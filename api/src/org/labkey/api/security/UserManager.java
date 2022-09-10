@@ -421,6 +421,18 @@ public class UserManager
         return Math.toIntExact((long) result.getValue());
     }
 
+    /** @return the number of unique users who have logged in since the provided date */
+    public static int getUniqueUsersCount(Date since)
+    {
+        TableInfo uat = getUserAuditSchemaTableInfo();
+        SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT CreatedBy) FROM ");
+        sql.append(uat, "uat");
+        sql.append( " WHERE Created >= ?");
+        sql.add(since);
+
+        return new SqlSelector(uat.getSchema(), sql).getObject(Integer.class);
+    }
+
     /** Of authenticated users, tallied when their session ends */
     private static final AtomicLong _sessionCount = new AtomicLong();
     /** In minutes */
@@ -437,10 +449,13 @@ public class UserManager
         public void sessionDestroyed(HttpSessionEvent event)
         {
             // Issue 44761 - track session duration for authenticated users
-            if (event.getSession().getAttribute(SecurityManager.USER_ID_KEY) != null)
+            User user = SecurityManager.getSessionUser(event.getSession());
+            if (user != null)
             {
+                long duration = TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime());
+                LOG.debug("Adding session duration to tally for " + user.getEmail() + ", " + duration + " minutes");
                 _sessionCount.incrementAndGet();
-                _totalSessionDuration.addAndGet((TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime())));
+                _totalSessionDuration.addAndGet(duration);
             }
         }
     }

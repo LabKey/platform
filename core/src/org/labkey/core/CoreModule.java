@@ -264,15 +264,18 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
@@ -878,7 +881,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     catch (IOException e)
                     {
-                        LogManager.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                        LOG.error("Exception exporting action stats", e);
                     }
 
                     logger.info(buf.toString());
@@ -1032,6 +1035,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
+            Calendar cal = new GregorianCalendar();
+            cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
+            results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
             return results;
         });
 
