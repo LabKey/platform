@@ -86,11 +86,6 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Recipe".equals(prefix))
-            {
-                String recipeName = suffix.substring(0, suffix.indexOf(":"));
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Recipe." + recipeName + ":Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION, lsid.getObjectId(), lsid.getVersion());
-            }
             else if (MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.equals(lsid.getObjectId()))
             {
                 /*
@@ -109,7 +104,8 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Data".equals(prefix))  {
+            else if ("Data".equals(prefix))
+            {
                 // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
                 // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
                 // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
@@ -147,11 +143,6 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             else if ("ProtocolApplication".equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
-            }
-            else if ("Recipe".equals(prefix))
-            {
-                String recipeName = suffix.substring(0, suffix.indexOf(":"));
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Recipe." + recipeName + ":Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION, lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Sample".equals(prefix))
             {

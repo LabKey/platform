@@ -612,26 +612,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         }
     }
 
-    private static class ExportMultiValuedLookupColumn extends ExportDataColumn
-    {
-        private ExportMultiValuedLookupColumn(ColumnInfo col)
-        {
-            super(col);
-        }
-
-//        public ExportMultiValuedLookupColumn(DisplayColumn dc)
-//        {
-//            super(dc);
-//        }
-//
-        @Override
-        public Object getValue(RenderContext ctx)
-        {
-            return new JSONArray(new MultiValuedDisplayColumn(getBoundColumn().getRenderer(), true).getTsvFormattedValues(ctx));
-        }
-
-    }
-
     // similar to XarExporter.relativizeLSIDPropertyValue but for columns
     private static class ExportLsidDataColumn extends ExportDataColumn
     {

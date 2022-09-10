@@ -151,8 +151,8 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
-                    // import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class
-                    // registry files need to imported in a particular order because some files rely on data from other files
+                    // Import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class.
+                    // Registry files need to imported in a particular order because some files rely on data from other files.
                     importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
                             dataClassDataFiles, xarDir, true, false);
 
@@ -180,7 +180,6 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
-                        // fix up the recipes
                     }
                 }
                 else

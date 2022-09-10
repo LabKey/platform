@@ -85,7 +85,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             if (ctx != null)
                 xarCtx = ctx.getContext(XarExportContext.class);
 
-            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
+            // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
             final XarExportContext fxarCtx = xarCtx;
             List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
@@ -112,7 +113,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
         private List<Integer> getProtocols(Container c)
         {
-            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
+            // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             List<ExpProtocol> protocols = ExperimentService.get().getExpProtocols(c)
                     .stream()
                     .filter(protocol ->
