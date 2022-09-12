@@ -627,9 +627,12 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public void setSiteDefaultRoot(File root, User user)
     {
-        if (root == null || !root.exists())
-            throw new IllegalArgumentException("Invalid site root: does not exist");
-        
+        if (root == null)
+            throw new IllegalArgumentException("Invalid site root: specified root is null");
+
+        if (!root.exists())
+            throw new IllegalArgumentException("Invalid site root: " + root.getAbsolutePath() + " does not exist");
+
         File prevRoot = getSiteDefaultRoot();
         WriteableAppProps props = AppProps.getWriteableInstance();
 
