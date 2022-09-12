@@ -57,7 +57,7 @@
             saveProtocol: analyzeFormCmp.getElementById("saveProtocolInput").checked,
             protocolName: protocolName,
             successCallback: function() {
-                var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+                var returnUrl = LABKEY.ActionURL.getReturnUrl();
                 if (!returnUrl) {
                     returnUrl = LABKEY.ActionURL.buildURL("project", "start.view");
                 }

@@ -75,7 +75,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     FilePathFilter getInitialFileTypeFilter();
 
     @NotNull
-    URLHelper getAnalyzeURL(Container c, String path, ReturnURLString parsedReturnUrl);
+    URLHelper getAnalyzeURL(Container c, String path, @Nullable ReturnURLString parsedReturnUrl);
 
     @NotNull
     Map<FileType, List<FileType>> getTypeHierarchy();

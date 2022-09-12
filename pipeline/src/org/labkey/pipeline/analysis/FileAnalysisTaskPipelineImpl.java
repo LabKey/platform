@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.CheckboxField;
@@ -275,7 +276,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     @Override
     @NotNull
-    public URLHelper getAnalyzeURL(Container c, String path, ReturnURLString parsedReturnUrl)
+    public URLHelper getAnalyzeURL(Container c, String path, @Nullable ReturnURLString parsedReturnUrl)
     {
         if (_analyzeURL != null)
         {

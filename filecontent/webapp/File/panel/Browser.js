@@ -276,7 +276,7 @@ Ext4.define('File.panel.Browser', {
          */
         _getActions : function(cb, containerPath, scope) {
             var params = {path : scope.getFullFolderOffset() };
-            var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+            var returnUrl = LABKEY.ActionURL.getReturnUrl();
             if (returnUrl) {
                 params.returnUrl = returnUrl;
             }
