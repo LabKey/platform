@@ -275,8 +275,13 @@ Ext4.define('File.panel.Browser', {
          * @private
          */
         _getActions : function(cb, containerPath, scope) {
+            var params = {path : scope.getFullFolderOffset() };
+            var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+            if (returnUrl) {
+                params.returnUrl = returnUrl;
+            }
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : scope.getFullFolderOffset() }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, params),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -2229,6 +2234,7 @@ Ext4.define('File.panel.Browser', {
                         if (files[j] == selections[i].data.name)
                         {
                             var fileField = document.createElement("input");
+                            fileField.setAttribute("type", "hidden");
                             fileField.setAttribute("name", "file");
                             fileField.setAttribute("value", selections[i].data.name);
                             form.appendChild(fileField);
@@ -2243,6 +2249,7 @@ Ext4.define('File.panel.Browser', {
                     }
                 }
                 var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
                 hiddenField.setAttribute("name", "X-LABKEY-CSRF");
                 hiddenField.setAttribute("value", LABKEY.CSRF);
                 form.appendChild(hiddenField);
