@@ -21,11 +21,14 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
@@ -1064,9 +1067,13 @@ abstract public class PipelineJob extends Job implements Serializable
      * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
      * status at the end of their execution to either COMPLETE or ERROR
      */
-    @Override
+    @Override @Trace
     public void run()
     {
+        // Connect log messages with the active trace and span
+        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+
         try
         {
             // The act of queueing the job runs the state machine for the first time.
@@ -1102,6 +1109,9 @@ abstract public class PipelineJob extends Job implements Serializable
         finally
         {
             finallyCleanUpLocalDirectory();
+
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
     }
 

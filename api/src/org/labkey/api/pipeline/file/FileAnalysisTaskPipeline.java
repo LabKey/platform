@@ -22,6 +22,7 @@ import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 
 import java.io.File;
@@ -74,7 +75,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     FilePathFilter getInitialFileTypeFilter();
 
     @NotNull
-    URLHelper getAnalyzeURL(Container c, String path);
+    URLHelper getAnalyzeURL(Container c, String path, @Nullable ReturnURLString parsedReturnUrl);
 
     @NotNull
     Map<FileType, List<FileType>> getTypeHierarchy();
