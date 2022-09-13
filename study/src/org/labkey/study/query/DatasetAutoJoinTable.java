@@ -109,14 +109,14 @@ public class DatasetAutoJoinTable extends VirtualTable
                 var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
                 colSequenceNum.setHidden(true);
                 addColumn(colSequenceNum);
-            }
 
-            // The extra key property is not always available.
-            if (_keyPropertyName != null)
-            {
-                var colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
-                colExtraKey.setHidden(true);
-                addColumn(colExtraKey);
+                // The extra key property is not always available.
+                if (_keyPropertyName != null)
+                {
+                    var colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
+                    colExtraKey.setHidden(true);
+                    addColumn(colExtraKey);
+                }
             }
         }
 
