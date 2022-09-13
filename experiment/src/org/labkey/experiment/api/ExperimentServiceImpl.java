@@ -1373,13 +1373,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
-
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
+        OntologyObject obj = OntologyManager.getOntologyObject(objectId);
+        if (obj == null)
             return null;
-        return new ExpDataClassImpl(dataClass);
+
+        return getDataClass(obj.getObjectURI());
     }
 
 
