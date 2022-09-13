@@ -101,14 +101,17 @@ public class DatasetAutoJoinTable extends VirtualTable
                 addColumn(colContainer);
             }
 
-            // Issue: 46138 sequence number isn't always available
-            _sequenceNumColumn = parent.getColumn(sequenceNumFieldKey);
-            if (_sequenceNumColumn != null)
+            if (!source.isDemographicData())
             {
-                Objects.requireNonNull(_sequenceNumColumn);
-                var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
-                colSequenceNum.setHidden(true);
-                addColumn(colSequenceNum);
+                // Issue: 46138 sequence number isn't always available
+                _sequenceNumColumn = parent.getColumn(sequenceNumFieldKey);
+                if (_sequenceNumColumn != null)
+                {
+                    Objects.requireNonNull(_sequenceNumColumn);
+                    var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
+                    colSequenceNum.setHidden(true);
+                    addColumn(colSequenceNum);
+                }
 
                 // The extra key property is not always available.
                 if (_keyPropertyName != null)
