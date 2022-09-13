@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.CheckboxField;
@@ -44,12 +45,14 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -273,7 +276,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     @Override
     @NotNull
-    public URLHelper getAnalyzeURL(Container c, String path)
+    public URLHelper getAnalyzeURL(Container c, String path, @Nullable ReturnURLString parsedReturnUrl)
     {
         if (_analyzeURL != null)
         {
@@ -292,6 +295,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 {
                     result.addParameter("taskId", getId().toString());
                 }
+                if (parsedReturnUrl != null)
+                {
+                    result.addParameter(ActionURL.Param.returnUrl.name(), parsedReturnUrl.toString());
+                }
                 return result;
             }
             catch (URISyntaxException e)
@@ -299,7 +306,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 throw new UnexpectedException(e);
             }
         }
-        return AnalysisController.urlAnalyze(c, getId(), path);
+        return AnalysisController.urlAnalyze(c, getId(), path, parsedReturnUrl);
     }
 
     @Override

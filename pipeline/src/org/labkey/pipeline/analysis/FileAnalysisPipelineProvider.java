@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
@@ -33,6 +34,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
@@ -89,6 +92,17 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         if (includeAll || isShowActionsIfModuleInactive())
             c = null;
 
+        ReturnURLString parsedReturnUrl = null;
+        String returnUrl = context.getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        if (returnUrl != null)
+        {
+            try
+            {
+                parsedReturnUrl = new ReturnURLString(returnUrl);
+            }
+            catch (ConversionException ignored) {}
+        }
+
         Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(c, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {
@@ -97,7 +111,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
             String path = directory.cloneHref().getParameter(Params.path.toString());
             String actionId = createActionId(this.getClass(), tp.getDescription()); // XXX: use task id instead so it's unique?
-            addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
+            addAction(actionId, tp.getAnalyzeURL(c, path, parsedReturnUrl), tp.getDescription(),
                     directory, directory.listPaths(tp.getInitialFileTypeFilter()), true, false, includeAll);
         }
     }
