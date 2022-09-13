@@ -111,7 +111,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
                 return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
             }
-            else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
+            else if (suffix != null && (SUFFIX_PATTERN.matcher(suffix).matches() || XAR_IMPORT_SUFFIX_PATTERN.matcher(suffix).matches()))
             {
                 String xarFileId = "";
                 if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
@@ -188,6 +188,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids);
 
     private static final Pattern SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+");
+    private static final Pattern XAR_IMPORT_SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+.Xar-[0-9]+");
 
     LSIDRelativizer(String description)
     {
