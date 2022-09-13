@@ -108,9 +108,6 @@ public class CrossFolderRecordDataIterator extends WrapperDataIterator
             if (null == di)
                 return null;
 
-            assert !di.supportsGetExistingRecord();
-            if (di.supportsGetExistingRecord())
-                return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
             if (option.mergeRows && QueryService.get().isProductProjectsEnabled(target.getUserSchema().getContainer()))
             {

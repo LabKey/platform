@@ -1171,12 +1171,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
             {
                 Object oName = keyMap.getValue().get("Name");
-                Object oClassId = keyMap.getValue().get("ClassId");
 
-                if (oName != null && oClassId != null)
-                {
+                if (oName != null)
                     dataNames.add((String) oName);
-                    dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
+
+                if (dataClassId == null)
+                {
+                    Object oClassId = keyMap.getValue().get("ClassId");
+                    if (oClassId != null)
+                        dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
                 }
 
             }

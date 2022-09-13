@@ -665,13 +665,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             String name = getMaterialName(keyMap.getValue());
-            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
 
-            if (name != null && materialSourceId != null)
-            {
-                sampleTypeId = materialSourceId;
+            if (name != null)
                 sampleNames.add(name);
-            }
+
+            if (sampleTypeId == null)
+                sampleTypeId = getMaterialSourceId(keyMap.getValue());
         }
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
