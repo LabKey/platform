@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -221,6 +222,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
+    private final List<ColumnExporter> _columnExporters = new ArrayList<>();
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
@@ -2991,8 +2993,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return emptyList();
     }
 
-    @Nullable @Override
-    public String getObjectReferenceDescription(Class referencedClass)
+    @Override
+    public @NotNull String getObjectReferenceDescription(Class referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -7278,6 +7280,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         _objectReferencers.add(referencer);
     }
 
+    @Override
+    public void registerColumnExporter(ColumnExporter exporter)
+    {
+        _columnExporters.add(exporter);
+    }
+
+    @Override
+    public List<ColumnExporter> getColumnExporters()
+    {
+        return _columnExporters;
+    }
+
+    @Override
     @NotNull
     public List<ObjectReferencer> getObjectReferencers()
     {
