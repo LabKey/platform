@@ -56,7 +56,13 @@
             files: selectedFileNames,
             saveProtocol: analyzeFormCmp.getElementById("saveProtocolInput").checked,
             protocolName: protocolName,
-            successCallback: function() { window.location = LABKEY.ActionURL.buildURL("project", "start.view") }
+            successCallback: function() {
+                var returnUrl = LABKEY.ActionURL.getReturnUrl();
+                if (!returnUrl) {
+                    returnUrl = LABKEY.ActionURL.buildURL("project", "start.view");
+                }
+                window.location = returnUrl;
+            }
         };
 
         if (analyzeFormCmp.getElementById("protocolSelect").selectedIndex == 0) {
