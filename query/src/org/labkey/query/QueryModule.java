@@ -341,7 +341,7 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            Query.QueryTestCase.class,
+            //Query.QueryTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
@@ -357,6 +357,7 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/MultiValueTest.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
         return ret;
     }
 
