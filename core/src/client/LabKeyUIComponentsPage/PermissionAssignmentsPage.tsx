@@ -84,6 +84,7 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<InjectedPermissi
                     onChange={this.onChange}
                     onSuccess={this.onSuccess}
                     policy={policy}
+                    groupMembership={undefined} // TODO what should this be?
                 />
             </>
         )
