@@ -112,6 +112,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _shouldLog = true;
     private boolean _lockName = false;
     private SimpleTranslator.RemapMissingBehavior _remapMissingBehavior = null;
+    private Integer _dbSequenceBatchSize = null;
 
     /**
      * True if this column isn't really part of the database. It might be a calculated value, or an alternate
@@ -934,6 +935,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _isAutoIncrement = autoIncrement;
+    }
+
+    @Override
+    public @Nullable Integer getDbSequenceBatchSize()
+    {
+        return _dbSequenceBatchSize;
+    }
+
+    @Override
+    public void setDbSequenceBatchSize(@Nullable Integer dbSequenceBatchSize)
+    {
+        _dbSequenceBatchSize = dbSequenceBatchSize;
     }
 
     @Override
