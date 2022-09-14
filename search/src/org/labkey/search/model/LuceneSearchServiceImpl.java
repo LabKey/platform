@@ -1869,6 +1869,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "mov_sample.mov", 0);
             add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
+            add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "pptx_sample.pptx", 148, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
@@ -1885,6 +1886,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
+            add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
 
             return map;
