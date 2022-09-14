@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -724,6 +726,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
     void registerObjectReferencer(ObjectReferencer referencer);
+
+    void registerColumnExporter(ColumnExporter exporter);
+
+    List<ColumnExporter> getColumnExporters();
 
     @NotNull
     List<ObjectReferencer> getObjectReferencers();

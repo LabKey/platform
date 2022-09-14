@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -221,6 +222,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
+    private final List<ColumnExporter> _columnExporters = new ArrayList<>();
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
@@ -1373,13 +1375,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
-
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
+        OntologyObject obj = OntologyManager.getOntologyObject(objectId);
+        if (obj == null)
             return null;
-        return new ExpDataClassImpl(dataClass);
+
+        return getDataClass(obj.getObjectURI());
     }
 
 
@@ -2991,8 +2991,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return emptyList();
     }
 
-    @Nullable @Override
-    public String getObjectReferenceDescription(Class referencedClass)
+    @Override
+    public @NotNull String getObjectReferenceDescription(Class referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -7278,6 +7278,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         _objectReferencers.add(referencer);
     }
 
+    @Override
+    public void registerColumnExporter(ColumnExporter exporter)
+    {
+        _columnExporters.add(exporter);
+    }
+
+    @Override
+    public List<ColumnExporter> getColumnExporters()
+    {
+        return _columnExporters;
+    }
+
+    @Override
     @NotNull
     public List<ObjectReferencer> getObjectReferencers()
     {
@@ -8207,6 +8220,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return count;
+    }
+
+    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, boolean isSample, Container container)
+    {
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        TableInfo tableInfo = isSample ? ExperimentService.get().getTinfoMaterial() : ExperimentService.get().getTinfoData();
+        SQLFragment currentFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container = ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(currentFolderCountSql, rowIds);
+        int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).get(0);
+
+        SQLFragment crossFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container <> ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(crossFolderCountSql, rowIds);
+        int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
+
+        return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
     }
 
     public static class TestCase extends Assert

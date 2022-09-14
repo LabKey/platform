@@ -590,7 +590,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public boolean isSortableDataType(String sqlDataTypeName)
     {
-        return true;
+        return !"json".equals(sqlDataTypeName) && !"jsonb".equals(sqlDataTypeName);
     }
 
     @Override

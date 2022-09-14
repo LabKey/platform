@@ -275,8 +275,13 @@ Ext4.define('File.panel.Browser', {
          * @private
          */
         _getActions : function(cb, containerPath, scope) {
+            var params = {path : scope.getFullFolderOffset() };
+            var returnUrl = LABKEY.ActionURL.getReturnUrl();
+            if (returnUrl) {
+                params.returnUrl = returnUrl;
+            }
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : scope.getFullFolderOffset() }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, params),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -1387,7 +1392,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset()));
     },
 
     getFolderOffset : function() {
@@ -1436,7 +1441,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getCurrentDirectory : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset()));
     },
 
     /**
@@ -1447,6 +1452,7 @@ Ext4.define('File.panel.Browser', {
     _initFolderOffset : function(offsetPath) {
         // Replace the base URL so only offsets are used
         var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
+
         // If we don't go anywhere, don't fire a folder change
         if (this.rootOffset != path) {
             this.rootOffset = path;
@@ -1770,7 +1776,7 @@ Ext4.define('File.panel.Browser', {
             this.tree.getView().expand(rec);
         }
         else {
-            this.changeFolder(rec);
+            this.changeFolder(rec, false);
             this.tree.getView().expand(rec);
         }
     },
@@ -2228,6 +2234,7 @@ Ext4.define('File.panel.Browser', {
                         if (files[j] == selections[i].data.name)
                         {
                             var fileField = document.createElement("input");
+                            fileField.setAttribute("type", "hidden");
                             fileField.setAttribute("name", "file");
                             fileField.setAttribute("value", selections[i].data.name);
                             form.appendChild(fileField);
@@ -2242,6 +2249,7 @@ Ext4.define('File.panel.Browser', {
                     }
                 }
                 var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
                 hiddenField.setAttribute("name", "X-LABKEY-CSRF");
                 hiddenField.setAttribute("value", LABKEY.CSRF);
                 form.appendChild(hiddenField);
@@ -2543,7 +2551,7 @@ Ext4.define('File.panel.Browser', {
      * @param {boolean} [skipHistory=false]
      */
     changeFolder : function(model, skipHistory) {
-        var url = model.data.id;
+        var url = this.fileSystem.getURLWithCharsReplaced(model.data.id);
         this.setFolderOffset(url, model, skipHistory);
     },
 
@@ -2754,6 +2762,7 @@ Ext4.define('File.panel.Browser', {
         var onCreateDir = function(panel) {
 
             var path = this.getFolderURL();
+
             if (!LABKEY.Utils.endsWith(path, this.folderSeparator))
                 path = path + this.folderSeparator;
             if (panel.getForm().isValid()) {
@@ -2761,7 +2770,6 @@ Ext4.define('File.panel.Browser', {
                 if (values && values.folderName) {
                     var folder = values.folderName;
                     var browser = this;
-                    var modifiedPath = path;
                     this.fileSystem.createDirectory({
                         path : this.fileSystem.encodeForURL(path + folder),
                         success : function(path) {
@@ -3139,11 +3147,13 @@ Ext4.define('File.panel.Browser', {
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
 
+            var dest = this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name));
+
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
                 fileRecord : selected,
-                source: selected.record.data.id,
-                destination: this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name)),
+                source: LABKEY.ActionURL.encodePath(selected.record.data.id),
+                destination: LABKEY.ActionURL.encodePath(dest),
                 isFile: !selected.record.data.collection,
                 success: function() {
                     this.afterFileSystemChange();

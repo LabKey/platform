@@ -102,8 +102,8 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 
         DomainFormPanel panel = definitionPage.getFieldsPanel();
         panel.manuallyDefineFields("textField");
-        panel.addField(new FieldDefinition("intField").setType(FieldDefinition.ColumnType.Integer));
-        panel.addField(new FieldDefinition("fileField").setType(FieldDefinition.ColumnType.File));
+        panel.addField(new FieldDefinition("intField", FieldDefinition.ColumnType.Integer));
+        panel.addField(new FieldDefinition("fileField", FieldDefinition.ColumnType.File));
         definitionPage.clickSave();
     }
 }
