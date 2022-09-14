@@ -77,6 +77,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
+import static org.labkey.api.gwt.client.AuditBehaviorType.NONE;
 
 /*
 * User: Dave
@@ -123,6 +124,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     /** Mapping for MV column names */
     private Map<String, String> _columnMapping = Collections.emptyMap();
+
+    private boolean _skipAuditLogging = false;
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
@@ -251,7 +254,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        if (!isBulkLoad())
+        if (_skipAuditLogging)
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, NONE);
+        else if (!isBulkLoad())
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
 
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
@@ -572,7 +577,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // if we are being called by QUS we don't want to call triggers twice or resync twice
             options.put(QueryUpdateService.ConfigParameters.SkipTriggers, true);
             options.put(DatasetUpdateService.Config.SkipResyncStudy, true);
-
+            // we don't want to audit the insert in this case, the update audit entry is handled later in this method
+            _skipAuditLogging = true;
             List<Map<String, Object>> newRows = insertRows(user,container, dataMap, errors, options, null);
 
             if (errors.hasErrors())
