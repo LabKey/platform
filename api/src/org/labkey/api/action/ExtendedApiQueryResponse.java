@@ -134,15 +134,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             boolean includeFormattedValue,
             boolean doItWithStyle)
     {
-        if (dc instanceof NestedPropertyDisplayColumn)
+        if (dc instanceof NestedPropertyDisplayColumn npc)
         {
-            NestedPropertyDisplayColumn npc = (NestedPropertyDisplayColumn) dc;
             return getNestedPropertiesArray(ctx, npc, arrayMultiValueColumns, includeFormattedValue, doItWithStyle);
         }
-        else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
+        else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn mdc)
         {
             // render MultiValue columns as an array of 'value', 'displayValue', and 'url' objects
-            IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
             return getMultiValuedColumnArray(ctx, includeFormattedValue, mdc);
         }
         else

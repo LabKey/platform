@@ -146,7 +146,7 @@ public abstract class TSVWriter extends TextWriter
     /**
      * Quote the value if necessary.  The quoting rules are:
      * <ul>
-     *   <li>Values containing leading or trailing whitespace, a newline, a carrage return, the row separator (usually newline), or the field separator will be quoted.
+     *   <li>Values containing leading or trailing whitespace, a newline, a carriage return, the row separator (usually newline), or the field separator will be quoted.
      *   <li>Values containing the quoting character will also be quoted with the quote character replaced by two quote characters.
      * </ul>
      * <p>
