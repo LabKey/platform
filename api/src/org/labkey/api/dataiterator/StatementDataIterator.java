@@ -199,6 +199,8 @@ public class StatementDataIterator extends AbstractDataIterator
                     to = stmt.getParameter(col.getPropertyURI());
                 if (to == null)
                     to = stmt.getParameter(col.getName());
+                if (to == null)
+                    to = stmt.getParameter(col.getAlias());
                 if (null != to)
                 {
                     FieldKey mvName = col.getMvColumnName();
