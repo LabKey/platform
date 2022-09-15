@@ -341,7 +341,6 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            //Query.QueryTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
