@@ -1579,6 +1579,54 @@ public class ContainerManager
         return changedProjects;
     }
 
+    public static Container rename(
+        Container c,
+        User user,
+        String name,
+        @Nullable String title,
+        boolean addAlias
+    ) throws ValidationException
+    {
+        // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
+        if (!isRenameable(c))
+            throw new IllegalArgumentException("This folder may not be renamed as it is reserved by the system.");
+
+        String folderName = StringUtils.trimToNull(name);
+        StringBuilder errors = new StringBuilder();
+        if (!Container.isLegalName(folderName, c.isProject(), errors))
+            throw new IllegalArgumentException(errors.toString());
+
+        // Issue 19061: Unable to do case-only container rename
+        if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
+        {
+            if (c.getParent().isRoot())
+                throw new IllegalArgumentException("The server already has a project with this name.");
+            else
+                throw new IllegalArgumentException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+        }
+
+        try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        {
+            // Rename
+            rename(c, user, folderName);
+
+            // Alias
+            if (addAlias)
+            {
+                List<String> newAliases = new ArrayList<>(getAliasesForContainer(c));
+                newAliases.add(c.getPath());
+                saveAliasesForContainer(c, newAliases, user);
+            }
+
+            // Title
+            if (Container.isLegalTitle(title, errors))
+                updateTitle(c, title, user);
+
+            tx.commit();
+        }
+
+        return ContainerManager.getForId(c.getId());
+    }
 
     // Rename a container in the table.  Will fail if the new name already exists in the parent container.
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
