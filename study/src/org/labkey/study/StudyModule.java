@@ -440,8 +440,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
                 );
 
-                metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload = ? AND ReloadInterval > ?", true, 0).getObject(Long.class));
                 metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
+                metric.put("timepointType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap());
 
                 metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
