@@ -413,7 +413,6 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
-        addParam("usedInstaller", usedInstaller());
         addParam("distribution", getDistributionStamp());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
@@ -422,14 +421,6 @@ public class MothershipReport implements Runnable
     public String getContent()
     {
         return _content;
-    }
-
-    public static boolean usedInstaller()
-    {
-        ServletContext context = ModuleLoader.getServletContext();
-        String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
-
-        return Boolean.parseBoolean(usedInstaller);
     }
 
     private static String getDistributionStamp()

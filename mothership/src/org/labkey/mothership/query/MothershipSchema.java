@@ -266,7 +266,8 @@ public class MothershipSchema extends UserSchema
         lastPing.append(" WHERE ss.ServerInstallationId = ");
         lastPing.append(STR_TABLE_ALIAS);
         lastPing.append(".ServerInstallationId)");
-        result.addColumn(new ExprColumn(result, "LastPing", lastPing, JdbcType.TIMESTAMP));
+        var lastPingCol = new ExprColumn(result, "LastPing", lastPing, JdbcType.TIMESTAMP);
+        result.addColumn(lastPingCol);
 
         SQLFragment exceptionCount = new SQLFragment("(SELECT COUNT(*) FROM ");
         exceptionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -276,7 +277,7 @@ public class MothershipSchema extends UserSchema
         exceptionCount.append(STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, JdbcType.INTEGER);
-        exceptionCountCol.setFormat("#.#");
+        exceptionCountCol.setFormat("#,###");
         result.addColumn(exceptionCountCol);
 
         SqlDialect dialect = MothershipManager.get().getSchema().getSqlDialect();
@@ -289,7 +290,7 @@ public class MothershipSchema extends UserSchema
         daysActive.append(STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
         ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, JdbcType.INTEGER);
-        daysActiveColumn.setFormat("#.#");
+        daysActiveColumn.setFormat("#,###");
         result.addColumn(daysActiveColumn);
 
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(softwarereleaseid)) FROM ");
@@ -297,7 +298,9 @@ public class MothershipSchema extends UserSchema
         versionCount.append(" WHERE ss.ServerInstallationId = ");
         versionCount.append(STR_TABLE_ALIAS);
         versionCount.append(".ServerInstallationId)");
-        result.addColumn(new ExprColumn(result, "VersionCount", versionCount, JdbcType.INTEGER));
+        var versionCountCol = new ExprColumn(result, "VersionCount", versionCount, JdbcType.INTEGER);
+        versionCountCol.setFormat("#,###");
+        result.addColumn(versionCountCol);
 
         SQLFragment currentVersion = new SQLFragment("(SELECT MAX(ServerSessionID) FROM ");
         currentVersion.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -308,16 +311,35 @@ public class MothershipSchema extends UserSchema
         currentVersionColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSION_TABLE_NAME).build());
         result.addColumn(currentVersionColumn);
 
+        SQLFragment sessionCountSQL = new SQLFragment("(SELECT COUNT(*) FROM ");
+        sessionCountSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        sessionCountSQL.append(" WHERE ss.ServerInstallationId = ");
+        sessionCountSQL.append(STR_TABLE_ALIAS);
+        sessionCountSQL.append(".ServerInstallationId)");
+        ExprColumn sessionCountCol = new ExprColumn(result, "ServerSessionCount", sessionCountSQL, JdbcType.INTEGER);
+        sessionCountCol.setFormat("#,###");
+        result.addColumn(sessionCountCol);
+
+        SQLFragment clonedInstances = new SQLFragment("(SELECT (COUNT (*) - 1) FROM ");
+        clonedInstances.append(MothershipManager.get().getTableInfoServerInstallation(), "si");
+        clonedInstances.append(" WHERE si.ServerInstallationGUID = ");
+        clonedInstances.append(STR_TABLE_ALIAS);
+        clonedInstances.append(".ServerInstallationGUID)");
+        ExprColumn clonedInstancesCol = new ExprColumn(result, "ClonedInstances", clonedInstances, JdbcType.INTEGER);
+        clonedInstancesCol.setURL(DetailsURL.fromString("mothership-showInstallations.view?serverInstallations.ServerInstallationGUID~eq=${ServerInstallationGUID}"));
+        clonedInstancesCol.setDescription("The number of other instances reporting the same unique GUID, stored in the DB");
+        result.addColumn(clonedInstancesCol);
+
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromString("ServerHostName"));
-        defaultCols.add(FieldKey.fromString("ServerIP"));
         defaultCols.add(FieldKey.fromString("Note"));
-        defaultCols.add(FieldKey.fromString("DaysActive"));
-        defaultCols.add(FieldKey.fromString("LastPing"));
-        defaultCols.add(FieldKey.fromString("ExceptionCount"));
-        defaultCols.add(FieldKey.fromString("VersionCount"));
+        defaultCols.add(daysActiveColumn.getFieldKey());
+        defaultCols.add(lastPingCol.getFieldKey());
+        defaultCols.add(exceptionCountCol.getFieldKey());
+        defaultCols.add(versionCountCol.getFieldKey());
+        defaultCols.add(sessionCountCol.getFieldKey());
+        defaultCols.add(clonedInstancesCol.getFieldKey());
         defaultCols.add(FieldKey.fromString("MostRecentSession/SoftwareReleaseId"));
-        defaultCols.add(FieldKey.fromString("UsedInstaller"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;
