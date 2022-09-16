@@ -47,8 +47,17 @@
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
     "testResultsProcessor": "jest-teamcity-reporter",
     "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    }
+      "^.+\\.tsx?$": "ts-jest",
+      "\\.jsx?$": [
+        "babel-jest",
+        {
+          "configFile": "./node_modules/@labkey/build/webpack/babel.config.js"
+        }
+      ]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@labkey))"
+    ]
   },
   "dependencies": {
     "@labkey/api": "1.15.0",
