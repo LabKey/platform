@@ -3152,7 +3152,9 @@ if (!LABKEY.DataRegions) {
                 });
 
                 $.each(pairs, function(i, pair) {
-                    p = pair.split('=', 2);
+                    var poundIdx = pair.indexOf('#');
+                    var pairWithoutPound = poundIdx > -1 ? pairWithoutPound = pair.substr(0, poundIdx) : pair;
+                    p = pairWithoutPound.split('=', 2);
                     key = p[0] = decodeURIComponent(p[0]);
                     lastIdx = key.indexOf(LAST);
 
