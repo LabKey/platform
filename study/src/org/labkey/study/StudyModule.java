@@ -235,7 +235,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 22.001;
+        return 22.002;
     }
 
     @Override
@@ -845,7 +845,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "studyReloadCount",
+                "timepointType",
                 "reportCountsByType"
             );
             assertTrue("Mothership report missing expected metrics",
