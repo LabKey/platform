@@ -114,7 +114,7 @@ public class QuerySelectView extends QueryRelation
     }
 
     @Override
-    TableInfo getTableInfo()
+    public TableInfo getTableInfo()
     {
         return null;
     }
