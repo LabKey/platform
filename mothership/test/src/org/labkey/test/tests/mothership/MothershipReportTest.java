@@ -36,6 +36,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
@@ -107,7 +108,8 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         goToSchemaBrowser();
         var table = viewQueryData("mothership", "recentJsonMetricValues");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
-        table.setFilter("DisplayKey", "Equals", "modules.Core.simpleMetricCounts.controllerHits.admin");
+        table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
+        fail("testing");
         table = new DataRegionTable("query", this);
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.clearAllFilters();
