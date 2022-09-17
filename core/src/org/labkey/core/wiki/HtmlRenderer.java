@@ -110,8 +110,7 @@ public class HtmlRenderer implements WikiRenderer
         NodeList nl = doc.getElementsByTagName("a");
         Map<Element, String> linkExceptions = new HashMap<>();
         // Some implementations calculate the length on all calls to getLength(), which can be expensive
-        int length = nl.getLength();
-        for (int i=0 ; i < length ; i++)
+        for (int i = 0, length = nl.getLength(); i < length ; i++)
         {
             Element a = (Element)nl.item(i);
             try
@@ -155,7 +154,7 @@ public class HtmlRenderer implements WikiRenderer
         }
 
         nl = doc.getElementsByTagName("img");
-        for (int i=0 ; i<nl.getLength() ; i++)
+        for (int i = 0, length = nl.getLength(); i < length; i++)
         {
             Element img = (Element)nl.item(i);
             String src = img.getAttribute("src");
@@ -177,7 +176,7 @@ public class HtmlRenderer implements WikiRenderer
 
             //look for style elements, as tidy moves them to the head section
             NodeList styleNodes = doc.getElementsByTagName("style");
-            for (int idx = 0; idx < styleNodes.getLength(); ++idx)
+            for (int idx = 0, length = styleNodes.getLength(); idx < length; ++idx)
             {
                 innerHtml.append(PageFlowUtil.convertNodeToHtml(styleNodes.item(idx)));
                 innerHtml.append('\n');
