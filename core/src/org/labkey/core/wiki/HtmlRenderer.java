@@ -109,7 +109,9 @@ public class HtmlRenderer implements WikiRenderer
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
         Map<Element, String> linkExceptions = new HashMap<>();
-        for (int i=0 ; i<nl.getLength() ; i++)
+        // Some implementations calculate the length on all calls to getLength(), which can be expensive
+        int length = nl.getLength();
+        for (int i=0 ; i < length ; i++)
         {
             Element a = (Element)nl.item(i);
             try
