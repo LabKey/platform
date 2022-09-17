@@ -80,14 +80,10 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     @Test
     public void testTopLevelItems()
     {
-        // TODO: Test others
-
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
-        assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
-        assertNotNull("Usage reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Usage Reporting Level")));
-        assertNotNull("Exception reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Exception Reporting Level")));
+        assertTextPresent(distributionName);
     }
 
     @Test
@@ -110,6 +106,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         goToProjectHome("/_mothership");
         goToSchemaBrowser();
         var table = viewQueryData("mothership", "recentJsonMetricValues");
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.setFilter("DisplayKey", "Equals", "modules.Core.simpleMetricCounts.controllerHits.admin");
         table = new DataRegionTable("query", this);
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
@@ -139,24 +136,13 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect forwarded IP address", forwardedFor, installDetail.getServerIP());
-    }
-
-    @Test
-    public void testServerHostName() throws Exception
-    {
-        log("Send test server host name from base server url");
-        String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
+        assertTextPresent(forwardedFor);
     }
 
     private int triggerNpeAndGetCount()
     {
         return _mothershipHelper.getReportCount(_mothershipHelper.triggerException(TestActions.ExceptionActions.npe));
     }
-    // TODO: Test output of each reporting level
 
     // TODO: test the View sample report buttons from Customize Site page?
 }

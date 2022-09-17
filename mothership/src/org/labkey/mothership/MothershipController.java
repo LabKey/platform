@@ -1609,7 +1609,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form);
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,ServletContainer,BuildTime");
+            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
             final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
             defaultServerInstallationColumn.setVisible(false);
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())
@@ -1619,8 +1619,6 @@ public class MothershipController extends SpringActionController
                 {
                     Map<String, Object> row = ctx.getRow();
 
-                    ColumnInfo displayColumn = defaultServerInstallationColumn.getColumnInfo().getDisplayField();
-
                     ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
                     if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
                     {
@@ -1628,20 +1626,15 @@ public class MothershipController extends SpringActionController
                     }
                     else
                     {
-                        Object displayValue = displayColumn.getValue(ctx);
-                        if (displayValue == null || "".equals(displayValue))
+                        if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
                         {
-                            if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
-                            {
-                                return HtmlString.of(si.getServerHostName());
-                            }
-                            else
-                            {
-                                return HtmlString.of("[Unnamed]");
-                            }
+                            return HtmlString.of(si.getServerHostName());
+                        }
+                        else
+                        {
+                            return HtmlString.of("[Unnamed]");
                         }
                     }
-                    return super.getFormattedHtml(ctx);
                 }
             };
 

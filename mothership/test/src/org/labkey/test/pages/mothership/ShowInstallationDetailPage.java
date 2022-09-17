@@ -48,11 +48,6 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
         return getInstallationValue("Distribution");
     }
 
-    public String getServerIP()
-    {
-        return getInstallationValue("Server IP");
-    }
-
     public String getServerHostName()
     {
         return Locator.input("serverHostName").findElement(getDriver()).getAttribute("value");
