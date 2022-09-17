@@ -54,7 +54,6 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -65,6 +64,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -105,7 +105,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import static org.apache.http.util.TextUtils.isBlank;
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
 /**
@@ -572,7 +571,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     @Override
     public Report getReportByEntityId(Container c, String entityId)
     {
-        if (isBlank(entityId))
+        if (StringUtils.isBlank(entityId))
             return null;
         if (GUID.isGUID(entityId))
         {
