@@ -109,7 +109,7 @@ public class HtmlRenderer implements WikiRenderer
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
         Map<Element, String> linkExceptions = new HashMap<>();
-        // Some implementations calculate the length on all calls to getLength(), which can be expensive
+        // Tidy recalculates the length on all calls to getLength(), which is expensive, so remember the value
         for (int i = 0, length = nl.getLength(); i < length ; i++)
         {
             Element a = (Element)nl.item(i);
