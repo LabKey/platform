@@ -15,12 +15,15 @@
  */
 package org.labkey.test.tests.mothership;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.OrderWith;
+import org.junit.runner.manipulation.Alphanumeric;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
@@ -34,14 +37,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({Daily.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 4)
+@BaseWebDriverTest.ClassTimeout(minutes = 4) @OrderWith(Alphanumeric.class)
 public class MothershipReportTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private MothershipHelper _mothershipHelper;
@@ -109,7 +111,6 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         var table = viewQueryData("mothership", "recentJsonMetricValues");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
-        fail("testing");
         table = new DataRegionTable("query", this);
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.clearAllFilters();
@@ -145,6 +146,21 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     {
         return _mothershipHelper.getReportCount(_mothershipHelper.triggerException(TestActions.ExceptionActions.npe));
     }
+
+    @Test
+    public void testServerHostName() throws Exception
+    {
+        log("Send test server host name from base server url");
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+
+        String hostName = new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
+        String hostName2 = "TEST_" + hostName;
+
+        beginAt(WebTestHelper.buildURL("mothership", MothershipHelper.MOTHERSHIP_PROJECT, "showInstallations"));
+        assertElementPresent(Locator.linkWithText(hostName));
+        assertElementPresent(Locator.linkWithText(hostName2));
+    }
+
 
     // TODO: test the View sample report buttons from Customize Site page?
 }
