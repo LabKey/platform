@@ -20,10 +20,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.labkey.api.admin.TableXmlUtils;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.DOM;
+import org.labkey.api.view.ActionURL;
+import org.labkey.core.admin.AdminController;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,15 +66,14 @@ public class SchemaXMLTestCase extends Assert
 
     private void testSchemaXml(DbSchema schema)
     {
-        String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
-
         // Not using assertNotNull, because it appends non-legal HTML text to our message
-        if (null != sOut)
-            fail("<div>Errors in schema " + schema.getDisplayName()
-                    + ".xml.  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
-                    + schema.getDisplayName() + "\">Click here for an XML doc with fixes</a>."
-                    + "<br>"
-                    + sOut + "</div>");
+        if (TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasErrors())
+        {
+            ActionURL url = new ActionURL(AdminController.GetSchemaXmlDocAction.class, ContainerManager.getRoot()).addParameter("dbSchema", schema.getDisplayName());
+            fail(DOM.DIV("Errors in schema " + schema.getDisplayName() + ".xml ",
+                    DOM.A(DOM.at(DOM.Attribute.href, url), "Click here for an XML doc with fixes"),
+                    DOM.BR()).renderToString());
+        }
 
 /* TODO: Uncomment once we change to all generic type names in schema .xml files
 
