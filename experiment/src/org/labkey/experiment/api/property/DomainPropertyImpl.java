@@ -724,6 +724,11 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
+    public boolean isSwap()
+    {
+        return isNew() && _pdOld != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
+    }
+
     public boolean isDirty()
     {
         if (_pdOld != null) return true;
@@ -749,7 +754,12 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
-        if (isNew())
+        if (isSwap())
+        {
+            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
+            OntologyManager.removePropertyDescriptorFromDomain(new DomainPropertyImpl((DomainImpl) getDomain(), _pdOld));
+        }
+        else if (isNew())
         {
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         }

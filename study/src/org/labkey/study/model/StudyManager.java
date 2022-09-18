@@ -69,6 +69,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -3777,10 +3778,34 @@ public class StudyManager
 
             if (null != p)
             {
-                // Enable the domain to make schema changes for this property if required
-                // by dropping/adding the property and its storage at domain save time
-                p.setSchemaImport(true);
-                OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
+                final String toPropertyUri = p.getPropertyDescriptor().getPropertyURI();
+                boolean fromSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
+                        sp.getPropertyURI().equals(toPropertyUri));
+                boolean toSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
+                        sp.getPropertyURI().equals(ipd.pd.getPropertyURI()));
+                boolean propertyUriChange = !toPropertyUri.equals(ipd.pd.getPropertyURI());
+
+                // Don't copy values over a system prop, just setup swapping the property descriptor
+                if (propertyUriChange && toSystemProp)
+                {
+                    p.setPropertyURI(ipd.pd.getPropertyURI());
+                }
+                else
+                {
+                    // Enable the domain to make schema changes for this property if required
+                    // by dropping/adding the property and its storage at domain save time
+                    p.setSchemaImport(true);
+                    OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
+
+                    // Could be changing from a shared property descriptor
+                    p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
+                }
+
+                // Set property Id to zero if swapping to a different property descriptor
+                if (propertyUriChange && (toSystemProp || fromSystemProp))
+                {
+                    p.getPropertyDescriptor().setPropertyId(0);
+                }
             }
             else
             {

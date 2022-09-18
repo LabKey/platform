@@ -628,12 +628,17 @@ public class DomainImpl implements Domain
                             generateStorageColumnName(impl._pd);
                     }
 
-                    if (impl.isRecreateRequired())
+                    if (impl.isRecreateRequired() && !impl.isSwap())
                     {
                         impl.markAsNew();
                     }
 
-                    if (impl.isNew())
+                    if (impl.isSwap())
+                    {
+                        // Property descriptor was swapped for a different pd
+                        propChanged = true;
+                    }
+                    else if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
                             checkRequiredStatus.add(impl);
