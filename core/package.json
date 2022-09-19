@@ -60,7 +60,7 @@
     ]
   },
   "dependencies": {
-    "@labkey/api": "1.15.0",
+    "@labkey/api": "1.15.0-fb-storageClientAPI.0",
     "@labkey/components": "2.218.1",
     "@labkey/themes": "1.3.0"
   },
