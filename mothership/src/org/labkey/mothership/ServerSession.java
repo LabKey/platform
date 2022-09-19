@@ -57,6 +57,10 @@ public class ServerSession
     private String _serverHostName;
     private String _serverIP;
     private Integer _originalServerSessionId;
+    private String _systemDescription;
+    private String _logoLink;
+    private String _organizationName;
+    private String _systemShortName;
 
     public String getDatabaseProductVersion()
     {
@@ -346,5 +350,45 @@ public class ServerSession
     public void setOriginalServerSessionId(Integer originalServerSessionId)
     {
         _originalServerSessionId = originalServerSessionId;
+    }
+
+    public String getSystemDescription()
+    {
+        return _systemDescription;
+    }
+
+    public void setSystemDescription(String systemDescription)
+    {
+        _systemDescription = systemDescription;
+    }
+
+    public String getLogoLink()
+    {
+        return _logoLink;
+    }
+
+    public void setLogoLink(String logoLink)
+    {
+        _logoLink = logoLink;
+    }
+
+    public String getOrganizationName()
+    {
+        return _organizationName;
+    }
+
+    public void setOrganizationName(String organizationName)
+    {
+        _organizationName = organizationName;
+    }
+
+    public String getSystemShortName()
+    {
+        return _systemShortName;
+    }
+
+    public void setSystemShortName(String systemShortName)
+    {
+        _systemShortName = systemShortName;
     }
 }

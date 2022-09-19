@@ -85,30 +85,10 @@
                 <inputRows>3</inputRows>
             </column>
             <column columnName="Container"/>
-            <column columnName="SystemDescription">
-                <isReadOnly>true</isReadOnly>
-                <inputLength>60</inputLength>
-            </column>
-            <column columnName="LogoLink">
-                <isReadOnly>true</isReadOnly>
-                <inputLength>60</inputLength>
-            </column>
-            <column columnName="OrganizationName">
-                <isReadOnly>true</isReadOnly>
-                <inputLength>60</inputLength>
-            </column>
-            <column columnName="SystemShortName">
-                <isReadOnly>true</isReadOnly>
-                <inputLength>60</inputLength>
-            </column>
-            <column columnName="ServerIP">
-                <isReadOnly>true</isReadOnly>
-            </column>
             <column columnName="ServerHostName">
                 <inputLength>60</inputLength>
                 <scale>255</scale>
             </column>
-            <column columnName="UsedInstaller"/>
             <column columnName="IgnoreExceptions"/>
         </columns>
         <pkColumnName>ServerInstallationId</pkColumnName>
@@ -164,6 +144,22 @@
                 <columnTitle>Max Heap Size (MB)</columnTitle>
             </column>
             <column columnName="AdministratorEmail"/>
+            <column columnName="SystemDescription">
+                <isReadOnly>true</isReadOnly>
+                <inputLength>60</inputLength>
+            </column>
+            <column columnName="LogoLink">
+                <isReadOnly>true</isReadOnly>
+                <inputLength>60</inputLength>
+            </column>
+            <column columnName="OrganizationName">
+                <isReadOnly>true</isReadOnly>
+                <inputLength>60</inputLength>
+            </column>
+            <column columnName="SystemShortName">
+                <isReadOnly>true</isReadOnly>
+                <inputLength>60</inputLength>
+            </column>
             <column columnName="ServletContainer"/>
             <column columnName="Distribution"/>
             <column columnName="JsonMetrics"/>
