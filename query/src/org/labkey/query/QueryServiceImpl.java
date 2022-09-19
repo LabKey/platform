@@ -30,6 +30,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -42,6 +44,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -234,7 +239,8 @@ public class QueryServiceImpl implements QueryService
             CompareType.Q,
             WHERE,
             INDESCENDANTSOF,
-            INANCESTORSOF
+            INANCESTORSOF,
+            HASASSAYRESULTSWHERE
     ));
 
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
@@ -261,6 +267,59 @@ public class QueryServiceImpl implements QueryService
         public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return InLineageOfClause.create(true, fieldKey, (String) value);
+        }
+    };
+
+    /**
+     * <code>
+     *     Filter.create("SampleId",  '{json:{"SampleID", "urn:lsid:labkey.com:GeneralAssayProtocol.Folder-6:Assay1", '{field1~neq: 5, field2~lt: 8}'}}, HAS_ASSAY_RESULTS_WHERE)
+     * </code>
+     */
+    public static final CompareType HASASSAYRESULTSWHERE = new CompareType("HAS ASSAY RESULTS WHERE", "hasassayresultswhere", "HAS_ASSAY_RESULTS_WHERE", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    ColumnInfo col = columnMap.get(fieldKey);
+
+                    SQLFragment sampleIdFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
+                    Set<String> params = parseParams(value, getValueSeparator());
+                    String[] values = params.toArray(new String[0]);
+                    String sampleIdField = values[0];
+                    String assayProtocolLsid = values[1];
+                    String whereClause = values[2];
+                    AssayService assayService = AssayService.get();
+
+                    ExperimentService svc = ExperimentService.get();
+
+                    if (svc == null || assayService == null)
+                        return new SQLFragment("(1 = 2)");
+
+                    ExpProtocol protocol = svc.getExpProtocol(assayProtocolLsid);
+                    AssayProvider provider = assayService.getProvider(protocol);
+                    if (provider == null)
+                        return new SQLFragment("(1 = 2)");
+                    Domain resultsDomain = provider.getResultsDomain(protocol);
+                    String tableName = resultsDomain.getStorageTableName();
+
+
+                    SQLFragment sql = new SQLFragment();
+                    sql.append("(").append(sampleIdFrag).append(") IN (")
+                            .append("SELECT ?")
+                            .add(sampleIdField)
+                            .append(" FROM ")
+                            .append(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME).append(".").append(tableName)
+                            .append(whereClause); // No safe
+
+                    sql.append(")");
+                    return sql;
+                }
+            };
         }
     };
 
