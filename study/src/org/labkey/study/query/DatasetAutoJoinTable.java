@@ -68,6 +68,8 @@ public class DatasetAutoJoinTable extends VirtualTable
     // The "_Key" FieldKey that has possibly been remapped.
     private FieldKey _keyFieldKey;
 
+    private ColumnInfo _sequenceNumColumn;
+
     public DatasetAutoJoinTable(StudyQuerySchema schema, ContainerFilter cf, DatasetDefinition source,
                                 @Nullable ColumnInfo participantIdColumn,
                                 @Nullable FieldKey sequenceNumFieldKey,
@@ -99,18 +101,25 @@ public class DatasetAutoJoinTable extends VirtualTable
                 addColumn(colContainer);
             }
 
-            // SequenceNum is always available
-            Objects.requireNonNull(parent.getColumn(sequenceNumFieldKey.getName()));
-            var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
-            colSequenceNum.setHidden(true);
-            addColumn(colSequenceNum);
-
-            // The extra key property is not always available.
-            if (_keyPropertyName != null)
+            if (!source.isDemographicData())
             {
-                var colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
-                colExtraKey.setHidden(true);
-                addColumn(colExtraKey);
+                // Issue: 46138 sequence number isn't always available
+                _sequenceNumColumn = parent.getColumn(sequenceNumFieldKey);
+                if (_sequenceNumColumn != null)
+                {
+                    Objects.requireNonNull(_sequenceNumColumn);
+                    var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
+                    colSequenceNum.setHidden(true);
+                    addColumn(colSequenceNum);
+                }
+
+                // The extra key property is not always available.
+                if (_keyPropertyName != null)
+                {
+                    var colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
+                    colExtraKey.setHidden(true);
+                    addColumn(colExtraKey);
+                }
             }
         }
 
@@ -129,6 +138,9 @@ public class DatasetAutoJoinTable extends VirtualTable
 
             // duplicate labels! see BUG 2206
             if (getColumn(name) != null)
+                continue;
+
+            if (_sequenceNumColumn == null && !dataset.isDemographicData())
                 continue;
 
             var datasetColumn = createDatasetColumn(name, dataset, cf);

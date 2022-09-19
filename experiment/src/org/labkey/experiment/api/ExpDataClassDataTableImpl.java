@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -29,24 +30,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
-import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CoerceDataIterator;
@@ -65,6 +49,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -105,7 +90,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -654,6 +638,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return (!col.isHidden() && !col.isUnselectable() && !DEFAULT_HIDDEN_COLS.contains(col.getName()));
     }
 
+    public ExpDataClass getDataClass()
+    {
+        return _dataClass;
+    }
+
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
@@ -868,6 +857,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
+        IntegerConverter _converter = new IntegerConverter();
+
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
@@ -1170,6 +1161,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         protected AttachmentParentFactory getAttachmentParentFactory()
         {
             return (entityId, c) -> new ExpDataClassAttachmentParent(c, Lsid.parse(entityId));
+        }
+
+        @Override
+        public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+        {
+            Integer dataClassId = null;
+            Set<String> dataNames = new HashSet<>();
+            for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
+            {
+                Object oName = keyMap.getValue().get("Name");
+
+                if (oName != null)
+                    dataNames.add((String) oName);
+
+                if (dataClassId == null)
+                {
+                    Object oClassId = keyMap.getValue().get("ClassId");
+                    if (oClassId != null)
+                        dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
+                }
+
+            }
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
+            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
+            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
+
+            return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
     }
 }

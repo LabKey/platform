@@ -53,6 +53,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -337,13 +339,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
-
-        MaterialSource materialSource = new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
-        if (materialSource == null)
+        OntologyObject obj = OntologyManager.getOntologyObject(objectId);
+        if (obj == null)
             return null;
-        return new ExpSampleTypeImpl(materialSource);
+
+        return getSampleType(obj.getObjectURI());
     }
 
     @Override

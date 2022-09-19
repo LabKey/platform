@@ -156,7 +156,7 @@ public class QValuesTable extends QTable
         {
         }
 
-        TableInfo getTableInfo()
+        public TableInfo getTableInfo()
         {
             throw new UnsupportedOperationException();
         }

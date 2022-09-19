@@ -26,6 +26,7 @@ import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
+import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
@@ -134,6 +135,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -275,6 +277,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
@@ -305,6 +308,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
     }
+
+    private CoreWarningProvider _warningProvider;
 
     @Override
     public boolean hasScripts()
@@ -382,7 +387,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
-        WarningService.get().register(new CoreWarningProvider());
+        _warningProvider = new CoreWarningProvider();
+        WarningService.get().register(_warningProvider);
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
@@ -1073,6 +1079,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         SystemMaintenance.setTimer();
         ThumbnailServiceImpl.startThread();
+        _warningProvider.startSchemaCheck();
 
         // Start up the default Quartz scheduler, used in many places
         try

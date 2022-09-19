@@ -658,6 +658,29 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+    {
+        Integer sampleTypeId = null;
+        Set<String> sampleNames = new HashSet<>();
+        for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
+        {
+            String name = getMaterialName(keyMap.getValue());
+
+            if (name != null)
+                sampleNames.add(name);
+
+            if (sampleTypeId == null)
+                sampleTypeId = getMaterialSourceId(keyMap.getValue());
+        }
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+        filter.addCondition(FieldKey.fromParts("Name"), sampleNames, CompareType.IN);
+        filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
+
+        return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
+    }
+
+    @Override
     public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {

@@ -71,18 +71,6 @@
       <column columnName="ShowPrivateDataByDefault">
         <description>Whether private data (as indicated by the data's quality control state) is visible by default.</description>
       </column>
-      <column columnName="AllowReload">
-        <description>Whether the study can be reloaded from disk-based files.</description>
-      </column>
-      <column columnName="ReloadInterval">
-        <description>How frequently automatic reloads of the study should take place.</description>
-      </column>
-      <column columnName="LastReload">
-        <description>The timestamp of the most recent study reload.</description>
-      </column>
-      <column columnName="ReloadUser">
-        <description>The user who initiated automatic reload.</description>
-      </column>
       <column columnName="AdvancedCohorts">
         <description>Whether advanced cohort assignment is enabled.  Advanced cohort support allows subjects to change cohorts over time.</description>
       </column>

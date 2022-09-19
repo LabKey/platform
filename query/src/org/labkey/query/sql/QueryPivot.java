@@ -388,7 +388,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    TableInfo getTableInfo()
+    public TableInfo getTableInfo()
     {
         QueryTableInfo qti = new PivotTableInfo();
         if (!getParseErrors().isEmpty())
