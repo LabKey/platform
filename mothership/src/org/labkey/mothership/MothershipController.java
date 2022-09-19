@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
@@ -85,6 +84,8 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -613,17 +614,19 @@ public class MothershipController extends SpringActionController
         @Override
         public Object execute(ExceptionForm form, BindException errors)
         {
+            String serverIP = getRemoteIP();
+
             try
             {
                 ServerInstallation installation = new ServerInstallation();
                 if (form.getServerGUID() == null)
                 {
-                    logger.warn("No serverGUID specified in exception report from " + installation.getServerIP() + ", making one up so we don't lose the exception");
+                    logger.warn("No serverGUID specified in exception report from " + serverIP + ", making one up so we don't lose the exception");
                     installation.setServerInstallationGUID(GUID.makeGUID());
                 }
                 else
                 {
-                    ServerInstallation existingInstallation = MothershipManager.get().getServerInstallation(form.getServerGUID(), getContainer());
+                    ServerInstallation existingInstallation = MothershipManager.get().getServerInstallation(form.getServerGUID(), form.getBestServerHostName(serverIP), getContainer());
                     if (null != existingInstallation && Boolean.TRUE.equals(existingInstallation.getIgnoreExceptions()))
                     {
                         // Mothership is set to ignore exceptions from this installation, so just return
@@ -632,7 +635,6 @@ public class MothershipController extends SpringActionController
                     installation.setServerInstallationGUID(form.getServerGUID());
                 }
 
-                installation.setServerIP(getRemoteAddr(installation.getServerInstallationGUID()));
                 ExceptionStackTrace stackTrace = new ExceptionStackTrace();
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
@@ -641,8 +643,7 @@ public class MothershipController extends SpringActionController
                 ServerSession session = sessionAndRelease.first;
                 SoftwareRelease release = sessionAndRelease.second;
 
-                installation.setUsedInstaller(form.isUsedInstaller());
-                session = MothershipManager.get().updateServerSession(form.getServerHostName(), session, installation, getContainer());
+                session = MothershipManager.get().updateServerSession(form, serverIP, session, installation, getContainer());
                 // Skip reports when we don't even know what code it's running
                 if (release.getVcsUrl() != null && release.getVcsRevision() != null)
                 {
@@ -722,10 +723,10 @@ public class MothershipController extends SpringActionController
     @CSRF(CSRF.Method.NONE)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
-    public class CheckForUpdatesAction extends MutatingApiAction<UpdateCheckForm>
+    public class CheckForUpdatesAction extends MutatingApiAction<ServerInfoForm>
     {
         @Override
-        public Object execute(UpdateCheckForm form, BindException errors) throws Exception
+        public Object execute(ServerInfoForm form, BindException errors) throws Exception
         {
             if (form.getServerGUID() != null)
             {
@@ -739,19 +740,13 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    private Pair<ServerSession, SoftwareRelease> saveSessionInfo(UpdateCheckForm form)
+    private Pair<ServerSession, SoftwareRelease> saveSessionInfo(ServerInfoForm form)
     {
         Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
         ServerInstallation installation = new ServerInstallation();
         installation.setServerInstallationGUID(form.getServerGUID());
-        installation.setLogoLink(form.getLogoLink());
-        installation.setOrganizationName(form.getOrganizationName());
-        installation.setServerIP(getRemoteAddr(form.getServerGUID()));
-        installation.setSystemDescription(form.getSystemDescription());
-        installation.setSystemShortName(form.getSystemShortName());
         installation.setContainer(getContainer().getId());
-        installation.setUsedInstaller(form.isUsedInstaller());
-        MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
+        MothershipManager.get().updateServerSession(form, getRemoteIP(), sessionAndRelease.first, installation, getContainer());
         return sessionAndRelease;
     }
 
@@ -803,7 +798,7 @@ public class MothershipController extends SpringActionController
             {
                 JSONObject parsed = new JSONObject(manualImportForm.getJson());
 
-                UpdateCheckForm form = new UpdateCheckForm();
+                ServerInfoForm form = new ServerInfoForm();
 
                 if (!parsed.has("serverGUID"))
                 {
@@ -862,16 +857,13 @@ public class MothershipController extends SpringActionController
     /**
      * @return If this server is behind a load balancer, get the original request IP instead of the load balancer's address.
      */
-    private String getRemoteAddr(String serverGUID)
+    private String getRemoteIP()
     {
         String forwardedFor = getViewContext().getRequest().getHeader(MothershipReport.X_FORWARDED_FOR);
         if (null != forwardedFor)
         {
             if (InetAddressValidator.getInstance().isValid(forwardedFor))
                 return forwardedFor;
-            else
-                _log.warn("Invalid (spoofed?) IP address submitted in mothership report for server GUID: " + serverGUID + " . Bad IP: " + forwardedFor);
-
         }
         return getViewContext().getRequest().getRemoteAddr();
     }
@@ -893,7 +885,7 @@ public class MothershipController extends SpringActionController
         return "";
     }
 
-    public static abstract class ServerInfoForm
+    public static class ServerInfoForm
     {
         private String _svnRevision;
         private String _svnURL;
@@ -914,7 +906,6 @@ public class MothershipController extends SpringActionController
         private String _administratorEmail;
         private boolean _enterprisePipelineEnabled;
         private String _servletContainer;
-        private boolean _usedInstaller;
         private String _description;
         private String _distribution;
         private String _usageReportingLevel;
@@ -922,6 +913,52 @@ public class MothershipController extends SpringActionController
         private String _jsonMetrics;
         private String _serverHostName;
         private Date _buildTime;
+
+        private String _systemDescription;
+        private String _logoLink;
+        private String _organizationName;
+        private String _systemShortName;
+
+        public String getLogoLink()
+        {
+            return _logoLink;
+        }
+
+        public void setLogoLink(String logoLink)
+        {
+            _logoLink = logoLink;
+        }
+
+        public String getOrganizationName()
+        {
+            return _organizationName;
+        }
+
+        public void setOrganizationName(String organizationName)
+        {
+            _organizationName = organizationName;
+        }
+
+        public String getSystemShortName()
+        {
+            return _systemShortName;
+        }
+
+        public void setSystemShortName(String systemShortName)
+        {
+            _systemShortName = systemShortName;
+        }
+
+        public String getSystemDescription()
+        {
+            return _systemDescription;
+        }
+
+        public void setSystemDescription(String systemDescription)
+        {
+            _systemDescription = systemDescription;
+        }
+
 
         public String getSvnURL()
         {
@@ -1093,9 +1130,26 @@ public class MothershipController extends SpringActionController
             _heapSize = heapSize;
         }
 
+        @NotNull
         public String getServerHostName()
         {
             return _serverHostName;
+        }
+
+        public String getBestServerHostName(String serverIP)
+        {
+            if (null == _serverHostName || MothershipReport.BORING_HOSTNAMES.contains(_serverHostName))
+            {
+                try
+                {
+                    _serverHostName = InetAddress.getByName(serverIP).getCanonicalHostName();
+                }
+                catch (UnknownHostException e)
+                {
+                    _serverHostName = "UnknownHostName";
+                }
+            }
+            return StringUtils.left(_serverHostName, 256);
         }
 
         public void setServerHostName(String serverHostName)
@@ -1220,16 +1274,6 @@ public class MothershipController extends SpringActionController
             _servletContainer = servletContainer;
         }
 
-        public boolean isUsedInstaller()
-        {
-            return _usedInstaller;
-        }
-
-        public void setUsedInstaller(boolean usedInstaller)
-        {
-            _usedInstaller = usedInstaller;
-        }
-
         public String getDescription()
         {
             return _description;
@@ -1288,54 +1332,6 @@ public class MothershipController extends SpringActionController
         public void setBuildTime(Date buildTime)
         {
             _buildTime = buildTime;
-        }
-    }
-
-    public static class UpdateCheckForm extends ServerInfoForm
-    {
-        private String _systemDescription;
-        private String _logoLink;
-        private String _organizationName;
-        private String _systemShortName;
-
-        public String getLogoLink()
-        {
-            return _logoLink;
-        }
-
-        public void setLogoLink(String logoLink)
-        {
-            _logoLink = logoLink;
-        }
-
-        public String getOrganizationName()
-        {
-            return _organizationName;
-        }
-
-        public void setOrganizationName(String organizationName)
-        {
-            _organizationName = organizationName;
-        }
-
-        public String getSystemShortName()
-        {
-            return _systemShortName;
-        }
-
-        public void setSystemShortName(String systemShortName)
-        {
-            _systemShortName = systemShortName;
-        }
-
-        public String getSystemDescription()
-        {
-            return _systemDescription;
-        }
-
-        public void setSystemDescription(String systemDescription)
-        {
-            _systemDescription = systemDescription;
         }
     }
 
@@ -1613,7 +1609,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form);
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,ServletContainer,BuildTime");
+            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
             final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
             defaultServerInstallationColumn.setVisible(false);
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())
@@ -1623,8 +1619,6 @@ public class MothershipController extends SpringActionController
                 {
                     Map<String, Object> row = ctx.getRow();
 
-                    ColumnInfo displayColumn = defaultServerInstallationColumn.getColumnInfo().getDisplayField();
-
                     ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
                     if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
                     {
@@ -1632,20 +1626,15 @@ public class MothershipController extends SpringActionController
                     }
                     else
                     {
-                        Object displayValue = displayColumn.getValue(ctx);
-                        if (displayValue == null || "".equals(displayValue))
+                        if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
                         {
-                            if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
-                            {
-                                return HtmlString.of(si.getServerHostName());
-                            }
-                            else
-                            {
-                                return HtmlString.of("[Unnamed]");
-                            }
+                            return HtmlString.of(si.getServerHostName());
+                        }
+                        else
+                        {
+                            return HtmlString.of("[Unnamed]");
                         }
                     }
-                    return super.getFormattedHtml(ctx);
                 }
             };
 
@@ -1706,29 +1695,16 @@ public class MothershipController extends SpringActionController
             requestedColumns.add(FieldKey.fromParts("ServerHostName"));
             requestedColumns.add(FieldKey.fromParts("Note"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
-            requestedColumns.add(FieldKey.fromParts("ServerIP"));
-            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationId"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationGUID"));
-            requestedColumns.add(FieldKey.fromParts("LogoLink"));
-            requestedColumns.add(FieldKey.fromParts("SystemDescription"));
-            requestedColumns.add(FieldKey.fromParts("SystemShortName"));
-
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UserCount"));
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ActiveUserCount"));
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ProjectCount"));
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ContainerCount"));
+            requestedColumns.add(FieldKey.fromParts("ClonedInstances"));
 
             requestedColumns.add(FieldKey.fromParts("ExceptionCount"));
             requestedColumns.add(FieldKey.fromParts("VersionCount"));
             requestedColumns.add(FieldKey.fromParts("DaysActive"));
             requestedColumns.add(FieldKey.fromParts("LastPing"));
             requestedColumns.add(FieldKey.fromParts("FirstPing"));
-            requestedColumns.add(FieldKey.fromParts("UsedInstaller"));
 
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "Distribution"));
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UsageReportingLevel"));
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ExceptionReportingLevel"));
             requestedColumns.add(FieldKey.fromParts("IgnoreExceptions"));
 
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(serverInstallationTable, requestedColumns);

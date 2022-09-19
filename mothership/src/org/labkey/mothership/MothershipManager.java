@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -42,8 +41,6 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -247,10 +244,11 @@ public class MothershipManager
         return "No VCS URL";
     }
 
-    public ServerInstallation getServerInstallation(String serverGUID, Container c)
+    public ServerInstallation getServerInstallation(@NotNull String serverGUID, @NotNull String serverHostName, @NotNull Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromString("ServerInstallationGUID"), serverGUID);
+        filter.addCondition(FieldKey.fromString("ServerHostName"), serverHostName);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
@@ -292,27 +290,13 @@ public class MothershipManager
        sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET ModifiedBy = NULL WHERE ModifiedBy = ?", u.getUserId());
     }
 
-    public synchronized ServerSession updateServerSession(@Nullable String hostName, ServerSession session, ServerInstallation installation, Container container)
+    public synchronized ServerSession updateServerSession(MothershipController.ServerInfoForm form, String serverIP, ServerSession session, ServerInstallation installation, Container container)
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container);
+            String hostName = form.getBestServerHostName(serverIP);
+            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), hostName, container);
 
-            if (null == hostName || MothershipReport.BORING_HOSTNAMES.contains(hostName))
-            {
-                try
-                {
-                    hostName = InetAddress.getByName(installation.getServerIP()).getCanonicalHostName();
-                }
-                catch (UnknownHostException e)
-                {
-                    // That's OK, not a big deal
-                }
-            }
-            else
-            {
-                hostName = StringUtils.left(hostName, 256);
-            }
             if (existingInstallation == null)
             {
                 installation.setContainer(container.getId());
@@ -321,16 +305,7 @@ public class MothershipManager
             }
             else
             {
-                existingInstallation.setLogoLink(getBestString(existingInstallation.getLogoLink(), installation.getLogoLink()));
-                existingInstallation.setOrganizationName(getBestString(existingInstallation.getOrganizationName(), installation.getOrganizationName()));
-                existingInstallation.setServerIP(installation.getServerIP());
                 existingInstallation.setServerHostName(hostName);
-                existingInstallation.setSystemDescription(getBestString(existingInstallation.getSystemDescription(), installation.getSystemDescription()));
-                if (installation.getUsedInstaller())
-                {
-                    // The existing installation may have been an upgrade from an earlier version before we started recording usage of the installer
-                    existingInstallation.setUsedInstaller(true);
-                }
                 installation = Table.update(null, getTableInfoServerInstallation(), existingInstallation,  existingInstallation.getServerInstallationId());
             }
 
@@ -359,28 +334,14 @@ public class MothershipManager
             if (existingSession == null)
             {
                 session.setEarliestKnownTime(now);
-                session.setLastKnownTime(now);
                 session.setServerInstallationId(installation.getServerInstallationId());
-                session.setServerIP(installation.getServerIP());
-                session.setServerHostName(hostName);
+
+                configureSession(session, now, serverIP, form);
                 session = Table.insert(null, getTableInfoServerSession(), session);
             }
             else
             {
-                existingSession.setLastKnownTime(now);
-                existingSession.setServerIP(installation.getServerIP());
-                existingSession.setServerHostName(hostName);
-                existingSession.setContainerCount(getBestInteger(existingSession.getContainerCount(), session.getContainerCount()));
-                existingSession.setProjectCount(getBestInteger(existingSession.getProjectCount(), session.getProjectCount()));
-                existingSession.setRecentUserCount(getBestInteger(existingSession.getRecentUserCount(), session.getRecentUserCount()));
-                existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
-                existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
-                existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
-                existingSession.setDistribution(getBestString(existingSession.getDistribution(), session.getDistribution()));
-                existingSession.setUsageReportingLevel(getBestString(existingSession.getUsageReportingLevel(), session.getUsageReportingLevel()));
-                existingSession.setExceptionReportingLevel(getBestString(existingSession.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
-                existingSession.setJsonMetrics(getBestJson(existingSession.getJsonMetrics(), session.getJsonMetrics(), existingSession.getServerSessionGUID()));
-
+                configureSession(existingSession, now, serverIP, form);
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
 
@@ -389,9 +350,33 @@ public class MothershipManager
         }
     }
 
+    private void configureSession(@NotNull ServerSession session, Date now, String serverIP, MothershipController.ServerInfoForm form)
+    {
+        session.setLastKnownTime(now);
+        session.setServerIP(serverIP);
+        session.setServerHostName(form.getBestServerHostName(serverIP));
+
+        session.setLogoLink(getBestString(session.getLogoLink(), form.getLogoLink()));
+        session.setOrganizationName(getBestString(session.getOrganizationName(), form.getOrganizationName()));
+        session.setSystemDescription(getBestString(session.getSystemDescription(), form.getSystemDescription()));
+        session.setSystemShortName(getBestString(session.getSystemShortName(), form.getSystemShortName()));
+
+        session.setContainerCount(getBestInteger(session.getContainerCount(), session.getContainerCount()));
+        session.setProjectCount(getBestInteger(session.getProjectCount(), session.getProjectCount()));
+        session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), session.getRecentUserCount()));
+        session.setUserCount(getBestInteger(session.getUserCount(), session.getUserCount()));
+        session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), session.getAdministratorEmail()));
+        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
+        session.setDistribution(getBestString(session.getDistribution(), session.getDistribution()));
+        session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), session.getUsageReportingLevel()));
+        session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
+        session.setJsonMetrics(getBestJson(session.getJsonMetrics(), session.getJsonMetrics(), session.getServerSessionGUID()));
+
+    }
+
     private String getBestString(String currentValue, String newValue)
     {
-        if (newValue == null || newValue.equals(""))
+        if (StringUtils.isEmpty(newValue))
         {
             return currentValue;
         }

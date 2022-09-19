@@ -35,6 +35,8 @@ import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +50,7 @@ public class MothershipHelper
 {
     public static final String ID_COLUMN = "ExceptionStackTraceId";
     public static final String SERVER_INSTALLATION_ID_COLUMN = "ServerInstallationId";
-    public static final String SERVER_INSTALLATION_QUERY = "ServerInstallations";
+    public static final String SERVER_INSTALLATION_QUERY = "ServerInstallation";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
 
     private boolean selfReportingEnabled;
@@ -155,7 +157,7 @@ public class MothershipHelper
     }
 
     @LogMethod
-    public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
+    public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException, URISyntaxException
     {
         // Find the current server GUID
         String serverGUID = test.goToAdminConsole().getServerGUID();
@@ -165,6 +167,8 @@ public class MothershipHelper
         SelectRowsCommand select = new SelectRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
         select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));
         select.addFilter("ServerInstallationGUID", serverGUID, Filter.Operator.EQUAL);
+        String hostName = new URI(CustomizeSitePage.beginAt(test).getBaseServerUrl()).getHost();
+        select.addFilter("ServerHostName", hostName, Filter.Operator.EQUAL);
         SelectRowsResponse response = select.execute(connection, MOTHERSHIP_PROJECT);
         if (!response.getRows().isEmpty())
         {
@@ -224,7 +228,7 @@ public class MothershipHelper
         for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
         {
             action.getLeft().triggerException(action.getRight());
-            sleep(100); // Wait for mothership to pick up exception
+            sleep(500); // Wait for mothership to pick up exception
             exceptionIds.add(getLatestStackTraceId());
         }
         test.resetErrors();

@@ -26,54 +26,8 @@ public class ServerInstallation
     private String _serverInstallationGUID;
     private String _note;
     private String _container;
-    private String _systemDescription;
-    private String _logoLink;
-    private String _organizationName;
-    private String _systemShortName;
-    private String _serverIP;
     private String _serverHostName;
-    private Boolean _usedInstaller; // The Windows installer was used to install LabKey, Tomcat, Postgres.
     private Boolean _ignoreExceptions;
-
-    public String getSystemDescription()
-    {
-        return _systemDescription;
-    }
-
-    public void setSystemDescription(String systemDescription)
-    {
-        _systemDescription = systemDescription;
-    }
-
-    public String getLogoLink()
-    {
-        return _logoLink;
-    }
-
-    public void setLogoLink(String logoLink)
-    {
-        _logoLink = logoLink;
-    }
-
-    public String getOrganizationName()
-    {
-        return _organizationName;
-    }
-
-    public void setOrganizationName(String organizationName)
-    {
-        _organizationName = organizationName;
-    }
-
-    public String getSystemShortName()
-    {
-        return _systemShortName;
-    }
-
-    public void setSystemShortName(String systemShortName)
-    {
-        _systemShortName = systemShortName;
-    }
 
     public int getServerInstallationId()
     {
@@ -115,16 +69,6 @@ public class ServerInstallation
         _container = container;
     }
 
-    public String getServerIP()
-    {
-        return _serverIP;
-    }
-
-    public void setServerIP(String serverIP)
-    {
-        _serverIP = serverIP;
-    }
-
     public String getServerHostName()
     {
         return _serverHostName;
@@ -133,16 +77,6 @@ public class ServerInstallation
     public void setServerHostName(String serverHostName)
     {
         _serverHostName = serverHostName;
-    }
-
-    public Boolean getUsedInstaller()
-    {
-        return _usedInstaller;
-    }
-
-    public void setUsedInstaller(Boolean usedInstaller)
-    {
-        _usedInstaller = usedInstaller;
     }
 
     public Boolean getIgnoreExceptions()

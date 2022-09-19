@@ -15,12 +15,15 @@
  */
 package org.labkey.test.tests.mothership;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.OrderWith;
+import org.junit.runner.manipulation.Alphanumeric;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
@@ -34,13 +37,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({Daily.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 4)
+@BaseWebDriverTest.ClassTimeout(minutes = 4) @OrderWith(Alphanumeric.class)
 public class MothershipReportTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private MothershipHelper _mothershipHelper;
@@ -80,14 +83,10 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     @Test
     public void testTopLevelItems()
     {
-        // TODO: Test others
-
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
-        assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
-        assertNotNull("Usage reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Usage Reporting Level")));
-        assertNotNull("Exception reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Exception Reporting Level")));
+        assertTextPresent(distributionName);
     }
 
     @Test
@@ -110,7 +109,8 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         goToProjectHome("/_mothership");
         goToSchemaBrowser();
         var table = viewQueryData("mothership", "recentJsonMetricValues");
-        table.setFilter("DisplayKey", "Equals", "modules.Core.simpleMetricCounts.controllerHits.admin");
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
         table = new DataRegionTable("query", this);
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.clearAllFilters();
@@ -139,24 +139,28 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect forwarded IP address", forwardedFor, installDetail.getServerIP());
-    }
-
-    @Test
-    public void testServerHostName() throws Exception
-    {
-        log("Send test server host name from base server url");
-        String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
+        assertTextPresent(forwardedFor);
     }
 
     private int triggerNpeAndGetCount()
     {
         return _mothershipHelper.getReportCount(_mothershipHelper.triggerException(TestActions.ExceptionActions.npe));
     }
-    // TODO: Test output of each reporting level
+
+    @Test
+    public void testServerHostName() throws Exception
+    {
+        log("Send test server host name from base server url");
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+
+        String hostName = new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
+        String hostName2 = "TEST_" + hostName;
+
+        beginAt(WebTestHelper.buildURL("mothership", MothershipHelper.MOTHERSHIP_PROJECT, "showInstallations"));
+        assertElementPresent(Locator.linkWithText(hostName));
+        assertElementPresent(Locator.linkWithText(hostName2));
+    }
+
 
     // TODO: test the View sample report buttons from Customize Site page?
 }
