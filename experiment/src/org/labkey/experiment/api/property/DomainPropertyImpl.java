@@ -726,7 +726,8 @@ public class DomainPropertyImpl implements DomainProperty
 
     public boolean isSwap()
     {
-        return isNew() && _pdOld != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
+        return isNew() && _pdOld != null && _pd.getPropertyURI() != null
+                && _pdOld.getPropertyURI() != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
     }
 
     public boolean isDirty()
