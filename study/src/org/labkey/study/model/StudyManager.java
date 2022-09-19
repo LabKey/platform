@@ -3805,6 +3805,7 @@ public class StudyManager
                 if (propertyUriChange && (toSystemProp || fromSystemProp))
                 {
                     p.getPropertyDescriptor().setPropertyId(0);
+                    p.setSwap(true);
                 }
             }
             else

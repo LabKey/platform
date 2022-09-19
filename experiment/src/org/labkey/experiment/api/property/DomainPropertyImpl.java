@@ -70,6 +70,7 @@ public class DomainPropertyImpl implements DomainProperty
     private List<PropertyValidatorImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
+    private boolean _swap;
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
@@ -724,10 +725,17 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
+    public void setSwap(boolean swap)
+    {
+        _swap = swap;
+    }
+
     public boolean isSwap()
     {
-        return isNew() && _pdOld != null && _pd.getPropertyURI() != null
+        // Assert necessary values to swap property descriptors
+        assert isNew() && _pdOld != null && _pd.getPropertyURI() != null
                 && _pdOld.getPropertyURI() != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
+        return _swap;
     }
 
     public boolean isDirty()

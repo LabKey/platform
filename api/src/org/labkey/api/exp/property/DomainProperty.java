@@ -74,6 +74,7 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setFormat(String s);
     void setRequired(boolean b);
     void setHidden(boolean hidden);
+    void setSwap(boolean swap);
     void setShownInInsertView(boolean shown);
     void setShownInUpdateView(boolean shown);
     void setShownInDetailsView(boolean shown);
