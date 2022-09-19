@@ -730,12 +730,13 @@ public class DomainPropertyImpl implements DomainProperty
         _swap = swap;
     }
 
+    // Scenario to swap property descriptors on study upload instead of updating the current property descriptor.
+    // Currently only used when changing to/from system property.
     public boolean isSwap()
     {
-        // Assert necessary values to swap property descriptors
-        assert isNew() && _pdOld != null && _pd.getPropertyURI() != null
+        // Ensure necessary values to swap property descriptors
+        return _swap && _pd.getPropertyId() == 0 && _pdOld != null && _pd.getPropertyURI() != null
                 && _pdOld.getPropertyURI() != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
-        return _swap;
     }
 
     public boolean isDirty()

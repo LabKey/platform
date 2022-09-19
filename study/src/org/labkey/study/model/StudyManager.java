@@ -3801,7 +3801,7 @@ public class StudyManager
                     p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
                 }
 
-                // Set property Id to zero if swapping to a different property descriptor
+                // Flag this as a property descriptor swap
                 if (propertyUriChange && (toSystemProp || fromSystemProp))
                 {
                     p.getPropertyDescriptor().setPropertyId(0);
