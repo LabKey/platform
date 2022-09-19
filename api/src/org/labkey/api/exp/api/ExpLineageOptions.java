@@ -15,16 +15,46 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Captures options for doing a lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions extends ResolveLsidsForm
 {
+    public enum LineageExpType
+    {
+        ALL("ALL"),
+        Data("Data"),
+        Material("Material"),
+        ExperimentRun("ExperimentRun"),
+        Object("Object");
+
+        final String _type;
+
+        LineageExpType(String type)
+        {
+            this._type = type;
+        }
+
+        public static @Nullable LineageExpType fromValue(String value)
+        {
+            for (LineageExpType type : LineageExpType.values()) {
+                if (type._type.equalsIgnoreCase(value)) {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+    }
+
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
-    private String _expType;
+    private LineageExpType _expType;
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
@@ -72,12 +102,12 @@ public class ExpLineageOptions extends ResolveLsidsForm
         _children = children;
     }
 
-    public String getExpType()
+    public String getExpTypeValue()
     {
-        return _expType;
+        return _expType == null ? null : _expType._type;
     }
 
-    public void setExpType(String expType)
+    public void setExpType(LineageExpType expType)
     {
         _expType = expType;
     }
