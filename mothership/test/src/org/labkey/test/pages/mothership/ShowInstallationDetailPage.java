@@ -34,23 +34,13 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
 
     public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
-    }
-
-    public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver, String containerPath)
-    {
-        driver.beginAt(WebTestHelper.buildURL("mothership", containerPath, "showInstallationDetail", Collections.singletonMap("serverInstallationId", "1")));
+        driver.beginAt(WebTestHelper.buildURL("mothership", MothershipHelper.MOTHERSHIP_PROJECT, "showInstallationDetail", Collections.singletonMap("serverInstallationId", "1")));
         return new ShowInstallationDetailPage(driver.getDriver());
     }
 
     public String getDistributionName()
     {
         return getInstallationValue("Distribution");
-    }
-
-    public String getServerIP()
-    {
-        return getInstallationValue("Server IP");
     }
 
     public String getServerHostName()
