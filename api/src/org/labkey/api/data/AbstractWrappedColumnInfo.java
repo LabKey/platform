@@ -753,6 +753,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public @Nullable Integer getDbSequenceBatchSize()
+    {
+        return delegate.getDbSequenceBatchSize();
+    }
+
+    @Override
     public boolean hasDbSequence()
     {
         return delegate.hasDbSequence();
