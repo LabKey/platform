@@ -3141,10 +3141,12 @@ if (!LABKEY.DataRegions) {
             var qmIdx = qString.indexOf('?');
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
+                var poundIdx = qString.indexOf('#');
+                var qStringWithoutPound = poundIdx > -1 ? qString.substr(0, poundIdx) : qString;
             }
 
-            if (qString.length > 1) {
-                var pairs = qString.split('&'), p, key,
+            if (qStringWithoutPound.length > 1) {
+                var pairs = qStringWithoutPound.split('&'), p, key,
                     LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
 
                 var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
@@ -3152,9 +3154,7 @@ if (!LABKEY.DataRegions) {
                 });
 
                 $.each(pairs, function(i, pair) {
-                    var poundIdx = pair.indexOf('#');
-                    var pairWithoutPound = poundIdx > -1 ? pairWithoutPound = pair.substr(0, poundIdx) : pair;
-                    p = pairWithoutPound.split('=', 2);
+                    p = pair.split('=', 2);
                     key = p[0] = decodeURIComponent(p[0]);
                     lastIdx = key.indexOf(LAST);
 
