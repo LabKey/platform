@@ -3139,10 +3139,11 @@ if (!LABKEY.DataRegions) {
         if (LABKEY.Utils.isString(qString) && qString.length > 0) {
 
             var qmIdx = qString.indexOf('?');
+            var qStringWithoutPound;
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
                 var poundIdx = qString.indexOf('#');
-                var qStringWithoutPound = poundIdx > -1 ? qString.substr(0, poundIdx) : qString;
+                qStringWithoutPound = poundIdx > -1 ? qString.substr(0, poundIdx) : qString;
             }
 
             if (qStringWithoutPound.length > 1) {
