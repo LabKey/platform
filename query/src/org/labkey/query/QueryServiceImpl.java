@@ -272,7 +272,7 @@ public class QueryServiceImpl implements QueryService
 
     /**
      * <code>
-     *     Filter.create("SampleId",  '{json:{"SampleID", "urn:lsid:labkey.com:GeneralAssayProtocol.Folder-6:Assay1", '{field1~neq: 5, field2~lt: 8}'}}, HAS_ASSAY_RESULTS_WHERE)
+     *     Filter.create("RowId",  '{json:{"AssaySampleIDFieldName", "urn:lsid:labkey.com:GeneralAssayProtocol.Folder-6:Assay1", "WHERE field1 < 5 AND field2 NOT NULL"}}', HAS_ASSAY_RESULTS_WHERE)
      * </code>
      */
     public static final CompareType HASASSAYRESULTSWHERE = new CompareType("HAS ASSAY RESULTS WHERE", "hasassayresultswhere", "HAS_ASSAY_RESULTS_WHERE", true /* dataValueRequired */, "sql", null)
@@ -314,7 +314,7 @@ public class QueryServiceImpl implements QueryService
                             .add(sampleIdField)
                             .append(" FROM ")
                             .append(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME).append(".").append(tableName)
-                            .append(whereClause); // No safe
+                            .append(whereClause);
 
                     sql.append(")");
                     return sql;
