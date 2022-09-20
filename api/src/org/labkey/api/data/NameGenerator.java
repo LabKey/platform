@@ -854,7 +854,7 @@ public class NameGenerator
                 if (token instanceof FieldKey fkTok)
                 {
                     int previousErrorCount = _syntaxErrors.size();
-                    List<String> fieldParts = processFieldParts(fkTok, partAncestorOptions);
+                    List<String> fieldParts = processFieldParts(fkTok, partAncestorOptions, user);
                     if (!_syntaxErrors.isEmpty() && _syntaxErrors.size() > previousErrorCount) // if ancestor lookup syntax error, continue
                         continue;
                     List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = null;
@@ -1114,15 +1114,13 @@ public class NameGenerator
             _previewName = _parsedNameExpression.eval(previewCtx);
     }
 
-    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions)
+    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions, User user)
     {
         List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorTypes = new ArrayList<>();
         List<String> allFieldParts = fkTok.getParts();
 
         List<String> fieldParts = new ArrayList<>();
         int partInd = 0, ancestorLevel = 0;
-
-        User user = User.getSearchUser();
 
         Map<String, String> dataClassLSIDs = new CaseInsensitiveHashMap<>();
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, user, true))
@@ -1140,15 +1138,16 @@ public class NameGenerator
             {
                 ancestorLevel++;
 
+                String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".");
                 if (partInd == 0)
                 {
-                    _syntaxErrors.add("Invalid substitution token: ${" + fkTok + "}.");
+                    _syntaxErrors.add("Invalid substitution token: ${" + fkTokDisplay + "}.");
                     return fieldParts;
                 }
 
                 if (ancestorLevel > 4)
                 {
-                    _syntaxErrors.add("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${" + fkTok + "}.");
+                    _syntaxErrors.add("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
                     return fieldParts;
                 }
 
@@ -1510,7 +1509,6 @@ public class NameGenerator
 
         private void addAncestorLookupValues(ExpRunItem parentObject, Map<String, ArrayList<Object>> inputLookupValues)
         {
-            User user = User.getSearchUser(); //TODO fix user
             String parentLsid = parentObject.getLSID();
 
             for (String ancestorFieldKey : _partAncestorOptions.keySet())
@@ -1530,7 +1528,7 @@ public class NameGenerator
                         List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = ancestorOptions.ancestorPaths();
                         String fieldName = ancestorOptions.lookupColumn();
                         Identifiable seed = LsidManager.get().getObject(parentLsid);
-                        ExpLineage lineage = ExperimentService.get().getLineage(_container, user, seed, options);
+                        ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
 
                         Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths);
 
@@ -2593,8 +2591,10 @@ public class NameGenerator
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
 
-            validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/$P$P[MaterialInputs]/$P$P[DataInputs]/$P$P[MaterialInputs]/$P$P[MaterialInputs]/$P$P[MaterialInputs]/name}.")); //TODO fix encoding in msg
-            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/$P$P[MaterialInputs::G1]/$P$P[DataInputs::G2]/$P$P[MaterialInputs::G3]/$P$P[MaterialInputs::G4]/$P$P[MaterialInputs::G5]/name}."));
+            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token: ${..[MaterialInputs]/name}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs::G1]/..[DataInputs::G2]/..[MaterialInputs::G3]/..[MaterialInputs::G4]/..[MaterialInputs::G5]/name}."));
         }
 
         private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
