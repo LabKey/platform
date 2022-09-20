@@ -1134,15 +1134,20 @@ public class NameGenerator
                 sampleTypeLSIDs.put(sampleType.getName(), sampleType.getLSID());
         }
 
+        String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".").replaceAll("::", "/");
+        boolean hasLookupColumn = false; // needs to specify an explicit ancestor lookup column: ..[MaterialInput/Type]/lookupColumnName
         for (String fPart : allFieldParts)
         {
-            if (!isAncestorPart(fPart))
+            if (!StringUtils.isEmpty(fPart) && !isAncestorPart(fPart))
+            {
+                hasLookupColumn = true;
                 fieldParts.add(fPart);
+            }
             else
             {
+                hasLookupColumn = false;
                 ancestorLevel++;
 
-                String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".").replaceAll("::", "/");
                 if (partInd == 0)
                 {
                     // Syntax should be ${MaterialInput/..[MaterialInputs]/name} where the first input is the direct parent, instead of ${..[MaterialInputs]/name}.
@@ -1165,6 +1170,12 @@ public class NameGenerator
 
         if (!ancestorTypes.isEmpty())
         {
+            if (!hasLookupColumn)
+            {
+                _syntaxErrors.add("Invalid substitution token, lookup column name not specified: ${" + fkTokDisplay + "}.");
+                return fieldParts;
+            }
+
             ExpLineageOptions options = new ExpLineageOptions();
             options.setForLookup(false);
             options.setParents(true);
@@ -2596,10 +2607,18 @@ public class NameGenerator
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
 
+        }
+
+        @Test
+        public void testNameExpressionAncestorLookupFieldErrors()
+        {
             validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token, parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
             validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
             validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]/}."));
+
         }
 
         private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
@@ -2661,6 +2680,8 @@ public class NameGenerator
             verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
 
+            // ancestor lookup
+            verifyPreview("S-${MaterialInputs/..[MaterialInputs]/name}", "S-parentname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/name}", "S-parentname");
             verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/..[DataInputs/GreatGrandParentDataType]/name}", "S-parentname");
             verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
