@@ -3778,12 +3778,12 @@ public class StudyManager
 
             if (null != p)
             {
-                final String toPropertyUri = p.getPropertyDescriptor().getPropertyURI();
+                final String fromPropertyUri = p.getPropertyDescriptor().getPropertyURI();
                 boolean fromSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
-                        sp.getPropertyURI().equals(toPropertyUri));
+                        sp.getPropertyURI().equals(fromPropertyUri));
                 boolean toSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
                         sp.getPropertyURI().equals(ipd.pd.getPropertyURI()));
-                boolean propertyUriChange = !toPropertyUri.equals(ipd.pd.getPropertyURI());
+                boolean propertyUriChange = !fromPropertyUri.equals(ipd.pd.getPropertyURI());
 
                 // Don't copy values over a system prop, just setup swapping the property descriptor
                 if (propertyUriChange && toSystemProp)
