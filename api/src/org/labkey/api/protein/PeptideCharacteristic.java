@@ -20,6 +20,4 @@ public class PeptideCharacteristic
     private String confidenceColor;
     private String color;
     private String foregroundColor;
-    private int startIndex;
-    private int endIndex;
 }
