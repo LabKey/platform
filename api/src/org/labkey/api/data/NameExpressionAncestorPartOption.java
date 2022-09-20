@@ -7,9 +7,9 @@ import java.util.List;
 
 /**
  * Used for name expression containing ancestor lookup parts, such as:
- * ${/MaterialInput/ParentSampleType1/..[MaterialInput/GrandParentType]/..[DataInput/GreatGrandParentType]/barcode}
+ * ${MaterialInputs/ParentSampleType1/..[MaterialInputs/GrandParentType]/..[DataInputs/GreatGrandParentType]/barcode}
  * For the above example, the params will be as follows:
- * options: The ExpLineageOptions configuration for this ancestor path (depth, expType, cpasType, etc)
+ * options: The ExpLineageOptions configuration for this ancestor path (depth, etc)
  * ancestorPaths: [{'Material', 'GrandParentType-LSID'}, {'Data', 'GreatGrandParentType-LSID'}]
  * lookupColumn: barcode
  */

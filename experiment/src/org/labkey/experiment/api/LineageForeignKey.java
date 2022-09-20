@@ -247,6 +247,8 @@ class LineageForeignKey extends AbstractForeignKey
                 }
             }
         }
+        else
+            lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "All");
 
         if (null != lookupColumnName)
             lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, lookupColumnName);
@@ -327,7 +329,7 @@ class LineageForeignKey extends AbstractForeignKey
                 {
                     if (null == _table)
                     {
-                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType.name(),"-"), defaultString(cpasType,"-"));
+                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), expType != null ? expType.name(): "-", defaultString(cpasType,"-"));
                         _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                         {
                             SQLFragment objectids;

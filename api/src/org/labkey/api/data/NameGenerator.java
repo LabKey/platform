@@ -1123,12 +1123,16 @@ public class NameGenerator
         int partInd = 0, ancestorLevel = 0;
 
         Map<String, String> dataClassLSIDs = new CaseInsensitiveHashMap<>();
-        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, user, true))
-            dataClassLSIDs.put(dataClass.getName(), dataClass.getLSID());
-
         Map<String, String> sampleTypeLSIDs = new CaseInsensitiveHashMap<>();
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(_container, user, true))
-            sampleTypeLSIDs.put(sampleType.getName(), sampleType.getLSID());
+
+        if (_container != null)
+        {
+            for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, user, true))
+                dataClassLSIDs.put(dataClass.getName(), dataClass.getLSID());
+
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(_container, user, true))
+                sampleTypeLSIDs.put(sampleType.getName(), sampleType.getLSID());
+        }
 
         for (String fPart : allFieldParts)
         {
@@ -1138,14 +1142,15 @@ public class NameGenerator
             {
                 ancestorLevel++;
 
-                String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".");
+                String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".").replaceAll("::", "/");
                 if (partInd == 0)
                 {
-                    _syntaxErrors.add("Invalid substitution token: ${" + fkTokDisplay + "}.");
+                    // Syntax should be ${MaterialInput/..[MaterialInputs]/name} where the first input is the direct parent, instead of ${..[MaterialInputs]/name}.
+                    _syntaxErrors.add("Invalid substitution token, parent input must be specified for ancestor lookup: ${" + fkTokDisplay + "}.");
                     return fieldParts;
                 }
 
-                if (ancestorLevel > 4)
+                if (ancestorLevel > 4) // 1 generation of direct parent + 4 extra generations of ancestors
                 {
                     _syntaxErrors.add("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
                     return fieldParts;
@@ -1164,7 +1169,7 @@ public class NameGenerator
             options.setForLookup(false);
             options.setParents(true);
             options.setChildren(false);
-            options.setDepth((ancestorTypes.size() + 1) * 2); // (ancestor + 1 direct parent) * 2 (for runs)
+            options.setDepth((ancestorTypes.size() + 1) * 2); // (ancestor + 1 direct parent) * 2 (1 for data, 1 for run)
 
             partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, ancestorTypes, allFieldParts.get(allFieldParts.size() - 1)));
         }
@@ -1179,7 +1184,7 @@ public class NameGenerator
         {
             ExpLineageOptions.LineageExpType expType = ExpLineageOptions.LineageExpType.Material;
             String expTypeStr = ancestorTypeMatcher.group(2);
-            if ("data".equalsIgnoreCase(expTypeStr))
+            if (ExpLineageOptions.LineageExpType.Data.name().equalsIgnoreCase(expTypeStr))
                 expType = ExpLineageOptions.LineageExpType.Data;
 
             String dataType = ancestorTypeMatcher.group(4);
@@ -1906,7 +1911,7 @@ public class NameGenerator
                 return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn, _counterSeqPrefix);
             }
 
-            // if contains ancestor expression, substitute ..[MaterialInput/type1] with ..[MaterialInput::type1], then parse
+            // if contains ancestor expression, substitute ..[MaterialInputs/type1] with ..[MaterialInputs::type1] before parsing, to avoid splitting at /.
             if (ANCESTOR_INPUT_PATTERN.matcher(expression).find())
             {
                 expression = expression.replaceAll(ANCESTOR_INPUT_PREFIX_MATERIAL.replace("[", "\\["), ANCESTOR_INPUT_PREFIX_MATERIAL_NOSLASH);
@@ -2591,10 +2596,10 @@ public class NameGenerator
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
 
-            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token: ${..[MaterialInputs]/name}."));
+            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token, parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
             validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
-            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs::G1]/..[DataInputs::G2]/..[MaterialInputs::G3]/..[MaterialInputs::G4]/..[MaterialInputs::G5]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}."));
         }
 
         private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)

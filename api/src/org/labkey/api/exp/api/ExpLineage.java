@@ -587,15 +587,6 @@ public class ExpLineage
             ExpLineageOptions.LineageExpType expType = ancestorPath.first;
             String cpas = ancestorPath.second;
 
-//            if (ancestorPaths.isEmpty())
-//            {
-//                Identifiable expObject = tree.getExpObject();
-//                if (isValidNode(expObject, expType, cpas)) //TODO is this needed? should have been checked already
-//                    targetNodes.add(expObject);
-//
-//                return targetNodes;
-//            }
-
             for (ExpLineageTree child : tree.getChildren())
             {
                 if (isValidNode(child.getExpObject(), expType, cpas))
