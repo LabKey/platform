@@ -24,6 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
+import org.labkey.test.SortDirection;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
@@ -100,7 +101,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
 
         EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.createIssueURL().set(WebTestHelper.getContextPath() + "/" +
+        configurePage.createIssueURL().set(WebTestHelper.getContextPath() +
                 WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
         configurePage.issuesContainer().set("/" + ISSUES_PROJECT);
         configurePage.save();
@@ -125,7 +126,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         _mothershipHelper.ensureSelfReportingEnabled();
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
-        goToMothership();
     }
 
     @Test
@@ -219,6 +219,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     public void testCombiningIdenticalExceptions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -230,6 +231,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         actions.add(Pair.of(ExceptionActions.multiException, "NPE2"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -241,6 +243,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         actions.add(Pair.of(ExceptionActions.multiException, "ISE"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertNotEquals("Should not group different exception types", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -248,6 +251,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     public void testNotCombiningFromDifferentActions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -291,7 +295,9 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
 
     private ShowExceptionsPage goToMothership()
     {
-        return ShowExceptionsPage.beginAt(this);
+        ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
+        showExceptionsPage.exceptionSummary().setSort("LastReport", SortDirection.DESC);
+        return showExceptionsPage;
     }
 
     protected int ensureUnassignedException()
