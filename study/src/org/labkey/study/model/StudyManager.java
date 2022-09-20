@@ -3796,15 +3796,15 @@ public class StudyManager
                     // by dropping/adding the property and its storage at domain save time
                     p.setSchemaImport(true);
                     OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
-
-                    // Could be changing from a shared property descriptor
-                    p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
                 }
 
-                // Flag this as a property descriptor swap
+                // Flag this as a property descriptor swap. EnsurePropertyDescriptor will find correct property Id
+                // by propertyURI. Ensure correct container/projects set.
                 if (propertyUriChange && (toSystemProp || fromSystemProp))
                 {
                     p.getPropertyDescriptor().setPropertyId(0);
+                    p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
+                    p.getPropertyDescriptor().setProject(ipd.pd.getProject());
                     p.setSwap(true);
                 }
             }
