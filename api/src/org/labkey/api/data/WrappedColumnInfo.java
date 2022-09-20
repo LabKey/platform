@@ -921,15 +921,21 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setDbSequenceBatchSize(@Nullable Integer batchSize)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setHasDbSequence(boolean b)
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setIsRootDbSequence(boolean b)
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         @Override

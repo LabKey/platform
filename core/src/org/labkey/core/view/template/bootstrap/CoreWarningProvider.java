@@ -18,7 +18,11 @@ package org.labkey.core.view.template.bootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.TableXmlUtils;
+import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
@@ -28,6 +32,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -37,6 +42,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
@@ -46,8 +52,12 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -56,9 +66,28 @@ public class CoreWarningProvider implements WarningProvider
 {
     private static final boolean SHOW_ALL_WARNINGS = WarningService.get().showAllWarnings();
 
+    private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
+
     public CoreWarningProvider()
     {
         AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
+    }
+
+    public void startSchemaCheck()
+    {
+        // Issue 46264 - proactively check all DB schemas against the schema XML
+        // Launch this in the background, but delay by 10 seconds to reduce impact on other startup tasks
+        JobRunner.getDefault().execute(TimeUnit.SECONDS.toMillis(10), () ->
+        {
+            for (DbSchema schema : DbSchema.getAllSchemasToTest())
+            {
+                var schemaWarnings = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
+                if (schemaWarnings.hasErrors())
+                {
+                    _dbSchemaWarnings.put(schema.getName(), schemaWarnings.getResults());
+                }
+            }
+        });
     }
 
     @Override
@@ -90,6 +119,8 @@ public class CoreWarningProvider implements WarningProvider
 
             getWebSocketConnectionWarnings(warnings);
 
+            getDbSchemaWarnings(warnings);
+
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
 
@@ -118,6 +149,39 @@ public class CoreWarningProvider implements WarningProvider
         else if (SHOW_ALL_WARNINGS)
         {
             warnings.add(HtmlString.of("Here is a sample ribbon message."));
+        }
+    }
+
+    private static final int MAX_SCHEMA_PROBLEMS_TO_SHOW = 3;
+
+    private void getDbSchemaWarnings(Warnings warnings)
+    {
+        Map<String, List<SiteValidationResult>> schemaProblems = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        schemaProblems.putAll(_dbSchemaWarnings);
+        if (SHOW_ALL_WARNINGS)
+        {
+            schemaProblems.put("WorstSchemaEver", List.of(SiteValidationResult.Level.ERROR.create("Your schema is very, very bad")));
+        }
+
+        int count = 0;
+        for (var entry : schemaProblems.entrySet())
+        {
+            for (SiteValidationResult result : entry.getValue())
+            {
+                if (count == 0)
+                {
+                    addStandardWarning(warnings, "One or more database schemas is not as expected. Adjust the module's schema or metadata, or contact LabKey support.", "sqlScripts", "docs for help with upgrade scripts");
+                }
+                if (++count <= MAX_SCHEMA_PROBLEMS_TO_SHOW)
+                {
+                    warnings.add(HtmlString.of("Problem with '" + entry.getKey() + "' schema. " + result.getMessage()));
+                }
+            }
+        }
+
+        if (count > MAX_SCHEMA_PROBLEMS_TO_SHOW)
+        {
+            addStandardWarning(warnings, (count - MAX_SCHEMA_PROBLEMS_TO_SHOW) + " additional schema problems.", "View full consistency check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()));
         }
     }
 

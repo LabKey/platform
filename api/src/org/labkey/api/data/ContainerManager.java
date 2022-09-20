@@ -236,7 +236,6 @@ public class ContainerManager
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
         return createContainer(parent, name, title, description, user, properties);
-
     }
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
