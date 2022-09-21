@@ -147,7 +147,7 @@ public class ContainerManager
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
-    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
+    public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
     private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
@@ -355,7 +355,7 @@ public class ContainerManager
         writer.write(templateContainer, exportCtx, vf);
 
         // create the new target container
-        Container c = ContainerManager.createContainer(parent, name, title, null, NormalContainerType.NAME, user);
+        Container c = createContainer(parent, name, title, null, NormalContainerType.NAME, user);
         afterCreateHandler.accept(c);
 
         // import objects into the target folder
@@ -435,7 +435,7 @@ public class ContainerManager
             }
             props.save();
 
-            ContainerManager.notifyContainerChange(c.getId(), Property.FolderType, user);
+            notifyContainerChange(c.getId(), Property.FolderType, user);
             folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
             // TODO: Not needed? I don't think we've changed the container's state.
@@ -453,10 +453,10 @@ public class ContainerManager
         // Check container for validity; in rare cases user may have changed their custom folderType.xml and caused
         // duplicate subfolders (same name) to exist
         // Get list of child containers that are not container tabs, but match container tabs; these are bad
-        FolderType folderType = ContainerManager.getFolderType(c);
+        FolderType folderType = getFolderType(c);
         List<String> errorStrings = new ArrayList<>();
         List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
-        List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
+        List<Container> containersMatchingTabs = findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
         if (!containersMatchingTabs.isEmpty())
         {
             throw new Container.ContainerException("Folder " + c.getPath() +
@@ -616,7 +616,7 @@ public class ContainerManager
     public static boolean hasContainerTabBeenDeleted(Container c, String tabName, String folderTypeName)
     {
         // We keep arbitrary number of deleted children tabs using suffix 0, 1, 2....
-        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.TABFOLDER_CHILDREN_DELETED);
+        Map<String, String> props = PropertyManager.getProperties(c, TABFOLDER_CHILDREN_DELETED);
         return props.containsKey(getDeletedTabKey(tabName, folderTypeName));
     }
 
@@ -968,7 +968,7 @@ public class ContainerManager
         Map<String, Container> ret = new LinkedHashMap<>();
         for (String id : childIds)
         {
-            Container c = ContainerManager.getForId(id);
+            Container c = getForId(id);
             if (null != c)
                 ret.put(c.getName(), c);
         }
@@ -1026,7 +1026,7 @@ public class ContainerManager
         if (null != d)
             return d;
 
-        Map<String, Container> map = ContainerManager.getChildrenMap(c);
+        Map<String, Container> map = getChildrenMap(c);
         return map.get(name);
     }
 
@@ -1079,7 +1079,7 @@ public class ContainerManager
             if (null == dirParent)
                 return null;
 
-            Map<String, Container> map = ContainerManager.getChildrenMap(dirParent);
+            Map<String, Container> map = getChildrenMap(dirParent);
             return map.get(name);
         }
     }
@@ -1202,7 +1202,7 @@ public class ContainerManager
 
     public static List<Container> getProjects()
     {
-        return ContainerManager.getChildren(ContainerManager.getRoot());
+        return getChildren(ContainerManager.getRoot());
     }
 
 
@@ -1219,7 +1219,7 @@ public class ContainerManager
             return navTree;
 
         NavTree list = new NavTree("Projects");
-        List<Container> projects = ContainerManager.getProjects();
+        List<Container> projects = getProjects();
 
         for (Container project : projects)
         {
@@ -1545,7 +1545,7 @@ public class ContainerManager
             new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
             // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-            c = ContainerManager.getForRowId(c.getRowId());
+            c = getForRowId(c.getRowId());
 
             // this could be done in the trigger, but I prefer to put it in the transaction
             if (changedProjects)
@@ -1625,7 +1625,7 @@ public class ContainerManager
             tx.commit();
         }
 
-        return ContainerManager.getForId(c.getId());
+        return getForId(c.getId());
     }
 
     // Rename a container in the table.  Will fail if the new name already exists in the parent container.
@@ -2499,9 +2499,9 @@ public class ContainerManager
 
         navTrail.add(new NavTree(isProject ? "Create Project" : "Create Folder"));
         navTrail.add(new NavTree("Users / Permissions"));
-        if(isProject)
+        if (isProject)
             navTrail.add(new NavTree("Project Settings"));
-        if(container != null)
+        if (container != null)
             navTrail.addAll(container.getFolderType().getExtraSetupSteps(container));
         return navTrail;
     }
@@ -2518,8 +2518,8 @@ public class ContainerManager
             if (null == _testRoot)
             {
                 Container junit = JunitUtil.getTestContainer();
-                _testRoot = ContainerManager.ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
-                ContainerManager.addContainerListener(this);
+                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+                addContainerListener(this);
             }
         }
 
@@ -2527,9 +2527,9 @@ public class ContainerManager
         @After
         public void tearDown()
         {
-            ContainerManager.removeContainerListener(this);
+            removeContainerListener(this);
             if (null != _testRoot)
-                ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
+                deleteAll(_testRoot, TestContext.get().getUser());
         }
 
 
@@ -2538,7 +2538,7 @@ public class ContainerManager
         {
             String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
 
-            for(String name: badnames)
+            for (String name: badnames)
             {
                 try
                 {
@@ -2574,7 +2574,7 @@ public class ContainerManager
             }
 
             logNode(mm, _testRoot.getName(), 0);
-            for(int i=0; i<2; i++) //do this twice to make sure the containers were *really* deleted
+            for (int i=0; i<2; i++) //do this twice to make sure the containers were *really* deleted
             {
                 createContainers(mm, _testRoot.getName(), _testRoot);
                 assertEquals(count, _containers.size());
@@ -2588,51 +2588,51 @@ public class ContainerManager
         public void testCache()
         {
             assertEquals(0, _containers.size());
-            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, getChildren(_testRoot).size());
 
-            Container one = ContainerManager.createContainer(_testRoot, "one");
+            Container one = createContainer(_testRoot, "one");
             assertEquals(1, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(0, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(0, getChildren(one).size());
 
-            Container oneA = ContainerManager.createContainer(one, "A");
+            Container oneA = createContainer(one, "A");
             assertEquals(2, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(1, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneA).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(1, getChildren(one).size());
+            assertEquals(0, getChildren(oneA).size());
 
-            Container oneB = ContainerManager.createContainer(one, "B");
+            Container oneB = createContainer(one, "B");
             assertEquals(3, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(2, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneB).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(2, getChildren(one).size());
+            assertEquals(0, getChildren(oneB).size());
 
-            Container deleteme = ContainerManager.createContainer(one, "deleteme");
+            Container deleteme = createContainer(one, "deleteme");
             assertEquals(4, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(3, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(deleteme).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(3, getChildren(one).size());
+            assertEquals(0, getChildren(deleteme).size());
 
             assertTrue(ContainerManager.delete(deleteme, TestContext.get().getUser()));
             assertEquals(3, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(2, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(2, getChildren(one).size());
 
-            Container oneC = ContainerManager.createContainer(one, "C");
+            Container oneC = createContainer(one, "C");
             assertEquals(4, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(3, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneC).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(3, getChildren(one).size());
+            assertEquals(0, getChildren(oneC).size());
 
             assertTrue(ContainerManager.delete(oneC, TestContext.get().getUser()));
             assertTrue(ContainerManager.delete(oneB, TestContext.get().getUser()));
-            assertEquals(1, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(one).size());
 
             assertTrue(ContainerManager.delete(oneA, TestContext.get().getUser()));
-            assertEquals(0, ContainerManager.getChildren(one).size());
+            assertEquals(0, getChildren(one).size());
 
             assertTrue(ContainerManager.delete(one, TestContext.get().getUser()));
-            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, getChildren(_testRoot).size());
             assertEquals(0, _containers.size());
         }
 
@@ -2687,7 +2687,7 @@ public class ContainerManager
 
             for (String childName : nodes)
             {
-                Container child = ContainerManager.createContainer(parent, childName);
+                Container child = createContainer(parent, childName);
                 createContainers(mm, childName, child);
             }
         }
