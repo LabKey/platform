@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
@@ -194,7 +194,7 @@
         LABKEY.requiresScript(["Ext4","Ext4ClientApi","core/customizeProjectWebPart.js"], function()
         {
             Ext4.onReady(function() {
-                const config = <%=new JSONObject(properties)%>;
+                const config = <%=unsafe(new JSONObject(properties).toString())%>;
                 _customizeProjectWebpart(Ext4, <%=webPart.getRowId()%>, <%=q(webPart.getPageId())%>, <%=webPart.getIndex()%>, config);
             });
         });

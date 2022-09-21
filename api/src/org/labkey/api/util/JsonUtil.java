@@ -47,7 +47,7 @@ public class JsonUtil
     {
         DEFAULT_MAPPER = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
-//        DEFAULT_MAPPER.registerModule(new JsonOrgModule());
+        DEFAULT_MAPPER.registerModule(new JsonOrgModule());
         // Allow org.json.old classes to be serialized by Jackson (TODO: Remove this after migrating from org.json.old.* -> org.json.*)
         DEFAULT_MAPPER.registerModule(new JsonOrgOldModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
