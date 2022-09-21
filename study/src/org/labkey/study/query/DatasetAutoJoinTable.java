@@ -140,9 +140,6 @@ public class DatasetAutoJoinTable extends VirtualTable
             if (getColumn(name) != null)
                 continue;
 
-            if (_sequenceNumColumn == null && !dataset.isDemographicData())
-                continue;
-
             var datasetColumn = createDatasetColumn(name, dataset, cf);
             if (datasetColumn != null)
             {

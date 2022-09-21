@@ -132,12 +132,12 @@ public class WikiVersion
 
     public HtmlString getHtmlForConvert(Container c, Wiki wiki)
     {
-        return WikiContentCache.getHtml(c, wiki, this, _cache);
+        return WikiContentCache.getHtml(c, wiki, this, _cache).getHtml();
     }
 
     public Set<ClientDependency> getClientDependencies(Container c, Wiki wiki)
     {
-        return WikiManager.get().formatWiki(c, wiki, this).getClientDependencies();
+        return WikiContentCache.getHtml(c, wiki, this, _cache).getClientDependencies();
     }
 
     public String getTitle()
