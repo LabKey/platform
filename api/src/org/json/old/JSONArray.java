@@ -88,6 +88,7 @@ import static org.json.old.JSONObject.NULL;
  * @author JSON.org
  * @version 2
  */
+@Deprecated
 public class JSONArray implements SafeToRender
 {
 
