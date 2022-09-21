@@ -678,7 +678,8 @@ public class NameGenerator
     {
         boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
         boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
-        if (ancestorPaths != null && !ancestorPaths.isEmpty())
+        boolean isAncestor = ancestorPaths != null && !ancestorPaths.isEmpty();
+        if (isAncestor)
         {
             Pair<ExpLineageOptions.LineageExpType, String> ancestorType = ancestorPaths.get(ancestorPaths.size() - 1);
             isMaterial = ExpLineageOptions.LineageExpType.Material == ancestorType.first;
@@ -696,7 +697,7 @@ public class NameGenerator
             case "name":
             case "lsid":
             case "description":
-                return "parent" + lookupField;
+                return (isAncestor ? "ancestor" : "parent") + lookupField;
             case "created":
                 return PREVIEW_DATE_VALUE;
             case "modified":
@@ -758,7 +759,7 @@ public class NameGenerator
                     {
                         Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
                         if (result instanceof String)
-                            return "parent" + result;
+                            return (isAncestor ? "ancestor" : "parent") + result;
                         return result;
                     }
                 }
@@ -882,7 +883,7 @@ public class NameGenerator
                     if (!_syntaxErrors.isEmpty() && _syntaxErrors.size() > previousErrorCount) // if ancestor lookup syntax error, continue
                         continue;
                     List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = null;
-                    if (partAncestorOptions.get(fkTok.encode()) != null)
+                    if (partAncestorOptions.containsKey(fkTok.encode()))
                         ancestorPaths = partAncestorOptions.get(fkTok.encode()).ancestorPaths();
 
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
@@ -2701,13 +2702,13 @@ public class NameGenerator
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
 
             // ancestor lookup
-            verifyPreview("S-${MaterialInputs/..[MaterialInputs]/name}", "S-parentname");
-            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/name}", "S-parentname");
-            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/..[DataInputs/GreatGrandParentDataType]/name}", "S-parentname");
-            verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
-            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", "S-parentname");
-            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-parentname");
-            verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${MaterialInputs/..[MaterialInputs]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/..[DataInputs/GreatGrandParentDataType]/name}", "S-ancestorname");
+            verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname");
+            verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 
         @After

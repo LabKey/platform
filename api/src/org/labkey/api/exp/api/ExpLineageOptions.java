@@ -25,23 +25,16 @@ public class ExpLineageOptions extends ResolveLsidsForm
 {
     public enum LineageExpType
     {
-        ALL("ALL"),
-        Data("Data"),
-        Material("Material"),
-        ExperimentRun("ExperimentRun"),
-        Object("Object");
-
-        final String _type;
-
-        LineageExpType(String type)
-        {
-            this._type = type;
-        }
+        ALL,
+        Data,
+        Material,
+        ExperimentRun,
+        Object;
 
         public static @Nullable LineageExpType fromValue(String value)
         {
             for (LineageExpType type : LineageExpType.values()) {
-                if (type._type.equalsIgnoreCase(value)) {
+                if (type.name().equals(value)) {
                     return type;
                 }
             }
@@ -104,7 +97,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
 
     public String getExpTypeValue()
     {
-        return _expType == null ? null : _expType._type;
+        return _expType == null ? null : _expType.name();
     }
 
     public void setExpType(LineageExpType expType)
