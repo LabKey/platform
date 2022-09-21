@@ -198,6 +198,11 @@ public class ContainerManager
         return getRoot();
     }
 
+    private static DbScope.Transaction ensureTransaction()
+    {
+        return CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK);
+    }
+
 
     private static int getNewChildSortOrder(Container parent)
     {
@@ -394,7 +399,7 @@ public class ContainerManager
                 if (!containersBecomingTabs.isEmpty())
                 {
                     // Make containers tab container; Folder tab will find them by name
-                    try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+                    try (DbScope.Transaction transaction = ensureTransaction())
                     {
                         for (Container container : containersBecomingTabs)
                             updateType(container, TabContainerType.NAME, user);
@@ -942,7 +947,7 @@ public class ContainerManager
         List<String> childIds = (List<String>) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
         if (null == childIds)
         {
-            try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+            try (DbScope.Transaction t = ensureTransaction())
             {
                 List<Container> children = new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
@@ -1000,7 +1005,7 @@ public class ContainerManager
         if (null != id && !GUID.isGUID(id))
             return null;
 
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             Container result = new SqlSelector(
                     CORE.getSchema(),
@@ -1047,7 +1052,7 @@ public class ContainerManager
         // Special case for ROOT -- we want to throw instead of returning null
         if (path.equals(Path.rootPath))
         {
-            try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+            try (DbScope.Transaction t = ensureTransaction())
             {
                 TableInfo tinfo = CORE.getTableInfoContainers();
 
@@ -1540,7 +1545,7 @@ public class ContainerManager
         boolean changedProjects = !oldProject.getId().equals(newProject.getId());
 
         // Synchronize the transaction, but not the listeners -- see #9901
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
@@ -1579,83 +1584,79 @@ public class ContainerManager
         return changedProjects;
     }
 
+    public static void rename(@NotNull Container c, User user, String name) throws ValidationException
+    {
+        rename(c, user, name, c.getTitle(), false);
+    }
+
+    /**
+     * Transacted method to rename a container. Optionally, supports updating the title and aliasing the
+     * original container path when the name is changed (as name changes result in a new container path).
+     */
     public static Container rename(
-        Container c,
+        @NotNull Container c,
         User user,
         String name,
         @Nullable String title,
         boolean addAlias
     ) throws ValidationException
     {
-        // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
-        if (!isRenameable(c))
-            throw new IllegalArgumentException("This folder may not be renamed as it is reserved by the system.");
-
-        String folderName = StringUtils.trimToNull(name);
-        StringBuilder errors = new StringBuilder();
-        if (!Container.isLegalName(folderName, c.isProject(), errors))
-            throw new IllegalArgumentException(errors.toString());
-
-        // Issue 19061: Unable to do case-only container rename
-        if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
+        try (DbScope.Transaction tx = ensureTransaction())
         {
-            if (c.getParent().isRoot())
-                throw new IllegalArgumentException("The server already has a project with this name.");
-            else
-                throw new IllegalArgumentException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
-        }
+            final String oldName = c.getName();
+            final String newName = StringUtils.trimToNull(name);
+            boolean isRenaming = !oldName.equals(newName);
+            StringBuilder errors = new StringBuilder();
 
-        try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
-        {
             // Rename
-            rename(c, user, folderName);
-
-            // Alias
-            if (addAlias)
+            if (isRenaming)
             {
-                List<String> newAliases = new ArrayList<>(getAliasesForContainer(c));
-                newAliases.add(c.getPath());
-                saveAliasesForContainer(c, newAliases, user);
+                // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
+                if (!isRenameable(c))
+                    throw new IllegalArgumentException("This folder may not be renamed as it is reserved by the system.");
+
+                if (!Container.isLegalName(newName, c.isProject(), errors))
+                    throw new IllegalArgumentException(errors.toString());
+
+                // Issue 19061: Unable to do case-only container rename
+                if (c.getParent().hasChild(newName) && !c.equals(c.getParent().getChild(newName)))
+                {
+                    if (c.getParent().isRoot())
+                        throw new IllegalArgumentException("The server already has a project with this name.");
+                    throw new IllegalArgumentException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                }
+
+                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", newName, c.getId());
+                clearCache();  // Clear the entire cache, since containers cache their full paths
+                // Get new version since name has changed.
+                Container renamedContainer = getForId(c.getId());
+                fireRenameContainer(renamedContainer, user, oldName);
+                // Clear again after the commit has propagated the state to other threads and transactions
+                // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+                tx.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
+
+                // Alias
+                if (addAlias)
+                {
+                    // Intentionally use original container rather than the already renamedContainer
+                    List<String> newAliases = new ArrayList<>(getAliasesForContainer(c));
+                    newAliases.add(c.getPath());
+                    saveAliasesForContainer(c, newAliases, user);
+                }
             }
 
             // Title
-            if (Container.isLegalTitle(title, errors))
+            if (!c.getTitle().equals(title))
+            {
+                if (!Container.isLegalTitle(title, errors))
+                    throw new IllegalArgumentException(errors.toString());
                 updateTitle(c, title, user);
+            }
 
             tx.commit();
         }
 
         return getForId(c.getId());
-    }
-
-    // Rename a container in the table.  Will fail if the new name already exists in the parent container.
-    // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
-    public static void rename(Container c, User user, String name)
-    {
-        if (!isRenameable(c))
-        {
-            throw new IllegalArgumentException("Cannot rename container " + c.getPath());
-        }
-
-        name = StringUtils.trimToNull(name);
-        if (null == name)
-            throw new NullPointerException();
-        String oldName = c.getName();
-        if (oldName.equals(name))
-            return;
-
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
-        {
-            new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", name, c.getId());
-            clearCache();  // Clear the entire cache, since containers cache their full paths
-            //Get new version since name has changed.
-            c = getForId(c.getId());
-            fireRenameContainer(c, user, oldName);
-            // Clear again after the commit has propagated the state to other threads and transactions
-            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
-            t.commit();
-        }
     }
 
     public static void setChildOrderToAlphabetical(Container parent)
@@ -1675,7 +1676,7 @@ public class ContainerManager
 
     private static void setChildOrder(List<Container> siblings, boolean resetToAlphabetical)
     {
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             for (int index = 0; index < siblings.size(); index++)
             {

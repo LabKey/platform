@@ -6714,8 +6714,8 @@ public class AdminController extends SpringActionController
         {
             try
             {
-                var title = form.isTitleSameAsName() ? null : form.getTitle();
-                var c = ContainerManager.rename(getContainer(), getUser(), form.getName(), title, form.isAddAlias());
+                String title = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
+                Container c = ContainerManager.rename(getContainer(), getUser(), form.getName(), title, form.isAddAlias());
                 _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
                 return true;
             }
