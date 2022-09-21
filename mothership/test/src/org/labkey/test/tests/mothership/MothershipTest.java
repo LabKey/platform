@@ -90,6 +90,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     private void doSetup()
     {
         _mothershipHelper = new MothershipHelper(this);
+        _mothershipHelper.enableDebugLoggers();
 
         _userHelper.createUser(ASSIGNEE);
         _userHelper.createUser(ASSIGNEE2);

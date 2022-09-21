@@ -38,7 +38,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
@@ -78,6 +77,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         _mothershipHelper = new MothershipHelper(this);
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
+        _mothershipHelper.enableDebugLoggers();
     }
 
     @Test
@@ -103,8 +103,8 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         );
 
         // Self-report so that we have some metrics to verify
-        String relativeUrl = "/mothership-selfReportMetrics.view";
-        beginAt(relativeUrl);
+        beginAt(WebTestHelper.buildRelativeUrl("mothership", "selfReportMetrics"));
+        assertTextPresent("success");
 
         goToProjectHome("/_mothership");
         goToSchemaBrowser();

@@ -26,10 +26,11 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.LabKeySiteWrapper;
-import org.labkey.test.Locator;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
+import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.APIUserHelper;
+import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
@@ -61,6 +62,12 @@ public class MothershipHelper
     {
         this.test = test;
         selfReportingEnabled = false;
+    }
+
+    public void enableDebugLoggers()
+    {
+        Log4jUtils.setLogLevel("org.labkey.mothership", ManagerPage.LoggingLevel.DEBUG);
+        Log4jUtils.setLogLevel("org.labkey.api.util.MothershipReport", ManagerPage.LoggingLevel.DEBUG);
     }
 
     public int getLatestStackTraceId()
