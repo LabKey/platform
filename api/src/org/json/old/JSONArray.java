@@ -1,4 +1,4 @@
-package org.json;
+package org.json.old;
 
 /*
 Copyright (c) 2002 JSON.org
@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
 
-import static org.json.JSONObject.NULL;
+import static org.json.old.JSONObject.NULL;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a

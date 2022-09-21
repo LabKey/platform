@@ -15,7 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.query.ValidationException;
 
 import java.net.URI;
