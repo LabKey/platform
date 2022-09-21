@@ -18,7 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DefaultAuditProvider;
@@ -121,7 +121,6 @@ import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
-import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;

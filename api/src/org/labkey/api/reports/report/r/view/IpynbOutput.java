@@ -18,9 +18,9 @@ package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.reports.report.ScriptOutput;
