@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.0-fb-editorWithoutDelete.0",
-    "@labkey/components": "2.218.2-fb-editorWithoutDelete.2",
+    "@labkey/components": "2.218.2-fb-editorWithoutDelete.3",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
