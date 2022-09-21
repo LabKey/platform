@@ -1,6 +1,5 @@
 package org.labkey.experiment.samples;
 
-import org.json.JSONArray;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
@@ -15,7 +14,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;

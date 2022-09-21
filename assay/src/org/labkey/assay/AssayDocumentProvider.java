@@ -3,7 +3,7 @@ package org.labkey.assay;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;

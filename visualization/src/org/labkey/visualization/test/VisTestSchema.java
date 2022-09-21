@@ -17,7 +17,7 @@ package org.labkey.visualization.test;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;

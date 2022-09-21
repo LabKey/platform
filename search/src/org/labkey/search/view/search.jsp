@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONArray" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>

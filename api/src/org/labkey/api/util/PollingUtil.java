@@ -17,7 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.settings.AppProps;
 
 import javax.servlet.FilterChain;

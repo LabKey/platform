@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;

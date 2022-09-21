@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;

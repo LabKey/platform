@@ -15,7 +15,7 @@
  */
 package org.labkey.survey.query;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;

@@ -33,7 +33,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;

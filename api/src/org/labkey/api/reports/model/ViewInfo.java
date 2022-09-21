@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
