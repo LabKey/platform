@@ -704,7 +704,11 @@ public class DomainImpl implements Domain
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
+                    {
+                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats);
+                        if (auditInfo.isChanged())
+                            propertyAuditInfo.add(auditInfo);
+                    }
                 }
             }
 
@@ -942,6 +946,8 @@ public class DomainImpl implements Domain
         {
             return _details;
         }
+
+        public boolean isChanged() { return !_details.isEmpty(); }
 
         private String makeNewPropAuditComment(DomainProperty prop)
         {

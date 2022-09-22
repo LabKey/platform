@@ -1,4 +1,4 @@
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>

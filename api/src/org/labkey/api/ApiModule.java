@@ -17,7 +17,7 @@ package org.labkey.api;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -102,7 +102,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 

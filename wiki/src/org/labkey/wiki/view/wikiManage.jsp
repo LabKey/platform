@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.old.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>

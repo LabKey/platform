@@ -1,4 +1,4 @@
-package org.json;
+package org.json.old;
 
 /*
 Copyright (c) 2002 JSON.org
@@ -91,9 +91,10 @@ import java.util.Map;
  * @author JSON.org
  * @version 2
  */
+@Deprecated
 public class JSONObject extends HashMap<String, Object> implements SafeToRender
 {
-    // kevink: restore the Null class removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
+    // kevink: restore the Null class removed in r10087. It is used by Jackson's JsonOrgModule for serialization of org.json
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
      * whilst Java's null is equivalent to the value that JavaScript calls
