@@ -16,8 +16,8 @@
 package org.labkey.api.study.model;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.data.AbstractParticipantGroup;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;

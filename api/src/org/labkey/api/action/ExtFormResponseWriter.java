@@ -15,7 +15,7 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;

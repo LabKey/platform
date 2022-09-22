@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONArray" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
