@@ -1584,7 +1584,7 @@ public class ContainerManager
         return changedProjects;
     }
 
-    public static void rename(@NotNull Container c, User user, String name) throws ValidationException
+    public static void rename(@NotNull Container c, User user, String name)
     {
         rename(c, user, name, c.getTitle(), false);
     }
@@ -1593,13 +1593,7 @@ public class ContainerManager
      * Transacted method to rename a container. Optionally, supports updating the title and aliasing the
      * original container path when the name is changed (as name changes result in a new container path).
      */
-    public static Container rename(
-        @NotNull Container c,
-        User user,
-        String name,
-        @Nullable String title,
-        boolean addAlias
-    ) throws ValidationException
+    public static Container rename(@NotNull Container c, User user, String name, @Nullable String title, boolean addAlias)
     {
         try (DbScope.Transaction tx = ensureTransaction())
         {
@@ -1654,6 +1648,10 @@ public class ContainerManager
             }
 
             tx.commit();
+        }
+        catch (ValidationException e)
+        {
+            throw new IllegalArgumentException(e);
         }
 
         return getForId(c.getId());
