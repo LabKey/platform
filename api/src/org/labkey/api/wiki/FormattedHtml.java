@@ -64,9 +64,9 @@ public class FormattedHtml
     {
         _html = null==html ? HtmlString.EMPTY_STRING : html;
         _volatile = isVolatile;
-        _wikiDependencies = wikiDependencies;
-        _anchors = anchors;
-        _clientDependencies = clientDependencies;
+        _wikiDependencies = Collections.unmodifiableSet(wikiDependencies);
+        _anchors = Collections.unmodifiableSet(anchors);
+        _clientDependencies = Collections.unmodifiableSet(clientDependencies);
     }
 
     @NotNull

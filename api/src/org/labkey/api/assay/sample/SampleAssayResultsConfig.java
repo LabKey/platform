@@ -1,7 +1,7 @@
 package org.labkey.api.assay.sample;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ContainerFilter;
 
 /**

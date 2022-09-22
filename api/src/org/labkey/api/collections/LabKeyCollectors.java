@@ -3,7 +3,7 @@ package org.labkey.api.collections;
 import com.google.common.collect.Comparators;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.HtmlString;

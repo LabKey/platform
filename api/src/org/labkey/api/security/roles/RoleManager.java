@@ -107,6 +107,7 @@ public class RoleManager
         registerAdminRole(new ProjectAdminRole());
         registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
+        registerRole(new EditorWithoutDeleteRole());
         registerRole(new AuthorRole());
         registerRole(new ReaderRole());
         registerRole(new RestrictedReaderRole());

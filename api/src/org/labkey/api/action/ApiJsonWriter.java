@@ -18,7 +18,7 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JsonUtil;
 

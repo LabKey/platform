@@ -16,7 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Path;
 

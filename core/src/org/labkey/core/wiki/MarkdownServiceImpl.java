@@ -18,7 +18,7 @@ package org.labkey.core.wiki;
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.StackKeyedObjectPool;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;

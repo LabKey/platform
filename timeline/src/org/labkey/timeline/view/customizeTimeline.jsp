@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.beanutils.BeanUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
