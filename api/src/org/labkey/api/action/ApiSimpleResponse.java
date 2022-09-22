@@ -17,7 +17,7 @@ package org.labkey.api.action;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
 import java.io.IOException;

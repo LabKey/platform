@@ -16,7 +16,7 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;

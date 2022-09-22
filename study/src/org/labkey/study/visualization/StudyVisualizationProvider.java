@@ -17,7 +17,7 @@ package org.labkey.study.visualization;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
