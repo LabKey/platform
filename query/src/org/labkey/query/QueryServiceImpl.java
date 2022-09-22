@@ -240,7 +240,8 @@ public class QueryServiceImpl implements QueryService
             WHERE,
             INDESCENDANTSOF,
             INANCESTORSOF,
-            COLUMN_IN
+            COLUMN_IN,
+            COLUMN_NOT_IN
     ));
 
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
@@ -270,6 +271,78 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Set<String> params, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, boolean negate)
+    {
+        ColumnInfo col = columnMap.get(fieldKey);
+        SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
+        String[] values = params.toArray(new String[0]);
+
+        if (values.length < 3)
+            throw new NotFoundException("Incorrect number of arguments provided");
+
+        String selectColumn = values[0];
+        String schemaName = values[1];
+        String queryName = values[2];
+        String whereSql = null;
+
+        if (values.length > 3)
+            whereSql = values[3];
+
+        if (StringUtils.isEmpty(selectColumn))
+            throw new NotFoundException("Select column not specified");
+        if (StringUtils.isEmpty(schemaName))
+            throw new NotFoundException("SchemaName not specified");
+        if (StringUtils.isEmpty(queryName))
+            throw new NotFoundException("QueryName not specified");
+
+        if (user == null || container == null)
+            throw new NotFoundException("Invalid context");
+
+        QuerySchema querySchema = DefaultSchema.get(user, container, schemaName);
+        if (!(querySchema instanceof UserSchema userSchema))
+            throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
+
+        SQLFragment selectIdsSql = new SQLFragment()
+                .append("SELECT ")
+                .append(selectColumn)
+                .append(" FROM ")
+                .append(schemaName)
+                .append(".")
+                .append(queryName);
+        if (!StringUtils.isEmpty(whereSql))
+        {
+            selectIdsSql = selectIdsSql.append(" WHERE (")
+                    .append(whereSql)
+                    .append(")");
+        }
+
+
+        QueryService qs = QueryService.get();
+        QueryDefinition qd;
+        qd = qs.createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
+        //TODO qd.setContainerFilter();
+        qd.setSql(selectIdsSql.getSQL());
+        ArrayList<QueryException> qerrors = new ArrayList<>();
+        TableInfo t = qd.getTable(userSchema, qerrors, true, true);
+        if (t == null)
+            throw new NotFoundException("Unable to find the specified table");
+
+        SQLFragment fromSql = t.getFromSQL("_");
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("(").append(colFrag)
+                .append(")")
+                .append(negate ? " NOT" : "")
+                .append(" IN (")
+                .append(" SELECT ")
+                .append(selectColumn)
+                .append(" FROM ")
+                .append(fromSql)
+                .append(")");
+
+        return sql;
+    }
+
     /**
      * column in subselect: rowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
      * <code>
@@ -279,83 +352,45 @@ public class QueryServiceImpl implements QueryService
 
     public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
     {
-        private User _user;
-        private Container _container;
-
         @Override
         public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
         {
-            _user = user;
-            _container = container;
             return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
             {
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    ColumnInfo col = columnMap.get(fieldKey);
-                    SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
                     Set<String> params = parseParams(value, getValueSeparator());
-                    String[] values = params.toArray(new String[0]);
-
-                    String selectColumn = values[0];
-                    String schemaName = values[1];
-                    String queryName = values[2];
-                    String whereSql = values[3];
-
-                    if (StringUtils.isEmpty(selectColumn))
-                        throw new NotFoundException("Select column not specified");
-                    if (StringUtils.isEmpty(schemaName))
-                        throw new NotFoundException("SchemaName not specified");
-                    if (StringUtils.isEmpty(queryName))
-                        throw new NotFoundException("QueryName not specified");
-
-                    if (_user == null || _container == null)
-                        throw new NotFoundException("Invalid context");
-
-                    QuerySchema querySchema = DefaultSchema.get(_user, _container, schemaName);
-                    if (!(querySchema instanceof UserSchema userSchema))
-                        throw new NotFoundException("Could not find the specified schema in the folder '" + _container.getPath() + "'");
-
-                    SQLFragment selectIdsSql = new SQLFragment()
-                            .append("SELECT ")
-                            .append(selectColumn)
-                            .append(" FROM ")
-                            .append(schemaName)
-                            .append(".")
-                            .append(queryName);
-                    if (!StringUtils.isEmpty(whereSql))
-                    {
-                        selectIdsSql = selectIdsSql.append(" WHERE (")
-                                .append(whereSql)
-                                .append(")");
-                    }
-
-
-                    QueryService qs = QueryService.get();
-                    QueryDefinition qd;
-                    qd = qs.createQueryDef(_user, _container, userSchema, GUID.makeGUID().replace("-", ""));
-                    //TODO qd.setContainerFilter();
-                    qd.setSql(selectIdsSql.getSQL());
-                    ArrayList<QueryException> qerrors = new ArrayList<>();
-                    TableInfo t = qd.getTable(userSchema, qerrors, true, true);
-                    if (t == null)
-                        throw new NotFoundException("Unable to find the specified table");
-
-                    SQLFragment fromSql = t.getFromSQL("_");
-
-                    SQLFragment sql = new SQLFragment();
-                    sql.append("(").append(colFrag).append(") IN (")
-                            .append(" SELECT ")
-                            .append(selectColumn)
-                            .append(" FROM ")
-                            .append(fromSql)
-                            .append(")");
-
-                    return sql;
+                    return getColumnInSql(fieldKey, params, user, container, columnMap, false);
                 }
             };
         }
     };
+
+    /**
+     * column in subselect: rowId NOT IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * <code>
+     *     Filter.create("RowId",  '{json:{"SampleId", "assay.General.assay1", "Data", "field1 < 5 AND field2 NOT NULL"}}', COLUMN_NOT_IN_FILTER_TYPE)
+     * </code>
+     */
+
+    public static final CompareType COLUMN_NOT_IN = new CompareType("COLUMN NOT IN", "columnnotin", "COLUMN_NOT_IN", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    Set<String> params = parseParams(value, getValueSeparator());
+                    return getColumnInSql(fieldKey, params, user, container, columnMap, true);
+                }
+            };
+        }
+    };
+
     /*
      * This is a marker for CompareClauses that can somewhat participate in Query (LabKey SQL) environment.
      *
