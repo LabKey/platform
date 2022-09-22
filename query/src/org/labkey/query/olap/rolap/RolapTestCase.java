@@ -15,7 +15,7 @@
  */
 package org.labkey.query.olap.rolap;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

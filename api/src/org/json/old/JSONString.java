@@ -1,4 +1,4 @@
-package org.json;
+package org.json.old;
 /**
  * The <code>JSONString</code> interface allows a <code>toJSONString()</code> 
  * method so that a class can change the behavior of 

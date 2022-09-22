@@ -15,9 +15,9 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONString;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
+import org.json.old.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.DateUtil;

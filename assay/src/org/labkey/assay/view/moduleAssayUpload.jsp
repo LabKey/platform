@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONObject"%>
+<%@ page import="org.json.old.JSONObject"%>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>

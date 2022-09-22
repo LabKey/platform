@@ -17,7 +17,7 @@
 package org.labkey.query.controllers;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.XML;
+import org.json.old.XML;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.SchemaKey;

@@ -15,7 +15,7 @@
  */
 package org.labkey.core.workbook;
 
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
