@@ -240,7 +240,7 @@ public class QueryServiceImpl implements QueryService
             WHERE,
             INDESCENDANTSOF,
             INANCESTORSOF,
-            HASASSAYRESULTSWHERE
+            COLUMN_IN
     ));
 
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
@@ -271,59 +271,91 @@ public class QueryServiceImpl implements QueryService
     };
 
     /**
+     * column in subselect: rowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
      * <code>
-     *     Filter.create("RowId",  '{json:{"AssaySampleIDFieldName", "urn:lsid:labkey.com:GeneralAssayProtocol.Folder-6:Assay1", "WHERE field1 < 5 AND field2 NOT NULL"}}', HAS_ASSAY_RESULTS_WHERE)
+     *     Filter.create("RowId",  '{json:{"SampleId", "assay.General.assay1", "Data", "field1 < 5 AND field2 NOT NULL"}}', COLUMN_IN_FILTER_TYPE)
      * </code>
      */
-    public static final CompareType HASASSAYRESULTSWHERE = new CompareType("HAS ASSAY RESULTS WHERE", "hasassayresultswhere", "HAS_ASSAY_RESULTS_WHERE", true /* dataValueRequired */, "sql", null)
+
+    public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
     {
+        private User _user;
+        private Container _container;
+
         @Override
-        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
         {
+            _user = user;
+            _container = container;
             return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
             {
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
                     ColumnInfo col = columnMap.get(fieldKey);
-
-                    SQLFragment sampleIdFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
+                    SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
                     Set<String> params = parseParams(value, getValueSeparator());
                     String[] values = params.toArray(new String[0]);
-                    String sampleIdField = values[0];
-                    String assayProtocolLsid = values[1];
-                    String whereClause = values[2];
-                    AssayService assayService = AssayService.get();
 
-                    ExperimentService svc = ExperimentService.get();
+                    String selectColumn = values[0];
+                    String schemaName = values[1];
+                    String queryName = values[2];
+                    String whereSql = values[3];
 
-                    if (svc == null || assayService == null)
-                        return new SQLFragment("(1 = 2)");
+                    if (StringUtils.isEmpty(selectColumn))
+                        throw new NotFoundException("Select column not specified");
+                    if (StringUtils.isEmpty(schemaName))
+                        throw new NotFoundException("SchemaName not specified");
+                    if (StringUtils.isEmpty(queryName))
+                        throw new NotFoundException("QueryName not specified");
 
-                    ExpProtocol protocol = svc.getExpProtocol(assayProtocolLsid);
-                    AssayProvider provider = assayService.getProvider(protocol);
-                    if (provider == null)
-                        return new SQLFragment("(1 = 2)");
-                    Domain resultsDomain = provider.getResultsDomain(protocol);
-                    String tableName = resultsDomain.getStorageTableName();
+                    if (_user == null || _container == null)
+                        throw new NotFoundException("Invalid context");
 
+                    QuerySchema querySchema = DefaultSchema.get(_user, _container, schemaName);
+                    if (!(querySchema instanceof UserSchema userSchema))
+                        throw new NotFoundException("Could not find the specified schema in the folder '" + _container.getPath() + "'");
+
+                    SQLFragment selectIdsSql = new SQLFragment()
+                            .append("SELECT ")
+                            .append(selectColumn)
+                            .append(" FROM ")
+                            .append(schemaName)
+                            .append(".")
+                            .append(queryName);
+                    if (!StringUtils.isEmpty(whereSql))
+                    {
+                        selectIdsSql = selectIdsSql.append(" WHERE (")
+                                .append(whereSql)
+                                .append(")");
+                    }
+
+
+                    QueryService qs = QueryService.get();
+                    QueryDefinition qd;
+                    qd = qs.createQueryDef(_user, _container, userSchema, GUID.makeGUID().replace("-", ""));
+                    //TODO qd.setContainerFilter();
+                    qd.setSql(selectIdsSql.getSQL());
+                    ArrayList<QueryException> qerrors = new ArrayList<>();
+                    TableInfo t = qd.getTable(userSchema, qerrors, true, true);
+                    if (t == null)
+                        throw new NotFoundException("Unable to find the specified table");
+
+                    SQLFragment fromSql = t.getFromSQL("_");
 
                     SQLFragment sql = new SQLFragment();
-                    sql.append("(").append(sampleIdFrag).append(") IN (")
-                            .append("SELECT ?")
-                            .add(sampleIdField)
+                    sql.append("(").append(colFrag).append(") IN (")
+                            .append(" SELECT ")
+                            .append(selectColumn)
                             .append(" FROM ")
-                            .append(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME).append(".").append(tableName)
-                            .append(whereClause);
+                            .append(fromSql)
+                            .append(")");
 
-                    sql.append(")");
                     return sql;
                 }
             };
         }
     };
-
-
     /*
      * This is a marker for CompareClauses that can somewhat participate in Query (LabKey SQL) environment.
      *
