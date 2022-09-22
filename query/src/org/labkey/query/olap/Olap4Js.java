@@ -17,7 +17,7 @@
 package org.labkey.query.olap;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.Cell;
 import org.olap4j.CellSet;

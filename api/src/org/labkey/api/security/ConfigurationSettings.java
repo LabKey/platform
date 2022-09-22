@@ -2,7 +2,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 

@@ -16,7 +16,7 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;

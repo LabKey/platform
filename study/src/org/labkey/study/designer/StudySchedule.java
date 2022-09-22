@@ -15,8 +15,8 @@
  */
 package org.labkey.study.designer;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;

@@ -19,7 +19,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,6 +62,7 @@ import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProvider;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProviderBase;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.json.old.JSONObject;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -907,7 +908,7 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(HashSet.class.getName());
         allowedClasses.add(Integer.class.getName());
         allowedClasses.add(JavaScriptException.class.getName());
-        allowedClasses.add(org.json.JSONObject.class.getName());
+        allowedClasses.add(JSONObject.class.getName());
         allowedClasses.add(LinkedHashMap.class.getName());
         allowedClasses.add(LinkedHashSet.class.getName());
         allowedClasses.add(LinkedList.class.getName());
