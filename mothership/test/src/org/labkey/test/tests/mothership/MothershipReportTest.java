@@ -28,7 +28,6 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
 import org.labkey.test.pages.test.TestActions;
-import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -111,10 +110,20 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         var table = viewQueryData("mothership", "recentJsonMetricValues");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
-        table = new DataRegionTable("query", this);
-        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        waitFor(() -> {
+            if (table.getDataRowCount() > 0)
+            {
+                return true;
+            }
+            else
+            {
+                // Entries can take a bit to appear. Wait with refresh.
+                sleep(1_000);
+                refresh();
+                return false;
+            }
+        }, "No metrics for Core controller hits.", WAIT_FOR_JAVASCRIPT);
         table.clearAllFilters();
-        table = new DataRegionTable("query", this);
         table.setFilter("DisplayKey", "Equals", "activeDayCount");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
     }
