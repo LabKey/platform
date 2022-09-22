@@ -186,16 +186,18 @@ public class Parameter implements AutoCloseable
 
     public Parameter(ColumnInfo c, int[] indexes)
     {
+        boolean isAttachmentField = (c.getInputType().equalsIgnoreCase("file") && c.getJdbcType() == JdbcType.VARCHAR);
+
         // The jdbc resultset metadata replaces special characters in source column names.
         // We need the parameter names to match so we can match to the column.
-        _name = c.getJdbcRsName();
+        _name = isAttachmentField ? c.getName() : c.getJdbcRsName(); // adding this check to fix Issue 45368: Attachment fields containing field names with spaces doesn't show attachment
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
         _scale = c.getScale();
         _precision = c.getPrecision();
         _indexes = indexes;
         // CONSIDER: this seems pretty low-level for this check (see also DefaultQueryUpdateService.convertTypes())
-        setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
+        setFileAsName = isAttachmentField;
     }
 
 
