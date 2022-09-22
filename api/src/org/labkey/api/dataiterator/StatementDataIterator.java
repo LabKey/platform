@@ -199,8 +199,6 @@ public class StatementDataIterator extends AbstractDataIterator
                     to = stmt.getParameter(col.getPropertyURI());
                 if (to == null)
                     to = stmt.getParameter(col.getName());
-                if (to == null)
-                    to = stmt.getParameter(col.getAlias());//Issue 45368: Attachment fields containing field names with spaces doesn't show attachment
                 if (null != to)
                 {
                     FieldKey mvName = col.getMvColumnName();
