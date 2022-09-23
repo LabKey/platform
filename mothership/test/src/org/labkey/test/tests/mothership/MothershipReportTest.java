@@ -18,6 +18,7 @@ package org.labkey.test.tests.mothership;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.OrderWith;
@@ -179,6 +180,12 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
         Assert.assertEquals("Forwarded for", forwardedFor, installDetail.getServerIP());
+    }
+
+    @Test @Ignore ("Proof of concept for future testing.")
+    public void testAPI() throws Exception
+    {
+        _mothershipHelper.submitMockUsageReport("fake_server.test", "testServerGUID", "sessionGUID_" + (Math.random() * 1_000_000));
     }
 
     private int triggerNpeAndGetCount()

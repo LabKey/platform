@@ -16,9 +16,17 @@
 package org.labkey.test.util.mothership;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.simple.JSONObject;
 import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.CommandResponse;
@@ -51,6 +59,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 public class MothershipHelper extends LabKeySiteWrapper
 {
@@ -224,27 +234,51 @@ public class MothershipHelper extends LabKeySiteWrapper
         beginAt(relativeUrl);
     }
 
-    public void submitMockUsageReport(Connection connection, String serverGUID, String sessionGUID) throws IOException, CommandException
+    public void submitMockUsageReport(String hostName, String serverGUID, String sessionGUID) throws IOException, CommandException
     {
-        Map<String, Object> usageReportJson = getUsageReportJson(connection);
+        Map<String, Object> usageReportJson = getUsageReportJson();
+        usageReportJson.put("serverHostName", hostName);
         usageReportJson.put("serverGUID", serverGUID);
-        usageReportJson.put("sessionGUID", sessionGUID);
-        submitUsageReport(connection, usageReportJson);
+        usageReportJson.put("serverSessionGUID", sessionGUID);
+        submitUsageReport(usageReportJson);
     }
 
-    public Map<String, Object> getUsageReportJson(Connection connection) throws IOException, CommandException
+    public Map<String, Object> getUsageReportJson() throws IOException, CommandException
     {
-        Command<CommandResponse> command = new Command<>("mothership", "testMothershipReport");
+        Command<CommandResponse> command = new Command<>("admin", "testMothershipReport");
         command.setParameters(getMothershipReportParams("CheckForUpdates", ReportLevel.ON, false, null));
-        CommandResponse response = command.execute(connection, "/");
+        CommandResponse response = command.execute(createDefaultConnection(), "/");
         return response.getParsedData();
     }
 
-    public void submitUsageReport(Connection connection, Map<String, Object> report) throws IOException, CommandException
+    private void submitUsageReport(Map<String, Object> report) throws IOException
     {
-        PostCommand<CommandResponse> command = new PostCommand<>("mothership", "checkForUpdates");
-        command.setJsonObject(new JSONObject(report));
-        command.execute(connection, "/");
+        // 'jsonMetrics' is converted to a JSON object by 'testMothershipReport'. Needs to be a string to submit.
+        report.computeIfPresent("jsonMetrics", (k, v) -> v.toString());
+        String url = WebTestHelper.buildURL(MOTHERSHIP_CONTROLLER, MOTHERSHIP_PROJECT, "checkForUpdates");
+        HttpContext context = WebTestHelper.getBasicHttpContext();
+        HttpPost method;
+        HttpResponse response = null;
+
+        try (CloseableHttpClient httpClient = (CloseableHttpClient)WebTestHelper.getHttpClient())
+        {
+            method = new HttpPost(url);
+            List<NameValuePair> args = new ArrayList<>();
+            for (Map.Entry<String, Object> reportVal : report.entrySet())
+            {
+                args.add(new BasicNameValuePair(reportVal.getKey(), reportVal.getValue().toString()));
+            }
+            method.setEntity(new UrlEncodedFormEntity(args));
+            response = httpClient.execute(method, context);
+            int status = response.getStatusLine().getStatusCode();
+            assertEquals("Report submitted status", HttpStatus.SC_OK, status);
+            assertEquals("Success", response.getHeaders("MothershipStatus")[0].getValue());
+        }
+        finally
+        {
+            if (null != response)
+                EntityUtils.consumeQuietly(response.getEntity());
+        }
     }
 
     @NotNull
