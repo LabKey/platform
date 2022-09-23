@@ -426,7 +426,7 @@ public class MothershipManager
         ObjectMapper mapper = new ObjectMapper();
         try
         {
-            log.info("Merging JSON. Old is " + currentValue + " characters, new is " + newValue.length());
+            log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
             Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
             ObjectReader updater = mapper.readerForUpdating(currentMap);
             Map<String, Object> merged = updater.readValue(newValue);
