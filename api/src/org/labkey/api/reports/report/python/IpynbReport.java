@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;

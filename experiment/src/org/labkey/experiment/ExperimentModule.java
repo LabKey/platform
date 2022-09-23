@@ -567,6 +567,36 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
 
+                    Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
+                    SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
+
+                    SQLFragment batchAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    batchAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Batch.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("batchDomain", new SqlSelector(ExperimentService.get().getSchema(), batchAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment runAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    runAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("runDomain", new SqlSelector(ExperimentService.get().getSchema(), runAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment resultAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    resultAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("resultDomain", new SqlSelector(ExperimentService.get().getSchema(), resultAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment resultAssayMultipleSampleLookupSQL = new SQLFragment(
+                    "SELECT COUNT(*) FROM (\n" +
+                        "    SELECT PD.domainid, COUNT(*) AS PropCount\n" +
+                        "    FROM exp.propertydescriptor D\n" +
+                        "        JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "    WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery = 'Materials'))\n" +
+                        "        AND propertyuri LIKE ?\n" +
+                        "    GROUP BY PD.domainid\n" +
+                        ") X WHERE X.PropCount > 1"
+                    );
+                    resultAssayMultipleSampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("resultDomainWithMultiple", new SqlSelector(ExperimentService.get().getSchema(), resultAssayMultipleSampleLookupSQL).getObject(Long.class));
+
+                    assayMetrics.put("sampleLookupCount", sampleLookupCountMetrics);
+
                     results.put("assay", assayMetrics);
                 }
 

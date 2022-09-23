@@ -1,7 +1,7 @@
 package org.labkey.api.reports.report;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptModel;

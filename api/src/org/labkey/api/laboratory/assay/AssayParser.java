@@ -15,7 +15,7 @@
  */
 package org.labkey.api.laboratory.assay;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
