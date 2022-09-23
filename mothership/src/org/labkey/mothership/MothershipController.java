@@ -34,24 +34,8 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.Aggregate;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -731,15 +715,8 @@ public class MothershipController extends SpringActionController
             if (report != null)
             {
                 report.run();
-                _log.debug(() -> String.format("Self reporting usage metrics [Status: %d]. Response: \n%s", report.getResponseCode(), report.getContent()));
-                return Collections.singletonMap("status", "success");
             }
-            else
-            {
-                return Map.of(
-                        "status", "failure",
-                        "message", "Unable to generate usage report.");
-            }
+            return Collections.singletonMap("status", "success");
         }
     }
 
