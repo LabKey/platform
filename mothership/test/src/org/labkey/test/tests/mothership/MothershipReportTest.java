@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.mothership;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,7 +139,12 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         Date nextPing = (Date) latestServerInfo.get("LastPing");
         if (lastPing == null)
         {
-            Assert.assertNotNull("Usage report didn't ", nextPing);
+            Assert.assertNotNull("No usage report found.", nextPing);
+        }
+        else
+        {
+            Assertions.assertThat(nextPing).as("Should be a new usage report.")
+                    .isAfter(lastPing);
         }
 
         goToProjectHome("/_mothership");
