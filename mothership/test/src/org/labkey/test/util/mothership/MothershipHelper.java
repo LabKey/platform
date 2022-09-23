@@ -16,8 +16,12 @@
 package org.labkey.test.util.mothership;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.simple.JSONObject;
+import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.query.Filter;
@@ -26,42 +30,53 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.LabKeySiteWrapper;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.core.admin.logger.ManagerPage;
+import org.labkey.test.pages.mothership.ShowInstallationsPage;
 import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.APIUserHelper;
 import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
+import org.labkey.test.util.TestLogger;
+import org.openqa.selenium.NotFoundException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WrapsDriver;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertFalse;
-import static org.labkey.test.WebDriverWrapper.sleep;
-
-public class MothershipHelper
+public class MothershipHelper extends LabKeySiteWrapper
 {
     public static final String ID_COLUMN = "ExceptionStackTraceId";
     public static final String SERVER_INSTALLATION_ID_COLUMN = "ServerInstallationId";
+    public static final String SERVER_INSTALLATION_NAME_COLUMN = "ServerHostName";
     public static final String SERVER_INSTALLATION_QUERY = "ServerInstallation";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
+    public static final String MOTHERSHIP_CONTROLLER = "mothership";
+    public static final String HOST_NAME = "localhost"; //org.labkey.api.util.MothershipReport.Target.local
+    public static final String TEST_HOST_NAME = "TEST_localhost"; //org.labkey.api.util.MothershipReport.Target.test
 
     private boolean selfReportingEnabled;
 
-    private final LabKeySiteWrapper test;
+    private final WrapsDriver _driver;
 
-    public MothershipHelper(LabKeySiteWrapper test)
+    public MothershipHelper(WrapsDriver driver)
     {
-        this.test = test;
+        _driver = driver;
         selfReportingEnabled = false;
+    }
+
+    @Override
+    public WebDriver getWrappedDriver()
+    {
+        return _driver.getWrappedDriver();
     }
 
     public void enableDebugLoggers()
@@ -70,9 +85,60 @@ public class MothershipHelper
         Log4jUtils.setLogLevel("org.labkey.api.util.MothershipReport", ManagerPage.LoggingLevel.DEBUG);
     }
 
+    public Integer getServerInstallationId(String hostName) throws IOException, CommandException
+    {
+        Map<String, Object> installationInfo = getServerInstallationInfo(hostName);
+        return (Integer) installationInfo.get(SERVER_INSTALLATION_ID_COLUMN);
+    }
+
+    public Date getLastPing(String hostName) throws IOException, CommandException
+    {
+        try
+        {
+            Map<String, Object> installationInfo = getServerInstallationInfo(hostName);
+            return (Date) installationInfo.get("LastPing");
+        }
+        catch (NotFoundException ignore)
+        {
+            return null;
+        }
+    }
+
+    public Map<String, Object> getLatestServerInfo() throws IOException, CommandException
+    {
+        return getServerInstallationInfo(null);
+    }
+
+    private Map<String, Object> getServerInstallationInfo(String hostName) throws IOException, CommandException
+    {
+        SelectRowsCommand selectRows = new SelectRowsCommand(MOTHERSHIP_CONTROLLER, SERVER_INSTALLATION_QUERY);
+        if (hostName != null)
+        {
+            selectRows.addFilter(new Filter(SERVER_INSTALLATION_NAME_COLUMN, hostName));
+        }
+        selectRows.addSort("LastPing", Sort.Direction.DESCENDING);
+        selectRows.setColumns(List.of("*"));
+        selectRows.setMaxRows(1);
+        SelectRowsResponse response = selectRows.execute(createDefaultConnection(), MOTHERSHIP_PROJECT);
+        if (response.getRows().size() != 1)
+        {
+            ShowInstallationsPage installationsPage = ShowInstallationsPage.beginAt(this);
+            if (hostName == null)
+            {
+                throw new NotFoundException("No mothership server info available.");
+            }
+            else
+            {
+                List<String> hostNames = installationsPage.getInstallationGrid().getColumnDataAsText(SERVER_INSTALLATION_NAME_COLUMN);
+                throw new NotFoundException(String.format("Unable to find server installation [%s]. Found: %s", hostName, hostNames));
+            }
+        }
+        return response.getRows().get(0);
+    }
+
     public int getLatestStackTraceId()
     {
-        Connection connection = test.createDefaultConnection();
+        Connection connection = createDefaultConnection();
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addSort("LastReport", Sort.Direction.DESCENDING);
         command.setMaxRows(1);
@@ -96,7 +162,7 @@ public class MothershipHelper
 
     public void updateStackTrace(int exceptionStackTraceId, String bugNumber, String comments, String assignedToEmail)
     {
-        Connection connection = test.createDefaultConnection();
+        Connection connection = createDefaultConnection();
         PostCommand command = new PostCommand("mothership", "updateStackTrace");
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
@@ -106,7 +172,7 @@ public class MothershipHelper
             params.put("comments", comments);
         if (assignedToEmail != null)
         {
-            String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(test).getUserId(assignedToEmail).toString();
+            String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(this).getUserId(assignedToEmail).toString();
             params.put("assignedTo", assignedToId);
         }
         command.setParameters(params);
@@ -122,7 +188,7 @@ public class MothershipHelper
 
     public int getReportCount(int stackTraceId)
     {
-        Connection connection = test.createDefaultConnection();
+        Connection connection = createDefaultConnection();
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addFilter(ID_COLUMN, stackTraceId, Filter.Operator.EQUAL);
         try
@@ -154,41 +220,72 @@ public class MothershipHelper
 
     private void createMothershipReport(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
     {
-        String relativeUrl = "/admin-testMothershipReport.view?" + "type=" + type +
-                "&level=" + level.toString() +
-                "&submit=" + submit +
-                "&testMode=true";
+        String relativeUrl = getTestMothershipReportUrl(type, level, submit, forwardedFor);
+        beginAt(relativeUrl);
+    }
+
+    public void submitMockUsageReport(Connection connection, String serverGUID, String sessionGUID) throws IOException, CommandException
+    {
+        Map<String, Object> usageReportJson = getUsageReportJson(connection);
+        usageReportJson.put("serverGUID", serverGUID);
+        usageReportJson.put("sessionGUID", sessionGUID);
+        submitUsageReport(connection, usageReportJson);
+    }
+
+    public Map<String, Object> getUsageReportJson(Connection connection) throws IOException, CommandException
+    {
+        Command<CommandResponse> command = new Command<>("mothership", "testMothershipReport");
+        command.setParameters(getMothershipReportParams("CheckForUpdates", ReportLevel.ON, false, null));
+        CommandResponse response = command.execute(connection, "/");
+        return response.getParsedData();
+    }
+
+    public void submitUsageReport(Connection connection, Map<String, Object> report) throws IOException, CommandException
+    {
+        PostCommand<CommandResponse> command = new PostCommand<>("mothership", "checkForUpdates");
+        command.setJsonObject(new JSONObject(report));
+        command.execute(connection, "/");
+    }
+
+    @NotNull
+    public static String getTestMothershipReportUrl(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
+    {
+        Map<String, Object> params = getMothershipReportParams(type, level, submit, forwardedFor);
+        return WebTestHelper.buildURL("admin", "testMothershipReport", params);
+    }
+
+    @NotNull
+    private static Map<String, Object> getMothershipReportParams(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
+    {
+        Map<String, Object> params = new HashMap<>();
+        params.put("type", type);
+        params.put("level", level.toString());
+        params.put("submit", submit);
+        params.put("testMode", true);
         if (null != forwardedFor)
-            relativeUrl += "&forwardedFor=" + forwardedFor;
-        test.beginAt(relativeUrl);
+            params.put("forwardedFor", forwardedFor);
+        return params;
     }
 
     @LogMethod
-    public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException, URISyntaxException
+    public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
     {
-        // Find the current server GUID
-        String serverGUID = test.goToAdminConsole().getServerGUID();
-
-        Connection connection = test.createDefaultConnection();
-        // Find the corresponding serverInstallationId
-        SelectRowsCommand select = new SelectRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
-        select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));
-        select.addFilter("ServerInstallationGUID", serverGUID, Filter.Operator.EQUAL);
-        String hostName = new URI(CustomizeSitePage.beginAt(test).getBaseServerUrl()).getHost();
-        select.addFilter("ServerHostName", hostName, Filter.Operator.EQUAL);
-        SelectRowsResponse response = select.execute(connection, MOTHERSHIP_PROJECT);
-        if (!response.getRows().isEmpty())
+        try
         {
-            int installationId = (int) response.getRows().get(0).get(SERVER_INSTALLATION_ID_COLUMN);
+            String serverName = executeScript("return LABKEY.serverName;", String.class);
+            int installationId = getServerInstallationId(serverName);
             // Set the flag for the installation
             UpdateRowsCommand update = new UpdateRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
             update.addRow(Maps.of(SERVER_INSTALLATION_ID_COLUMN, installationId, "IgnoreExceptions", ignore));
-            update.execute(connection, MOTHERSHIP_PROJECT);
+            update.execute(createDefaultConnection(), MOTHERSHIP_PROJECT);
         }
-        else
+        catch (NotFoundException notFound)
         {
-            test.log("No existing server installation record to update.");
-            assertFalse("Attempting to set ignore exceptions true but no existing server installation record.", ignore);
+            TestLogger.log("No existing server installation record to update.");
+            if (ignore)
+            {
+                throw new IllegalStateException("Attempting to set ignore exceptions true but no existing server installation record.", notFound);
+            }
         }
     }
 
@@ -196,7 +293,7 @@ public class MothershipHelper
     {
         if (!selfReportingEnabled)
         {
-            CustomizeSitePage.beginAt(test)
+            CustomizeSitePage.beginAt(this)
                     .setExceptionSelfReporting(true)
                     .save();
             selfReportingEnabled = true;
@@ -205,7 +302,7 @@ public class MothershipHelper
 
     public void disableExceptionReporting()
     {
-        CustomizeSitePage.beginAt(test)
+        CustomizeSitePage.beginAt(this)
                 .setExceptionReportingLevel(CustomizeSitePage.ReportingLevel.NONE)
                 .setExceptionSelfReporting(false)
                 .save();
@@ -231,14 +328,14 @@ public class MothershipHelper
     public List<Integer> triggerExceptions(@LoggedParam List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages)
     {
         List<Integer> exceptionIds = new ArrayList<>();
-        test.checkErrors();
+        checkErrors();
         for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
         {
             action.getLeft().triggerException(action.getRight());
             sleep(100); // Wait for mothership to pick up exception
             exceptionIds.add(getLatestStackTraceId());
         }
-        test.resetErrors();
+        resetErrors();
         return exceptionIds;
     }
 }

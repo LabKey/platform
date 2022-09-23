@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.mothership;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,6 +23,7 @@ import org.junit.runner.OrderWith;
 import org.junit.runner.manipulation.Alphanumeric;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
@@ -31,14 +33,18 @@ import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
+import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
+import static org.labkey.test.util.mothership.MothershipHelper.SERVER_INSTALLATION_NAME_COLUMN;
+import static org.labkey.test.util.mothership.MothershipHelper.TEST_HOST_NAME;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 4) @OrderWith(Alphanumeric.class)
@@ -80,18 +86,39 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     }
 
     @Test
-    public void testTopLevelItems()
+    public void testTopLevelItems() throws Exception
     {
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
-        assertTextPresent(distributionName);
+        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
+        String distributionName = getDeployedDistributionName();
+        Assert.assertEquals("Distribution name.", distributionName, installDetail.getDistributionName());
+        checker().screenShotIfNewError("usage_report_items");
+    }
+
+    private String getDeployedDistributionName()
+    {
+        File distFile = new File(TestFileUtils.getDefaultDeployDir(), "labkeyWebapp/WEB-INF/classes/distribution");
+        if (distFile.exists())
+        {
+            // Deployed from distribution
+            return TestFileUtils.getFileContents(distFile).trim();
+        }
+        else if (distFile.getParentFile().isDirectory())
+        {
+            // Local dev build
+            return "localBuild";
+        }
+        else
+        {
+            // Couldn't find deploy directory. Might be a remote server; probably shouldn't run this test
+            throw new IllegalStateException("Unable to determine expected distribution.");
+        }
     }
 
     @Test
-    public void testJsonMetrics()
+    public void testJsonMetrics() throws Exception
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, false, null);
         assertTextPresent("jsonMetrics",
                 "modules",
                 "controllerHits", // Should have multiple sections for this across different modules
@@ -101,28 +128,25 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
                 "activeDayCount" // a LOW level metric, should also exist at MEDIUM
         );
 
+        Date lastPing = _mothershipHelper.getLastPing("localhost");
         // Self-report so that we have some metrics to verify
         beginAt(WebTestHelper.buildRelativeUrl("mothership", "selfReportMetrics"));
         assertTextPresent("success");
+        Map<String, Object> latestServerInfo = _mothershipHelper.getLatestServerInfo();
+        Assert.assertEquals("Self reported metrics were associated with the wrong host.", "localhost",
+                latestServerInfo.get(SERVER_INSTALLATION_NAME_COLUMN));
+        Date nextPing = (Date) latestServerInfo.get("LastPing");
+        if (lastPing == null)
+        {
+            Assert.assertNotNull("Usage report didn't ", nextPing);
+        }
 
         goToProjectHome("/_mothership");
         goToSchemaBrowser();
         var table = viewQueryData("mothership", "recentJsonMetricValues");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
-        waitFor(() -> {
-            if (table.getDataRowCount() > 0)
-            {
-                return true;
-            }
-            else
-            {
-                // Entries can take a bit to appear. Wait with refresh.
-                sleep(1_000);
-                refresh();
-                return false;
-            }
-        }, "No metrics for Core controller hits.", WAIT_FOR_JAVASCRIPT);
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.clearAllFilters();
         table.setFilter("DisplayKey", "Equals", "activeDayCount");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
@@ -142,13 +166,13 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     }
 
     @Test
-    public void testForwardedRequest()
+    public void testForwardedRequest() throws Exception
     {
         log("Simulate receiving a report behind a load balancer");
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertTextPresent(forwardedFor);
+        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
+        Assert.assertEquals("Forwarded for", forwardedFor, installDetail.getServerIP());
     }
 
     private int triggerNpeAndGetCount()
@@ -170,6 +194,4 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         assertElementPresent(Locator.linkWithText(hostName2));
     }
 
-
-    // TODO: test the View sample report buttons from Customize Site page?
 }
