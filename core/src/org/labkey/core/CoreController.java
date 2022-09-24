@@ -723,9 +723,9 @@ public class CoreController extends SpringActionController
                 throw new NotFoundException("No JSON posted");
             }
             String name = StringUtils.trimToNull(json.getString("name"));
-            String title = StringUtils.trimToNull(json.getString("title"));
-            String description = StringUtils.trimToNull(json.getString("description"));
-            String typeName = StringUtils.trimToNull(json.getString("type"));
+            String title = StringUtils.trimToNull(json.optString("title"));
+            String description = StringUtils.trimToNull(json.optString("description"));
+            String typeName = StringUtils.trimToNull(json.optString("type"));
             boolean isWorkbook = false;
             if (typeName == null)
             {
@@ -750,7 +750,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.getString("folderType");
+                String folderTypeName = json.optString("folderType");
                 if (folderTypeName == null && isWorkbook)
                 {
                     folderTypeName = WorkbookFolderType.NAME;
