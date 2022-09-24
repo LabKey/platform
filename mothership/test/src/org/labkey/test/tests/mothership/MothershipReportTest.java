@@ -148,15 +148,17 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
                     .isAfter(lastPing);
         }
 
+        String sessionId = String.valueOf(latestServerInfo.get("MostRecentSession"));
+
         goToProjectHome("/_mothership");
         goToSchemaBrowser();
         var table = viewQueryData("mothership", "recentJsonMetricValues");
+        table.setFilter("ServerSessionId", "Equals", sessionId);
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
         table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
         assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
-        table.clearAllFilters();
         table.setFilter("DisplayKey", "Equals", "activeDayCount");
-        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        assertEquals("Should have one entry for activeDayCount", 1, table.getDataRowCount());
     }
 
     @Test
