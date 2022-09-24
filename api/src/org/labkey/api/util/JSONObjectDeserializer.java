@@ -10,6 +10,7 @@ import org.json.old.JSONObject;
 
 import java.io.IOException;
 
+@Deprecated
 public class JSONObjectDeserializer extends StdDeserializer<JSONObject>
 {
     private static final long serialVersionUID = 1L;
