@@ -194,7 +194,7 @@
         LABKEY.requiresScript(["Ext4","Ext4ClientApi","core/customizeProjectWebPart.js"], function()
         {
             Ext4.onReady(function() {
-                const config = <%=unsafe(new JSONObject(properties).toString())%>;
+                const config = <%=new JSONObject(properties)%>;
                 _customizeProjectWebpart(Ext4, <%=webPart.getRowId()%>, <%=q(webPart.getPageId())%>, <%=webPart.getIndex()%>, config);
             });
         });
