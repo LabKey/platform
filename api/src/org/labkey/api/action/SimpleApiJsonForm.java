@@ -45,6 +45,6 @@ public class SimpleApiJsonForm implements CustomApiForm
 
     public org.json.JSONObject getNewJsonObject()
     {
-        return new org.json.JSONObject(json);
+        return new org.json.JSONObject(json.toString());
     }
 }
