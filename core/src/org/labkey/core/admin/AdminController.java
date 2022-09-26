@@ -6712,74 +6712,18 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
-            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            try
             {
-                Container c = getContainer();
-                if (updateFolderName(c, form, errors) && updateFolderTitle(c, form, errors))
-                {
-                    transaction.commit();
-                    return true;
-                }
+                String title = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
+                Container c = ContainerManager.rename(getContainer(), getUser(), form.getName(), title, form.isAddAlias());
+                _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
+                return true;
             }
-            return false;
-        }
-
-        private boolean updateFolderName(Container c, ManageFoldersForm form, BindException errors)
-        {
-            String folderName = StringUtils.trimToNull(form.getName());
-            StringBuilder error = new StringBuilder();
-
-            if (Container.isLegalName(folderName, c.isProject(), error))
+            catch (Exception e)
             {
-                // 19061: Unable to do case-only container rename
-                if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
-                {
-                    if (c.getParent().isRoot())
-                    {
-                        error.append("The server already has a project with this name.");
-                    }
-                    else
-                    {
-                        error.append("The ").append(c.getParent().isProject() ? "project " : "folder ").append(c.getParent().getPath()).append(" already has a folder with this name.");
-                    }
-                }
-                else
-                {
-                    ContainerManager.rename(c, getUser(), folderName);
-                    if (form.isAddAlias())
-                    {
-                        List<String> newAliases = new ArrayList<>(ContainerManager.getAliasesForContainer(c));
-                        newAliases.add(c.getPath());
-                        ContainerManager.saveAliasesForContainer(c, newAliases, getUser());
-                    }
-                    c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
-                    _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
-                    return true;
-                }
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
-            return false;
-        }
-
-        private boolean updateFolderTitle(Container c, ManageFoldersForm form, BindException errors)
-        {
-            //if we have gotten this far, we can assume that the formName is valid.
-            String folderTitle = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
-            StringBuilder error = new StringBuilder();
-            if(Container.isLegalTitle(folderTitle, error))
-            {
-                try
-                {
-                    ContainerManager.updateTitle(c, folderTitle, getUser());
-                    return true;
-                }
-                catch (ValidationException e)
-                {
-                    error.append(e.getMessage());
-                }
-            }
-            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
 

@@ -1,16 +1,19 @@
 package org.labkey.api.util;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.WritableTypeId;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import org.json.old.JSONArray;
 import org.json.old.JSONObject;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.WritableTypeId;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import java.io.IOException;
+import java.lang.reflect.Type;
 
+@Deprecated
 public class JSONArraySerializer extends JSONBaseSerializer<JSONArray>
 {
     private static final long serialVersionUID = 1L;

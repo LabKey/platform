@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Iterator;
 
+@Deprecated
 public class JSONObjectSerializer extends JSONBaseSerializer<JSONObject>
 {
     private static final long serialVersionUID = 1L;
