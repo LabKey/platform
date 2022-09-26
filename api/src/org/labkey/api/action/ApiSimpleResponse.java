@@ -50,6 +50,11 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         _json = json;
     }
 
+    public ApiSimpleResponse(org.json.JSONObject json)
+    {
+        this(json.toMap());
+    }
+
     public ApiSimpleResponse(Map<String, ?> values)
     {
         _json = new JSONObject(values);
