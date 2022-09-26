@@ -943,6 +943,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         else if (entry.getKey().equalsIgnoreCase(Column.WorkflowTask.toString()))
                         {
                             Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                            Integer oldWorkflowTaskID = null;
+                            if (run.getWorkflowTask() != null)
+                                oldWorkflowTaskID = run.getWorkflowTask().getRowId();
+
+                            appendPropertyIfChanged(sb, "WorkflowTask", oldWorkflowTaskID, newWorkflowTaskId);
                             run.setWorkflowTaskId(newWorkflowTaskId);
                         }
 
