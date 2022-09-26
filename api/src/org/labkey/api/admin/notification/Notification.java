@@ -207,7 +207,7 @@ public class Notification
         props.put("UserId", getUserId());
         props.put("ObjectId", getObjectId());
         props.put("Type", getType());
-        props.put("ContainerId", getContainer());
+        props.put("ContainerId", getContainer().toString());
         props.put("HtmlContent", getHtmlContent().toString());
         props.put("Content", getContent());
         props.put("ContentType", getContentType());
