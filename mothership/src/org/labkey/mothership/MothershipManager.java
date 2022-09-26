@@ -361,16 +361,16 @@ public class MothershipManager
         session.setSystemDescription(getBestString(session.getSystemDescription(), form.getSystemDescription()));
         session.setSystemShortName(getBestString(session.getSystemShortName(), form.getSystemShortName()));
 
-        session.setContainerCount(getBestInteger(session.getContainerCount(), session.getContainerCount()));
-        session.setProjectCount(getBestInteger(session.getProjectCount(), session.getProjectCount()));
-        session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), session.getRecentUserCount()));
-        session.setUserCount(getBestInteger(session.getUserCount(), session.getUserCount()));
-        session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), session.getAdministratorEmail()));
-        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
-        session.setDistribution(getBestString(session.getDistribution(), session.getDistribution()));
-        session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), session.getUsageReportingLevel()));
-        session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
-        session.setJsonMetrics(getBestJson(session.getJsonMetrics(), session.getJsonMetrics(), session.getServerSessionGUID()));
+        session.setContainerCount(getBestInteger(session.getContainerCount(), form.getContainerCount()));
+        session.setProjectCount(getBestInteger(session.getProjectCount(), form.getProjectCount()));
+        session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), form.getRecentUserCount()));
+        session.setUserCount(getBestInteger(session.getUserCount(), form.getUserCount()));
+        session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), form.getAdministratorEmail()));
+        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), form.isEnterprisePipelineEnabled()));
+        session.setDistribution(getBestString(session.getDistribution(), form.getDistribution()));
+        session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), form.getUsageReportingLevel()));
+        session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), form.getExceptionReportingLevel()));
+        session.setJsonMetrics(getBestJson(session.getJsonMetrics(), form.getJsonMetrics(), session.getServerSessionGUID()));
 
     }
 
@@ -407,7 +407,7 @@ public class MothershipManager
         {
             return currentValue;
         }
-        else if (StringUtils.isEmpty(currentValue))
+        if (StringUtils.isEmpty(currentValue))
         {
             // Verify the newValue as valid json; if it is, return it. Otherwise, return null.
             try
@@ -426,6 +426,7 @@ public class MothershipManager
         ObjectMapper mapper = new ObjectMapper();
         try
         {
+            log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
             Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
             ObjectReader updater = mapper.readerForUpdating(currentMap);
             Map<String, Object> merged = updater.readValue(newValue);
