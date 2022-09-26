@@ -90,11 +90,14 @@ public class QueryUnion extends QueryRelation
     @Override
     void setQuery(Query query)
     {
-        super.setQuery(query);
-        for (QueryRelation r : _termList)
-            r.setQuery(query);
+        // UNION within a CTE can be recursive, need to guard against that.
+        if (query != _query)
+        {
+            super.setQuery(query);
+            for (QueryRelation r : _termList)
+                r.setQuery(query);
+        }
     }
-
 
     void collectUnionTerms(QUnion qunion)
     {
