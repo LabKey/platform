@@ -45,6 +45,7 @@ import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -70,8 +71,6 @@ public class DomainPropertyImpl implements DomainProperty
     private List<PropertyValidatorImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
-    private boolean _swap;
-
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
@@ -725,18 +724,18 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
-    public void setSwap(boolean swap)
+    // Scenario to swap property descriptors on study upload to or from a system property, instead of updating the
+    // current property descriptor. Avoids overwriting a system property.
+    public boolean isSystemPropertySwap()
     {
-        _swap = swap;
-    }
+        if (_pd.getPropertyId() == 0 && _pd.getPropertyURI() != null && _pdOld != null && _pdOld.getPropertyURI() != null
+                && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI()))
+        {
+            return SystemProperty.getProperties().stream().anyMatch(sp ->
+                    sp.getPropertyURI().equals(_pd.getPropertyURI()) || sp.getPropertyURI().equals(_pdOld.getPropertyURI()));
+        }
 
-    // Scenario to swap property descriptors on study upload instead of updating the current property descriptor.
-    // Currently only used when changing to/from system property.
-    public boolean isSwap()
-    {
-        // Ensure necessary values to swap property descriptors
-        return _swap && _pd.getPropertyId() == 0 && _pdOld != null && _pd.getPropertyURI() != null
-                && _pdOld.getPropertyURI() != null && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI());
+        return false;
     }
 
     public boolean isDirty()
@@ -764,7 +763,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
-        if (isSwap())
+        if (isSystemPropertySwap())
         {
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
             OntologyManager.removePropertyDescriptorFromDomain(new DomainPropertyImpl((DomainImpl) getDomain(), _pdOld));
