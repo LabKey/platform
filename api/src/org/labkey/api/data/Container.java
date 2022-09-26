@@ -23,8 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
@@ -1378,7 +1378,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (this.hasPermission(user, ReadPermission.class))
         {
-            containerProps.put("startUrl", getStartURL(user));
+            containerProps.put("startUrl", getStartURL(user).toString());
             containerProps.put("iconHref", getIconHref());
             containerProps.put("id", getId());
             containerProps.put("sortOrder", getSortOrder());
