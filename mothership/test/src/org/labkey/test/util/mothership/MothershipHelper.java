@@ -70,6 +70,7 @@ public class MothershipHelper extends LabKeySiteWrapper
     public static final String SERVER_INSTALLATION_QUERY = "ServerInstallation";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
     public static final String MOTHERSHIP_CONTROLLER = "mothership";
+    public static final String MOTHERSHIP_SCHEMA = "mothership";
     public static final String HOST_NAME = "localhost"; //org.labkey.api.util.MothershipReport.Target.local
     public static final String TEST_HOST_NAME = "TEST_localhost"; //org.labkey.api.util.MothershipReport.Target.test
 
@@ -121,7 +122,7 @@ public class MothershipHelper extends LabKeySiteWrapper
 
     private Map<String, Object> getServerInstallationInfo(String hostName) throws IOException, CommandException
     {
-        SelectRowsCommand selectRows = new SelectRowsCommand(MOTHERSHIP_CONTROLLER, SERVER_INSTALLATION_QUERY);
+        SelectRowsCommand selectRows = new SelectRowsCommand(MOTHERSHIP_SCHEMA, SERVER_INSTALLATION_QUERY);
         if (hostName != null)
         {
             selectRows.addFilter(new Filter(SERVER_INSTALLATION_NAME_COLUMN, hostName));
