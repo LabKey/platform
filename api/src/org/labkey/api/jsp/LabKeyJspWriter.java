@@ -46,7 +46,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     public void print(Object obj) throws IOException
     {
         // These are the only objects we consider safe-to-render
-        if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean | obj instanceof JSONObject || obj instanceof JSONArray)
+        if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean || obj instanceof JSONObject || obj instanceof JSONArray)
         {
             super.print(obj);
         }
