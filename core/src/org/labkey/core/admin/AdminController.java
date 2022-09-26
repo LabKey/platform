@@ -10228,7 +10228,7 @@ public class AdminController extends SpringActionController
         final Map<String,Map<String,Object>> sets = new TreeMap<>();
         new SqlSelector(CoreSchema.getInstance().getScope(),
             new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None'", ContainerManager.getRoot())).forEachMap(m ->
+            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
             {
                 String category = (String)m.get("category");
                 String name = (String)m.get("name");
