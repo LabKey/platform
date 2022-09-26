@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 

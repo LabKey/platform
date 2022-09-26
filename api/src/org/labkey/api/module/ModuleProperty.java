@@ -18,7 +18,7 @@ package org.labkey.api.module;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -49,8 +49,9 @@ public class ModuleProperty
     Note that module properties can be defined in module.xml files, so if adding property options here, they should also
     be added to propertyType in module.xsd and wired through in DefaultModule.loadXmlFile()
      */
-    private Module _module;
-    private String _name;
+    private final Module _module;
+    private final String _name;
+
     private String _label;
     private boolean _canSetPerContainer = false;
     private boolean _excludeFromClientContext = false;
