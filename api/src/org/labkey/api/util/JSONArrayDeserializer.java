@@ -11,6 +11,7 @@ import org.json.old.JSONObject;
 
 import java.io.IOException;
 
+@Deprecated
 public class JSONArrayDeserializer extends StdDeserializer<JSONArray>
 {
     private static final long serialVersionUID = 1L;
