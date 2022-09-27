@@ -18,7 +18,7 @@ public class FixedHtmlField extends SettingsField
         FixedHtmlField field = new FixedHtmlField();
         field.put("type", FieldType.fixedHtml);
         field.put("caption", caption);
-        field.put("html", html);
+        field.put("html", html.toString()); // JSONObject doesn't know how to serialize HtmlString
 
         return field;
     }

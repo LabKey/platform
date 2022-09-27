@@ -18,7 +18,8 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JsonUtil;
 
@@ -153,31 +154,18 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeObject(value);
         }
-        else if (value instanceof Map) // This also covers the JSONObject case as that subclasses HashMap. TODO: replace the creation of JSONObjects with Jackson methods
+        else if (value instanceof Map<?, ?> map) // This also covers the org.json.old.JSONObject case as that subclasses HashMap. TODO: replace the creation of JSONObjects with Jackson methods
         {
-            boolean badContext = jg.getOutputContext().getCurrentName() == null && jg.getOutputContext().inObject();
-            if (badContext)
-            {   // Exceptions get serialized out into the response. However, in some parts of the processing we're in the wrong output context
-                // and this would create invalid JSON. Detect and prevent this to still create valid JSON, and hopefully something downstream will handle
-                // the error gracefully.
-                jg.writeFieldName("unhandledException");
-            }
-            jg.writeStartObject();
-            for (var e : ((Map<Object,Object>)value).entrySet())
-            {
-                jg.writeFieldName(String.valueOf(e.getKey()));
-                writeObject(e.getValue());
-            }
-            jg.writeEndObject();
-            if (badContext)
-            {
-                jg.writeEndObject();
-            }
+            writeMap(map);
         }
-        else if (value instanceof Collection<?>)
+        else if (value instanceof JSONObject jsonObject)
+        {
+            writeMap(jsonObject.toMap());
+        }
+        else if (value instanceof Collection<?> coll)
         {
             jg.writeStartArray();
-            for (Object element : (Collection<?>)value)
+            for (Object element : coll)
             {
                 writeObject(element);
             }
@@ -192,16 +180,23 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             jg.writeEndArray();
         }
-        else if (value instanceof JSONArray)  // JSONArray is a wrapper for ArrayList, but doesn't expose the same convenience methods. TODO: replace the upstream creation of these JSONArrays with Jackson methods
+        else if (value instanceof org.json.old.JSONArray jsonArray)  // JSONArray is a wrapper for ArrayList, but doesn't expose the same convenience methods. TODO: replace the upstream creation of these JSONArrays with Jackson methods
         {
             jg.writeStartArray();
-            for (int i = 0; i < ((JSONArray) value).length(); i++)
+            for (int i = 0; i < jsonArray.length(); i++)
             {
-                writeObject(((JSONArray) value).get(i));
+                writeObject(jsonArray.get(i));
             }
             jg.writeEndArray();
         }
-        else if(value instanceof Date)
+        else if (value instanceof JSONArray jsonArray)
+        {
+            jg.writeStartArray();
+            for (Object o : jsonArray)
+                writeObject(o);
+            jg.writeEndArray();
+        }
+        else if (value instanceof Date)
         {
             jg.writeString(DateUtil.formatJsonDateTime((Date) value));
         }
@@ -217,6 +212,29 @@ public class ApiJsonWriter extends ApiResponseWriter
         // 21112: Malformed JSON response in production environments
         // TODO: This is not the recommended pattern as this causes an unnecessary amount of flushing (performance)
         jg.flush();
+    }
+
+    private void writeMap(Map<?, ?> map) throws IOException
+    {
+        boolean badContext = jg.getOutputContext().getCurrentName() == null && jg.getOutputContext().inObject();
+        if (badContext)
+        {
+            // Exceptions get serialized out into the response. However, in some parts of the processing we're in the wrong output context
+            // and this would create invalid JSON. Detect and prevent this to still create valid JSON, and hopefully something downstream will handle
+            // the error gracefully.
+            jg.writeFieldName("unhandledException");
+        }
+        jg.writeStartObject();
+        for (var e : map.entrySet())
+        {
+            jg.writeFieldName(String.valueOf(e.getKey()));
+            writeObject(e.getValue());
+        }
+        jg.writeEndObject();
+        if (badContext)
+        {
+            jg.writeEndObject();
+        }
     }
 
     @Override
