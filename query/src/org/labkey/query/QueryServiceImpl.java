@@ -302,20 +302,20 @@ public class QueryServiceImpl implements QueryService
         if (!(querySchema instanceof UserSchema userSchema))
             throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
 
+        SqlDialect dialect = querySchema.getDbSchema().getSqlDialect();
         SQLFragment selectIdsSql = new SQLFragment()
                 .append("SELECT ")
-                .append(selectColumn)
+                .append(dialect.makeLegalIdentifier(selectColumn))
                 .append(" FROM ")
-                .append(schemaName)
+                .append(dialect.makeLegalIdentifier(schemaName))
                 .append(".")
-                .append(queryName);
+                .append(dialect.makeLegalIdentifier(queryName));
         if (!StringUtils.isEmpty(whereSql))
         {
             selectIdsSql = selectIdsSql.append(" WHERE (")
                     .append(whereSql)
                     .append(")");
         }
-
 
         QueryService qs = QueryService.get();
         QueryDefinition qd;
@@ -335,7 +335,7 @@ public class QueryServiceImpl implements QueryService
                 .append(negate ? " NOT" : "")
                 .append(" IN (")
                 .append(" SELECT ")
-                .append(selectColumn)
+                .append(dialect.makeLegalIdentifier(selectColumn))
                 .append(" FROM ")
                 .append(fromSql)
                 .append(")");
