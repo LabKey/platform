@@ -118,13 +118,16 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                                     Ext4.Msg.hide();
                                     var responseMsg = Ext4.Msg.show({
                                         title: "Delete " + totalNoun,
-                                        msg:  hasErrors ? response.errors.exception : response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted."
+                                        msg:  hasErrors
+                                                ? response.errors.exception
+                                                : response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted."
                                     });
-                                    Ext4.defer(function() {
-                                        responseMsg.hide();
-                                        if (!hasErrors) window.location.reload();
-                                    }, 2500, responseMsg);
-
+                                    if (!hasErrors) {
+                                        Ext4.defer(function () {
+                                            responseMsg.hide();
+                                            window.location.reload();
+                                        }, 2500, responseMsg);
+                                    }
                                 }),
                                 failure: LABKEY.Utils.getCallbackWrapper(function(response) {
                                     console.error("There was a problem deleting " + nounPlural, response);
