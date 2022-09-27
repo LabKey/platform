@@ -75,7 +75,7 @@ public class StatementUtils
     private SqlDialect _dialect;
     private final TableInfo _targetTable;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
-    private Set<String> _skipColumnNames = null;
+    private Set<String> _skipColumnNames = Set.of();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
@@ -127,7 +127,7 @@ public class StatementUtils
 
     public StatementUtils skip(Set<String> skip)
     {
-        _skipColumnNames = skip;
+        _skipColumnNames = null==skip ? Set.of() : skip;
         return this;
     }
 
@@ -303,7 +303,7 @@ public class StatementUtils
         ParameterHolder ph = parameters.get(c.getName());
         if (null == ph)
         {
-            ph = new ParameterHolder(new Parameter(c.getName(), c.getJdbcType()), c);
+            ph = new ParameterHolder(new Parameter(c.getName(), c.getPropertyURI(), null, c.getJdbcType()), c);
             // NOTE: earlier DataIterator should probably split file into two columns: attachment_name, attachment_body
             if (c.getInputType().equalsIgnoreCase("file") && c.getJdbcType() == JdbcType.VARCHAR)
                 ph.p.setFileAsName(true);
@@ -721,7 +721,7 @@ public class StatementUtils
         ColumnInfo autoIncrementColumn = null;
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
         if (null == remap)
-            remap = new CaseInsensitiveHashMap<>();
+            remap = CaseInsensitiveHashMap.of();
 
         for (ColumnInfo column : table.getColumns())
         {
@@ -742,7 +742,6 @@ public class StatementUtils
             ColumnInfo updatableColumn = updatable.getColumn(column.getName());
             if (updatableColumn != null && updatableColumn.hasDbSequence())
                 _dontUpdateColumnNames.add(column.getName());
-
 
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
