@@ -30,13 +30,13 @@ public class ShowInstallationsPage extends BaseMothershipPage<ShowInstallationsP
 
     public static ShowInstallationsPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
+        driver.beginAt(WebTestHelper.buildURL("mothership", MothershipHelper.MOTHERSHIP_PROJECT, "showInstallations"));
+        return new ShowInstallationsPage(driver.getDriver());
     }
 
-    public static ShowInstallationsPage beginAt(WebDriverWrapper driver, String containerPath)
+    public DataRegionTable getInstallationGrid()
     {
-        driver.beginAt(WebTestHelper.buildURL("mothership", containerPath, "showInstallations"));
-        return new ShowInstallationsPage(driver.getDriver());
+        return elementCache().dataRegion;
     }
 
     @Override
@@ -45,8 +45,8 @@ public class ShowInstallationsPage extends BaseMothershipPage<ShowInstallationsP
         return new ElementCache();
     }
 
-    protected class ElementCache extends BaseMothershipPage.ElementCache
+    protected class ElementCache extends BaseMothershipPage<ShowInstallationsPage.ElementCache>.ElementCache
     {
-        DataRegionTable dataRegion = new DataRegionTable("serverInstallations", getDriver());
+        DataRegionTable dataRegion = DataRegionTable.DataRegion(getDriver()).withName("serverInstallations").findWhenNeeded();
     }
 }
