@@ -45,6 +45,7 @@ import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -70,7 +71,6 @@ public class DomainPropertyImpl implements DomainProperty
     private List<PropertyValidatorImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
-
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
@@ -724,6 +724,20 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
+    // Scenario to swap property descriptors on study upload to or from a system property, instead of updating the
+    // current property descriptor. Avoids overwriting a system property.
+    public boolean isSystemPropertySwap()
+    {
+        if (_pd.getPropertyId() == 0 && _pd.getPropertyURI() != null && _pdOld != null && _pdOld.getPropertyURI() != null
+                && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI()))
+        {
+            return SystemProperty.getProperties().stream().anyMatch(sp ->
+                    sp.getPropertyURI().equals(_pd.getPropertyURI()) || sp.getPropertyURI().equals(_pdOld.getPropertyURI()));
+        }
+
+        return false;
+    }
+
     public boolean isDirty()
     {
         if (_pdOld != null) return true;
@@ -749,7 +763,12 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
-        if (isNew())
+        if (isSystemPropertySwap())
+        {
+            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
+            OntologyManager.removePropertyDescriptorFromDomain(new DomainPropertyImpl((DomainImpl) getDomain(), _pdOld));
+        }
+        else if (isNew())
         {
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         }
