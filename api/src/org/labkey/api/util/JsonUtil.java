@@ -41,16 +41,17 @@ public class JsonUtil
     // The ObjectMapper is thread-safe and can be shared across requests
     // but shouldn't be mutated. If you need to reconfigure the ObjectMapper,
     // create a new instance by calling <code>ObjectMapper.copy()</code>.
-    public static final ObjectMapper DEFAULT_MAPPER;
+    public static final ObjectMapper DEFAULT_MAPPER = createDefaultMapper();
 
-    static
+    public static ObjectMapper createDefaultMapper()
     {
-        DEFAULT_MAPPER = new ObjectMapper();
+        ObjectMapper result = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
-        DEFAULT_MAPPER.registerModule(new JsonOrgModule());
+        result.registerModule(new JsonOrgModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
-        DEFAULT_MAPPER.registerModule(new JavaTimeModule());
-        DEFAULT_MAPPER.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+        result.registerModule(new JavaTimeModule());
+        result.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+        return result;
     }
 
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
