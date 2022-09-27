@@ -722,7 +722,7 @@ public class CoreController extends SpringActionController
             {
                 throw new NotFoundException("No JSON posted");
             }
-            String name = StringUtils.trimToNull(json.getString("name"));
+            String name = StringUtils.trimToNull(json.optString("name"));
             String title = StringUtils.trimToNull(json.optString("title"));
             String description = StringUtils.trimToNull(json.optString("description"));
             String typeName = StringUtils.trimToNull(json.optString("type"));
@@ -1665,7 +1665,7 @@ public class CoreController extends SpringActionController
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.getString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.optString("value"));
                 }
                 transaction.commit();
             }
