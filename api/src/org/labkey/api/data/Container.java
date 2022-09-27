@@ -23,8 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
@@ -1378,7 +1376,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (this.hasPermission(user, ReadPermission.class))
         {
-            containerProps.put("startUrl", getStartURL(user));
+            containerProps.put("startUrl", getStartURL(user).toString());
             containerProps.put("iconHref", getIconHref());
             containerProps.put("id", getId());
             containerProps.put("sortOrder", getSortOrder());
@@ -1392,11 +1390,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("isWorkbook", isWorkbook());
             containerProps.put("isContainerTab", isContainerTab());
             containerProps.put("type", getContainerNoun());
-            JSONArray activeModuleNames = new JSONArray();
+            List<String> activeModuleNames = new ArrayList<>();
             Set<Module> activeModules = getActiveModules(user);
             for (Module module : activeModules)
             {
-                activeModuleNames.put(module.getName());
+                activeModuleNames.add(module.getName());
             }
             containerProps.put("activeModules", activeModuleNames);
             containerProps.put("folderType", getFolderType().getName());
@@ -1412,7 +1410,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
-        JSONObject formats = new JSONObject();
+        Map<String, Object> formats = new HashMap<>();
         formats.put("dateFormat", DateUtil.getDateFormatString(this));
         formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
         formats.put("numberFormat", props.getDefaultNumberFormat());

@@ -18,7 +18,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.module.ModuleLoader;

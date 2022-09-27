@@ -24,8 +24,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -189,7 +189,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -200,7 +199,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -718,15 +717,15 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             if (json == null)
             {
                 throw new NotFoundException("No JSON posted");
             }
             String name = StringUtils.trimToNull(json.getString("name"));
-            String title = StringUtils.trimToNull(json.getString("title"));
-            String description = StringUtils.trimToNull(json.getString("description"));
-            String typeName = StringUtils.trimToNull(json.getString("type"));
+            String title = StringUtils.trimToNull(json.optString("title"));
+            String description = StringUtils.trimToNull(json.optString("description"));
+            String typeName = StringUtils.trimToNull(json.optString("type"));
             boolean isWorkbook = false;
             if (typeName == null)
             {
@@ -751,7 +750,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.getString("folderType");
+                String folderTypeName = json.optString("folderType");
                 if (folderTypeName == null && isWorkbook)
                 {
                     folderTypeName = WorkbookFolderType.NAME;
@@ -771,8 +770,8 @@ public class CoreController extends SpringActionController
                 Set<Module> ensureModules = new HashSet<>();
                 if (json.has("ensureModules") && !json.isNull("ensureModules"))
                 {
-                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
-                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    List<String> requestedModules = StreamSupport.stream(json.getJSONArray("ensureModules").spliterator(), false)
+                        .map(Object::toString).toList();
                     for (String moduleName : requestedModules)
                     {
                         Module module = ModuleLoader.getInstance().getModule(moduleName);
@@ -845,7 +844,7 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             String targetIdentifier = object.getString("container");
 
             if (null == targetIdentifier)
@@ -930,7 +929,7 @@ public class CoreController extends SpringActionController
             }
 
             // Prepare aliases
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
             
             List<String> aliasList = new ArrayList<>();
@@ -1499,7 +1498,7 @@ public class CoreController extends SpringActionController
         {
             JSONObject ret = new JSONObject();
 
-            if(form.getModuleName() == null)
+            if (form.getModuleName() == null)
             {
                 errors.reject(ERROR_MSG, "Must provide the name of the module");
                 return null;
@@ -1638,7 +1637,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
-            JSONObject formData = form.getJsonObject();
+            JSONObject formData = form.getNewJsonObject();
             JSONArray a = formData.getJSONArray("properties");
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
