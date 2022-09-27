@@ -16,7 +16,7 @@
 package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -137,11 +137,11 @@ public class ExperimentAPITest extends BaseWebDriverTest
         int batchId = response.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Materials in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Materials in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
-        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
     }
 
@@ -190,11 +190,11 @@ public class ExperimentAPITest extends BaseWebDriverTest
         int batchId = response.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Materials in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Materials in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
-        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
     }
 
@@ -235,11 +235,11 @@ public class ExperimentAPITest extends BaseWebDriverTest
         int batchId = saveResponse.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Datas in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Datas in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getDataInputs().size() + run.getDataOutputs().size()).sum());
-        assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getDataOutputs().get(0).getId(), responseBatch.getRuns().get(1).getDataInputs().get(0).getId());
     }
 

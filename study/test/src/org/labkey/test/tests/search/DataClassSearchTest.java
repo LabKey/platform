@@ -15,8 +15,8 @@
  */
 package org.labkey.test.tests.search;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -149,15 +149,15 @@ public class DataClassSearchTest extends BaseWebDriverTest
         JSONObject firstDomainFieldJson = new JSONObject();
         firstDomainFieldJson.put("name", "iceCreamFlavor");
         firstDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(firstDomainFieldJson);
+        domainFieldsJson.put(firstDomainFieldJson);
         JSONObject secondDomainFieldJson = new JSONObject();
         secondDomainFieldJson.put("name", "foodColor");
         secondDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(secondDomainFieldJson);
+        domainFieldsJson.put(secondDomainFieldJson);
         JSONObject thirdDomainFieldJson = new JSONObject();
         thirdDomainFieldJson.put("name", "sequence");
         thirdDomainFieldJson.put("rangeURI", "multiLine");
-        domainFieldsJson.add(thirdDomainFieldJson);
+        domainFieldsJson.put(thirdDomainFieldJson);
         JSONObject domainDesignJson = new JSONObject();
         domainDesignJson.put("name", DATA_CLASS_DOMAIN_1);
         domainDesignJson.put("fields", domainFieldsJson);
@@ -180,15 +180,15 @@ public class DataClassSearchTest extends BaseWebDriverTest
         firstDomainFieldJson = new JSONObject();
         firstDomainFieldJson.put("name", "iceCreamFlavor");
         firstDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(firstDomainFieldJson);
+        domainFieldsJson.put(firstDomainFieldJson);
         secondDomainFieldJson = new JSONObject();
         secondDomainFieldJson.put("name", "foodColor");
         secondDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(secondDomainFieldJson);
+        domainFieldsJson.put(secondDomainFieldJson);
         thirdDomainFieldJson = new JSONObject();
         thirdDomainFieldJson.put("name", "sequence");
         thirdDomainFieldJson.put("rangeURI", "multiLine");
-        domainFieldsJson.add(thirdDomainFieldJson);
+        domainFieldsJson.put(thirdDomainFieldJson);
         domainDesignJson = new JSONObject();
         domainDesignJson.put("name", DATA_CLASS_DOMAIN_2);
         domainDesignJson.put("fields", domainFieldsJson);
@@ -305,15 +305,15 @@ public class DataClassSearchTest extends BaseWebDriverTest
         JSONObject firstDomainFieldJson = new JSONObject();
         firstDomainFieldJson.put("name", "sodaFlavor");
         firstDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(firstDomainFieldJson);
+        domainFieldsJson.put(firstDomainFieldJson);
         JSONObject secondDomainFieldJson = new JSONObject();
         secondDomainFieldJson.put("name", "foodColor");
         secondDomainFieldJson.put("rangeURI", "string");
-        domainFieldsJson.add(secondDomainFieldJson);
+        domainFieldsJson.put(secondDomainFieldJson);
         JSONObject thirdDomainFieldJson = new JSONObject();
         thirdDomainFieldJson.put("name", "sequence");
         thirdDomainFieldJson.put("rangeURI", "multiLine");
-        domainFieldsJson.add(thirdDomainFieldJson);
+        domainFieldsJson.put(thirdDomainFieldJson);
         JSONObject domainDesignJson = new JSONObject();
         domainDesignJson.put("domainId", dataClassDomainId);
         domainDesignJson.put("domainURI", dataClassDomainUri);
@@ -335,7 +335,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         secondDomainRowJson.put("sodaFlavor", "ginger ale");
         secondDomainRowJson.put("foodColor", "yellow");  // doesn't work right currently, see issue #26116
         secondDomainRowJson.put("sequence", "ein \nzwei \ndrei");  // doesn't work right currently, see issue #26116
-        domainRowsJson.add(secondDomainRowJson);
+        domainRowsJson.put(secondDomainRowJson);
         domainJson.put("rows", domainRowsJson);
         saveRowsCommand.setJsonObject(domainJson);
         saveRowsCommand.execute(connection, getCurrentContainerPath());
