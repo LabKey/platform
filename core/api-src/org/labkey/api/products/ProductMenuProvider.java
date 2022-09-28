@@ -37,7 +37,7 @@ public abstract class ProductMenuProvider
 
     public String getDocumentationLabel()
     {
-        return "Documentation";
+        return "Help";
     }
 
     public @NotNull List<MenuItem> getUserMenuItems(ViewContext context)
