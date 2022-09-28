@@ -729,7 +729,7 @@ public class CoreController extends SpringActionController
             boolean isWorkbook = false;
             if (typeName == null)
             {
-                isWorkbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+                isWorkbook = json.optBoolean("isWorkbook");
                 typeName = isWorkbook ? WorkbookContainerType.NAME : NormalContainerType.NAME;
             }
             ContainerType type = ContainerTypeRegistry.get().getType(typeName);
@@ -750,11 +750,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.optString("folderType", null);
-                if (folderTypeName == null && isWorkbook)
-                {
-                    folderTypeName = WorkbookFolderType.NAME;
-                }
+                String folderTypeName = json.optString("folderType", isWorkbook ? WorkbookFolderType.NAME : null);
 
                 FolderType folderType = null;
                 if (folderTypeName != null)
@@ -845,7 +841,7 @@ public class CoreController extends SpringActionController
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
             JSONObject object = form.getNewJsonObject();
-            String targetIdentifier = object.getString("container");
+            String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
             {
@@ -853,7 +849,7 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            String parentIdentifier = object.getString("parent");
+            String parentIdentifier = object.optString("parent", null);
 
             if (null == parentIdentifier)
             {
@@ -901,7 +897,7 @@ public class CoreController extends SpringActionController
                 List<Container> children = parent.getChildren();
                 for (Container child : children)
                 {
-                    if (child.getName().toLowerCase().equals(target.getName().toLowerCase()))
+                    if (child.getName().equalsIgnoreCase(target.getName()))
                     {
                         errors.reject(ERROR_MSG, "Subfolder of '" + parent.getPath() + "' with name '" +
                                 target.getName() + "' already exists.");
@@ -931,9 +927,8 @@ public class CoreController extends SpringActionController
             // Prepare aliases
             JSONObject object = form.getNewJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
-            
-            List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
+
+            List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
@@ -1659,8 +1654,9 @@ public class CoreController extends SpringActionController
                     if (mp == null)
                         throw new IllegalArgumentException("Invalid module property: " + name);
 
-                    Container ct = ContainerManager.getForId(row.getString("container"));
-                    if (ct == null && (Boolean.TRUE == row.getBoolean("currentContainer")))
+                    String containerId = row.optString("container", null);
+                    Container ct = null != containerId ? ContainerManager.getForId(containerId) : null;
+                    if (ct == null && row.getBoolean("currentContainer"))
                         ct = getContainer();
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
