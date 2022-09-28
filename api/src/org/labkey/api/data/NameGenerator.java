@@ -683,6 +683,7 @@ public class NameGenerator
         {
             Pair<ExpLineageOptions.LineageExpType, String> ancestorType = ancestorPaths.get(ancestorPaths.size() - 1);
             isMaterial = ExpLineageOptions.LineageExpType.Material == ancestorType.first;
+            isData = ExpLineageOptions.LineageExpType.Data == ancestorType.first;
             if (!StringUtils.isEmpty(ancestorType.second))
                 inputDataType = isMaterial ? sampleTypeNames.get(ancestorType.second) : dataClassNames.get(ancestorType.second);
             else
