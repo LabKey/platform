@@ -841,7 +841,7 @@ public class CoreController extends SpringActionController
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
             JSONObject object = form.getNewJsonObject();
-            String targetIdentifier = object.getString("container");
+            String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
             {
@@ -849,7 +849,7 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            String parentIdentifier = object.getString("parent");
+            String parentIdentifier = object.optString("parent", null);
 
             if (null == parentIdentifier)
             {
@@ -897,7 +897,7 @@ public class CoreController extends SpringActionController
                 List<Container> children = parent.getChildren();
                 for (Container child : children)
                 {
-                    if (child.getName().toLowerCase().equals(target.getName().toLowerCase()))
+                    if (child.getName().equalsIgnoreCase(target.getName()))
                     {
                         errors.reject(ERROR_MSG, "Subfolder of '" + parent.getPath() + "' with name '" +
                                 target.getName() + "' already exists.");
@@ -927,9 +927,8 @@ public class CoreController extends SpringActionController
             // Prepare aliases
             JSONObject object = form.getNewJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
-            
-            List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
+
+            List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
