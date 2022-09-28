@@ -729,7 +729,7 @@ public class CoreController extends SpringActionController
             boolean isWorkbook = false;
             if (typeName == null)
             {
-                isWorkbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+                isWorkbook = json.optBoolean("isWorkbook");
                 typeName = isWorkbook ? WorkbookContainerType.NAME : NormalContainerType.NAME;
             }
             ContainerType type = ContainerTypeRegistry.get().getType(typeName);
@@ -750,11 +750,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.optString("folderType");
-                if (folderTypeName == null && isWorkbook)
-                {
-                    folderTypeName = WorkbookFolderType.NAME;
-                }
+                String folderTypeName = json.optString("folderType", isWorkbook ? WorkbookFolderType.NAME : null);
 
                 FolderType folderType = null;
                 if (folderTypeName != null)
@@ -1659,13 +1655,14 @@ public class CoreController extends SpringActionController
                     if (mp == null)
                         throw new IllegalArgumentException("Invalid module property: " + name);
 
-                    Container ct = ContainerManager.getForId(row.getString("container"));
-                    if (ct == null && (Boolean.TRUE == row.getBoolean("currentContainer")))
+                    String containerId = row.optString("container", null);
+                    Container ct = null != containerId ? ContainerManager.getForId(containerId) : null;
+                    if (ct == null && row.getBoolean("currentContainer"))
                         ct = getContainer();
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.optString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.optString("value", null));
                 }
                 transaction.commit();
             }
