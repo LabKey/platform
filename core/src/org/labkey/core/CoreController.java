@@ -750,7 +750,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.optString("folderType");
+                String folderTypeName = json.optString("folderType", null);
                 if (folderTypeName == null && isWorkbook)
                 {
                     folderTypeName = WorkbookFolderType.NAME;
@@ -1665,7 +1665,7 @@ public class CoreController extends SpringActionController
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.optString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.optString("value", null));
                 }
                 transaction.commit();
             }
