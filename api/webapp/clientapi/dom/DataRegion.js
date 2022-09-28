@@ -3139,12 +3139,15 @@ if (!LABKEY.DataRegions) {
         if (LABKEY.Utils.isString(qString) && qString.length > 0) {
 
             var qmIdx = qString.indexOf('?');
+            var qStringWithoutPound;
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
+                var poundIdx = qString.indexOf('#');
+                qStringWithoutPound = poundIdx > -1 ? qString.substr(0, poundIdx) : qString;
             }
 
-            if (qString.length > 1) {
-                var pairs = qString.split('&'), p, key,
+            if (qStringWithoutPound && qStringWithoutPound.length > 1) {
+                var pairs = qStringWithoutPound.split('&'), p, key,
                     LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
 
                 var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
