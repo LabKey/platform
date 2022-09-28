@@ -30,8 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -44,9 +42,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -271,57 +266,19 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Set<String> params, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, boolean negate)
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull List<ColumnInfo> selectColumns, boolean negate)
     {
-        ColumnInfo col = columnMap.get(fieldKey);
-        SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
-        String[] values = params.toArray(new String[0]);
-
-        if (values.length < 3)
-            throw new NotFoundException("Incorrect number of arguments provided");
-
-        String selectColumn = values[0];
-        String schemaName = values[1];
-        String queryName = values[2];
-        String whereSql = null;
-
-        if (values.length > 3)
-            whereSql = values[3];
-
-        if (StringUtils.isEmpty(selectColumn))
-            throw new NotFoundException("Select column not specified");
-        if (StringUtils.isEmpty(schemaName))
-            throw new NotFoundException("SchemaName not specified");
-        if (StringUtils.isEmpty(queryName))
-            throw new NotFoundException("QueryName not specified");
-
         if (user == null || container == null)
             throw new NotFoundException("Invalid context");
 
-        QuerySchema querySchema = DefaultSchema.get(user, container, schemaName);
-        if (!(querySchema instanceof UserSchema userSchema))
-            throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
+        ColumnInfo col = columnMap.get(fieldKey);
+        SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
+        final String sql = (String) value;
+        UserSchema userSchema = selectColumns.get(0).getParentTable().getUserSchema();
 
-        SqlDialect dialect = querySchema.getDbSchema().getSqlDialect();
-        SQLFragment selectIdsSql = new SQLFragment()
-                .append("SELECT ")
-                .append(dialect.makeLegalIdentifier(selectColumn))
-                .append(" FROM ")
-                .append(dialect.makeLegalIdentifier(schemaName))
-                .append(".")
-                .append(dialect.makeLegalIdentifier(queryName));
-        if (!StringUtils.isEmpty(whereSql))
-        {
-            selectIdsSql = selectIdsSql.append(" WHERE (")
-                    .append(whereSql)
-                    .append(")");
-        }
-
-        QueryService qs = QueryService.get();
-        QueryDefinition qd;
-        qd = qs.createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
+        QueryDefinition qd = QueryService.get().createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
         //TODO qd.setContainerFilter();
-        qd.setSql(selectIdsSql.getSQL());
+        qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();
         TableInfo t = qd.getTable(userSchema, qerrors, true, true);
         if (t == null)
@@ -329,24 +286,24 @@ public class QueryServiceImpl implements QueryService
 
         SQLFragment fromSql = t.getFromSQL("_");
 
-        SQLFragment sql = new SQLFragment();
-        sql.append("(").append(colFrag)
+        SQLFragment sqlFragment = new SQLFragment()
+                .append("(").append(colFrag)
                 .append(")")
                 .append(negate ? " NOT" : "")
                 .append(" IN (")
                 .append(" SELECT ")
-                .append(dialect.makeLegalIdentifier(selectColumn))
+                .append(t.getColumns().get(0).getValueSql("_"))
                 .append(" FROM ")
                 .append(fromSql)
                 .append(")");
 
-        return sql;
+        return sqlFragment;
     }
 
     /**
-     * column in subselect: rowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * column in subselect: RowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
      * <code>
-     *     Filter.create("RowId",  '{json:{"SampleId", "assay.General.assay1", "Data", "field1 < 5 AND field2 NOT NULL"}}', COLUMN_IN_FILTER_TYPE)
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_IN_FILTER_TYPE)
      * </code>
      */
 
@@ -360,8 +317,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    Set<String> params = parseParams(value, getValueSeparator());
-                    return getColumnInSql(fieldKey, params, user, container, columnMap, false);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, false);
                 }
             };
         }
@@ -370,7 +326,7 @@ public class QueryServiceImpl implements QueryService
     /**
      * column in subselect: rowId NOT IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
      * <code>
-     *     Filter.create("RowId",  '{json:{"SampleId", "assay.General.assay1", "Data", "field1 < 5 AND field2 NOT NULL"}}', COLUMN_NOT_IN_FILTER_TYPE)
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_NOT_IN_FILTER_TYPE)
      * </code>
      */
 
@@ -384,8 +340,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    Set<String> params = parseParams(value, getValueSeparator());
-                    return getColumnInSql(fieldKey, params, user, container, columnMap, true);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, true);
                 }
             };
         }
