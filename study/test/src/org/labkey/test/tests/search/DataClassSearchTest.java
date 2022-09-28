@@ -73,7 +73,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     private static final String DATA_CLASS_ICE_CREAM = "cookies and cream";
     private static Integer dataClassDomainId;
     private static String dataClassDomainUri;
-    private static long[] dataClassRowIds = new long[3];
+    private static int[] dataClassRowIds = new int[3];
     private static Connection connection;
 
     @Override
@@ -220,8 +220,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
         SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
 
         List<Map<String, Object>> responseRows = insertResponse.getRows();
-        dataClassRowIds[0] = (Long)responseRows.get(0).get("rowid");
-        dataClassRowIds[1] = (Long)responseRows.get(1).get("rowid");
+        dataClassRowIds[0] = (int)responseRows.get(0).get("rowid");
+        dataClassRowIds[1] = (int)responseRows.get(1).get("rowid");
 
         // verify searchable data classes
         _searchHelper.clearSearchQueue();  // get rid of other searches
@@ -274,7 +274,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         insertRowsCommand.addRow(row1);
         SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
         List<Map<String, Object>> responseRows = insertResponse.getRows();
-        dataClassRowIds[2] = (Long)responseRows.get(0).get("rowid");
+        dataClassRowIds[2] = (int)responseRows.get(0).get("rowid");
 
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_1 + " AND " + DATA_CLASS_ICE_CREAM,
                 Locator.linkContainingText(DATA_CLASS_1_NAME_1));
