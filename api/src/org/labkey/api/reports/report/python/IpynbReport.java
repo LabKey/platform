@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -28,6 +29,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -43,6 +45,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import javax.script.ScriptEngine;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -60,6 +63,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +81,14 @@ public class IpynbReport extends DockerScriptReport
     public static final String ERROR_OUTPUT = "errors.txt";
     public static final String LABEL = "Jupyter Report";
     public static final String EXTENSION = "ipynb";
+
+    
+    record Env(String env, String header) {}
+    public static final Env LABKEY_USERID = new Env("LABKEY_USERID", "X-LABKEY-USERID");
+    public static final Env LABKEY_EMAIL = new Env("LABKEY_EMAIL", "X-LABKEY-EMAIL");
+    public static final Env LABKEY_APIKEY = new Env( "LABKEY_APIKEY", "X-LABKEY-APIKEY");
+    public static final Env LABKEY_CSRF = new Env( "LABKEY_CSRF", "X-LABKEY-CSRF");
+
 
     public IpynbReport()
     {
@@ -254,7 +266,7 @@ public class IpynbReport extends DockerScriptReport
 
     URL getServiceAddress(Container c) throws ConfigurationException
     {
-        String service = null; // "http://localhost:3031";
+        String service = "http://localhost:3031";
 
         try
         {
@@ -352,7 +364,12 @@ public class IpynbReport extends DockerScriptReport
             try (CloseableHttpClient client = HttpClients.createDefault())
             {
                 HttpPut putRequest = new HttpPut(new URLHelper(service.toString()).setPath("/evaluate").getURIString());
-                putRequest.setHeader("X-LABKEY-API-KEY", apiKey);
+
+                putRequest.setHeader(LABKEY_APIKEY.header(), apiKey);
+                putRequest.setHeader(LABKEY_USERID.header(), String.valueOf(context.getUser().getUserId()));
+                putRequest.setHeader(LABKEY_EMAIL.header(), context.getUser().getEmail());
+                if (null != context.getRequest())
+                    putRequest.setHeader(LABKEY_CSRF.header(), CSRFUtil.getExpectedToken(context.getRequest(), null));
 
                 final PipedInputStream in = new PipedInputStream();
                 final InputStreamEntity entity = new InputStreamEntity(in);
@@ -493,9 +510,13 @@ public class IpynbReport extends DockerScriptReport
                     "labkey:userid", String.valueOf(context.getUser().getUserId()),
                     "labkey:isReport", "true"
             );
-            var environment = Map.of(
-                    "REPORT_CONFIG", CONFIG_FILE,
-                    "LABKEY_API_KEY", apiKey);
+            var environment = new HashMap<>(Map.of(
+                    LABKEY_USERID.env(), String.valueOf(context.getUser().getUserId()),
+                    LABKEY_EMAIL.env(), context.getUser().getEmail(),
+                    LABKEY_APIKEY.env(), apiKey));
+            if (null!=context.getRequest())
+                environment.put(LABKEY_CSRF.env(), CSRFUtil.getExpectedToken(context.getRequest(), null));
+
             try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
             {
                 try
@@ -533,6 +554,29 @@ public class IpynbReport extends DockerScriptReport
             if (null != inputScript && inputScript.isFile())
                 return inputScript;
             return null;
+        }
+    }
+
+
+    public record PingResult (int statusCode, String message) {}
+
+    public static PingResult testServiceEndpoint(URL service)
+    {
+        try (CloseableHttpClient client = HttpClients.createDefault())
+        {
+            HttpGet getRequest = new HttpGet(new URLHelper(service.toString()).setPath("/ping").getURIString());
+            try (CloseableHttpResponse response = client.execute(getRequest))
+            {
+                return new PingResult(response.getStatusLine().getStatusCode(),"");
+            }
+            catch (Exception x)
+            {
+                return new PingResult(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, x.getMessage());
+            }
+        }
+        catch (URISyntaxException|IOException x)
+        {
+            return new PingResult(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, x.getMessage());
         }
     }
 }
