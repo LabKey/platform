@@ -118,6 +118,7 @@ public abstract class BaseWikiView extends JspView<Object>
             {
                 try
                 {
+                    // Issue 46346 - make a single call to get the HTML and dependency info to avoid double-rendering
                     Pair<HtmlString, Set<ClientDependency>> rendered = wikiVersion.render(c, wiki);
                     html = rendered.first;
                     addClientDependencies(rendered.second);
