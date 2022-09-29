@@ -272,9 +272,11 @@ public class QueryServiceImpl implements QueryService
             throw new NotFoundException("Invalid context");
 
         ColumnInfo col = columnMap.get(fieldKey);
-        SQLFragment colFrag = new SQLFragment(col == null ? fieldKey.toString() : col.getAlias());
+        assert null != col;
+
+        SQLFragment colFrag = new SQLFragment(col.getAlias());
         final String sql = (String) value;
-        UserSchema userSchema = selectColumns.get(0).getParentTable().getUserSchema();
+        UserSchema userSchema = col.getParentTable().getUserSchema();
 
         QueryDefinition qd = QueryService.get().createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
         //TODO qd.setContainerFilter();
