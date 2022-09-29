@@ -36,7 +36,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -2567,7 +2566,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2582,7 +2581,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -2624,13 +2623,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     parents.append(and).append("objectid <> self");
                 }
 
-                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
                         parents.append(and).append("exptype = ?\n");
                     else
                         parents.append(and).append("parent_exptype = ?\n");
-                    parents.add(options.getExpType());
+                    parents.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
@@ -2699,13 +2698,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     children.append(and).append("objectid <> self");
                 }
 
-                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
                         children.append(and).append("exptype = ?\n");
                     else
                         children.append(and).append("child_exptype = ?\n");
-                    children.add(options.getExpType());
+                    children.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))

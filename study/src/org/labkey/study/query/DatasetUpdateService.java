@@ -354,6 +354,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             context.putConfigParameter(Config.CheckForDuplicates, dupePolicy);
         }
 
+        // NOTE: This was done to help coalesce some old code paths.  However, this is a little weird, because
+        // the DI is over the DatasetSchemaTableInfo not the DatasetTableImpl you'd expect.  This all still works
+        // because of property URI matching in StatementDataIterator.
         return _dataset.getInsertDataIterator(user, data, context);
     }
 
