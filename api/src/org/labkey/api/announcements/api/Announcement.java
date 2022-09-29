@@ -21,6 +21,7 @@ import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: Nick
@@ -40,4 +41,5 @@ public interface Announcement
     Date getCreated();
     Date getModified();
     WikiRendererType getRendererType();
+    List<Integer> getMemberListIds();
 }

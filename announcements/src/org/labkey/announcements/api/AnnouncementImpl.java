@@ -23,6 +23,7 @@ import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: Nick
@@ -148,6 +149,12 @@ public class AnnouncementImpl implements Announcement
     {
         _model.setRendererType(rendererType.getDisplayName());
     }
-    
+
+    @Override
+    public List<Integer> getMemberListIds()
+    {
+        return _model.getMemberListIds();
+    }
+
     // This needs to be filled out more completely
 }
