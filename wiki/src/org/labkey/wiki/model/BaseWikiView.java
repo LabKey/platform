@@ -22,6 +22,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -34,6 +35,7 @@ import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Mark Igra
@@ -116,8 +118,9 @@ public abstract class BaseWikiView extends JspView<Object>
             {
                 try
                 {
-                    html = wikiVersion.getHtml(c, wiki);
-                    addClientDependencies(wikiVersion.getClientDependencies(c, wiki));
+                    Pair<HtmlString, Set<ClientDependency>> rendered = wikiVersion.render(c, wiki);
+                    html = rendered.first;
+                    addClientDependencies(rendered.second);
                 }
                 catch (Exception e)
                 {
