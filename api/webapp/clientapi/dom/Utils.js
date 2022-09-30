@@ -866,10 +866,11 @@ LABKEY.Utils = new function(impl, $) {
             return;
         const fn = function()
         {
-            if (typeof el === "string")
-                el = document.getElementById(el);
-            if (el)
-                el['on' + eventName] = handler;
+            if (typeof el === "string") {
+                const list = document.querySelectorAll('#' + el);
+                for (let i in list)
+                    list[i]['on' + eventName] = handler;
+            }
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };
