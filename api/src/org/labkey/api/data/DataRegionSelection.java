@@ -350,6 +350,7 @@ public class DataRegionSelection
         view.getSettings().setOffset(Table.NO_OFFSET);
 
         RenderContext rc = v.getRenderContext();
+        rc.setViewContext(view.getViewContext());
         rc.setCache(false);
 
         setDataRegionColumnsForSelection(rgn, rc, view, table);

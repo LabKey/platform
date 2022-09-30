@@ -28,6 +28,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
@@ -470,10 +471,17 @@ public class RenderContext implements Map<String, Object>, Serializable
             filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getFieldKey()));
         }
 
+        User user = null;
+        Container container = null;
+        if (_viewContext != null)
+        {
+            user = _viewContext.getUser();
+            container = _viewContext.getContainer();
+        }
         if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
             buildSelectedFilter(filter, tinfo, _showRows == ShowRows.UNSELECTED);
         else
-            filter.addUrlFilters(url, name, displayColumns);
+            filter.addUrlFilters(url, name, displayColumns, user, container);
 
         return filter;
     }
