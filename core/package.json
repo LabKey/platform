@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.219.0",
+    "@labkey/components": "2.222.2-storageConsistency.1",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
