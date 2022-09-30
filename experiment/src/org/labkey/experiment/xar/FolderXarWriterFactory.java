@@ -131,7 +131,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                     )
                     .collect(Collectors.toList());
             protocols.stream()
-                    .filter(protocol -> ExpProtocol.isSampleWorkflowTaskProtocol(protocol.getLSID()))
+                    .filter(protocol -> ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID()))
                     .forEach(reorderedProtocols::add);
             return reorderedProtocols.stream()
                     .map(ExpObject::getRowId)
