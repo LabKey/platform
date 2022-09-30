@@ -1502,9 +1502,10 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class AttachmentForm extends LsidForm
+    public static class AttachmentForm extends LsidForm implements BaseDownloadAction.InlineDownloader
     {
         private String _name;
+        private boolean _inline = true;
 
         public String getName()
         {
@@ -1514,6 +1515,17 @@ public class ExperimentController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
+        }
+
+        @Override
+        public boolean isInline()
+        {
+            return _inline;
+        }
+
+        public void setInline(boolean inline)
+        {
+            _inline = inline;
         }
     }
 

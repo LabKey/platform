@@ -17,19 +17,17 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.InputStream;
 import java.net.FileNameMap;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -39,9 +37,11 @@ import java.util.Map;
  */
 public class MimeMap implements FileNameMap
 {
-    private static final Hashtable<String, MimeType> mimeTypeMap = new Hashtable<>(101);
+    private static final Map<String, MimeType> mimeTypeMap = new HashMap<>(101);
     private static final Map<String, MimeType> extensionMap = new HashMap<>();
-    
+
+    public static final MimeMap DEFAULT = new MimeMap();
+
     public static class MimeType
     {
         private final String _contentType;
@@ -145,36 +145,20 @@ public class MimeMap implements FileNameMap
         }
         catch (Exception e)
         {
-            LogManager.getLogger(MimeMap.class).error("unexpected error", e);
+            LogHelper.getLogger(MimeMap.class, "Resolves file names and extensions to MIME types").error("Failed loading MIME types", e);
         }
     }
-
-
-    private Hashtable<String, MimeType> map = new Hashtable<>();
-
-    public void addContentType(String extn, String type)
-    {
-        addContentType(extn, type, false);
-    }
-
-    public void addContentType(String extn, String type, boolean inline)
-    {
-        map.put(extn, new MimeType(type.toLowerCase(), inline));
-    }
-
-    public Enumeration<String> getExtensions()
-    {
-        return map.keys();
-    }
-
 
     public MimeType getMimeType(String extn)
     {
         extn = extn.toLowerCase();
-        MimeType type = map.get(extn);
-        if (type == null)
-            type = extensionMap.get(extn);
-        return type;
+        return extensionMap.get(extn);
+    }
+
+    public boolean canInlineFor(String filename)
+    {
+        MimeType mime = getMimeTypeFor(filename);
+        return mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
     }
 
 
@@ -194,30 +178,15 @@ public class MimeMap implements FileNameMap
         return type == null ? null : type.getContentType();
     }
 
-    public void removeContentType(String extn)
-    {
-        map.remove(extn.toLowerCase());
-    }
-
     /**
      * Get extension of file name, stripping off any fragment id (after the #)
      */
     public static String getExtension(String fileName)
     {
-        // play it safe and get rid of any fragment id
-        // that might be there
-        int length = fileName.length();
-
-        int newEnd = fileName.lastIndexOf('#');
-        if (newEnd == -1) newEnd = length;
-        // Instead of creating a new string.
-        //         if (i != -1) {
-        //             fileName = fileName.substring(0, i);
-        //         }
-        int i = fileName.lastIndexOf('.', newEnd);
+        int i = fileName.lastIndexOf('.');
         if (i != -1)
         {
-            return fileName.substring(i + 1, newEnd);
+            return fileName.substring(i + 1);
         }
         else
         {
