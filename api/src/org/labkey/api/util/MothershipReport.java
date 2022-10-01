@@ -407,7 +407,14 @@ public class MothershipReport implements Runnable
             addParam("databaseDriverName", scope.getDriverName());
             addParam("databaseDriverVersion", scope.getDriverVersion());
         }
-        addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
+        if (_target == Target.test)
+        {
+            addParam("serverSessionGUID", GUID.makeGUID()); // Random session GUID for each test report
+        }
+        else
+        {
+            addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
+        }
         addParam("serverGUID", AppProps.getInstance().getServerGUID());
 
         ServletContext context = ModuleLoader.getServletContext();

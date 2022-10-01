@@ -3647,7 +3647,7 @@ public class QueryController extends SpringActionController
                 filter.addAllClauses(new SimpleFilter(url, dataRegionName));
             }
 
-            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
+            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName, Collections.emptyList(), getUser(), getContainer());
         }
 
         return filter;

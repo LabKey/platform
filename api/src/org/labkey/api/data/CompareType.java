@@ -1078,6 +1078,11 @@ public abstract class CompareType
         return new CompareClause(fieldKey, this, value);
     }
 
+    public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+    {
+        return createFilterClause(fieldKey, value);
+    }
+
     public abstract static class AbstractCompareClause extends FilterClause
     {
         @NotNull

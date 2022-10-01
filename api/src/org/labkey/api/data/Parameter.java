@@ -17,16 +17,15 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +55,7 @@ import java.util.concurrent.Callable;
 
 public class Parameter implements AutoCloseable
 {
-    static Logger LOG = LogManager.getLogger(Parameter.class);
+    static Logger LOG = LogHelper.getLogger(Parameter.class, "low-level jdbc parameter wrapper");
 
     public interface JdbcParameterValue
     {
@@ -115,8 +114,6 @@ public class Parameter implements AutoCloseable
     String _name;
     @Nullable String _uri = null;       // for migration of ontology based code
     final @Nullable JdbcType _type;
-    int _scale;
-    int _precision;
     boolean setFileAsName = false;
 
     // only allow setting once, do not clear
@@ -179,25 +176,10 @@ public class Parameter implements AutoCloseable
         _type = type;
     }
 
-    public Parameter(ColumnInfo c, int index)
+    public void setFileAsName(boolean b)
     {
-        this(c, new int[] { index });
+        setFileAsName = b;
     }
-
-    public Parameter(ColumnInfo c, int[] indexes)
-    {
-        // The jdbc resultset metadata replaces special characters in source column names.
-        // We need the parameter names to match so we can match to the column.
-        _name = c.getJdbcRsName();
-        _uri = c.getPropertyURI();
-        _type = c.getJdbcType();
-        _scale = c.getScale();
-        _precision = c.getPrecision();
-        _indexes = indexes;
-        // CONSIDER: this seems pretty low-level for this check (see also DefaultQueryUpdateService.convertTypes())
-        setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
-    }
-
 
     public Parameter copy(PreparedStatement stmt)
     {
@@ -225,17 +207,6 @@ public class Parameter implements AutoCloseable
         return _type;
     }
 
-    public int getScale()
-    {
-        return _scale;
-    }
-
-    public int getPrecision()
-    {
-        return _precision;
-    }
-
-
     public void setValue(@Nullable Object in)
     {
         if (_constant)
@@ -261,12 +232,10 @@ public class Parameter implements AutoCloseable
                 return;
             }
 
-            if (value instanceof AttachmentFile)
+            if (value instanceof final AttachmentFile attachmentFile)
             {
                 if (_indexes.length > 1)
                     throw new IllegalArgumentException("AttachmentFile can only be bound to a single parameter");
-
-                final AttachmentFile attachmentFile = (AttachmentFile) value;
 
                 // Set up to close it
                 _autoCloseable = () -> {
@@ -298,16 +267,14 @@ public class Parameter implements AutoCloseable
                     }
                     catch (Exception x)
                     {
-                        SQLException sqlx = new SQLException();
-                        sqlx.initCause(x);
-                        throw sqlx;
+                        throw new SQLException(x);
                     }
                 }
             }
 
             if (value instanceof Collection)
             {
-                value = ((Collection)value).toArray();
+                value = ((Collection<?>)value).toArray();
             }
 
             if (value instanceof Object[])
@@ -345,7 +312,7 @@ public class Parameter implements AutoCloseable
             }
             catch (Exception e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
     }
@@ -380,7 +347,7 @@ public class Parameter implements AutoCloseable
         {
             try
             {
-                value = ((Callable)value).call();
+                value = ((Callable<?>)value).call();
             }
             catch (SQLException x)
             {
@@ -392,9 +359,8 @@ public class Parameter implements AutoCloseable
             }
         }
 
-        if (value instanceof QueryService.ParameterDecl)
+        if (value instanceof QueryService.ParameterDecl decl)
         {
-            QueryService.ParameterDecl decl = (QueryService.ParameterDecl)value;
             if (decl.isRequired())
                 throw new QueryService.NamedParameterNotProvided(decl.getName());
             value = decl.getDefault();
@@ -427,12 +393,12 @@ public class Parameter implements AutoCloseable
         else if (value.getClass() == java.lang.Character.class || value instanceof CharSequence)
             return value.toString();
         else if (value instanceof Enum && type != null && type.isNumeric())
-            return ((Enum)value).ordinal();
+            return ((Enum<?>)value).ordinal();
         else if (value instanceof Enum)
-            return ((Enum)value).name();
+            return ((Enum<?>)value).name();
         else if (value instanceof Class)
-            return (((Class) value).getName());
-        else if (value instanceof Lsid || value instanceof JSONObject || value instanceof File)
+            return (((Class<?>) value).getName());
+        else if (value instanceof Lsid || value instanceof org.json.JSONObject || value instanceof org.json.old.JSONObject || value instanceof File)
             return value.toString();
 
         return value;
