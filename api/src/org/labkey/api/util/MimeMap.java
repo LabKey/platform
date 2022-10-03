@@ -165,7 +165,7 @@ public class MimeMap implements FileNameMap
     @Nullable
     public MimeType getMimeTypeFor(String fileName)
     {
-        String extn = getExtension(fileName);
+        String extn = FileUtil.getExtension(fileName);
         if (null == extn)
             return null;
         return getMimeType(extn);
@@ -178,41 +178,6 @@ public class MimeMap implements FileNameMap
         return type == null ? null : type.getContentType();
     }
 
-    /**
-     * Get extension of file name, stripping off any fragment id (after the #)
-     */
-    public static String getExtension(String fileName)
-    {
-        int i = fileName.lastIndexOf('.');
-        if (i != -1)
-        {
-            return fileName.substring(i + 1);
-        }
-        else
-        {
-            // no extension, no content type
-            return null;
-        }
-    }
-
-    /**
-     * Get extension of file
-     */
-    public static String getExtension(@NotNull File file)
-    {
-        int i = file.getName().lastIndexOf('.');
-        if (i != -1)
-        {
-            return file.getName().substring(i + 1);
-        }
-        else
-        {
-            // no extension, no content type
-            return null;
-        }
-    }
-
-
     public boolean isInlineImage(String extn)
     {
         MimeType type = getMimeType(extn);
@@ -222,7 +187,7 @@ public class MimeMap implements FileNameMap
 
     public boolean isInlineImageFor(String fileName)
     {
-        String extn = getExtension(fileName);
+        String extn = FileUtil.getExtension(fileName);
         if (extn != null)
         {
             return isInlineImage(extn);
@@ -235,7 +200,7 @@ public class MimeMap implements FileNameMap
 
     public boolean isInlineImageFor(@NotNull File file)
     {
-        String extn = getExtension(file);
+        String extn = FileUtil.getExtension(file);
         if (extn != null)
         {
             return isInlineImage(extn);
@@ -262,7 +227,7 @@ public class MimeMap implements FileNameMap
 
     public boolean isOfficeDocumentFor(String fileName)
     {
-        String extn = getExtension(fileName);
+        String extn = FileUtil.getExtension(fileName);
         if (extn != null)
         {
             return isOfficeDocument(extn);
@@ -277,7 +242,7 @@ public class MimeMap implements FileNameMap
     @Override
     public String getContentTypeFor(String fileName)
     {
-        String extn = getExtension(fileName);
+        String extn = FileUtil.getExtension(fileName);
         if (extn != null)
         {
             return getContentType(extn);

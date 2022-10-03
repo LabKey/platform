@@ -349,6 +349,7 @@ public class FileUtil
      * Returns the file name extension without the dot, null if there
      * isn't one.
      */
+    @Nullable
     public static String getExtension(String name)
     {
         if (name != null && name.lastIndexOf('.') != -1)
