@@ -977,7 +977,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    public static class AttachmentForm
+    public static class AttachmentForm implements BaseDownloadAction.InlineDownloader
     {
         private Integer _userId;
         private String _name;

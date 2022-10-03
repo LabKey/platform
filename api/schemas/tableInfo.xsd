@@ -726,6 +726,8 @@
                         is the string to display when false, and "null" is the string to display when null. For date and
                         datetime columns the values Date and DateTime can be used to display as
                         either date or date and time with the currently configured display formats for this folder.
+                        For file and attachment columns, "attachment" to save files as a download, overriding the
+                        default behavior of displaying files like PDFs and images in the browser .
                         Supported for SQL metadata, dataset import/export and list import/export.
                     </xs:documentation>
 				</xs:annotation>
