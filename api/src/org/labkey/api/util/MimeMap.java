@@ -158,6 +158,7 @@ public class MimeMap implements FileNameMap
     public boolean canInlineFor(String filename)
     {
         MimeType mime = getMimeTypeFor(filename);
+        // Don't allow inlining of HTML due to script injection concerns - see issue 38714
         return mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
     }
 
