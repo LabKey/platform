@@ -859,6 +859,12 @@ LABKEY.Utils = new function(impl, $) {
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };
 
+    impl.isValidQuerySelector = function(selector) {
+        try { document.createDocumentFragment().querySelector(selector) }
+        catch { return false }
+        return true
+    }
+
     // attach handlers to element events e.g. onclick=fn() etc.
     impl.attachEventHandler = function(el, eventName, handler, immediate)
     {
@@ -867,9 +873,19 @@ LABKEY.Utils = new function(impl, $) {
         const fn = function()
         {
             if (typeof el === "string") {
-                const list = document.querySelectorAll('#' + el);
-                for (let i in list)
-                    list[i]['on' + eventName] = handler;
+                // Issue 46371: LKS grid column header locking clones the header row which results in multiple
+                //      DOM elements with the same id attr, but only the first was getting the event handler attached
+                if (impl.isValidQuerySelector(el)) {
+                    const list = document.querySelectorAll('#' + el);
+                    for (let i in list) {
+                        list[i]['on' + eventName] = handler;
+                    }
+                } else {
+                    el = document.getElementById(el);
+                    if (el) {
+                        el['on' + eventName] = handler;
+                    }
+                }
             }
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
