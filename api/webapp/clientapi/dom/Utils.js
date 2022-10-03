@@ -860,9 +860,12 @@ LABKEY.Utils = new function(impl, $) {
     };
 
     impl.isValidQuerySelector = function(selector) {
-        try { document.createDocumentFragment().querySelector(selector) }
-        catch { return false }
-        return true
+        try {
+            document.createDocumentFragment().querySelector(selector);
+        } catch(ignore) {
+            return false;
+        }
+        return true;
     }
 
     // attach handlers to element events e.g. onclick=fn() etc.
