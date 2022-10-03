@@ -45,11 +45,22 @@ public interface AnnouncementService
     /** @param parentRowId optionally, the existing thread to add the post to. If null, start a new thread */
     Announcement insertAnnouncement(Container container, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId);
 
+    /**
+     * @param parentRowId optionally, the existing thread to add the post to. If null, start a new thread
+     * @param status status for the message thread. Ignored if it does not resolve to a DiscussionService.StatusOption
+     * @param memberList List of users that should be added to the notify list; Users that do not have permission to read the message are ignored.
+     */
+    Announcement insertAnnouncement(Container container, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId,
+                                    @Nullable String status, @Nullable List<User> memberList);
+
     // Get One
     Announcement getAnnouncement(Container container, User user, int RowId);
 
     // Get Many
     List<Announcement> getAnnouncements(Container... containers);
+
+    // Get the latest post
+    @Nullable Announcement getLatestPost(Container container, User user, int parentRowId);
 
     // Update
     Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body);

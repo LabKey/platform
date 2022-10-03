@@ -1289,7 +1289,7 @@ public class AnnouncementManager
                 this.messageSubject = typeProvider.getEmailSubject(c, UserManager.getUser(a.getCreatedBy()), a.getRowId(), a.getDiscussionSrcIdentifier(), a.getBody(), a.getTitle(), parentBody);
             }
             if (this.messageSubject == null)
-                this.messageSubject = StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle());
+                this.messageSubject = StringUtils.trimToEmpty(isResponse ? "RE: " + (StringUtils.isNotBlank(a.getTitle()) ? a.getTitle() : parent.getTitle()) : a.getTitle());
 
             this.recipient = recipient;
             this.threadURL = AnnouncementsController.getThreadURL(c, recipient, a);
