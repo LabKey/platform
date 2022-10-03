@@ -499,12 +499,14 @@ public class FileUtil
         }
     }
 
+    @NotNull
     public static String getFileName(Path fullPath)
     {
         // We want unencoded fileName
         if (hasCloudScheme(fullPath))
         {
-            return fullPath.getFileName().toUri().getPath();
+            Path path = fullPath.getFileName();
+            return path == null ? "" : path.toUri().getPath();
         }
         else
         {
