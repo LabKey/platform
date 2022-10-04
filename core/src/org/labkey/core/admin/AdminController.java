@@ -15,6 +15,8 @@
  */
 package org.labkey.core.admin;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
@@ -171,6 +173,7 @@ import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
@@ -9993,6 +9996,19 @@ public class AdminController extends SpringActionController
             json = getConfigurationJson();
             return json;
         }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper result = JsonUtil.createDefaultMapper();
+            result.addMixIn(ExternalScriptEngineDefinitionImpl.class, IgnorePasswordMixIn.class);
+            return result;
+        }
+    }
+
+    @JsonIgnoreProperties(value = { "password", "changePassword" })
+    private static class IgnorePasswordMixIn
+    {
     }
 
     @AdminConsoleAction()
@@ -10224,7 +10240,7 @@ public class AdminController extends SpringActionController
         final Map<String,Map<String,Object>> sets = new TreeMap<>();
         new SqlSelector(CoreSchema.getInstance().getScope(),
             new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None'", ContainerManager.getRoot())).forEachMap(m ->
+            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
             {
                 String category = (String)m.get("category");
                 String name = (String)m.get("name");

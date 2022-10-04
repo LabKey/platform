@@ -15,12 +15,14 @@
  */
 package org.labkey.api.announcements.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: Nick
@@ -40,4 +42,5 @@ public interface Announcement
     Date getCreated();
     Date getModified();
     WikiRendererType getRendererType();
+    @NotNull List<Integer> getMemberListIds();
 }

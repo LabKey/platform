@@ -15,6 +15,9 @@
  */
 package org.labkey.announcements.api;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
@@ -27,6 +30,7 @@ import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -37,7 +41,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * User: Nick
@@ -57,6 +63,13 @@ public class AnnouncementServiceImpl implements AnnouncementService
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId)
     {
+        return insertAnnouncement(c, u, title, body, sendEmailNotification, parentRowId, null, null);
+    }
+
+    @Override
+    public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId,
+                                           @Nullable String status, @Nullable List<User> memberList)
+    {
         DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
@@ -68,6 +81,32 @@ public class AnnouncementServiceImpl implements AnnouncementService
         AnnouncementModel insert = new AnnouncementModel();
         insert.setTitle(title);
         insert.setBody(body);
+        if (status != null && EnumUtils.getEnum(DiscussionService.StatusOption.class, status, null) != null)
+        {
+            insert.setStatus(status);
+        }
+        if (CollectionUtils.isNotEmpty(memberList))
+        {
+            List<Integer> memberListIds = memberList.stream().filter(Objects::nonNull).map(UserPrincipal::getUserId).collect(Collectors.toList());
+            AnnouncementModel ann = new AnnouncementModel();
+            ann.setMemberListIds(memberListIds);
+
+            List<Integer> validMemberListIds = new ArrayList<>();
+            for (User memberUser : memberList)
+            {
+                if (memberUser != null && AnnouncementManager.getPermissions(c, memberUser, settings).allowRead(ann))
+                {
+                    // Keep only those users that have the appropriate permission to read the message.
+                    validMemberListIds.add(memberUser.getUserId());
+                }
+            }
+
+            if (validMemberListIds.size() > 0)
+            {
+                // insert.setMemberListIds(validMemberListIds); // This gets set in AnnouncementManager.validateModelWithSideEffects by parsing the memberListInput
+                insert.setMemberListInput(StringUtils.join(validMemberListIds, "\n")); // Pretend this is coming as comma-separated input from a form
+            }
+        }
 
         if (parentRowId != null)
         {
@@ -133,6 +172,18 @@ public class AnnouncementServiceImpl implements AnnouncementService
         }
 
         return announcements;
+    }
+
+    @Override
+    public @Nullable Announcement getLatestPost(Container container, User user, int parentRowId)
+    {
+        AnnouncementModel parent = AnnouncementManager.getAnnouncement(container, parentRowId);
+        if (parent == null)
+        {
+            return null;
+        }
+        Integer latestPostId = AnnouncementManager.getLatestPostId(parent);
+        return latestPostId == null ? null : getAnnouncement(container, user, latestPostId); // getAnnouncement will do permission checking
     }
 
     @Override
