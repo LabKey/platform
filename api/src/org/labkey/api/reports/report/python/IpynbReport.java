@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -120,10 +121,14 @@ public class IpynbReport extends DockerScriptReport
 
     public static boolean isEnabled()
     {
-        if (DockerService.get() != null)
+        if (PremiumService.get().isEnabled())
         {
-            return LabKeyScriptEngineManager.get().getEngineDefinitions(ExternalScriptEngineDefinition.Type.Docker).stream()
-                    .anyMatch(def -> Arrays.asList(def.getExtensions()).contains(EXTENSION));
+            LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
+            List<ExternalScriptEngineDefinition> defs = mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.Jupyter);
+
+            // we currently only support a single site scoped engine
+            if (defs.size() == 1 && Arrays.asList(defs.get(0).getExtensions()).contains(EXTENSION))
+                return defs.get(0).isEnabled();
         }
         return false;
     }
@@ -266,17 +271,24 @@ public class IpynbReport extends DockerScriptReport
 
     URL getServiceAddress(Container c) throws ConfigurationException
     {
-        String service = "http://localhost:3031";
-
-        try
+        ScriptEngine eng = LabKeyScriptEngineManager.get().getEngineByExtension(c, EXTENSION);
+        if (eng instanceof ExternalScriptEngine engine)
         {
-            if (service == null)
-                return null;
-            return new URL(service);
+            try
+            {
+                if (engine.getEngineDefinition().getRemoteUrl() != null)
+                    return new URL(engine.getEngineDefinition().getRemoteUrl());
+                else
+                    return null;
+            }
+            catch (MalformedURLException e)
+            {
+                throw new ConfigurationException("Bad service endpoint: " + engine.getEngineDefinition().getRemoteUrl(), e);
+            }
         }
-        catch (MalformedURLException e)
+        else
         {
-            throw new ConfigurationException("Bad service endpoint: " + service, e);
+            throw new IllegalStateException("No script engine configured for  " + LABEL + " reports");
         }
     }
 
