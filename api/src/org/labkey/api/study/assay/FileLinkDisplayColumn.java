@@ -40,6 +40,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,6 +59,10 @@ import java.util.Set;
 */
 public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
+    // Issue 46282 - let admins choose if files should be rendered inside browser or downloaded as files
+    public static final String AS_ATTACHMENT_FORMAT = "attachment";
+    public static final String AS_INLINE_FORMAT = "inline";
+
     public static class Factory implements RemappingDisplayColumnFactory
     {
         private PropertyDescriptor _pd;
@@ -152,6 +157,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             sb.append("&pk=${");
             sb.append(pkFieldKey);
             sb.append("}");
+            if (AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+            {
+                sb.append("&inline=false");
+            }
             ContainerContext context = new ContainerContext.FieldKeyContext(new FieldKey(pkFieldKey.getParent(), "Folder"));
             setURLExpression(DetailsURL.fromString(sb.toString(), context));
         }
@@ -167,7 +176,17 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         if (pd.getURL() == null)
         {
             // Don't stomp over an explicitly configured URL on this column
-            DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
+
+            ActionURL baseUrl = PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd);
+            if (AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+            {
+                baseUrl.addParameter("inline", "false");
+            }
+            else
+            {
+                setLinkTarget("_blank");
+            }
+            DetailsURL url = new DetailsURL(baseUrl, "objectURI", objectURIFieldKey);
             setURLExpression(url);
         }
     }

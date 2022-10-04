@@ -234,7 +234,9 @@ public class QueryServiceImpl implements QueryService
             CompareType.Q,
             WHERE,
             INDESCENDANTSOF,
-            INANCESTORSOF
+            INANCESTORSOF,
+            COLUMN_IN,
+            COLUMN_NOT_IN
     ));
 
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
@@ -264,6 +266,87 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull List<ColumnInfo> selectColumns, boolean negate)
+    {
+        if (user == null || container == null)
+            throw new NotFoundException("Invalid context");
+
+        ColumnInfo col = columnMap.get(fieldKey);
+        assert null != col;
+
+        SQLFragment colFrag = new SQLFragment(col.getAlias());
+        final String sql = (String) value;
+        UserSchema userSchema = col.getParentTable().getUserSchema();
+
+        QueryDefinition qd = QueryService.get().createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
+        //TODO qd.setContainerFilter();
+        qd.setSql(sql);
+        ArrayList<QueryException> qerrors = new ArrayList<>();
+        TableInfo t = qd.getTable(userSchema, qerrors, true, true);
+        if (t == null)
+            throw new NotFoundException("Unable to find the specified table");
+
+        SQLFragment fromSql = t.getFromSQL("_");
+
+        SQLFragment sqlFragment = new SQLFragment()
+                .append("(").append(colFrag)
+                .append(")")
+                .append(negate ? " NOT" : "")
+                .append(" IN (")
+                .append(" SELECT ")
+                .append(t.getColumns().get(0).getValueSql("_"))
+                .append(" FROM ")
+                .append(fromSql)
+                .append(")");
+
+        return sqlFragment;
+    }
+
+    /**
+     * column in subselect: RowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * <code>
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_IN_FILTER_TYPE)
+     * </code>
+     */
+
+    public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, false);
+                }
+            };
+        }
+    };
+
+    /**
+     * column in subselect: rowId NOT IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * <code>
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_NOT_IN_FILTER_TYPE)
+     * </code>
+     */
+
+    public static final CompareType COLUMN_NOT_IN = new CompareType("COLUMN NOT IN", "columnnotin", "COLUMN_NOT_IN", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, true);
+                }
+            };
+        }
+    };
 
     /*
      * This is a marker for CompareClauses that can somewhat participate in Query (LabKey SQL) environment.
