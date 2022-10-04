@@ -145,6 +145,15 @@ LABKEY.Utils = new function(impl, $) {
         return nextRow;
     };
 
+    var isValidQuerySelector = function(selector) {
+        try {
+            document.createDocumentFragment().querySelector(selector);
+        } catch(ignore) {
+            return false;
+        }
+        return true;
+    };
+
     /**
      * Shows an error dialog box to the user in response to an error from an AJAX request, including
      * any error messages from the server.
@@ -859,15 +868,6 @@ LABKEY.Utils = new function(impl, $) {
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };
 
-    impl.isValidQuerySelector = function(selector) {
-        try {
-            document.createDocumentFragment().querySelector(selector);
-        } catch(ignore) {
-            return false;
-        }
-        return true;
-    }
-
     // attach handlers to element events e.g. onclick=fn() etc.
     impl.attachEventHandler = function(el, eventName, handler, immediate)
     {
@@ -878,7 +878,7 @@ LABKEY.Utils = new function(impl, $) {
             if (typeof el === "string") {
                 // Issue 46371: LKS grid column header locking clones the header row which results in multiple
                 //      DOM elements with the same id attr, but only the first was getting the event handler attached
-                if (impl.isValidQuerySelector(el)) {
+                if (isValidQuerySelector(el)) {
                     const list = document.querySelectorAll('#' + el);
                     for (let i in list) {
                         list[i]['on' + eventName] = handler;
