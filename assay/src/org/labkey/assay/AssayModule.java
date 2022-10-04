@@ -89,7 +89,7 @@ import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPL
 
 public class AssayModule extends SpringModule
 {
-    private static final String NAME = "Assay";
+    public static final String NAME = "Assay";
 
     @Override
     public String getName()
