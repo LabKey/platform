@@ -85,6 +85,7 @@ class LineageForeignKey extends AbstractForeignKey
         _userSchema = schema;
         _parents = parents;
         this._useLineageDisplayColumn = useLineageDisplayColumn;
+        setShowAsPublicDependency(false);
     }
 
     @Override
