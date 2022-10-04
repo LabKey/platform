@@ -107,8 +107,6 @@ LABKEY.dataregion.confirmDelete = function(
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
-                                    const hasErrors = response.errors !== undefined && response.errors.exception !== undefined;
-
                                     if (response.errors) {
                                         var errorMsg = "There was a problem deleting your " + totalNoun + ". ";
                                         if (typeof response.errors === 'string') {
