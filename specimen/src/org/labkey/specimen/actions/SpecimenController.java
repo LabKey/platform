@@ -1194,7 +1194,7 @@ public class SpecimenController extends SpringActionController
         }
     }
 
-    public static class SpecimenEventAttachmentForm
+    public static class SpecimenEventAttachmentForm implements BaseDownloadAction.InlineDownloader
     {
         private int _eventId;
         private String _name;

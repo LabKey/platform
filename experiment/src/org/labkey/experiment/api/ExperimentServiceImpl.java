@@ -5297,17 +5297,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<Pair<String, String>> getRunsAndRolesUsingDataIds(List<Integer> ids)
     {
         SQLFragment sql = new SQLFragment(
-                "SELECT r.LSID, di.Role\n" +
-                "FROM exp.ExperimentRun r\n" +
-                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
-                "INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId\n" +
-                "WHERE di.dataId ");
+                """
+                        SELECT r.LSID, di.Role
+                        FROM exp.ExperimentRun r
+                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
+                        INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId
+                        LEFT OUTER JOIN exp.Data d ON pa.RowId = d.sourceApplicationID
+                        WHERE di.dataId\s""");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
-        sql.append("OR pa.RowId IN (SELECT d.sourceApplicationID FROM exp.Data d WHERE d.RowId ");
+        sql.append("OR d.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append(")\n");
-        sql.append("ORDER BY Created DESC");
+        sql.append("\n");
+        sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
@@ -5359,7 +5361,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * @param ids to include within parentheses
      * @return SQLFragment like: IN (1, 2, 3)
      */
-    private SQLFragment getAppendInClause(Collection ids)
+    private SQLFragment getAppendInClause(Collection<?> ids)
     {
         return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
@@ -5368,17 +5370,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<Pair<String, String>> getRunsAndRolesUsingMaterialIds(List<Integer> ids)
     {
         SQLFragment sql = new SQLFragment(
-                "SELECT r.LSID, mi.Role\n" +
-                "FROM exp.ExperimentRun r\n" +
-                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
-                "INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId\n" +
-                "WHERE mi.materialId ");
+                """
+                        SELECT r.LSID, mi.Role
+                        FROM exp.ExperimentRun r
+                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
+                        INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId
+                        LEFT OUTER JOIN exp.Material m ON pa.RowId = m.sourceApplicationID
+                        WHERE mi.materialId\s""");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
-        sql.append("OR pa.RowId IN (SELECT m.sourceApplicationID FROM exp.Material m WHERE m.RowId ");
+        sql.append("OR m.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append(")\n");
-        sql.append("ORDER BY Created DESC");
+        sql.append("\n");
+        sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());

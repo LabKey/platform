@@ -117,6 +117,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -1308,6 +1309,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
+            SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "GWTServiceCreation");
             return new AssayImportServiceImpl(getViewContext());
         }
     }
