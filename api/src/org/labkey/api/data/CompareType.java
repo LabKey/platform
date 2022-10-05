@@ -820,9 +820,13 @@ public abstract class CompareType
                         _queryColumns.add(column);
                     }
 
-                    // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
-                    if (column.isHidden())
-                        continue;
+                    // Issue 45372: Do not skip hidden columns as they may still be visible to the user.
+                    // A column can be marked as <isHidden> which will hide the column from the default selection
+                    // list when choosing columns for customizing the view, however, it does not hide them from the
+                    // view itself. As such, if a view includes a column marked as <isHidden> it still appears in
+                    // queries using that view, so we want it to still be searchable by this filter type.
+                    // if (column.isHidden())
+                    //    continue;
 
                     // skip uninteresting things like 'Folder' and 'CreatedBy'
                     ForeignKey fk = column.getFk();
