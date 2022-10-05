@@ -21,10 +21,12 @@ package org.labkey.api.attachments;
  * Date: Jan 3, 2007
  * Time: 3:41:22 PM
  */
-public class AttachmentForm
+public class AttachmentForm implements BaseDownloadAction.InlineDownloader
 {
     private String _entityId = null;
     private String _name = null;
+
+    private boolean _inline = true;
 
     public String getEntityId()
     {
@@ -44,5 +46,16 @@ public class AttachmentForm
     public void setName(String name)
     {
         _name = name;
+    }
+
+    @Override
+    public boolean isInline()
+    {
+        return _inline;
+    }
+
+    public void setInline(boolean inline)
+    {
+        _inline = inline;
     }
 }

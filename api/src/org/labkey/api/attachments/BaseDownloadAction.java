@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 // Abstract action that downloads an attachment associated with an AttachmentParent. Modules need an action in their own controller
 // that extends this class and handles security, creates the correct attachment parent, and specifies the attachment filename.
-public abstract class BaseDownloadAction<FORM> extends ExportAction<FORM>
+public abstract class BaseDownloadAction<FORM extends BaseDownloadAction.InlineDownloader> extends ExportAction<FORM>
 {
     @Override
     protected String getCommandClassMethodName()
@@ -43,8 +43,17 @@ public abstract class BaseDownloadAction<FORM> extends ExportAction<FORM>
         Pair<AttachmentParent, String> attachment = getAttachment(form);
 
         if (null != attachment)
-            AttachmentService.get().download(response, attachment.first, attachment.second);
+            AttachmentService.get().download(response, attachment.first, attachment.second, form.isInline());
     }
 
     public abstract @Nullable Pair<AttachmentParent, String> getAttachment(FORM form);
+
+    /**
+     * Optional URL parameter binding for forms. Use false to indicate that files should always be sent
+     * as a download instead of opening within the browser.
+     */
+    public interface InlineDownloader
+    {
+        default boolean isInline() { return true; }
+    }
 }

@@ -1176,7 +1176,7 @@ public class IssuesController extends SpringActionController
     }
 
     // SAME as AttachmentForm, just to demonstrate GuidString
-    public static class _AttachmentForm
+    public static class _AttachmentForm implements BaseDownloadAction.InlineDownloader
     {
         private GUID _entityId = null;
         private String _name = null;

@@ -66,6 +66,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -93,6 +94,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
@@ -403,11 +405,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                 {
-                    wrapped.setURL(StringExpressionFactory.createURL(
-                            new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
-                                    .addParameter("lsid", "${LSID}")
-                                    .addParameter("name", "${" + col.getName() + "}")
-                    ));
+                    configureAttachmentURL(wrapped);
                 }
 
                 if (wrapped.isMvEnabled())
@@ -473,6 +471,38 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         setDefaultVisibleColumns(defaultVisible);
 
         addExpObjectMethod();
+    }
+
+    private void configureAttachmentURL(MutableColumnInfo col)
+    {
+        ActionURL url = new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getUserSchema().getContainer())
+                .addParameter("lsid", "${LSID}")
+                .addParameter("name", "${" + col.getName() + "}");
+        if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+        {
+            url.addParameter("inline", "false");
+            col.setURLTargetWindow(null);
+        }
+        else
+        {
+            col.setURLTargetWindow("_blank");
+        }
+        col.setURL(StringExpressionFactory.createURL(url));
+    }
+
+    @Override
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        super.overlayMetadata(metadata, schema, errors);
+
+        // Reset URLs in case the XML metadata changed the view/download format option for the file
+        for (MutableColumnInfo col : getMutableColumns())
+        {
+            if (col.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                configureAttachmentURL(col);
+            }
+        }
     }
 
     private Map<String, DataClassVocabularyProviderProperties> getVocabularyDomainProviders()

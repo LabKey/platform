@@ -490,9 +490,10 @@ public class CoreController extends SpringActionController
             {
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
-                MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = MimeMap.DEFAULT.canInlineFor(file.getName());
+                // Default to rendering inline when possible, but let caller force download as an attachment
+                boolean asAttachment = !canInline || (form.getInline() != null && !form.getInline().booleanValue());
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), asAttachment);
             }
             return null;
         }
