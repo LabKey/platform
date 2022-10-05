@@ -535,18 +535,18 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                         return Ext4.htmlEncode(folder);
                     },
                     renderType : function(cmp, row) {
-                        let cls = 'fa fa-database';
-                        let tip = 'Type : table';
-
-                        if (row.type === 'Report') {
-                            cls = 'fa fa-area-chart';
-                            tip = 'Type : report';
+                        if (row.type === 'Report')
+                        {
+                            return "<span class='fa fa-area-chart' data-qtip='Type : report'></span>'";
                         }
-                        else if (row.type === 'Query') {
-                            cls = 'fa fa-table';
-                            tip = 'Type : query';
+                        else if (row.type === 'Query')
+                        {
+                            return "<img src='" + LABKEY.ActionURL.getContextPath() + "/reports/grid-sql.png'>";
                         }
-                        return '<span class="' + cls + '" data-qtip="' + tip + '"></span>';
+                        else
+                        {
+                            return "<img src='"  + LABKEY.ActionURL.getContextPath() + "/reports/grid.gif'>";
+                        }
                     },
                     getDependeesTip : function(cmp) {
                         if (cmp.me.queryDetails.isUserDefined)
