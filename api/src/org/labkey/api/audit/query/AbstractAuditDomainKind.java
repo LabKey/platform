@@ -413,4 +413,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     {
         return null;
     }
+
+
+    @Override
+    public boolean isUserCreatedType()
+    {
+        return false;
+    }
 }

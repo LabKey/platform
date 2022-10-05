@@ -591,7 +591,7 @@ public interface QueryService
     @Nullable
     QueryAnalysisService getQueryAnalysisService();
 
-    TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
+    TableInfo analyzeQuery(UserSchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
 
 
     /* registry of column types (named by conceptURI) */

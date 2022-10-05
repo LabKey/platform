@@ -189,6 +189,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         {
             super(cf, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), null);
             this.dsd = dsd;
+            setShowAsPublicDependency(false);
         }
         
         @Override
