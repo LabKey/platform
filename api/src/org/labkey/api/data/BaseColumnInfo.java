@@ -1623,6 +1623,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         {
             return null;
         }
+
+        @Override
+        public boolean isShowAsPublicDependency()
+        {
+            return false;
+        }
     }
 
     @Override

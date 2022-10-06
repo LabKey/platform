@@ -8,6 +8,7 @@ public enum ProductFeature
     Assay("assay"),
     ELN("labbook"),
     FreezerManagement("inventory"),
+    Media("recipe"),
     SampleManagement("sampleManagement"),
     Workflow("sampleManagement");
 
