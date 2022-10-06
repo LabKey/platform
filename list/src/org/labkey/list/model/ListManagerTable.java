@@ -29,6 +29,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
@@ -49,7 +50,14 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         super(table, userSchema, cf);
 
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ListID")));
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
+        {
+            var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
+
+            // Lists can contain data that spans multiple folders.
+            // Override the container context for the details URL to always be the current folder.
+            if (column.getURL() instanceof DetailsURL detailsURL)
+                detailsURL.setContainerContext(getContainer());
+        }
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
         {
@@ -177,6 +185,6 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
+        return getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
     }
 }
