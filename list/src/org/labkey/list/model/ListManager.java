@@ -1226,11 +1226,13 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    boolean importListSchema(ListDefinition unsavedList,
-                             ImportTypesHelper importHelper,
-                             User user,
-                             Collection<ValidatorImporter> validatorImporters,
-                             List<String> errors) throws Exception
+    boolean importListSchema(
+        ListDefinition unsavedList,
+        ImportTypesHelper importHelper,
+        User user,
+        Collection<ValidatorImporter> validatorImporters,
+        List<String> errors
+    ) throws Exception
     {
         if (!errors.isEmpty())
             return false;

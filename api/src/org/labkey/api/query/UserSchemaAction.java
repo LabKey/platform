@@ -82,6 +82,9 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return errors;
     }
 
+    // This ContainerFilter is applied to the underlying table that backs this UserSchemaAction.
+    // As a result all lookup fields, that respect container filters, in these views will populate
+    // with this container filter applied.
     protected @Nullable ContainerFilter getBindParametersContainerFilter()
     {
         return QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
