@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -68,7 +69,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             throw new NotFoundException("Schema not found");
         }
-        _table = _schema.getTable(_form.getQueryName(), null, true, true);
+        _table = _schema.getTable(_form.getQueryName(), getBindParametersContainerFilter(), true, true);
         if (null == _table)
         {
             throw new NotFoundException("Query not found");
@@ -79,6 +80,11 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
         command.validateBind(errors);
         return errors;
+    }
+
+    protected @Nullable ContainerFilter getBindParametersContainerFilter()
+    {
+        return QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
     }
 
     protected QueryForm createQueryForm(ViewContext context)
