@@ -52,7 +52,10 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        {
+            var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+            column.setLabel("Folder");
+        }
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
