@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.229.0-fb-sampleTypeConsistencyV1.7",
+    "@labkey/components": "2.230.1-fb-sampleTypeConsistencyV1.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
