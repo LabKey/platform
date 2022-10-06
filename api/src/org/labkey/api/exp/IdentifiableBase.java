@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Utility base class for implementations of {@link Identifiable}
@@ -31,7 +32,9 @@ public class IdentifiableBase implements Identifiable, Serializable
     private String _name;
     // some entities copy the exp.object.objectid value
     private Integer objectId;
-    protected Container container;
+    // Issue 46473 - don't retain a reference to container itself from a potentially cached object,
+    // just know how to easily resolve it so we can get the latest version
+    protected Supplier<Container> container;
 
     public IdentifiableBase()
     {
@@ -46,7 +49,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     {
         _lsid = oo.getObjectURI();
         objectId = oo.getObjectId();
-        container = oo.getContainer();
+        container = Container.supplierOf(oo.getContainer());
     }
 
     @Override
@@ -97,13 +100,13 @@ public class IdentifiableBase implements Identifiable, Serializable
     @Override
     public Container getContainer()
     {
-        return container;
+        return container.get();
     }
 
     // for Table layer
     public void setContainer(Container container)
     {
-        this.container = container;
+        this.container = Container.supplierOf(container);
     }
 
 
