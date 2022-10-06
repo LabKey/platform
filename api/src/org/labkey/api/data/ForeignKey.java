@@ -148,4 +148,10 @@ public interface ForeignKey
         insert,
         update,
     }
+
+    /**
+     * Should we consider this FK when generating dependency graphs?
+     * Returning false can save time creating/inspecting lookup tables.
+     */
+    default boolean isShowAsPublicDependency() { return false; }
 }

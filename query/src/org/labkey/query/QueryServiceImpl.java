@@ -42,6 +42,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -3053,43 +3054,107 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     public TableInfo analyzeQuery(
-        QuerySchema schema, String queryName,
+            UserSchema userSchema, String queryName,
         SetValuedMap<DependencyObject,DependencyObject> dependencyGraph,
         @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
     {
-        Object qort;
-        if (schema instanceof UserSchema)
-            qort = ((UserSchema)schema)._getTableOrQuery(queryName, null, true, false, errors);
-        else
-            qort = schema.getTable(queryName, null);
+        SchemaKey schemaKey = userSchema.getSchemaPath();
+        Object qort = userSchema._getTableOrQuery(queryName, null, true, false, errors);
         TableInfo t = (qort instanceof TableInfo) ? (TableInfo)qort : null;
         QueryDefinitionImpl qdef = (qort instanceof QueryDefinitionImpl) ? (QueryDefinitionImpl)qort : null;
 
-        if (null != t)
-            return t;
-
-        if (null == qdef)
+        if (null == t && null == qdef)
         {
             if (errors.isEmpty())
-                throw new QueryException("Query not found: " + schema.getName() + "." + queryName);
+                throw new QueryException("Query not found: " + userSchema.getName() + "." + queryName);
             return null;
         }
 
-        try
+        DependencyObject from;
+        if (null != t)
         {
-            Query query = qdef.getQuery(schema, errors, null, true);
-
-            warnings.addAll(query.getParseWarnings());
-            errors.addAll(query.getParseErrors());
-            dependencyGraph.putAll(query.getDependencies());
-
-            return query.getTableInfo();
+            from = new DependencyObject(DependencyType.Table, userSchema.getContainer(), schemaKey, t.getName(), null);
         }
-        catch (Exception x)
+        else
         {
-            throw new QueryException("Could not analyze query " + schema.getName() + "." + queryName, x);
+            from = new DependencyObject(DependencyType.Table, userSchema.getContainer(), schemaKey, qdef.getName(), null);
+
+            try
+            {
+                Query query = qdef.getQuery(userSchema, errors, null, true);
+
+                warnings.addAll(query.getParseWarnings());
+                errors.addAll(query.getParseErrors());
+                dependencyGraph.putAll(query.getDependencies());
+
+                t = query.getTableInfo();
+            }
+            catch (Exception x)
+            {
+                throw new QueryException("Could not analyze query " + userSchema.getName() + "." + queryName, x);
+            }
         }
+
+        return _analyzeTableInfo(from, t, dependencyGraph);
     }
+
+
+    private TableInfo _analyzeTableInfo(DependencyObject from, TableInfo source, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph)
+    {
+        if (null == source)
+            return null;
+        for (ColumnInfo ci : source.getColumns())
+        {
+            ForeignKey fk = ci.getFk();
+            if (null == fk || !fk.isShowAsPublicDependency())
+                continue;
+            // I think this can be expensive!
+            TableInfo target = fk.getLookupTableInfo();
+            if (null == target)
+                continue;
+            if (!_includeLookupDependency(source, target))
+                continue;
+            var type = target instanceof QueryTableInfo ? DependencyType.Query : DependencyType.Table;
+            Container c = fk.getLookupContainer();
+            if (null == c)
+                c = from.container;
+            String name = fk.getLookupTableName();
+            if (null != target.getName())
+                name = target.getName();
+            if (null == name)
+                continue;
+            SchemaKey schemaKey = fk.getLookupSchemaKey();
+            if (null != target.getUserSchema())
+                schemaKey = target.getUserSchema().getSchemaPath();
+            if (null == schemaKey)
+                schemaKey = from.schemaKey;
+            DependencyObject to = new DependencyObject(type, c, schemaKey, name, null);
+            dependencyGraph.put(from, to);
+        }
+        return source;
+    }
+
+
+    final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
+
+    private boolean _includeLookupDependency(TableInfo from, TableInfo to)
+    {
+        // ignore core schema
+        if (to.getUserSchema() == null)
+            return false;
+        if (coreSchemaKey.equals(to.getUserSchema().getSchemaPath()))
+            return false;
+
+        if (to instanceof QueryTableInfo)
+            return true;
+
+         DomainKind dk = to.getDomainKind();
+         if (dk != null && dk.isUserCreatedType())
+             return true;
+
+        return false;
+    }
+
 
     @Override
     public void registerQueryAnalysisProvider(QueryAnalysisService provider)
