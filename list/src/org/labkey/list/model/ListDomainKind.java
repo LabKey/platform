@@ -265,7 +265,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String type = getType(keyType, category);
         StringBuilder typeURI = getBaseURI(name, type, c);
 
-        // 13131: uniqueify the lsid for situations where a preexisting list was renamed
+        // Issue 13131: uniqueify the lsid for situations where a preexisting list was renamed
         int i = 1;
         String sTypeURI = typeURI.toString();
         String uniqueURI = sTypeURI;
@@ -362,13 +362,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String keyName = listProperties.getKeyName();
 
         if (StringUtils.isEmpty(name))
-            throw new ApiUsageException("List name must not be null");
+            throw new ApiUsageException("List name is required");
         if (name.length() > MAX_NAME_LENGTH)
             throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name, false) != null)
+        if (ListService.get().getList(container, name, true) != null)
             throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
-            throw new ApiUsageException("List keyName must not be null");
+            throw new ApiUsageException("List keyName is required");
 
         KeyType keyType = getDefaultKeyType();
 
@@ -382,7 +382,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
 
         ListDefinition.Category category;
-        try {
+        try
+        {
             category = listProperties.getCategory() != null ? ListDefinition.Category.valueOf(listProperties.getCategory()) : null;
         }
         catch (IllegalArgumentException e)
@@ -700,7 +701,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
-        if(!(template instanceof ListTemplateType))
+        if (!(template instanceof ListTemplateType))
             return false;
 
         ListOptionsType options = ((ListTemplateType) template).getOptions();
@@ -723,5 +724,4 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     {
         var props = getBaseProperties(d);
     }
-
 }
