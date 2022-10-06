@@ -726,6 +726,8 @@
                         is the string to display when false, and "null" is the string to display when null. For date and
                         datetime columns the values Date and DateTime can be used to display as
                         either date or date and time with the currently configured display formats for this folder.
+                        For file and attachment columns, "attachment" to save files as a download, overriding the
+                        default behavior of displaying files like PDFs and images in the browser .
                         Supported for SQL metadata, dataset import/export and list import/export.
                     </xs:documentation>
 				</xs:annotation>
@@ -968,6 +970,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="derivationDataScope" type="dat:DerivationDataScopeTypes" minOccurs="0" maxOccurs="1" default="ParentOnly">
+                <xs:annotation>
+                    <xs:documentation>
+                        Field editing scope for aliquots. ParentOnly: Field editable in parent and inherited by aliquot,
+                        ChildOnly: Only editable by aliquot, All: Both parent and aliquot are editable. Default is ParentOnly.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
 		<xs:attribute name="columnName" type="xs:string" use="required">
 			<xs:annotation>
@@ -994,6 +1004,14 @@
 		</xs:attribute>
         <xs:anyAttribute processContents="lax" namespace="##any"/>
 	</xs:complexType>
+
+    <xs:simpleType name="DerivationDataScopeTypes">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ParentOnly"/>
+            <xs:enumeration value="ChildOnly"/>
+            <xs:enumeration value="All"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="ConceptType">
         <xs:all>

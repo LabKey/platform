@@ -16,14 +16,22 @@
 package org.labkey.test.pages.mothership;
 
 import org.apache.commons.text.WordUtils;
+import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
+import org.labkey.test.components.html.Input;
 import org.labkey.test.pages.LabKeyPage;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Collections;
+import java.io.IOException;
+import java.util.Map;
+
+import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_CONTROLLER;
+import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
+import static org.labkey.test.util.mothership.MothershipHelper.SERVER_INSTALLATION_ID_COLUMN;
 
 public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetailPage.ElementCache>
 {
@@ -32,30 +40,48 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
         super(driver);
     }
 
-    public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver)
+    @Override
+    protected void waitForPage()
     {
-        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
+        waitFor(() -> elementCache().hostNameInput.getComponentElement().isDisplayed(),
+                "Details page failed to load", 5_000);
     }
 
-    public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver, String containerPath)
+    public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver, String hostName) throws IOException, CommandException
     {
-        driver.beginAt(WebTestHelper.buildURL("mothership", containerPath, "showInstallationDetail", Collections.singletonMap("serverInstallationId", "1")));
+        Integer serverInstallationId = new MothershipHelper(driver).getServerInstallationId(hostName);
+        return beginAt(driver, serverInstallationId);
+    }
+
+    public static ShowInstallationDetailPage beginAt(WebDriverWrapper driver, int serverInstallationId)
+    {
+        driver.beginAt(WebTestHelper.buildURL(MOTHERSHIP_CONTROLLER, MOTHERSHIP_PROJECT, "showInstallationDetail",
+                Map.of(SERVER_INSTALLATION_ID_COLUMN, serverInstallationId)));
         return new ShowInstallationDetailPage(driver.getDriver());
-    }
-
-    public String getDistributionName()
-    {
-        return getInstallationValue("Distribution");
     }
 
     public String getServerIP()
     {
-        return getInstallationValue("Server IP");
+        return getSessionProperty("ServerIP");
+    }
+
+    public String getDistributionName()
+    {
+        return getSessionProperty("Distribution");
+    }
+
+    private String getSessionProperty(String serverIP)
+    {
+        if (getSessionsGrid().getDataRowCount() == 0)
+        {
+            throw new IllegalStateException("No session info for server: " + getServerHostName());
+        }
+        return getSessionsGrid().getDataAsText(0, serverIP);
     }
 
     public String getServerHostName()
     {
-        return Locator.input("serverHostName").findElement(getDriver()).getAttribute("value");
+        return elementCache().hostNameInput.get();
     }
 
     public String getInstallationValue(String labelText)
@@ -66,13 +92,22 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
                 .findElement(getDriver()).getText();
     }
 
+    public DataRegionTable getSessionsGrid()
+    {
+        return elementCache().sessionsGrid;
+    }
+
     @Override
     protected ElementCache newElementCache()
     {
         return new ElementCache();
     }
 
-    protected class ElementCache extends LabKeyPage.ElementCache
+    protected class ElementCache extends LabKeyPage<?>.ElementCache
     {
+        private final Input hostNameInput = Input.Input(Locator.input("serverHostName"), getDriver())
+                .findWhenNeeded(this);
+        private final DataRegionTable sessionsGrid = new DataRegionTable.DataRegionFinder(getDriver())
+                .withName("ServerSessions").findWhenNeeded(this);
     }
 }

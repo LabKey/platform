@@ -122,7 +122,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault = true;
     private boolean _blankQCStatePublic = false;
-    private Date _lastReload;
     private boolean _advancedCohorts;
     private Integer _participantCommentDatasetId;
     private String _participantCommentProperty;
@@ -573,16 +572,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             return 0;
 
         return domain.getProperties().size();
-    }
-
-    public Date getLastReload()
-    {
-        return _lastReload;
-    }
-
-    public void setLastReload(Date lastReload)
-    {
-        _lastReload = lastReload;
     }
 
     @Override

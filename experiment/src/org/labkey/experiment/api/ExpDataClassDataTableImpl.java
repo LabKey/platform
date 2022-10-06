@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -29,24 +30,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
-import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CoerceDataIterator;
@@ -65,6 +49,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -81,6 +66,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -105,10 +91,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
@@ -419,11 +405,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                 {
-                    wrapped.setURL(StringExpressionFactory.createURL(
-                            new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
-                                    .addParameter("lsid", "${LSID}")
-                                    .addParameter("name", "${" + col.getName() + "}")
-                    ));
+                    configureAttachmentURL(wrapped);
                 }
 
                 if (wrapped.isMvEnabled())
@@ -489,6 +471,38 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         setDefaultVisibleColumns(defaultVisible);
 
         addExpObjectMethod();
+    }
+
+    private void configureAttachmentURL(MutableColumnInfo col)
+    {
+        ActionURL url = new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getUserSchema().getContainer())
+                .addParameter("lsid", "${LSID}")
+                .addParameter("name", "${" + col.getName() + "}");
+        if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+        {
+            url.addParameter("inline", "false");
+            col.setURLTargetWindow(null);
+        }
+        else
+        {
+            col.setURLTargetWindow("_blank");
+        }
+        col.setURL(StringExpressionFactory.createURL(url));
+    }
+
+    @Override
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        super.overlayMetadata(metadata, schema, errors);
+
+        // Reset URLs in case the XML metadata changed the view/download format option for the file
+        for (MutableColumnInfo col : getMutableColumns())
+        {
+            if (col.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                configureAttachmentURL(col);
+            }
+        }
     }
 
     private Map<String, DataClassVocabularyProviderProperties> getVocabularyDomainProviders()
@@ -652,6 +666,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         return (!col.isHidden() && !col.isUnselectable() && !DEFAULT_HIDDEN_COLS.contains(col.getName()));
+    }
+
+    public ExpDataClass getDataClass()
+    {
+        return _dataClass;
     }
 
     @Override
@@ -868,6 +887,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
+        IntegerConverter _converter = new IntegerConverter();
+
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
@@ -1170,6 +1191,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         protected AttachmentParentFactory getAttachmentParentFactory()
         {
             return (entityId, c) -> new ExpDataClassAttachmentParent(c, Lsid.parse(entityId));
+        }
+
+        @Override
+        public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+        {
+            Integer dataClassId = null;
+            Set<String> dataNames = new HashSet<>();
+            for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
+            {
+                Object oName = keyMap.getValue().get("Name");
+
+                if (oName != null)
+                    dataNames.add((String) oName);
+
+                if (dataClassId == null)
+                {
+                    Object oClassId = keyMap.getValue().get("ClassId");
+                    if (oClassId != null)
+                        dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
+                }
+
+            }
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
+            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
+            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
+
+            return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
     }
 }

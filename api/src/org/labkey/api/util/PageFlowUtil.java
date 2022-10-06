@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -2886,12 +2886,15 @@ public class PageFlowUtil
         {
             if (paramName.endsWith("." + QueryParam.offset))
                 clone.deleteParameter(paramName);
-            // CONSIDER: Should we whitelist params that don't contain a "."?  They are not usually dataregion related.
-            // We know pageId should not be persisted (Issue 45617)
-            clone.deleteParameter("pageId");
         }
 
+        // CONSIDER: Should we pass through only selected params that don't contain "."?  They are not usually dataregion related.
+        // We know pageId should not be persisted (Issue 45617)
+        clone.deleteParameter("pageId");
         clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
+
+        clone.setReadOnly();
+
         HttpSession session = context.getRequest().getSession(false);
         // We should already have a session at this point, but check anyway - see bug #7761
         if (session != null)

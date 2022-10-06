@@ -107,6 +107,8 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
     void setColumnLogging(ColumnLogging columnLogging);
 
+    void setDbSequenceBatchSize(@Nullable Integer batchSize);
+
     void setHasDbSequence(boolean b);
 
     void setIsRootDbSequence(boolean b);

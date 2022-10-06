@@ -147,7 +147,7 @@ public class ContainerManager
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
-    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
+    public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
     private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
@@ -198,6 +198,11 @@ public class ContainerManager
         return getRoot();
     }
 
+    private static DbScope.Transaction ensureTransaction()
+    {
+        return CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK);
+    }
+
 
     private static int getNewChildSortOrder(Container parent)
     {
@@ -236,7 +241,6 @@ public class ContainerManager
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
         return createContainer(parent, name, title, description, user, properties);
-
     }
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
@@ -356,7 +360,7 @@ public class ContainerManager
         writer.write(templateContainer, exportCtx, vf);
 
         // create the new target container
-        Container c = ContainerManager.createContainer(parent, name, title, null, NormalContainerType.NAME, user);
+        Container c = createContainer(parent, name, title, null, NormalContainerType.NAME, user);
         afterCreateHandler.accept(c);
 
         // import objects into the target folder
@@ -395,7 +399,7 @@ public class ContainerManager
                 if (!containersBecomingTabs.isEmpty())
                 {
                     // Make containers tab container; Folder tab will find them by name
-                    try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+                    try (DbScope.Transaction transaction = ensureTransaction())
                     {
                         for (Container container : containersBecomingTabs)
                             updateType(container, TabContainerType.NAME, user);
@@ -436,7 +440,7 @@ public class ContainerManager
             }
             props.save();
 
-            ContainerManager.notifyContainerChange(c.getId(), Property.FolderType, user);
+            notifyContainerChange(c.getId(), Property.FolderType, user);
             folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
             // TODO: Not needed? I don't think we've changed the container's state.
@@ -454,10 +458,10 @@ public class ContainerManager
         // Check container for validity; in rare cases user may have changed their custom folderType.xml and caused
         // duplicate subfolders (same name) to exist
         // Get list of child containers that are not container tabs, but match container tabs; these are bad
-        FolderType folderType = ContainerManager.getFolderType(c);
+        FolderType folderType = getFolderType(c);
         List<String> errorStrings = new ArrayList<>();
         List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
-        List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
+        List<Container> containersMatchingTabs = findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
         if (!containersMatchingTabs.isEmpty())
         {
             throw new Container.ContainerException("Folder " + c.getPath() +
@@ -617,7 +621,7 @@ public class ContainerManager
     public static boolean hasContainerTabBeenDeleted(Container c, String tabName, String folderTypeName)
     {
         // We keep arbitrary number of deleted children tabs using suffix 0, 1, 2....
-        Map<String, String> props = PropertyManager.getProperties(c, ContainerManager.TABFOLDER_CHILDREN_DELETED);
+        Map<String, String> props = PropertyManager.getProperties(c, TABFOLDER_CHILDREN_DELETED);
         return props.containsKey(getDeletedTabKey(tabName, folderTypeName));
     }
 
@@ -943,7 +947,7 @@ public class ContainerManager
         List<String> childIds = (List<String>) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
         if (null == childIds)
         {
-            try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+            try (DbScope.Transaction t = ensureTransaction())
             {
                 List<Container> children = new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
@@ -969,7 +973,7 @@ public class ContainerManager
         Map<String, Container> ret = new LinkedHashMap<>();
         for (String id : childIds)
         {
-            Container c = ContainerManager.getForId(id);
+            Container c = getForId(id);
             if (null != c)
                 ret.put(c.getName(), c);
         }
@@ -1001,7 +1005,7 @@ public class ContainerManager
         if (null != id && !GUID.isGUID(id))
             return null;
 
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             Container result = new SqlSelector(
                     CORE.getSchema(),
@@ -1027,7 +1031,7 @@ public class ContainerManager
         if (null != d)
             return d;
 
-        Map<String, Container> map = ContainerManager.getChildrenMap(c);
+        Map<String, Container> map = getChildrenMap(c);
         return map.get(name);
     }
 
@@ -1048,7 +1052,7 @@ public class ContainerManager
         // Special case for ROOT -- we want to throw instead of returning null
         if (path.equals(Path.rootPath))
         {
-            try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+            try (DbScope.Transaction t = ensureTransaction())
             {
                 TableInfo tinfo = CORE.getTableInfoContainers();
 
@@ -1080,7 +1084,7 @@ public class ContainerManager
             if (null == dirParent)
                 return null;
 
-            Map<String, Container> map = ContainerManager.getChildrenMap(dirParent);
+            Map<String, Container> map = getChildrenMap(dirParent);
             return map.get(name);
         }
     }
@@ -1203,7 +1207,7 @@ public class ContainerManager
 
     public static List<Container> getProjects()
     {
-        return ContainerManager.getChildren(ContainerManager.getRoot());
+        return getChildren(ContainerManager.getRoot());
     }
 
 
@@ -1220,7 +1224,7 @@ public class ContainerManager
             return navTree;
 
         NavTree list = new NavTree("Projects");
-        List<Container> projects = ContainerManager.getProjects();
+        List<Container> projects = getProjects();
 
         for (Container project : projects)
         {
@@ -1541,12 +1545,12 @@ public class ContainerManager
         boolean changedProjects = !oldProject.getId().equals(newProject.getId());
 
         // Synchronize the transaction, but not the listeners -- see #9901
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
             // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-            c = ContainerManager.getForRowId(c.getRowId());
+            c = getForRowId(c.getRowId());
 
             // this could be done in the trigger, but I prefer to put it in the transaction
             if (changedProjects)
@@ -1580,35 +1584,77 @@ public class ContainerManager
         return changedProjects;
     }
 
-
-    // Rename a container in the table.  Will fail if the new name already exists in the parent container.
-    // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
-    public static void rename(Container c, User user, String name)
+    public static void rename(@NotNull Container c, User user, String name)
     {
-        if (!isRenameable(c))
+        rename(c, user, name, c.getTitle(), false);
+    }
+
+    /**
+     * Transacted method to rename a container. Optionally, supports updating the title and aliasing the
+     * original container path when the name is changed (as name changes result in a new container path).
+     */
+    public static Container rename(@NotNull Container c, User user, String name, @Nullable String title, boolean addAlias)
+    {
+        try (DbScope.Transaction tx = ensureTransaction())
         {
-            throw new IllegalArgumentException("Cannot rename container " + c.getPath());
+            final String oldName = c.getName();
+            final String newName = StringUtils.trimToNull(name);
+            boolean isRenaming = !oldName.equals(newName);
+            StringBuilder errors = new StringBuilder();
+
+            // Rename
+            if (isRenaming)
+            {
+                // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
+                if (!isRenameable(c))
+                    throw new IllegalArgumentException("This folder may not be renamed as it is reserved by the system.");
+
+                if (!Container.isLegalName(newName, c.isProject(), errors))
+                    throw new IllegalArgumentException(errors.toString());
+
+                // Issue 19061: Unable to do case-only container rename
+                if (c.getParent().hasChild(newName) && !c.equals(c.getParent().getChild(newName)))
+                {
+                    if (c.getParent().isRoot())
+                        throw new IllegalArgumentException("The server already has a project with this name.");
+                    throw new IllegalArgumentException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                }
+
+                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", newName, c.getId());
+                clearCache();  // Clear the entire cache, since containers cache their full paths
+                // Get new version since name has changed.
+                Container renamedContainer = getForId(c.getId());
+                fireRenameContainer(renamedContainer, user, oldName);
+                // Clear again after the commit has propagated the state to other threads and transactions
+                // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+                tx.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
+
+                // Alias
+                if (addAlias)
+                {
+                    // Intentionally use original container rather than the already renamedContainer
+                    List<String> newAliases = new ArrayList<>(getAliasesForContainer(c));
+                    newAliases.add(c.getPath());
+                    saveAliasesForContainer(c, newAliases, user);
+                }
+            }
+
+            // Title
+            if (!c.getTitle().equals(title))
+            {
+                if (!Container.isLegalTitle(title, errors))
+                    throw new IllegalArgumentException(errors.toString());
+                updateTitle(c, title, user);
+            }
+
+            tx.commit();
+        }
+        catch (ValidationException e)
+        {
+            throw new IllegalArgumentException(e);
         }
 
-        name = StringUtils.trimToNull(name);
-        if (null == name)
-            throw new NullPointerException();
-        String oldName = c.getName();
-        if (oldName.equals(name))
-            return;
-
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
-        {
-            new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", name, c.getId());
-            clearCache();  // Clear the entire cache, since containers cache their full paths
-            //Get new version since name has changed.
-            c = getForId(c.getId());
-            fireRenameContainer(c, user, oldName);
-            // Clear again after the commit has propagated the state to other threads and transactions
-            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
-            t.commit();
-        }
+        return getForId(c.getId());
     }
 
     public static void setChildOrderToAlphabetical(Container parent)
@@ -1628,7 +1674,7 @@ public class ContainerManager
 
     private static void setChildOrder(List<Container> siblings, boolean resetToAlphabetical)
     {
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
+        try (DbScope.Transaction t = ensureTransaction())
         {
             for (int index = 0; index < siblings.size(); index++)
             {
@@ -2452,9 +2498,9 @@ public class ContainerManager
 
         navTrail.add(new NavTree(isProject ? "Create Project" : "Create Folder"));
         navTrail.add(new NavTree("Users / Permissions"));
-        if(isProject)
+        if (isProject)
             navTrail.add(new NavTree("Project Settings"));
-        if(container != null)
+        if (container != null)
             navTrail.addAll(container.getFolderType().getExtraSetupSteps(container));
         return navTrail;
     }
@@ -2471,8 +2517,8 @@ public class ContainerManager
             if (null == _testRoot)
             {
                 Container junit = JunitUtil.getTestContainer();
-                _testRoot = ContainerManager.ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
-                ContainerManager.addContainerListener(this);
+                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+                addContainerListener(this);
             }
         }
 
@@ -2480,9 +2526,9 @@ public class ContainerManager
         @After
         public void tearDown()
         {
-            ContainerManager.removeContainerListener(this);
+            removeContainerListener(this);
             if (null != _testRoot)
-                ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
+                deleteAll(_testRoot, TestContext.get().getUser());
         }
 
 
@@ -2491,7 +2537,7 @@ public class ContainerManager
         {
             String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
 
-            for(String name: badnames)
+            for (String name: badnames)
             {
                 try
                 {
@@ -2527,7 +2573,7 @@ public class ContainerManager
             }
 
             logNode(mm, _testRoot.getName(), 0);
-            for(int i=0; i<2; i++) //do this twice to make sure the containers were *really* deleted
+            for (int i=0; i<2; i++) //do this twice to make sure the containers were *really* deleted
             {
                 createContainers(mm, _testRoot.getName(), _testRoot);
                 assertEquals(count, _containers.size());
@@ -2541,51 +2587,51 @@ public class ContainerManager
         public void testCache()
         {
             assertEquals(0, _containers.size());
-            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, getChildren(_testRoot).size());
 
-            Container one = ContainerManager.createContainer(_testRoot, "one");
+            Container one = createContainer(_testRoot, "one");
             assertEquals(1, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(0, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(0, getChildren(one).size());
 
-            Container oneA = ContainerManager.createContainer(one, "A");
+            Container oneA = createContainer(one, "A");
             assertEquals(2, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(1, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneA).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(1, getChildren(one).size());
+            assertEquals(0, getChildren(oneA).size());
 
-            Container oneB = ContainerManager.createContainer(one, "B");
+            Container oneB = createContainer(one, "B");
             assertEquals(3, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(2, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneB).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(2, getChildren(one).size());
+            assertEquals(0, getChildren(oneB).size());
 
-            Container deleteme = ContainerManager.createContainer(one, "deleteme");
+            Container deleteme = createContainer(one, "deleteme");
             assertEquals(4, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(3, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(deleteme).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(3, getChildren(one).size());
+            assertEquals(0, getChildren(deleteme).size());
 
             assertTrue(ContainerManager.delete(deleteme, TestContext.get().getUser()));
             assertEquals(3, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(2, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(2, getChildren(one).size());
 
-            Container oneC = ContainerManager.createContainer(one, "C");
+            Container oneC = createContainer(one, "C");
             assertEquals(4, _containers.size());
-            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
-            assertEquals(3, ContainerManager.getChildren(one).size());
-            assertEquals(0, ContainerManager.getChildren(oneC).size());
+            assertEquals(1, getChildren(_testRoot).size());
+            assertEquals(3, getChildren(one).size());
+            assertEquals(0, getChildren(oneC).size());
 
             assertTrue(ContainerManager.delete(oneC, TestContext.get().getUser()));
             assertTrue(ContainerManager.delete(oneB, TestContext.get().getUser()));
-            assertEquals(1, ContainerManager.getChildren(one).size());
+            assertEquals(1, getChildren(one).size());
 
             assertTrue(ContainerManager.delete(oneA, TestContext.get().getUser()));
-            assertEquals(0, ContainerManager.getChildren(one).size());
+            assertEquals(0, getChildren(one).size());
 
             assertTrue(ContainerManager.delete(one, TestContext.get().getUser()));
-            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, getChildren(_testRoot).size());
             assertEquals(0, _containers.size());
         }
 
@@ -2640,7 +2686,7 @@ public class ContainerManager
 
             for (String childName : nodes)
             {
-                Container child = ContainerManager.createContainer(parent, childName);
+                Container child = createContainer(parent, childName);
                 createContainers(mm, childName, child);
             }
         }

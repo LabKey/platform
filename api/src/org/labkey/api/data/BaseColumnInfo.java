@@ -112,6 +112,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _shouldLog = true;
     private boolean _lockName = false;
     private SimpleTranslator.RemapMissingBehavior _remapMissingBehavior = null;
+    private Integer _dbSequenceBatchSize = null;
 
     /**
      * True if this column isn't really part of the database. It might be a calculated value, or an alternate
@@ -937,6 +938,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
+    public @Nullable Integer getDbSequenceBatchSize()
+    {
+        return _dbSequenceBatchSize;
+    }
+
+    @Override
+    public void setDbSequenceBatchSize(@Nullable Integer dbSequenceBatchSize)
+    {
+        _dbSequenceBatchSize = dbSequenceBatchSize;
+    }
+
+    @Override
     public boolean hasDbSequence()
     {
         return _hasDbSequence;
@@ -1192,6 +1205,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _nullable = xmlCol.getNullable();
         if (xmlCol.isSetExcludeFromShifting())
             _isExcludeFromShifting = xmlCol.getExcludeFromShifting();
+        if (xmlCol.isSetDerivationDataScope())
+            _derivationDataScope = xmlCol.getDerivationDataScope().toString();
         if (xmlCol.isSetImportAliases())
         {
             LinkedHashSet<String> set = new LinkedHashSet<>(getImportAliasSet());
@@ -1607,6 +1622,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         public Set<FieldKey> getSuggestedColumns()
         {
             return null;
+        }
+
+        @Override
+        public boolean isShowAsPublicDependency()
+        {
+            return false;
         }
     }
 

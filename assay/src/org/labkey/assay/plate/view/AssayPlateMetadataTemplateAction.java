@@ -1,6 +1,6 @@
 package org.labkey.assay.plate.view;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;

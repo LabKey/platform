@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
@@ -40,6 +39,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -57,7 +57,6 @@ import java.util.Map;
 /**
  * <code>PipelineJobMarshaller</code> handles saving a <code>PipelineJob</code> to XML,
  * and restoring it from XML.
- *
  * todo: probably want to have 2 different interfaces here, rather than implementing
  *          JobStore and throwing UnsupportedOperationException on most of its
  *          methods.
@@ -107,35 +106,37 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    @Override
-    public String serializeToJSON(Object job)
-    {
-        return serializeToJSON(job, true);
-    }
+    // Ticket 46206 - better to prevent ridiculously large serialization of jobs instead of letting them
+    // get stored in the DB to cause havoc later
+    private static final int SERIALIZATION_SIZE_LIMIT = 100_000_000;
 
     @Override
-    public String serializeToJSON(Object job, boolean ensureDeserialize)
+    public String serializeToJSON(PipelineJob job, boolean ensureDeserialize)
     {
         ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         try
         {
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(job);
+
+            if (serialized.length() > SERIALIZATION_SIZE_LIMIT)
+            {
+                throw new IllegalStateException("Job exceeds serialization limit of " + SERIALIZATION_SIZE_LIMIT + " characters. It was " + serialized.length() + " characters long.");
+            }
+            LOG.debug("Serialized JSON for " + job + " was " + serialized.length() + " characters");
+
             if (ensureDeserialize)          // Some callers round trip, so we don't need to here
             {
                 try
                 {
-                    Object unserialized = deserializeFromJSON(serialized, job.getClass());
-                    if (job instanceof PipelineJob)
-                    {
-                        List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)unserialized);
-                        if (!errors.isEmpty())
-                            LOG.error("Deserialized object differs from original: " + StringUtils.join(errors, ","));
-                    }
+                    PipelineJob unserialized = deserializeFromJSON(serialized, job.getClass());
+                    List<String> errors = job.compareJobs(unserialized);
+                    if (!errors.isEmpty())
+                        LOG.error("Deserialized object differs from original: " + StringUtils.join(errors, ","));
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Unserializing test failed: " + job.getClass(), e);
+                    LOG.error("Serializing round-trip test failed: " + job.getClass(), e);
                 }
             }
             return serialized;
@@ -148,13 +149,18 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     }
 
     @Override
-    public Object deserializeFromJSON(String json, Class<?> cls)
+    public PipelineJob deserializeFromJSON(String json, Class<? extends PipelineJob> cls)
     {
         ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         try
         {
-            return mapper.readValue(json, cls);
+            PipelineJob result = mapper.readValue(json, cls);
+            if (result == null)
+            {
+                throw new IllegalArgumentException("Deserialized object was null, but should have been a PipelineJob");
+            }
+            return result;
         }
         catch (Exception e)
         {
@@ -237,7 +243,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             }
         }
 
-        public static class TestJob
+        public static class TestJob extends PipelineJob
         {
             public File _file;
             public File _file1;
@@ -270,6 +276,19 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
 
             }
+
+            @Override
+            public URLHelper getStatusHref()
+            {
+                return null;
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Test Job";
+            }
+
             public TestJob(String name, int option)
             {
                 _file = new File(URI.create("file:///Users/daveb"));
@@ -349,7 +368,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         {
             try
             {
-                Object job = new TestJob("Johnny", 5);
+                TestJob job = new TestJob("Johnny", 5);
                 testSerialize(job, LOG);
             }
             catch (Exception e)

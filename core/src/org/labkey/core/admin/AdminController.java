@@ -33,7 +33,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -141,6 +141,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.NetworkDriveProps;
+import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -296,6 +297,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
+        if (!AdminConsole.getProductGroups().isEmpty())
+            AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
         if (ModuleLoader.getInstance().hasModule("FileContent"))
             AdminConsole.addLink(Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
@@ -948,10 +951,10 @@ public class AdminController extends SpringActionController
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
 
-            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
+            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource, true);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, errorSource);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx,  errorSource, AppProps.getInstance().isDevMode() /* No staging dir in production mode so skip error checking */);
 
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
@@ -977,10 +980,10 @@ public class AdminController extends SpringActionController
 
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource);
+        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource, true);
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource, boolean checkForErrors) throws IOException
     {
         for (Module module : modules)
         {
@@ -995,7 +998,7 @@ public class AdminController extends SpringActionController
             {
                 String component = "the " + module.getName() + " Module";
                 String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
-                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern);
+                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern, checkForErrors);
                 views.addView(credits);
                 errorSource.append(credits.getErrors());
             }
@@ -1011,19 +1014,14 @@ public class AdminController extends SpringActionController
         private HtmlString _html;
         private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern)
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern, boolean checkForErrors)
         {
             super(title);
 
             _component = StringUtils.trimToEmpty(component);
-
-            // If both wikiSource and filenames are null there can't be a problem.
-            // trims/empty check allow for problem reporting if one is null but not the other.
-            if (!filenames.isEmpty())
-            {
+            if (checkForErrors)
                 _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
-                wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
-            }
+            wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
@@ -1038,11 +1036,14 @@ public class AdminController extends SpringActionController
             return _errors;
         }
 
-        private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
         {
+            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
+                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
+
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
 
-            if (null != wikiSource)
+            if (null != wikiSource && null != wikiSourceSearchPattern)
             {
                 Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
                 Matcher m = p.matcher(wikiSource);
@@ -6711,74 +6712,18 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
-            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            try
             {
-                Container c = getContainer();
-                if (updateFolderName(c, form, errors) && updateFolderTitle(c, form, errors))
-                {
-                    transaction.commit();
-                    return true;
-                }
+                String title = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
+                Container c = ContainerManager.rename(getContainer(), getUser(), form.getName(), title, form.isAddAlias());
+                _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
+                return true;
             }
-            return false;
-        }
-
-        private boolean updateFolderName(Container c, ManageFoldersForm form, BindException errors)
-        {
-            String folderName = StringUtils.trimToNull(form.getName());
-            StringBuilder error = new StringBuilder();
-
-            if (Container.isLegalName(folderName, c.isProject(), error))
+            catch (Exception e)
             {
-                // 19061: Unable to do case-only container rename
-                if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
-                {
-                    if (c.getParent().isRoot())
-                    {
-                        error.append("The server already has a project with this name.");
-                    }
-                    else
-                    {
-                        error.append("The ").append(c.getParent().isProject() ? "project " : "folder ").append(c.getParent().getPath()).append(" already has a folder with this name.");
-                    }
-                }
-                else
-                {
-                    ContainerManager.rename(c, getUser(), folderName);
-                    if (form.isAddAlias())
-                    {
-                        List<String> newAliases = new ArrayList<>(ContainerManager.getAliasesForContainer(c));
-                        newAliases.add(c.getPath());
-                        ContainerManager.saveAliasesForContainer(c, newAliases, getUser());
-                    }
-                    c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
-                    _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
-                    return true;
-                }
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
-            return false;
-        }
-
-        private boolean updateFolderTitle(Container c, ManageFoldersForm form, BindException errors)
-        {
-            //if we have gotten this far, we can assume that the formName is valid.
-            String folderTitle = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
-            StringBuilder error = new StringBuilder();
-            if(Container.isLegalTitle(folderTitle, error))
-            {
-                try
-                {
-                    ContainerManager.updateTitle(c, folderTitle, getUser());
-                    return true;
-                }
-                catch (ValidationException e)
-                {
-                    error.append(e.getMessage());
-                }
-            }
-            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
 
@@ -8740,6 +8685,70 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "Experimental Features", getClass());
         }
     }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class ProductFeatureAction extends BaseApiAction<ProductConfigForm>
+    {
+        @Override
+        protected ModelAndView handleGet() throws Exception
+        {
+            return handlePost(); // 'execute' ensures that only POSTs are mutating
+        }
+
+        @Override
+        public ApiResponse execute(ProductConfigForm form, BindException errors)
+        {
+            String productKey = StringUtils.trimToNull(form.getProductKey());
+            if (productKey == null)
+                throw new ApiUsageException("productKey is required");
+
+            Map<String, Object> ret = new HashMap<>();
+
+            if (isPost())
+            {
+               ProductConfiguration.setProductKey(form.getProductKey());
+            }
+
+            ret.put("productKey", new ProductConfiguration().getCurrentProduct());
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    public static class ProductConfigForm
+    {
+        private String productKey;
+
+        public String getProductKey()
+        {
+            return productKey;
+        }
+
+        public void setProductKey(String productKey)
+        {
+            this.productKey = productKey;
+        }
+
+    }
+
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class ProductConfigurationAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Product Configuration", getClass());
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/productConfiguration.jsp");
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
+        }
+    }
+
 
     public static class FolderTypesBean
     {
@@ -10853,11 +10862,23 @@ public class AdminController extends SpringActionController
 
     public static class SerializationTest extends PipelineJob.TestSerialization
     {
-        static class TestJob
+        static class TestJob extends PipelineJob
         {
             ImpersonationContext _impersonationContext;
             ImpersonationContext _impersonationContext1;
             ImpersonationContext _impersonationContext2;
+
+            @Override
+            public URLHelper getStatusHref()
+            {
+                return null;
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Test Job";
+            }
         }
 
         @Test

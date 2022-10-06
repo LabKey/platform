@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
@@ -1438,7 +1438,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             .stream()
             .filter(columnInfo -> columnInfo.hasDbSequence() && !columnInfo.isUniqueIdField())
             .forEach(columnInfo -> {
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100, null);
+                // Issue 46326: Allow specific columns to specify preallocated batch size to avoid gaps
+                Integer dbSequenceBatchSize = columnInfo.getDbSequenceBatchSize();
+                if (dbSequenceBatchSize == null)
+                    dbSequenceBatchSize = 100;
+
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, dbSequenceBatchSize, null);
                 added.add(columnInfo.getName());
             });
         return added;

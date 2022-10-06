@@ -221,6 +221,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
+    private final List<ColumnExporter> _columnExporters = new ArrayList<>();
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
@@ -1373,13 +1374,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
-
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
+        OntologyObject obj = OntologyManager.getOntologyObject(objectId);
+        if (obj == null)
             return null;
-        return new ExpDataClassImpl(dataClass);
+
+        return getDataClass(obj.getObjectURI());
     }
 
 
@@ -2567,7 +2566,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2582,7 +2581,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -2624,13 +2623,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     parents.append(and).append("objectid <> self");
                 }
 
-                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
                         parents.append(and).append("exptype = ?\n");
                     else
                         parents.append(and).append("parent_exptype = ?\n");
-                    parents.add(options.getExpType());
+                    parents.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
@@ -2699,13 +2698,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     children.append(and).append("objectid <> self");
                 }
 
-                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
                         children.append(and).append("exptype = ?\n");
                     else
                         children.append(and).append("child_exptype = ?\n");
-                    children.add(options.getExpType());
+                    children.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
@@ -2991,8 +2990,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return emptyList();
     }
 
-    @Nullable @Override
-    public String getObjectReferenceDescription(Class referencedClass)
+    @Override
+    public @NotNull String getObjectReferenceDescription(Class referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -5298,17 +5297,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<Pair<String, String>> getRunsAndRolesUsingDataIds(List<Integer> ids)
     {
         SQLFragment sql = new SQLFragment(
-                "SELECT r.LSID, di.Role\n" +
-                "FROM exp.ExperimentRun r\n" +
-                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
-                "INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId\n" +
-                "WHERE di.dataId ");
+                """
+                        SELECT r.LSID, di.Role
+                        FROM exp.ExperimentRun r
+                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
+                        INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId
+                        LEFT OUTER JOIN exp.Data d ON pa.RowId = d.sourceApplicationID
+                        WHERE di.dataId\s""");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
-        sql.append("OR pa.RowId IN (SELECT d.sourceApplicationID FROM exp.Data d WHERE d.RowId ");
+        sql.append("OR d.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append(")\n");
-        sql.append("ORDER BY Created DESC");
+        sql.append("\n");
+        sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
@@ -5360,7 +5361,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * @param ids to include within parentheses
      * @return SQLFragment like: IN (1, 2, 3)
      */
-    private SQLFragment getAppendInClause(Collection ids)
+    private SQLFragment getAppendInClause(Collection<?> ids)
     {
         return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
@@ -5369,17 +5370,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<Pair<String, String>> getRunsAndRolesUsingMaterialIds(List<Integer> ids)
     {
         SQLFragment sql = new SQLFragment(
-                "SELECT r.LSID, mi.Role\n" +
-                "FROM exp.ExperimentRun r\n" +
-                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
-                "INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId\n" +
-                "WHERE mi.materialId ");
+                """
+                        SELECT r.LSID, mi.Role
+                        FROM exp.ExperimentRun r
+                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
+                        INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId
+                        LEFT OUTER JOIN exp.Material m ON pa.RowId = m.sourceApplicationID
+                        WHERE mi.materialId\s""");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
-        sql.append("OR pa.RowId IN (SELECT m.sourceApplicationID FROM exp.Material m WHERE m.RowId ");
+        sql.append("OR m.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append(")\n");
-        sql.append("ORDER BY Created DESC");
+        sql.append("\n");
+        sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
@@ -7278,6 +7281,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         _objectReferencers.add(referencer);
     }
 
+    @Override
+    public void registerColumnExporter(ColumnExporter exporter)
+    {
+        _columnExporters.add(exporter);
+    }
+
+    @Override
+    public List<ColumnExporter> getColumnExporters()
+    {
+        return _columnExporters;
+    }
+
+    @Override
     @NotNull
     public List<ObjectReferencer> getObjectReferencers()
     {
@@ -8207,6 +8223,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return count;
+    }
+
+    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, boolean isSample, Container container)
+    {
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        TableInfo tableInfo = isSample ? ExperimentService.get().getTinfoMaterial() : ExperimentService.get().getTinfoData();
+        SQLFragment currentFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container = ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(currentFolderCountSql, rowIds);
+        int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).get(0);
+
+        SQLFragment crossFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container <> ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(crossFolderCountSql, rowIds);
+        int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
+
+        return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
     }
 
     public static class TestCase extends Assert

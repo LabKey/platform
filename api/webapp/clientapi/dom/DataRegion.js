@@ -1273,22 +1273,11 @@ if (!LABKEY.DataRegions) {
      * @ignore
      * @Deprecated
      */
-    LABKEY.DataRegion.prototype.getSearchString = function() {
-        if (!LABKEY.Utils.isString(this.savedSearchString)) {
-            this.savedSearchString = document.location.search.substring(1) /* strip the ? */ || "";
-        }
-        return this.savedSearchString;
-    };
-
-    /**
-     * @ignore
-     * @Deprecated
-     */
     LABKEY.DataRegion.prototype.setSearchString = function(regionName, search) {
         this.savedSearchString = search || "";
         // If the search string doesn't change and there is a hash on the url, the page won't reload.
         // Remove the hash by setting the full path plus search string.
-        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
+        window.location.assign(window.location.pathname + (this.savedSearchString.length > 0 ? "?" + this.savedSearchString : ""));
     };
 
     //
@@ -3141,70 +3130,70 @@ if (!LABKEY.DataRegions) {
             var qmIdx = qString.indexOf('?');
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
-            }
 
-            if (qString.length > 1) {
-                var pairs = qString.split('&'), p, key,
-                    LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
+                if (qString.length > 1) {
+                    var pairs = qString.split('&'), p, key,
+                            LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
 
-                var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
-                    return region.name + prefix;
-                });
+                    var exactMatches = EXACT_MATCH_PREFIXES.map(function (prefix) {
+                        return region.name + prefix;
+                    });
 
-                $.each(pairs, function(i, pair) {
-                    p = pair.split('=', 2);
-                    key = p[0] = decodeURIComponent(p[0]);
-                    lastIdx = key.indexOf(LAST);
+                    $.each(pairs, function (i, pair) {
+                        p = pair.split('=', 2);
+                        key = p[0] = decodeURIComponent(p[0]);
+                        lastIdx = key.indexOf(LAST);
 
-                    if (lastIdx > -1 && lastIdx === (key.length - LAST.length)) {
-                        return;
-                    }
-                    else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
-                        // 26686: Black list known parameters, should be prefixed by region name
-                        return;
-                    }
-
-                    var stop = false;
-                    if (skip) {
-                        $.each(skipPrefixSet, function(j, skipPrefix) {
-                            if (LABKEY.Utils.isString(skipPrefix)) {
-
-                                // Special prefix that should remove all filters, but no other parameters
-                                if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
-                                    if (key.indexOf('~') > 0) {
-                                        stop = true;
-                                        return false;
-                                    }
-                                }
-                                else {
-                                    if (exactMatches.indexOf(skipPrefix) > -1) {
-                                        if (key === skipPrefix) {
-                                            stop = true;
-                                            return false;
-                                        }
-                                    }
-                                    else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
-                                        // only skip filters, parameters, and sorts
-                                        if (key === skipPrefix ||
-                                                key.indexOf('~') > 0 ||
-                                                key.indexOf(PARAM_PREFIX) > 0 ||
-                                                key === (skipPrefix + 'sort')) {
-                                            stop = true;
-                                            return false;
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    if (!stop) {
-                        if (p.length > 1) {
-                            p[1] = decodeURIComponent(p[1]);
+                        if (lastIdx > -1 && lastIdx === (key.length - LAST.length)) {
+                            return;
                         }
-                        params.push(p);
-                    }
-                });
+                        else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
+                            // 26686: Black list known parameters, should be prefixed by region name
+                            return;
+                        }
+
+                        var stop = false;
+                        if (skip) {
+                            $.each(skipPrefixSet, function (j, skipPrefix) {
+                                if (LABKEY.Utils.isString(skipPrefix)) {
+
+                                    // Special prefix that should remove all filters, but no other parameters
+                                    if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
+                                        if (key.indexOf('~') > 0) {
+                                            stop = true;
+                                            return false;
+                                        }
+                                    }
+                                    else {
+                                        if (exactMatches.indexOf(skipPrefix) > -1) {
+                                            if (key === skipPrefix) {
+                                                stop = true;
+                                                return false;
+                                            }
+                                        }
+                                        else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
+                                            // only skip filters, parameters, and sorts
+                                            if (key === skipPrefix ||
+                                                    key.indexOf('~') > 0 ||
+                                                    key.indexOf(PARAM_PREFIX) > 0 ||
+                                                    key === (skipPrefix + 'sort')) {
+                                                stop = true;
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        if (!stop) {
+                            if (p.length > 1) {
+                                p[1] = decodeURIComponent(p[1]);
+                            }
+                            params.push(p);
+                        }
+                    });
+                }
             }
         }
 

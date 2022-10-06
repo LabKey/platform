@@ -21,10 +21,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -47,7 +46,9 @@ public class JsonUtil
     {
         DEFAULT_MAPPER = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
-        DEFAULT_MAPPER.registerModule(new JsonOrgModule());
+//        DEFAULT_MAPPER.registerModule(new JsonOrgModule()); // TODO: Uncomment this once we remove JsonOrgOldModule
+        // Allow org.json.old classes to be serialized by Jackson (TODO: Remove this after migrating from org.json.old.* -> org.json.*)
+        DEFAULT_MAPPER.registerModule(new JsonOrgOldModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
         DEFAULT_MAPPER.registerModule(new JavaTimeModule());
         DEFAULT_MAPPER.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));

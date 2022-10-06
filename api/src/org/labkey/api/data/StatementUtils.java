@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +40,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -64,7 +65,7 @@ import java.util.stream.Stream;
 // identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
-    private static final Logger _log = LogManager.getLogger(StatementUtils.class);
+    private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");
 
     public enum Operation {insert, update, merge}
     public static String OWNEROBJECTID = "exp$object$ownerobjectid";
@@ -72,15 +73,14 @@ public class StatementUtils
     // configuration parameters
     private Operation _operation = Operation.insert;
     private SqlDialect _dialect;
-    private TableInfo _targetTable;
+    private final TableInfo _targetTable;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
-    private Set<String> _skipColumnNames = null;
-    private Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
+    private Set<String> _skipColumnNames = Set.of();
+    private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
     private boolean _selectObjectUri = false;
     private boolean _allowUpdateAutoIncrement = false;
-    private boolean _allowInsertByLookupDisplayValue = false;
 
     // variable/parameter tracking helpers
     private boolean useVariables = false;
@@ -127,7 +127,7 @@ public class StatementUtils
 
     public StatementUtils skip(Set<String> skip)
     {
-        _skipColumnNames = skip;
+        _skipColumnNames = null==skip ? Set.of() : skip;
         return this;
     }
 
@@ -159,12 +159,6 @@ public class StatementUtils
     public StatementUtils allowSetAutoIncrement(boolean b)
     {
         _allowUpdateAutoIncrement = b;
-        return this;
-    }
-
-    public StatementUtils allowInsertByLookupDisplayValue(boolean b)
-    {
-        _allowInsertByLookupDisplayValue = b;
         return this;
     }
 
@@ -261,8 +255,33 @@ public class StatementUtils
 
     private static class ParameterHolder
     {
-        Parameter p;
-        int length = -1;
+        ParameterHolder(Parameter p)
+        {
+            this.p = p;
+            _columnInfo = null;
+        }
+
+        ParameterHolder(Parameter p, ColumnInfo c)
+        {
+            this.p = p;
+            _columnInfo = c;
+        }
+
+        int getScale()
+        {
+            var type = Objects.requireNonNull(p.getType());
+            if (type.isText() && type!= JdbcType.GUID && (null != _columnInfo && _columnInfo.getScale() > 0))
+                return _columnInfo.getScale();
+            return -1;
+        }
+
+        int getPrecision()
+        {
+            return null==_columnInfo ? -1 : _columnInfo.getPrecision();
+        }
+
+        final Parameter p;
+        final ColumnInfo _columnInfo;
         String variableName = null;
         Object constantValue = null;
         boolean isConstant = false;
@@ -284,15 +303,17 @@ public class StatementUtils
         ParameterHolder ph = parameters.get(c.getName());
         if (null == ph)
         {
-            ph = new ParameterHolder();
-            ph.p = new Parameter(c, null);
-            initParameterHolder(ph, c);
+            ph = new ParameterHolder(new Parameter(c.getName(), c.getPropertyURI(), null, c.getJdbcType()), c);
+            // NOTE: earlier DataIterator should probably split file into two columns: attachment_name, attachment_body
+            if (c.getInputType().equalsIgnoreCase("file") && c.getJdbcType() == JdbcType.VARCHAR)
+                ph.p.setFileAsName(true);
+            initParameterHolder(ph);
             parameters.put(c.getName(), ph);
         }
         return ph;
     }
 
-    private void initParameterHolder(ParameterHolder ph, @Nullable ColumnInfo columnInfo)
+    private void initParameterHolder(ParameterHolder ph)
     {
         String name = ph.p.getName();
         JdbcType type = ph.p.getType();
@@ -307,8 +328,6 @@ public class StatementUtils
             }
         }
         ph.variableName = makeVariableName(name);
-        if (type.isText() && type!= JdbcType.GUID && (null != columnInfo && columnInfo.getScale() > 0))
-            ph.length = columnInfo.getScale();
     }
 
 
@@ -317,9 +336,8 @@ public class StatementUtils
         ParameterHolder ph = parameters.get(name);
         if (null == ph)
         {
-            ph = new ParameterHolder();
-            ph.p = new Parameter(name, type);
-            initParameterHolder(ph, null);
+            ph = new ParameterHolder(new Parameter(name, type));
+            initParameterHolder(ph);
             parameters.put(name, ph);
         }
         return ph;
@@ -331,9 +349,8 @@ public class StatementUtils
         ParameterHolder ph = parameters.get(name);
         if (null == ph)
         {
-            ph = new ParameterHolder();
-            ph.p = new Parameter(name, uri, null, type);
-            initParameterHolder(ph, null);
+            ph = new ParameterHolder(new Parameter(name, uri, null, type));
+            initParameterHolder(ph);
             parameters.put(name, ph);
         }
         return ph;
@@ -704,7 +721,7 @@ public class StatementUtils
         ColumnInfo autoIncrementColumn = null;
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
         if (null == remap)
-            remap = new CaseInsensitiveHashMap<>();
+            remap = CaseInsensitiveHashMap.of();
 
         for (ColumnInfo column : table.getColumns())
         {
@@ -725,7 +742,6 @@ public class StatementUtils
             ColumnInfo updatableColumn = updatable.getColumn(column.getName());
             if (updatableColumn != null && updatableColumn.hasDbSequence())
                 _dontUpdateColumnNames.add(column.getName());
-
 
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
@@ -974,7 +990,7 @@ public class StatementUtils
                 fn.append(type);
                 // For PG (29687) we need the length for CHAR type
                 if (_dialect.isPostgreSQL() && JdbcType.CHAR.equals(ph.p.getType()))
-                    fn.append("(").append(ph.length).append(")");
+                    fn.append("(").append(ph.getScale()).append(")");
                 call.append(comma).append("?");
                 call.add(ph.p);
                 comma = ",";
@@ -1124,15 +1140,15 @@ public class StatementUtils
         // Workaround - SQLServer doesn't support TEXT, NTEXT, or IMAGE as local variables in statements, but is OK with NVARCHAR(MAX)
         if (jdbcType.isText())
         {
-            if ("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type) || ph.length>4000)
+            if ("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type) || ph.getScale()>4000)
                 type = "NVARCHAR(MAX)";
             else
                 type = "NVARCHAR(4000)";
         }
         // Add scale and precision for decimal values specifying scale
-        else if (jdbcType.isDecimal() && ph.p.getScale() > 0)
+        else if (jdbcType.isDecimal() && ph.getScale() > 0)
         {
-            type = type + "(" + ph.p.getPrecision() + "," + ph.p.getScale() + ")";
+            type = type + "(" + ph.getPrecision() + "," + ph.getScale() + ")";
         }
 
         sqlfDeclare.append(type);
@@ -1197,11 +1213,11 @@ public class StatementUtils
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.insertStatement(conn, principals, null, container, user, null, true, true, false);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
                 m = StatementUtils.insertStatement(conn, test, null, container, user, null, true, true, false);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
             finally
@@ -1220,11 +1236,11 @@ public class StatementUtils
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.updateStatement(conn, principals, container, user, true, true);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
                 m = StatementUtils.updateStatement(conn, test, container, user, true, true);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
             finally
@@ -1243,11 +1259,11 @@ public class StatementUtils
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.mergeStatement(conn, principals, null, null, container, user, false, true);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
                 m = StatementUtils.mergeStatement(conn, test, null, null, container, user, false, true);
-                System.err.println(m.getDebugSql()+"\n\n");
+//                System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }
             finally

@@ -125,7 +125,6 @@ import java.util.TreeSet;
  */
 public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
 {
-    private static final MimeMap _mimeMap = new MimeMap();
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
 
@@ -136,15 +135,17 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
 
     @Override
-    public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
         {
             throw new NotFoundException();
         }
 
-        MimeMap.MimeType mime = _mimeMap.getMimeTypeFor(filename);
-        boolean asAttachment = null==mime || mime==MimeMap.MimeType.HTML || !mime.canInline();
+        boolean canInline = MimeMap.DEFAULT.canInlineFor(filename);
+
+        // Default to rendering inline when possible, but let caller force download as an attachment
+        boolean asAttachment = !canInline || !inlineIfPossible;
 
         response.reset();
         writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
@@ -704,7 +705,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
             allSql.append(SQLFragment.join(selectStatements, "UNION\n"));
             allSql.append(") u\nGROUP BY Type\nORDER BY Type");
-            String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
+            String link = currentUrl.clone().deleteParameters().addParameter("type", null).getLocalURIString();
 
             // The second query shows all attachments that we can't associate with a type. We just need to assemble a big
             // WHERE NOT clause that ORs the conditions from every registered type.

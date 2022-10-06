@@ -465,6 +465,8 @@ public class ClosureQueryHelper
         });
         wrappedRowId.setConceptURI(CONCEPT_URI);
         wrappedRowId.setShownInDetailsView(false);
+        wrappedRowId.setShownInInsertView(false);
+        wrappedRowId.setShownInUpdateView(false);
         return wrappedRowId;
     }
 

@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +30,6 @@ import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -191,7 +189,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -202,7 +199,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -493,9 +490,10 @@ public class CoreController extends SpringActionController
             {
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
-                MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = MimeMap.DEFAULT.canInlineFor(file.getName());
+                // Default to rendering inline when possible, but let caller force download as an attachment
+                boolean asAttachment = !canInline || (form.getInline() != null && !form.getInline().booleanValue());
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), asAttachment);
             }
             return null;
         }
@@ -720,19 +718,19 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             if (json == null)
             {
                 throw new NotFoundException("No JSON posted");
             }
-            String name = StringUtils.trimToNull(json.getString("name"));
-            String title = StringUtils.trimToNull(json.getString("title"));
-            String description = StringUtils.trimToNull(json.getString("description"));
-            String typeName = StringUtils.trimToNull(json.getString("type"));
+            String name = StringUtils.trimToNull(json.optString("name"));
+            String title = StringUtils.trimToNull(json.optString("title"));
+            String description = StringUtils.trimToNull(json.optString("description"));
+            String typeName = StringUtils.trimToNull(json.optString("type"));
             boolean isWorkbook = false;
             if (typeName == null)
             {
-                isWorkbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+                isWorkbook = json.optBoolean("isWorkbook");
                 typeName = isWorkbook ? WorkbookContainerType.NAME : NormalContainerType.NAME;
             }
             ContainerType type = ContainerTypeRegistry.get().getType(typeName);
@@ -753,11 +751,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.getString("folderType");
-                if (folderTypeName == null && isWorkbook)
-                {
-                    folderTypeName = WorkbookFolderType.NAME;
-                }
+                String folderTypeName = json.optString("folderType", isWorkbook ? WorkbookFolderType.NAME : null);
 
                 FolderType folderType = null;
                 if (folderTypeName != null)
@@ -773,8 +767,8 @@ public class CoreController extends SpringActionController
                 Set<Module> ensureModules = new HashSet<>();
                 if (json.has("ensureModules") && !json.isNull("ensureModules"))
                 {
-                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
-                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    List<String> requestedModules = StreamSupport.stream(json.getJSONArray("ensureModules").spliterator(), false)
+                        .map(Object::toString).toList();
                     for (String moduleName : requestedModules)
                     {
                         Module module = ModuleLoader.getInstance().getModule(moduleName);
@@ -847,8 +841,8 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getJsonObject();
-            String targetIdentifier = object.getString("container");
+            JSONObject object = form.getNewJsonObject();
+            String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
             {
@@ -856,7 +850,7 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            String parentIdentifier = object.getString("parent");
+            String parentIdentifier = object.optString("parent", null);
 
             if (null == parentIdentifier)
             {
@@ -904,7 +898,7 @@ public class CoreController extends SpringActionController
                 List<Container> children = parent.getChildren();
                 for (Container child : children)
                 {
-                    if (child.getName().toLowerCase().equals(target.getName().toLowerCase()))
+                    if (child.getName().equalsIgnoreCase(target.getName()))
                     {
                         errors.reject(ERROR_MSG, "Subfolder of '" + parent.getPath() + "' with name '" +
                                 target.getName() + "' already exists.");
@@ -932,11 +926,10 @@ public class CoreController extends SpringActionController
             }
 
             // Prepare aliases
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
-            
-            List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
+
+            List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
@@ -1501,7 +1494,7 @@ public class CoreController extends SpringActionController
         {
             JSONObject ret = new JSONObject();
 
-            if(form.getModuleName() == null)
+            if (form.getModuleName() == null)
             {
                 errors.reject(ERROR_MSG, "Must provide the name of the module");
                 return null;
@@ -1640,7 +1633,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
-            JSONObject formData = form.getJsonObject();
+            JSONObject formData = form.getNewJsonObject();
             JSONArray a = formData.getJSONArray("properties");
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
@@ -1662,13 +1655,14 @@ public class CoreController extends SpringActionController
                     if (mp == null)
                         throw new IllegalArgumentException("Invalid module property: " + name);
 
-                    Container ct = ContainerManager.getForId(row.getString("container"));
-                    if (ct == null && (Boolean.TRUE == row.getBoolean("currentContainer")))
+                    String containerId = row.optString("container", null);
+                    Container ct = null != containerId ? ContainerManager.getForId(containerId) : null;
+                    if (ct == null && row.getBoolean("currentContainer"))
                         ct = getContainer();
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.getString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.optString("value", null));
                 }
                 transaction.commit();
             }
@@ -2799,89 +2793,6 @@ public class CoreController extends SpringActionController
         public void setModuleName(String moduleName)
         {
             _moduleName = moduleName;
-        }
-    }
-
-    @RequiresNoPermission
-    public class TestLoggerAction extends BaseApiAction
-    {
-        private String[] nouns = { "LabKey", "Beaker", "Lab", "San Diego", "Seattle",
-                "Server", "Java", "Science", "Maths" };
-
-        private String[] verbs = { "kept", "developed", "made",
-                "found", "coined" };
-
-        private String[] phrases = { "tech is cool",
-                "computers and corn",
-                "One or two things that money can't buy",
-                "that's true about home grown tomatoes",
-                "drove my chevy to the levy but the levy was dry",
-                "them good old boys were drinking whiskey and rye",
-                "we're waxing down out surf boards, we can't wait for June",
-                "tell the teacher we are surfing",
-                "it's a 59,60,61,62,63,64,65,66,67,68,69 automobile..",
-                "beers and horn" };
-
-        private Logger log = LogManager.getLogger(TestLoggerAction.class);
-
-        void randomSentence()
-        {
-            for (int i=0; i<50; i++)
-            {
-                randomSimpleSentence();
-
-                if (Math.random() > 0.5)
-                {
-                    log.info(" and ");
-                    randomSimpleSentence();
-                }
-            }
-        }
-
-        void randomSimpleSentence()
-        {
-            if (Math.random() > 0.5)
-            {
-                log.info("the Bus Is Outta Control! ");
-                randomNounPhrase();
-            }
-            else
-                log.info("these pretzels are making me thirsty");
-        }
-
-        void randomNounPhrase()
-        {
-            int n = (int)(Math.random()*nouns.length);
-            log.info(phrases[n]);
-
-            if (Math.random() > 0.5)
-            {
-                int m = (int)(Math.random()*phrases.length);
-                log.info(" " + nouns[m]);
-            }
-            else
-            {
-                int v = (int) (Math.random() * verbs.length);
-                log.info(" that " + verbs[v] + " ");
-            }
-        }
-
-        @Override
-        protected ModelAndView handleGet()
-        {
-            Runnable testThread = this::randomSentence;
-
-            for (int i=0; i < 4000; i++)
-            {
-                (new Thread(testThread)).start();
-            }
-            return null;
-        }
-
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            return null;
         }
     }
 }

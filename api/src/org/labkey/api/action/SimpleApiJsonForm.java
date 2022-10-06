@@ -15,7 +15,7 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 
 import java.util.Map;
 
@@ -29,16 +29,22 @@ public class SimpleApiJsonForm implements CustomApiForm
     protected JSONObject json;
 
     @Override
-    public void bindProperties(Map<String,Object> properties)
+    public void bindProperties(Map<String, Object> properties)
     {
-        if (properties instanceof JSONObject)
-            json = (JSONObject)properties;
+        if (properties instanceof JSONObject jsonObject)
+            json = jsonObject;
         else
             json = new JSONObject(properties);
     }
 
+    @Deprecated
     public JSONObject getJsonObject()
     {
         return json;
+    }
+
+    public org.json.JSONObject getNewJsonObject()
+    {
+        return new org.json.JSONObject(json.toString());
     }
 }

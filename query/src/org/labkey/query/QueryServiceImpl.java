@@ -27,7 +27,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayService;
@@ -42,6 +42,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -234,7 +235,9 @@ public class QueryServiceImpl implements QueryService
             CompareType.Q,
             WHERE,
             INDESCENDANTSOF,
-            INANCESTORSOF
+            INANCESTORSOF,
+            COLUMN_IN,
+            COLUMN_NOT_IN
     ));
 
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
@@ -264,6 +267,87 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull List<ColumnInfo> selectColumns, boolean negate)
+    {
+        if (user == null || container == null)
+            throw new NotFoundException("Invalid context");
+
+        ColumnInfo col = columnMap.get(fieldKey);
+        assert null != col;
+
+        SQLFragment colFrag = new SQLFragment(col.getAlias());
+        final String sql = (String) value;
+        UserSchema userSchema = col.getParentTable().getUserSchema();
+
+        QueryDefinition qd = QueryService.get().createQueryDef(user, container, userSchema, GUID.makeGUID().replace("-", ""));
+        //TODO qd.setContainerFilter();
+        qd.setSql(sql);
+        ArrayList<QueryException> qerrors = new ArrayList<>();
+        TableInfo t = qd.getTable(userSchema, qerrors, true, true);
+        if (t == null)
+            throw new NotFoundException("Unable to find the specified table");
+
+        SQLFragment fromSql = t.getFromSQL("_");
+
+        SQLFragment sqlFragment = new SQLFragment()
+                .append("(").append(colFrag)
+                .append(")")
+                .append(negate ? " NOT" : "")
+                .append(" IN (")
+                .append(" SELECT ")
+                .append(t.getColumns().get(0).getValueSql("_"))
+                .append(" FROM ")
+                .append(fromSql)
+                .append(")");
+
+        return sqlFragment;
+    }
+
+    /**
+     * column in subselect: RowId IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * <code>
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_IN_FILTER_TYPE)
+     * </code>
+     */
+
+    public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, false);
+                }
+            };
+        }
+    };
+
+    /**
+     * column in subselect: rowId NOT IN (SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL)
+     * <code>
+     *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_NOT_IN_FILTER_TYPE)
+     * </code>
+     */
+
+    public static final CompareType COLUMN_NOT_IN = new CompareType("COLUMN NOT IN", "columnnotin", "COLUMN_NOT_IN", true /* dataValueRequired */, "sql", null)
+    {
+        @Override
+        public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value, User user, Container container)
+        {
+            return new SimpleFilter.SQLClause(new SQLFragment(), fieldKey)
+            {
+                @Override
+                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+                {
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, true);
+                }
+            };
+        }
+    };
 
     /*
      * This is a marker for CompareClauses that can somewhat participate in Query (LabKey SQL) environment.
@@ -2970,43 +3054,107 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     public TableInfo analyzeQuery(
-        QuerySchema schema, String queryName,
+            UserSchema userSchema, String queryName,
         SetValuedMap<DependencyObject,DependencyObject> dependencyGraph,
         @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
     {
-        Object qort;
-        if (schema instanceof UserSchema)
-            qort = ((UserSchema)schema)._getTableOrQuery(queryName, null, true, false, errors);
-        else
-            qort = schema.getTable(queryName, null);
+        SchemaKey schemaKey = userSchema.getSchemaPath();
+        Object qort = userSchema._getTableOrQuery(queryName, null, true, false, errors);
         TableInfo t = (qort instanceof TableInfo) ? (TableInfo)qort : null;
         QueryDefinitionImpl qdef = (qort instanceof QueryDefinitionImpl) ? (QueryDefinitionImpl)qort : null;
 
-        if (null != t)
-            return t;
-
-        if (null == qdef)
+        if (null == t && null == qdef)
         {
             if (errors.isEmpty())
-                throw new QueryException("Query not found: " + schema.getName() + "." + queryName);
+                throw new QueryException("Query not found: " + userSchema.getName() + "." + queryName);
             return null;
         }
 
-        try
+        DependencyObject from;
+        if (null != t)
         {
-            Query query = qdef.getQuery(schema, errors, null, true);
-
-            warnings.addAll(query.getParseWarnings());
-            errors.addAll(query.getParseErrors());
-            dependencyGraph.putAll(query.getDependencies());
-
-            return query.getTableInfo();
+            from = new DependencyObject(DependencyType.Table, userSchema.getContainer(), schemaKey, t.getName(), null);
         }
-        catch (Exception x)
+        else
         {
-            throw new QueryException("Could not analyze query " + schema.getName() + "." + queryName, x);
+            from = new DependencyObject(DependencyType.Table, userSchema.getContainer(), schemaKey, qdef.getName(), null);
+
+            try
+            {
+                Query query = qdef.getQuery(userSchema, errors, null, true);
+
+                warnings.addAll(query.getParseWarnings());
+                errors.addAll(query.getParseErrors());
+                dependencyGraph.putAll(query.getDependencies());
+
+                t = query.getTableInfo();
+            }
+            catch (Exception x)
+            {
+                throw new QueryException("Could not analyze query " + userSchema.getName() + "." + queryName, x);
+            }
         }
+
+        return _analyzeTableInfo(from, t, dependencyGraph);
     }
+
+
+    private TableInfo _analyzeTableInfo(DependencyObject from, TableInfo source, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph)
+    {
+        if (null == source)
+            return null;
+        for (ColumnInfo ci : source.getColumns())
+        {
+            ForeignKey fk = ci.getFk();
+            if (null == fk || !fk.isShowAsPublicDependency())
+                continue;
+            // I think this can be expensive!
+            TableInfo target = fk.getLookupTableInfo();
+            if (null == target)
+                continue;
+            if (!_includeLookupDependency(source, target))
+                continue;
+            var type = target instanceof QueryTableInfo ? DependencyType.Query : DependencyType.Table;
+            Container c = fk.getLookupContainer();
+            if (null == c)
+                c = from.container;
+            String name = fk.getLookupTableName();
+            if (null != target.getName())
+                name = target.getName();
+            if (null == name)
+                continue;
+            SchemaKey schemaKey = fk.getLookupSchemaKey();
+            if (null != target.getUserSchema())
+                schemaKey = target.getUserSchema().getSchemaPath();
+            if (null == schemaKey)
+                schemaKey = from.schemaKey;
+            DependencyObject to = new DependencyObject(type, c, schemaKey, name, null);
+            dependencyGraph.put(from, to);
+        }
+        return source;
+    }
+
+
+    final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
+
+    private boolean _includeLookupDependency(TableInfo from, TableInfo to)
+    {
+        // ignore core schema
+        if (to.getUserSchema() == null)
+            return false;
+        if (coreSchemaKey.equals(to.getUserSchema().getSchemaPath()))
+            return false;
+
+        if (to instanceof QueryTableInfo)
+            return true;
+
+         DomainKind dk = to.getDomainKind();
+         if (dk != null && dk.isUserCreatedType())
+             return true;
+
+        return false;
+    }
+
 
     @Override
     public void registerQueryAnalysisProvider(QueryAnalysisService provider)

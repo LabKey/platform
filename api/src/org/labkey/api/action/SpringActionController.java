@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -599,10 +599,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     StringBuilder url = new StringBuilder(request.getRequestURL().toString());
-                    if (request.getQueryString() != null)
+                    if (!StringUtils.isBlank(request.getQueryString()))
                     {
                         url.append("?");
                         url.append(request.getQueryString());
+                    }
+                    else if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+                    {
+                        url.append("?");
                     }
                     returnURL = new URLHelper(url.toString());
                 }

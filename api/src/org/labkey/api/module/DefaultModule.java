@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -1289,9 +1289,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     public Collection<String> getJarFilenames()
     {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
         return getDependenciesFromFile();
     }
 

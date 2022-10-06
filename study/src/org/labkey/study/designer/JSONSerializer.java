@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.study.xml.Adjuvant;
 import org.labkey.study.xml.AdjuvantRef;
 import org.labkey.study.xml.Antigen;

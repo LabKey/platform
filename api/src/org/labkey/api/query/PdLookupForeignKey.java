@@ -125,6 +125,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         assert currentContainer != null : "Container cannot be null";
         _currentContainer = currentContainer;
         _targetContainer = targetContainer;
+        setShowAsPublicDependency(true);
     }
 
     @Override

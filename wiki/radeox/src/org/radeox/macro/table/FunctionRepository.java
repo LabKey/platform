@@ -26,7 +26,6 @@
 package org.radeox.macro.table;
 
 import org.radeox.macro.PluginRepository;
-import org.radeox.macro.Repository;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,10 +39,10 @@ import java.util.List;
  */
 
 public class FunctionRepository extends PluginRepository {
-  protected static Repository instance;
+  protected static FunctionRepository instance;
   protected List loaders;
 
-  public synchronized  static Repository getInstance() {
+  public synchronized  static FunctionRepository getInstance() {
     if (null == instance) {
       instance = new FunctionRepository();
     }

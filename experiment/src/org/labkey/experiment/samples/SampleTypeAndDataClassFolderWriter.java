@@ -30,6 +30,7 @@ import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarExportContext;
+import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -75,7 +76,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
+public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter implements ColumnExporter
 {
     public static final String DEFAULT_DIRECTORY = "sample-types";
     public static final String XAR_TYPES_NAME = "sample_types.xar";             // the file which contains the sample type and data class definitions
@@ -87,6 +88,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
     private PHI _exportPhiLevel = PHI.NotPHI;
     private XarExportContext _xarCtx;
+    private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
+    public static final List<String> EXCLUDED_TYPES = List.of("MoleculeSet", "MolecularSpecies", "MixtureBatches");
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -101,7 +104,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     @Override
     public boolean show(Container c)
     {
-        // need to always return true so it can be used in a folder template
+        // need to always return true, so it can be used in a folder template
         return true;
     }
 
@@ -131,10 +134,10 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 continue;
 
             // ignore sample types that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
+            if ((_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId())) || EXCLUDED_TYPES.contains(sampleType.getName()))
                 continue;
 
-            // filter out non sample type material sources
+            // filter out non-sample type material sources
             Lsid lsid = new Lsid(sampleType.getLSID());
 
             if (sampleTypeLsid.getNamespacePrefix().equals(lsid.getNamespacePrefix()))
@@ -152,7 +155,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, ctx.getUser(), false))
         {
             // ignore data classes that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
+            if ((_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId())) || EXCLUDED_TYPES.contains(dataClass.getName()))
                 continue;
 
             Set<Integer> includedDatas = _xarCtx != null ? _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()) : null;
@@ -187,11 +190,11 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
-        LSIDRelativizer.RelativizedLSIDs relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
+        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
-            XarExporter exporter = new XarExporter(relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_TYPES_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -201,7 +204,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         // create the XAR which contains any derivation protocol runs
         if (exportRuns)
         {
-            XarExporter exporter = new XarExporter(relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_RUNS_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -209,13 +212,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
 
         // write the sample type data as .tsv files
-        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir, relativizedLSIDs);
+        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
 
         // write the data class data as .tsv files
-        writeDataClassDataFiles(dataClasses, ctx, xarDir, relativizedLSIDs);
+        writeDataClassDataFiles(dataClasses, ctx, xarDir);
     }
 
-    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir) throws Exception
     {
         // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
@@ -235,7 +238,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
                     Sort sort = new Sort(FieldKey.fromParts("RowId"));
 
-                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
+                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo);
 
                     if (!columns.isEmpty())
                         writeTsv(tinfo, columns, filter, sort, dir, SAMPLE_TYPE_PREFIX + sampleType.getName());
@@ -246,7 +249,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
-    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir) throws Exception
     {
         // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
@@ -257,7 +260,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 TableInfo tinfo = userSchema.getTable(dataClass.getName());
                 if (tinfo != null)
                 {
-                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
+                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo);
 
                     if (!columns.isEmpty())
                     {
@@ -323,7 +326,97 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         return columns;
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(FolderExportContext ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
+    @Override
+    public boolean shouldExcludeColumn(TableInfo tableInfo, ColumnInfo col, FolderExportContext context)
+    {
+        // don't include sample state here so the sample type data and then all related
+        // runs, storage info, etc. can be imported without sample state restrictions.
+        // SampleState is exported and imported from a separate file.
+        if (ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName()))
+            return true;
+        for (ColumnExporter exporter : ExperimentService.get().getColumnExporters())
+        {
+            if (exporter.shouldExcludeColumn(tableInfo, col, context))
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Collection<ColumnInfo> getExportColumns(TableInfo tinfo, ColumnInfo col, FolderExportContext ctx)
+    {
+        Collection<ColumnInfo> columns;
+        for (ColumnExporter exporter : ExperimentService.get().getColumnExporters())
+        {
+            columns = exporter.getExportColumns(tinfo, col, ctx);
+            if (columns != null)
+                return columns;
+        }
+
+        if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
+        {
+            // substitute the comment value for the lsid lookup value
+            FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
+            Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
+            return Collections.singletonList(new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey)));
+        }
+        else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
+        {
+            MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
+
+            if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+                aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
+            else
+                aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
+
+            return Collections.singletonList(aliasCol);
+        }
+        else if (col.getFk() instanceof MultiValuedForeignKey)
+        {
+            // skip multi-value columns
+            // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
+            // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
+            // CONSIDER: Alternate strategy would be to export the lookup target values?
+            ctx.getLogger().info("Skipping multi-value column: " + col.getName());
+        }
+        else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
+        {
+            // In order to reimport Aliquots, the AliquotedFrom field, which is the
+            // name of the aliquot's parent, must be present.  We get the name from the LSID.
+            return Collections.singletonList(getAliquotedFromNameColumn(tinfo));
+        }
+        else if (col.isKeyField() ||
+                ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
+                (col.isUserEditable() && !col.isHidden() && !col.isReadOnly()))
+        {
+            MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+            // Relativize the LSID column or any column with LSID values (e.g. MoleculeSet.intendedMoleculeLsid)
+            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || (col.getName().toLowerCase().endsWith("lsid") && col.isStringType() && col.getScale() == 300))
+            {
+                wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, _relativizedLSIDs));
+            }
+            else
+            {
+                wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+            }
+            columns = new ArrayList<>();
+            columns.add(wrappedCol);
+
+            // If the column is MV enabled, export the data in the indicator column as well
+            if (col.isMvEnabled())
+            {
+                ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
+                if (null == mvIndicator)
+                    ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
+                else
+                    columns.add(mvIndicator);
+            }
+            return columns;
+        }
+        return null;
+    }
+
+    private Collection<ColumnInfo> getColumnsToExport(FolderExportContext ctx, TableInfo tinfo)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());
@@ -339,75 +432,18 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             if ((basePropNames.contains(col.getName())
                     && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(col.getName())
                     && !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()))
-                    || ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName())
-                    // don't include sample state here so the sample type data and then all related
-                    // runs, storage info, etc. can be imported without sample state restrictions.
-                    // SampleState is exported and imported from a separate file.
+                    || shouldExcludeColumn(tinfo, col, ctx)
             )
             {
                 continue;
             }
 
-            if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
+            Collection<ColumnInfo> exportColumns = getExportColumns(tinfo, col, ctx);
+            if (exportColumns != null)
             {
-                // substitute the comment value for the lsid lookup value
-                FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
-                Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
-                ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));
-
-                columns.put(flagAlias.getFieldKey(), flagAlias);
-            }
-            else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
-            {
-                MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
-
-                if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-                    aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
-                else
-                    aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
-
-                columns.put(aliasCol.getFieldKey(), aliasCol);
-            }
-            else if (col.getFk() instanceof MultiValuedForeignKey)
-            {
-                // skip multi-value columns
-                // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
-                // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
-                // CONSIDER: Alternate strategy would be to export the lookup target values?
-                ctx.getLogger().info("Skipping multi-value column: " + col.getName());
-            }
-            else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
-            {
-                // In order to reimport Aliquots, the AliquotedFrom field, which is the
-                // name of the aliquot's parent, must be present.  We get the name from the LSID.
-                ColumnInfo wrappedCol = getAliquotedFromNameColumn(tinfo);
-                columns.put(col.getFieldKey(), wrappedCol);
-            }
-            else if (col.isKeyField() ||
-                    ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
-                    (col.isUserEditable() && !col.isHidden() && !col.isReadOnly()))
-            {
-                MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
-                // Relativize the LSID column or any column with LSID values (e.g. MoleculeSet.intendedMoleculeLsid)
-                if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || (col.getName().toLowerCase().endsWith("lsid") && col.isStringType() && col.getScale() == 300))
-                {
-                    wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, relativizedLSIDs));
-                }
-                else
-                {
-                    wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
-                }
-                columns.put(wrappedCol.getFieldKey(), wrappedCol);
-
-                // If the column is MV enabled, export the data in the indicator column as well
-                if (col.isMvEnabled())
-                {
-                    ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
-                    if (null == mvIndicator)
-                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
-                    else
-                        columns.put(mvIndicator.getFieldKey(), mvIndicator);
-                }
+                exportColumns.forEach(exportCol -> {
+                    columns.put(exportCol.getFieldKey(), exportCol);
+                });
             }
         }
         return columns.values();
@@ -510,7 +546,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private abstract static class AbstractAliasColumnFactory implements DisplayColumnFactory
     {
-        private ColumnInfo _aliasColumn;
+        private final ColumnInfo _aliasColumn;
 
         public AbstractAliasColumnFactory(ColumnInfo aliasColumn)
         {

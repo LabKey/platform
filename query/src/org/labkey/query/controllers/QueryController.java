@@ -33,9 +33,9 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -3647,7 +3647,7 @@ public class QueryController extends SpringActionController
                 filter.addAllClauses(new SimpleFilter(url, dataRegionName));
             }
 
-            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
+            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName, Collections.emptyList(), getUser(), getContainer());
         }
 
         return filter;

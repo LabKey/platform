@@ -35,7 +35,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -362,18 +361,6 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
     void delete(User user);
 
     void deleteAllRows(User user);
-
-    /**
-     * Update a single dataset row
-     * @return the new lsid for the updated row
-     * @param u user performing the update
-     * @param lsid the lsid of the dataset row
-     * @param data the data to be updated
-     *
-     * Don't use this method unless you are DatasetUpdateService
-     */
-    @Deprecated
-    String updateDatasetRow_forDatasetUpdateService(User u, String lsid, Map<String,Object> data) throws ValidationException;
 
     /**
      * Fetches a single row from a dataset given an LSID

@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -1434,7 +1434,30 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
+    public static class StopImpersonatingApiAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public void validateForm(Object o, Errors errors)
+        {
+            if (!getUser().isImpersonated())
+                errors.reject(ERROR_MSG, "Error: You are not impersonating!");
+        }
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
+    public static class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
         public Object execute(ReturnUrlForm form, BindException errors)
