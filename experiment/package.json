@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.230.1-fb-sampleTypeConsistencyV1.0"
+    "@labkey/components": "2.230.1-fb-sampleTypeConsistencyV1.2"
   },
   "devDependencies": {
     "@labkey/build": "6.2.1-fb-sampleTypeConsistencyV1.0",
