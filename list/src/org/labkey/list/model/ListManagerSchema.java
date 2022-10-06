@@ -122,13 +122,14 @@ public class ListManagerSchema extends UserSchema
     }
 
     @Override
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (LIST_MANAGER.equalsIgnoreCase(settings.getQueryName()))
         {
             QueryView qv = new QueryView(this, settings, errors)
             {
-                QuerySettings s = getSettings();
+                final QuerySettings s = getSettings();
 
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
