@@ -53,8 +53,9 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         {
             var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
 
-            // Lists can contain data that spans multiple folders.
-            // Override the container context for the details URL to always be the current folder.
+            // This overrides the details URL for the "name" of the list column to always
+            // resolve to the current folder. This is done because lists can contain data that span multiple folders
+            // and we want to default to showing users data in the list for the folder their working in.
             if (column.getURL() instanceof DetailsURL detailsURL)
                 detailsURL.setContainerContext(getContainer());
         }
