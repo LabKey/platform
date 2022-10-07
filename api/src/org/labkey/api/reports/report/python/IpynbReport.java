@@ -15,11 +15,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.docker.DockerService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
@@ -36,7 +36,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -47,8 +46,6 @@ import org.springframework.validation.BindException;
 
 import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,10 +61,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.DOM.DIV;
@@ -201,11 +196,7 @@ public class IpynbReport extends DockerScriptReport
                 StringUtils.join(beforeExecute.stream().map(f ->
                         f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
 
-        ExecuteStrategy ex;
-        if (null != getServiceAddress(context.getContainer()))
-            ex = new WebServiceExecuteStrategy();
-        else
-            ex = new DockerRunTarStdinStdout();
+        ExecuteStrategy ex = new WebServiceExecuteStrategy();
 
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
         LOG.trace("EXIT: " + exitCode);
@@ -269,40 +260,24 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
+    @NotNull
     URL getServiceAddress(Container c) throws ConfigurationException
     {
         ScriptEngine eng = LabKeyScriptEngineManager.get().getEngineByExtension(c, EXTENSION);
+        String urlString = null;
         if (eng instanceof ExternalScriptEngine engine)
         {
             try
             {
-                if (engine.getEngineDefinition().getRemoteUrl() != null)
-                    return new URL(engine.getEngineDefinition().getRemoteUrl());
-                else
-                    return null;
+                urlString = engine.getEngineDefinition().getRemoteUrl();
+                if (urlString != null)
+                    return new URL(urlString);
+                throw new MalformedURLException("URL is empty");
             }
             catch (MalformedURLException e)
             {
-                throw new ConfigurationException("Bad service endpoint: " + engine.getEngineDefinition().getRemoteUrl(), e);
+                throw new ConfigurationException("Bad service endpoint: " + urlString, e);
             }
-        }
-        else
-        {
-            throw new IllegalStateException("No script engine configured for  " + LABEL + " reports");
-        }
-    }
-
-
-    DockerService.ImageConfig getImageConfig(Container c)
-    {
-        // apply configuration options from the configured docker engine
-        ScriptEngine eng = LabKeyScriptEngineManager.get().getEngineByExtension(c, EXTENSION);
-        if (eng instanceof ExternalScriptEngine engine)
-        {
-            // this is a little strange, DockerImage and ImageConfig classes overlap quite a bit, I'm not sure
-            // why they aren't more interchangeable.
-            DockerService.DockerImage image = DockerService.get().getDockerImage(engine.getEngineDefinition().getDockerImageRowId());
-            return DockerService.get().getImageConfigBuilder(image.getImageName()).build();
         }
         else
         {
@@ -463,119 +438,6 @@ public class IpynbReport extends DockerScriptReport
 
         @Override
         public @Nullable File getOutputDocument()
-        {
-            if (null != outputDocument && outputDocument.isFile())
-                return outputDocument;
-            if (null != inputScript && inputScript.isFile())
-                return inputScript;
-            return null;
-        }
-    }
-
-
-    class DockerRunTarStdinStdout implements ExecuteStrategy
-    {
-        File inputScript;
-        File outputDocument;
-
-        @Override
-        public IpynbReport getReport()
-        {
-            return IpynbReport.this;
-        }
-
-        DockerRunTarStdinStdout()
-        {
-        }
-
-        @Override
-        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
-        {
-            inputScript = ipynb;
-
-            JSONObject reportConfig = createReportConfig(context, ipynb);
-            // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
-            FileUtils.write(new File(working,CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
-
-            File[] listFiles = working.listFiles();
-            List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
-            DockerService.ImageConfig image = getImageConfig(context.getContainer());
-
-            final PipedInputStream in = new PipedInputStream();
-            // TODO would be nice to have a binary/OutputStream version of FileUtil.TempTextFileWrapper()
-            var out = new ByteArrayOutputStream();
-            var err = new ByteArrayOutputStream();
-
-            // DockerService.run() blocks until process completion, so input stream has to be written on a different threads
-            final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
-            final Thread t = new Thread(() -> {
-                try (
-                    PipedOutputStream pipeOutput = new PipedOutputStream();
-                    TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput)
-                )
-                {
-                    pipeOutput.connect(in);
-                    for (var file : files)
-                    {
-                        ArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
-                        tar.putArchiveEntry(entry);
-                        try(FileInputStream fis = new FileInputStream(file))
-                        {
-                            IOUtils.copy(fis, tar);
-                        }
-                        tar.closeArchiveEntry();
-                    }
-                }
-                catch (IOException ex)
-                {
-                    bgException[0] = new DbScope.RetryPassthroughException(ex);
-                }
-            });
-            t.start();
-
-            var labels = Map.of(
-                    "labkey:configuration", "docker report (." + EXTENSION + ")",
-                    "labkey:userid", String.valueOf(context.getUser().getUserId()),
-                    "labkey:isReport", "true"
-            );
-            var environment = new HashMap<>(Map.of(
-                    LABKEY_USERID.env(), String.valueOf(context.getUser().getUserId()),
-                    LABKEY_EMAIL.env(), context.getUser().getEmail(),
-                    LABKEY_APIKEY.env(), apiKey));
-            if (null!=context.getRequest())
-                environment.put(LABKEY_CSRF.env(), CSRFUtil.getExpectedToken(context.getRequest(), null));
-
-            try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
-            {
-                try
-                {
-                    t.join(1000);
-                }
-                catch (InterruptedException x)
-                {
-                    // pass
-                }
-                if (null != bgException[0])
-                {
-                    bgException[0].rethrow(IOException.class);
-                    bgException[0].throwRuntimeException();
-                }
-
-                // delete script to avoid returning unprocessed ipynb in case of error
-                FileUtils.delete(ipynb);
-                // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
-                extractTar(new ByteArrayInputStream(out.toByteArray()), working);
-
-                return run.getExitCode();
-            }
-            catch (Exception x)
-            {
-                throw UnexpectedException.wrap(x);
-            }
-        }
-
-        @Override
-        public File getOutputDocument()
         {
             if (null != outputDocument && outputDocument.isFile())
                 return outputDocument;
