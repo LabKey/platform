@@ -350,6 +350,9 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
+    private static boolean successfulPing = false;
+
+
     class WebServiceExecuteStrategy implements ExecuteStrategy
     {
         File inputScript;
@@ -360,6 +363,18 @@ public class IpynbReport extends DockerScriptReport
         {
             return null;
         }
+
+        /* give webservice chance to startup */
+        private void tryPing(URL service)
+        {
+            for (int retry=0 ; !successfulPing && retry < 5 ; retry++)
+            {
+                var res = testServiceEndpoint(service);
+                if (200 == res.statusCode)
+                    successfulPing = true;
+            }
+        }
+
 
         @Override
         public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
@@ -372,6 +387,7 @@ public class IpynbReport extends DockerScriptReport
             FileUtils.write(new File(working, CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
             URL service = getServiceAddress(context.getContainer());
+            tryPing(service);
 
             try (CloseableHttpClient client = HttpClients.createDefault())
             {
