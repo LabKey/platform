@@ -86,7 +86,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         final Connection cn = WebTestHelper.getRemoteApiConnection(true);
         TruncateTableCommand cmd = new TruncateTableCommand("study", "DEM-1");
         TruncateTableResponse resp = cmd.execute(cn, getProjectName() + "/" + getFolderName());
-        Assert.assertTrue("Truncation of DEM-1 table failed", resp.getDeletedRowCount().intValue() == 24);
+        Assert.assertTrue("Truncation of DEM-1 table failed", resp.getDeletedRowCount() == 24);
 
         // reload should now work
         deleteAllPipelineJobs();

@@ -151,12 +151,17 @@ public class ExperimentAPITest extends BaseWebDriverTest
         goToModule("Experiment");
         SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
         sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName)
-                        .setFields(List.of(
-                                new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
-                                new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
-                                new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
-                                new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean))),
-                TestFileUtils.getSampleData("sampleType.xlsx"));
+            .setFields
+            (
+                List.of
+                (
+                    new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
+                    new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
+                    new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
+                    new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)
+                )
+            ),
+            TestFileUtils.getSampleData("sampleType.xlsx"));
     }
 
     @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
