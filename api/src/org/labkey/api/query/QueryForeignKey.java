@@ -252,6 +252,7 @@ public class QueryForeignKey extends AbstractForeignKey
         _url = builder.url;
         // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
         // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
+        setShowAsPublicDependency(null==_schema || !"core".equalsIgnoreCase(_schema.getName()));
     }
 
     protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
