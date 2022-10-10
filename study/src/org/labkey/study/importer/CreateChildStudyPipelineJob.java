@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -229,6 +230,17 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (_form.getViews() != null)
                     folderExportContext.setViewIds(_form.getViews());
 
+                // Issue 44868: include custom default views for any datasets selected
+                for (DatasetDefinition dataset : datasets)
+                {
+                    List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, sourceStudy.getContainer(), StudySchema.getInstance().getSchemaName(), dataset.getName(), false);
+                    for (CustomView customView : customViews)
+                    {
+                        if (customView.isShared() && customView.getName() == null)
+                            folderExportContext.addViewIds(customView.getEntityId());
+                    }
+                }
+
                 if (_form.getReports() != null)
                     folderExportContext.setReportIds(_form.getReports());
 
@@ -349,8 +361,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
-
         dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
+        dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
 
         if (StudySnapshotType.ancillary.equals(form.getMode()))
         {
@@ -376,11 +388,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (form.getQueries() != null)
         {
             dataTypes.add(FolderArchiveDataTypes.QUERIES);
-        }
-
-        if (form.getViews() != null)
-        {
-            dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
         }
 
         if (form.getLists() != null)
