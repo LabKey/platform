@@ -23,7 +23,25 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -53,8 +71,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
@@ -69,21 +88,21 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
-import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1109,5 +1128,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {}
         templates.add(Pair.of("Download Template", url.toString()));
         return templates;
+    }
+
+    @Override
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        if (SamplesSchema.SCHEMA_NAME.equals(schema.getName()))
+        {
+            Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, SamplesSchema.SCHEMA_METADATA_NAME, false, false, errors, null);
+            if (null != metadata)
+            {
+                overlayMetadata(metadata, schema, errors);
+            }
+        }
+        super.overlayMetadata(tableName, schema, errors);
     }
 }
