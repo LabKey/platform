@@ -139,6 +139,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             if (destStudy != null)
             {
+                User user = getUser();
                 Set<DatasetDefinition> datasets = new HashSet<>();
 
                 // get the list of datasets to export
@@ -207,11 +208,21 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // Issue 44866: preserve order for the datasets based on display order, even if not all are selected
                 List<DatasetDefinition> orderedDatasets = datasets.stream().sorted(StudyManager.DATASET_ORDER_COMPARATOR).toList();
 
+                // Issue 44868: include custom default views for any datasets selected
+                for (DatasetDefinition dataset : datasets)
+                {
+                    List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, sourceStudy.getContainer(), StudySchema.getInstance().getSchemaName(), dataset.getName(), false);
+                    for (CustomView customView : customViews)
+                    {
+                        if (customView.isShared() && customView.getName() == null)
+                            _form.addView(customView.getEntityId());
+                    }
+                }
+
                 // log selected settings to the pipeline job log file
                 _form.logSelections(getLogger());
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
-                User user = getUser();
                 if(_form.getFolderProps() != null)
                     _form.setFolderProps(_form.getFolderProps()[0].split(","));
                 if(_form.getStudyProps() != null)
@@ -229,17 +240,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 if (_form.getViews() != null)
                     folderExportContext.setViewIds(_form.getViews());
-
-                // Issue 44868: include custom default views for any datasets selected
-                for (DatasetDefinition dataset : datasets)
-                {
-                    List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, sourceStudy.getContainer(), StudySchema.getInstance().getSchemaName(), dataset.getName(), false);
-                    for (CustomView customView : customViews)
-                    {
-                        if (customView.isShared() && customView.getName() == null)
-                            folderExportContext.addViewIds(customView.getEntityId());
-                    }
-                }
 
                 if (_form.getReports() != null)
                     folderExportContext.setReportIds(_form.getReports());
@@ -361,8 +361,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
+
         dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
-        dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
 
         if (StudySnapshotType.ancillary.equals(form.getMode()))
         {
@@ -388,6 +388,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (form.getQueries() != null)
         {
             dataTypes.add(FolderArchiveDataTypes.QUERIES);
+        }
+
+        if (form.getViews() != null)
+        {
+            dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
         }
 
         if (form.getLists() != null)

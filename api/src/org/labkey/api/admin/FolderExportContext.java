@@ -161,13 +161,6 @@ public class FolderExportContext extends AbstractFolderContext
         _viewIds = new HashSet<>(Arrays.asList(viewIds));
     }
 
-    public void addViewIds(String id)
-    {
-        if (_viewIds == null)
-            _viewIds = new HashSet<>();
-        _viewIds.add(id);
-    }
-
     public Set<Integer> getListIds()
     {
         return _listIds;
