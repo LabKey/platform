@@ -331,28 +331,21 @@ public class ListController extends SpringActionController
                     listIDs = form.getListIds();
                 else
                     listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
-                for (String s : listIDs)
+
+                for (Pair<Integer, Container> pair : getListIdContainerPairs(listIDs, getContainer(), errorMessages))
                 {
-                    String[] parts = s.split(",");
-                    Container c;
-                    if (parts.length > 1)
-                        c = ContainerManager.getForId(parts[1]);
-                    else
-                        c = getContainer();
-                    if (c == null)
-                        errorMessages.add(String.format("Container not found for %s", s));
-                    else
+                    var listId = pair.first;
+                    var listContainer = pair.second;
+
+                    if (canDelete(listContainer, listId))
                     {
-                        int listId = Integer.parseInt(parts[0]);
-                        if (canDelete(c, listId))
-                        {
-                            _listIDs.add(listId);
-                            _containers.add(c);
-                        }
-                        else
-                            errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, c.getName()));
+                        _listIDs.add(listId);
+                        _containers.add(listContainer);
                     }
+                    else
+                        errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, listContainer.getName()));
                 }
+
                 if (!errorMessages.isEmpty())
                     errors.reject(ERROR_MSG,  StringUtils.join(errorMessages, "\n"));
             }
@@ -928,18 +921,27 @@ public class ListController extends SpringActionController
         @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), false);
-            Integer[] IDs = new Integer[listIDs.size()];
-            int i = 0;
-            for(String s : listIDs)
-            {
-                IDs[i] = Integer.parseInt(s.substring(0, s.indexOf(',')));
-                i++;
-            }
             Container c = getContainer();
-            String datatype = ("lists");
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set(datatype), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
-            ctx.setListIds(IDs);
+            List<String> errorMessages = new ArrayList<>();
+            Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
+            List<Integer> listIDs = new ArrayList<>();
+
+            // List export is only supported for lists defined in the current folder
+            for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
+            {
+                if (pair.second != c)
+                {
+                    errorMessages.add(String.format("Cannot export lists defined in %s from %s. List export is only supported for lists defined in the current folder.", pair.second.getPath(), c.getName()));
+                    break;
+                }
+                listIDs.add(pair.first);
+            }
+
+            if (!errorMessages.isEmpty())
+                throw new IllegalArgumentException(StringUtils.join(errorMessages, "\n"));
+
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
+            ctx.setListIds(listIDs.toArray(new Integer[0]));
             ListWriter writer = new ListWriter();
 
             // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
@@ -1055,5 +1057,37 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class SetDefaultValuesListAction extends SetDefaultValuesAction
     {
+    }
+
+    /**
+     * Utility method to parse out Pair<ListId, Container> from a Collection<String> where the strings are encoded
+     * pairs of listIds and container entityIds separated (e.g. "12,ff72c81e-ce2d-103a-b3ce-e8f660509016").
+     */
+    private static List<Pair<Integer, Container>> getListIdContainerPairs(
+        Collection<String> listIdContainers,
+        Container currentContainer,
+        Collection<String> errors)
+    {
+        List<Pair<Integer, Container>> pairs = new ArrayList<>();
+
+        for (String s : listIdContainers)
+        {
+            String[] parts = s.split(",");
+            Container c;
+            if (parts.length > 1)
+                c = ContainerManager.getForId(parts[1]);
+            else
+                c = currentContainer;
+            if (c == null)
+            {
+                errors.add(String.format("Container not found for %s", s));
+                continue;
+            }
+
+            int listId = Integer.parseInt(parts[0]);
+            pairs.add(Pair.of(listId, c));
+        }
+
+        return pairs;
     }
 }

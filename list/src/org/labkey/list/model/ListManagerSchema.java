@@ -179,21 +179,9 @@ public class ListManagerSchema extends UserSchema
 
                 private ActionButton createExportArchiveButton()
                 {
-                    ActionURL urlExport;
-                    ActionButton btnExport;
-
-                    if (ContainerFilter.Type.CurrentAndSubfolders.name().equals(s.getContainerFilterName()))
-                    {
-                        btnExport = new ActionButton("Export List Archive", getReturnURL());
-                        btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
-                    }
-                    else
-                    {
-                        urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
-                        btnExport = new ActionButton(urlExport, "Export List Archive");
-                        btnExport.setRequiresSelection(true);
-                    }
-
+                    ActionURL urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
+                    ActionButton btnExport = new ActionButton(urlExport, "Export List Archive");
+                    btnExport.setRequiresSelection(true);
                     btnExport.setActionType(ActionButton.Action.POST);
                     btnExport.setDisplayPermission(DesignListPermission.class);
                     return btnExport;
