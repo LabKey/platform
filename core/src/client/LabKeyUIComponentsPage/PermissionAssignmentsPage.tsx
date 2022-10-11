@@ -84,7 +84,6 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<InjectedPermissi
                     onChange={this.onChange}
                     onSuccess={this.onSuccess}
                     policy={policy}
-                    groupMembership={undefined} // TODO delete this after fix from fb_groupmanagement2
                 />
             </>
         )
