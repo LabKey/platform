@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -138,6 +139,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             if (destStudy != null)
             {
+                User user = getUser();
                 Set<DatasetDefinition> datasets = new HashSet<>();
 
                 // get the list of datasets to export
@@ -206,11 +208,21 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // Issue 44866: preserve order for the datasets based on display order, even if not all are selected
                 List<DatasetDefinition> orderedDatasets = datasets.stream().sorted(StudyManager.DATASET_ORDER_COMPARATOR).toList();
 
+                // Issue 44868: include custom default views for any datasets selected
+                for (DatasetDefinition dataset : datasets)
+                {
+                    List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, sourceStudy.getContainer(), StudySchema.getInstance().getSchemaName(), dataset.getName(), false);
+                    for (CustomView customView : customViews)
+                    {
+                        if (customView.isShared() && customView.getName() == null)
+                            _form.addView(customView.getEntityId());
+                    }
+                }
+
                 // log selected settings to the pipeline job log file
                 _form.logSelections(getLogger());
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
-                User user = getUser();
                 if(_form.getFolderProps() != null)
                     _form.setFolderProps(_form.getFolderProps()[0].split(","));
                 if(_form.getStudyProps() != null)
