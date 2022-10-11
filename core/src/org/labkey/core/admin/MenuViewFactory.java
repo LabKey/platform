@@ -79,6 +79,7 @@ public class MenuViewFactory
             //current URL and query string
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
+            settings.setReportId(null); // Issue 46238
 
             settings.setShowRows(ShowRows.PAGINATED);
             settings.setMaxRows(100);
