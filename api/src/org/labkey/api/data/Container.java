@@ -1727,7 +1727,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /** Convert a container into a reference that can be used to get the latest version of the container object. See issue 46473 */
-    public static Supplier<Container> supplierOf(Container c)
+    @NotNull
+    public static Supplier<Container> supplierOf(@Nullable Container c)
     {
         final GUID id = c == null ? null : c.getEntityId();
         return () -> id == null ? null : ContainerManager.getForId(id);

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 
 import java.io.Serializable;
@@ -34,7 +35,10 @@ public class IdentifiableBase implements Identifiable, Serializable
     private Integer objectId;
     // Issue 46473 - don't retain a reference to container itself from a potentially cached object,
     // just know how to easily resolve it so we can get the latest version
-    protected Supplier<Container> container;
+    private static final Supplier<Container> NULL_SUPPLIER = Container.supplierOf(null);
+
+    @NotNull
+    protected Supplier<Container> container = NULL_SUPPLIER;
 
     public IdentifiableBase()
     {
