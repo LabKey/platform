@@ -23,9 +23,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
 import org.labkey.remoteapi.assay.GetAssayRunCommand;
@@ -65,8 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({Daily.class})
@@ -145,26 +143,24 @@ public class ExperimentAPITest extends BaseWebDriverTest
                 responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
     }
 
-    private void createSampleSet(String sampleSetName)
+    private void createSampleSet(String sampleSetName) throws IOException, CommandException
     {
         log("Create sample type");
-        goToModule("Experiment");
-        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
-        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName)
-            .setFields
-            (
-                List.of
-                (
+        new SampleTypeDefinition(sampleSetName).setFields(
+                List.of(
                     new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
                     new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
                     new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
-                    new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)
-                )
-            ),
-            TestFileUtils.getSampleData("sampleType.xlsx"));
+                    new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)))
+                .create(createDefaultConnection(), getProjectName());
+
+        goToModule("Experiment");
+        new SampleTypeHelper(this)
+                .goToSampleType(sampleSetName)
+                .bulkImport(TestFileUtils.getSampleData("sampleType.xlsx"));
     }
 
-    @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
+    @Test @Ignore(/*TODO*/"Issue 35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
     public void testSaveBatchMaterials() throws Exception
     {
         Batch batch = new Batch();
@@ -280,13 +276,9 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @NotNull
     private Batch getBatch(Connection connection, int batchId) throws IOException, CommandException
     {
-        PostCommand getBatch = new PostCommand("assay", "getAssayBatch");
-        JSONObject json = new JSONObject();
-        json.put("protocolName", SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL);
-        json.put("batchId", batchId);
-        getBatch.setJsonObject(json);
-        CommandResponse getResponse = getBatch.execute(connection, getProjectName());
-        return new Batch(getResponse.getProperty("batch"));
+        LoadAssayBatchCommand getBatch = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batchId);
+        LoadAssayBatchResponse getResponse = getBatch.execute(connection, getProjectName());
+        return getResponse.getBatch();
     }
 
     private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
