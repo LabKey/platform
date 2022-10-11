@@ -10006,7 +10006,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @JsonIgnoreProperties(value = { "password", "changePassword" })
+    @JsonIgnoreProperties(value = { "password", "changePassword", "configuration" })
     private static class IgnorePasswordMixIn
     {
     }
