@@ -302,9 +302,9 @@ public class ListController extends SpringActionController
         private final List<Integer> _listIDs = new ArrayList<>();
         private final List<Container> _containers = new ArrayList<>();
 
-        private boolean canDelete(int listId)
+        private boolean canDelete(Container listContainer, int listId)
         {
-            ListDef listDef = ListManager.get().getList(getContainer(), listId);
+            ListDef listDef = ListManager.get().getList(listContainer, listId);
             ListDefinitionImpl list = ListDefinitionImpl.of(listDef);
 
             if (list == null)
@@ -315,8 +315,8 @@ public class ListController extends SpringActionController
             {
                 boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
                 return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && list.getContainer().hasPermission(getUser(), AdminPermission.class));
-
             }
+
             return list.getContainer().hasPermission(getUser(), DesignListPermission.class);
         }
 
@@ -344,7 +344,7 @@ public class ListController extends SpringActionController
                     else
                     {
                         int listId = Integer.parseInt(parts[0]);
-                        if (canDelete(listId))
+                        if (canDelete(c, listId))
                         {
                             _listIDs.add(listId);
                             _containers.add(c);
@@ -359,7 +359,7 @@ public class ListController extends SpringActionController
             else
             {
                 //Accessed from the edit list page, where selection is not possible
-                if (canDelete(form.getListId()))
+                if (canDelete(getContainer(), form.getListId()))
                 {
                     _listIDs.add(form.getListId());
                     _containers.add(getContainer());
