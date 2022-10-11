@@ -362,6 +362,10 @@ public class IpynbReport extends DockerScriptReport
             FileUtils.write(new File(working, CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
             URL service = getServiceAddress(context.getContainer());
+            // For testing, just return if the remoteURL host is "noop.test"
+            if ("noop.test".equals(service.getHost()))
+                return 0;
+
             tryPing(service);
 
             try (CloseableHttpClient client = HttpClients.createDefault())
