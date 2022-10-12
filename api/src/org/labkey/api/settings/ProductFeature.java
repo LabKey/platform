@@ -6,6 +6,7 @@ package org.labkey.api.settings;
 public enum ProductFeature
 {
     Assay("assay"),
+    AssayQC("assay"),
     ELN("labbook"),
     FreezerManagement("inventory"),
     Media("recipe"),
