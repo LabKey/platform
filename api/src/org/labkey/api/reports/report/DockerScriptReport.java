@@ -12,7 +12,6 @@ import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptException;
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -51,12 +50,15 @@ abstract public class DockerScriptReport extends ScriptProcessReport
             sourceQuery = model.getJSON(17.1);
 
             // getModel() returns "exploded" fieldkeys.  It's more useful here to use FieldKey.toString()
-            JSONArray columnsFK = (JSONArray)sourceQuery.get("columns");
+            JSONArray columnsFK = sourceQuery.optJSONArray("columns");
             if (null != columnsFK)
             {
                 JSONArray columnsStr = new JSONArray();
                 for (int i=0 ; i<columnsFK.length() ; i++)
-                    columnsStr.put(FieldKey.fromParts( ((Collection<String>)columnsFK.get(i)).toArray(new String[0]) ));
+                {
+                    List<String> fieldKeyParts = columnsFK.getJSONArray(i).toList().stream().map(p -> (String)p).toList();
+                    columnsStr.put(FieldKey.fromParts(fieldKeyParts));
+                }
                 sourceQuery.put("columns",columnsStr);
             }
         }
