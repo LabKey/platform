@@ -379,18 +379,18 @@ public class IpynbReport extends DockerScriptReport
                     putRequest.setHeader(LABKEY_CSRF.header(), CSRFUtil.getExpectedToken(context.getRequest(), null));
 
                 final PipedInputStream in = new PipedInputStream();
+                final PipedOutputStream pipeOutput = new PipedOutputStream();
+                pipeOutput.connect(in);
+
                 final InputStreamEntity entity = new InputStreamEntity(in);
                 putRequest.setEntity(entity);
 
                 final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
                 final Thread t = new Thread(() -> {
                     try (
-                            PipedOutputStream pipeOutput = new PipedOutputStream();
                             TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput)
                     )
                     {
-                        pipeOutput.connect(in);
-
                         File[] listFiles = working.listFiles();
                         List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
                         for (var file : files)
