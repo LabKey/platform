@@ -3131,6 +3131,10 @@ if (!LABKEY.DataRegions) {
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
 
+                var poundIdx = qString.indexOf('#');
+                if (poundIdx > -1)
+                    qString = qString.substr(0, poundIdx);
+
                 if (qString.length > 1) {
                     var pairs = qString.split('&'), p, key,
                             LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);

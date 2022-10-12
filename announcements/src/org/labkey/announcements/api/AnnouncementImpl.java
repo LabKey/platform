@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.Attachment;
@@ -22,7 +23,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: Nick
@@ -148,6 +151,12 @@ public class AnnouncementImpl implements Announcement
     {
         _model.setRendererType(rendererType.getDisplayName());
     }
-    
+
+    @Override
+    public @NotNull List<Integer> getMemberListIds()
+    {
+        return _model.getMemberListIds() != null ? _model.getMemberListIds() : Collections.emptyList();
+    }
+
     // This needs to be filled out more completely
 }
