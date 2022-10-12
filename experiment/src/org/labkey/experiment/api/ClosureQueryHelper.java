@@ -431,6 +431,7 @@ public class ClosureQueryHelper
         wrappedRowId.setReadOnly(true);
         wrappedRowId.setCalculated(true);
         wrappedRowId.setRequired(false);
+        wrappedRowId.setUserEditable(false);
         wrappedRowId.setFk(new AbstractForeignKey(parent.getUserSchema(),parent.getContainerFilter())
         {
             @Override

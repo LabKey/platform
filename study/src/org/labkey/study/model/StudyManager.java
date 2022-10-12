@@ -69,6 +69,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -3777,10 +3778,34 @@ public class StudyManager
 
             if (null != p)
             {
-                // Enable the domain to make schema changes for this property if required
-                // by dropping/adding the property and its storage at domain save time
-                p.setSchemaImport(true);
-                OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
+                final String fromPropertyUri = p.getPropertyDescriptor().getPropertyURI();
+                boolean fromSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
+                        sp.getPropertyURI().equals(fromPropertyUri));
+                boolean toSystemProp = SystemProperty.getProperties().stream().anyMatch(sp ->
+                        sp.getPropertyURI().equals(ipd.pd.getPropertyURI()));
+                boolean propertyUriChange = !fromPropertyUri.equals(ipd.pd.getPropertyURI());
+
+                // Don't copy values over a system prop, just setup swapping the property descriptor
+                if (propertyUriChange && toSystemProp)
+                {
+                    p.setPropertyURI(ipd.pd.getPropertyURI());
+                }
+                else
+                {
+                    // Enable the domain to make schema changes for this property if required
+                    // by dropping/adding the property and its storage at domain save time
+                    p.setSchemaImport(true);
+                    OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
+                }
+
+                // Flag this as a property descriptor swap. EnsurePropertyDescriptor will find correct property Id
+                // by propertyURI. Ensure correct container/projects set.
+                if (propertyUriChange && (toSystemProp || fromSystemProp))
+                {
+                    p.getPropertyDescriptor().setPropertyId(0);
+                    p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
+                    p.getPropertyDescriptor().setProject(ipd.pd.getProject());
+                }
             }
             else
             {
