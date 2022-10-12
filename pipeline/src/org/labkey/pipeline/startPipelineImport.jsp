@@ -42,19 +42,20 @@
     Container project = c.getProject();
     boolean isProjectAdmin = project != null && project.hasPermission(getUser(), AdminPermission.class);
     String importFormId = "pipelineImportForm";
+    StudyService studyService = StudyService.get();
 
     boolean canCreateSharedDatasets = false;
     if (!c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
-            Study studyProject = StudyService.get().getStudy(project);
+            Study studyProject = studyService != null ? studyService.getStudy(project) : null;
             if (null != studyProject && studyProject.getShareDatasetDefinitions())
                 canCreateSharedDatasets = true;
         }
     }
 
-    Study study = StudyService.get().getStudy(getContainer());
+    Study study = studyService != null ? studyService.getStudy(getContainer()) : null;
     TimepointType timepointType = study != null ? study.getTimepointType() : null;
 %>
 
