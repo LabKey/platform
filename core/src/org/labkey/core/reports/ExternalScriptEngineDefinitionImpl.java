@@ -77,6 +77,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private PathMapper _pathMapper;
     private Integer _dockerImageRowId;
     private String _dockerImageConfig;
+    private String _remoteUrl;
 
     @Override
     public Integer getRowId()
@@ -164,6 +165,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "default", isDefault());
         addIfNotNull(json, "sandboxed", isSandboxed());
         addIfNotNull(json, "dockerImageRowId", getDockerImageRowId());
+        addIfNotNull(json, "remoteUrl", getRemoteUrl());
 
         _configuration = json.toString();
     }
@@ -236,6 +238,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 }
             }
         }
+        if (json.has("remoteUrl"))
+            setRemoteUrl(json.getString("remoteUrl"));
 
         _configuration = configuration;
     }
@@ -497,6 +501,16 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setSandboxed(boolean sandboxed)
     {
         _sandboxed = sandboxed;
+    }
+
+    public String getRemoteUrl()
+    {
+        return _remoteUrl;
+    }
+
+    public void setRemoteUrl(String remoteUrl)
+    {
+        _remoteUrl = remoteUrl;
     }
 
     private void addIfNotNull(JSONObject json, String key, Object value)
