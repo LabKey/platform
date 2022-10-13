@@ -122,13 +122,14 @@ public class ListManagerSchema extends UserSchema
     }
 
     @Override
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (LIST_MANAGER.equalsIgnoreCase(settings.getQueryName()))
         {
             QueryView qv = new QueryView(this, settings, errors)
             {
-                QuerySettings s = getSettings();
+                final QuerySettings s = getSettings();
 
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -178,21 +179,9 @@ public class ListManagerSchema extends UserSchema
 
                 private ActionButton createExportArchiveButton()
                 {
-                    ActionURL urlExport;
-                    ActionButton btnExport;
-
-                    if (s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
-                    {
-                        btnExport = new ActionButton("Export List Archive", getReturnURL());
-                        btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
-                    }
-                    else
-                    {
-                        urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
-                        btnExport = new ActionButton(urlExport, "Export List Archive");
-                        btnExport.setRequiresSelection(true);
-                    }
-
+                    ActionURL urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
+                    ActionButton btnExport = new ActionButton(urlExport, "Export List Archive");
+                    btnExport.setRequiresSelection(true);
                     btnExport.setActionType(ActionButton.Action.POST);
                     btnExport.setDisplayPermission(DesignListPermission.class);
                     return btnExport;
@@ -203,7 +192,7 @@ public class ListManagerSchema extends UserSchema
                 {
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
-                        SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
+                        ret.add(new SimpleDisplayColumn()
                         {
                             @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -211,15 +200,14 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink("Design", designUrl));
+                                out.write(PageFlowUtil.link("Design").href(designUrl).toString());
                             }
-                        };
-                        ret.add(designColumn);
+                        });
                     }
 
                     if (AuditLogService.get().isViewable())
                     {
-                        SimpleDisplayColumn historyColumn = new SimpleDisplayColumn()
+                        ret.add(new SimpleDisplayColumn()
                         {
                             @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -227,10 +215,9 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
                                 historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink("View History", historyUrl));
+                                out.write(PageFlowUtil.link("View History").href(historyUrl).toString());
                             }
-                        };
-                        ret.add(historyColumn);
+                        });
                     }
                 }
             };
@@ -244,6 +231,7 @@ public class ListManagerSchema extends UserSchema
 
             return qv;
         }
+
         return super.createView(context, settings, errors);
     }
     @Override

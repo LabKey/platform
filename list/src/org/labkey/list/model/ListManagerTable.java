@@ -29,6 +29,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
@@ -49,18 +50,29 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         super(table, userSchema, cf);
 
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ListID")));
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
+        {
+            var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
+
+            // This overrides the details URL for the "name" of the list column to always
+            // resolve to the current folder. This is done because lists can contain data that span multiple folders
+            // and we want to default to showing users data in the list for the folder their working in.
+            if (column.getURL() instanceof DetailsURL detailsURL)
+                detailsURL.setContainerContext(getContainer());
+        }
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        {
+            var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+            column.setLabel("Folder");
+        }
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         addWrapColumn( _rootTable.getColumn(FieldKey.fromParts("Category")));
         MutableColumnInfo sharingCol = addWrapColumn("Sharing", _rootTable.getColumn(FieldKey.fromParts("Category")));
-        sharingCol.setDisplayColumnFactory(new DisplayColumnFactory() {
-
+        sharingCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
@@ -99,8 +111,8 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
 
         MutableColumnInfo countCol = addWrapColumn("ItemCount", _rootTable.getColumn(FieldKey.fromParts("ListID")));
         countCol.setHidden(true);
-        countCol.setDisplayColumnFactory(new DisplayColumnFactory() {
-
+        countCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
@@ -158,7 +170,11 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
             }
         });
 
-        setDefaultVisibleColumns(Arrays.asList(FieldKey.fromParts("Name"), FieldKey.fromParts("Description")));
+        setDefaultVisibleColumns(Arrays.asList(
+            FieldKey.fromParts("Name"),
+            FieldKey.fromParts("Description"),
+            FieldKey.fromParts("Container")
+        ));
     }
 
     @Override
@@ -170,6 +186,6 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
+        return getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
     }
 }
