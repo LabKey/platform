@@ -56,6 +56,7 @@ import java.util.Set;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
+    // AllSampleTypes.query.xml metadata file is applied to all Sample Types in a container
     public static final String SCHEMA_METADATA_NAME = "AllSampleTypes";
     public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
