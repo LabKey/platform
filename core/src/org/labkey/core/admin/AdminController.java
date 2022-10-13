@@ -9150,7 +9150,7 @@ public class AdminController extends SpringActionController
             if (null != tab)
             {
                 int oldIndex = tab.getIndex();
-                Portal.PortalPage pageToSwap = handleMovePortalPage(tabContainer, tab, form.getDirection());
+                Portal.PortalPage pageToSwap = handleMovePortalPage(tabContainer, getUser(), tab, form.getDirection());
 
                 if (null != pageToSwap)
                 {
@@ -9213,9 +9213,24 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private Portal.PortalPage handleMovePortalPage(Container c, Portal.PortalPage page, int direction)
+    private Portal.PortalPage handleMovePortalPage(Container c, User user, Portal.PortalPage page, int direction)
     {
-        List<Portal.PortalPage> pagesList = Portal.getTabPages(c, true);
+        Map<String, Portal.PortalPage> pageMap = new CaseInsensitiveHashMap<>();
+        for (Portal.PortalPage pp : Portal.getTabPages(c, true))
+            pageMap.put(pp.getPageId(), pp);
+
+        for (FolderTab folderTab : c.getFolderType().getDefaultTabs())
+        {
+            if (pageMap.containsKey(folderTab.getName()))
+            {
+                // Issue 46233 : folder tabs can conditionally hide/show themselves at render time, these need to
+                // be excluded when adjusting the relative indexes.
+                if (!folderTab.isVisible(c, user))
+                    pageMap.remove(folderTab.getName());
+            }
+        }
+        List<Portal.PortalPage> pagesList = new ArrayList<>(pageMap.values());
+        pagesList.sort(Comparator.comparingInt(Portal.PortalPage::getIndex));
 
         int visibleIndex;
         for (visibleIndex = 0; visibleIndex < pagesList.size(); visibleIndex++)
