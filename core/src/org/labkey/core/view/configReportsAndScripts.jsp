@@ -42,7 +42,7 @@
 <%
     boolean isRemoteEnabled = PremiumService.get().isRemoteREnabled();
     boolean isRDockerAvailable = false;
-    boolean isDockerServiceEnabled = DockerService.get() != null;
+    boolean isPremiumServiceAvailable = PremiumService.get().isEnabled();
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
         DockerService ds = DockerService.get();
@@ -75,11 +75,11 @@
         var R_ENGINE_NAME = 'R Scripting Engine';
         var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
         var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
-        var DOCKER_REPORT_NAME = 'Docker Report Engine';
+        var JUPYTER_SERVICE_REPORT_NAME = 'Jupyter Report Engine';
         var defaultR, countR = 0;
         let grid;
         let remoteEnabled = <%=isRemoteEnabled%>;
-        let dockerServiceEnabled = <%=isDockerServiceEnabled%>;
+        let premiumServiceEnabled = <%=isPremiumServiceAvailable%>;
         let rDockerEnabled = <%=isRDockerAvailable%>;
 
         var DockerImageFields = {
@@ -92,12 +92,6 @@
             appArmorProfile: {label: 'AppArmor Profile', description: ''},
             extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;USERID=1000,USER=rstudio&apos;, which will be converted to &apos;-e USERID=1000 -e USER=rstudio&apos; for docker run command. ' +
                         'A special variable &apos;DETACH=TRUE&apos; will force container to run in detached mode, with &apos;--detach&apos;'}
-        };
-
-        var DockerReportFields = {
-            imageName: {label: 'Docker Image Name', defaultVal: 'labkey/nbconvert', description: "Enter the Docker image name to execute your script.", allowBlank: false},
-            extensions: {label: 'Script extension', defaultVal: 'ipynb', description: "The file extension associated with this script engine. Don't use for R reports, use &apos;New R Docker Engine&apos; instead."},
-            executionOptions: {label: "Execute options", defaultVal: ''}
         };
 
         var renderNameColumn = function(value, p, record) {
@@ -165,15 +159,21 @@
                     });
                 }
             }
-            else if (record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%> && record.docker) {
-                items = getDockerConfigItems(items, record, DockerReportFields);
+            else if (record.type === <%=q(ExternalScriptEngineDefinition.Type.Jupyter.name())%>) {
+
+                items.push({
+                    fieldLabel: 'Remote URL',
+                    name: 'remoteUrl',
+                    id: 'editEngine_remoteUrl',
+                    labelAttrTpl: " data-qtitle='Remote URL' data-qtip='The URL of the service endpoint'",
+                    value: record.remoteUrl
+                });
             }
             return items;
         };
 
         // adds docker engine specific config form items
         var getDockerConfigItems = function(items, record, imageFields) {
-            var isDockerReport = record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>;
             items = items.concat([{
                 name: 'docker',
                 xtype: 'hidden',
@@ -195,11 +195,10 @@
             var configuredHtml = '<span style="color:green;" class="fa fa-check-circle"></span>';
             var notConfiguredHtml = '<span style="color:red;" class="fa fa-times-circle"></span>\<a href="admin-customizeSite.view">site settings</a>';
 
-            if (!isDockerReport)
-                items = items.concat([{
-                    xtype: 'box',
-                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
-                }]);
+            items = items.concat([{
+                xtype: 'box',
+                html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
+            }]);
 
             items = items.concat([{
                 xtype: 'box',
@@ -523,7 +522,7 @@
         };
 
         var getFieldsForRecord = function(record) {
-            var isDockerReport = record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>;
+            var isJupyterReport = record.type === <%=q(ExternalScriptEngineDefinition.Type.Jupyter.name())%>;
             var items = [];
 
             Ext4.each(getAllFields(record), function(rec){
@@ -534,7 +533,7 @@
                     case 'changePassword':
                     case 'user':
                     case 'password':
-                        if (!record.docker && record.remote)
+                        if (!record.docker && record.remote && !isJupyterReport)
                             items.push(rec);
                         break;
                     case 'exePath':
@@ -542,7 +541,7 @@
                             items.push(rec);
                         break;
                     case 'exeCommand':
-                        if (!record.docker)
+                        if (!record.docker && !isJupyterReport)
                             items.push(rec);
                         break;
                     default:
@@ -562,11 +561,11 @@
                         break;
                     case 'languageName':
                     case 'extensions':
-                        if (!isDockerReport)
+                        if (!isJupyterReport)
                             item.readOnly = (!record.external || record.docker);
                         break;
                     case 'outputFileName':
-                        item.hidden = isDockerReport;
+                        item.hidden = isJupyterReport;
                         break;
                 }
             });
@@ -576,7 +575,7 @@
 
         var saveDisabled = function(record) {
             if (record.docker) {
-                if (record.type !== <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
+                if (record.type !== <%=q(ExternalScriptEngineDefinition.Type.Jupyter.name())%>)
                     return <%=(!baseServerUrlSet)%>
             }
             return false;
@@ -716,7 +715,7 @@
 
                                 if (rec.data.extensions === PERL_EXTENSIONS)
                                     perlMenuItem.disable();
-                                else if (dockerMenuItem && rec.data.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
+                                else if (dockerMenuItem && rec.data.type === <%=q(ExternalScriptEngineDefinition.Type.Jupyter.name())%>)
                                     dockerMenuItem.disable();
                             }
                         });
@@ -856,23 +855,23 @@
                 });
             }
 
-            // generic docker report
-            if (dockerServiceEnabled) {
+            // jupyter nbconvert microservice
+            if (premiumServiceEnabled) {
                 items.push({
-                    id: 'add_DockerReportImage',
-                    text: 'New Docker Report Engine',
+                    id: 'add_JupyterReportImage',
+                    text: 'New Jupyter Report Engine',
                     listeners: {
                         click: function (button) {
                             var record = {
-                                name: DOCKER_REPORT_NAME,
+                                name: JUPYTER_SERVICE_REPORT_NAME,
                                 languageName: 'Python',
                                 extensions: 'ipynb',
                                 external: true,
                                 enabled: true,
-                                docker: true,
+                                docker: false,
                                 remote: true,
                                 sandboxed: true,
-                                type: <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>
+                                type: <%=q(ExternalScriptEngineDefinition.Type.Jupyter.name())%>
                             };
                             editRecord(button, grid, record);
                         }
@@ -979,7 +978,8 @@
                     {name:'dockerImageRowId'},
                     {name:'dockerImageConfig'},
                     {name:'outputFileName'},
-                    {name:'pandocEnabled', type:'boolean'}
+                    {name:'pandocEnabled', type:'boolean'},
+                    {name:'remoteUrl'}
                 ]
             });
             showEngines();

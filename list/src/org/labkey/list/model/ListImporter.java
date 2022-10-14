@@ -459,7 +459,7 @@ public class ListImporter
                 return true;
             }
         };
-        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importHelper, user, validatorImporters, errors);
+        return ListManager.get().importListSchema(list, importHelper, user, validatorImporters, errors);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException

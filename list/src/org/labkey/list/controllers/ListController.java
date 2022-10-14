@@ -46,6 +46,7 @@ import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.SQLFragment;
@@ -222,6 +223,9 @@ public class ListController extends SpringActionController
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
 
+            if (null == StringUtils.trimToNull(settings.getContainerFilterName()))
+                settings.setContainerFilterName(ContainerFilter.Type.CurrentPlusProjectAndShared.name());
+
             return schema.createView(getViewContext(), settings, errors);
         }
 
@@ -298,9 +302,9 @@ public class ListController extends SpringActionController
         private final List<Integer> _listIDs = new ArrayList<>();
         private final List<Container> _containers = new ArrayList<>();
 
-        private boolean canDelete(int listId)
+        private boolean canDelete(Container listContainer, int listId)
         {
-            ListDef listDef = ListManager.get().getList(getContainer(), listId);
+            ListDef listDef = ListManager.get().getList(listContainer, listId);
             ListDefinitionImpl list = ListDefinitionImpl.of(listDef);
 
             if (list == null)
@@ -311,8 +315,8 @@ public class ListController extends SpringActionController
             {
                 boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
                 return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && list.getContainer().hasPermission(getUser(), AdminPermission.class));
-
             }
+
             return list.getContainer().hasPermission(getUser(), DesignListPermission.class);
         }
 
@@ -327,35 +331,28 @@ public class ListController extends SpringActionController
                     listIDs = form.getListIds();
                 else
                     listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
-                for (String s : listIDs)
+
+                for (Pair<Integer, Container> pair : getListIdContainerPairs(listIDs, getContainer(), errorMessages))
                 {
-                    String[] parts = s.split(",");
-                    Container c;
-                    if (parts.length > 1)
-                        c = ContainerManager.getForId(parts[1]);
-                    else
-                        c = getContainer();
-                    if (c == null)
-                        errorMessages.add(String.format("Container not found for %s", s));
-                    else
+                    var listId = pair.first;
+                    var listContainer = pair.second;
+
+                    if (canDelete(listContainer, listId))
                     {
-                        int listId = Integer.parseInt(parts[0]);
-                        if (canDelete(listId))
-                        {
-                            _listIDs.add(listId);
-                            _containers.add(c);
-                        }
-                        else
-                            errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, c.getName()));
+                        _listIDs.add(listId);
+                        _containers.add(listContainer);
                     }
+                    else
+                        errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, listContainer.getName()));
                 }
+
                 if (!errorMessages.isEmpty())
                     errors.reject(ERROR_MSG,  StringUtils.join(errorMessages, "\n"));
             }
             else
             {
                 //Accessed from the edit list page, where selection is not possible
-                if (canDelete(form.getListId()))
+                if (canDelete(getContainer(), form.getListId()))
                 {
                     _listIDs.add(form.getListId());
                     _containers.add(getContainer());
@@ -582,7 +579,7 @@ public class ListController extends SpringActionController
 
             if (form.isShowHistory())
             {
-                WebPartView linkView = new HtmlView(PageFlowUtil.textLink("hide item history", getViewContext().cloneActionURL().deleteParameter("showHistory")));
+                WebPartView linkView = new HtmlView(PageFlowUtil.link("hide item history").href(getViewContext().cloneActionURL().deleteParameter("showHistory")).build());
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
 
@@ -605,7 +602,7 @@ public class ListController extends SpringActionController
             }
             else
             {
-                view.addView(new HtmlView(PageFlowUtil.textLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1"))));
+                view.addView(new HtmlView(PageFlowUtil.link("show item history").href(getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
             }
 
             if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled() && DiscussionService.get() != null)
@@ -924,18 +921,27 @@ public class ListController extends SpringActionController
         @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), false);
-            Integer[] IDs = new Integer[listIDs.size()];
-            int i = 0;
-            for(String s : listIDs)
-            {
-                IDs[i] = Integer.parseInt(s.substring(0, s.indexOf(',')));
-                i++;
-            }
             Container c = getContainer();
-            String datatype = ("lists");
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set(datatype), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
-            ctx.setListIds(IDs);
+            List<String> errorMessages = new ArrayList<>();
+            Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
+            List<Integer> listIDs = new ArrayList<>();
+
+            // List export is only supported for lists defined in the current folder
+            for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
+            {
+                if (pair.second != c)
+                {
+                    errorMessages.add(String.format("Cannot export lists defined in %s from %s. List export is only supported for lists defined in the current folder.", pair.second.getPath(), c.getName()));
+                    break;
+                }
+                listIDs.add(pair.first);
+            }
+
+            if (!errorMessages.isEmpty())
+                throw new IllegalArgumentException(StringUtils.join(errorMessages, "\n"));
+
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
+            ctx.setListIds(listIDs.toArray(new Integer[0]));
             ListWriter writer = new ListWriter();
 
             // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
@@ -1051,5 +1057,37 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class SetDefaultValuesListAction extends SetDefaultValuesAction
     {
+    }
+
+    /**
+     * Utility method to parse out Pair<ListId, Container> from a Collection<String> where the strings are encoded
+     * pairs of listIds and container entityIds separated (e.g. "12,ff72c81e-ce2d-103a-b3ce-e8f660509016").
+     */
+    private static List<Pair<Integer, Container>> getListIdContainerPairs(
+        Collection<String> listIdContainers,
+        Container currentContainer,
+        Collection<String> errors)
+    {
+        List<Pair<Integer, Container>> pairs = new ArrayList<>();
+
+        for (String s : listIdContainers)
+        {
+            String[] parts = s.split(",");
+            Container c;
+            if (parts.length > 1)
+                c = ContainerManager.getForId(parts[1]);
+            else
+                c = currentContainer;
+            if (c == null)
+            {
+                errors.add(String.format("Container not found for %s", s));
+                continue;
+            }
+
+            int listId = Integer.parseInt(parts[0]);
+            pairs.add(Pair.of(listId, c));
+        }
+
+        return pairs;
     }
 }

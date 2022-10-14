@@ -29,6 +29,9 @@ public interface ExternalScriptEngineDefinition
         R,
         Perl,
         External,
+        Jupyter,
+
+        // Docker is no longer implemented/supported, but we don't want to blow up for existing saved configs
         Docker
     }
 
@@ -98,4 +101,6 @@ public interface ExternalScriptEngineDefinition
     void setUser(String user);
     void setPassword(String password);
     void setPathMapper(PathMapper pathMap);
+
+    String getRemoteUrl();
 }

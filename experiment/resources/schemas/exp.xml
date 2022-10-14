@@ -216,7 +216,11 @@
           </column>
           <column columnName="Container" />
           <column columnName="Name" >
-              <url>/list/grid.view?listId=${ListId}</url>
+              <!--
+                Resolve lists by "name" instead of "listId" as "name" will resolve cross-folder
+                where as "listId"s are only unique within a folder.
+              -->
+              <url>/list/grid.view?name=${Name}</url>
           </column>
           <column columnName="DomainId" />
           <column columnName="KeyName" />

@@ -125,6 +125,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -187,6 +188,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -2275,6 +2278,9 @@ public class CoreController extends SpringActionController
                             record.put("pathMap", null);
 
                         record.put("user", def.getUser());
+
+                        if (def.getRemoteUrl() != null)
+                            record.put("remoteUrl", def.getRemoteUrl());
                         // don't send down password
                         //record.put("password", def.getPassword());
                     }
@@ -2322,6 +2328,18 @@ public class CoreController extends SpringActionController
                                 errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
                             }
                         }
+                    }
+                }
+
+                if (def.getRemoteUrl() != null)
+                {
+                    try
+                    {
+                        new URL(def.getRemoteUrl());
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        errors.rejectValue("remoteUrl", ERROR_MSG, e.getMessage());
                     }
                 }
 
