@@ -30,9 +30,6 @@ public interface ExternalScriptEngineDefinition
         Perl,
         External,
         Jupyter,
-
-        // Docker is no longer implemented/supported, but we don't want to blow up for existing saved configs
-        Docker
     }
 
     Integer getRowId();
