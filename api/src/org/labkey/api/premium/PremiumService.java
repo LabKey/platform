@@ -33,6 +33,8 @@ public interface PremiumService
         return service;
     }
 
+    boolean isEnabled();
+
     boolean isDisableFileUploadSupported();
 
     boolean isFileUploadDisabled();
@@ -84,6 +86,12 @@ public interface PremiumService
 
     class DefaultPremiumService implements PremiumService
     {
+        @Override
+        public boolean isEnabled()
+        {
+            return false;
+        }
+
         @Override
         public boolean isDisableFileUploadSupported()
         {
