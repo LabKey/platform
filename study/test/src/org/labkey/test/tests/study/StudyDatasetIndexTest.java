@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.study;
 
-import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.TruncateTableCommand;
@@ -30,6 +29,8 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
+
+import static org.junit.Assert.assertEquals;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 12)
@@ -75,7 +76,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
         // Issue: 44363 - we are expecting the import to fail because we are trying to change dataset keys on a
         // non-empty dataset.
-        Assert.assertTrue("Server errors detected", getServerErrorCount() == 0);
+        assertEquals("Server errors detected", 0, getServerErrorCount());
         reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 2, true);
         clickAndWait(Locator.linkWithText("ERROR"));
         new PipelineStatusDetailsPage(getDriver()).assertLogTextContains("ERROR: Unable to change the keys on dataset (DEM-1), because there is still data present. The dataset should be truncated before the import.");
@@ -86,7 +87,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         final Connection cn = WebTestHelper.getRemoteApiConnection(true);
         TruncateTableCommand cmd = new TruncateTableCommand("study", "DEM-1");
         TruncateTableResponse resp = cmd.execute(cn, getProjectName() + "/" + getFolderName());
-        Assert.assertTrue("Truncation of DEM-1 table failed", resp.getDeletedRowCount() == 24);
+        assertEquals("Truncation of DEM-1 table failed", 24, (int) resp.getDeletedRowCount());
 
         // reload should now work
         deleteAllPipelineJobs();
