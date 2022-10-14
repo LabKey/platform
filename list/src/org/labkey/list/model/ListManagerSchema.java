@@ -170,10 +170,9 @@ public class ListManagerSchema extends UserSchema
                     urlDelete.addReturnURL(getReturnURL());
                     ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
                     btnDelete.setIconCls("trash");
-                    btnDelete.setActionType(ActionButton.Action.POST);
-                    btnDelete.isLocked();
+                    btnDelete.setActionType(ActionButton.Action.GET);
                     btnDelete.setDisplayPermission(DesignListPermission.class);
-                    btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+                    btnDelete.setRequiresSelection(true);
                     return btnDelete;
                 }
 
