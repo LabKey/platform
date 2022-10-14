@@ -61,7 +61,6 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowBackgroundUpload;
     private boolean _allowEditableResults;
     private boolean _allowQCStates;
-    private boolean _allowSpacesInPath;
     private boolean _allowTransformationScript;
     private boolean _allowPlateMetadata;
 
@@ -334,16 +333,6 @@ public class GWTProtocol implements IsSerializable
     public void setQcEnabled(boolean qcEnabled)
     {
         _qcEnabled = qcEnabled;
-    }
-
-    public boolean isAllowSpacesInPath()
-    {
-        return _allowSpacesInPath;
-    }
-
-    public void setAllowSpacesInPath(boolean allowSpacesInPath)
-    {
-        _allowSpacesInPath = allowSpacesInPath;
     }
 
     public boolean isAllowQCStates()
