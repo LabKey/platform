@@ -133,17 +133,19 @@ public class AuthenticationManager
 
     public enum AuthLogoType
     {
-        HEADER("header", "auth_header_logo", "16"),
-        LOGIN_PAGE("login page", "auth_login_page_logo", "32");
+        HEADER("header", "auth_header_logo", "_small.png", "16"),
+        LOGIN_PAGE("login page", "auth_login_page_logo", "_big.png", "32");
 
         private final String _label;
         private final String _fileName;
+        private final String _placeholderSuffix;
         private final String _height;
 
-        AuthLogoType(String label, String fileName, String height)
+        AuthLogoType(String label, String fileName, String placeholderSuffix, String height)
         {
             _label = label;
             _fileName = fileName;
+            _placeholderSuffix = placeholderSuffix;
             _height = height;
         }
 
@@ -155,6 +157,11 @@ public class AuthenticationManager
         public String getFileName()
         {
             return _fileName;
+        }
+
+        public String getPlaceholderFilename(SSOAuthenticationConfiguration<?> configuration)
+        {
+            return configuration.getAuthenticationProvider().getName().toLowerCase() + _placeholderSuffix;
         }
 
         public String getHeight()
@@ -195,7 +202,6 @@ public class AuthenticationManager
     // values. Authentication configuration properties will overwrite an existing configuration if "Description" is provided
     // and matches an existing configuration description for the same provider; if "Description" is not provided or doesn't
     // match an existing configuration for that provider then a new configuration will be created. See #39474.
-    // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
         // Handle each provider's startup properties
