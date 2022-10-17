@@ -29,7 +29,7 @@ public interface ExternalScriptEngineDefinition
         R,
         Perl,
         External,
-        Docker
+        Jupyter,
     }
 
     Integer getRowId();
@@ -98,4 +98,6 @@ public interface ExternalScriptEngineDefinition
     void setUser(String user);
     void setPassword(String password);
     void setPathMapper(PathMapper pathMap);
+
+    String getRemoteUrl();
 }

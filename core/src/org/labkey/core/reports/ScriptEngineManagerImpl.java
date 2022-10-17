@@ -290,12 +290,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                         return new RserveScriptEngineFactory(def).getScriptEngine();
                     else
                     {
-                        LOG.error(String.format("Remote R engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
-                        throw new RemoteRNotEnabledException(def);
+                        RemoteRNotEnabledException ex = new RemoteRNotEnabledException(def);
+                        LOG.error(ex.getMessage());
+                        throw ex;
                     }
                 }
                 else
                     return new RScriptEngineFactory(def).getScriptEngine();
+            }
+            else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
+            {
+                LOG.error(String.format("Jupyter Report engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+                throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
