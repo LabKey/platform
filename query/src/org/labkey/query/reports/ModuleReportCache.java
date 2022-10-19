@@ -32,7 +32,7 @@ import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;

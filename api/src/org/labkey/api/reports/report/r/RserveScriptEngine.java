@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.rosuda.REngine.REXP;

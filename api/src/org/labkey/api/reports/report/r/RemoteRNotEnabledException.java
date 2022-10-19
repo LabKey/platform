@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.reports;
+package org.labkey.api.reports.report.r;
 
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
 
 public class RemoteRNotEnabledException extends PremiumFeatureNotEnabledException
 {

@@ -27,7 +27,7 @@ import org.labkey.api.query.QueryService.NamedParameterNotProvided;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
-import org.labkey.api.reports.RConnectionHolder;
+import org.labkey.api.reports.report.r.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;

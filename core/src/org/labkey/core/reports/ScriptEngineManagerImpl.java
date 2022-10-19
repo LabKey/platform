@@ -49,7 +49,7 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
-import org.labkey.api.reports.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
