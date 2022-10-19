@@ -2274,13 +2274,18 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .collect(Collectors.toList());
     }
 
+    public File getStartupPropDirectory()
+    {
+        return new File(_webappDir.getParent(), "startup");
+    }
+
     /**
      * Loads startup/bootstrap properties from configuration files.
      * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using">Documentation Page</a>
      */
     private void loadStartupProps()
     {
-        File propsDir = new File(_webappDir.getParent(), "startup");
+        File propsDir = getStartupPropDirectory();
         if (propsDir.isDirectory())
         {
             File newinstall = new File(propsDir, "newinstall");
