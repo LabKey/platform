@@ -30,7 +30,7 @@ import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;

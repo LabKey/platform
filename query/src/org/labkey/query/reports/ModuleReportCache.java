@@ -34,7 +34,7 @@ import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
-import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;

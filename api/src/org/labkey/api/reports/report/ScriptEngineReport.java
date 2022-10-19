@@ -39,6 +39,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;

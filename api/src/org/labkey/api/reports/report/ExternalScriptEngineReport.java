@@ -29,7 +29,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.RserveScriptEngine;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;

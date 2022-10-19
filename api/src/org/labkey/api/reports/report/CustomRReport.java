@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;

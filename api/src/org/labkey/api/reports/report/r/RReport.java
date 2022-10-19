@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.reports.report;
+package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -33,12 +33,13 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.RScriptEngine;
+import org.labkey.api.reports.report.ExternalScriptEngineReport;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.RserveScriptEngine;
-import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;

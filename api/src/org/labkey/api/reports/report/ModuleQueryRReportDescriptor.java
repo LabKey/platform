@@ -16,6 +16,8 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleRReportResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.template.ClientDependency;

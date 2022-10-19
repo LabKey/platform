@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.reports.report;
+package org.labkey.api.reports.report.r;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
+import org.labkey.api.reports.report.ModuleReportIdentifier;
+import org.labkey.api.reports.report.ModuleReportResource;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
