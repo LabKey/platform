@@ -93,6 +93,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
+import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
 
 /**
  * User: jeckels
@@ -988,7 +989,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         Object remapped = cache.remap(lookupTable, (String)o, true);
                         if (remapped == null)
                         {
-                            errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                            if (pd.getConceptURI().equals(SAMPLE_CONCEPT_URI))
+                                errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
+                            else
+                                errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
                         }
                         else if (o != remapped)
                         {
