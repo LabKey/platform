@@ -143,7 +143,8 @@ public interface AuthenticationProvider
                         form.setDescription(form.getProvider() + " Configuration");
                     }
 
-                    SaveConfigurationAction.saveForm(form, null);
+                    AuthenticationConfiguration<?> configuration = SaveConfigurationAction.saveForm(form, null);
+                    configuration.handleStartupProperties(map);
                 }
             }
         });
@@ -164,11 +165,18 @@ public interface AuthenticationProvider
         @Override
         default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
         {
-            // SSO authentication provider StartupProperty enums must define AutoRedirect constant
-            assert Arrays.stream(type.getEnumConstants()).anyMatch(c -> c.name().equals("AutoRedirect")) :
-                type.getName() + " does not define required AutoRedirect constant!";
+            // SSO authentication provider StartupProperty enums must define AutoRedirect, HeaderLogo, and LoginPageLogo constants
+            assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("AutoRedirect") || c.name().equals("HeaderLogo") || c.name().equals("LoginPageLogo")).count() == 3 :
+                type.getName() + " does not define required AutoRedirect, HeaderLogo, and LoginPageLogo constants!";
 
             PrimaryAuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
+        }
+
+        static String getStartupLogoDescription(String type, String name)
+        {
+            return "File name of the image to use as the " + type + " logo for this " + name + " configuration. " +
+                "Valid values: [a relative path to an image file in the \"startup\" folder, PLACEHOLDER to save a " +
+                "placeholder image for this logo, <BLANK> to clear any previously set image]";
         }
     }
 

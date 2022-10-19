@@ -378,8 +378,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as
-        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
+        // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
+        // from being indexed as samples
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || "Material".equals(getCpasType()))
         {
             return;
         }
