@@ -1098,8 +1098,15 @@ public class ListController extends SpringActionController
                 continue;
             }
 
-            int listId = Integer.parseInt(parts[0]);
-            pairs.add(Pair.of(listId, c));
+            try
+            {
+                int listId = Integer.parseInt(parts[0]);
+                pairs.add(Pair.of(listId, c));
+            }
+            catch (NumberFormatException badListId)
+            {
+                errors.add(String.format("Invalid listId: %s", s));
+            }
         }
 
         return pairs;
