@@ -444,7 +444,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, cf);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -708,7 +708,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                                Domain dataDomain,
                                                List<Map<String, Object>> rawData,
                                                DataLoaderSettings settings,
-                                               ParticipantVisitResolver resolver)
+                                               ParticipantVisitResolver resolver,
+                                               ContainerFilter containerFilter)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -1030,11 +1031,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
-                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, exp::getExpMaterial);
+                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
                     if (material != null)
                     {
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
+                    }
+                    else
+                    {
+                        errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
                     }
                 }
             }

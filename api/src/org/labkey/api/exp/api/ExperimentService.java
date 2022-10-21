@@ -296,6 +296,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpMaterial getExpMaterial(int rowid);
 
+    @Nullable
+    ExpMaterial getExpMaterial(int rowid, ContainerFilter containerFilter);
+
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *

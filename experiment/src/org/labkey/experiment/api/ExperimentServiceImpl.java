@@ -657,6 +657,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
+    public ExpMaterialImpl getExpMaterial(int rowid, ContainerFilter containerFilter)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
+        Material material = new TableSelector(getTinfoMaterial(), filter, null).getObject(rowid, Material.class);
+        return material == null ? null : new ExpMaterialImpl(material);
+    }
+
+    @Override
+    @Nullable
     public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
