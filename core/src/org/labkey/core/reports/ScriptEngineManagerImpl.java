@@ -73,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,7 +98,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
     private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
-        if (key == ALL_ENGINES)
+        if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
             return unmodifiableList(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getArrayList(ExternalScriptEngineDefinitionImpl.class));
@@ -704,6 +705,45 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         ModuleLoader.getInstance().handleStartupProperties(new ScriptEngineStartupPropertyHandler());
     }
+
+
+    @Override
+    public Map<String,Object> getScriptEngineMetrics()
+    {
+        Map<String,Object> views = new LinkedHashMap<>();
+
+        for (ScriptEngineFactory factory : getEngineFactories())
+        {
+            Map<String, Object> record = new HashMap<>();
+
+            record.put("factoryClass", factory.getClass().getName());
+            record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+            record.put("external", String.valueOf(factory instanceof ExternalScriptEngineFactory));
+            record.put("enabled", String.valueOf(isFactoryEnabled(factory)));
+
+            if (factory instanceof ExternalScriptEngineFactory externalFactory)
+            {
+                ExternalScriptEngineDefinition def = externalFactory.getDefinition();
+                record.put("type", String.valueOf(def.getType()));
+                record.put("remote", def.isRemote());
+                record.put("sandboxed", String.valueOf(def.isSandboxed()));
+            }
+
+            try
+            {
+                ScriptEngine engine = factory.getScriptEngine();
+                if (null != engine)
+                    record.put("engineClass", engine.getClass().getName());
+            }
+            catch (Exception x)
+            {
+                // pass
+            }
+            views.put(String.valueOf(views.size()+1),record);
+        }
+        return views;
+    }
+
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
