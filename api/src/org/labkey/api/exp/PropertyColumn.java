@@ -63,9 +63,9 @@ public class PropertyColumn extends LookupColumn
     /**
      * @param container container in which the query is going to be executed. Used optionally as a join condition, and
      * to construct the appropriate TableInfo for lookups.
-     * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container 
+     * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container
      */
-    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer, ContainerFilter containerFilter)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
@@ -74,8 +74,18 @@ public class PropertyColumn extends LookupColumn
 
         _pd = pd;
         _container = container;
-        
-        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey());
+
+        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey(), containerFilter);
+    }
+
+    /**
+     * @param container container in which the query is going to be executed. Used optionally as a join condition, and
+     * to construct the appropriate TableInfo for lookups.
+     * @param joinOnContainer when creating the join as a LookupColumn, whether to also match based on container
+     */
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
+    {
+        this(pd, lsidColumn, container, user, joinOnContainer, null);
     }
 
     // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
@@ -83,6 +93,11 @@ public class PropertyColumn extends LookupColumn
     public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, @Nullable FieldKey lsidColumnFieldKey)
     {
         copyAttributes(user, to, dp, container, lsidColumnFieldKey, null);
+    }
+
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey, ContainerFilter containerFilter)
+    {
+        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, containerFilter);
     }
 
     public static void copyAttributes(
