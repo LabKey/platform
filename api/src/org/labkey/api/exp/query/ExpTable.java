@@ -87,7 +87,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
         return addColumns(domain, legacyName, null);
     }
 
-    MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName, ContainerFilter cf);
+    MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName,@Nullable ContainerFilter cf);
 
 
     void setTitle(String title);

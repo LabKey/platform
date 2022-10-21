@@ -63,9 +63,10 @@ public class PropertyColumn extends LookupColumn
     /**
      * @param container container in which the query is going to be executed. Used optionally as a join condition, and
      * to construct the appropriate TableInfo for lookups.
-     * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container
+     * @param joinOnContainer when creating the join as a LookupColumn, whether to also match based on container
+     * @param containerFilter container filter to use for property column data
      */
-    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer, ContainerFilter containerFilter)
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer, @Nullable ContainerFilter containerFilter)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
@@ -95,7 +96,7 @@ public class PropertyColumn extends LookupColumn
         copyAttributes(user, to, dp, container, lsidColumnFieldKey, null);
     }
 
-    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey, ContainerFilter containerFilter)
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey, @Nullable ContainerFilter containerFilter)
     {
         copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, containerFilter);
     }

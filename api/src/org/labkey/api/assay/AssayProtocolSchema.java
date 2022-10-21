@@ -480,7 +480,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         }
     }
 
-    private void addPropertyColumn(ExpTable table, Domain domain, String columnName, ContainerFilter containerFilter)
+    private void addPropertyColumn(ExpTable table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
     {
         var propsCol = table.addColumns(domain, columnName, containerFilter);
         if (propsCol != null)
