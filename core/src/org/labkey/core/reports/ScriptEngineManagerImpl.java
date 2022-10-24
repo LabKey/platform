@@ -718,15 +718,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             record.put("factoryClass", factory.getClass().getName());
             record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
-            record.put("external", String.valueOf(factory instanceof ExternalScriptEngineFactory));
-            record.put("enabled", String.valueOf(isFactoryEnabled(factory)));
+            record.put("external", factory instanceof ExternalScriptEngineFactory);
+            record.put("enabled", isFactoryEnabled(factory));
 
             if (factory instanceof ExternalScriptEngineFactory externalFactory)
             {
                 ExternalScriptEngineDefinition def = externalFactory.getDefinition();
                 record.put("type", String.valueOf(def.getType()));
                 record.put("remote", def.isRemote());
-                record.put("sandboxed", String.valueOf(def.isSandboxed()));
+                record.put("sandboxed", def.isSandboxed());
             }
 
             try
@@ -739,7 +739,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             {
                 // pass
             }
-            views.put(String.valueOf(views.size()+1),record);
+
+            // add using a class as the key, uniquify if necessary.
+            String key = (String)record.get("factoryClass");
+            if (null != views.putIfAbsent(key, record))
+            {
+                int i=1;
+                while (null != views.putIfAbsent(key + "$" + i, record))
+                    i++;
+            }
         }
         return views;
     }
