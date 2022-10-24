@@ -10001,7 +10001,7 @@ public class AdminController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             if (!getContainer().isRoot())
-                throw new NotFoundException();
+                throw new NotFoundException("Must be invoked in the root");
 
             // requires site-admin, unless there are no users
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
