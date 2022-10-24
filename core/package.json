@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.236.2",
+    "@labkey/components": "2.236.2-fb-enable-assay-qc.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
