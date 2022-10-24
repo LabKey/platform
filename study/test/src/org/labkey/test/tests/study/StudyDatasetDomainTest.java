@@ -5,8 +5,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.domain.AbstractDomainUpdateCommand;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.Domain;
 import org.labkey.remoteapi.domain.DomainResponse;
@@ -180,7 +180,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         saveCmd.execute(this.createDefaultConnection(), getContainerPath());
     }
 
-    private void testForExpectedErrorMessage(AbstractDomainUpdateCommand cmd, String expectedErrorMsg, String domainApiType) throws IOException
+    private void testForExpectedErrorMessage(Command<?> cmd, String expectedErrorMsg, String domainApiType) throws IOException
     {
         try
         {
