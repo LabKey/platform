@@ -13,30 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
-import {Panel} from "react-bootstrap";
+import React from 'react';
+import { Panel } from 'react-bootstrap';
 import { ActionURL, Security, Utils, getServerContext, PermissionTypes } from '@labkey/api';
-import { Alert, LoadingSpinner, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol, BeforeUnload } from '@labkey/components';
+import {
+    Alert,
+    AssayDesignerPanels,
+    AssayProtocolModel,
+    BeforeUnload,
+    DomainFieldsDisplay,
+    fetchProtocol,
+    LoadingSpinner,
+    ServerContext,
+    ServerContextProvider,
+    withAppUser,
+} from '@labkey/components';
 
 import "../DomainDesigner.scss"
 
 type State = {
-    protocolId: number,
-    providerName?: string,
-    copy?: boolean,
-    returnUrl: string,
-    model?: AssayProtocolModel,
-    isLoadingModel: boolean,
-    hasDesignAssayPerm?: boolean
-    message?: string
+    copy?: boolean;
+    hasDesignAssayPerm?: boolean;
+    isLoadingModel: boolean;
+    message?: string;
+    model?: AssayProtocolModel;
+    protocolId: number;
+    providerName?: string;
+    returnUrl: string;
+    serverContext: ServerContext;
 }
 
 export class App extends React.Component<any, State> {
 
-    private _dirty: boolean  = false;
+    private _dirty: boolean = false;
 
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
         const { rowId, copy, providerName } = ActionURL.getParameters();
@@ -55,7 +66,8 @@ export class App extends React.Component<any, State> {
             providerName,
             copy,
             isLoadingModel: true,
-            returnUrl
+            returnUrl,
+            serverContext: withAppUser(getServerContext()),
         };
     }
 
@@ -64,17 +76,13 @@ export class App extends React.Component<any, State> {
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
-            containerPath: getServerContext().container.path,
             success: (data) => {
-                this.setState(() => ({
-                    hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1
-                }));
+                this.setState({
+                    hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1,
+                });
             },
             failure: (error) => {
-                this.setState(() => ({
-                    message: error.exception,
-                    hasDesignAssayPerm: false
-                }));
+                this.setState({ hasDesignAssayPerm: false, message: error.exception });
             }
         });
 
@@ -82,23 +90,14 @@ export class App extends React.Component<any, State> {
         if (protocolId || providerName) {
             fetchProtocol(protocolId, providerName, copy)
                 .then((model) => {
-                    this.setState(() => ({
-                        model,
-                        isLoadingModel: false
-                    }));
+                    this.setState({ isLoadingModel: false, model });
                 })
                 .catch((error) => {
-                    this.setState(() => ({
-                        message: error.exception,
-                        isLoadingModel: false
-                    }));
+                    this.setState({ isLoadingModel: false, message: error.exception });
                 });
         }
         else {
-            this.setState(() => ({
-                message: 'Missing required parameter: rowId or providerName',
-                isLoadingModel: false
-            }));
+            this.setState({ isLoadingModel: false, message: 'Missing required parameter: rowId or providerName' });
         }
     }
 
@@ -114,52 +113,19 @@ export class App extends React.Component<any, State> {
         window.location.href = this.state.returnUrl || defaultUrl;
     }
 
-    onCancel = () => {
-        this.navigate(ActionURL.buildURL('project', 'begin', getServerContext().container.path));
+    onCancel = (): void => {
+        this.navigate(ActionURL.buildURL('project', 'begin'));
     };
 
-    onComplete = (model: AssayProtocolModel) => {
-        this.navigate(ActionURL.buildURL('assay', 'assayBegin', getServerContext().container.path, {rowId: model.protocolId}));
+    onComplete = (model: AssayProtocolModel): void => {
+        this.navigate(ActionURL.buildURL('assay', 'assayBegin', undefined, { rowId: model.protocolId }));
     };
 
-    onChange = (model: AssayProtocolModel) => {
+    onChange = (model: AssayProtocolModel): void => {
         this._dirty = true;
     };
 
-    renderReadOnlyView() {
-        const { model } = this.state;
-
-        return (
-            <>
-                <Panel>
-                    <Panel.Heading>
-                        <div className={"panel-title"}>{model.name}</div>
-                    </Panel.Heading>
-                    <Panel.Body>
-                        <table>
-                            {this.renderReadOnlyProperty('Provider', model.providerName)}
-                            {this.renderReadOnlyProperty('Description', model.description)}
-                            {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
-                            {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
-                            {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
-                            {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer['path'] : undefined)}
-                            {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
-                            {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
-                            {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
-                            {this.renderReadOnlyProperty('Module-Provided Scripts', model.moduleTransformScripts, model.moduleTransformScripts.size === 0)}
-                            {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
-                            {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
-                        </table>
-                    </Panel.Body>
-                </Panel>
-                {model.domains.map((domain, index) => (
-                    <DomainFieldsDisplay key={index} domain={domain} />
-                ))}
-            </>
-        )
-    }
-
+    // TODO: Convert this into a React component
     renderReadOnlyProperty(label: string, value: any, hide?: boolean) {
         if (value && !hide) {
             return (
@@ -171,49 +137,71 @@ export class App extends React.Component<any, State> {
                         {typeof value === 'object' && value.map((val) => <div>{val}</div>)}
                     </td>
                 </tr>
-            )
+            );
         }
     }
 
-    renderDesignerView() {
-        const { model } = this.state;
-
-        return (
-            <AssayDesignerPanels
-                initModel={model}
-                onCancel={this.onCancel}
-                onComplete={this.onComplete}
-                onChange={this.onChange}
-                useTheme={true}
-                successBsStyle={'primary'}
-            />
-        )
-    }
-
     render() {
-        const { isLoadingModel, hasDesignAssayPerm, message, model } = this.state;
+        const { isLoadingModel, hasDesignAssayPerm, message, model, serverContext } = this.state;
 
         if (message) {
-            return <Alert>{message}</Alert>
+            return <Alert>{message}</Alert>;
         }
 
         // set as loading until model is loaded and we know if the user has DesignAssayPerm
         if (isLoadingModel || hasDesignAssayPerm === undefined) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         // check if this is a create assay case with a user that doesn't have permissions
         if (model.isNew() && !hasDesignAssayPerm) {
-            return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>
+            return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>;
         }
 
         return (
-            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {hasDesignAssayPerm
-                    ? this.renderDesignerView()
-                    : this.renderReadOnlyView()
-                }
-            </BeforeUnload>
-        )
+            <ServerContextProvider initialContext={serverContext}>
+                <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
+                    {hasDesignAssayPerm && (
+                        <AssayDesignerPanels
+                            initModel={model}
+                            onChange={this.onChange}
+                            onCancel={this.onCancel}
+                            onComplete={this.onComplete}
+                            successBsStyle="primary"
+                            useTheme
+                        />
+                    )}
+                    {!hasDesignAssayPerm && (
+                        <>
+                            <Panel>
+                                <Panel.Heading>
+                                    <div className={"panel-title"}>{model.name}</div>
+                                </Panel.Heading>
+                                <Panel.Body>
+                                    <table>
+                                        {this.renderReadOnlyProperty('Provider', model.providerName)}
+                                        {this.renderReadOnlyProperty('Description', model.description)}
+                                        {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
+                                        {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
+                                        {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
+                                        {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
+                                        {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer['path'] : undefined)}
+                                        {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
+                                        {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
+                                        {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
+                                        {this.renderReadOnlyProperty('Module-Provided Scripts', model.moduleTransformScripts, model.moduleTransformScripts.size === 0)}
+                                        {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
+                                        {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
+                                    </table>
+                                </Panel.Body>
+                            </Panel>
+                            {model.domains.map((domain, index) => (
+                                <DomainFieldsDisplay key={index} domain={domain} />
+                            ))}
+                        </>
+                    )}
+                </BeforeUnload>
+            </ServerContextProvider>
+        );
     }
 }

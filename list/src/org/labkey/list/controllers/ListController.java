@@ -299,9 +299,6 @@ public class ListController extends SpringActionController
     @RequiresAnyOf({DesignListPermission.class, ManagePicklistsPermission.class})
     public static class DeleteListDefinitionAction extends ConfirmAction<ListDeletionForm>
     {
-        private final List<Integer> _listIDs = new ArrayList<>();
-        private final List<Container> _containers = new ArrayList<>();
-
         private boolean canDelete(Container listContainer, int listId)
         {
             ListDef listDef = ListManager.get().getList(listContainer, listId);
@@ -321,9 +318,30 @@ public class ListController extends SpringActionController
         }
 
         @Override
+        public String getConfirmText()
+        {
+            return "Confirm Delete";
+        }
+
+        @Override
         public void validateCommand(ListDeletionForm form, Errors errors)
         {
-            if (form.getListId() == null)
+            if (form.getListId() != null)
+            {
+                if (canDelete(getContainer(), form.getListId()))
+                    form.getListContainerMap().add(Pair.of(form.getListId(), getContainer()));
+                else
+                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", form.getListId(), getContainer().getName()));
+            }
+            else if (form.getName() != null)
+            {
+                var list = form.getList();
+                if (canDelete(list.getContainer(), list.getListId()))
+                    form.getListContainerMap().add(Pair.of(list.getListId(), getContainer()));
+                else
+                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", list.getListId(), getContainer().getName()));
+            }
+            else
             {
                 List<String> errorMessages = new ArrayList<>();
                 Collection<String> listIDs;
@@ -338,10 +356,7 @@ public class ListController extends SpringActionController
                     var listContainer = pair.second;
 
                     if (canDelete(listContainer, listId))
-                    {
-                        _listIDs.add(listId);
-                        _containers.add(listContainer);
-                    }
+                        form.getListContainerMap().add(pair);
                     else
                         errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, listContainer.getName()));
                 }
@@ -349,33 +364,25 @@ public class ListController extends SpringActionController
                 if (!errorMessages.isEmpty())
                     errors.reject(ERROR_MSG,  StringUtils.join(errorMessages, "\n"));
             }
-            else
-            {
-                //Accessed from the edit list page, where selection is not possible
-                if (canDelete(getContainer(), form.getListId()))
-                {
-                    _listIDs.add(form.getListId());
-                    _containers.add(getContainer());
-                }
-                else
-                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", form.getListId(), getContainer().getName()));
-            }
+
+            if (form.getListContainerMap().isEmpty())
+                errors.reject(ERROR_MSG, "You must specify a list or lists to delete.");
         }
 
         @Override
         public ModelAndView getConfirmView(ListDeletionForm form, BindException errors)
         {
             if (getPageConfig().getTitle() == null)
-                setTitle("Delete List");
+                setTitle("Confirm Deletion");
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
         @Override
         public boolean handlePost(ListDeletionForm form, BindException errors)
         {
-            for(int i = 0; i < _listIDs.size(); i++)
+            for (Pair<Integer, Container> pair : form.getListContainerMap())
             {
-                ListDefinition listDefinition = ListService.get().getList(_containers.get(i), _listIDs.get(i));
+                ListDefinition listDefinition = ListService.get().getList(pair.second, pair.first);
                 if (null != listDefinition)
                 {
                     try
@@ -388,6 +395,7 @@ public class ListController extends SpringActionController
                     }
                 }
             }
+
             return !errors.hasErrors();
         }
 
@@ -401,6 +409,7 @@ public class ListController extends SpringActionController
     public static class ListDeletionForm extends ListDefinitionForm
     {
         private List<String> _listIds;
+        private final List<Pair<Integer, Container>> _listContainerMap = new ArrayList<>();
 
         public List<String> getListIds()
         {
@@ -410,6 +419,11 @@ public class ListController extends SpringActionController
         public void setListIds(List<String> listIds)
         {
             _listIds = listIds;
+        }
+
+        public List<Pair<Integer, Container>> getListContainerMap()
+        {
+            return _listContainerMap;
         }
     }
 
@@ -1084,8 +1098,15 @@ public class ListController extends SpringActionController
                 continue;
             }
 
-            int listId = Integer.parseInt(parts[0]);
-            pairs.add(Pair.of(listId, c));
+            try
+            {
+                int listId = Integer.parseInt(parts[0]);
+                pairs.add(Pair.of(listId, c));
+            }
+            catch (NumberFormatException badListId)
+            {
+                errors.add(String.format("Invalid listId: %s", s));
+            }
         }
 
         return pairs;
