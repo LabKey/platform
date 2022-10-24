@@ -125,7 +125,12 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
             Date dateConstraint = new Date(DateUtil.parseDateTime(constraint.getValue()));
             int comparison = ((Date) value).compareTo(dateConstraint);
 
-            return comparisonValid(comparison, constraint.getKey());
+            // Issue 46094: handle "~date" based filter types (i.e. ~dateeq, ~dategt, etc.)
+            String type = constraint.getKey();
+            if (type != null && type.startsWith("~date"))
+                type = type.replace("~date", "~");
+
+            return comparisonValid(comparison, type);
         }
         return false;
     }
