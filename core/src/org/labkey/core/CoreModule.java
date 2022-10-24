@@ -1036,6 +1036,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             Calendar cal = new GregorianCalendar();
             cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
+            results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             return results;
         });
 

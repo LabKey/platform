@@ -705,7 +705,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
             allSql.append(SQLFragment.join(selectStatements, "UNION\n"));
             allSql.append(") u\nGROUP BY Type\nORDER BY Type");
-            String link = currentUrl.clone().deleteParameters().addParameter("type", null).getLocalURIString();
+            ActionURL linkUrl = currentUrl.clone().deleteParameters().addParameter("type", null);
 
             // The second query shows all attachments that we can't associate with a type. We just need to assemble a big
             // WHERE NOT clause that ORs the conditions from every registered type.
@@ -773,7 +773,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             }
             unknownView.setNavMenu(navMenu);
 
-            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", link), unknownView);
+            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", linkUrl), unknownView);
         }
         else
         {
@@ -859,12 +859,12 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         selectStatements.add("    SELECT " + expression + " AS EntityId, '" + table.getSelectName() + "' AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
-    private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable String link)
+    private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
     {
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();
 
-        return null != link ? new ResultSetView(rs, title, 1, link) : new ResultSetView(rs, title);
+        return null != linkUrl ? new ResultSetView(rs, title, "Type", linkUrl) : new ResultSetView(rs, title);
     }
 
     @Override

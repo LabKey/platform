@@ -355,11 +355,11 @@ public class PropertyController extends SpringActionController
     }
 
     /**
-     * DO NOT USE. This action has been deprecated in 20.3 in favor of GetDomainKindAction.
+     * @deprecated Use {@link GetDomainDetailsAction}
      * Only here for backwards compatibility to resolve requests and redirect.
      * //TODO: Deprecate/update docs
      */
-    @Deprecated
+    @Deprecated (since = "20.3")
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
