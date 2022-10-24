@@ -15,8 +15,10 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
@@ -28,19 +30,26 @@ public class ResultSetView extends WebPartView
 {
     private final ResultSet _rs;
     private final int _linkColumn;
-    private final String _link;
+    private final String _unencodedLink;
 
     public ResultSetView(ResultSet rs, String title)
     {
-        this(rs, title, 0, null);
+        this(rs, title, null, null);
     }
 
-    public ResultSetView(ResultSet rs, String title, int linkColumn, String link)
+    public ResultSetView(ResultSet rs, String title, @Nullable String linkColumnName, @Nullable ActionURL linkUrl)
     {
         super(title);
         _rs = rs;
-        _linkColumn = linkColumn;
-        _link = link;
+        try
+        {
+            _linkColumn = linkColumnName != null ? rs.findColumn(linkColumnName) : 0;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        _unencodedLink = linkUrl != null ? linkUrl.toString() : null;
     }
 
     @Override
@@ -83,12 +92,12 @@ public class ResultSetView extends WebPartView
 
                     out.print("<td>");
 
-                    boolean createLink = null != _link && _linkColumn == i && null != val && shouldLink(_rs);
+                    boolean createLink = null != _unencodedLink && _linkColumn == i && null != val && shouldLink(_rs);
 
                     if (createLink)
                     {
                         out.print("<a href=\"");
-                        out.print(PageFlowUtil.filter(_link + val.toString()));
+                        out.print(PageFlowUtil.filter(_unencodedLink + val.toString()));
                         out.print("\">");
                     }
 
