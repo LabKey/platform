@@ -1745,7 +1745,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         @Override
-        public Container get()
+        public @Nullable Container get()
         {
             return _entityId == null ? null : ContainerManager.getForId(_entityId);
         }
