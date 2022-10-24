@@ -1738,7 +1738,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         private final GUID _entityId;
 
-        public ContainerSupplier(GUID entityId)
+        @JsonCreator
+        public ContainerSupplier(@JsonProperty("entityId") GUID entityId)
         {
             _entityId = entityId;
         }
