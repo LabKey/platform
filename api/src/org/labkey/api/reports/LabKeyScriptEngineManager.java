@@ -25,6 +25,7 @@ import org.labkey.api.services.ServiceRegistry;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import java.util.List;
+import java.util.Map;
 
 public interface LabKeyScriptEngineManager
 {
@@ -83,4 +84,6 @@ public interface LabKeyScriptEngineManager
     ExternalScriptEngineDefinition getEngineDefinition(int rowId, @NotNull ExternalScriptEngineDefinition.Type type);
 
     ExternalScriptEngineDefinition createEngineDefinition();
+
+    Map<String,Object> getScriptEngineMetrics();
 }
