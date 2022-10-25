@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.236.2-fb-enable-assay-qc.0"
+    "@labkey/components": "2.237.1"
   },
   "devDependencies": {
     "@labkey/build": "6.3.1",
