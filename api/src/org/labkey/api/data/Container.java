@@ -1731,6 +1731,23 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public static Supplier<Container> supplierOf(@Nullable Container c)
     {
         final GUID id = c == null ? null : c.getEntityId();
-        return () -> id == null ? null : ContainerManager.getForId(id);
+        return new ContainerSupplier(id);
+    }
+
+    private static class ContainerSupplier implements Supplier<Container>, Serializable
+    {
+        private final GUID _entityId;
+
+        @JsonCreator
+        public ContainerSupplier(@JsonProperty("entityId") GUID entityId)
+        {
+            _entityId = entityId;
+        }
+
+        @Override
+        public @Nullable Container get()
+        {
+            return _entityId == null ? null : ContainerManager.getForId(_entityId);
+        }
     }
 }
