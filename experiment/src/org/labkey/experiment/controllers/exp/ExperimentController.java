@@ -77,6 +77,7 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -130,6 +131,7 @@ import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -3483,8 +3485,8 @@ public class ExperimentController extends SpringActionController
 
     public static class DataViewSelectionForm extends ViewForm
     {
-        private String _dataRegionSelectionKey;
-        private Set<Integer> _rowIds;
+        protected String _dataRegionSelectionKey;
+        protected Set<Integer> _rowIds;
 
         public String getDataRegionSelectionKey()
         {
@@ -7512,6 +7514,7 @@ public class ExperimentController extends SpringActionController
     public static class CrossFolderSelectionForm extends DataViewSelectionForm
     {
         private String _dataType;
+        private String _picklistName;
 
         public String getDataType()
         {
@@ -7521,6 +7524,39 @@ public class ExperimentController extends SpringActionController
         public void setDataType(String dataType)
         {
             _dataType = dataType;
+        }
+
+        public String getPicklistName()
+        {
+            return _picklistName;
+        }
+
+        public void setPicklistName(String picklistName)
+        {
+            _picklistName = picklistName;
+        }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null)
+                return _rowIds;
+            Set<Integer> selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+            if (_picklistName != null)
+            {
+                User user = getViewContext().getUser();
+                Container container = getViewContext().getContainer();
+                UserSchema schema = ListService.get().getUserSchema(user, container);
+                TableInfo tInfo = schema.getTable(_picklistName);
+                if (tInfo != null)
+                {
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+                    filter.addInClause(FieldKey.fromParts("id"), selectedIds);
+                    TableSelector selector = new TableSelector(tInfo, Collections.singleton("SampleID"), filter, null);
+                    return new HashSet<>(selector.getArrayList(Integer.class));
+                }
+            }
+            return selectedIds;
         }
     }
 

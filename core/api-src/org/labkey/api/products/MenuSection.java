@@ -25,7 +25,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -159,13 +158,13 @@ public abstract class MenuSection
         return def.getTable(new ArrayList<>(), true);
     }
 
-    protected String getLabel(UserSchema schema, String queryName, boolean splitCamelCase)
+    protected String getLabel(UserSchema schema, String queryName)
     {
         TableInfo tableInfo = getTableInfo(schema, queryName);
         String label = tableInfo.getTitle();
         if (label == null)
             label = tableInfo.getName();
-        return splitCamelCase ? StringUtilsLabKey.splitCamelCase(label) : label;
+        return label;
     }
 
     public String getSectionKey()
