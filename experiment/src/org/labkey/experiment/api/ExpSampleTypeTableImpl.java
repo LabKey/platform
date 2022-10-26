@@ -67,7 +67,6 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case LSID:
             case MaterialLSIDPrefix:
             case Name:
-            case AliquotNameExpression:
             case LabelColor:
             case MetricUnit:
             case AutoLinkTargetContainer:
@@ -86,6 +85,12 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             {
                 var columnInfo =  wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 columnInfo.setLabel("Naming Pattern");
+                return columnInfo;
+            }
+            case AliquotNameExpression:
+            {
+                var columnInfo =  wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Aliquot Naming Pattern");
                 return columnInfo;
             }
             case SampleCount:
