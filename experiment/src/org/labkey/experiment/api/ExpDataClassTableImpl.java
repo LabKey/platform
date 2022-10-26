@@ -75,14 +75,22 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         switch (column)
         {
             case Folder:
+            {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ListDataClassAction.class, getContainer())));
                 return columnInfo;
+            }
 
             case Description:
-            case NameExpression:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
+
+            case NameExpression:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Naming Pattern");
+                return columnInfo;
+            }
 
             case Name:
             {
