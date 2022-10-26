@@ -217,17 +217,17 @@ public class PropertyColumn extends LookupColumn
         {
             sql.append(getPropertyCol(_pd));
         }
-        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + _pd.getPropertyId());
+        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
         sql.append(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
             sql.append(_foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias(tableAlias) + ".ObjectId");
+            sql.append(getTableAlias(tableAlias)).append(".ObjectId");
         sql.append(")");
         if (null != cast)
         {
             sql.insert(0, "CAST(");
-            sql.append(" AS " + cast + ")");
+            sql.append(" AS ").append(cast).append(")");
         }
 
         return sql;
@@ -245,17 +245,13 @@ public class PropertyColumn extends LookupColumn
         if (pd.getPropertyType() == null)
             throw new IllegalStateException("No storage type");
 
-        switch (pd.getPropertyType().getStorageType())
-        {
-            case 's':
-                return "StringValue";
-            case 'f':
-                return "FloatValue";
-            case 'd':
-                return "DateTimeValue";
-            default:
-                throw new IllegalStateException("Bad storage type");
-        }
+        return switch (pd.getPropertyType().getStorageType())
+                {
+                    case 's' -> "StringValue";
+                    case 'f' -> "FloatValue";
+                    case 'd' -> "DateTimeValue";
+                    default -> throw new IllegalStateException("Bad storage type");
+                };
     }
 
     private String getPropertySqlCastType()
@@ -300,7 +296,7 @@ public class PropertyColumn extends LookupColumn
         }
 
         strJoinNoContainer.append(" AND ");
-        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container"), _container));
+        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container")));
 
         return strJoinNoContainer;
     }
@@ -348,7 +344,7 @@ public class PropertyColumn extends LookupColumn
     }
 
     @Override
-    public Class getJavaClass(boolean isNullable)
+    public Class<?> getJavaClass(boolean isNullable)
     {
         if (isMvIndicatorColumn())
         {
