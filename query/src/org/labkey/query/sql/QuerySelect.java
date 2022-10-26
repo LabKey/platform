@@ -1425,9 +1425,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
         List<Sort.SortField> ret = new ArrayList<>();
         for (var entry : _sortEntries)
         {
-            if (entry.expr() instanceof QIdentifier && selectAliases.contains(entry.expr().getTokenText()))
+            if (entry.expr() instanceof QIdentifier qid && selectAliases.contains(qid.getIdentifier()))
             {
-                ret.add(new Sort.SortField(new FieldKey(null, entry.expr().getTokenText()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+                ret.add(new Sort.SortField(new FieldKey(null, qid.getIdentifier()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
             }
             else
             {
