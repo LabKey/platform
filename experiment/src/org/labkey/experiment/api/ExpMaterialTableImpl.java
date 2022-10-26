@@ -224,6 +224,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                columnInfo.setLabel("Root Material");
                 return columnInfo;
             }
             case AliquotedFromLSID:
@@ -231,6 +232,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                columnInfo.setLabel("Aliquoted From");
                 return columnInfo;
             }
             case IsAliquot:
