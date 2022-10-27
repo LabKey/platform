@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_10(100, false, true, PostgreSql_10_Dialect::new),
+    POSTGRESQL_10(100, true, true, PostgreSql_10_Dialect::new),
     POSTGRESQL_11(110, false, true, PostgreSql_11_Dialect::new),
     POSTGRESQL_12(120, false, true, PostgreSql_12_Dialect::new),
     POSTGRESQL_13(130, false, true, PostgreSql_13_Dialect::new),
