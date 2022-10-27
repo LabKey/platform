@@ -235,10 +235,7 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -951,25 +948,14 @@ public class AdminController extends SpringActionController
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
-            String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
-            StringBuilder errorSource = new StringBuilder();
-
-            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource, true);
+            addCreditsViews(views, modules, "jars.txt", "JAR", null);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx,  errorSource, AppProps.getInstance().isDevMode() /* No staging dir in production mode so skip error checking */);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "JAR Files Installed in the <tomcat>/lib Directory"      /* No staging dir in production mode so skip error checking */);
 
-            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
-            addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
-            addCreditsViews(views, modules, "executables.txt", "Executable", errorSource);
-
-            if (errorSource.length() > 0)
-            {
-                WikiRenderingService renderingService = WikiRenderingService.get();
-                // Copy all the warnings to the top
-                HtmlString html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
-                views.addView(new HtmlView(html), 0);
-            }
+            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
+            addCreditsViews(views, modules, "source.txt", "Java Source Code");
+            addCreditsViews(views, modules, "executables.txt", "Executable");
 
             return views;
         }
@@ -981,29 +967,23 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource, true);
+        addCreditsViews(views, modules, creditsFile, fileType, null);
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource, boolean checkForErrors) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String customTitle) throws IOException
     {
         for (Module module : modules)
         {
             String wikiSource = getCreditsFile(module, creditsFile);
 
-            Collection<String> filenames = Collections.emptySet();
-
-            if (null != filenameProvider)
-                filenames = filenameProvider.apply(module);
-
-            if (null != wikiSource || !filenames.isEmpty())
+            if (null != wikiSource)
             {
                 String component = "the " + module.getName() + " Module";
                 String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
-                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern, checkForErrors);
+                CreditsView credits = new CreditsView(wikiSource, component, title);
                 views.addView(credits);
-                errorSource.append(credits.getErrors());
             }
         }
     }
@@ -1017,13 +997,11 @@ public class AdminController extends SpringActionController
         private HtmlString _html;
         private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern, boolean checkForErrors)
+        CreditsView(@Nullable String wikiSource, String component, String title)
         {
             super(title);
 
             _component = StringUtils.trimToEmpty(component);
-            if (checkForErrors)
-                _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
             wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
 
             if (StringUtils.isNotEmpty(wikiSource))
@@ -1037,37 +1015,6 @@ public class AdminController extends SpringActionController
         private @NotNull String getErrors()
         {
             return _errors;
-        }
-
-        private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
-        {
-            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
-                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
-
-            Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
-
-            if (null != wikiSource && null != wikiSourceSearchPattern)
-            {
-                Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
-                Matcher m = p.matcher(wikiSource);
-
-                while(m.find())
-                {
-                    String found = m.group(1);
-                    documentedFilenames.add(found);
-                }
-            }
-
-            Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
-            documentedFilenames.removeAll(foundFilenames);
-            foundFilenames.removeAll(documentedFilenamesCopy);
-            Collection<String> undocumented = new CaseInsensitiveTreeSet(foundFilenames);
-            undocumented.removeIf(name->name.startsWith("."));
-
-            String undocumentedErrors = foundFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (undocumented.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (foundFilenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(foundFilenames.iterator(), "\\\\");
-            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
-
-            return undocumentedErrors + missingErrors;
         }
 
         @Override
