@@ -409,4 +409,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
         return new DataClassDomainKindProperties(dc);
     }
+
+    @Override
+    public boolean allowTimepointProperties()
+    {
+        return true;
+    }
 }
