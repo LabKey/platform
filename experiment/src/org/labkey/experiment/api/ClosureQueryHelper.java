@@ -224,13 +224,15 @@ public class ClosureQueryHelper
                 if (ret != null)
                 {
                     ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
-                    ret.setConceptURI(CONCEPT_URI);
                 }
                 return ret;
             }
         };
         ret.setFk(qfk);
-        ret.setConceptURI(CONCEPT_URI);
+
+        // Don't override an existing conceptUri
+        if(ret.getConceptURI() == null)
+            ret.setConceptURI(CONCEPT_URI);
         return ret;
     }
 
