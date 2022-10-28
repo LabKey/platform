@@ -1163,7 +1163,6 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
-            ModuleLoader.getInstance().setDeferUsageReport(false);
             HttpServletRequest request = getViewContext().getRequest();
 
             // We only need to check that SSL is running if the user isn't already using SSL
@@ -1215,9 +1214,7 @@ public class AdminController extends SpringActionController
                 level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
                 props.setUsageReportingLevel(level);
             }
-            catch (IllegalArgumentException e)
-            {
-            }
+            catch (IllegalArgumentException ignored) {}
 
             props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
@@ -3773,7 +3770,6 @@ public class AdminController extends SpringActionController
                 lafProps.save();
 
                 // Send an immediate report now that they've set up their account and defaults, and then every 24 hours after.
-                ModuleLoader.getInstance().setDeferUsageReport(false);
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
 
                 return true;
