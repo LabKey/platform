@@ -172,7 +172,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_| \s
                               /                 \s""".indent(2);
 
-    private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
 
@@ -1346,24 +1345,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
-        if (isUpgradeRequired())
-        {
-            setDeferUsageReport(true);
-        }
-
         filterChain.doFilter(servletRequest, servletResponse);
 
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-    }
-
-    public boolean isDeferUsageReport()
-    {
-        return _deferUsageReport;
-    }
-
-    public void setDeferUsageReport(boolean defer)
-    {
-        _deferUsageReport = defer;
     }
 
     // Run scripts using the default upgrade script runner

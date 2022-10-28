@@ -151,14 +151,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     public void scheduleUpgradeCheck()
     {
         cancelUpgradeCheck();
-        if (!ModuleLoader.getInstance().isDeferUsageReport())
+        TimerTask task = createTimerTask();
+        if (task != null)
         {
-            TimerTask task = createTimerTask();
-            if (task != null)
-            {
-                _timer = new Timer("UpgradeCheck", true);
-                _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
-            }
+            _timer = new Timer("UpgradeCheck", true);
+            _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
         }
     }
 
