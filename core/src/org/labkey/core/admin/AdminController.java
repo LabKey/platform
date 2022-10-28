@@ -61,7 +61,6 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
@@ -189,7 +188,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -982,27 +980,21 @@ public class AdminController extends SpringActionController
             {
                 String component = "the " + module.getName() + " Module";
                 String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
-                CreditsView credits = new CreditsView(wikiSource, component, title);
+                CreditsView credits = new CreditsView(wikiSource, title);
                 views.addView(credits);
             }
         }
     }
 
-    private static class CreditsView extends WebPartView
+    private static class CreditsView extends WebPartView<Object>
     {
-        private final static String WIKI_LINE_SEP = "\r\n\r\n";
-
-        private final String _component;
-
         private HtmlString _html;
-        private String _errors = "";
 
-        CreditsView(@Nullable String wikiSource, String component, String title)
+        CreditsView(@Nullable String wikiSource, String title)
         {
             super(title);
 
-            _component = StringUtils.trimToEmpty(component);
-            wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
+            wikiSource = StringUtils.trimToEmpty(wikiSource);
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
@@ -1010,11 +1002,6 @@ public class AdminController extends SpringActionController
                 HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
                 _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
-        }
-
-        private @NotNull String getErrors()
-        {
-            return _errors;
         }
 
         @Override
@@ -1031,47 +1018,6 @@ public class AdminController extends SpringActionController
 
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
-
-    @NotNull
-    private Set<String> getTomcatJars()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
-        // Note: Keep this path in sync with gradlePlugin StagingExtension.groovy
-        File tomcat = new File(AppProps.getInstance().getProjectRoot(), "build/staging/tomcat-lib");
-
-        if (!tomcat.exists())
-            return Collections.emptySet();
-
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        addAllChildren(tomcat, filenames);
-        filenames.remove("labkeyBootstrap.jar");  // Don't need credits for LabKey's class loader
-
-        return filenames;
-    }
-
-
-    private static FileFilter _fileFilter = f -> !f.isDirectory();
-
-    private static FileFilter _dirFilter = f -> f.isDirectory() && !".svn".equals(f.getName());
-
-    private void addAllChildren(File root, Set<String> filenames)
-    {
-        File[] files = root.listFiles(_fileFilter);
-
-        if (null != files)
-            for (File file : files)
-                filenames.add(file.getName());
-
-        File[] dirs = root.listFiles(_dirFilter);
-
-        if (null != dirs)
-            for (File dir : dirs)
-                addAllChildren(dir, filenames);
-    }
-
 
     private void validateNetworkDrive(SiteSettingsForm form, Errors errors)
     {
