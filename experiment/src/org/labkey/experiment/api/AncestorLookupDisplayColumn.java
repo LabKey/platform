@@ -52,6 +52,17 @@ public class AncestorLookupDisplayColumn extends DataColumn
     }
 
     @Override
+    @Nullable
+    public String getFormattedText(RenderContext ctx)
+    {
+        Integer lookupKey = getLookupId(ctx);
+        if (lookupKey != null && lookupKey < 0)
+            return  (-lookupKey) + " values";
+
+        return super.getFormattedText(ctx);
+    }
+
+    @Override
     public Object getValue(RenderContext ctx)
     {
         Integer lookupKey = getLookupId(ctx);

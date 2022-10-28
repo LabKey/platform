@@ -18,6 +18,7 @@ package org.labkey.api.admin.notification;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -66,8 +67,12 @@ public interface NotificationService
     /*
      * Returns a list of notifications for a specific user. Sorted descending by created date.
      */
-    List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly);
+    default List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly)
+    {
+        return getNotificationsByUser(container, notifyUserId, unreadOnly, null);
+    }
 
+    List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
      * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
      * list returned by getNotificationsByUser(), and is significantly more efficient to query.
@@ -82,8 +87,12 @@ public interface NotificationService
     /*
      * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
      */
-    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly);
+    default List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
+    {
+        return getNotificationsByTypeLabels(container, typeLabels, notifyUserId, unreadOnly, null);
+    }
 
+    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
      * Returns a notification based on the notification's RowId.
      */
