@@ -430,6 +430,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
+        deleteTempFiles();
+    }
+
+    private void deleteTempFiles()
+    {
         try
         {
             // Issue 46598 - clean up previously created temp files from file uploads
@@ -855,6 +860,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Temp file cleanup";
+            }
+
+            @Override
+            public void shutdownPre()
+            {}
+
+            @Override
+            public void shutdownStarted()
+            {
+                deleteTempFiles();
+            }
+        });
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 
