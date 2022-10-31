@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -134,6 +135,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -427,7 +429,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
-   }
+
+        try
+        {
+            // Issue 46598 - clean up previously created temp files from file uploads
+            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir().toPath());
+        }
+        catch (IOException e)
+        {
+            LOG.warn("Failed to clean up previously uploaded files from " + SpringActionController.getTempUploadDir(), e);
+        }
+    }
 
     private void registerHealthChecks()
     {
