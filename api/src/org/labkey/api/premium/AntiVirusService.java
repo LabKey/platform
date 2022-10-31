@@ -15,8 +15,11 @@
  */
 package org.labkey.api.premium;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -89,6 +92,18 @@ public interface AntiVirusService
     default <T> void queueScan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info, T extra, Callback<T> callbackFn)
     {
         JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(f, originalName, info)));
+    }
+
+    default void warnAndAuditLog(Logger log, String logmessage, ViewBackgroundInfo info, @Nullable String originalName)
+    {
+        log.warn((null != info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage);
+        FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
+                info.getContainer().getId(), logmessage
+        );
+        if (null != info.getURL())
+            event.setDirectory(info.getURL().getPath());
+        event.setFile(originalName);
+        AuditLogService.get().addEvent(info.getUser(), event);
     }
 
     /** originalName and user are used for error reporting and logging */
