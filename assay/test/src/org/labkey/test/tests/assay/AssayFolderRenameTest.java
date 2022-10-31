@@ -1,4 +1,4 @@
-package org.labkey.test.tests.study;
+package org.labkey.test.tests.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
