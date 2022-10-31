@@ -156,4 +156,55 @@ public class Stats
         }
         return mR;
     }
+
+    public static Double[] getTrailingMeans(Double[] values, int N)
+    {
+        if (values == null || values.length <= 1)
+            return new Double[0];
+
+        int numOfTrailingValues = values.length - N + 1;
+        Double[] trailingMeans = new Double[numOfTrailingValues];
+        int start = 0;
+        int end = N;
+        for (int i = 0; i < numOfTrailingValues; i++)
+        {
+            trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
+            start++;
+            end++;
+        }
+
+        return trailingMeans;
+    }
+
+    public static Double[] getTrailingCVs(Double[] values, int N)
+    {
+        if (values == null || values.length <= 1)
+            return new Double[0];
+
+        int numOfTrailingValues = values.length - N + 1;
+        Double[] trailingCVs = new Double[numOfTrailingValues];
+        int start = 0;
+        int end = N;
+        for (int i = 0; i < numOfTrailingValues; i++)
+        {
+            Double[] vals = getValuesFromRange(values, start, end);
+            double sd = getStdDev(vals, false);
+            double mean = getMean(vals);
+            trailingCVs[i] = sd/mean;
+            start++;
+            end++;
+        }
+
+        return trailingCVs;
+    }
+
+    private static Double[] getValuesFromRange(Double[] values, int start, int end)
+    {
+        Double[] valuesFromRange = new Double[end-start];
+        if (end - start >= 0)
+        {
+            System.arraycopy(values, start, valuesFromRange, start, end - start);
+        }
+        return valuesFromRange;
+    }
 }
