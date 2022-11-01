@@ -60,7 +60,10 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -71,6 +74,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -482,7 +486,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL().clone());
-                    request = PremiumService.get().getMultipartResolver(info).resolveMultipart(request);
+                    CommonsMultipartResolver resolver = PremiumService.get().getMultipartResolver(info);
+                    resolver.setUploadTempDir(new FileSystemResource(getTempUploadDir()));
+                    request = resolver.resolveMultipart(request);
                     context.setRequest(request);
                     // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
                     if (!ViewServlet.validChars(request))
@@ -541,6 +547,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return null;
     }
 
+    private static File TEMP_UPLOAD_DIR;
+    /** Issue 46598 - use a directory of the primary temp dir for file uploads */
+    public static File getTempUploadDir()
+    {
+        if (TEMP_UPLOAD_DIR == null)
+        {
+            TEMP_UPLOAD_DIR = new File(new File(System.getProperty("java.io.tmpdir")), "httpUploads");
+            TEMP_UPLOAD_DIR.mkdirs();
+        }
+        return TEMP_UPLOAD_DIR;
+    }
 
     protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)
     {
