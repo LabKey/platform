@@ -10,7 +10,7 @@ lucene-core-8.10.1.jar|Lucene|8.10.1|{link:Apache|http://lucene.apache.org/java/
 lucene-analyzers-common-8.10.1.jar|Lucene Analyzers|8.10.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
 lucene-queryparser-8.10.1.jar|Lucene Query Parsers|8.10.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Query parser support for full-text search
 metadata-extractor-2.8.1.jar|Metadata Extractor|2.8.1|{link:drewnoakes|https://github.com/drewnoakes/metadata-extractor}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers that read metadata from image files
-pdfbox-2.0.23.jar|Apache PDFBox®|2.0.23|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
+pdfbox-2.0.24.jar|Apache PDFBox®|2.0.24|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
 poi-scratchpad-4.1.2.jar|Apache POI OOXML|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for older Microsoft document formats (e.g., PPT, DOC, VSD, PUB)
 tagsoup-1.2.1.jar|TagSoup|1.2.1|{link:TagSoup|http://vrici.lojban.org/~cowan/XML/tagsoup/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for HTML/XML
 tika-parsers-1.26.jar|Tika|1.26|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for text simple formats plus adapters for many external parsing libraries
