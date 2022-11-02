@@ -19,6 +19,7 @@
   "devDependencies": {
     "@labkey/build": "6.3.2-fb-package-updates-1122.1",
     "@labkey/eslint-config-react": "0.0.12",
-    "@types/react": "16.14.23"
+    "@types/react": "16.14.34",
+    "@types/react-dom": "16.9.17"
   }
 }
