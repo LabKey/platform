@@ -88,6 +88,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 
 /**
@@ -1723,5 +1724,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
+    }
+
+    /** Convert a container into a reference that can be used to get the latest version of the container object. See issue 46473 */
+    @NotNull
+    public static Supplier<Container> supplierOf(@Nullable Container c)
+    {
+        final GUID id = c == null ? null : c.getEntityId();
+        return new ContainerSupplier(id);
+    }
+
+    private static class ContainerSupplier implements Supplier<Container>, Serializable
+    {
+        private final GUID _entityId;
+
+        @JsonCreator
+        public ContainerSupplier(@JsonProperty("entityId") GUID entityId)
+        {
+            _entityId = entityId;
+        }
+
+        @Override
+        public @Nullable Container get()
+        {
+            return _entityId == null ? null : ContainerManager.getForId(_entityId);
+        }
     }
 }

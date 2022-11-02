@@ -27,7 +27,7 @@
      * and warn the user about unsaved changes if the user leaves the page before saving.
      * @class LABKEY.Form A utility class for tracking HTML form dirty state and warning the user about unsaved changes.
      * @constructor
-     * @param {Object} config A configuration ojbect containing the following properties:
+     * @param {Object} config A configuration object containing the following properties:
      * @param {Element} config.formElement A reference to the HTML form element you want to track.
      * @param {String} [config.warningMessage] A warning message to display if the user
      * attempts to leave the page while the form is still dirty. If not supplied, a default message is used.

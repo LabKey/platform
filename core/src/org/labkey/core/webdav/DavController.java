@@ -3090,7 +3090,7 @@ public class DavController extends SpringActionController
             }
 
             // otherwise, save to temp directory, scan, return wrapper over saved file
-            File tmp = File.createTempFile(GUID.makeHash(), "");
+            File tmp = new File(getTempUploadDir(), GUID.makeGUID());
             fis.transferTo(tmp);
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);
@@ -3098,12 +3098,16 @@ public class DavController extends SpringActionController
             if (result.result == AntiVirusService.Result.OK)
             {
                 _fis = new FileStream.FileFileStream(tmp, true);
-                return;
             }
-            else if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
-                throw new ConfigurationException(result.message);
             else
-                throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
+            {
+                // Delete the temp file that failed the virus scan
+                tmp.delete();
+                if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
+                    throw new ConfigurationException(result.message);
+                else
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
+            }
         }
 
         FileStream getFileStream(String name) throws DavException, IOException

@@ -162,12 +162,8 @@ public class FlagColumnRenderer extends DataColumn
     @Override
     protected Object getInputValue(RenderContext ctx)
     {
-        FlagColumn displayField = (FlagColumn) getColumnInfo().getDisplayField();
-
-        if(null != displayField)
-            return displayField.getValue(ctx);
-
-        return displayField;
+        ColumnInfo displayField = getColumnInfo().getDisplayField();
+        return displayField == null ? null : displayField.getValue(ctx);
     }
 
     @Override
@@ -175,5 +171,11 @@ public class FlagColumnRenderer extends DataColumn
     {
         // never return null
         return StringUtils.trimToEmpty((String)super.getDisplayValue(ctx));
+    }
+
+    @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return super.getDisplayValue(ctx);
     }
 }

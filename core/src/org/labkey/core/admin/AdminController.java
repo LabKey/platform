@@ -61,7 +61,6 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
@@ -189,7 +188,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -235,10 +233,7 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -951,25 +946,14 @@ public class AdminController extends SpringActionController
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
-            String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
-            StringBuilder errorSource = new StringBuilder();
-
-            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource, true);
+            addCreditsViews(views, modules, "jars.txt", "JAR", null);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx,  errorSource, AppProps.getInstance().isDevMode() /* No staging dir in production mode so skip error checking */);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "JAR Files Installed in the <tomcat>/lib Directory"      /* No staging dir in production mode so skip error checking */);
 
-            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
-            addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
-            addCreditsViews(views, modules, "executables.txt", "Executable", errorSource);
-
-            if (errorSource.length() > 0)
-            {
-                WikiRenderingService renderingService = WikiRenderingService.get();
-                // Copy all the warnings to the top
-                HtmlString html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
-                views.addView(new HtmlView(html), 0);
-            }
+            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
+            addCreditsViews(views, modules, "source.txt", "Java Source Code");
+            addCreditsViews(views, modules, "executables.txt", "Executable");
 
             return views;
         }
@@ -981,50 +965,36 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource, true);
+        addCreditsViews(views, modules, creditsFile, fileType, null);
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource, boolean checkForErrors) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String customTitle) throws IOException
     {
         for (Module module : modules)
         {
             String wikiSource = getCreditsFile(module, creditsFile);
 
-            Collection<String> filenames = Collections.emptySet();
-
-            if (null != filenameProvider)
-                filenames = filenameProvider.apply(module);
-
-            if (null != wikiSource || !filenames.isEmpty())
+            if (null != wikiSource)
             {
                 String component = "the " + module.getName() + " Module";
                 String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
-                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern, checkForErrors);
+                CreditsView credits = new CreditsView(wikiSource, title);
                 views.addView(credits);
-                errorSource.append(credits.getErrors());
             }
         }
     }
 
-    private static class CreditsView extends WebPartView
+    private static class CreditsView extends WebPartView<Object>
     {
-        private final static String WIKI_LINE_SEP = "\r\n\r\n";
-
-        private final String _component;
-
         private HtmlString _html;
-        private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern, boolean checkForErrors)
+        CreditsView(@Nullable String wikiSource, String title)
         {
             super(title);
 
-            _component = StringUtils.trimToEmpty(component);
-            if (checkForErrors)
-                _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
-            wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
+            wikiSource = StringUtils.trimToEmpty(wikiSource);
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
@@ -1032,42 +1002,6 @@ public class AdminController extends SpringActionController
                 HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
                 _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
-        }
-
-        private @NotNull String getErrors()
-        {
-            return _errors;
-        }
-
-        private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
-        {
-            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
-                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
-
-            Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
-
-            if (null != wikiSource && null != wikiSourceSearchPattern)
-            {
-                Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
-                Matcher m = p.matcher(wikiSource);
-
-                while(m.find())
-                {
-                    String found = m.group(1);
-                    documentedFilenames.add(found);
-                }
-            }
-
-            Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
-            documentedFilenames.removeAll(foundFilenames);
-            foundFilenames.removeAll(documentedFilenamesCopy);
-            Collection<String> undocumented = new CaseInsensitiveTreeSet(foundFilenames);
-            undocumented.removeIf(name->name.startsWith("."));
-
-            String undocumentedErrors = foundFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (undocumented.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (foundFilenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(foundFilenames.iterator(), "\\\\");
-            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
-
-            return undocumentedErrors + missingErrors;
         }
 
         @Override
@@ -1084,47 +1018,6 @@ public class AdminController extends SpringActionController
 
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
-
-    @NotNull
-    private Set<String> getTomcatJars()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
-        // Note: Keep this path in sync with gradlePlugin StagingExtension.groovy
-        File tomcat = new File(AppProps.getInstance().getProjectRoot(), "build/staging/tomcat-lib");
-
-        if (!tomcat.exists())
-            return Collections.emptySet();
-
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        addAllChildren(tomcat, filenames);
-        filenames.remove("labkeyBootstrap.jar");  // Don't need credits for LabKey's class loader
-
-        return filenames;
-    }
-
-
-    private static FileFilter _fileFilter = f -> !f.isDirectory();
-
-    private static FileFilter _dirFilter = f -> f.isDirectory() && !".svn".equals(f.getName());
-
-    private void addAllChildren(File root, Set<String> filenames)
-    {
-        File[] files = root.listFiles(_fileFilter);
-
-        if (null != files)
-            for (File file : files)
-                filenames.add(file.getName());
-
-        File[] dirs = root.listFiles(_dirFilter);
-
-        if (null != dirs)
-            for (File dir : dirs)
-                addAllChildren(dir, filenames);
-    }
-
 
     private void validateNetworkDrive(SiteSettingsForm form, Errors errors)
     {
@@ -1270,7 +1163,6 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
-            ModuleLoader.getInstance().setDeferUsageReport(false);
             HttpServletRequest request = getViewContext().getRequest();
 
             // We only need to check that SSL is running if the user isn't already using SSL
@@ -1322,9 +1214,7 @@ public class AdminController extends SpringActionController
                 level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
                 props.setUsageReportingLevel(level);
             }
-            catch (IllegalArgumentException e)
-            {
-            }
+            catch (IllegalArgumentException ignored) {}
 
             props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
@@ -3880,7 +3770,6 @@ public class AdminController extends SpringActionController
                 lafProps.save();
 
                 // Send an immediate report now that they've set up their account and defaults, and then every 24 hours after.
-                ModuleLoader.getInstance().setDeferUsageReport(false);
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
 
                 return true;
@@ -10001,7 +9890,7 @@ public class AdminController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             if (!getContainer().isRoot())
-                throw new NotFoundException();
+                throw new NotFoundException("Must be invoked in the root");
 
             // requires site-admin, unless there are no users
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))

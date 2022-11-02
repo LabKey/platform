@@ -12,12 +12,12 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -91,7 +91,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
     <div>
       <div
         dangerouslySetInnerHTML={
-          Object {
+          {
             "__html": "",
           }
         }
@@ -106,7 +106,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
     <div>
       <div
         dangerouslySetInnerHTML={
-          Object {
+          {
             "__html": "",
           }
         }
@@ -217,12 +217,12 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -296,7 +296,7 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
     <div>
       <div
         dangerouslySetInnerHTML={
-          Object {
+          {
             "__html": "",
           }
         }
@@ -311,7 +311,7 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
     <div>
       <div
         dangerouslySetInnerHTML={
-          Object {
+          {
             "__html": "",
           }
         }

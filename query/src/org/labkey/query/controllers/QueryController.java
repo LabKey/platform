@@ -47,6 +47,7 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1495,20 +1496,20 @@ public class QueryController extends SpringActionController
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
                     (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
+                Set<String> tableNames = Sets.newCaseInsensitiveHashSet(qs.getTableNames());
 
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer())
                     .addParameter("schemaName", _schemaName)
                     .addParameter("query.queryName", null);
-                String tableLink = url.getEncodedLocalURIString();
-                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink)
+                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", "TABLE_NAME", url)
                 {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {
                         // Only link to tables and views (not indexes or sequences). And only if they're defined in the query schema.
-                        String name = rs.getString(3);
-                        String type = rs.getString(4);
-                        return ("TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type)) && qs.getTableNames().contains(name);
+                        String name = rs.getString("TABLE_NAME");
+                        String type = rs.getString("TABLE_TYPE");
+                        return ("TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type)) && tableNames.contains(name);
                     }
                 };
             }

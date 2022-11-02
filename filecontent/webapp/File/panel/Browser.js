@@ -2304,7 +2304,7 @@ Ext4.define('File.panel.Browser', {
 
             if (!selections.length && count > 0) {
                 emptySelection = true;
-                selections = store.getRange(0, count-1); // get all the available records
+                selections = store.data.getRange(0, count-1); // get all the loaded records without loading more into buffer
             }
 
             // Issue 25493: Intermittent JS error from FileBrowser.

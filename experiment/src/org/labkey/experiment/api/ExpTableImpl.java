@@ -291,11 +291,12 @@ abstract public class ExpTableImpl<C extends Enum>
 
     /**
      * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
-     * @param domain the domain from which to add all of the properties
+     * @param domain the domain from which to add all the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
+     * @param containerFilter Container filter to be applied to property fields
      */
     @Override
-    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName, @Nullable ContainerFilter containerFilter)
     {
         MutableColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
@@ -309,7 +310,7 @@ abstract public class ExpTableImpl<C extends Enum>
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
+            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false, containerFilter);
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);

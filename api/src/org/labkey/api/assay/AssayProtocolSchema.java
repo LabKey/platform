@@ -367,7 +367,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         Domain batchDomain = provider.getBatchDomain(protocol);
         if (batchDomain != null)
         {
-            addPropertyColumn(result, batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
+            addPropertyColumn(result, batchDomain, BATCH_PROPERTIES_COLUMN_NAME, containerFilter);
             result.setDomain(batchDomain);
         }
 
@@ -417,7 +417,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         Domain runDomain = getProvider().getRunDomain(getProtocol());
         if (runDomain != null)
         {
-            addPropertyColumn(runTable, runDomain, RUN_PROPERTIES_COLUMN_NAME);
+            addPropertyColumn(runTable, runDomain, RUN_PROPERTIES_COLUMN_NAME, cf);
             runTable.setDomain(runDomain);
         }
 
@@ -480,9 +480,9 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         }
     }
 
-    private void addPropertyColumn(ExpTable table, Domain domain, String columnName)
+    private void addPropertyColumn(ExpTable table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
     {
-        var propsCol = table.addColumns(domain, columnName);
+        var propsCol = table.addColumns(domain, columnName, containerFilter);
         if (propsCol != null)
         {
             // Will be null if the domain doesn't have any properties
