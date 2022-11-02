@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -780,8 +780,9 @@ public class PageFlowUtil
             else
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new JSONObject();
-                f.toMap(o, json);
+                Map<String, Object> map = new HashMap<>();
+                f.toMap(o, map);
+                json = new JSONObject(map);
             }
             w.write(json.toString());
         }
@@ -817,7 +818,7 @@ public class PageFlowUtil
                 return (T)json;
 
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(json);
+            Object o = f.fromMap(json.toMap());
             if (cls.isAssignableFrom(o.getClass()))
                 return (T)o;
             throw new ClassCastException("Could not create class: " + cls.getName());
@@ -2052,7 +2053,7 @@ public class PageFlowUtil
         return builder
             .append(HttpView.currentPageConfig().getScriptTagStart())
             .append(JavaScriptFragment.unsafe("LABKEY.init("))
-            .append(jsInitObject(context, config, resources, includePostParameters))
+            .append(JavaScriptFragment.unsafe(jsInitObject(context, config, resources, includePostParameters).toString()))
             .append(JavaScriptFragment.unsafe(");\n"))
             .append(HtmlString.unsafe("</script>\n"));
     }
