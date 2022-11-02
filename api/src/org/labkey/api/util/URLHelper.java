@@ -233,20 +233,11 @@ public class URLHelper implements Cloneable, Serializable
     protected void appendParamsAndFragment(StringBuilder uriString, boolean allowSubstSyntax)
     {
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
-            uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
-            uriString.append(getQueryString(allowSubstSyntax));
+            uriString.append('?').append(getQueryString(allowSubstSyntax));
         if (null != _fragment && _fragment.length() > 0)
             uriString.append("#").append(_fragment);
     }
-
-    // when true, don't include '?' unless there are query parameters
-    private boolean isExperimentalNoQuestionMark()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL);
-    }
-
 
     /** Applies HTML encoding to local URI string */
     public String getEncodedLocalURIString()
@@ -1040,13 +1031,9 @@ public class URLHelper implements Cloneable, Serializable
             URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
                     ":1&activeReport:virusTesting");
 
-            String url = "/ehr-animalHistory.view";
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
-                url += "?";
-            url += "#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+            String url = "/ehr-animalHistory.view#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
 
             assertEquals(url, h.toString());
         }
     }
-
 }

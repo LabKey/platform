@@ -62,7 +62,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
@@ -620,10 +619,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     {
                         url.append("?");
                         url.append(request.getQueryString());
-                    }
-                    else if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
-                    {
-                        url.append("?");
                     }
                     returnURL = new URLHelper(url.toString());
                 }

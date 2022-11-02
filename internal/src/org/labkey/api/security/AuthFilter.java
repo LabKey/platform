@@ -113,10 +113,6 @@ public class AuthFilter implements Filter
                 {
                     redirectURL.append("?").append(req.getQueryString());
                 }
-                else if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
-                {
-                    redirectURL.append("?");
-                }
                 resp.sendRedirect(redirectURL.toString());
                 return;
             }
@@ -137,10 +133,6 @@ public class AuthFilter implements Filter
             {
                 originalURL.append("?");
                 originalURL.append(req.getQueryString());
-            }
-            else if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
-            {
-                originalURL.append("?");
             }
             URL url = new URL(originalURL.toString());
             int port = AppProps.getInstance().getSSLPort();
