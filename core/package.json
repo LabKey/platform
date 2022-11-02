@@ -16,10 +16,6 @@
   },
   "jest": {
     "globals": {
-      "ts-jest": {
-        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json",
-        "isolatedModules": true
-      },
       "LABKEY": {
         "container": {
           "formats": {
@@ -47,7 +43,13 @@
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
     "testResultsProcessor": "jest-teamcity-reporter",
     "transform": {
-      "^.+\\.tsx?$": "ts-jest"
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "isolatedModules": true,
+          "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
+        }
+      ]
     }
   },
   "dependencies": {
