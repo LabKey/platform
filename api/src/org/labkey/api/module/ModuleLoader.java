@@ -1664,7 +1664,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         if (performedUpgrade)
         {
-            handleUnkownModules();
+            handleUnknownModules();
             updateModuleProperties();
         }
 
@@ -1726,7 +1726,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
 
     // Remove all unknown modules that are marked as AutoUninstall
-    public void handleUnkownModules()
+    public void handleUnknownModules()
     {
         getUnknownModuleContexts()
             .values()

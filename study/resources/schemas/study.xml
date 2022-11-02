@@ -1932,20 +1932,20 @@
     <description>Contains one row per defined sample availability rule.  Containers without defined rules will use a default set.</description>
     <columns>
       <column columnName="rowid">
-        <description>The unique ID of the availablility rule.</description>
+        <description>The unique ID of the availability rule.</description>
       </column>
       <column columnName="container"/>
       <column columnName="SortOrder">
-        <description>The order in which this availablility rule is run within its container.</description>
+        <description>The order in which this availability rule is run within its container.</description>
       </column>
       <column columnName="RuleType">
-        <description>The type the availablility rule.</description>
+        <description>The type the availability rule.</description>
       </column>
       <column columnName="RuleData">
-        <description>The data specifying how the availablility rule should be run.</description>
+        <description>The data specifying how the availability rule should be run.</description>
       </column>
       <column columnName="MarkType">
-        <description>The unique ID of the availablility rule.</description>
+        <description>The unique ID of the availability rule.</description>
       </column>
     </columns>
   </table>
