@@ -235,9 +235,12 @@ public class FileUtil
             if (hasCloudScheme(dir))
             {
                 // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
-                for (Path path : Files.walk(dir).sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+                try (Stream<Path> paths = Files.walk(dir))
                 {
-                    Files.deleteIfExists(path);
+                    for (Path path : paths.sorted(Comparator.reverseOrder()).toList())
+                    {
+                        Files.deleteIfExists(path);
+                    }
                 }
             }
             else
