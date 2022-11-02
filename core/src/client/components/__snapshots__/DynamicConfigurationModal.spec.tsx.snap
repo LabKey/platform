@@ -12,12 +12,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -66,7 +66,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
         onstyle="primary"
         recalculateOnResize={false}
         size="normal"
-        style={Object {}}
+        style={{}}
         width=""
       />
     </div>
@@ -87,7 +87,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
     />
     <DynamicFields
       authConfig={
-        Object {
+        {
           "autoRedirect": false,
           "configuration": 143,
           "description": "CAS Configuration1",
@@ -101,22 +101,22 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       }
       canEdit={true}
       checkCheckBox={[Function]}
-      emptyRequiredFields={Array []}
+      emptyRequiredFields={[]}
       fieldValues={
-        Object {
+        {
           "auth_header_logo": "",
           "auth_login_page_logo": "",
           "autoRedirect": false,
-          "changedFiles": Array [],
-          "deletedLogos": Array [],
+          "changedFiles": [],
+          "deletedLogos": [],
           "description": "CAS Configuration1",
           "enabled": true,
           "serverUrl": "https://www.labkey.org/cas",
         }
       }
       fields={
-        Array [
-          Object {
+        [
+          {
             "caption": "CAS Server URL",
             "defaultValue": "",
             "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -124,7 +124,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "Default to CAS Login",
             "defaultValue": false,
             "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -135,12 +135,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
         ]
       }
       modalType={
-        Object {
+        {
           "description": "Central Authentication Service (CAS)",
           "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
           "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
-          "settingsFields": Array [
-            Object {
+          "settingsFields": [
+            {
               "caption": "CAS Server URL",
               "defaultValue": "",
               "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -148,7 +148,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "Default to CAS Login",
               "defaultValue": false,
               "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -231,12 +231,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -285,7 +285,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         onstyle="primary"
         recalculateOnResize={false}
         size="normal"
-        style={Object {}}
+        style={{}}
         width=""
       />
     </div>
@@ -306,7 +306,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
     />
     <DynamicFields
       authConfig={
-        Object {
+        {
           "autoRedirect": false,
           "configuration": 143,
           "description": "CAS Configuration1",
@@ -320,22 +320,22 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       }
       canEdit={false}
       checkCheckBox={[Function]}
-      emptyRequiredFields={Array []}
+      emptyRequiredFields={[]}
       fieldValues={
-        Object {
+        {
           "auth_header_logo": "",
           "auth_login_page_logo": "",
           "autoRedirect": false,
-          "changedFiles": Array [],
-          "deletedLogos": Array [],
+          "changedFiles": [],
+          "deletedLogos": [],
           "description": "CAS Configuration1",
           "enabled": true,
           "serverUrl": "https://www.labkey.org/cas",
         }
       }
       fields={
-        Array [
-          Object {
+        [
+          {
             "caption": "CAS Server URL",
             "defaultValue": "",
             "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -343,7 +343,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "Default to CAS Login",
             "defaultValue": false,
             "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -354,12 +354,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         ]
       }
       modalType={
-        Object {
+        {
           "description": "Central Authentication Service (CAS)",
           "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
           "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
-          "settingsFields": Array [
-            Object {
+          "settingsFields": [
+            {
               "caption": "CAS Server URL",
               "defaultValue": "",
               "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -367,7 +367,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "Default to CAS Login",
               "defaultValue": false,
               "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -439,12 +439,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -493,7 +493,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         onstyle="primary"
         recalculateOnResize={false}
         size="normal"
-        style={Object {}}
+        style={{}}
         width=""
       />
     </div>
@@ -514,7 +514,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
     />
     <DynamicFields
       authConfig={
-        Object {
+        {
           "apiHostname": "Api HostName",
           "configuration": 127,
           "description": "Duo 2 Factor Configuration",
@@ -527,9 +527,9 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       }
       canEdit={true}
       checkCheckBox={[Function]}
-      emptyRequiredFields={Array []}
+      emptyRequiredFields={[]}
       fieldValues={
-        Object {
+        {
           "apiHostname": "Api HostName",
           "description": "Duo 2 Factor Configuration",
           "enabled": false,
@@ -539,8 +539,8 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         }
       }
       fields={
-        Array [
-          Object {
+        [
+          {
             "caption": "Integration Key",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -548,7 +548,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "Secret Key",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -556,7 +556,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "API Hostname",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
@@ -564,12 +564,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "User Identifier",
             "defaultValue": "UserID",
             "description": "Choose the way LabKey will match with Duo accounts.",
             "name": "userIdentifier",
-            "options": Object {
+            "options": {
               "FullEmailAddress": "Full Email Address",
               "UserID": "User ID",
               "UserName": "User Name",
@@ -580,12 +580,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         ]
       }
       modalType={
-        Object {
+        {
           "description": "Require two-factor authentication via Duo",
           "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
           "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
-          "settingsFields": Array [
-            Object {
+          "settingsFields": [
+            {
               "caption": "Integration Key",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -593,7 +593,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "Secret Key",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -601,7 +601,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "API Hostname",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
@@ -609,12 +609,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "User Identifier",
               "defaultValue": "UserID",
               "description": "Choose the way LabKey will match with Duo accounts.",
               "name": "userIdentifier",
-              "options": Object {
+              "options": {
                 "FullEmailAddress": "Full Email Address",
                 "UserID": "User ID",
                 "UserName": "User Name",
@@ -689,12 +689,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
   manager={
     ModalManager {
       "add": [Function],
-      "containers": Array [],
-      "data": Array [],
+      "containers": [],
+      "data": [],
       "handleContainerOverflow": true,
       "hideSiblingNodes": true,
       "isTopModal": [Function],
-      "modals": Array [],
+      "modals": [],
       "remove": [Function],
     }
   }
@@ -743,7 +743,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         onstyle="primary"
         recalculateOnResize={false}
         size="normal"
-        style={Object {}}
+        style={{}}
         width=""
       />
     </div>
@@ -764,7 +764,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
     />
     <DynamicFields
       authConfig={
-        Object {
+        {
           "apiHostname": "Api HostName",
           "configuration": 127,
           "description": "Duo 2 Factor Configuration",
@@ -777,9 +777,9 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       }
       canEdit={false}
       checkCheckBox={[Function]}
-      emptyRequiredFields={Array []}
+      emptyRequiredFields={[]}
       fieldValues={
-        Object {
+        {
           "apiHostname": "Api HostName",
           "description": "Duo 2 Factor Configuration",
           "enabled": false,
@@ -789,8 +789,8 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         }
       }
       fields={
-        Array [
-          Object {
+        [
+          {
             "caption": "Integration Key",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -798,7 +798,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "Secret Key",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -806,7 +806,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "API Hostname",
             "defaultValue": "",
             "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
@@ -814,12 +814,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
             "required": true,
             "type": "input",
           },
-          Object {
+          {
             "caption": "User Identifier",
             "defaultValue": "UserID",
             "description": "Choose the way LabKey will match with Duo accounts.",
             "name": "userIdentifier",
-            "options": Object {
+            "options": {
               "FullEmailAddress": "Full Email Address",
               "UserID": "User ID",
               "UserName": "User Name",
@@ -830,12 +830,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         ]
       }
       modalType={
-        Object {
+        {
           "description": "Require two-factor authentication via Duo",
           "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
           "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
-          "settingsFields": Array [
-            Object {
+          "settingsFields": [
+            {
               "caption": "Integration Key",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -843,7 +843,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "Secret Key",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -851,7 +851,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "API Hostname",
               "defaultValue": "",
               "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
@@ -859,12 +859,12 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
               "required": true,
               "type": "input",
             },
-            Object {
+            {
               "caption": "User Identifier",
               "defaultValue": "UserID",
               "description": "Choose the way LabKey will match with Duo accounts.",
               "name": "userIdentifier",
-              "options": Object {
+              "options": {
                 "FullEmailAddress": "Full Email Address",
                 "UserID": "User ID",
                 "UserName": "User Name",
