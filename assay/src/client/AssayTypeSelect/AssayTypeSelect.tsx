@@ -1,9 +1,9 @@
-import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { ActionURL, Ajax, getServerContext, Utils } from "@labkey/api";
+import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
 import { AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME, App as LabKeyApp } from '@labkey/components';
-import { Button, Panel } from "react-bootstrap";
+import { Button, Panel } from 'react-bootstrap';
 
-import "./AssayTypeSelect.scss";
+import './AssayTypeSelect.scss';
 
 function uploadXarFile(
     file: File,
@@ -83,11 +83,11 @@ export const App: FC<any> = memo(props => {
                 </div>
                 <Panel.Body>
                     <AssayPicker
-                        showImport={true}
-                        showContainerSelect={true}
-                        onChange={onChange}
-                        selectedTab={tab}
+                        defaultTab={tab}
                         hasPremium={LabKeyApp.hasPremiumModule()}
+                        onChange={onChange}
+                        showContainerSelect
+                        showImport
                     />
                 </Panel.Body>
             </Panel>

@@ -32,7 +32,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
       >
         <PrimaryTab
           addNewPrimaryDropdown={
-            Array [
+            [
               <MenuItem
                 bsClass="dropdown"
                 disabled={false}
@@ -84,7 +84,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
             <div>
               <DragAndDropPane
                 actions={
-                  Object {
+                  {
                     "onDelete": [Function],
                     "onDragEnd": [Function],
                     "toggleModalOpen": [Function],
@@ -92,8 +92,8 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                   }
                 }
                 authConfigs={
-                  Array [
-                    Object {
+                  [
+                    {
                       "configuration": 107,
                       "description": "LDAP Configurations",
                       "details": "ldap://ldap.forumsys.com",
@@ -111,13 +111,13 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 configType="formConfigurations"
                 isDragDisabled={false}
                 providers={
-                  Array [
-                    Object {
+                  [
+                    {
                       "description": "Central Authentication Service (CAS)",
                       "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
                       "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
-                      "settingsFields": Array [
-                        Object {
+                      "settingsFields": [
+                        {
                           "caption": "CAS Server URL",
                           "defaultValue": "",
                           "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -125,7 +125,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": true,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Default to CAS Login",
                           "defaultValue": false,
                           "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -136,12 +136,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                       ],
                       "sso": true,
                     },
-                    Object {
+                    {
                       "description": "Uses the LDAP protocol to authenticate against an institution's directory server",
                       "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap",
                       "saveLink": "/labkey/ldap-ldapSaveConfiguration.view?",
-                      "settingsFields": Array [
-                        Object {
+                      "settingsFields": [
+                        {
                           "caption": "LDAP server URLs",
                           "defaultValue": "",
                           "description": "The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org",
@@ -149,7 +149,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": true,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "LDAP domain",
                           "defaultValue": "labkey.com",
                           "description": "Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain.",
@@ -157,7 +157,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": true,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "LDAP principal template",
                           "defaultValue": "\${email}",
                           "description": "LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address.",
@@ -165,14 +165,14 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": true,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Use SASL authentication",
                           "defaultValue": false,
                           "name": "SASL",
                           "required": false,
                           "type": "checkbox",
                         },
-                        Object {
+                        {
                           "caption": "Use LDAP Search",
                           "defaultValue": false,
                           "description": "The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address.",
@@ -181,7 +181,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "checkbox",
                         },
-                        Object {
+                        {
                           "caption": "Search DN",
                           "defaultValue": "",
                           "description": "Distinguished name of the LDAP user that will be used to search the LDAP directory.",
@@ -189,7 +189,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Password",
                           "defaultValue": "",
                           "description": "Password for the LDAP user specified above.",
@@ -197,7 +197,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "password",
                         },
-                        Object {
+                        {
                           "caption": "Search base",
                           "defaultValue": "",
                           "description": "Search base to use. This could be the root of your directory or the base that contains all of your user accounts.",
@@ -205,7 +205,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Lookup field",
                           "defaultValue": "sAMAccountName",
                           "description": "User record field name to use for authenticating via LDAP. The value of this field will be substituted into the principal template to generate a DN for authenticating.",
@@ -213,7 +213,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Search template",
                           "defaultValue": "(&(objectClass=user)(mail=\${email}))",
                           "description": "Filter to apply during the LDAP search. Valid substitution patterns are \${email} and \${uid}.",
@@ -225,19 +225,19 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                       "sso": false,
                       "testLink": "/labkey/ldap-testLdap.view?",
                     },
-                    Object {
+                    {
                       "description": "Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)",
                       "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml",
                       "saveLink": "/labkey/saml-samlSaveConfiguration.view?",
-                      "settingsFields": Array [
-                        Object {
+                      "settingsFields": [
+                        {
                           "caption": "IdP Signing Certificate",
                           "defaultValue": "",
                           "name": "IdPSigningCertificate",
                           "required": true,
                           "type": "pem",
                         },
-                        Object {
+                        {
                           "caption": "Encryption Certificate",
                           "defaultValue": "",
                           "description": "Encryption Certificate for Encrypted Assertion",
@@ -245,7 +245,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "pem",
                         },
-                        Object {
+                        {
                           "caption": "SP Private Key",
                           "defaultValue": "",
                           "description": "Private Key for the Encryption Certificate. Required if encryption cert is used.",
@@ -253,7 +253,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "pem",
                         },
-                        Object {
+                        {
                           "caption": "IdP SSO URL",
                           "defaultValue": "",
                           "description": "Target IdP URL for SSO login",
@@ -261,7 +261,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": true,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "Issuer URL",
                           "defaultValue": "",
                           "description": "Issuer of SP SAML metadata",
@@ -269,12 +269,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "input",
                         },
-                        Object {
+                        {
                           "caption": "NameID Format",
                           "defaultValue": "emailAddress",
                           "description": "If IdP does not support 'Email Address' then select 'Transient'",
                           "name": "NameIdFormat",
-                          "options": Object {
+                          "options": {
                             "emailAddress": "Email Address",
                             "transient": "Transient",
                             "unspecified": "Unspecified",
@@ -282,7 +282,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "options",
                         },
-                        Object {
+                        {
                           "caption": "Force Authorization",
                           "defaultValue": false,
                           "description": "Require user to login to IdP even if they already have an active SSO session.",
@@ -290,12 +290,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                           "required": false,
                           "type": "checkbox",
                         },
-                        Object {
+                        {
                           "caption": "EntityId",
-                          "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>.",
+                          "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href="/labkey/admin-customizeSite.view?" target="_customize">Customize Site page</a>.",
                           "type": "fixedHtml",
                         },
-                        Object {
+                        {
                           "caption": "Assertion Consumer Service (ACS) URL",
                           "html": "This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view",
                           "type": "fixedHtml",
@@ -303,11 +303,11 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                       ],
                       "sso": true,
                     },
-                    Object {
+                    {
                       "description": "A trivial, insecure SSO authentication provider (for test purposes only)",
                       "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
                       "saveLink": "/labkey/testsso-testSsoSaveConfiguration.view?",
-                      "settingsFields": Array [],
+                      "settingsFields": [],
                       "sso": true,
                     },
                   ]
@@ -315,7 +315,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               />
               <AuthRow
                 authConfig={
-                  Object {
+                  {
                     "configuration": 0,
                     "description": "Standard database authentication",
                     "details": null,
@@ -332,7 +332,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
           primaryTabSSO={
             <DragAndDropPane
               actions={
-                Object {
+                {
                   "onDelete": [Function],
                   "onDragEnd": [Function],
                   "toggleModalOpen": [Function],
@@ -340,8 +340,8 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 }
               }
               authConfigs={
-                Array [
-                  Object {
+                [
+                  {
                     "ForceAuth": true,
                     "IdPSigningCertificate": "certificateText",
                     "IdPSsoUrl": "IdP SSO URL",
@@ -356,7 +356,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     "loginLogoUrl": null,
                     "provider": "SAML",
                   },
-                  Object {
+                  {
                     "autoRedirect": false,
                     "configuration": 106,
                     "description": "CAS Configurations",
@@ -367,7 +367,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     "provider": "CAS",
                     "serverUrl": "https://www.labkey.org/cas",
                   },
-                  Object {
+                  {
                     "autoRedirect": false,
                     "configuration": 108,
                     "description": "CAS Configuration 2",
@@ -384,13 +384,13 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               configType="ssoConfigurations"
               isDragDisabled={false}
               providers={
-                Array [
-                  Object {
+                [
+                  {
                     "description": "Central Authentication Service (CAS)",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
                     "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
-                    "settingsFields": Array [
-                      Object {
+                    "settingsFields": [
+                      {
                         "caption": "CAS Server URL",
                         "defaultValue": "",
                         "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
@@ -398,7 +398,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Default to CAS Login",
                         "defaultValue": false,
                         "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
@@ -409,12 +409,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     ],
                     "sso": true,
                   },
-                  Object {
+                  {
                     "description": "Uses the LDAP protocol to authenticate against an institution's directory server",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap",
                     "saveLink": "/labkey/ldap-ldapSaveConfiguration.view?",
-                    "settingsFields": Array [
-                      Object {
+                    "settingsFields": [
+                      {
                         "caption": "LDAP server URLs",
                         "defaultValue": "",
                         "description": "The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org",
@@ -422,7 +422,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "LDAP domain",
                         "defaultValue": "labkey.com",
                         "description": "Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain.",
@@ -430,7 +430,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "LDAP principal template",
                         "defaultValue": "\${email}",
                         "description": "LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address.",
@@ -438,14 +438,14 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Use SASL authentication",
                         "defaultValue": false,
                         "name": "SASL",
                         "required": false,
                         "type": "checkbox",
                       },
-                      Object {
+                      {
                         "caption": "Use LDAP Search",
                         "defaultValue": false,
                         "description": "The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address.",
@@ -454,7 +454,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "checkbox",
                       },
-                      Object {
+                      {
                         "caption": "Search DN",
                         "defaultValue": "",
                         "description": "Distinguished name of the LDAP user that will be used to search the LDAP directory.",
@@ -462,7 +462,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Password",
                         "defaultValue": "",
                         "description": "Password for the LDAP user specified above.",
@@ -470,7 +470,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "password",
                       },
-                      Object {
+                      {
                         "caption": "Search base",
                         "defaultValue": "",
                         "description": "Search base to use. This could be the root of your directory or the base that contains all of your user accounts.",
@@ -478,7 +478,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Lookup field",
                         "defaultValue": "sAMAccountName",
                         "description": "User record field name to use for authenticating via LDAP. The value of this field will be substituted into the principal template to generate a DN for authenticating.",
@@ -486,7 +486,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Search template",
                         "defaultValue": "(&(objectClass=user)(mail=\${email}))",
                         "description": "Filter to apply during the LDAP search. Valid substitution patterns are \${email} and \${uid}.",
@@ -498,19 +498,19 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     "sso": false,
                     "testLink": "/labkey/ldap-testLdap.view?",
                   },
-                  Object {
+                  {
                     "description": "Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml",
                     "saveLink": "/labkey/saml-samlSaveConfiguration.view?",
-                    "settingsFields": Array [
-                      Object {
+                    "settingsFields": [
+                      {
                         "caption": "IdP Signing Certificate",
                         "defaultValue": "",
                         "name": "IdPSigningCertificate",
                         "required": true,
                         "type": "pem",
                       },
-                      Object {
+                      {
                         "caption": "Encryption Certificate",
                         "defaultValue": "",
                         "description": "Encryption Certificate for Encrypted Assertion",
@@ -518,7 +518,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "pem",
                       },
-                      Object {
+                      {
                         "caption": "SP Private Key",
                         "defaultValue": "",
                         "description": "Private Key for the Encryption Certificate. Required if encryption cert is used.",
@@ -526,7 +526,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "pem",
                       },
-                      Object {
+                      {
                         "caption": "IdP SSO URL",
                         "defaultValue": "",
                         "description": "Target IdP URL for SSO login",
@@ -534,7 +534,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Issuer URL",
                         "defaultValue": "",
                         "description": "Issuer of SP SAML metadata",
@@ -542,12 +542,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "NameID Format",
                         "defaultValue": "emailAddress",
                         "description": "If IdP does not support 'Email Address' then select 'Transient'",
                         "name": "NameIdFormat",
-                        "options": Object {
+                        "options": {
                           "emailAddress": "Email Address",
                           "transient": "Transient",
                           "unspecified": "Unspecified",
@@ -555,7 +555,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "options",
                       },
-                      Object {
+                      {
                         "caption": "Force Authorization",
                         "defaultValue": false,
                         "description": "Require user to login to IdP even if they already have an active SSO session.",
@@ -563,12 +563,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": false,
                         "type": "checkbox",
                       },
-                      Object {
+                      {
                         "caption": "EntityId",
-                        "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>.",
+                        "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href="/labkey/admin-customizeSite.view?" target="_customize">Customize Site page</a>.",
                         "type": "fixedHtml",
                       },
-                      Object {
+                      {
                         "caption": "Assertion Consumer Service (ACS) URL",
                         "html": "This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view",
                         "type": "fixedHtml",
@@ -576,11 +576,11 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     ],
                     "sso": true,
                   },
-                  Object {
+                  {
                     "description": "A trivial, insecure SSO authentication provider (for test purposes only)",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
                     "saveLink": "/labkey/testsso-testSsoSaveConfiguration.view?",
-                    "settingsFields": Array [],
+                    "settingsFields": [],
                     "sso": true,
                   },
                 ]
@@ -595,7 +595,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
       >
         <SecondaryTab
           addNewSecondaryDropdown={
-            Array [
+            [
               <MenuItem
                 bsClass="dropdown"
                 disabled={false}
@@ -624,7 +624,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
           secondaryTabDuo={
             <DragAndDropPane
               actions={
-                Object {
+                {
                   "onDelete": [Function],
                   "onDragEnd": [Function],
                   "toggleModalOpen": [Function],
@@ -632,8 +632,8 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 }
               }
               authConfigs={
-                Array [
-                  Object {
+                [
+                  {
                     "apiHostname": "Key1",
                     "configuration": 87,
                     "description": "Duo 2 Factor Configuration",
@@ -643,7 +643,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                     "provider": "Duo 2 Factor",
                     "userIdentifier": "UserID",
                   },
-                  Object {
+                  {
                     "apiHostname": "Key2",
                     "configuration": 88,
                     "description": "Duo 2 Factor Configuration 2",
@@ -659,13 +659,13 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               configType="secondaryConfigurations"
               isDragDisabled={false}
               providers={
-                Array [
-                  Object {
+                [
+                  {
                     "description": "Require two-factor authentication via Duo",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
                     "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
-                    "settingsFields": Array [
-                      Object {
+                    "settingsFields": [
+                      {
                         "caption": "Integration Key",
                         "defaultValue": "",
                         "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -673,7 +673,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "Secret Key",
                         "defaultValue": "",
                         "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
@@ -681,7 +681,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "API Hostname",
                         "defaultValue": "",
                         "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
@@ -689,12 +689,12 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                         "required": true,
                         "type": "input",
                       },
-                      Object {
+                      {
                         "caption": "User Identifier",
                         "defaultValue": "UserID",
                         "description": "Choose the way LabKey will match with Duo accounts.",
                         "name": "userIdentifier",
-                        "options": Object {
+                        "options": {
                           "FullEmailAddress": "Full Email Address",
                           "UserID": "User ID",
                           "UserName": "User Name",
@@ -704,11 +704,11 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                       },
                     ],
                   },
-                  Object {
+                  {
                     "description": "Adds a trivial, insecure secondary authentication requirement (for test purposes only)",
                     "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
                     "saveLink": "/labkey/testsecondary-testSecondarySaveConfiguration.view?",
-                    "settingsFields": Array [],
+                    "settingsFields": [],
                   },
                 ]
               }
@@ -817,14 +817,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   data-prefix="fas"
                   focusable="false"
                   role="img"
-                  style={Object {}}
+                  style={{}}
                   viewBox="0 0 512 512"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zM262.655 90c-54.497 0-89.255 22.957-116.549 63.758-3.536 5.286-2.353 12.415 2.715 16.258l34.699 26.31c5.205 3.947 12.621 3.008 16.665-2.122 17.864-22.658 30.113-35.797 57.303-35.797 20.429 0 45.698 13.148 45.698 32.958 0 14.976-12.363 22.667-32.534 33.976C247.128 238.528 216 254.941 216 296v4c0 6.627 5.373 12 12 12h56c6.627 0 12-5.373 12-12v-1.333c0-28.462 83.186-29.647 83.186-106.667 0-58.002-60.165-102-116.531-102zM256 338c-25.365 0-46 20.635-46 46 0 25.364 20.635 46 46 46s46-20.636 46-46c0-25.365-20.635-46-46-46z"
                     fill="currentColor"
-                    style={Object {}}
+                    style={{}}
                   />
                 </svg>
               </span>
@@ -879,14 +879,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Enabled
@@ -908,14 +908,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -972,14 +972,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Enabled
@@ -1001,14 +1001,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -1041,14 +1041,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   data-prefix="fas"
                   focusable="false"
                   role="img"
-                  style={Object {}}
+                  style={{}}
                   viewBox="0 0 512 512"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zM262.655 90c-54.497 0-89.255 22.957-116.549 63.758-3.536 5.286-2.353 12.415 2.715 16.258l34.699 26.31c5.205 3.947 12.621 3.008 16.665-2.122 17.864-22.658 30.113-35.797 57.303-35.797 20.429 0 45.698 13.148 45.698 32.958 0 14.976-12.363 22.667-32.534 33.976C247.128 238.528 216 254.941 216 296v4c0 6.627 5.373 12 12 12h56c6.627 0 12-5.373 12-12v-1.333c0-28.462 83.186-29.647 83.186-106.667 0-58.002-60.165-102-116.531-102zM256 338c-25.365 0-46 20.635-46 46 0 25.364 20.635 46 46 46s46-20.636 46-46c0-25.365-20.635-46-46-46z"
                     fill="currentColor"
-                    style={Object {}}
+                    style={{}}
                   />
                 </svg>
               </span>
@@ -1103,14 +1103,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Enabled
@@ -1132,14 +1132,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -1198,14 +1198,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Enabled
@@ -1227,14 +1227,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -1293,14 +1293,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Enabled
@@ -1322,14 +1322,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -1402,14 +1402,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Disabled
@@ -1431,14 +1431,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
@@ -1497,14 +1497,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                             data-prefix="fas"
                             focusable="false"
                             role="img"
-                            style={Object {}}
+                            style={{}}
                             viewBox="0 0 512 512"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
                               fill="currentColor"
-                              style={Object {}}
+                              style={{}}
                             />
                           </svg>
                              Disabled
@@ -1526,14 +1526,14 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                               data-prefix="fas"
                               focusable="false"
                               role="img"
-                              style={Object {}}
+                              style={{}}
                               viewBox="0 0 512 512"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
                                 d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
                                 fill="currentColor"
-                                style={Object {}}
+                                style={{}}
                               />
                             </svg>
                           </div>
