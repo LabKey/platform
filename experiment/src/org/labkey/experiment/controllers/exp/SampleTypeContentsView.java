@@ -18,7 +18,6 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
@@ -124,8 +123,7 @@ public class SampleTypeContentsView extends QueryView
                 "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString()) + ";" +
                 "   }" +
                 "   else {" +
-                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString() +
-                (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "") +
+                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString() + "?" +
                         (isOuput ? "materialOutputs" : "materialInputs") + "=") + "+encodeURIComponent(selected)" +
                 "   }" +
                 "}";

@@ -1027,10 +1027,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
-                "No Question Marks in URLs",
-                "Don't append '?' to URLs unless there are query parameters.",
-                false);
 
         if (null != PropertyService.get())
         {
