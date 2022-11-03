@@ -54,7 +54,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "mysql:mysql-connector-java:${mysqlDriverVersion}",
+            "com.mysql:mysql-connector-j:${mysqlDriverVersion}",
             "MySQL JDBC Driver",
             "MySQL",
             "https://dev.mysql.com/downloads/connector/j",
