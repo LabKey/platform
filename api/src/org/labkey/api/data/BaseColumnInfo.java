@@ -319,7 +319,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
         setColumnLogging(col.getColumnLogging());
-        setConceptURI(col.getConceptURI());     // Review TODO: Do we always want to do this?
+
+        // These properties need to be copied over so that the fields are properly displayed in the Apps.
+        setConceptURI(col.getConceptURI());
+        setUserEditable(col.isUserEditable());  //This can impact UniqueId fields if not set
     }
 
 
