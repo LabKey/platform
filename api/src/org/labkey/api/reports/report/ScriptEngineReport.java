@@ -106,6 +106,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
 
+    public static final String METRIC_FEATURE_AREA = "ReportInvocation";
+
     private static final Logger LOG = LogManager.getLogger(ScriptEngineReport.class);
 
     static
