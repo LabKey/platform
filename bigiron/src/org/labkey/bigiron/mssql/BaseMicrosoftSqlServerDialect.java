@@ -35,9 +35,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
@@ -221,6 +219,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
         {
             // This is because the jtds driver has a bug where it returns these from the db as strings
+            // TODO: Is this true for the SQL Server JDBC driver?
             return "DATETIME";
         }
         else
@@ -762,8 +761,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState()) // jTDS driver
-                || ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
+        return ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
@@ -986,47 +984,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
-        return new JtdsJdbcHelper();
+        return new SqlServerJdbcHelper();
     }
 
 
     /*
-        jTDS example connection URLs we need to parse:
+        SQL Server example connection URLs we need to parse:
 
-        jdbc:jtds:sqlserver://host:1433/database
-        jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
-        jdbc:jtds:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://host:1433/database
+        jdbc:sqlserver://host/database;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
     */
 
-    private static final String JTDS_PREFIX = "jdbc:jtds:sqlserver://";
-
-    private static class JtdsJdbcHelper implements JdbcHelper
+    private static class SqlServerJdbcHelper implements JdbcHelper
     {
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (url.startsWith(JTDS_PREFIX))
-            {
-                int dbEnd = url.indexOf(';');
-                if (-1 == dbEnd)
-                    dbEnd = url.length();
-                int dbDelimiter = url.indexOf('/', JTDS_PREFIX.length());
-
-                // Didn't find /database after the prefix, so look for databaseName property. See #43751.
-                if (-1 == dbDelimiter)
-                {
-                    dbDelimiter = url.indexOf(";databaseName=");
-                    if (-1 == dbDelimiter)
-                        throw new ServletException("Invalid jTDS connection url - no database is specified: " + url);
-                    dbDelimiter = url.indexOf("=", dbDelimiter);
-                    dbEnd = url.indexOf(";", dbDelimiter);
-                    if (-1 == dbEnd)
-                        dbEnd = url.length();
-                }
-
-                return url.substring(dbDelimiter + 1, dbEnd);
-            }
-            else if (url.startsWith("jdbc:sqlserver"))
+            if (url.startsWith("jdbc:sqlserver"))
             {
                 int dbDelimiter = url.indexOf(";database=");
                 if (-1 == dbDelimiter)
@@ -1694,11 +1669,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
             warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
-
-        if (WarningService.get().showAllWarnings() || CoreSchema.getInstance().getScope().getDriverName().contains("jTDS"))
-            warnings.add(HtmlStringBuilder.of(
-                    "LabKey Server prefers the Microsoft JDBC driver for SQL Server. jTDS support will be completely removed in 23.3.0; please upgrade. ").
-                    append(new HelpTopic("configSQLServer").getLinkHtml("docs")));
     }
 
     @Override
@@ -1925,19 +1895,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 Map<ParamTraits, Integer> traitMap = new HashMap<>();
                 if (rs.getInt("COLUMN_TYPE") == DatabaseMetaData.procedureColumnReturn)
                 {
-                    // jtds reports a column name of "return_code" from the getProcedureColumns call,
-                    // but in the return from the execution, it's called "return_status".
-                    // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    if (isJTDS(scope))
-                    {
-                        parameters.put("return_status", new MetadataParameterInfo(traitMap));
-                    }
-                    else
-                    {
-                        parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
-                    }
+                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
                 }
                 else
                 {
@@ -1958,10 +1918,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
-            if (!isJTDS(procScope))
-            {
-                sb.append("{");
-            }
+            sb.append("{");
             sb.append("? = ");
             paramCount--;
         }
@@ -1972,7 +1929,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
-        if (hasReturn || assignResult && !isJTDS(procScope))
+        if (hasReturn || assignResult)
         {
             sb.append("}");
         }
@@ -1984,43 +1941,22 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         int index = 1;
-        boolean jTDS = isJTDS(scope);
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
-            String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
             int datatype = paramInfo.getParamTraits().get(ParamTraits.datatype);
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
             {
-                if (jTDS)
-                {
-                    stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
-                }
-                else
-                {
-                    stmt.setObject(index, paramInfo.getParamValue(), datatype);
-                }
+                stmt.setObject(index, paramInfo.getParamValue(), datatype);
             }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
             {
-                if (jTDS)
-                {
-                    stmt.registerOutParameter(paramName, datatype);
-                }
-                else
-                {
-                    stmt.registerOutParameter(index, datatype);
-                }
+                stmt.registerOutParameter(index, datatype);
             }
             index++;
         }
-    }
-
-    protected boolean isJTDS(DbScope scope)
-    {
-        return scope.getDriverName().contains("jTDS");
     }
 
     @Override

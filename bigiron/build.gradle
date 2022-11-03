@@ -9,19 +9,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.sourceforge.jtds:jtds:${jtdsVersion}", // JTDS SQLServer JDBC Driver
-            "jTDS JDBC Driver",
-            "SourceForge",
-            "http://jtds.sourceforge.net",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            "http://jtds.sourceforge.net/license.html",
-            "Connect with Microsoft SQL Server database servers"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "com.microsoft.sqlserver:mssql-jdbc:${mssqlJdbcVersion}", // MS SQLServer JDBC Driver
             "Microsoft JDBC Driver for SQL Server",
             "Microsoft",
