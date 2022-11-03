@@ -23,7 +23,6 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
@@ -324,7 +323,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         {
             try
             {
-                Map<String, ?> oldObject = PageFlowUtil.decodeObject(JSONObject.class, (String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue()).toMap();
+                Map<String, ?> oldObject = PageFlowUtil.decodeObject(Map.class, (String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue());
                 ((ObjectFactory<Object>)ObjectFactory.Registry.getFactory(form.getClass())).fromMap(form, oldObject);
             }
             catch (Exception x)

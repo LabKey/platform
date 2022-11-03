@@ -815,7 +815,7 @@ public class PageFlowUtil
             JSONObject json = new JSONObject(IOUtils.toString(r));
 
             if (cls == Map.class || cls == HashMap.class)
-                return (T)json;
+                return (T)json.toMap();
 
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
             Object o = f.fromMap(json.toMap());
