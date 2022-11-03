@@ -2785,7 +2785,7 @@ public class PageFlowUtil
             assertEquals(bean.s, copy.s);
             assertEquals(bean.d, copy.d);
 
-            Map<String, Object> map = ((JSONObject)decodeObject(Map.class, s)).toMap();
+            Map<String, Object> map = ((Map<String,Object>)decodeObject(Map.class, s));
             assertNotNull(map);
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));
