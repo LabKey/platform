@@ -11,23 +11,16 @@ exports[`<AuthRow/> Editable 1`] = `
       <div
         className="domain-row-handle"
       >
-        <svg
-          aria-hidden="true"
-          className="svg-inline--fa fa-grip-vertical fa-w-10 "
-          data-icon="grip-vertical"
-          data-prefix="fas"
-          focusable="false"
-          role="img"
-          style={{}}
-          viewBox="0 0 320 512"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          className="drag-drop-handle"
         >
-          <path
-            d="M96 32H32C14.33 32 0 46.33 0 64v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zM288 32h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32z"
-            fill="currentColor"
-            style={{}}
+          <span
+            className="fa fa-ellipsis-v"
           />
-        </svg>
+          <span
+            className="fa fa-ellipsis-v"
+          />
+        </div>
       </div>
       <div
         className="domain-row-main"
@@ -60,24 +53,14 @@ exports[`<AuthRow/> Editable 1`] = `
           <div
             className="enabled auth-row__field col-xs-7"
           >
-            <svg
-              aria-hidden="true"
-              className="svg-inline--fa fa-circle fa-w-16 "
-              color="#75B666"
-              data-icon="circle"
-              data-prefix="fas"
-              focusable="false"
-              role="img"
-              style={{}}
-              viewBox="0 0 512 512"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
-                fill="currentColor"
-                style={{}}
-              />
-            </svg>
+            <span
+              className="fa fa-circle"
+              style={
+                {
+                  "color": "#75B666",
+                }
+              }
+            />
                Enabled
           </div>
           <div
@@ -87,23 +70,9 @@ exports[`<AuthRow/> Editable 1`] = `
               className="clickable deleteIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-times-circle fa-w-16 "
-                data-icon="times-circle"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-times-circle"
+              />
             </div>
           </div>
           <div
@@ -113,23 +82,9 @@ exports[`<AuthRow/> Editable 1`] = `
               className="clickable editOrViewIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                data-icon="pencil-alt"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-pencil"
+              />
             </div>
           </div>
         </div>
@@ -150,23 +105,16 @@ exports[`<AuthRow/> Non-draggable 1`] = `
       <div
         className="domain-row-handle"
       >
-        <svg
-          aria-hidden="true"
-          className="svg-inline--fa fa-grip-vertical fa-w-10 "
-          data-icon="grip-vertical"
-          data-prefix="fas"
-          focusable="false"
-          role="img"
-          style={{}}
-          viewBox="0 0 320 512"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          className="drag-drop-handle"
         >
-          <path
-            d="M96 32H32C14.33 32 0 46.33 0 64v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zM288 32h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32z"
-            fill="currentColor"
-            style={{}}
+          <span
+            className="fa fa-ellipsis-v"
           />
-        </svg>
+          <span
+            className="fa fa-ellipsis-v"
+          />
+        </div>
       </div>
       <div
         className="domain-row-main"
@@ -199,24 +147,14 @@ exports[`<AuthRow/> Non-draggable 1`] = `
           <div
             className="enabled auth-row__field col-xs-7"
           >
-            <svg
-              aria-hidden="true"
-              className="svg-inline--fa fa-circle fa-w-16 "
-              color="#75B666"
-              data-icon="circle"
-              data-prefix="fas"
-              focusable="false"
-              role="img"
-              style={{}}
-              viewBox="0 0 512 512"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
-                fill="currentColor"
-                style={{}}
-              />
-            </svg>
+            <span
+              className="fa fa-circle"
+              style={
+                {
+                  "color": "#75B666",
+                }
+              }
+            />
                Enabled
           </div>
           <div
@@ -226,23 +164,9 @@ exports[`<AuthRow/> Non-draggable 1`] = `
               className="clickable deleteIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-times-circle fa-w-16 "
-                data-icon="times-circle"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-times-circle"
+              />
             </div>
           </div>
           <div
@@ -252,23 +176,9 @@ exports[`<AuthRow/> Non-draggable 1`] = `
               className="clickable editOrViewIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                data-icon="pencil-alt"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-pencil"
+              />
             </div>
           </div>
         </div>
@@ -289,23 +199,16 @@ exports[`<AuthRow/> View-only 1`] = `
       <div
         className="domain-row-handle"
       >
-        <svg
-          aria-hidden="true"
-          className="svg-inline--fa fa-grip-vertical fa-w-10 "
-          data-icon="grip-vertical"
-          data-prefix="fas"
-          focusable="false"
-          role="img"
-          style={{}}
-          viewBox="0 0 320 512"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          className="drag-drop-handle"
         >
-          <path
-            d="M96 32H32C14.33 32 0 46.33 0 64v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zM288 32h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32z"
-            fill="currentColor"
-            style={{}}
+          <span
+            className="fa fa-ellipsis-v"
           />
-        </svg>
+          <span
+            className="fa fa-ellipsis-v"
+          />
+        </div>
       </div>
       <div
         className="domain-row-main"
@@ -338,24 +241,14 @@ exports[`<AuthRow/> View-only 1`] = `
           <div
             className="enabled auth-row__field col-xs-7"
           >
-            <svg
-              aria-hidden="true"
-              className="svg-inline--fa fa-circle fa-w-16 "
-              color="#75B666"
-              data-icon="circle"
-              data-prefix="fas"
-              focusable="false"
-              role="img"
-              style={{}}
-              viewBox="0 0 512 512"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"
-                fill="currentColor"
-                style={{}}
-              />
-            </svg>
+            <span
+              className="fa fa-circle"
+              style={
+                {
+                  "color": "#75B666",
+                }
+              }
+            />
                Enabled
           </div>
           <div
@@ -365,23 +258,9 @@ exports[`<AuthRow/> View-only 1`] = `
               className="clickable deleteIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-times-circle fa-w-16 "
-                data-icon="times-circle"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-times-circle"
+              />
             </div>
           </div>
           <div
@@ -391,23 +270,9 @@ exports[`<AuthRow/> View-only 1`] = `
               className="clickable editOrViewIcon"
               onClick={[Function]}
             >
-              <svg
-                aria-hidden="true"
-                className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                data-icon="pencil-alt"
-                data-prefix="fas"
-                focusable="false"
-                role="img"
-                style={{}}
-                viewBox="0 0 512 512"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"
-                  fill="currentColor"
-                  style={{}}
-                />
-              </svg>
+              <span
+                className="fa fa-pencil"
+              />
             </div>
           </div>
         </div>

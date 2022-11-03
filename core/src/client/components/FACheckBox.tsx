@@ -1,30 +1,23 @@
-import React, { PureComponent } from 'react';
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckSquare } from '@fortawesome/free-solid-svg-icons';
-import { faSquare } from '@fortawesome/free-regular-svg-icons';
+import React, { FC, memo, useCallback } from 'react';
+import classNames from 'classnames';
 
 interface Props {
-    checked: boolean;
     canEdit: boolean;
-    onClick: Function;
+    checked: boolean;
     name?: string;
+    onClick?: () => void;
 }
 
-export default class FACheckBox extends PureComponent<Props> {
-    render() {
-        const checkedOrNot = this.props.checked ? (
-            <FontAwesomeIcon size="lg" icon={faCheckSquare} color="#0073BB" />
-        ) : (
-            <FontAwesomeIcon size="lg" icon={faSquare} color="#adadad" />
-        );
+export const FACheckBox: FC<Props> = memo(({ canEdit, checked, name, onClick }) => {
+    const wrapperClassName = classNames(name, 'no-highlight', { clickable: canEdit });
+    const iconClassName = classNames('fa', 'fa-lg', { 'fa-check-square': checked, 'fa-square': !checked });
+    const onClick_ = useCallback(() => {
+        if (canEdit) onClick();
+    }, [canEdit, onClick]);
 
-        const classNames = this.props.canEdit ? 'no-highlight clickable ' : 'no-highlight ';
-
-        return (
-            <span className={classNames + (this.props.name ? this.props.name : "")} onClick={() => this.props.onClick()}>
-                {checkedOrNot}
-            </span>
-        );
-    }
-}
+    return (
+        <span className={wrapperClassName + (name ? name : '')} onClick={onClick_}>
+            <span className={iconClassName} style={{ color: checked ? '#0073BB' : '#ADADAD' }} />
+        </span>
+    );
+});
