@@ -16,7 +16,7 @@
 package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;

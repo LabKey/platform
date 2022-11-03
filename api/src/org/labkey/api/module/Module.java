@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -393,7 +393,7 @@ public interface Module
      * is true. However, individual modules can override this to return any content they choose. The method is called at page rendering time
      * once startup is complete, so all module schemas should be upgraded and services should be registered.
      * Note: this is written as plain text.
-     * @param context Current ViewContext for the page
+     * @param context ContainerUser of the request
      */
     JSONObject getPageContextJson(ContainerUser context);
 
