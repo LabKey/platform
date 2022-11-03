@@ -15,10 +15,13 @@
  */
 package org.labkey.api.reports.report;
 
+import org.labkey.api.ApiModule;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -114,6 +117,9 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("consoleOut", consolePw);
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+
+                SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, "Internal-" + engine.getFactory().getEngineName());
+
                 Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
                 consolePw.flush();
                 String consoleString = consoleOut.toString();
