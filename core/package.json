@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.244.1-assayDisplayConsistency.12",
+    "@labkey/components": "2.244.1-assayDisplayConsistency.13",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
