@@ -772,17 +772,16 @@ public class PageFlowUtil
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             Class cls = o.getClass();
-            final JSONObject json;
+            final org.json.old.JSONObject json;
             if (o instanceof Map)
             {
-                json = new JSONObject((Map)o);
+                json = new org.json.old.JSONObject((Map)o);
             }
             else
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                Map<String, Object> map = new HashMap<>();
-                f.toMap(o, map);
-                json = new JSONObject(map);
+                json = new org.json.old.JSONObject();
+                f.toMap(o, json);
             }
             w.write(json.toString());
         }
@@ -812,13 +811,13 @@ public class PageFlowUtil
         }
         try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            JSONObject json = new JSONObject(IOUtils.toString(r));
+            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
 
             if (cls == Map.class || cls == HashMap.class)
-                return (T)json.toMap();
+                return (T)json;
 
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(json.toMap());
+            Object o = f.fromMap(json);
             if (cls.isAssignableFrom(o.getClass()))
                 return (T)o;
             throw new ClassCastException("Could not create class: " + cls.getName());
