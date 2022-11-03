@@ -2256,11 +2256,11 @@ public class PageFlowUtil
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     @SuppressWarnings("UnusedDeclaration")
-    public static JSONObject jsInitObject()
+    public static Map<String, Object> jsInitObject()
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, null, new LinkedHashSet<>(), false);
+        return jsInitObject(context, null, new LinkedHashSet<>(), false).toMap();
     }
 
     public static JSONObject jsInitObject(ContainerUser context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
@@ -2786,7 +2786,7 @@ public class PageFlowUtil
             assertEquals(bean.s, copy.s);
             assertEquals(bean.d, copy.d);
 
-            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
+            Map<String, Object> map = ((JSONObject)decodeObject(Map.class, s)).toMap();
             assertNotNull(map);
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));
