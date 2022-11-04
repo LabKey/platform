@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -56,18 +55,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public MicrosoftSqlServerDialectFactory()
     {
-        // jTDS JDBC driver should not be present in <tomcat>/lib
-        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("jtds.jar"));
     }
 
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return switch (driverClassName)
-        {
-            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect();
-            default -> null;
-        };
+        return "com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName) ? new MicrosoftSqlServer2014Dialect() : null;
     }
 
     static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
@@ -89,7 +82,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         String driverName = md.getDriverName();
 
-        if (!driverName.startsWith("jTDS") && !driverName.startsWith("Microsoft"))
+        if (!driverName.startsWith("Microsoft"))
             LOG.warn("LabKey Server has not been tested against " + driverName + ". Instead, we recommend configuring the Microsoft SQL Server JDBC Driver, which is distributed with LabKey Server.");
 
         return dialect;
@@ -154,7 +147,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     private static SqlDialect getEarliestSqlDialect()
     {
-        return SqlDialectManager.getFromDriverClassname("TEST", "net.sourceforge.jtds.jdbc.Driver");
+        return SqlDialectManager.getFromDriverClassname("TEST", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -256,29 +249,47 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getGoodUrls()
                 {
-                    return new CsvSet("jdbc:jtds:sqlserver://localhost/database," +
-                        "jdbc:jtds:sqlserver://localhost:1433/database," +
-                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com/database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database," +
-                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database;," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;");
+                    return new CsvSet
+                    (
+                        "jdbc:sqlserver://;databaseName=database," +
+                        "jdbc:sqlserver://;servername=localhost;databaseName=database," +
+                        "jdbc:sqlserver://localhost;databaseName=database," +
+                        "jdbc:sqlserver://localhost:1433;databaseName=database," +
+                        "jdbc:sqlserver://localhost\\instancename;databaseName=database," +
+                        "jdbc:sqlserver://localhost\\instancename:1433;databaseName=database," +
+                        "jdbc:sqlserver://www.host.com\\instancename;databaseName=database," +
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;databaseName=database," +
+                        "jdbc:sqlserver://www.host.com:1433;databaseName=database," +
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;databaseName=database;," +
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;" +
+                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database,"
+                    );
                 }
 
                 @NotNull
                 @Override
                 protected Set<String> getBadUrls()
                 {
-                    return new CsvSet("jdb:jtds:sqlserver://localhost/database," +
-                        "jdbc:jts:sqlserver://localhost/database," +
-                        "jdbc:jtds:sqlerver://localhost/database," +
-                        "jdbc:jtds:sqlserver://localhostdatabase," +
-                        "jdbc:jtds:sqlserver:database");
+                    return new CsvSet
+                    (
+                        "jdbc:sqlserver://," +
+                        "jdbc:sqlserver://;servername=localhost," +
+                        "jdbc:sqlserver://localhost," +
+                        "jdbc:sqlserver://localhost:1433," +
+                        "jdbc:sqlserver://localhost;database=database," +
+                        "jdbc:sqlserver://localhost:1433;database=database," +
+                        "jdbc:jtds:sqlserver://localhost/database," +
+                        "jdbc:jtds:sqlserver://localhost:1433/database," +
+                        "jdb:sqlserver://localhost/database," +
+                        "jdbc:sqlerver://localhost/database," +
+                        "jdbc:sqlserver://localhostdatabase," +
+                        "jdbc:sqlserver:database" +
+                        "jdbc:sqlserver://localhost\\instancename," +
+                        "jdbc:sqlserver://localhost\\instancename:1433," +
+                        "jdbc:sqlserver://www.host.com\\instancename," +
+                        "jdbc:sqlserver://www.host.com\\instancename:1433,"
+                    );
                 }
             };
 

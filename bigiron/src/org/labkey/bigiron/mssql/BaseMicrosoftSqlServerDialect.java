@@ -991,9 +991,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     /*
         SQL Server example connection URLs we need to parse:
 
-        jdbc:sqlserver://host:1433/database
-        jdbc:sqlserver://host/database;SelectMethod=cursor
+        jdbc:sqlserver://;databaseName=foo
+        jdbc:sqlserver://host;databaseName=foo
+        jdbc:sqlserver://host:1433;databaseName=foo
+        jdbc:sqlserver://host:1433;databaseName=foo;SelectMethod=cursor
         jdbc:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+
+        Note: SQL Server JDBC driver accepts connection URLs that lack a "databaseName" parameter (in which case the
+        server uses the "default" database). But LabKey requires this parameter, especially for creating a new database.
     */
 
     private static class SqlServerJdbcHelper implements JdbcHelper
@@ -1001,21 +1006,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (url.startsWith("jdbc:sqlserver"))
+            if (url.startsWith("jdbc:sqlserver://"))
             {
-                int dbDelimiter = url.indexOf(";database=");
+                int dbDelimiter = url.indexOf(";databaseName=");
                 if (-1 == dbDelimiter)
-                    dbDelimiter = url.indexOf(";databaseName=");
-                if (-1 == dbDelimiter)
-                    throw new ServletException("Invalid sql server connection url: " + url);
-                dbDelimiter = url.indexOf("=",dbDelimiter)+1;
-                int dbEnd = url.indexOf(";",dbDelimiter);
+                    throw new ServletException("Invalid sql server connection url; \"databaseName\" property is required: " + url);
+                dbDelimiter = url.indexOf("=", dbDelimiter)+1;
+                int dbEnd = url.indexOf(";", dbDelimiter);
                 if (-1 == dbEnd)
                     dbEnd = url.length();
                 return url.substring(dbDelimiter, dbEnd);
             }
             else
-                throw new ServletException("Unsupported connection url: " + url);
+                throw new ServletException("Unsupported connection url; must begin with \"jdbc:sqlserver://\": " + url);
         }
     }
 
