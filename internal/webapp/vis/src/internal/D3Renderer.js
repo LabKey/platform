@@ -2489,10 +2489,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('stroke-opacity', geom.opacity)
                 .attr('fill', 'none');
 
+        if (geom.hoverTextAes) {
+            pathSel.append('title').text(geom.hoverTextAes.getValue);
+        }
+
         if (geom.dashed) {
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
         }
+
+        bindMouseEvents(pathSel, geom, layer);
     };
 
     var renderDataspaceBoxPlotPaths = function(layer, data, geom) {
