@@ -191,35 +191,35 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
-                    "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
-                    "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
+                "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
+                "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
 
-                    "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
-                    "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
-                    "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
+                "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
+                "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
+                "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
 
-                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
-                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
-                    "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
-                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
-                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
 
 
             String badSql =
-                    "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
-                    "   more comment\n" +
-                    "*/" +
-                    "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
-                    "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
-                    "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
-                    "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                    "EXECUTEUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +        // Misspell EXECUTE -- previous regex allowed this
-                    "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                    "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: parentheses
+                "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
+                "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
+                "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
+                "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                "EXECUTEUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +        // Misspell EXECUTE -- previous regex allowed this
+                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
+                "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: parentheses
 
             SqlDialect dialect = getEarliestSqlDialect();
             TestUpgradeCode good = new TestUpgradeCode();
@@ -263,7 +263,20 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                         "jdbc:sqlserver://www.host.com:1433\\instanceName;databaseName=database;," +
                         "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
                         "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;" +
-                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database,"
+                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database," +
+                        "jdbc:sqlserver://;database=database," +
+                        "jdbc:sqlserver://;servername=localhost;database=database," +
+                        "jdbc:sqlserver://localhost;database=database," +
+                        "jdbc:sqlserver://localhost:1433;database=database," +
+                        "jdbc:sqlserver://localhost\\instancename;database=database," +
+                        "jdbc:sqlserver://localhost\\instancename:1433;database=database," +
+                        "jdbc:sqlserver://www.host.com\\instancename;database=database," +
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;database=database," +
+                        "jdbc:sqlserver://www.host.com:1433;database=database," +
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;database=database;," +
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database," +
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database;" +
+                        "jdbc:sqlserver://;servername=www.host.com;database=database,"
                     );
                 }
 
@@ -277,8 +290,6 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                         "jdbc:sqlserver://;servername=localhost," +
                         "jdbc:sqlserver://localhost," +
                         "jdbc:sqlserver://localhost:1433," +
-                        "jdbc:sqlserver://localhost;database=database," +
-                        "jdbc:sqlserver://localhost:1433;database=database," +
                         "jdbc:jtds:sqlserver://localhost/database," +
                         "jdbc:jtds:sqlserver://localhost:1433/database," +
                         "jdb:sqlserver://localhost/database," +

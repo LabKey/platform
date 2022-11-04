@@ -992,13 +992,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         SQL Server example connection URLs we need to parse:
 
         jdbc:sqlserver://;databaseName=foo
+        jdbc:sqlserver://;database=foo
         jdbc:sqlserver://host;databaseName=foo
+        jdbc:sqlserver://host;database=foo
         jdbc:sqlserver://host:1433;databaseName=foo
+        jdbc:sqlserver://host:1433;database=foo
         jdbc:sqlserver://host:1433;databaseName=foo;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;database=foo;SelectMethod=cursor
         jdbc:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;database=database
 
         Note: SQL Server JDBC driver accepts connection URLs that lack a "databaseName" parameter (in which case the
-        server uses the "default" database). But LabKey requires this parameter, especially for creating a new database.
+        server uses the "default" database). But LabKey requires this parameter, especially when creating a new database.
+        Although not documented, the driver will accept "database" as a synonym for "databaseName", so we allow it.
     */
 
     private static class SqlServerJdbcHelper implements JdbcHelper
@@ -1008,7 +1014,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             if (url.startsWith("jdbc:sqlserver://"))
             {
-                int dbDelimiter = url.indexOf(";databaseName=");
+                int dbDelimiter = url.indexOf(";database=");
+                if (-1 == dbDelimiter)
+                    dbDelimiter = url.indexOf(";databaseName=");
                 if (-1 == dbDelimiter)
                     throw new ServletException("Invalid sql server connection url; \"databaseName\" property is required: " + url);
                 dbDelimiter = url.indexOf("=", dbDelimiter)+1;
