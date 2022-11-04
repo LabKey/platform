@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -249,34 +248,34 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getGoodUrls()
                 {
-                    return new CsvSet
+                    return Set.of
                     (
-                        "jdbc:sqlserver://;databaseName=database," +
-                        "jdbc:sqlserver://;servername=localhost;databaseName=database," +
-                        "jdbc:sqlserver://localhost;databaseName=database," +
-                        "jdbc:sqlserver://localhost:1433;databaseName=database," +
-                        "jdbc:sqlserver://localhost\\instancename;databaseName=database," +
-                        "jdbc:sqlserver://localhost\\instancename:1433;databaseName=database," +
-                        "jdbc:sqlserver://www.host.com\\instancename;databaseName=database," +
-                        "jdbc:sqlserver://www.host.com\\instancename:1433;databaseName=database," +
-                        "jdbc:sqlserver://www.host.com:1433;databaseName=database," +
-                        "jdbc:sqlserver://www.host.com:1433\\instanceName;databaseName=database;," +
-                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
-                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;" +
-                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database," +
-                        "jdbc:sqlserver://;database=database," +
-                        "jdbc:sqlserver://;servername=localhost;database=database," +
-                        "jdbc:sqlserver://localhost;database=database," +
-                        "jdbc:sqlserver://localhost:1433;database=database," +
-                        "jdbc:sqlserver://localhost\\instancename;database=database," +
-                        "jdbc:sqlserver://localhost\\instancename:1433;database=database," +
-                        "jdbc:sqlserver://www.host.com\\instancename;database=database," +
-                        "jdbc:sqlserver://www.host.com\\instancename:1433;database=database," +
-                        "jdbc:sqlserver://www.host.com:1433;database=database," +
-                        "jdbc:sqlserver://www.host.com:1433\\instanceName;database=database;," +
-                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database," +
-                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database;" +
-                        "jdbc:sqlserver://;servername=www.host.com;database=database,"
+                        "jdbc:sqlserver://;databaseName=database",
+                        "jdbc:sqlserver://;servername=localhost;databaseName=database",
+                        "jdbc:sqlserver://localhost;databaseName=database",
+                        "jdbc:sqlserver://localhost:1433;databaseName=database",
+                        "jdbc:sqlserver://localhost\\instancename;databaseName=database",
+                        "jdbc:sqlserver://localhost\\instancename:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com\\instancename;databaseName=database",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;databaseName=database;",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;",
+                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database",
+                        "jdbc:sqlserver://;database=database",
+                        "jdbc:sqlserver://;servername=localhost;database=database",
+                        "jdbc:sqlserver://localhost;database=database",
+                        "jdbc:sqlserver://localhost:1433;database=database",
+                        "jdbc:sqlserver://localhost\\instancename;database=database",
+                        "jdbc:sqlserver://localhost\\instancename:1433;database=database",
+                        "jdbc:sqlserver://www.host.com\\instancename;database=database",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;database=database",
+                        "jdbc:sqlserver://www.host.com:1433;database=database",
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;database=database;",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database;",
+                        "jdbc:sqlserver://;servername=www.host.com;database=database"
                     );
                 }
 
@@ -284,22 +283,22 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getBadUrls()
                 {
-                    return new CsvSet
+                    return Set.of
                     (
-                        "jdbc:sqlserver://," +
-                        "jdbc:sqlserver://;servername=localhost," +
-                        "jdbc:sqlserver://localhost," +
-                        "jdbc:sqlserver://localhost:1433," +
-                        "jdbc:jtds:sqlserver://localhost/database," +
-                        "jdbc:jtds:sqlserver://localhost:1433/database," +
-                        "jdb:sqlserver://localhost/database," +
-                        "jdbc:sqlerver://localhost/database," +
-                        "jdbc:sqlserver://localhostdatabase," +
-                        "jdbc:sqlserver:database" +
-                        "jdbc:sqlserver://localhost\\instancename," +
-                        "jdbc:sqlserver://localhost\\instancename:1433," +
-                        "jdbc:sqlserver://www.host.com\\instancename," +
-                        "jdbc:sqlserver://www.host.com\\instancename:1433,"
+                        "jdbc:sqlserver://",
+                        "jdbc:sqlserver://;servername=localhost",
+                        "jdbc:sqlserver://localhost",
+                        "jdbc:sqlserver://localhost:1433",
+                        "jdbc:jtds:sqlserver://localhost/database",
+                        "jdbc:jtds:sqlserver://localhost:1433/database",
+                        "jdb:sqlserver://localhost/database",
+                        "jdbc:sqlerver://localhost/database",
+                        "jdbc:sqlserver://localhostdatabase",
+                        "jdbc:sqlserver:database",
+                        "jdbc:sqlserver://localhost\\instancename",
+                        "jdbc:sqlserver://localhost\\instancename:1433",
+                        "jdbc:sqlserver://www.host.com\\instancename",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433"
                     );
                 }
             };
