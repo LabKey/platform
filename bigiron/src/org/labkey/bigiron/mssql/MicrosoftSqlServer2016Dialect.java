@@ -33,22 +33,12 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
     @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
-        if (isJTDS(conn.getScope()))
-        {
-            return super.getStatementWrapper(conn, stmt);
-        }
-
         return new TimestampStatementWrapper(conn, stmt);
     }
 
     @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
-        if (isJTDS(conn.getScope()))
-        {
-            return super.getStatementWrapper(conn, stmt, sql);
-        }
-
         return new TimestampStatementWrapper(conn, stmt, sql);
     }
 

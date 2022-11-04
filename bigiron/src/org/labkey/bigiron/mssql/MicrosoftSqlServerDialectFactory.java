@@ -21,8 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -56,18 +54,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public MicrosoftSqlServerDialectFactory()
     {
-        // jTDS JDBC driver should not be present in <tomcat>/lib
-        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("jtds.jar"));
     }
 
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return switch (driverClassName)
-        {
-            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect();
-            default -> null;
-        };
+        return "com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName) ? new MicrosoftSqlServer2014Dialect() : null;
     }
 
     static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
@@ -89,7 +81,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         String driverName = md.getDriverName();
 
-        if (!driverName.startsWith("jTDS") && !driverName.startsWith("Microsoft"))
+        if (!driverName.startsWith("Microsoft"))
             LOG.warn("LabKey Server has not been tested against " + driverName + ". Instead, we recommend configuring the Microsoft SQL Server JDBC Driver, which is distributed with LabKey Server.");
 
         return dialect;
@@ -154,7 +146,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     private static SqlDialect getEarliestSqlDialect()
     {
-        return SqlDialectManager.getFromDriverClassname("TEST", "net.sourceforge.jtds.jdbc.Driver");
+        return SqlDialectManager.getFromDriverClassname("TEST", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -198,35 +190,35 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
-                    "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
-                    "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
+                "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
+                "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
 
-                    "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
-                    "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
-                    "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
+                "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
+                "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
+                "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
 
-                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
-                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
-                    "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
-                    "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
-                    "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
 
 
             String badSql =
-                    "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
-                    "   more comment\n" +
-                    "*/" +
-                    "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
-                    "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
-                    "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
-                    "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                    "EXECUTEUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +        // Misspell EXECUTE -- previous regex allowed this
-                    "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                    "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                    "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: parentheses
+                "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
+                "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
+                "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
+                "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                "EXECUTEUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +        // Misspell EXECUTE -- previous regex allowed this
+                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
+                "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: parentheses
 
             SqlDialect dialect = getEarliestSqlDialect();
             TestUpgradeCode good = new TestUpgradeCode();
@@ -256,29 +248,58 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getGoodUrls()
                 {
-                    return new CsvSet("jdbc:jtds:sqlserver://localhost/database," +
-                        "jdbc:jtds:sqlserver://localhost:1433/database," +
-                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com/database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database," +
-                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database;," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;");
+                    return Set.of
+                    (
+                        "jdbc:sqlserver://;databaseName=database",
+                        "jdbc:sqlserver://;servername=localhost;databaseName=database",
+                        "jdbc:sqlserver://localhost;databaseName=database",
+                        "jdbc:sqlserver://localhost:1433;databaseName=database",
+                        "jdbc:sqlserver://localhost\\instancename;databaseName=database",
+                        "jdbc:sqlserver://localhost\\instancename:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com\\instancename;databaseName=database",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;databaseName=database;",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;",
+                        "jdbc:sqlserver://;servername=www.host.com;databaseName=database",
+                        "jdbc:sqlserver://;database=database",
+                        "jdbc:sqlserver://;servername=localhost;database=database",
+                        "jdbc:sqlserver://localhost;database=database",
+                        "jdbc:sqlserver://localhost:1433;database=database",
+                        "jdbc:sqlserver://localhost\\instancename;database=database",
+                        "jdbc:sqlserver://localhost\\instancename:1433;database=database",
+                        "jdbc:sqlserver://www.host.com\\instancename;database=database",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433;database=database",
+                        "jdbc:sqlserver://www.host.com:1433;database=database",
+                        "jdbc:sqlserver://www.host.com:1433\\instanceName;database=database;",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database",
+                        "jdbc:sqlserver://www.host.com:1433;SelectMethod=cursor;database=database;",
+                        "jdbc:sqlserver://;servername=www.host.com;database=database"
+                    );
                 }
 
                 @NotNull
                 @Override
                 protected Set<String> getBadUrls()
                 {
-                    return new CsvSet("jdb:jtds:sqlserver://localhost/database," +
-                        "jdbc:jts:sqlserver://localhost/database," +
-                        "jdbc:jtds:sqlerver://localhost/database," +
-                        "jdbc:jtds:sqlserver://localhostdatabase," +
-                        "jdbc:jtds:sqlserver:database");
+                    return Set.of
+                    (
+                        "jdbc:sqlserver://",
+                        "jdbc:sqlserver://;servername=localhost",
+                        "jdbc:sqlserver://localhost",
+                        "jdbc:sqlserver://localhost:1433",
+                        "jdbc:jtds:sqlserver://localhost/database",
+                        "jdbc:jtds:sqlserver://localhost:1433/database",
+                        "jdb:sqlserver://localhost/database",
+                        "jdbc:sqlerver://localhost/database",
+                        "jdbc:sqlserver://localhostdatabase",
+                        "jdbc:sqlserver:database",
+                        "jdbc:sqlserver://localhost\\instancename",
+                        "jdbc:sqlserver://localhost\\instancename:1433",
+                        "jdbc:sqlserver://www.host.com\\instancename",
+                        "jdbc:sqlserver://www.host.com\\instancename:1433"
+                    );
                 }
             };
 
