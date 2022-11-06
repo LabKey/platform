@@ -27,8 +27,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -117,7 +115,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                         "    var config = { \n" +
                         "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
                         "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
-                        "        url: " + PageFlowUtil.jsString(url.getLocalURIString() + (ExperimentalFeatureService.get().isFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "")) + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
+                        "        url: " + PageFlowUtil.jsString(url.getLocalURIString() + "?") + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
                         "        method: 'POST'\n" +
                         "    }\n" +
                         "    LABKEY.Ajax.request(config); \n" +

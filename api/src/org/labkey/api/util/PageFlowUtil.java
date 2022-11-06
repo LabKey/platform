@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -772,15 +772,15 @@ public class PageFlowUtil
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             Class cls = o.getClass();
-            final JSONObject json;
+            final org.json.old.JSONObject json;
             if (o instanceof Map)
             {
-                json = new JSONObject((Map)o);
+                json = new org.json.old.JSONObject((Map)o);
             }
             else
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new JSONObject();
+                json = new org.json.old.JSONObject();
                 f.toMap(o, json);
             }
             w.write(json.toString());
@@ -811,7 +811,7 @@ public class PageFlowUtil
         }
         try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            JSONObject json = new JSONObject(IOUtils.toString(r));
+            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
 
             if (cls == Map.class || cls == HashMap.class)
                 return (T)json;
@@ -2052,7 +2052,7 @@ public class PageFlowUtil
         return builder
             .append(HttpView.currentPageConfig().getScriptTagStart())
             .append(JavaScriptFragment.unsafe("LABKEY.init("))
-            .append(jsInitObject(context, config, resources, includePostParameters))
+            .append(JavaScriptFragment.unsafe(jsInitObject(context, config, resources, includePostParameters).toString()))
             .append(JavaScriptFragment.unsafe(");\n"))
             .append(HtmlString.unsafe("</script>\n"));
     }
@@ -2255,11 +2255,11 @@ public class PageFlowUtil
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     @SuppressWarnings("UnusedDeclaration")
-    public static JSONObject jsInitObject()
+    public static Map<String, Object> jsInitObject()
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, null, new LinkedHashSet<>(), false);
+        return jsInitObject(context, null, new LinkedHashSet<>(), false).toMap();
     }
 
     public static JSONObject jsInitObject(ContainerUser context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
@@ -2785,7 +2785,7 @@ public class PageFlowUtil
             assertEquals(bean.s, copy.s);
             assertEquals(bean.d, copy.d);
 
-            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
+            Map<String, Object> map = ((Map<String,Object>)decodeObject(Map.class, s));
             assertNotNull(map);
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));

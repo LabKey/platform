@@ -29,8 +29,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.GUID;
 
@@ -61,7 +59,7 @@ public class CoreUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void handleUnknownModules(ModuleContext context)
     {
-        ModuleLoader.getInstance().handleUnkownModules();
+        ModuleLoader.getInstance().handleUnknownModules();
     }
 
     /**
@@ -132,16 +130,5 @@ public class CoreUpgradeCode implements UpgradeCode
             // Bump the look & feel revision to force browsers to retrieve new logos
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
-    }
-
-    /**
-     * Invoked at 22.005 to turn on no-question-mark mode for all servers. Can be deleted once the experimental feature
-     * is removed (22.12 or thereabouts).
-     */
-    @SuppressWarnings("unused")
-    @DeferredUpgrade // Required because root container is created after all scripts run
-    public void turnOnNoQuestionMarkMode(ModuleContext context)
-    {
-        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
     }
 }
