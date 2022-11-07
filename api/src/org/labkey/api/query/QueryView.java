@@ -32,7 +32,7 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;

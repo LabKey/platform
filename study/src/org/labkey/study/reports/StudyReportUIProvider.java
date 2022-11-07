@@ -19,7 +19,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;

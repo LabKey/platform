@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.reports.report;
+package org.labkey.api.reports.report.r;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.reports.RScriptEngine;
+import org.labkey.api.reports.report.ModuleReportDependenciesResource;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.FunctionType;

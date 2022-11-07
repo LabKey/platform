@@ -19,7 +19,7 @@ package org.labkey.api.reports.report.r.view;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.FileUtil;
