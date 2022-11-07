@@ -1651,6 +1651,12 @@ boxPlot.render();
  * @param {Function} [config.properties.legendMouseOutFn] (Optional) The function to call on legend item mouse out. The parameters to
  *                  that function will be the mouse event, and the legend data.
  * @param {Object} [config.properties.legendMouseOutFnScope] (Optional) The scope to use for the call to legendMouseOutFn.
+ * @param {Function} [config.properties.pathMouseOverFn] (Optional) The function to call on path/line mouse over. The parameters to
+ *                  that function will be the mouse event, path data, and the DOM element for the path itself.
+ * @param {Object} [config.properties.pathMouseOverFnScope] (Optional) The scope to use for the call to pathMouseOverFn.
+ * @param {Function} [config.properties.pathMouseOutFn] (Optional) The function to call on path/line item mouse out. The parameters to
+ *                  that function will be the mouse event, and the path data.
+ * @param {Object} [config.properties.pathMouseOutFnScope] (Optional) The scope to use for the call to pathMouseOutFn.
  */
 (function(){
     LABKEY.vis.TrendingLinePlotType = {
@@ -2260,6 +2266,24 @@ boxPlot.render();
                             return colorValue;
                         }
                     }
+                }
+
+                // add some mouse over effects to highlight selected point
+                pathLayerConfig.aes.mouseOverFn = function(event, pathData, layerSel, path) {
+                    if (config.properties.pathMouseOverFn) {
+                        config.properties.pathMouseOverFn.call(config.properties.pathMouseOverFnScope || this, event, pathData, layerSel, path, valueName, config);
+                    }
+                };
+
+                pathLayerConfig.aes.mouseOutFn = function(event, pathData, layerSel) {
+                    if (config.properties.pathMouseOutFn) {
+                        config.properties.pathMouseOutFn.call(config.properties.pathMouseOutFnScope || this, event, pathData, layerSel, valueName, config);
+                    }
+                };
+                if (config.properties.hoverTextFn) {
+                    pathLayerConfig.aes.hoverText = function() {
+                        return config.properties.hoverTextFn.call(this);
+                    };
                 }
 
                 return pathLayerConfig;
