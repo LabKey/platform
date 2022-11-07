@@ -399,12 +399,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public @NotNull Collection<String> getJarFilenames()
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
     public boolean isAutoUninstall()
     {
         return false;
