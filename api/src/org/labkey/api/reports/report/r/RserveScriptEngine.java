@@ -18,9 +18,11 @@ package org.labkey.api.reports.report.r;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.impl.common.IOUtil;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
@@ -30,20 +32,65 @@ import org.rosuda.REngine.Rserve.RserveException;
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.labkey.api.reports.report.r.RReport.getLocalPath;
+import static org.labkey.api.reports.report.r.RReport.toR;
+
 
 public class RserveScriptEngine extends RScriptEngine
 {
     private static final Logger LOG = LogManager.getLogger(RserveScriptEngine.class);
 
-    private String localHostIP = "127.0.0.1";
-    private String localHostName = "localhost";
-    private static final int INITIAL_R_SESSONS = 5;
+    public enum ModusOperandi
+    {
+        Local(false, false),         // similar usage to classic "R.exe" reports: local execution with access to entire file system (no file mapping needed)
+        FileShare(false, true),      // original rserve implementation: assumes a shared file system (supports remapping file paths)
+        Cloud(true, false);          // similar usage to docker R configuration: assumes no sharing files are copied/sent to  remote service
+
+        ModusOperandi(boolean copy, boolean remap)
+        {
+            this.copy = copy;
+            this.cwd = !copy;
+            this.remap = remap;
+        }
+
+        final boolean copy, cwd, remap;
+
+        // copy files before eval()?
+        boolean requiresCopyFiles()
+        {
+            return copy;
+        }
+
+        // change working directory of R connection?
+        boolean requiresChangeWorkingDirectory()
+        {
+            return cwd;
+        }
+
+        // remap files outside of working directory?
+        // files in working directory are always remapped to ./
+        boolean requiresFileRemap()
+        {
+            return remap;
+        }
+    }
+
+
+    protected static final String localHostIP = "127.0.0.1";
+    protected static final String localHostName = "localhost";
     //
     // "share" is a bad name here - what we really mean is the name of the mounted
     // volume and path to the share on the labkey server reports directory
@@ -53,10 +100,32 @@ public class RserveScriptEngine extends RScriptEngine
     public static final String PIPELINE_ROOT = "rserve.script.engine.pipelineRoot";
     public static final String PROJECT_PIPELINE_ROOT = "rserve.script.engine.projectPipelineRoot";
 
+
+    protected final ModusOperandi mo;
+    protected String rserveWorkingDirectory;
+
+
     public RserveScriptEngine(ExternalScriptEngineDefinition def)
     {
         super(def);
+        mo = getModusOperandi(def);
     }
+
+
+    // NB: we are inferring MO, we could make this explicit in the configuration
+    static ModusOperandi getModusOperandi(ExternalScriptEngineDefinition def)
+    {
+        var local = localHostName.equals(def.getMachine()) || localHostIP.equals(def.getMachine());
+        var sandboxed = def.isSandboxed();
+        var hasPathMapping = null != def.getPathMap() && !def.getPathMap().getURIPathMap().isEmpty();
+
+        if (local && !sandboxed && !hasPathMapping)
+            return ModusOperandi.Local;
+        if (hasPathMapping)
+            return ModusOperandi.FileShare;
+        return ModusOperandi.Cloud;
+    }
+
 
     @Override
     protected String getInputFilename(File inputScript)
@@ -64,12 +133,48 @@ public class RserveScriptEngine extends RScriptEngine
         return getRemotePath(inputScript);
     }
 
+
+    // clean absolute path
+    File workingDirectory;
+
+    @Override
+    public File getWorkingDir(ScriptContext context)
+    {
+        if (null == workingDirectory)
+            workingDirectory = FileUtil.getAbsoluteCaseSensitiveFile(super.getWorkingDir(getContext()));
+        return workingDirectory;
+    }
+
+
     @Override
     protected String getRWorkingDir(ScriptContext context)
     {
         File workingDir = getWorkingDir(context);
-        return getRemotePath(workingDir);
+        if (!mo.requiresFileRemap())
+            return workingDir.toString();
+        else
+        {
+            // getRemotePath(workingDir) will return ./ so call makeLocalToRemotePath() directly
+            URI remote = makeLocalToRemotePath(_def, null, workingDir.toURI());
+            return PathMapper.UriToPath(remote);
+        }
     }
+
+
+    public void appendScriptProlog(StringBuilder labkey, ViewContext context)
+    {
+        if (!mo.requiresCopyFiles())    // requiresCopyFiles implies there is no shared file-system
+        {
+            File pipelineRoot = RReport.getPipelineRoot(context);
+            String localPath = getLocalPath(pipelineRoot);
+            labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
+
+            // include remote paths so that the client can fixup any file references
+            String remotePath = getRemotePath(pipelineRoot);
+            labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
+        }
+    }
+
 
     //
     // note this is only run in the context of Rserve (callers need to ensure this).  The incoming script must already
@@ -100,7 +205,7 @@ public class RserveScriptEngine extends RScriptEngine
 
         StringBuilder paramsList = new StringBuilder();
         RReport.appendParamList(paramsList, inputParameters);
-        function = function + "(" + paramsList.toString() + ")";
+        function = function + "(" + paramsList + ")";
 
         try
         {
@@ -119,6 +224,57 @@ public class RserveScriptEngine extends RScriptEngine
             rh.release();
         }
     }
+
+
+    protected void copyWorkingDirectoryToRemote(RConnection rconn) throws IOException
+    {
+        if (!mo.requiresCopyFiles())
+            return;
+
+        LOG.debug("Copy files in working directory to remote server");
+        File wd = getWorkingDir(getContext());
+        // recursive???
+        File[] files = Objects.requireNonNullElse(wd.listFiles(), new File[0]);
+        for (var file : files)
+        {
+            try (OutputStream os = rconn.createFile(file.getName());
+                 FileInputStream fis = new FileInputStream(file))
+            {
+                IOUtil.copyCompletely(fis,os);
+            }
+        }
+    }
+
+
+    protected void copyWorkingDirectoryFromRemote(RConnection rconn) throws IOException, RserveException
+    {
+        if (!mo.requiresCopyFiles())
+            return;
+
+        LOG.debug("Copy files from remote server to local working directory");
+        File wd = getWorkingDir(getContext());
+        try
+        {
+            String[] names = rconn.eval("list.files("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +")").asStrings();
+            for (var name : names)
+            {
+                if ("input_data.tsv".equalsIgnoreCase(name))
+                    continue;
+                if ("script.R".equalsIgnoreCase(name))
+                    continue;
+                try (InputStream is = rconn.openFile(name);
+                     FileOutputStream fos = new FileOutputStream(new File(wd,name)))
+                {
+                    IOUtil.copyCompletely(is, fos);
+                }
+            }
+        }
+        catch (REXPMismatchException x)
+        {
+            throw new IOException(x);
+        }
+    }
+
 
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException
@@ -151,6 +307,9 @@ public class RserveScriptEngine extends RScriptEngine
         {
             rconn = getConnection(rh, context);
 
+            // no logging here, because this is a no-op by default
+            copyWorkingDirectoryToRemote(rconn);
+
             String remoteInputFile = getInputFilename(scriptFile);
             LOG.debug("Executing remote script '" + remoteInputFile + "'...");
             String cmdFormat = RReport.DEFAULT_RSERVE_CMD;
@@ -163,7 +322,15 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.debug("Evaluating command:  " + rserveCmd);
             String output = eval(rconn, rserveCmd);
             LOG.debug("Executed remote script '" + scriptFile + "' successfully");
+
+            // no logging here, because this is a no-op by default
+            copyWorkingDirectoryFromRemote(rconn);
+
             return output;
+        }
+        catch (IOException|RserveException x)
+        {
+            throw new ScriptException(x);
         }
         finally
         {
@@ -171,7 +338,8 @@ public class RserveScriptEngine extends RScriptEngine
         }
     }
 
-    private String eval(RConnection rconn, String script)
+
+    protected String eval(RConnection rconn, String script)
     {
         try
         {
@@ -190,6 +358,7 @@ public class RserveScriptEngine extends RScriptEngine
             throw new RuntimeException(getRserveError(rconn, re));
         }
     }
+
 
     public static String getRserveError(RConnection rconn, RserveException re)
     {
@@ -215,6 +384,7 @@ public class RserveScriptEngine extends RScriptEngine
         return rserveErr;
     }
 
+
     //
     // Generate the output of Rserve.  Currently we only spit out what is explicitly "printed"
     // by the R script itself.  Since we run the script as is using the Source command and don't
@@ -223,7 +393,6 @@ public class RserveScriptEngine extends RScriptEngine
     public static String getRserveOutput(REXP rexp)
     {
         StringBuilder sb = new StringBuilder();
-        String rserveOut = null;
 
         if (null != rexp)
         {
@@ -246,7 +415,7 @@ public class RserveScriptEngine extends RScriptEngine
                 //
             }
         }
-        rserveOut = sb.toString();
+        String rserveOut = sb.toString();
         //
         // Don't bother returning an empty string here as we'll just
         // write out an empty file
@@ -255,165 +424,104 @@ public class RserveScriptEngine extends RScriptEngine
      }
 
 
+/*
     @Override
     public String getRemotePath(File localFile)
     {
-        // get absolute path to make sure the paths are consistent
-        String localPath = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI().toString();
-        return getRemotePath(localPath);
+        // see RScriptEngine.getRemotePath(localFile);
+        return relativizeWorkingDirectory(RReport.getLocalPath(localFile));
     }
 
 
     @Override
     public String getRemotePath(String localURI)
     {
-        return makeLocalToRemotePath(_def, localURI);
+        // see RScriptEngine.getRemotePath(localFile);
+        return relativizeWorkingDirectory(localURI);
+    }
+     */
+
+
+    @Override
+    public String getRemotePath(File localFile)
+    {
+        // get absolute path to make sure the paths are consistent
+        localFile = FileUtil.getAbsoluteCaseSensitiveFile(localFile);
+        if (!mo.requiresFileRemap())
+            return localFile.toString();
+        URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localFile.toURI());
+        return PathMapper.UriToPath(remote);
     }
 
 
-    static public String makeLocalToRemotePath(ExternalScriptEngineDefinition def, String localURI)
+    @Override
+    public String getRemotePath(String local)
     {
-        PathMapper pathMap = def.getPathMap();
-        if (pathMap != null && !pathMap.getPathMap().isEmpty())
+        try
         {
-            // CONSIDER: Move converting file path to URI into the PathMapper.
-            if (!localURI.startsWith("file:"))
-                localURI = FileUtil.getAbsoluteCaseSensitiveFile(new File(localURI)).toURI().toString();
+            URI localURI = PathMapper.pathToUri(local);
+            URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localURI);
+            return PathMapper.UriToPath(remote);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
 
-            String remoteURI = pathMap.localToRemote(localURI);
-            remoteURI = remoteURI.replace('\\', '/');
-            try
+    // generate path relative to the working directory, return null for paths outside directory
+    static String relativizeWorkingDirectory(File workingDirectory, String strPath)
+    {
+        Path path = new File(strPath).toPath().normalize();
+        if (path.equals(path.getRoot()) || path.startsWith(".."))
+            return null;
+        if (!path.isAbsolute())
+            return path.toString();
+        Path wd = workingDirectory.toPath();
+        Path relative = wd.relativize(path);
+        if (relative.startsWith("../") || relative.startsWith("/"))
+            return null;
+        return "./" + relative;
+    }
+
+
+    // It's confusing to have methods that take URI and return path (or vice versa)
+    // Let's stick to methods that take/return the same type (using URI here since pathMap.localToRemote() wants URI)
+    static public URI makeLocalToRemotePath(ExternalScriptEngineDefinition def, File workingDirectory, URI localURI)
+    {
+        // let's first try to relative relative to the working directory
+        // We could do this in the other order.  However, since pathMap.localToRemote() doesn't tell us when it did not do anything,
+        // this works better for now.
+        if (null != workingDirectory)
+        {
+            String workingFile = relativizeWorkingDirectory(workingDirectory, localURI.getPath());
+            if (null != workingFile)
             {
-                // check that the remoteURI is valid
-                URI uri = new URI(remoteURI);
-                LOG.debug("Mapped path '" + localURI + "' ==> '" + remoteURI + "'");
-
-                if (remoteURI.startsWith("file:"))
+                try
                 {
-                    remoteURI = URLDecoder.decode(remoteURI, "UTF-8");
-                    return remoteURI.substring(5);
+                    return new URI(workingFile);
                 }
+                catch (URISyntaxException x)
+                {
+                    throw UnexpectedException.wrap(x);
+                }
+            }
+        }
 
-                return remoteURI;
-            }
-            catch (URISyntaxException | UnsupportedEncodingException e)
-            {
-                LOG.warn("Error mapping localURI '" + localURI + "' to remote RServe path: " + e.getMessage());
-            }
+        PathMapper pathMap = def.getPathMap();
+        if (pathMap != null && !pathMap.getURIPathMap().isEmpty())
+        {
+            URI remoteURI = pathMap.localToRemote(localURI);
+            LOG.debug("Mapped path '" + localURI + "' ==> '" + remoteURI + "'");
+            return remoteURI;
         }
         else
         {
             LOG.warn("No path mapping configured; using localURI '" + localURI + "' on remote RServe");
         }
-
         return localURI;
     }
 
-
-    /*
-    public String getRemoteReportPath(String localPath)
-    {
-        File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.TEMP_ROOT);
-        if (!StringUtils.isEmpty(_def.getReportShare()) && f != null)
-        {
-            String tempRoot = RReport.getLocalPath(f);
-            return localPath.replaceAll(tempRoot, _def.getReportShare());
-        }
-
-        return localPath;
-    }
-
-    public String getRemotePipelinePath(String localPath)
-    {
-        File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PIPELINE_ROOT);
-        if (!StringUtils.isEmpty(_def.getPipelineShare()) && f != null)
-        {
-            // TODO: RServe currently only configures site-wide pipeline share.
-            // TODO: We check that the current folder pipeline root is either equal to or is under the project's pipeline root.
-            // TODO: This could fail if the project pipeline root isn't the same as the RServe script engine settings pipeline share
-            File projectRoot = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PROJECT_PIPELINE_ROOT);
-            if (projectRoot != null)
-                f = projectRoot;
-
-            String pipelineRoot = RReport.getLocalPath(f);
-            return localPath.replaceAll(pipelineRoot, _def.getPipelineShare());
-        }
-
-        return localPath;
-    }
-    */
-
-
-    /*
-    private void EvalLines()
-    {
-            //
-            // eval source line by line
-            //
-
-            RserveScriptUtil su = new RserveScriptUtil(script);
-            StringBuilder sb = new StringBuilder();
-
-            rcmd = su.getNextCommand();
-            while (null != rcmd)
-            {
-                rconn.eval(rcmd);
-
-                //
-                // this will print out expression evaluations
-                // which is not all that useful unless
-                // we wrap with capture.output (which does some
-                // funky things to the environment unless you use force(environ)
-                //
-                //REXP rexp = rconn.eval(rcmd);
-                //
-                // todo: is this logic correct? why is the first output always thrown away?
-                //
-                //if (output && rexp != null)
-                //{
-                //    outputEval(rexp, sb);
-                //    sb.append("\n");
-                //}
-                //output = true;
-                //
-
-                rcmd = su.getNextCommand();
-            }
-
-
-    //
-    // if (isDebug())
-    //  view.addView(new HtmlView(err))
-    //
-
-    }
-    */
-
-    private void EnsureRserveStarted()
-    {
-        /*
-        if (isRserveRunning())
-        {
-            return;
-        }
-        */
-
-
-        //
-        //  todo:  do we want to try to start a remote instance?
-        //  todo:  on windows, we do need to do some session pooling here
-        //  todo:  do we want to do this on an existing labkey server?
-        //  todo:  note that starting rserve requires knowing the rserve path which we may want
-        //  todo:  request.  for now, I don't have a 64 bit binary
-        //
-
-        /*
-        if (localHostIP.equalsIgnoreCase(_def.getMachineName()) ||
-            localHostName.equalsIgnoreCase(_def.getMachineName()))
-        {
-        }
-        */
-    }
 
     private static RConnection getConnectionFromHolder(RConnectionHolder rh)
     {
@@ -427,18 +535,25 @@ public class RserveScriptEngine extends RScriptEngine
         return null;
     }
 
+
     /** Change to the R working directory on the remote RServe. */
-    private void initEnv(RConnection rconn, ScriptContext context)
+    protected void initEnv(RConnection rconn, ScriptContext context) throws IOException
     {
+        assert( getContext() == context ); // why pass around context???
+
+        if (!mo.requiresChangeWorkingDirectory())
+            return;
+
         String workingDir = getRWorkingDir(context);
         if (workingDir != null)
         {
             LOG.debug("Setting RServe working directory to '" + workingDir + "'");
-            String script = "setwd(\"" + workingDir + "\")\n";
-
-            eval(rconn, script);
+            eval(rconn, "setwd(" + toR(workingDir) + ")\n");
         }
+
+        rserveWorkingDirectory = eval(rconn, "getwd()\n");
     }
+
 
     private RConnection getConnection(RConnectionHolder rh, ScriptContext context)
     {
@@ -466,7 +581,7 @@ public class RserveScriptEngine extends RScriptEngine
 
                 initEnv(rconn, context);
             }
-            catch(RserveException rse)
+            catch(IOException|RserveException rse)
             {
                 String message;
 
@@ -561,7 +676,7 @@ public class RserveScriptEngine extends RScriptEngine
 
     //
     // todo: just get the first one you can from the map (i.e., don't burn a connection just to check if rserve is running or not as this
-    // todo: could be expensinve on an windows box
+    // todo: could be expensive on an windows box
     //
     private boolean isRserveRunning()
     {

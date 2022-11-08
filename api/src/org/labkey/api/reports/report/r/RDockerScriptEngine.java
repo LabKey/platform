@@ -23,16 +23,20 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.docker.DockerService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.UnexpectedException;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -141,14 +145,24 @@ public class RDockerScriptEngine extends RScriptEngine
     public String getRemotePath(File localFile)
     {
         // get absolute path to make sure the paths are consistent
-        String localPath = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI().toString();
-        return getRemotePath(localPath);
+        URI localUri = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI();
+        URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
+        return PathMapper.UriToPath(remote);
     }
 
     @Override
-    public String getRemotePath(String localURI)
+    public String getRemotePath(String local)
     {
-        return RserveScriptEngine.makeLocalToRemotePath(_def, localURI);
+        try
+        {
+            URI localUri = PathMapper.pathToUri(local);
+            URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
+            return PathMapper.UriToPath(remote);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     @NotNull

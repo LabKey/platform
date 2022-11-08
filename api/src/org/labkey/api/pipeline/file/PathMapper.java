@@ -15,10 +15,13 @@
  */
 package org.labkey.api.pipeline.file;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.FileUtil;
 
+import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 /**
@@ -44,4 +47,23 @@ public interface PathMapper
     ValidationException getValidationErrors();
 
     JSONObject toJSON();
+
+
+
+    static URI fileToUri(File localFile)
+    {
+        return FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI();
+    }
+
+    static URI pathToUri(String path) throws URISyntaxException
+    {
+        if (path.startsWith("file:"))
+            return new URI(path);
+        return FileUtil.getAbsoluteCaseSensitiveFile(new File(path)).toURI();
+    }
+
+    static String UriToPath(URI uri)
+    {
+        return uri.getPath();
+    }
 }

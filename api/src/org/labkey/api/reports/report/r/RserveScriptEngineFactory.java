@@ -30,6 +30,8 @@ public class RserveScriptEngineFactory extends ExternalScriptEngineFactory
     @Override
     public synchronized ScriptEngine getScriptEngine()
     {
+        // http://www.ci.tuwien.ac.at/Conferences/DSC-2003/Proceedings/Urbanek.pdf
         return new RserveScriptEngine(_def);
     }
 }
+
