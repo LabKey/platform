@@ -15,7 +15,9 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -220,8 +222,15 @@ public class AdminConsole
 
     public static Set<String> getProductFeatureSet()
     {
+        return getProductFeatureSet(null);
+    }
+
+    public static Set<String> getProductFeatureSet(@Nullable String groupKey)
+    {
         Set<String> productFeatures = new HashSet<>();
         AdminConsole.getProductGroups().forEach(group -> {
+            if (!StringUtils.isEmpty(groupKey) && !groupKey.equals(group.getKey()))
+                return;
             group.getProducts().forEach(product -> {
                 if (product.isEnabled())
                     productFeatures.addAll(product.getFeatureFlags());
@@ -232,7 +241,12 @@ public class AdminConsole
 
     public static boolean isProductFeatureEnabled(ProductFeature feature)
     {
-        return getProductFeatureSet().contains(feature.toString());
+        return isProductFeatureEnabled(feature, null);
+    }
+
+    public static boolean isProductFeatureEnabled(ProductFeature feature, @Nullable String groupKey)
+    {
+        return getProductFeatureSet(groupKey).contains(feature.toString());
     }
 
     public static abstract class ProductGroup implements Comparable<ProductGroup>

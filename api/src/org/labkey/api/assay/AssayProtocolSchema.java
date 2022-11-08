@@ -447,6 +447,14 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
             visibleColumns.add(FieldKey.fromParts(AssayQCFlagColumn.NAME));
         }
 
+        boolean hasProductProjects = getContainer().getProductProjectsCount() > 0;
+        if (hasProductProjects)
+        {
+            var folderColumn = runTable.getMutableColumn(ExpRunTable.Column.Folder);
+            folderColumn.setLabel("Project");
+            visibleColumns.add(FieldKey.fromParts(ExpRunTable.Column.Folder));
+        }
+
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
         Domain batchDomain = getProvider().getBatchDomain(getProtocol());

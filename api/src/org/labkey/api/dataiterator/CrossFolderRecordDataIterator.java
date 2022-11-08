@@ -109,7 +109,8 @@ public class CrossFolderRecordDataIterator extends WrapperDataIterator
                 return null;
 
             QueryUpdateService.InsertOption option = context.getInsertOption();
-            if (option.mergeRows && QueryService.get().isProductProjectsEnabled(target.getUserSchema().getContainer()))
+            Container container = target.getUserSchema() == null ? null : target.getUserSchema().getContainer();
+            if (option.mergeRows && container != null && container.isProductProjectsEnabled())
             {
                 return new CrossFolderRecordDataIterator(new CachingDataIterator(di), context, target, keys, extraKeyValueMap);
             }

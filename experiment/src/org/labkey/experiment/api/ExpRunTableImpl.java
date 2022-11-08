@@ -553,12 +553,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Links);
         addColumn(Column.Name);
         setTitleColumn(Column.Name.toString());
+        addContainerColumn(Column.Folder, null);
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
-        addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
         addColumn(Column.JobId).setFk(schema.getJobForeignKey());
         addColumn(Column.Replaced);

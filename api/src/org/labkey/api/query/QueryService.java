@@ -622,8 +622,4 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
-    /**
-     * Resolves if the product projects feature is enabled in the supplied container scope.
-     */
-    boolean isProductProjectsEnabled(Container container);
 }

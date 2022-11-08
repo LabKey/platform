@@ -610,7 +610,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setUserEditable(false);
         typeColumnInfo.setShownInInsertView(false);
 
-        addContainerColumn(ExpMaterialTable.Column.Folder, null);
+        var folderCol = addContainerColumn(ExpMaterialTable.Column.Folder, null);
+        boolean hasProductProjects = getContainer().getProductProjectsCount() > 0;
+        if (hasProductProjects)
+            folderCol.setLabel("Project");
 
         var runCol = addColumn(ExpMaterialTable.Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
@@ -649,6 +652,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
+        if (hasProductProjects)
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Folder));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
 
         if (st == null)

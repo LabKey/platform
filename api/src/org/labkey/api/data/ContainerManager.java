@@ -577,6 +577,45 @@ public class ContainerManager
         return nameCounts;
     }
 
+    @NotNull
+    public static Map<String, Integer> getProductProjectsCounts(@NotNull FolderType folderType)
+    {
+        Container root = getRoot();
+        Map<String, Integer> metrics = new TreeMap<>();
+        List<Integer> counts = new ArrayList<>();
+        for (Container c : getAllChildren(root))
+        {
+            if (!c.getFolderType().getName().equals(folderType.getName()))
+                continue;
+
+            int childCount = c.getChildren().size();
+            counts.add(childCount);
+        }
+
+        int totalFolderTypeMatch = counts.size();
+        if (totalFolderTypeMatch == 0)
+            return metrics;
+
+        Collections.sort(counts);
+        int median = counts.get((totalFolderTypeMatch - 1)/2);
+        if (totalFolderTypeMatch % 2 == 0 )
+        {
+            int low = counts.get(totalFolderTypeMatch/2 - 1);
+            int high = counts.get(totalFolderTypeMatch/2);
+            median = Math.round((low + high) / 2);
+        }
+        int maxProjectsCount = counts.get(totalFolderTypeMatch - 1);
+        int totalProjectsCount = counts.stream().mapToInt(Integer::intValue).sum();
+        int averageProjectsCount = Math.round(totalProjectsCount/totalFolderTypeMatch);
+
+        metrics.put("totalSubProjectsCount", totalProjectsCount);
+        metrics.put("averageSubProjectsPerHomeProject", averageProjectsCount);
+        metrics.put("medianSubProjectsCountPerHomeProject", median);
+        metrics.put("maxSubProjectsCountInHomeProject", maxProjectsCount);
+
+        return metrics;
+    }
+
     public static boolean isContainerTabTypeThisOrChildrenOverridden(Container c)
     {
         if (isContainerTabTypeOverridden(c))
