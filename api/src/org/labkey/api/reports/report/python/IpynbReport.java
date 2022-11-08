@@ -65,6 +65,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.cl;
 
@@ -270,7 +271,7 @@ public class IpynbReport extends DockerScriptReport
             try
             {
                 urlString = engine.getEngineDefinition().getRemoteUrl();
-                if (urlString != null)
+                if (isNotBlank(urlString))
                     return new URL(urlString);
                 throw new MalformedURLException("URL is empty");
             }

@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;

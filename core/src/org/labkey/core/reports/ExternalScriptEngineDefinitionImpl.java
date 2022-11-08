@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.labkey.api.reports.RScriptEngine.DOCKER_IMAGE_TYPE;
+import static org.labkey.api.reports.report.r.RScriptEngine.DOCKER_IMAGE_TYPE;
 import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm

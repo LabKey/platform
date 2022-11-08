@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.reports.report;
+package org.labkey.api.reports.report.r;
 
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 

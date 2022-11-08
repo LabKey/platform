@@ -23,12 +23,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.model.ReportPropsManager;
-import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -43,7 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.reports.RScriptEngine.PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST;
+import static org.labkey.api.reports.report.r.RScriptEngine.PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST;
 
 public class ScriptReportDesignBean extends ScriptReportBean
 {

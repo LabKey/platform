@@ -30,6 +30,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.security.SessionApiKeyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.thumbnail.Thumbnail;
