@@ -424,31 +424,11 @@ public class RserveScriptEngine extends RScriptEngine
      }
 
 
-/*
-    @Override
-    public String getRemotePath(File localFile)
-    {
-        // see RScriptEngine.getRemotePath(localFile);
-        return relativizeWorkingDirectory(RReport.getLocalPath(localFile));
-    }
-
-
-    @Override
-    public String getRemotePath(String localURI)
-    {
-        // see RScriptEngine.getRemotePath(localFile);
-        return relativizeWorkingDirectory(localURI);
-    }
-     */
-
-
     @Override
     public String getRemotePath(File localFile)
     {
         // get absolute path to make sure the paths are consistent
         localFile = FileUtil.getAbsoluteCaseSensitiveFile(localFile);
-        if (!mo.requiresFileRemap())
-            return localFile.toString();
         URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localFile.toURI());
         return PathMapper.UriToPath(remote);
     }
@@ -587,7 +567,7 @@ public class RserveScriptEngine extends RScriptEngine
 
                 if (rconn == null)
                 {
-                    message = "Could not connect to: " + _def.getMachine() + ":" + String.valueOf(_def.getPort());
+                    message = "Could not connect to: " + _def.getMachine() + ":" + _def.getPort();
                 }
                 else
                 {

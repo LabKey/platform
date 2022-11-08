@@ -503,6 +503,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _sandboxed = sandboxed;
     }
 
+    @Override
     public String getRemoteUrl()
     {
         return _remoteUrl;
@@ -527,9 +528,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         BaseViewAction.defaultBindParameters(this, "form", params);
 
         // Handle pathMap
-        JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
-        if (jsonPathMap != null)
-            _pathMap = jsonPathMap.toString();
+        if (props.get("pathMap") != null)
+            _pathMap = props.get("pathMap").toString();
     }
 
     @Override
