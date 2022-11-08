@@ -21,6 +21,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.formula.EvaluationWorkbook;
 import org.apache.poi.ss.formula.udf.UDFFinder;
+import org.apache.poi.ss.usermodel.CellReferenceType;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -456,5 +457,15 @@ public class JxlWorkbook implements Workbook
         throw new UnsupportedOperationException("method not yet supported");
     }
 
+    @Override
+    public CellReferenceType getCellReferenceType()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
 
+    @Override
+    public void setCellReferenceType(CellReferenceType cellReferenceType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
 }

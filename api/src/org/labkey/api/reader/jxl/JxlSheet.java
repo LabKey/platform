@@ -26,6 +26,8 @@ import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Footer;
 import org.apache.poi.ss.usermodel.Header;
 import org.apache.poi.ss.usermodel.Hyperlink;
+import org.apache.poi.ss.usermodel.PageMargin;
+import org.apache.poi.ss.usermodel.PaneType;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -774,10 +776,28 @@ public class JxlSheet implements Sheet
         throw new UnsupportedOperationException("method not yet supported");
     }
 
+    @Override
+    public double getMargin(PageMargin margin)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setMargin(PageMargin margin, double size)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void createSplitPane(int xSplitPos, int ySplitPos, int leftmostColumn, int topRow, PaneType activePane)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
     protected class JxlRowIterator implements Iterator<Row>
     {
         private int _current;
-        private int _last;
+        private final int _last;
 
         public JxlRowIterator()
         {
