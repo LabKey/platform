@@ -12,10 +12,11 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.243.1"
+    "@labkey/components": "2.246.1-fb-sampleListingPageConsistency.2"
   },
   "devDependencies": {
     "@labkey/build": "6.4.0",
+    "@types/jest": "29.2.0",
     "@types/react": "16.14.34",
     "@types/react-dom": "16.9.17"
   }
