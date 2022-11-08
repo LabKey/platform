@@ -396,7 +396,9 @@ public class QueryModule extends DefaultModule
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
         Container container = context.getContainer();
-        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled()); // TODO: should this be moved to CoreModule?
+        boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
+        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
+        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.getProductProjectsCount() > 0);
 
         return json;
     }
