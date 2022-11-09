@@ -387,4 +387,16 @@ public class JxlCellStyle implements CellStyle
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
+
+    @Override
+    public void setFillBackgroundColor(Color color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setFillForegroundColor(Color color)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
 }

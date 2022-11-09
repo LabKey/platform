@@ -96,12 +96,15 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // We support only 2014 and higher as the primary data source, or 2012/2008/2008R2 as an external data source
         if (version >= 100)
         {
-            if (version >= 160)
+            if (version >= 170)
             {
-                // Warn for > SQL Server 2019, for now.
+                // Warn for > SQL Server 2022, for now.
                 if (logWarnings)
                     LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
             }
+
+            if (version >= 160)
+                return new MicrosoftSqlServer2022Dialect();
 
             if (version >= 150)
                 return new MicrosoftSqlServer2019Dialect();
@@ -179,8 +182,11 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             // >= 14.0 and < 15.0 should result in MicrosoftSqlServer2017Dialect
             good("Microsoft SQL Server", 14.0, 15.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
 
-            // >= 15.0 should result in MicrosoftSqlServer2019Dialect
-            good("Microsoft SQL Server", 15.0, 17.0, "", null, driverName, MicrosoftSqlServer2019Dialect.class);
+            // >= 15.0 and < 16.0 should result in MicrosoftSqlServer2019Dialect
+            good("Microsoft SQL Server", 15.0, 16.0, "", null, driverName, MicrosoftSqlServer2019Dialect.class);
+
+            // >= 16.0 should result in MicrosoftSqlServer2022Dialect
+            good("Microsoft SQL Server", 16.0, 18.0, "", null, driverName, MicrosoftSqlServer2022Dialect.class);
         }
     }
 
