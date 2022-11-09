@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.247.0-fb-remove-fortawesome.4",
+    "@labkey/components": "2.247.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
