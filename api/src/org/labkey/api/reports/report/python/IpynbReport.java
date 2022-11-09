@@ -18,8 +18,10 @@ import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.ApiModule;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
@@ -30,6 +32,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
@@ -368,6 +371,8 @@ public class IpynbReport extends DockerScriptReport
                 return 0;
 
             tryPing(service);
+
+            SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), ScriptEngineReport.METRIC_FEATURE_AREA, getClass().getSimpleName());
 
             try (CloseableHttpClient client = HttpClients.createDefault())
             {

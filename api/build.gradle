@@ -40,7 +40,7 @@ List apache = [
 List jackson = [
         "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
         "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
-        "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+        "com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}",
         // added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
         "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
 //        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}" // included separately below so we can exclude the json jar it brings in
@@ -449,7 +449,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+            "com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}",
             "Jackson Databind Library",
             "Jackson",
             "https://github.com/FasterXML/jackson",
