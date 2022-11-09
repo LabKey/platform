@@ -275,15 +275,15 @@ public class UsersDomainKind extends SimpleTableDomainKind
         {
             return null;
         }
-        return (namespacePrefix.equalsIgnoreCase(SimpleModule.NAMESPACE_PREFIX + "-core") && objectId.equalsIgnoreCase("users")) ? Handler.Priority.MEDIUM : null;
+        return (namespacePrefix.equalsIgnoreCase(SimpleModule.NAMESPACE_PREFIX + "-core") && objectId.equalsIgnoreCase("users")) ? Handler.Priority.HIGH : null;
     }
 
     private static class PropertyDescriptorSpec
     {
-        private String _name;
-        private PropertyType _type;
-        private int _scale;
-        private boolean _hidden;
+        private final String _name;
+        private final PropertyType _type;
+        private final int _scale;
+        private final boolean _hidden;
 
         public PropertyDescriptorSpec(String name, PropertyType type, int scale, boolean hidden)
         {
