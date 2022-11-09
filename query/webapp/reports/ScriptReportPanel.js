@@ -121,16 +121,20 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
-                                // issue 18430, unmask before we load the HTML, just in case there is a javascript error
-                                // in the rendered content
-                                cmp.getEl().unmask();
-                                // Update the view div with the returned HTML, and make sure scripts are run
-                                LABKEY.Utils.loadAjaxContent(resp, panelId, function() {
-                                    cmp.doLayout();
-                                });
+                                try {
+                                    // Update the view div with the returned HTML, and make sure scripts are run
+                                    LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
+                                        cmp.doLayout();
+                                    });
+                                } finally {
+                                    // issue 18430, unmask before we load the HTML, just in case there is a javascript error
+                                    // in the rendered content
+                                    cmp.getEl().unmask();
+                                }
                             },
                             failure : function(resp, exp) {
-                                this.viewFailure(cmp, resp, exp);
+                                this.viewFailure(panelId, resp, exp);
+                                cmp.getEl().unmask();
                             },
                             jsonData: config.parameters,
                             scope   : this
@@ -141,7 +145,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         };
     },
 
-    viewFailure : function(cmp, resp, exp) {
+    viewFailure : function(panelId, resp, exp) {
 
         var error = null;
         if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
@@ -156,8 +160,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         if (!error) {
             error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp, exp)});
         }
-        Ext4.get(cmp.getEl()).update(error);
-        cmp.getEl().unmask();
+        Ext4.get(Ext4.getElementById(panelId)).update(error);
         this.prevScriptSource = null;
         this.prevViewURL = null;
     },
