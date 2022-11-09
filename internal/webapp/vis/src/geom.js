@@ -266,6 +266,11 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
     this.sizeScale = scales.size;
 
+    this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
+    this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+    this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
+
     this._dataspaceBoxPlot ? renderer.renderDataspaceBoxPlotPathGeom(data, this) : renderer.renderPathGeom(data, this);
 
     return true;

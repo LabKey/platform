@@ -479,6 +479,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetPrincipalConceptCode();
             }
 
+            if (metadataColumnJSON.isScannable() != rawColumnInfo.isScannable())
+            {
+                xmlColumn.setScannable(metadataColumnJSON.isScannable());
+            }
+
             if (xmlColumn.getWrappedColumnName() == null)
             {
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
@@ -489,11 +494,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
                 }
-            }
-
-            if (metadataColumnJSON.isScannable() != rawColumnInfo.isScannable())
-            {
-                xmlColumn.setScannable(metadataColumnJSON.isScannable());
             }
         }
 
