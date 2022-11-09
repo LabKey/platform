@@ -1,7 +1,5 @@
 import React, { ReactNode } from 'react';
 import { Button } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { imageURL, HelpLink, HELP_LINK_REFERRER } from '@labkey/components';
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
@@ -91,7 +89,7 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Double check and
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Double check and
                 make sure that your URL has been correctly input.
             </div>
             <ul>
@@ -101,7 +99,7 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Contact your
                 administrator to request access.
             </div>
         </div>
@@ -129,7 +127,7 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
                     More &gt;</HelpLink>
                 </p>
                 <div className="labkey-error-details labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
+                    <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try contacting your
                 server administrator to request access to this page.
                 </div>
             </> : <p className="labkey-error-details">{errorDetails.advice}</p>
@@ -149,7 +147,7 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
         </div>
         {getServerContext().impersonatingUser !== undefined && (
             <div className="labkey-error labkey-error-details labkey-error-subdetails">
-                <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
+                <span className="fa fa-exclamation-circle permission-warning-icon" /> You are currently
                 impersonating: <b>{getServerContext().user.displayName} </b>
                 <div className="error-page-br" />
                 <div className="error-page-br" />
@@ -213,7 +211,7 @@ const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try restarting your
                 current instance of LabKey.
             </div>
         </div>

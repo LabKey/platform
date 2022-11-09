@@ -4,7 +4,7 @@ import { mount, shallow } from 'enzyme';
 import renderer from 'react-test-renderer';
 
 import GlobalSettings from './GlobalSettings';
-import FACheckBox from './FACheckBox';
+import { FACheckBox } from './FACheckBox';
 import {GLOBAL_SETTINGS} from '../../../test/data';
 
 describe('<GlobalSettings/>', () => {
