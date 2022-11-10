@@ -2,7 +2,7 @@ import React from 'react';
 
 import renderer from 'react-test-renderer';
 
-import FACheckBox from './FACheckBox';
+import { FACheckBox } from './FACheckBox';
 
 describe('<FACheckBox/>', () => {
     test('Checked, view-only', () => {

@@ -2,15 +2,14 @@ import React, { PureComponent } from 'react';
 import { Panel, FormControl } from 'react-bootstrap';
 import { HelpLink, LabelHelpTip } from '@labkey/components';
 
-import FACheckBox from './FACheckBox';
+import { FACheckBox } from './FACheckBox';
 import { GlobalSettingsOptions } from './models';
 
 const ROW_TEXTS = [
     {
         id: 'SelfRegistration',
         text: 'Allow self sign up',
-        tip:
-            'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
+        tip: 'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
     },
     {
         id: 'SelfServiceEmailChanges',
@@ -60,10 +59,10 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
 }
 
 interface Props {
-    globalSettings: GlobalSettingsOptions;
+    authCount: number;
     canEdit: boolean;
     globalAuthOnChange: (id: string, value: any) => void;
-    authCount: number;
+    globalSettings: GlobalSettingsOptions;
 }
 
 export default class GlobalSettings extends PureComponent<Props> {
@@ -72,27 +71,9 @@ export default class GlobalSettings extends PureComponent<Props> {
         const { canEdit, authCount, globalAuthOnChange, globalSettings } = this.props;
 
         // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
-        if (authCount == 1) {
+        if (authCount === 1) {
             rowTexts = ROW_TEXTS.slice(0, -1);
         }
-
-        const rowTextComponents = rowTexts.map(text => (
-            <div className="global-settings__text-row" key={text.id}>
-                <FACheckBox
-                    key={text.id}
-                    checked={globalSettings[text.id]}
-                    canEdit={canEdit}
-                    onClick={() => globalAuthOnChange(text.id, !globalSettings[text.id])}
-                />
-
-                <span className="global-settings__text">
-                    {text.text}
-                    <LabelHelpTip title="Tip">
-                        <div> {text.tip} </div>
-                    </LabelHelpTip>
-                </span>
-            </div>
-        ));
 
         return (
             <Panel>
@@ -101,7 +82,23 @@ export default class GlobalSettings extends PureComponent<Props> {
                 </Panel.Heading>
 
                 <Panel.Body>
-                    {rowTextComponents}
+                    {rowTexts.map(text => (
+                        <div className="global-settings__text-row" key={text.id}>
+                            <FACheckBox
+                                key={text.id}
+                                checked={globalSettings[text.id]}
+                                canEdit={canEdit}
+                                onClick={() => globalAuthOnChange(text.id, !globalSettings[text.id])}
+                            />
+
+                            <span className="global-settings__text">
+                                {text.text}
+                                <LabelHelpTip title="Tip">
+                                    <div> {text.tip} </div>
+                                </LabelHelpTip>
+                            </span>
+                        </div>
+                    ))}
 
                     <DefaultDomainField
                         defaultDomain={globalSettings?.DefaultDomain}
