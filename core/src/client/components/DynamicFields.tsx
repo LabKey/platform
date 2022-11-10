@@ -1,13 +1,9 @@
-import React, { PureComponent } from 'react';
+import React, { FC, memo, PureComponent, useCallback } from 'react';
 import { FormControl } from 'react-bootstrap';
 import { FileAttachmentForm, LabelHelpTip } from '@labkey/components';
 import { Utils } from '@labkey/api';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
-import { faFileAlt } from '@fortawesome/free-solid-svg-icons';
-
-import FACheckBox from './FACheckBox';
+import { FACheckBox } from './FACheckBox';
 import { AuthConfig, AuthConfigField, AuthConfigProvider, InputFieldProps } from './models';
 
 interface TextInputProps extends InputFieldProps {
@@ -51,45 +47,33 @@ export class TextInput extends PureComponent<TextInputProps> {
 }
 
 interface CheckBoxInputProps extends AuthConfigField {
+    canEdit: boolean;
     checkCheckBox?: Function;
     value: boolean;
-    canEdit: boolean;
 }
 
-export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
-    render() {
-        const { caption, description, name, value, required } = this.props;
+export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
+    const { canEdit, caption, checkCheckBox, description, name, value, required } = props;
+    const onClick = useCallback(() => checkCheckBox(name), [checkCheckBox, name]);
 
-        return (
-            <div className="modal__field">
-                <span className="modal__field-label">
-                    {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip">
-                            <div> {description} </div>
-                        </LabelHelpTip>
-                    )}
-                    {required ? ' *' : null}
-                </span>
+    return (
+        <div className="modal__field">
+            <span className="modal__field-label">
+                {caption}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
+                )}
+                {required ? ' *' : null}
+            </span>
 
-                <span className="modal__input">
-                    {this.props.canEdit ? (
-                        <FACheckBox
-                            name={name}
-                            checked={value}
-                            canEdit={true}
-                            onClick={() => {
-                                this.props.checkCheckBox(name);
-                            }}
-                        />
-                    ) : (
-                        <FACheckBox name={name} checked={value} canEdit={false} onClick={null} />
-                    )}
-                </span>
-            </div>
-        );
-    }
-}
+            <span className="modal__input">
+                <FACheckBox name={name} checked={value} canEdit={canEdit} onClick={onClick} />
+            </span>
+        </div>
+    );
+});
 
 interface OptionInputProps extends InputFieldProps {
     options: { [key: string]: string };
@@ -129,10 +113,10 @@ export class Option extends PureComponent<OptionInputProps> {
 }
 
 interface FixedHtmlProps {
-    caption: string;
-    html?: string;
-    description?: string;
     authConfig: AuthConfig;
+    caption: string;
+    description?: string;
+    html?: string;
 }
 
 export class FixedHtml extends PureComponent<FixedHtmlProps> {
@@ -167,11 +151,11 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
 }
 
 interface SmallFileInputProps extends InputFieldProps {
-    text?: string;
     index: number;
     onFileChange: Function;
     onFileRemoval: Function;
     requiredFieldEmpty?: boolean;
+    text?: string;
 }
 
 export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
@@ -216,7 +200,7 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
                 ) : (
                     value && (
                         <div className="modal__pem-input">
-                            <FontAwesomeIcon icon={faFileAlt} className="attached-file--icon" />
+                            <span className="fa fa-file-alt attached-file--icon" />
                         </div>
                     )
                 )}
@@ -226,14 +210,14 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
 }
 
 interface DynamicFieldsProps {
-    fields: AuthConfigField[];
-    fieldValues: any;
-    canEdit: boolean;
-    modalType: AuthConfigProvider;
-    emptyRequiredFields: string[];
     authConfig: AuthConfig;
-    onChange: (event) => void;
+    canEdit: boolean;
     checkCheckBox: (string) => void;
+    emptyRequiredFields: string[];
+    fieldValues: any;
+    fields: AuthConfigField[];
+    modalType: AuthConfigProvider;
+    onChange: (event) => void;
     onFileChange: (attachment, logoType: string) => void;
     onFileRemoval: (name: string) => void;
 }
