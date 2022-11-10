@@ -54,6 +54,7 @@ public interface ExternalScriptEngineDefinition
     int getPort();
     String getUser();
     String getPassword();
+    String getFileExchange();
     PathMapper getPathMap();
 
     void setName(String name);

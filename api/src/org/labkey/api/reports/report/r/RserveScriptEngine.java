@@ -115,14 +115,8 @@ public class RserveScriptEngine extends RScriptEngine
     // NB: we are inferring MO, we could make this explicit in the configuration
     static ModusOperandi getModusOperandi(ExternalScriptEngineDefinition def)
     {
-        var local = localHostName.equals(def.getMachine()) || localHostIP.equals(def.getMachine());
-        var sandboxed = def.isSandboxed();
-        var hasPathMapping = null != def.getPathMap() && !def.getPathMap().getURIPathMap().isEmpty();
-
-        if (local && !sandboxed && !hasPathMapping)
-            return ModusOperandi.Local;
-        if (hasPathMapping)
-            return ModusOperandi.FileShare;
+        if (def.getFileExchange() != null)
+            return ModusOperandi.valueOf(def.getFileExchange());
         return ModusOperandi.Cloud;
     }
 

@@ -297,11 +297,10 @@ public class PathMapperImpl implements PathMapper
         Map<String, String> map = new LinkedHashMap<>();
         for (Object entry : jsonPaths)
         {
-            if (!(entry instanceof Map mapEntry))
+            if (!(entry instanceof JSONObject mapEntry))
                 continue;
-            Map<String,String> pairs = (Map<String,String>)mapEntry;
-            String localURI = StringUtils.trimToNull(pairs.get("localURI"));
-            String remoteURI = StringUtils.trimToNull(pairs.get("remoteURI"));
+            String localURI = StringUtils.trimToNull(mapEntry.getString("localURI"));
+            String remoteURI = StringUtils.trimToNull(mapEntry.getString("remoteURI"));
 
             //Ignore blank rows, could throw an error here -- but lets be flexible
             if (localURI == null && remoteURI == null)
@@ -337,6 +336,12 @@ public class PathMapperImpl implements PathMapper
                 remoteURI = remoteURI.concat("/");
 
             map.put(remoteURI, localURI);
+        }
+
+        if (map.size() == 0)
+        {
+            handleError("Paths", "No file shares enabled", errors);
+            return new PathMapperImpl(errors);
         }
 
         boolean localIgnoreCase = json.optBoolean("localIgnoreCase", false);

@@ -76,6 +76,12 @@
         var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
         var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
         var JUPYTER_SERVICE_REPORT_NAME = 'Jupyter Report Engine';
+
+        // Rserve file sharing constants (these should map to RserveScriptEngine.ModusOperandi enums
+        var FILE_EXCHANGE_CLOUD = 'Cloud';
+        var FILE_EXCHANGE_LOCAL = 'Local';
+        var FILE_EXCHANGE_MAPPED = 'FileShare';
+
         var defaultR, countR = 0;
         let grid;
         let remoteEnabled = <%=isRemoteEnabled%>;
@@ -294,7 +300,7 @@
                 title: 'Edit Engine Configuration',
                 layout:'form',
                 border: false,
-                width: record.remote ? 575 : 475,
+                width: record.remote ? 600 : 475,
                 autoHeight : true,
                 closeAction:'destroy',
                 modal: true,
@@ -375,32 +381,60 @@
                 value: record.port,
                 width: 275
             },{
-                fieldLabel: 'Path Mapping',
-                name: 'pathgrid',
-                xtype: 'fieldcontainer',
-                id: 'editEngine_pathMapContainer',
-                labelAttrTpl: " data-qtitle='Local to Remote Path Mapping' data-qtip='Add or remove local to remote path mappings'",
-                items: [{
-                    xtype: 'gridpanel',
-                    name: 'pathMap',
-                    id: 'editEngine_pathMap',
-                    disabled: !record.external,
-                    stripeRows: true,
-                    autoEncode: true,
-                    enableColumnHide: false,
-                    store: pathMapStore,
-                    plugins: [
-                        Ext4.create('Ext.grid.plugin.CellEditing', {
-                            clicksToEdit: 1
-                        })
-                    ],
-                    columns: [{
+                fieldLabel  : 'Data Exchange',
+                name        : 'dataExchangeOptions',
+                id          : 'editEngine_dataExchangeOptions',
+                xtype       : 'fieldcontainer',
+                labelAttrTpl: " data-qtitle='Data Exchange Options' data-qtip='Controls how files are exchanged between the Rserve and LabKey servers.'",
+                items       : [{
+                        xtype   : 'radiogroup',
+                        width   : 300,
+                        items : [{
+                                boxLabel : 'Auto',
+                                boxLabelAttrTpl: " data-qtitle='Auto' data-qtip='Assumes no sharing, files are copied/sent to remote services regardless of the location of the remote Rserve server.'",
+                                name : 'fileExchange',
+                                inputValue : FILE_EXCHANGE_CLOUD,
+                                checked : (record.fileExchange === FILE_EXCHANGE_CLOUD || !record.fileExchange )
+                            },{
+                                boxLabel : 'Local',
+                                boxLabelAttrTpl: " data-qtitle='Local' data-qtip='Assumes all instances are on the same local file system.'",
+                                name : 'fileExchange',
+                                inputValue : FILE_EXCHANGE_LOCAL,
+                                checked : (record.fileExchange === FILE_EXCHANGE_LOCAL)
+                            },{
+                                boxLabel : 'Mapped',
+                                boxLabelAttrTpl: " data-qtitle='Mapped' data-qtip='Establishes a shared file system using mapped local and remote file system paths.'",
+                                name : 'fileExchange',
+                                inputValue : FILE_EXCHANGE_MAPPED,
+                                checked : (record.fileExchange === FILE_EXCHANGE_MAPPED)
+                        }
+                        ],
+                        listeners : {
+                            'change': function (cb, value) {
+                                cb.up('panel').down('gridpanel[name=pathMap]').setVisible(value.fileExchange === FILE_EXCHANGE_MAPPED);
+                            }
+                        }
+                    },{
+                        xtype: 'gridpanel',
+                        name: 'pathMap',
+                        id: 'editEngine_pathMap',
+                        hidden : record.fileExchange !== FILE_EXCHANGE_MAPPED,
+                        stripeRows: true,
+                        autoEncode: true,
+                        enableColumnHide: false,
+                        store: pathMapStore,
+                        plugins: [
+                            Ext4.create('Ext.grid.plugin.CellEditing', {
+                                clicksToEdit: 1
+                            })
+                        ],
+                        columns: [{
                             id: 'localURI',
                             header: 'Local',
                             dataIndex: 'localURI',
                             editable: true,
                             editor: 'textfield',
-                            width: 200,
+                            width: 225,
                             renderer: 'htmlEncode'
                         },{
                             id: 'remoteURI',
@@ -408,11 +442,11 @@
                             dataIndex: 'remoteURI',
                             editable: true,
                             editor: 'textfield',
-                            width: 200,
+                            width: 225,
                             renderer: 'htmlEncode'
                         }
-                    ],
-                    tbar: [{
+                        ],
+                        tbar: [{
                             text: 'Add',
                             handler: function () {
                                 var data = {'localURI': '', 'remoteURI': ''};
@@ -428,11 +462,12 @@
                                 }
                             }
                         }
-                    ],
-                    width: 430,
-                    height: 160,
-                    viewConfig: {forceFit: true}
-                }]
+                        ],
+                        width: 470,
+                        height: 160,
+                        viewConfig: {forceFit: true}
+                    }
+                ]
             },{
                 xtype: 'checkbox',
                 fieldLabel: 'Change Password',
@@ -529,7 +564,7 @@
                 switch (rec.name) {
                     case 'machine':
                     case 'port':
-                    case 'pathgrid':
+                    case 'dataExchangeOptions' :
                     case 'changePassword':
                     case 'user':
                     case 'password':
@@ -619,15 +654,17 @@
                     return;
             }
 
-            // Get the pathMap store data as an array of JSON objects of the form: {'localURI':'A', 'remoteURI':'B'}
-            if (panel.items.get('editEngine_pathMapContainer')) {
-                var pathMapItem = panel.items.get('editEngine_pathMapContainer').items.get('editEngine_pathMap');
-                if (pathMapItem)
-                {
-                    var pathMapDatas = Ext4.pluck(pathMapItem.store.data.items, 'data');
-                    values['pathMap'] = {
-                        paths: pathMapDatas
-                    };
+            if (values.fileExchange === FILE_EXCHANGE_MAPPED) {
+                // Get the pathMap store data as an array of JSON objects of the form: {'localURI':'A', 'remoteURI':'B'}
+                if (panel.items.get('editEngine_dataExchangeOptions')) {
+                    var pathMapItem = panel.items.get('editEngine_dataExchangeOptions').items.get('editEngine_pathMap');
+                    if (pathMapItem)
+                    {
+                        var pathMapDatas = Ext4.pluck(pathMapItem.store.data.items, 'data');
+                        values['pathMap'] = {
+                            paths: pathMapDatas
+                        };
+                    }
                 }
             }
 
@@ -961,6 +998,7 @@
                     {name:'exeCommand'},
                     {name:'machine'},
                     {name:'port'},
+                    {name:'fileExchange'},
                     {name:'pathMap'},
                     {name:'user'},
                     {name:'password'},
