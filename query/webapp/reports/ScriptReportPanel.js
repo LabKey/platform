@@ -117,7 +117,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         var config = this.getViewConfig(url);
 
                         cmp.getEl().mask("Loading report results...");
-                        Ext4.Ajax.request({
+                        LABKEY.Ajax.request({
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
@@ -742,7 +742,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             if (initExternalWindow)
                 this.initExternalWindow();
 
-            Ext4.Ajax.request({
+            LABKEY.Ajax.request({
                 url : url,
                 method  : 'POST',
                 success : function(resp, opt) {
