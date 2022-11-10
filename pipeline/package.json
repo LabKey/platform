@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "2.247.0-fb-sampleListingPageConsistency.0"
+    "@labkey/components": "2.248.0"
   },
   "devDependencies": {
     "@labkey/build": "6.4.0",
