@@ -228,15 +228,23 @@ public class AdminConsole
     public static Set<String> getProductFeatureSet(@Nullable String groupKey)
     {
         Set<String> productFeatures = new HashSet<>();
-        AdminConsole.getProductGroups().forEach(group -> {
-            if (!StringUtils.isEmpty(groupKey) && !groupKey.equals(group.getKey()))
-                return;
+        AdminConsole.getProductGroups(groupKey).forEach(group -> {
             group.getProducts().forEach(product -> {
                 if (product.isEnabled())
                     productFeatures.addAll(product.getFeatureFlags());
             });
         });
         return productFeatures;
+    }
+
+    public static Set<ProductGroup> getProductGroups(@Nullable String groupKey)
+    {
+        Set<ProductGroup> productGroups = new HashSet<>();
+        AdminConsole.getProductGroups().forEach(group -> {
+            if (StringUtils.isEmpty(groupKey) || groupKey.equals(group.getKey()))
+                productGroups.add(group);
+        });
+        return productGroups;
     }
 
     public static boolean isProductFeatureEnabled(ProductFeature feature)

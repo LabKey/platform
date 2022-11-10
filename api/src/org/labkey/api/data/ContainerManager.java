@@ -578,12 +578,12 @@ public class ContainerManager
     }
 
     @NotNull
-    public static Map<String, Integer> getProductProjectsCounts(@NotNull FolderType folderType)
+    public static Map<String, Integer> getProductProjectsMetrics(@NotNull FolderType folderType)
     {
         Container root = getRoot();
         Map<String, Integer> metrics = new TreeMap<>();
         List<Integer> counts = new ArrayList<>();
-        for (Container c : getAllChildren(root))
+        for (Container c : root.getChildren())
         {
             if (!c.getFolderType().getName().equals(folderType.getName()))
                 continue;
