@@ -30,6 +30,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.VersionNumber;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -97,10 +98,41 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     private BaseMicrosoftSqlServerDialect getDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
     {
-        // Good resources for past & current SQL Server version numbers:
-        // - http://www.sqlteam.com/article/sql-server-versions
-        // - http://sqlserverbuilds.blogspot.se/
+        MicrosoftSqlServerVersion ssv = MicrosoftSqlServerVersion.get(version, primaryDataSource);
 
+        if (MicrosoftSqlServerVersion.SQL_SERVER_UNSUPPORTED == ssv)
+            throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
+
+        MicrosoftSqlServer2008R2Dialect dialect = ssv.getDialect();
+
+        if (logWarnings)
+        {
+            // It's an old version being used as an external schema... we support this but still warn to encourage upgrades
+            if (!ssv.isAllowedAsPrimaryDataSource())
+            {
+                LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+            }
+
+            if (!ssv.isTested())
+            {
+                LOG.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+            }
+            else if (ssv.isDeprecated())
+            {
+                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                LOG.warn(deprecationWarning);
+                dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+            }
+        }
+
+        BaseMicrosoftSqlServerDialect oldDialect = oldGetDialect(version, databaseProductVersion, logWarnings, primaryDataSource);
+        Assert.assertEquals(dialect.getClass().getSimpleName(), oldDialect.getClass().getSimpleName());
+
+        return dialect;
+    }
+
+    private BaseMicrosoftSqlServerDialect oldGetDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
+    {
         // We support only 2014 and higher as the primary data source, or 2012/2008/2008R2 as an external data source
         if (version >= 100)
         {
@@ -139,7 +171,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             }
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
+        return null;
     }
 
     @Override

@@ -89,6 +89,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private volatile String _versionYear = null;
     private volatile Edition _edition = null;
 
+    private HtmlString _adminWarning = null;
+
     @SuppressWarnings("unused")
     enum Edition
     {
@@ -1687,12 +1689,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         GroupConcatInstallationManager.get().ensureInstalled(context);
     }
 
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
+        else if (WarningService.get().showAllWarnings())
             warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
 
         if (WarningService.get().showAllWarnings() || CoreSchema.getInstance().getScope().getDriverName().contains("jTDS"))
