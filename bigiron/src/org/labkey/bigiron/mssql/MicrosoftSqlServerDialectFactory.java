@@ -107,7 +107,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         if (logWarnings)
         {
-            // It's an old version being used as an external schema... we support this but still warn to encourage upgrades
+            // It's an old version being used as an external schema... we allow this but still warn to encourage upgrades
             if (!ssv.isAllowedAsPrimaryDataSource())
             {
                 LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
@@ -125,53 +125,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             }
         }
 
-        BaseMicrosoftSqlServerDialect oldDialect = oldGetDialect(version, databaseProductVersion, logWarnings, primaryDataSource);
-        Assert.assertEquals(dialect.getClass().getSimpleName(), oldDialect.getClass().getSimpleName());
-
         return dialect;
-    }
-
-    private BaseMicrosoftSqlServerDialect oldGetDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
-    {
-        // We support only 2014 and higher as the primary data source, or 2012/2008/2008R2 as an external data source
-        if (version >= 100)
-        {
-            if (version >= 170)
-            {
-                // Warn for > SQL Server 2022, for now.
-                if (logWarnings)
-                    LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-            }
-
-            if (version >= 160)
-                return new MicrosoftSqlServer2022Dialect();
-
-            if (version >= 150)
-                return new MicrosoftSqlServer2019Dialect();
-
-            if (version >= 140)
-                return new MicrosoftSqlServer2017Dialect();
-
-            if (version >= 130)
-                return new MicrosoftSqlServer2016Dialect();
-
-            if (version >= 120)
-                return new MicrosoftSqlServer2014Dialect();
-
-            // Accept 2008, 2008R2, or 2012 as an external/supplemental database, but not as the primary database
-            if (!primaryDataSource)
-            {
-                if (logWarnings)
-                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                if (version >= 110)
-                    return new MicrosoftSqlServer2012Dialect();
-
-                return new MicrosoftSqlServer2008R2Dialect();
-            }
-        }
-
-        return null;
     }
 
     @Override
