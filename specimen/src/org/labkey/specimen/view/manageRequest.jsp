@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONArray"%>
+<%@ page import="org.labkey.api.collections.LabKeyCollectors"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.User"%>
@@ -96,7 +96,7 @@
     var NONSITE_ACTORS = <%=Arrays.stream(actors)
         .filter(actor->!actor.isPerSite())
         .map(SpecimenRequestActor::getRowId)
-        .collect(JSONArray.collector())%>;
+        .collect(LabKeyCollectors.toJSONArray())%>;
 
     setCookieToRequestId(<%= bean.getSpecimenRequest().getRowId()%>);
 

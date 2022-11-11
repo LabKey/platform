@@ -15,7 +15,8 @@
  */
 package org.labkey.core.workbook;
 
-import org.json.old.JSONArray;
+import org.json.JSONArray;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
@@ -44,6 +45,6 @@ public class MoveWorkbooksBean
     {
         return _workbooks.stream()
             .map(Container::getRowId)
-            .collect(JSONArray.collector());
+            .collect(LabKeyCollectors.toJSONArray());
     }
 }

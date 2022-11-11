@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
@@ -34,12 +34,12 @@
     ExpExperiment batch = bean.expExperiment;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
-    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+    org.json.old.JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
-LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.getJavaScriptFragment(2)%>);
+LABKEY.page.assay = <%=json(new JSONObject(assay), 2) %>;
+LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=json(batchJson, 2)%>);
 LABKEY.page.batch.batchProtocolId = <%= protocol.getRowId() %>;
 LABKEY.page.batch.loaded = true;
 </script>

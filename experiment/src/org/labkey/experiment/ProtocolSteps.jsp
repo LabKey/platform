@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject"%>
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.exp.ProtocolParameter" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
@@ -122,7 +122,7 @@
             <%=h(predecessorNames)%>
         </td>
         <td valign="top">
-            <% if (!props.isEmpty()) out.print(new JSONObject(props).getJavaScriptFragment(2)); %>
+            <% if (!props.isEmpty()) out.print(json(new JSONObject(props), 2)); %>
         </td>
         <% } %>
     </tr>
@@ -172,7 +172,7 @@
                     <td width="20px"><%=mpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
+                        <% if (!map.isEmpty()) out.print(json(new JSONObject(map), 2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -193,7 +193,7 @@
                     <td width="20px"><%=dpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
+                        <% if (!map.isEmpty()) out.print(json(new JSONObject(map), 2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -219,7 +219,7 @@
                     <td width="20px"><%=h(mpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
+                        <% if (!map.isEmpty()) out.print(json(new JSONObject(map), 2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -240,7 +240,7 @@
                     <td width="20px"><%=dpo.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
+                        <% if (!map.isEmpty()) out.print(json(new JSONObject(map), 2)); %>
                     </td>
                 </tr>
                 <% } %>
