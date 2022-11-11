@@ -124,10 +124,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 LABKEY.Utils.signalWebDriverTest('script-panel-success');
                                 try {
                                     // Update the view div with the returned HTML, and make sure scripts are run
-                                    // LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
-                                    //     cmp.doLayout();
-                                    // });
-                                    this.viewFailure(panelId, resp);
+                                    LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
+                                        cmp.doLayout();
+                                    });
                                 } finally {
                                     // issue 18430. Make sure we unmask, even if there is a javascript error
                                     // in the rendered content
