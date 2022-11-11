@@ -110,7 +110,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             autoScroll  : true,
             listeners : {
                 activate : {fn : function(cmp){
-                    LABKEY.Utils.signalWebDriverTest('script-panel-activate');
+
                     var url = this.getViewURL();
                     if (this.isViewConfigChanged(url))
                     {
@@ -121,7 +121,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
-                                LABKEY.Utils.signalWebDriverTest('script-panel-success');
                                 try {
                                     // Update the view div with the returned HTML, and make sure scripts are run
                                     LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
@@ -134,7 +133,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 }
                             },
                             failure : function(resp, options) {
-                                LABKEY.Utils.signalWebDriverTest('script-panel-failure');
                                 this.viewFailure(panelId, resp);
                                 cmp.getEl().unmask();
                             },
@@ -147,7 +145,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         };
     },
 
-    viewFailure : function(panelId, resp) {
+    viewFailure : function(panelId, resp, config) {
 
         var error = null;
         if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
@@ -159,8 +157,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 error = this.errorTpl.apply(json);
             }
         }
-        if (error) {
-            error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp, {}), stackTrace: resp.responseText});
+        if (!error) {
+            error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp)});
         }
         Ext4.get(Ext4.getElementById(panelId)).update(error);
         this.prevScriptSource = null;
@@ -744,7 +742,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             if (initExternalWindow)
                 this.initExternalWindow();
 
-            LABKEY.Ajax.request({
+            Ext4.Ajax.request({
                 url : url,
                 method  : 'POST',
                 success : function(resp, opt) {
