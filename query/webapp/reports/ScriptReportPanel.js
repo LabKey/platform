@@ -110,30 +110,33 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             autoScroll  : true,
             listeners : {
                 activate : {fn : function(cmp){
-
+                    LABKEY.Utils.signalWebDriverTest('script-panel-activate');
                     var url = this.getViewURL();
                     if (this.isViewConfigChanged(url))
                     {
                         var config = this.getViewConfig(url);
 
                         cmp.getEl().mask("Loading report results...");
-                        LABKEY.Ajax.request({
+                        Ext4.Ajax.request({
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
+                                LABKEY.Utils.signalWebDriverTest('script-panel-success');
                                 try {
                                     // Update the view div with the returned HTML, and make sure scripts are run
-                                    LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
-                                        cmp.doLayout();
-                                    });
+                                    // LABKEY.Utils.loadAjaxContent(resp, panelId, function () {
+                                    //     cmp.doLayout();
+                                    // });
+                                    this.viewFailure(panelId, resp);
                                 } finally {
-                                    // issue 18430, unmask before we load the HTML, just in case there is a javascript error
+                                    // issue 18430. Make sure we unmask, even if there is a javascript error
                                     // in the rendered content
                                     cmp.getEl().unmask();
                                 }
                             },
-                            failure : function(resp, exp) {
-                                this.viewFailure(panelId, resp, exp);
+                            failure : function(resp, options) {
+                                LABKEY.Utils.signalWebDriverTest('script-panel-failure');
+                                this.viewFailure(panelId, resp);
                                 cmp.getEl().unmask();
                             },
                             jsonData: config.parameters,
@@ -145,7 +148,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         };
     },
 
-    viewFailure : function(panelId, resp, exp) {
+    viewFailure : function(panelId, resp) {
 
         var error = null;
         if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
@@ -157,8 +160,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 error = this.errorTpl.apply(json);
             }
         }
-        if (!error) {
-            error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp, exp)});
+        if (error) {
+            error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp, {}), stackTrace: resp.responseText});
         }
         Ext4.get(Ext4.getElementById(panelId)).update(error);
         this.prevScriptSource = null;
