@@ -18,12 +18,7 @@ package org.labkey.visualization;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.ImageTranscoder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fop.svg.PDFTranscoder;
 import org.jetbrains.annotations.NotNull;
 import org.json.old.JSONObject;
 import org.labkey.api.action.NullSafeBindException;
@@ -53,9 +48,7 @@ import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,30 +57,6 @@ import java.util.Map;
 
 public class VisualizationServiceImpl implements VisualizationService
 {
-    @Override
-    public void renderSvgAsPdf(String svgSource, String filename, HttpServletResponse response) throws IOException
-    {
-        response.setContentType("application/pdf");
-        response.addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-
-        PDFTranscoder transcoder = new PDFTranscoder();
-        TranscoderInput xIn = new TranscoderInput(new StringReader(svgSource));
-        TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
-
-        // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
-        transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
-        transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
-
-        try
-        {
-            transcoder.transcode(xIn, xOut);
-        }
-        catch (TranscoderException e)
-        {
-            throw new IOException(e);
-        }
-    }
-
     @Override
     public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException
     {

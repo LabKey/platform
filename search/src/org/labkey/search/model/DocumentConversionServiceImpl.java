@@ -21,18 +21,20 @@ import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.ImageTranscoder;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.wmf.tosvg.WMFTranscoder;
+import org.apache.fop.svg.PDFTranscoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.SvgSource;
 
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.StringReader;
 
 /**
  * User: adam
@@ -44,32 +46,60 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     private static final int DEFAULT_USER_SPACE_UNIT_DPI = 72;     // From PDFBox PDPage
 
     @Override
-    public void svgToPng(String svg, OutputStream os) throws TranscoderException
+    public void svgToPng(SvgSource svgSource, OutputStream os) throws TranscoderException
     {
-        svgToPng(svg, os, null);
+        svgToPng(svgSource, os, null);
     }
 
     // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
     @Override
-    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
+    public void svgToPng(SvgSource svgSource, OutputStream os, @Nullable Float height) throws TranscoderException
     {
-        svgToPng(new StringReader(svg), os, height);
+        try (Reader reader = svgSource.getReader())
+        {
+            TranscoderInput xIn = new TranscoderInput(reader);
+
+            PNGTranscoder transcoder = new PNGTranscoder();
+            transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
+            transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
+
+            if (null != height)
+                transcoder.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
+
+            transcoder.transcode(xIn, new TranscoderOutput(os));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
     @Override
-    public void svgToPng(Reader reader, OutputStream os, @Nullable Float height) throws TranscoderException
+    public void svgToPdf(SvgSource svgSource, String filename, HttpServletResponse response) throws IOException
     {
-        TranscoderInput xIn = new TranscoderInput(reader);
+        response.setContentType("application/pdf");
+        response.addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 
-        PNGTranscoder transcoder = new PNGTranscoder();
-        transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
-        transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
+        PDFTranscoder transcoder = new PDFTranscoder();
 
-        if (null != height)
-            transcoder.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
+        try (Reader reader = svgSource.getReader())
+        {
+            TranscoderInput xIn = new TranscoderInput(reader);
+            TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
 
-        transcoder.transcode(xIn, new TranscoderOutput(os));
+            // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
+            transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
+            transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
+
+            try
+            {
+                transcoder.transcode(xIn, xOut);
+            }
+            catch (TranscoderException e)
+            {
+                throw new IOException(e);
+            }
+        }
     }
 
     // Not tested yet... but should work  TODO: wmfToPng, chaining this with svgToPng
