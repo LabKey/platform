@@ -7,6 +7,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.Readers;
@@ -539,7 +540,7 @@ public class ToolsController extends SpringActionController
                 addActionIds(actionIds, file);
             }
 
-            Set<ControllerActionId> missingModules = new TreeSet<>();
+            Set<ControllerActionId> missingModuleActions = new TreeSet<>();
             Set<ControllerActionId> missingActions = new TreeSet<>();
 
             for (ControllerActionId actionId : actionIds)
@@ -548,7 +549,7 @@ public class ToolsController extends SpringActionController
 
                 if (null == module)
                 {
-                    missingModules.add(actionId);
+                    missingModuleActions.add(actionId);
                 }
                 else
                 {
@@ -564,19 +565,21 @@ public class ToolsController extends SpringActionController
 
             HtmlStringBuilder builder = HtmlStringBuilder.of();
 
-            if (!missingModules.isEmpty())
+            if (!missingModuleActions.isEmpty())
             {
                 builder
-                    .append("The following actions could not be resolved to a module running in this deployment:")
+                    .append("The following " + (missingModuleActions.size() > 1 ? "actions' controllers" : "action's controller") + " could not be resolved to a module running in this deployment:")
                     .append(HtmlString.unsafe("<br><br>\n"));
-                missingModules.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
+                missingModuleActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
                 builder.append(HtmlString.unsafe("<br>\n"));
+                builder.append("The associated module(s) might not support " + DbScope.getLabKeyScope().getDatabaseProductName() + ".");
+                builder.append(HtmlString.unsafe("<br><br>\n"));
             }
 
             if (!missingActions.isEmpty())
             {
                 builder
-                    .append("The following actions do not exist:")
+                    .append("The following " + (missingActions.size() > 1 ? "actions were" : "action was") + " not found in the action's controller:")
                     .append(HtmlString.unsafe("<br><br>\n"));
                 missingActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
             }
