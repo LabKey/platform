@@ -6,7 +6,7 @@ import org.labkey.api.view.NotFoundException;
 public class JavaScanner extends BaseScanner
 {
     private static final String ESCAPED_BACKSLASH = "\\\\";   // Backslash + backslash
-    private static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
+    protected static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
 
     public JavaScanner(String text)
     {

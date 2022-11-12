@@ -433,7 +433,7 @@ public class ToolsController extends SpringActionController
                                         @Override
                                         public boolean string(int beginIndex, int endIndex)
                                         {
-                                            String s = endIndex - beginIndex > 6 && "\"\"\"".equals(code.substring(beginIndex, beginIndex + 3)) ?
+                                            String s = endIndex - beginIndex > 6 && JavaScanner.TEXT_BLOCK_DELIMITER.equals(code.substring(beginIndex, beginIndex + 3)) ?
                                                 code.substring(beginIndex + 3, endIndex - 3) :  // Strip text block delimiters
                                                 code.substring(beginIndex + 1, endIndex - 1);   // Strip double quotes from standard string
                                             if (s.length() > 4 && s.contains("/") && s.endsWith(".jsp"))
