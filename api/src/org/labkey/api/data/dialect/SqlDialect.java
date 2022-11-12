@@ -1141,8 +1141,8 @@ public abstract class SqlDialect
         {
             try
             {
-                Method getUrl = _ds.getClass().getMethod(methodName);
-                return (K)getUrl.invoke(_ds);
+                Method getMethod = _ds.getClass().getMethod(methodName);
+                return (K)getMethod.invoke(_ds);
             }
             catch (Exception e)
             {
