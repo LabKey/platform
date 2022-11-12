@@ -357,16 +357,16 @@ public class ToolsController extends SpringActionController
                 jspReferences.removeAll(copyOfJspFiles);
                 jspReferences.forEach(path-> {
                     List<String> candidates = jspFiles.stream()
-                        .filter(s->s.endsWith(path))
-                        .collect(Collectors.toUnmodifiableList());
+                        .filter(s -> s.endsWith(path))
+                        .toList();
 
                     // If a JSP file is referenced twice (say, once with an absolute path and once with a relative path) then
                     // we might have already removed the candidate from jspFiles. If no match, check the full list of JSPs.
                     if (candidates.isEmpty())
                     {
                         candidates = copyOfJspFiles.stream()
-                            .filter(s->s.endsWith(path))
-                            .collect(Collectors.toUnmodifiableList());
+                            .filter(s -> s.endsWith(path))
+                            .toList();
                     }
 
                     out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(53 - path.length(), 0)) + " " + candidates)));
@@ -433,7 +433,9 @@ public class ToolsController extends SpringActionController
                                         @Override
                                         public boolean string(int beginIndex, int endIndex)
                                         {
-                                            String s = code.substring(beginIndex + 1, endIndex - 1);
+                                            String s = endIndex - beginIndex > 6 && "\"\"\"".equals(code.substring(beginIndex, beginIndex + 3)) ?
+                                                code.substring(beginIndex + 3, endIndex - 3) :  // Strip text block delimiters
+                                                code.substring(beginIndex + 1, endIndex - 1);   // Strip double quotes from standard string
                                             if (s.length() > 4 && s.contains("/") && s.endsWith(".jsp"))
                                                 ret.add(s);
                                             return true;
@@ -441,7 +443,7 @@ public class ToolsController extends SpringActionController
                                     });
                                 }
 
-                            return FileVisitResult.CONTINUE;
+                                return FileVisitResult.CONTINUE;
                             }
                         });
                     }
