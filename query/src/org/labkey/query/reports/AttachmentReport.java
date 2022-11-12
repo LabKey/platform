@@ -26,6 +26,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -274,7 +275,7 @@ public class AttachmentReport extends BaseRedirectReport
 
                     try
                     {
-                        svc.svgToPng(Readers.getXmlReader(report.getInputStream()), os, ImageType.Large.getHeight());
+                        svc.svgToPng(SvgSource.of(Readers.getXmlReader(report.getInputStream())), os, ImageType.Large.getHeight());
 
                         return os.getThumbnail("image/png");
                     }

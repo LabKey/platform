@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.batik.transcoder.TranscoderException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.settings.ResourceURL;
@@ -33,9 +34,9 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
  */
 public class ThumbnailUtil
 {
-    public static Thumbnail getThumbnailFromSvg(String svg)
+    public static Thumbnail getThumbnailFromSvg(SvgSource svgSource)
     {
-        if (null != svg)
+        if (null != svgSource)
         {
             try
             {
@@ -44,7 +45,7 @@ public class ThumbnailUtil
                 if (null != svc)
                 {
                     ThumbnailOutputStream os = new ThumbnailOutputStream();
-                    svc.svgToPng(svg, os, ImageType.Large.getHeight());
+                    svc.svgToPng(svgSource, os, ImageType.Large.getHeight());
 
                     return os.getThumbnail("image/png");
                 }
