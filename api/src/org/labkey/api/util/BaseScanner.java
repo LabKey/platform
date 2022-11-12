@@ -23,9 +23,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A generic scanner for that can perform simple text operations on various code languages (e.g., SQL, Java) while
- * ignoring comments and quoted strings. Subclasses for each language implement the scan() method to dictate specific
- * rules for that language (e.g., block comment, single line comment, quoting, escaped quotes, etc. rules).
+ * A generic scanner that can perform simple text operations on various code languages (e.g., SQL, Java) while ignoring
+ * comments and quoted strings. Subclasses for each language implement the scan() method to dictate specific rules for
+ * that language (e.g., block comment, single line comment, quoting, escaped quotes, text block, etc. rules).
  */
 public abstract class BaseScanner
 {
@@ -197,8 +197,8 @@ public abstract class BaseScanner
 
         /**
          * Called for every comment detected.
-         * @param startIndex   the starting index, inclusive
-         * @param endIndex     the ending index, inclusive
+         * @param startIndex   the starting index, inclusive of comment characters
+         * @param endIndex     the ending index, inclusive of comment characters
          * @return             true to continue scanning, false to stop
          */
         default boolean comment(int startIndex, int endIndex)
@@ -208,8 +208,8 @@ public abstract class BaseScanner
 
         /**
          * Called for every quoted string detected.
-         * @param startIndex   the starting index, inclusive
-         * @param endIndex     the ending index, inclusive
+         * @param startIndex   the starting index, inclusive of quotes
+         * @param endIndex     the ending index, inclusive of quotes
          * @return             true to continue scanning, false to stop
          */
         default boolean string(int startIndex, int endIndex)
