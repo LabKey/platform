@@ -147,7 +147,7 @@ public class JsonTest extends Assert
         ActionURL url = HttpView.currentContext().getActionURL();
         Map<String, Object> map = Map.of("url", url);
         assertEquals(new org.json.old.JSONObject(map).toString(), new JSONObject(map).toString());
-        assertEquals("{\"url\":\"/labkey/home/junit-run.view?testCase=org.labkey.api.data.JsonTest\"}", new JSONObject(map).toString());
+        assertEquals("{\"url\":\"" + url + "\"}", new JSONObject(map).toString());
     }
 
     private static class Customer
