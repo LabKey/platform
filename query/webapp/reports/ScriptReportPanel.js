@@ -132,7 +132,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                     cmp.getEl().unmask();
                                 }
                             },
-                            failure : function(resp, options) {
+                            failure : function(resp) {
                                 this.viewFailure(panelId, resp);
                                 cmp.getEl().unmask();
                             },
@@ -145,7 +145,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         };
     },
 
-    viewFailure : function(panelId, resp, config) {
+    viewFailure : function(panelId, resp) {
 
         var error = null;
         if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
