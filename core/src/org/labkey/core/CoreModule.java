@@ -31,6 +31,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.audit.DefaultAuditProvider;
@@ -232,6 +233,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
@@ -374,6 +376,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
+        DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
 
         try
         {

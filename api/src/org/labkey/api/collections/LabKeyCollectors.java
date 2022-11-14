@@ -3,7 +3,7 @@ package org.labkey.api.collections;
 import com.google.common.collect.Comparators;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.HtmlString;
@@ -33,7 +33,7 @@ public class LabKeyCollectors
      * Returns a {@link Collector} that builds a {@link LinkedHashMap}, for cases where caller wants a map that preserves {@link Stream} order.
      * https://stackoverflow.com/questions/29090277/how-do-i-keep-the-iteration-order-of-a-list-when-using-collections-tomap-on-a
      */
-    public static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(
+    public static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(
         Function<? super T, ? extends K> keyMapper,
         Function<? super T, ? extends U> valueMapper)
     {
@@ -85,10 +85,10 @@ public class LabKeyCollectors
      * Returns a {@link Collector} that accumulates elements into a {@link MultiValuedMap} whose keys and values are the
      * result of applying the provided mapping functions to the input elements, an approach that mimics {@link Collectors#toMap(Function, Function)}.
      *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
-     * @param <V> the output type of the value mapping function
-     * @param keyMapper a mapping function to produce keys
+     * @param <T>         the type of the input elements
+     * @param <K>         the output type of the key mapping function
+     * @param <V>         the output type of the value mapping function
+     * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
@@ -104,12 +104,12 @@ public class LabKeyCollectors
      * result of applying the provided mapping functions to the input elements, an approach that mimics {@link Collectors#toMap(Function, Function)}.
      * The {@link MultiValuedMap} is created by a provided supplier function.
      *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
-     * @param <V> the output type of the value mapping function
-     * @param keyMapper a mapping function to produce keys
+     * @param <T>         the type of the input elements
+     * @param <K>         the output type of the key mapping function
+     * @param <V>         the output type of the value mapping function
+     * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
-     * @param supplier a function that returns a new, empty {@code MultiValuedMap} into which the results will be inserted
+     * @param supplier    a function that returns a new, empty {@code MultiValuedMap} into which the results will be inserted
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
      */
@@ -134,7 +134,11 @@ public class LabKeyCollectors
      */
     public static Collector<Object, JSONArray, JSONArray> toJSONArray()
     {
-        return JSONArray.collector();
+        return Collector.of(
+            JSONArray::new,
+            JSONArray::put,
+            JSONArray::putAll
+        );
     }
 
     /**
