@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.GWTView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
@@ -31,5 +31,5 @@ String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js
 <%=getScriptTag(jsPath)%>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
-<%=unsafe(GWTView.PROPERTIES_OBJECT_NAME)%> = <%=new JSONObject(bean.getProperties()).getJavaScriptFragment(3)%>;
+<%=unsafe(GWTView.PROPERTIES_OBJECT_NAME)%> = <%=json(new JSONObject(bean.getProperties()), 3)%>;
 </script>

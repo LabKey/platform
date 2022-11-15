@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.ColumnHeaderType" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -123,21 +123,21 @@
                 if (xlsxExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
+                        exportParams = <%=json(new JSONObject(model.getSignXlsxURL().getParameterMap()), 2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
+                        exportParams = <%=json(new JSONObject(model.getXlsxURL().getParameterMap()), 2)%>;
                     }
                 }
                 else if (xlsExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
+                        exportParams = <%=json(new JSONObject(model.getSignXlsURL().getParameterMap()), 2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
+                        exportParams = <%=json(new JSONObject(model.getXlsURL().getParameterMap()), 2)%>;
                     }
                 <% if (model.getIqyURL() != null) { %>
                 }

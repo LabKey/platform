@@ -19,10 +19,11 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 
 /**
  * User: adam
@@ -48,9 +49,11 @@ public interface DocumentConversionService
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution);
 
     // Use the dimensions in the SVG
-    void svgToPng(String svg, OutputStream os) throws TranscoderException;
+    void svgToPng(SvgSource svgSource, OutputStream os) throws TranscoderException;
     // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
-    void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException;
+    void svgToPng(SvgSource svgSource, OutputStream os, @Nullable Float height) throws TranscoderException;
     // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
-    void svgToPng(Reader reader, OutputStream os, @Nullable Float height) throws TranscoderException;
+    //void svgToPng(Reader reader, OutputStream os, @Nullable Float height) throws TranscoderException;
+
+    void svgToPdf(SvgSource svgSource, String filename, HttpServletResponse response) throws IOException;
 }

@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.json.old.JSONArray" %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.collections.LabKeyCollectors" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -50,14 +50,14 @@
     {
         return replacements.stream()
             .sorted()
-            .map(param -> new JSONObject(Map.of(
+            .map(param -> Map.of(
                 "paramName", param.getName(),
                 "format", param.getContentType().toString(),
                 "valueType", param.getValueType().getSimpleName(),
                 "paramDesc", param.getDescription(),
                 "paramValue", param.getFormattedValue(getContainer(), null, ContentType.HTML)
-            )))
-            .collect(JSONArray.collector());
+            ))
+            .collect(LabKeyCollectors.toJSONArray());
     }
 %>
 <%
@@ -157,7 +157,7 @@
     // create an array of email templates with their replacement parameters
     JSONArray array = emailTemplates.stream()
         // Some values could be null, so Map.of() is not an option for the top-level map
-        .map(et->new JSONObject(PageFlowUtil.map(
+        .map(et->PageFlowUtil.map(
             "name", et.getClass().getName(),
             "description", et.getDescription(),
             "sender", et.getSenderName(),
@@ -172,10 +172,10 @@
             "hasMultipleContentTypes", (et.getContentType() == ContentType.HTML),
             "standardReplacements", getReplacementJSON(et.getStandardReplacements()),
             "customReplacements", getReplacementJSON(et.getCustomReplacements())
-        )))
-        .collect(JSONArray.collector());
+        ))
+        .collect(LabKeyCollectors.toJSONArray());
 %>
-    var emailTemplates = <%=array.getJavaScriptFragment(4)%>
+    var emailTemplates = <%=json(array, 4)%>
 
     function changeEmailTemplate()
     {
