@@ -77,7 +77,7 @@ function setElementDisplayByCheckbox(checkbox, element)
 <labkey:form action="<%=urlFor(ManageNotificationsAction.class)%>" method="POST">
     <table class="labkey-manage-display" width="90%">
         <tr>
-            <td colspan="2" style="font-size: 14px;padding-bottom: 10px">The stupid specimen request system sends emails as requested by the specimen administrator.
+            <td colspan="2" style="font-size: 14px;padding-bottom: 10px">The specimen request system sends emails as requested by the specimen administrator.
                 Some properties of these email notifications can be configured here.</td>
         </tr>
         <tr>
