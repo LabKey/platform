@@ -138,7 +138,7 @@ public class JsonTest extends Assert
         // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
         JSONObject jsonOrgRoundTrip =  new JSONObject(jacksonToString);
         JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, JSONObject.class);
-        assertTrue(jsonOrgRoundTrip.similar(jacksonRoundTrip)); // Note: JSONObject.equals() doesn't work as expected
+        assertTrue("Not equivalent: " + jsonOrgRoundTrip + " vs. " + jacksonRoundTrip, jsonOrgRoundTrip.similar(jacksonRoundTrip)); // Note: JSONObject.equals() doesn't work as expected
     }
 
     @Test
