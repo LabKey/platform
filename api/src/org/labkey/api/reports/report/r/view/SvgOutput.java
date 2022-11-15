@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.r.view;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
@@ -60,7 +61,7 @@ public class SvgOutput extends HtmlOutput
             {
                 try
                 {
-                    svc.svgToPng(Readers.getXmlReader(file), os, ImageType.Large.getHeight());
+                    svc.svgToPng(SvgSource.of(Readers.getXmlReader(file)), os, ImageType.Large.getHeight());
 
                     return os.getThumbnail("image/png");
                 }

@@ -24,6 +24,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
+import org.json.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
@@ -55,12 +57,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable
+public class URLHelper implements Cloneable, Serializable, JSONString
 {
     private static final Logger LOG = LogManager.getLogger(URLHelper.class);
 
@@ -733,6 +734,11 @@ public class URLHelper implements Cloneable, Serializable
         return getLocalURIString(true);
     }
 
+    @Override
+    public String toJSONString()
+    {
+        return JSONObject.quote(toString());
+    }
 
     @Override
     public URLHelper clone()
@@ -744,7 +750,7 @@ public class URLHelper implements Cloneable, Serializable
             n._readOnly = false;
             n._parameters = _parameters == null ? null : new ArrayList<>(_parameters.size());
             if (null != _parameters)
-                n._parameters.addAll(_parameters.stream().map(Pair::copy).collect(Collectors.toList()));
+                n._parameters.addAll(_parameters.stream().map(Pair::copy).toList());
             return n;
         }
         catch (Exception x)
