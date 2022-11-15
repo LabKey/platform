@@ -3,7 +3,7 @@ import { Button, Alert } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
-import GlobalSettings from '../components/GlobalSettings';
+import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
@@ -278,7 +278,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                 <GlobalSettings
                     globalSettings={globalSettings as GlobalSettingsOptions}
                     canEdit={canEdit}
-                    globalAuthOnChange={this.globalAuthOnChange}
+                    onChange={this.globalAuthOnChange}
                     authCount={authCount}
                 />
 

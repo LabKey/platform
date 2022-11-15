@@ -279,7 +279,7 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("listDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("listDesignerDev"));
         }
 
         @Override
