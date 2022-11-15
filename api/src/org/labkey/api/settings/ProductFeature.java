@@ -10,6 +10,7 @@ public enum ProductFeature
     ELN("labbook"),
     FreezerManagement("inventory"),
     Media("recipe"),
+    Projects("sampleManagement"),
     SampleManagement("sampleManagement"),
     Workflow("sampleManagement");
 
