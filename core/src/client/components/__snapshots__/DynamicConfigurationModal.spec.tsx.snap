@@ -163,7 +163,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       onFileChange={[Function]}
       onFileRemoval={[Function]}
     />
-    <SSOFields
+    <Memo()
       canEdit={true}
       handleDeleteLogo={[Function]}
       headerLogoUrl={null}
@@ -381,7 +381,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       onFileChange={[Function]}
       onFileRemoval={[Function]}
     />
-    <SSOFields
+    <Memo()
       canEdit={false}
       handleDeleteLogo={[Function]}
       headerLogoUrl={null}

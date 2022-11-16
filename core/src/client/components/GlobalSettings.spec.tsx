@@ -1,12 +1,9 @@
 import React from 'react';
 import { mount } from 'enzyme';
 
-import renderer from 'react-test-renderer';
-
 import { GLOBAL_SETTINGS } from '../../../test/data';
 
 import { GlobalSettings } from './GlobalSettings';
-import { FACheckBox } from './FACheckBox';
 
 describe('<GlobalSettings/>', () => {
     test('Clicking a checkbox toggles the checkbox', () => {
@@ -24,8 +21,8 @@ describe('<GlobalSettings/>', () => {
         expect(wrapper.props()).toHaveProperty('globalSettings', value);
 
         // Click self registration checkbox
-        const firstCheckBox = wrapper.find(FACheckBox).first();
-        firstCheckBox.simulate('click');
+        const firstCheckBox = wrapper.find('input[type="checkbox"]').first();
+        firstCheckBox.simulate('change', { target: { checked: true, name: '' }});
         expect(checkGlobalAuthBox).toHaveBeenCalled();
 
         expect(wrapper.props()).toHaveProperty('SelfRegistration', false);
@@ -42,22 +39,15 @@ describe('<GlobalSettings/>', () => {
             />
         );
 
-        expect(wrapper.find(FACheckBox).length).toBe(3);
+        expect(wrapper.find('input[type="checkbox"]').length).toBe(3);
         wrapper.setProps({ authCount: 1 });
-        expect(wrapper.find(FACheckBox).length).toBe(2);
+        expect(wrapper.find('input[type="checkbox"]').length).toBe(2);
         expect(wrapper.text()).not.toMatch(/Auto-create authenticated users/);
     });
 
     test('view-only mode', () => {
-        const checkGlobalAuthBox = (id: string, value): void => {};
-
         const wrapper = mount(
-            <GlobalSettings
-                globalSettings={GLOBAL_SETTINGS}
-                canEdit={false}
-                authCount={3}
-                onChange={checkGlobalAuthBox}
-            />
+            <GlobalSettings globalSettings={GLOBAL_SETTINGS} canEdit={false} authCount={3} onChange={jest.fn()} />
         );
 
         wrapper.find('input').forEach(element => {
