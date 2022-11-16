@@ -200,10 +200,13 @@ public class Stats
 
     private static Double[] getValuesFromRange(Double[] values, int start, int end)
     {
-        Double[] valuesFromRange = new Double[end-start];
+        Double[] valuesFromRange = new Double[end-start+1];
         if (end - start >= 0)
         {
-            System.arraycopy(values, start, valuesFromRange, start, end - start);
+            for (int i=0; i<valuesFromRange.length; i++)
+            {
+                valuesFromRange[i] = values[i];
+            }
         }
         return valuesFromRange;
     }
