@@ -59,11 +59,6 @@ public class AssayJSONConverter
     // Run properties
     public static final String DATA_ROWS = "dataRows";
 
-    public static org.json.JSONObject newSerializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
-    {
-        return serializeBatch(batch, provider, protocol, user, settings).toNewJSONObject();
-    }
-
     public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings);
@@ -114,11 +109,6 @@ public class AssayJSONConverter
         });
 
         return dataRows;
-    }
-
-    public static org.json.JSONObject newSerializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
-    {
-        return serializeRun(run, provider, protocol, user, settings).toNewJSONObject();
     }
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
