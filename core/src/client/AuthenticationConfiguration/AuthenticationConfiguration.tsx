@@ -10,6 +10,9 @@ import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '
 
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 
+const UNSAVED_ALERT =
+    'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
+
 interface State {
     error: string;
     initError: string;
@@ -246,8 +249,6 @@ export class App extends PureComponent<{}, Partial<State>> {
     };
 
     render() {
-        const alertText =
-            'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
         const {
             error,
             initError,
@@ -293,7 +294,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                     actions={this.actions}
                 />
 
-                {dirty && <Alert> {alertText} </Alert>}
+                {dirty && <Alert>{UNSAVED_ALERT}</Alert>}
                 {error && <Alert bsStyle="danger">{error}</Alert>}
 
                 {canEdit ? (
