@@ -1429,7 +1429,7 @@ public abstract class SqlDialect
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
     // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
     }
 

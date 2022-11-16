@@ -1879,7 +1879,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
