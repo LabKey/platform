@@ -42,4 +42,10 @@ public class SimpleApiJsonForm implements NewCustomApiForm
     {
         return _json;
     }
+
+    // For backwards compatibility
+    public void bindProperties(org.json.old.JSONObject json)
+    {
+        _json = json.toNewJSONObject();
+    }
 }
