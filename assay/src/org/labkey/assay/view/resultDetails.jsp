@@ -44,7 +44,7 @@
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
     JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getUser(), bean.objectId);
-    JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
+    org.json.JSONObject result = (dataRows.length() > 0 ? ((JSONObject)dataRows.get(0)).toNewJSONObject() : new org.json.JSONObject());
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
