@@ -2037,6 +2037,11 @@ public class ContainerManager
         return new TableSelector(CORE.getTableInfoContainers()).getRowCount();
     }
 
+    public static long getWorkbookCount()
+    {
+        return new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("type"), "workbook"), null).getRowCount();
+    }
+
 
     /** Retrieve entire container hierarchy */
     public static MultiValuedMap<Container, Container> getContainerTree()
