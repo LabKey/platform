@@ -35,7 +35,7 @@ public class SimpleApiJsonForm implements NewCustomApiForm
     @Deprecated
     public org.json.old.JSONObject getJsonObject()
     {
-        return new org.json.old.JSONObject(_json.toString());
+        return null != _json ? new org.json.old.JSONObject(_json.toString()) : null;
     }
 
     public JSONObject getNewJsonObject()
@@ -44,6 +44,7 @@ public class SimpleApiJsonForm implements NewCustomApiForm
     }
 
     // For backwards compatibility
+    @Deprecated
     public void bindProperties(org.json.old.JSONObject json)
     {
         _json = json.toNewJSONObject();
