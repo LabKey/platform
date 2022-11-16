@@ -1687,7 +1687,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (null != _adminWarning)
             warnings.add(_adminWarning);
         else if (showAllWarnings)
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+            warnings.add(HtmlString.of(MicrosoftSqlServerDialectFactory.getStandardWarningMessage("no longer supports", _versionYear)));
     }
 
     @Override

@@ -95,7 +95,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt());
 
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
-            throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+            throw new DatabaseNotSupportedException(getStandardWarningMessage("does not support", databaseProductVersion));
 
         PostgreSql_10_Dialect dialect = psv.getDialect();
 
@@ -109,17 +109,22 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             if (!psv.isTested())
             {
-                _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                _log.warn(getStandardWarningMessage("has not been tested against", databaseProductVersion));
             }
             else if (psv.isDeprecated())
             {
-                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                String deprecationWarning = getStandardWarningMessage("no longer supports", databaseProductVersion);
                 _log.warn(deprecationWarning);
                 dialect.setAdminWarning(HtmlString.of(deprecationWarning));
             }
         }
 
         return dialect;
+    }
+
+    public static String getStandardWarningMessage(String warning, String databaseProductVersion)
+    {
+        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
     }
 
     @Override

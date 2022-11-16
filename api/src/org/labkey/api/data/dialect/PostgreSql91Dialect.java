@@ -1883,6 +1883,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
+        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
+            warnings.add(HtmlString.of("LabKey Server has not been tested against version 22.7. PostgreSQL 15.x is the recommended version."));
     }
 
     @Override
