@@ -534,7 +534,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(@NotNull Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
                     for (HtmlString error : _duplicateModuleErrors)
                     {
@@ -615,7 +615,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(@NotNull Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
                     warnings.add(HtmlString.of(message));
                 }
@@ -1683,11 +1683,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
         WarningService.get().register(new WarningProvider()
         {
             @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
             {
                 if (context.getUser().hasSiteAdminPermission())
                 {
-                    if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                    if (showAllWarnings || !_missingViews.isEmpty())
                         warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
                             ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
                 }

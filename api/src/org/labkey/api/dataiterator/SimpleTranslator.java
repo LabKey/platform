@@ -1475,7 +1475,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
         Supplier<?> containerCallable = containerFieldKeyName != null && inputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, inputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
         if (0 != addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable))
+        {
             added.add(SpecialColumn.Container.name());
+            added.add("Folder");
+        }
         if (0 != addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context))
             added.add(SpecialColumn.CreatedBy.name());
         if (0 != addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context))
