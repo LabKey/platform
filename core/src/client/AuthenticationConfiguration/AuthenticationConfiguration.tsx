@@ -3,12 +3,15 @@ import { Button, Alert } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
-import GlobalSettings from '../components/GlobalSettings';
+import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
 
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
+
+const UNSAVED_ALERT =
+    'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
 
 interface State {
     error: string;
@@ -246,8 +249,6 @@ export class App extends PureComponent<{}, Partial<State>> {
     };
 
     render() {
-        const alertText =
-            'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
         const {
             error,
             initError,
@@ -278,7 +279,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                 <GlobalSettings
                     globalSettings={globalSettings as GlobalSettingsOptions}
                     canEdit={canEdit}
-                    globalAuthOnChange={this.globalAuthOnChange}
+                    onChange={this.globalAuthOnChange}
                     authCount={authCount}
                 />
 
@@ -293,7 +294,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                     actions={this.actions}
                 />
 
-                {dirty && <Alert> {alertText} </Alert>}
+                {dirty && <Alert>{UNSAVED_ALERT}</Alert>}
                 {error && <Alert bsStyle="danger">{error}</Alert>}
 
                 {canEdit ? (

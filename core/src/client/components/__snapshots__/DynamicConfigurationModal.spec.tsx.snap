@@ -75,7 +75,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
     >
        Settings 
     </div>
-    <TextInput
+    <Memo()
       canEdit={true}
       caption="Description"
       name="description"
@@ -85,7 +85,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       type="text"
       value="CAS Configuration1"
     />
-    <DynamicFields
+    <Memo()
       authConfig={
         {
           "autoRedirect": false,
@@ -100,7 +100,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
         }
       }
       canEdit={true}
-      checkCheckBox={[Function]}
       emptyRequiredFields={[]}
       fieldValues={
         {
@@ -164,7 +163,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       onFileChange={[Function]}
       onFileRemoval={[Function]}
     />
-    <SSOFields
+    <Memo()
       canEdit={true}
       handleDeleteLogo={[Function]}
       headerLogoUrl={null}
@@ -294,7 +293,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
     >
        Settings 
     </div>
-    <TextInput
+    <Memo()
       canEdit={false}
       caption="Description"
       name="description"
@@ -304,7 +303,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       type="text"
       value="CAS Configuration1"
     />
-    <DynamicFields
+    <Memo()
       authConfig={
         {
           "autoRedirect": false,
@@ -319,7 +318,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         }
       }
       canEdit={false}
-      checkCheckBox={[Function]}
       emptyRequiredFields={[]}
       fieldValues={
         {
@@ -383,7 +381,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       onFileChange={[Function]}
       onFileRemoval={[Function]}
     />
-    <SSOFields
+    <Memo()
       canEdit={false}
       handleDeleteLogo={[Function]}
       headerLogoUrl={null}
@@ -502,7 +500,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
     >
        Settings 
     </div>
-    <TextInput
+    <Memo()
       canEdit={true}
       caption="Description"
       name="description"
@@ -512,7 +510,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       type="text"
       value="Duo 2 Factor Configuration"
     />
-    <DynamicFields
+    <Memo()
       authConfig={
         {
           "apiHostname": "Api HostName",
@@ -526,7 +524,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         }
       }
       canEdit={true}
-      checkCheckBox={[Function]}
       emptyRequiredFields={[]}
       fieldValues={
         {
@@ -752,7 +749,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
     >
        Settings 
     </div>
-    <TextInput
+    <Memo()
       canEdit={false}
       caption="Description"
       name="description"
@@ -762,7 +759,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       type="text"
       value="Duo 2 Factor Configuration"
     />
-    <DynamicFields
+    <Memo()
       authConfig={
         {
           "apiHostname": "Api HostName",
@@ -776,7 +773,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         }
       }
       canEdit={false}
-      checkCheckBox={[Function]}
       emptyRequiredFields={[]}
       fieldValues={
         {

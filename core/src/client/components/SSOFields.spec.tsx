@@ -1,85 +1,91 @@
 import React from 'react';
-import {SSOFields, ImageAndFileAttachmentForm} from './SSOFields';
+
 import renderer from 'react-test-renderer';
-import {shallow} from "enzyme";
+import { mount } from 'enzyme';
 
-const testImageUrl = "https://en.wikipedia.org/wiki/Moose#/media/File:Moose_superior.jpg";
+import { SSOFields, ImageAndFileAttachmentForm } from './SSOFields';
 
-describe("<SSOFields/>", () => {
-    test("No images attached", () => {
-        const component =
+const testImageUrl = 'https://en.wikipedia.org/wiki/Moose#/media/File:Moose_superior.jpg';
+
+describe('<SSOFields/>', () => {
+    test('No images attached', () => {
+        const wrapper = mount(
             <SSOFields
                 canEdit={true}
                 headerLogoUrl={null}
                 loginLogoUrl={null}
-                onFileChange={() => {}}
-                handleDeleteLogo={() => {}}
-            />;
+                onFileChange={jest.fn()}
+                handleDeleteLogo={jest.fn()}
+            />
+        );
 
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__image').exists()).toEqual(false);
+        expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(false);
     });
 
-    test("With images attached", () => {
-        const component =
+    test('With images attached', () => {
+        const wrapper = mount(
             <SSOFields
                 canEdit={true}
-                headerLogoUrl={"imgURLHeader"}
-                loginLogoUrl={"imgURLLogin"}
-                onFileChange={() => {}}
-                handleDeleteLogo={() => {}}
-            />;
+                headerLogoUrl="imgURLHeader"
+                loginLogoUrl="imgURLLogin"
+                onFileChange={jest.fn()}
+                handleDeleteLogo={jest.fn()}
+            />
+        );
 
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
+        expect(wrapper.find('.sso-fields__image').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(true);
     });
 
-    test("Editable mode", () => {
-        const component =
+    test('Editable mode', () => {
+        const wrapper = mount(
             <SSOFields
                 canEdit={true}
                 headerLogoUrl={null}
                 loginLogoUrl={null}
-                onFileChange={() => {}}
-                handleDeleteLogo={() => {}}
-            />;
-
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+                onFileChange={jest.fn()}
+                handleDeleteLogo={jest.fn()}
+            />
+        );
+        expect(wrapper.find('.sso-fields__image-holder').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__image-holder--view-only').exists()).toEqual(false);
     });
 
-    test("View-only mode", () => {
-        const component =
+    test('View-only mode', () => {
+        const wrapper = mount(
             <SSOFields
                 canEdit={false}
                 headerLogoUrl={null}
                 loginLogoUrl={null}
-                onFileChange={() => {}}
-                handleDeleteLogo={() => {}}
-            />;
-
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+                onFileChange={jest.fn()}
+                handleDeleteLogo={jest.fn()}
+            />
+        );
+        expect(wrapper.find('.sso-fields__image-holder').exists()).toEqual(false);
+        expect(wrapper.find('.sso-fields__image-holder--view-only').exists()).toEqual(true);
     });
 });
 
-describe("<ImageAndFileAttachmentForm/>", () => {
-    test("Click remove-image button", () => {
-        const component =
+describe('<ImageAndFileAttachmentForm/>', () => {
+    test('Click remove-image button', () => {
+        const component = (
             <ImageAndFileAttachmentForm
-                text={"Page Header Logo"}
+                text="Page Header Logo"
                 imageUrl={testImageUrl}
-                onFileChange={() => {}}
-                handleDeleteLogo={() => {}}
-                fileTitle={"auth_header_logo"}
+                onFileChange={jest.fn()}
+                handleDeleteLogo={jest.fn()}
+                fileTitle="auth_header_logo"
                 canEdit={true}
                 index={1}
-            />;
-        const wrapper = shallow<SSOFields>(component);
-
-        const deleteImgButton = wrapper.find('.sso-fields__delete-img-div');
-        deleteImgButton.simulate('click');
-
-        expect(wrapper.state()).toHaveProperty('imageUrl', null)
+            />
+        );
+        const wrapper = mount(component);
+        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
+        wrapper.find('.sso-fields__delete-img-icon').simulate('click');
+        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
     });
 });
