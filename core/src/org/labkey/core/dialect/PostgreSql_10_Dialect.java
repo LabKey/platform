@@ -15,6 +15,6 @@
  */
 package org.labkey.core.dialect;
 
-public class PostgreSql_10_Dialect extends PostgreSql96Dialect
+public abstract class PostgreSql_10_Dialect extends PostgreSql96Dialect
 {
 }
