@@ -15,36 +15,38 @@
  */
 package org.labkey.api.action;
 
-import org.json.old.JSONObject;
-
-import java.util.Map;
+import org.json.JSONObject;
 
 /**
  * User: jgarms
  * Date: Aug 13, 2008
  * Time: 3:39:02 PM
  */
-public class SimpleApiJsonForm implements CustomApiForm
+public class SimpleApiJsonForm implements NewCustomApiForm
 {
-    protected JSONObject json;
+    private JSONObject _json;
 
     @Override
-    public void bindProperties(Map<String, Object> properties)
+    public void bindJson(JSONObject json)
     {
-        if (properties instanceof JSONObject jsonObject)
-            json = jsonObject;
-        else
-            json = new JSONObject(properties);
+        _json = json;
     }
 
     @Deprecated
-    public JSONObject getJsonObject()
+    public org.json.old.JSONObject getJsonObject()
     {
-        return json;
+        return null != _json ? new org.json.old.JSONObject(_json.toString()) : null;
     }
 
-    public org.json.JSONObject getNewJsonObject()
+    public JSONObject getNewJsonObject()
     {
-        return new org.json.JSONObject(json.toString());
+        return _json;
+    }
+
+    // For backwards compatibility
+    @Deprecated
+    public void bindProperties(org.json.old.JSONObject json)
+    {
+        _json = json.toNewJSONObject();
     }
 }

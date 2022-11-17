@@ -1422,4 +1422,10 @@ public class JSONObject extends HashMap<String, Object> implements SafeToRender
             throw new JSONException(e);
         }
      }
+
+    // To ease migration from old to new
+    public org.json.JSONObject toNewJSONObject()
+    {
+        return new org.json.JSONObject(toString());
+    }
 }
