@@ -80,11 +80,11 @@ public class Encryption
 
         WarningService.get().register(new WarningProvider() {
             @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
             {
                 int count = DECRYPTION_EXCEPTIONS.get();
 
-                if (count > 0)
+                if (count > 0 || showAllWarnings)
                     warnings.add(HtmlString.of("On " + StringUtilsLabKey.pluralize(count, "attempt") + " the server failed to decrypt encrypted content using the " + ENCRYPTION_KEY_CHANGED +
                         " An administrator should change the encryption key back to the previous value or be prepared to re-enter and re-save all saved credentials."));
             }

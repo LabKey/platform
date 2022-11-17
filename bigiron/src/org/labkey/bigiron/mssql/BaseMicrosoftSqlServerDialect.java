@@ -38,7 +38,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -1681,14 +1680,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
         if (null != _adminWarning)
             warnings.add(_adminWarning);
-        else if (WarningService.get().showAllWarnings())
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+        else if (showAllWarnings)
+            warnings.add(HtmlString.of(MicrosoftSqlServerDialectFactory.getStandardWarningMessage("no longer supports", _versionYear)));
     }
 
     @Override

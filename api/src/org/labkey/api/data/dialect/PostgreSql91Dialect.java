@@ -1879,10 +1879,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
+        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
+            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. PostgreSQL 15.x is the recommended version."));
+
     }
 
     @Override

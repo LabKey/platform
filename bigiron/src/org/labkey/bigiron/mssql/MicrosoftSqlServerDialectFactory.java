@@ -48,11 +48,6 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private static final Logger LOG = LogHelper.getLogger(MicrosoftSqlServerDialectFactory.class, "Warnings about SQL Server versions");
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
-    private String getProductName()
-    {
-        return PRODUCT_NAME;
-    }
-
     public MicrosoftSqlServerDialectFactory()
     {
     }
@@ -68,7 +63,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
-        if (!md.getDatabaseProductName().equals(getProductName()))
+        if (!md.getDatabaseProductName().equals(PRODUCT_NAME))
             return null;
 
         String jdbcProductVersion = md.getDatabaseProductVersion();
@@ -93,7 +88,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         MicrosoftSqlServerVersion ssv = MicrosoftSqlServerVersion.get(version, primaryDataSource);
 
         if (MicrosoftSqlServerVersion.SQL_SERVER_UNSUPPORTED == ssv)
-            throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
+            throw new DatabaseNotSupportedException(getStandardWarningMessage("does not support", databaseProductVersion));
 
         MicrosoftSqlServer2008R2Dialect dialect = ssv.getDialect();
 
@@ -102,22 +97,27 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             // It's an old version being used as an external schema... we allow this but still warn to encourage upgrades
             if (!ssv.isAllowedAsPrimaryDataSource())
             {
-                LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                LOG.warn(getStandardWarningMessage("no longer supports", databaseProductVersion));
             }
 
             if (!ssv.isTested())
             {
-                LOG.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                LOG.warn(getStandardWarningMessage("has not been tested against", databaseProductVersion));
             }
             else if (ssv.isDeprecated())
             {
-                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                String deprecationWarning = getStandardWarningMessage("no longer supports", databaseProductVersion);
                 LOG.warn(deprecationWarning);
                 dialect.setAdminWarning(HtmlString.of(deprecationWarning));
             }
         }
 
         return dialect;
+    }
+
+    public static String getStandardWarningMessage(String warning, String databaseProductVersion)
+    {
+        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
     }
 
     @Override
