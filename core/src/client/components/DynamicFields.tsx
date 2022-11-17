@@ -89,6 +89,12 @@ interface SelectProps extends InputFieldProps {
 // TODO: This should use the SelectInput component from UI components
 export const Select: FC<SelectProps> = props => {
     const { options, caption, required, description, canEdit, name, value, onChange } = props;
+    const onChange_ = useCallback(
+        (event: ChangeEvent<HTMLSelectElement>) => {
+            onChange(name, event.target.value);
+        },
+        [name, onChange]
+    );
     return (
         <div className="modal__option-field">
             <span className="modal__field-label">
@@ -103,7 +109,7 @@ export const Select: FC<SelectProps> = props => {
 
             {canEdit && (
                 <div className="modal__option-input">
-                    <FormControl componentClass="select" name={name} onChange={onChange} value={value}>
+                    <FormControl componentClass="select" name={name} onChange={onChange_} value={value}>
                         {Object.keys(options).map(item => (
                             <option value={item} key={item}>
                                 {options[item]}
