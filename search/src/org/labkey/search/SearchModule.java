@@ -67,7 +67,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 22.003;
+        return 22.004;
     }
 
     @Override

@@ -49,19 +49,3 @@ CREATE TABLE search.CrawlResources
     LastIndexed DATETIME NULL,  -- server time
     CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
 );
-
-CREATE TABLE search.ParticipantIndex
-(
-    Container ENTITYID NOT NULL,          -- see core.containers
-    ParticipantId NVARCHAR(32) NOT NULL,   -- see study.participantvisit
-    LastIndexed DATETIME NOT NULL,
-    CONSTRAINT PK_ParticipantIndex PRIMARY KEY (Container,ParticipantId)
-);
-
-/* search-12.30-13.10.sql */
-
--- We now use the search index (not a side table) to boost participant results.
-DROP TABLE search.ParticipantIndex;
-
-EXEC core.fn_dropifexists '*', 'umls', 'SCHEMA'
-GO
