@@ -17,13 +17,11 @@ package org.labkey.api.action;
 
 import java.util.Map;
 
-/**
- * Implement this interface on your form when you need
- * to do custom binding of the raw maps sent to an API action.
- * User: Dave
- * Date: May 11, 2009
+/*
+ * Use NewCustomApiForm instead of this
  */
+@Deprecated
 public interface CustomApiForm
 {
-    void bindProperties(Map<String,Object> props);
+    void bindProperties(Map<String, Object> props);
 }
