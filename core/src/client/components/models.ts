@@ -1,60 +1,60 @@
 export interface AuthConfig {
-    enabled: boolean;
-    description: string;
-    provider: string;
-    details?: string;
     configuration?: number;
+    description: string;
+    details?: string;
+    enabled: boolean;
     headerLogoUrl?: string;
     loginLogoUrl?: string;
+    provider: string;
 }
 
 // Specifies possible attributes of one field
 export interface AuthConfigField {
-    defaultValue?: any;
-    name?: string;
     caption: string;
+    defaultValue?: any;
     description?: string;
-    type: string;
-    required?: boolean;
-    options?: Record<string, string>;
     html?: string;
+    name?: string;
+    options?: Record<string, string>;
+    required?: boolean;
+    type: string;
 }
 
 export interface AuthConfigProvider {
+    description: string;
     helpLink: string;
     saveLink: string;
     settingsFields: AuthConfigField[];
-    description: string;
     sso?: boolean;
     testLink?: string;
 }
 
 export interface GlobalSettingsOptions {
-    SelfRegistration?: boolean;
-    SelfServiceEmailChanges?: boolean;
     AutoCreateAccounts?: boolean;
     DefaultDomain?: string;
+    SelfRegistration?: boolean;
+    SelfServiceEmailChanges?: boolean;
 }
 
-export interface InputFieldProps extends AuthConfigField{
+export interface InputFieldProps extends AuthConfigField {
     canEdit: boolean;
+    onChange?: (name: string, value: string | boolean) => void;
     value?: any;
-    onChange?: Function;
 }
 
 export interface DatabasePasswordRules {
-    Weak: string;
     Strong: string;
+    Weak: string;
 }
 
 export interface DatabasePasswordSettings {
-    strength: string;
     expiration: string;
+    strength: string;
 }
 
 export interface Actions {
-    onDragEnd: (result: {[key:string]: any}) => void;
     onDelete: (configuration: number, configType: string) => void;
-    updateAuthRowsAfterSave: (config: string, configType: string) => void;
+    onDragEnd: (result: { [key: string]: any }) => void;
     toggleModalOpen?: (modalOpen: boolean) => void;
+    updateAuthRowsAfterSave: (config: string, configType: string) => void;
 }

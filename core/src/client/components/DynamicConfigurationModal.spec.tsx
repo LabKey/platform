@@ -7,66 +7,62 @@ import { CAS_MODAL_TYPE, DUO_MODAL_TYPE, CAS_CONFIG, DUO_CONFIG } from '../../..
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 
+const noop = () => {};
+
 describe('<DynamicConfigurationModal/>', () => {
     test('CAS Modal', () => {
-        const component =
+        const wrapper = shallow(
             <DynamicConfigurationModal
                 authConfig={CAS_CONFIG}
                 configType="ssoConfigurations"
                 modalType={CAS_MODAL_TYPE}
                 canEdit={true}
-                updateAuthRowsAfterSave={() => {}}
-                closeModal={() => {}}
-            />;
-
-        const wrapper = shallow(component);
+                updateAuthRowsAfterSave={noop}
+                closeModal={noop}
+            />
+        );
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test('CAS Modal View-only', () => {
-        const component =
+        const wrapper = shallow(
             <DynamicConfigurationModal
                 authConfig={CAS_CONFIG}
                 configType="ssoConfigurations"
                 modalType={CAS_MODAL_TYPE}
                 canEdit={false}
-                updateAuthRowsAfterSave={() => {}}
-                closeModal={() => {}}
-            />;
-
-        const wrapper = shallow(component);
+                updateAuthRowsAfterSave={noop}
+                closeModal={noop}
+            />
+        );
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test('Duo Modal', () => {
-        const component = (
+        const wrapper = shallow(
             <DynamicConfigurationModal
                 authConfig={DUO_CONFIG}
-                configType={"secondaryConfigurations"}
+                configType="secondaryConfigurations"
                 modalType={DUO_MODAL_TYPE}
                 canEdit={true}
-                updateAuthRowsAfterSave={() => {}}
-                closeModal={() => {}}
+                updateAuthRowsAfterSave={noop}
+                closeModal={noop}
             />
         );
-
-        const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test('Duo Modal View-only', () => {
-        const component = (
+        const wrapper = shallow(
             <DynamicConfigurationModal
                 authConfig={DUO_CONFIG}
-                configType={"secondaryConfigurations"}
+                configType="secondaryConfigurations"
                 modalType={DUO_MODAL_TYPE}
                 canEdit={false}
-                updateAuthRowsAfterSave={() => {}}
-                closeModal={() => {}}
+                updateAuthRowsAfterSave={noop}
+                closeModal={noop}
             />
         );
-
-        const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 });

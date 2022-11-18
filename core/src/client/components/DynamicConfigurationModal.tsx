@@ -91,7 +91,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         });
     };
 
-    areRequiredFieldsEmpty = () => {
+    areRequiredFieldsEmpty = (): boolean => {
         // Array of all required fields
         const requiredFields = this.props.modalType.settingsFields.reduce((accum, current) => {
             if (current.required) {
@@ -109,43 +109,35 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         }
     };
 
-    onToggle = () => {
+    onToggle = (): void => {
         this.setState(state => ({
             ...state,
             fieldValues: { ...state.fieldValues, enabled: !state.fieldValues.enabled },
         }));
     };
 
-    onChange = event => {
-        const { name, value } = event.target;
+    onChange = (name: string, value: string | boolean): void => {
         this.setState(state => ({
             ...state,
             fieldValues: { ...state.fieldValues, [name]: value },
         }));
     };
 
-    handleDeleteLogo = (value: string) => {
+    handleDeleteLogo = (value: string): void => {
         this.setState(state => ({
             ...state,
             fieldValues: { ...state.fieldValues, deletedLogos: [...state.fieldValues.deletedLogos, value] },
         }));
     };
 
-    checkCheckBox = (name: string) => {
-        this.setState(state => ({
-            ...state,
-            fieldValues: { ...state.fieldValues, [name]: !state.fieldValues[name] },
-        }));
-    };
-
-    onFileChange = (attachment, logoType: string) => {
+    onFileChange = (attachment, logoType: string): void => {
         this.setState(state => ({
             ...state,
             fieldValues: { ...state.fieldValues, [logoType]: attachment.first() },
         }));
     };
 
-    onFileRemoval = (name: string) => {
+    onFileRemoval = (name: string): void => {
         const changedFiles = this.state.fieldValues.changedFiles;
         if (changedFiles.indexOf(name) === -1) {
             this.setState(state => ({
@@ -219,7 +211,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                         modalType={modalType}
                         authConfig={authConfig}
                         onChange={this.onChange}
-                        checkCheckBox={this.checkCheckBox}
                         onFileChange={this.onFileChange}
                         onFileRemoval={this.onFileRemoval}
                     />
