@@ -17,7 +17,7 @@ package org.labkey.core.reports;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.Entity;
@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.User;
@@ -67,6 +68,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private String _user;
     private boolean _changePassword;
     private String _password;
+    private String _fileExchange;               // specific to Rserve at the moment
     private String _pathMap;
     private boolean _external;
     private boolean _remote;
@@ -161,6 +163,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "remote", isRemote());
         addIfNotNull(json, "docker", isDocker());
         addIfNotNull(json, "pandocEnabled", isPandocEnabled());
+        addIfNotNull(json, "fileExchange", getFileExchange());
         addIfNotNull(json, "pathMap", _pathMap);
         addIfNotNull(json, "default", isDefault());
         addIfNotNull(json, "sandboxed", isSandboxed());
@@ -217,6 +220,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setDocker(json.getBoolean("docker"));
         if (json.has("pandocEnabled"))
             setPandocEnabled(json.getBoolean("pandocEnabled"));
+        if (json.has("fileExchange"))
+            setFileExchange(json.getString("fileExchange"));
         if (json.has("pathMap"))
             setPathMap(json.getString("pathMap"));
         if (json.has("default"))
@@ -405,6 +410,24 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     }
 
     @Override
+    public String getFileExchange()
+    {
+        if (_fileExchange == null)
+        {
+            if (getPathMap() != null)
+                return RserveScriptEngine.ModusOperandi.FileShare.name();
+            else
+                return RserveScriptEngine.ModusOperandi.Cloud.name();
+        }
+        return _fileExchange;
+    }
+
+    public void setFileExchange(String fileExchange)
+    {
+        _fileExchange = fileExchange;
+    }
+
+    @Override
     public PathMapper getPathMap()
     {
         if (_pathMapper != null)
@@ -503,6 +526,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _sandboxed = sandboxed;
     }
 
+    @Override
     public String getRemoteUrl()
     {
         return _remoteUrl;
@@ -527,9 +551,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         BaseViewAction.defaultBindParameters(this, "form", params);
 
         // Handle pathMap
-        JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
-        if (jsonPathMap != null)
-            _pathMap = jsonPathMap.toString();
+        if (props.get("pathMap") != null)
+            _pathMap = props.get("pathMap").toString();
     }
 
     @Override
