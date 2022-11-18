@@ -24,8 +24,9 @@ public interface WarningProvider
      * Add warnings for conditions that will never change while the server is running (e.g., size of JVM heap or Tomcat
      * version). These warnings are displayed to site administrators only.
      * @param warnings A @NotNull Warnings collector
+     * @param showAllWarnings A flag for testing that indicates the provider should unconditionally add all warnings
      */
-    default void addStaticWarnings(@NotNull Warnings warnings)
+    default void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
     {
     }
 
@@ -34,8 +35,9 @@ public interface WarningProvider
      * the context to limit who sees the warning(s); otherwise, ALL users (including guests) will see the warning(s).
      * @param warnings A @NotNull Warnings collector
      * @param context A @NotNull ViewContext that also guarantees a @NotNull getUser() and @NotNull getRequest()
+     * @param showAllWarnings A flag for testing that indicates the provider should unconditionally add all warnings
      */
-    default void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+    default void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
     {
     }
 }

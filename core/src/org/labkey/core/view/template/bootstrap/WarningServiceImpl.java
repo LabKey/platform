@@ -64,7 +64,7 @@ public class WarningServiceImpl implements WarningService
 
         List<HtmlString> messages = new LinkedList<>();
         Warnings warnings = Warnings.of(messages);
-        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings));
+        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
 
         messages = Collections.unmodifiableList(messages);
         if (ModuleLoader.getInstance().isStartupComplete())
@@ -112,7 +112,7 @@ public class WarningServiceImpl implements WarningService
             warningMessages.addAll(getStaticAdminWarnings());
 
         Warnings warnings = Warnings.of(warningMessages);
-        WarningService.get().forEachProvider(p->p.addDynamicWarnings(warnings, context));
+        WarningService.get().forEachProvider(p->p.addDynamicWarnings(warnings, context, showAllWarnings()));
 
         return warnings;
     }

@@ -24,7 +24,7 @@
 
 <%
     Portal.WebPart webPart = (Portal.WebPart)HttpView.currentModel();
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
     String selected = StringUtils.defaultString(webPart.getPropertyMap().get("style"), "full");
 %>
 

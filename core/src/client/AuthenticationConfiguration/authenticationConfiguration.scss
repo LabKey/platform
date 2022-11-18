@@ -5,19 +5,6 @@
   font-weight: bold;
 }
 
-.no-highlight {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.clickable {
-  cursor:pointer;
-}
-
 .parent-panel {
   min-width: 1200px;
   padding-bottom: 40px;
@@ -149,22 +136,20 @@
   padding: 5px;
 }
 
-.sso-fields__image__header-logo {
-  max-height: 26px;
-  width: auto;
-
+.sso-fields__image {
   border: 1px solid #ddd;
   border-radius: 4px;
+  max-width: 100%;
   padding: 5px;
+  width: auto;
+}
+
+.sso-fields__image__header-logo {
+  max-height: 26px;
 }
 
 .sso-fields__image__page-logo {
   max-height: 44px;
-  width: auto;
-
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 5px;
 }
 
 .sso-fields__null-image {
@@ -173,18 +158,13 @@
 
 .sso-fields__delete-img {
   color: #d9534f;
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
-.sso-fields__delete-img--page-logo {
+.sso-fields__image-holder {
   position: relative;
-  bottom: 54px;
-  left: 54px;
-}
-
-.sso-fields__delete-img--header-logo {
-  position: relative;
-  bottom: 40px;
-  left: 30px;
 }
 
 .sso-fields__image-holder--view-only {
@@ -195,10 +175,6 @@
   font-size: smaller;
   color: #DCDCDC;
   margin-left: 5px;
-}
-
-.sso-fields__spacer {
-  height: 12px;
 }
 
 .fa-cloud-upload:before {

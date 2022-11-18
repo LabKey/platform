@@ -330,6 +330,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
+
+        var folderCol = addContainerColumn(Column.Folder, null);
+        if (getContainer().getProductProjectsCount() > 0)
+        {
+            folderCol.setLabel("Project");
+            defaultVisible.add(FieldKey.fromParts(Column.Folder));
+        }
+
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
         addColumn(Column.LSID);
@@ -350,7 +358,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.ModifiedBy);
         addColumn(Column.Flag);
         addColumn(Column.DataClass);
-        addContainerColumn(Column.Folder, null);
         addColumn(Column.Description);
         addColumn(Column.Alias);
 

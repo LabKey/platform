@@ -936,11 +936,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
             // drop columns
+            ColumnInfo containerColumn = this.materialTable.getColumn(this.materialTable.getContainerFieldKey());
+            String containerFieldLabel = containerColumn.getLabel();
             var drop = new CaseInsensitiveHashSet();
             for (int i = 1; i <= source.getColumnCount(); i++)
             {
                 String name = source.getColumnInfo(i).getName();
-                if (isReservedHeader(name))
+                boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
+                if (isReservedHeader(name) || isContainerField)
                 {
                     // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.

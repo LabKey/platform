@@ -7,6 +7,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.Readers;
@@ -357,16 +358,16 @@ public class ToolsController extends SpringActionController
                 jspReferences.removeAll(copyOfJspFiles);
                 jspReferences.forEach(path-> {
                     List<String> candidates = jspFiles.stream()
-                        .filter(s->s.endsWith(path))
-                        .collect(Collectors.toUnmodifiableList());
+                        .filter(s -> s.endsWith(path))
+                        .toList();
 
                     // If a JSP file is referenced twice (say, once with an absolute path and once with a relative path) then
                     // we might have already removed the candidate from jspFiles. If no match, check the full list of JSPs.
                     if (candidates.isEmpty())
                     {
                         candidates = copyOfJspFiles.stream()
-                            .filter(s->s.endsWith(path))
-                            .collect(Collectors.toUnmodifiableList());
+                            .filter(s -> s.endsWith(path))
+                            .toList();
                     }
 
                     out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(53 - path.length(), 0)) + " " + candidates)));
@@ -433,7 +434,9 @@ public class ToolsController extends SpringActionController
                                         @Override
                                         public boolean string(int beginIndex, int endIndex)
                                         {
-                                            String s = code.substring(beginIndex + 1, endIndex - 1);
+                                            String s = endIndex - beginIndex > 6 && JavaScanner.TEXT_BLOCK_DELIMITER.equals(code.substring(beginIndex, beginIndex + 3)) ?
+                                                code.substring(beginIndex + 3, endIndex - 3) :  // Strip text block delimiters
+                                                code.substring(beginIndex + 1, endIndex - 1);   // Strip double quotes from standard string
                                             if (s.length() > 4 && s.contains("/") && s.endsWith(".jsp"))
                                                 ret.add(s);
                                             return true;
@@ -441,7 +444,7 @@ public class ToolsController extends SpringActionController
                                     });
                                 }
 
-                            return FileVisitResult.CONTINUE;
+                                return FileVisitResult.CONTINUE;
                             }
                         });
                     }
@@ -537,7 +540,7 @@ public class ToolsController extends SpringActionController
                 addActionIds(actionIds, file);
             }
 
-            Set<ControllerActionId> missingModules = new TreeSet<>();
+            Set<ControllerActionId> missingModuleActions = new TreeSet<>();
             Set<ControllerActionId> missingActions = new TreeSet<>();
 
             for (ControllerActionId actionId : actionIds)
@@ -546,7 +549,7 @@ public class ToolsController extends SpringActionController
 
                 if (null == module)
                 {
-                    missingModules.add(actionId);
+                    missingModuleActions.add(actionId);
                 }
                 else
                 {
@@ -562,19 +565,21 @@ public class ToolsController extends SpringActionController
 
             HtmlStringBuilder builder = HtmlStringBuilder.of();
 
-            if (!missingModules.isEmpty())
+            if (!missingModuleActions.isEmpty())
             {
                 builder
-                    .append("The following actions could not be resolved to a module running in this deployment:")
+                    .append("The following " + (missingModuleActions.size() > 1 ? "actions' controllers" : "action's controller") + " could not be resolved to a module running in this deployment:")
                     .append(HtmlString.unsafe("<br><br>\n"));
-                missingModules.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
+                missingModuleActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
                 builder.append(HtmlString.unsafe("<br>\n"));
+                builder.append("The associated module(s) might not support " + DbScope.getLabKeyScope().getDatabaseProductName() + ".");
+                builder.append(HtmlString.unsafe("<br><br>\n"));
             }
 
             if (!missingActions.isEmpty())
             {
                 builder
-                    .append("The following actions do not exist:")
+                    .append("The following " + (missingActions.size() > 1 ? "actions were" : "action was") + " not found in the action's controller:")
                     .append(HtmlString.unsafe("<br><br>\n"));
                 missingActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
             }

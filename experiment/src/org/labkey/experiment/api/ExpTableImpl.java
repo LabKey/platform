@@ -165,7 +165,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return new FieldKey(null, ExpMaterialTable.Column.Folder.toString());
     }
 
-    protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
+    protected MutableColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
         Set<String> set = new LinkedHashSet(result.getImportAliasSet());

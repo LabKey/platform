@@ -33,7 +33,6 @@
 <%@ page import="org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function setElementDisplayByCheckbox(checkbox, element)

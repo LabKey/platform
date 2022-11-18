@@ -140,7 +140,6 @@ api/schemas/view.xsd -text
 api/schemas/viewCategory.xsd -text
 api/schemas/visitMap.xsd -text
 api/schemas/webpart.xsd -text
-api/src/org/json/JSONNaNException.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/Action.java -text
 api/src/org/labkey/api/action/ActionType.java -text
@@ -1091,13 +1090,9 @@ api/src/org/labkey/api/reports/model/ViewCategoryManager.java -text
 api/src/org/labkey/api/reports/model/ViewInfo.java -text
 api/src/org/labkey/api/reports/permissions/EditSharedReportPermission.java -text
 api/src/org/labkey/api/reports/permissions/ShareReportPermission.java -text
-api/src/org/labkey/api/reports/RConnectionHolder.java -text
-api/src/org/labkey/api/reports/RDockerScriptEngine.java -text
-api/src/org/labkey/api/reports/RDockerScriptEngineFactory.java -text
 api/src/org/labkey/api/reports/Report.java -text
 api/src/org/labkey/api/reports/report/AbstractReport.java -text
 api/src/org/labkey/api/reports/report/AbstractReportIdentifier.java -text
-api/src/org/labkey/api/reports/report/CustomRReport.java -text
 api/src/org/labkey/api/reports/report/DbReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ExternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/InternalScriptEngineReport.java -text
@@ -1106,13 +1101,10 @@ api/src/org/labkey/api/reports/report/JavaScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleJavaScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryJavaScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryReportResource.java -text
-api/src/org/labkey/api/reports/report/ModuleQueryRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportDependenciesResource.java -text
 api/src/org/labkey/api/reports/report/ModuleReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ModuleReportResource.java -text
-api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
-api/src/org/labkey/api/reports/report/ModuleRReportResource.java -text
 api/src/org/labkey/api/reports/report/QueryReport.java -text
 api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
@@ -1146,9 +1138,6 @@ api/src/org/labkey/api/reports/report/ReportThumbnailLarge.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailSmall.java -text
 api/src/org/labkey/api/reports/report/ReportType.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
-api/src/org/labkey/api/reports/report/RReport.java -text
-api/src/org/labkey/api/reports/report/RReportDescriptor.java -text
-api/src/org/labkey/api/reports/report/RReportJob.java -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ScriptOutput.java -text
 api/src/org/labkey/api/reports/report/ScriptReport.java -text
@@ -1171,10 +1160,6 @@ api/src/org/labkey/api/reports/report/view/RunChartReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunReportView.java -text
 api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
 api/src/org/labkey/api/reports/ReportService.java -text
-api/src/org/labkey/api/reports/RScriptEngine.java -text
-api/src/org/labkey/api/reports/RScriptEngineFactory.java -text
-api/src/org/labkey/api/reports/RserveScriptEngine.java -text
-api/src/org/labkey/api/reports/RserveScriptEngineFactory.java -text
 api/src/org/labkey/api/resource/ChildFirstClassLoader.java -text
 api/src/org/labkey/api/resource/ResourceWrapper.java -text
 api/src/org/labkey/api/rstudio/RStudioService.java -text
@@ -1305,7 +1290,6 @@ api/src/org/labkey/api/settings/AppProps.java -text
 api/src/org/labkey/api/settings/AppPropsImpl.java -text
 api/src/org/labkey/api/settings/BaseServerProperties.java -text
 api/src/org/labkey/api/settings/ConceptURIProperties.java -text
-api/src/org/labkey/api/settings/ConfigProperty.java -text
 api/src/org/labkey/api/settings/CustomLabelProvider.java -text
 api/src/org/labkey/api/settings/CustomLabelService.java -text
 api/src/org/labkey/api/settings/DateParsingMode.java -text
@@ -1316,7 +1300,6 @@ api/src/org/labkey/api/settings/LookAndFeelProperties.java -text
 api/src/org/labkey/api/settings/NetworkDriveProps.java -text
 api/src/org/labkey/api/settings/PreferenceService.java -text
 api/src/org/labkey/api/settings/ResourceURL.java -text
-api/src/org/labkey/api/settings/Setting.java -text
 api/src/org/labkey/api/settings/TemplateProperties.java -text
 api/src/org/labkey/api/settings/TemplateResourceHandler.java -text
 api/src/org/labkey/api/settings/WriteableAppProps.java -text
@@ -1997,6 +1980,7 @@ core/src/org/labkey/core/query/UserAvatarDisplayColumnFactory.java -text
 core/src/org/labkey/core/query/UsersDomainKind.java -text
 core/src/org/labkey/core/query/UsersMsgPrefTable.java -text
 core/src/org/labkey/core/query/UsersTable.java -text
+core/src/org/labkey/core/reports/DocumentConversionServiceImpl.java -text
 core/src/org/labkey/core/reports/ExternalScriptEngineDefinitionImpl.java -text
 core/src/org/labkey/core/reports/ScriptEngineManagerImpl.java -text
 core/src/org/labkey/core/security/addUsers.jsp -text
@@ -2227,7 +2211,6 @@ experiment/src/org/labkey/experiment/ProtocolWebPart.java -text
 experiment/src/org/labkey/experiment/RunGroupWebPart.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/RunTypeWebPart.java -text
-experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text
 experiment/src/org/labkey/experiment/SampleTypeAuditProvider.java -text
 experiment/src/org/labkey/experiment/SampleTypeDisplayColumn.java -text
 experiment/src/org/labkey/experiment/SampleTypeWebPart.java -text
@@ -2855,7 +2838,6 @@ query/src/org/labkey/query/controllers/NewQueryForm.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
 query/src/org/labkey/query/controllers/QueryController.java -text
-query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
@@ -2976,7 +2958,6 @@ query/src/org/labkey/query/sql/QueryLookupWrapper.java -text
 query/src/org/labkey/query/sql/QuerySelect.java -text
 query/src/org/labkey/query/sql/QueryTableInfo.java -text
 query/src/org/labkey/query/sql/QueryUnion.java -text
-query/src/org/labkey/query/sql/QueryWith.java -text
 query/src/org/labkey/query/sql/QUnion.java -text
 query/src/org/labkey/query/sql/QUnknownNode.java -text
 query/src/org/labkey/query/sql/QUnsafeExpr.java -text
@@ -3047,7 +3028,6 @@ search/module.properties -text
 search/resources/credits/jars.txt -text
 search/resources/schemas/search.xml -text
 search/src/org/labkey/search/audit/SearchAuditProvider.java -text
-search/src/org/labkey/search/model/DocumentConversionServiceImpl.java -text
 search/src/org/labkey/search/model/IndexInspector.java -text
 search/src/org/labkey/search/model/IndexManager.java -text
 search/src/org/labkey/search/model/IndexManagerClosedException.java -text
@@ -3312,7 +3292,6 @@ study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
 study/src/org/labkey/study/reports/QueryAssayProgressSource.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
-study/src/org/labkey/study/reports/ReportViewProvider.java -text
 study/src/org/labkey/study/reports/StudyCrosstabReport.java -text
 study/src/org/labkey/study/reports/StudyQueryReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
@@ -3615,7 +3594,6 @@ wiki/radeox/conf/radeox_messages.properties -text
 wiki/radeox/conf/wiki.txt -text
 wiki/radeox/conf/xref.txt -text
 wiki/radeox/documentation/cut.rb -text
-wiki/radeox/documentation/examples/AllTests.java -text
 wiki/radeox/documentation/examples/build.xml -text
 wiki/radeox/documentation/examples/ContentHelloWorldMacro.java -text
 wiki/radeox/documentation/examples/FilterExample.java -text
@@ -3663,9 +3641,6 @@ wiki/radeox/src/org/radeox/engine/BaseRenderEngine.java -text
 wiki/radeox/src/org/radeox/engine/context/BaseInitialRenderContext.java -text
 wiki/radeox/src/org/radeox/engine/context/BaseRenderContext.java -text
 wiki/radeox/src/org/radeox/EngineManager.java -text
-wiki/radeox/src/org/radeox/example/RadeoxTemplateEngine.java -text
-wiki/radeox/src/org/radeox/example/RenderEngineExample.java -text
-wiki/radeox/src/org/radeox/example/XSLTExtension.java -text
 wiki/radeox/src/org/radeox/filter/BoldFilter.java -text
 wiki/radeox/src/org/radeox/filter/CacheFilter.java -text
 wiki/radeox/src/org/radeox/filter/context/BaseFilterContext.java -text
@@ -3743,7 +3718,6 @@ wiki/radeox/src/org/radeox/macro/PluginLoader.java -text
 wiki/radeox/src/org/radeox/macro/PluginRepository.java -text
 wiki/radeox/src/org/radeox/macro/Preserved.java -text
 wiki/radeox/src/org/radeox/macro/QuoteMacro.java -text
-wiki/radeox/src/org/radeox/macro/Repository.java -text
 wiki/radeox/src/org/radeox/macro/RfcMacro.java -text
 wiki/radeox/src/org/radeox/macro/table/AvgFunction.java -text
 wiki/radeox/src/org/radeox/macro/table/Function.java -text
@@ -3794,29 +3768,12 @@ wiki/radeox/src/org/radeox/test/filter/StrikeThroughFilterTest.java -text
 wiki/radeox/src/org/radeox/test/filter/TypographyFilterTest.java -text
 wiki/radeox/src/org/radeox/test/filter/UrlFilterTest.java -text
 wiki/radeox/src/org/radeox/test/filter/WikiLinkFilterTest.java -text
-wiki/radeox/src/org/radeox/test/macro/AllMacroTests.java -text
-wiki/radeox/src/org/radeox/test/macro/ApiDocMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/ApiMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/AsinMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/code/AllCodeMacroTests.java -text
-wiki/radeox/src/org/radeox/test/macro/code/XmlCodeMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/FilePathMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/IsbnMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/LinkMacroTest.java -text
 wiki/radeox/src/org/radeox/test/macro/list/AllListTests.java -text
 wiki/radeox/src/org/radeox/test/macro/list/AtoZListFormatterTest.java -text
 wiki/radeox/src/org/radeox/test/macro/list/ExampleListFormatterTest.java -text
 wiki/radeox/src/org/radeox/test/macro/list/ListFormatterSupport.java -text
 wiki/radeox/src/org/radeox/test/macro/list/SimpleListTest.java -text
-wiki/radeox/src/org/radeox/test/macro/MacroTestSupport.java -text
-wiki/radeox/src/org/radeox/test/macro/MailToMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/ParamMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/RfcMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/TableMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/XrefMacroTest.java -text
-wiki/radeox/src/org/radeox/test/macro/YipeeTest.java -text
 wiki/radeox/src/org/radeox/test/PerformanceTests.java -text
-wiki/radeox/src/org/radeox/test/RegexpTest.java -text
 wiki/radeox/src/org/radeox/test/RenderEnginePerformanceTest.java -text
 wiki/radeox/src/org/radeox/util/Encoder.java -text
 wiki/radeox/src/org/radeox/util/Linkable.java -text
@@ -3829,8 +3786,6 @@ wiki/radeox/src/org/radeox/util/Nameable.java -text
 wiki/radeox/src/org/radeox/util/Service.java -text
 wiki/radeox/src/org/radeox/util/StringBufferWriter.java -text
 wiki/radeox/src/simplelog.properties -text
-wiki/radeox/src/test/radeox/test/groovy/AllGroovyTests.java -text
-wiki/radeox/src/test/radeox/test/groovy/RadeoxTemplateEngineTest.java -text
 wiki/resources/web/wiki/internal/wikiEdit.js -text
 wiki/schemas/wiki.xsd -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text

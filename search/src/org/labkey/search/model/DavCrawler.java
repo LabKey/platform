@@ -189,13 +189,13 @@ public class DavCrawler implements ShutdownListener
     public void shutdownStarted()
     {
         if (null != _crawlerThread)
-        try
-        {
-            _crawlerThread.join(1000);
-        }
-        catch (InterruptedException x)
-        {
-        }
+            try
+            {
+                _crawlerThread.join(1000);
+            }
+            catch (InterruptedException x)
+            {
+            }
     }
 
 

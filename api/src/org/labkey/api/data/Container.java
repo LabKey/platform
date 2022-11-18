@@ -53,6 +53,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
@@ -1635,6 +1636,34 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (module.getRequireSitePermission())
                 return true;
         return false;
+    }
+
+    public boolean isProductProjectsEnabled()
+    {
+        if (isWorkbook())
+            return false;
+
+        Container project = getProject();
+        if (project == null)
+            return false;
+
+        return project.getFolderType().isProductFeatureEnabled(ProductFeature.Projects);
+    }
+
+    /**
+     * Returns the subfolder count of the project container, if product projects feature is enabled in project
+     */
+    public int getProductProjectsCount()
+    {
+        if (!isProductProjectsEnabled())
+            return 0;
+
+        Container project = getProject();
+
+        if (project == null)
+            return 0;
+
+        return project.getChildren().size();
     }
 
     public boolean isDataspace()

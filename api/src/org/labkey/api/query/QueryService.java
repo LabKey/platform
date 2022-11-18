@@ -70,6 +70,7 @@ public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
+    String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -622,8 +623,4 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
-    /**
-     * Resolves if the product projects feature is enabled in the supplied container scope.
-     */
-    boolean isProductProjectsEnabled(Container container);
 }

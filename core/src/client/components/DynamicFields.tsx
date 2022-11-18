@@ -1,63 +1,23 @@
-import React, { FC, memo, PureComponent, useCallback } from 'react';
+import React, { ChangeEvent, FC, memo, PureComponent, useCallback } from 'react';
 import { FormControl } from 'react-bootstrap';
 import { FileAttachmentForm, LabelHelpTip } from '@labkey/components';
 import { Utils } from '@labkey/api';
 
-import { FACheckBox } from './FACheckBox';
 import { AuthConfig, AuthConfigField, AuthConfigProvider, InputFieldProps } from './models';
 
 interface TextInputProps extends InputFieldProps {
     requiredFieldEmpty?: boolean;
 }
 
-export class TextInput extends PureComponent<TextInputProps> {
-    render() {
-        const { description, caption, required, canEdit, requiredFieldEmpty, onChange, name, type, value } = this.props;
-
-        return (
-            <div className="modal__text-input">
-                <span className="modal__field-label">
-                    {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip">
-                            <div> {description} </div>
-                        </LabelHelpTip>
-                    )}
-                    {required ? ' *' : null}
-                </span>
-
-                {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
-
-                {canEdit ? (
-                    <FormControl
-                        name={name}
-                        type={type}
-                        value={value}
-                        onChange={onChange}
-                        className={
-                            'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
-                        }
-                    />
-                ) : (
-                    <span className="modal__text-input-field"> {value} </span>
-                )}
-            </div>
-        );
-    }
-}
-
-interface CheckBoxInputProps extends AuthConfigField {
-    canEdit: boolean;
-    checkCheckBox?: Function;
-    value: boolean;
-}
-
-export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
-    const { canEdit, caption, checkCheckBox, description, name, value, required } = props;
-    const onClick = useCallback(() => checkCheckBox(name), [checkCheckBox, name]);
+export const TextInput: FC<TextInputProps> = memo(props => {
+    const { description, caption, required, canEdit, requiredFieldEmpty, name, onChange, type, value } = props;
+    const onChange_ = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => onChange(event.target.name, event.target.value),
+        [onChange]
+    );
 
     return (
-        <div className="modal__field">
+        <div className="modal__text-input">
             <span className="modal__field-label">
                 {caption}
                 {description && (
@@ -68,22 +28,42 @@ export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
                 {required ? ' *' : null}
             </span>
 
-            <span className="modal__input">
-                <FACheckBox name={name} checked={value} canEdit={canEdit} onClick={onClick} />
-            </span>
+            {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
+
+            {canEdit ? (
+                <FormControl
+                    name={name}
+                    type={type}
+                    value={value}
+                    onChange={onChange_}
+                    className={
+                        'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
+                    }
+                />
+            ) : (
+                <span className="modal__text-input-field"> {value} </span>
+            )}
         </div>
     );
 });
 
-interface OptionInputProps extends InputFieldProps {
-    options: { [key: string]: string };
+interface CheckBoxInputProps extends InputFieldProps {
+    canEdit: boolean;
+    value: boolean;
 }
 
-export class Option extends PureComponent<OptionInputProps> {
-    render() {
-        const { options, caption, required, description, canEdit, name, value, onChange } = this.props;
-        return (
-            <div className="modal__option-field">
+export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
+    const { canEdit, caption, description, name, onChange, value, required } = props;
+    const onChange_ = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            onChange(name, event.target.checked);
+        },
+        [name, onChange]
+    );
+
+    return (
+        <div className="modal__field">
+            <label htmlFor={name}>
                 <span className="modal__field-label">
                     {caption}
                     {description && (
@@ -93,24 +73,56 @@ export class Option extends PureComponent<OptionInputProps> {
                     )}
                     {required ? ' *' : null}
                 </span>
+            </label>
 
-                {canEdit ? (
-                    <div className="modal__option-input">
-                        <FormControl componentClass="select" name={name} onChange={onChange} value={value}>
-                            {Object.keys(options).map(item => (
-                                <option value={item} key={item}>
-                                    {options[item]}
-                                </option>
-                            ))}
-                        </FormControl>
-                    </div>
-                ) : (
-                    <span className="modal__fixed-html-text"> {value} </span>
-                )}
-            </div>
-        );
-    }
+            <span className="modal__input">
+                <input checked={value} disabled={!canEdit} id={name} onChange={onChange_} type="checkbox" />
+            </span>
+        </div>
+    );
+});
+
+interface SelectProps extends InputFieldProps {
+    options: { [key: string]: string };
 }
+
+// TODO: This should use the SelectInput component from UI components
+export const Select: FC<SelectProps> = props => {
+    const { options, caption, required, description, canEdit, name, value, onChange } = props;
+    const onChange_ = useCallback(
+        (event: ChangeEvent<HTMLSelectElement>) => {
+            onChange(name, event.target.value);
+        },
+        [name, onChange]
+    );
+    return (
+        <div className="modal__option-field">
+            <span className="modal__field-label">
+                {caption}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
+                )}
+                {required ? ' *' : null}
+            </span>
+
+            {canEdit && (
+                <div className="modal__option-input">
+                    <FormControl componentClass="select" name={name} onChange={onChange_} value={value}>
+                        {Object.keys(options).map(item => (
+                            <option value={item} key={item}>
+                                {options[item]}
+                            </option>
+                        ))}
+                    </FormControl>
+                </div>
+            )}
+
+            {!canEdit && <span className="modal__fixed-html-text"> {value} </span>}
+        </div>
+    );
+};
 
 interface FixedHtmlProps {
     authConfig: AuthConfig;
@@ -152,208 +164,191 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
 
 interface SmallFileInputProps extends InputFieldProps {
     index: number;
-    onFileChange: Function;
-    onFileRemoval: Function;
+    onFileChange: (attachment, name: string) => void;
+    onFileRemoval: (name: string) => void;
     requiredFieldEmpty?: boolean;
-    text?: string;
 }
 
-export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
-    render() {
-        const { requiredFieldEmpty, description, canEdit, name, caption, required, value } = this.props;
+export const SmallFileUpload: FC<SmallFileInputProps> = props => {
+    const { canEdit, caption, description, index, name, required, requiredFieldEmpty, value } = props;
+    const onFileChange = useCallback(attachment => props.onFileChange(attachment, name), [name, props.onFileChange]);
+    const onFileRemoval = useCallback(() => props.onFileRemoval(name), [name, props.onFileRemoval]);
 
-        return (
-            <div className="modal__compact-file-upload-field">
-                <span className="modal__field-label">
-                    {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip">
-                            <div> {description} </div>
-                        </LabelHelpTip>
-                    )}
-                    {required ? ' *' : null}
-                </span>
-
-                {requiredFieldEmpty && (
-                    <div className="modal__tiny-error--small-file-input"> This file is required </div>
+    return (
+        <div className="modal__compact-file-upload-field">
+            <span className="modal__field-label">
+                {caption}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
                 )}
+                {required ? ' *' : null}
+            </span>
 
-                {canEdit ? (
-                    <div className="modal__compact-file-upload-input">
-                        <FileAttachmentForm
-                            index={this.props.index}
-                            showLabel={false}
-                            allowMultiple={false}
-                            allowDirectories={false}
-                            acceptedFormats=".txt,.pem,.crt"
-                            showAcceptedFormats={false}
-                            onFileChange={attachment => {
-                                this.props.onFileChange(attachment, name);
-                            }}
-                            onFileRemoval={() => {
-                                this.props.onFileRemoval(name);
-                            }}
-                            compact={true}
-                            initialFileNames={value ? [''] : undefined}
-                        />
+            {requiredFieldEmpty && <div className="modal__tiny-error--small-file-input"> This file is required </div>}
+
+            {canEdit ? (
+                <div className="modal__compact-file-upload-input">
+                    <FileAttachmentForm
+                        index={index}
+                        showLabel={false}
+                        allowMultiple={false}
+                        allowDirectories={false}
+                        acceptedFormats=".txt,.pem,.crt"
+                        showAcceptedFormats={false}
+                        onFileChange={onFileChange}
+                        onFileRemoval={onFileRemoval}
+                        compact={true}
+                        initialFileNames={value ? [''] : undefined}
+                    />
+                </div>
+            ) : (
+                value && (
+                    <div className="modal__pem-input">
+                        <span className="fa fa-file-alt attached-file--icon" />
                     </div>
-                ) : (
-                    value && (
-                        <div className="modal__pem-input">
-                            <span className="fa fa-file-alt attached-file--icon" />
-                        </div>
-                    )
-                )}
-            </div>
-        );
-    }
-}
+                )
+            )}
+        </div>
+    );
+};
 
 interface DynamicFieldsProps {
     authConfig: AuthConfig;
     canEdit: boolean;
-    checkCheckBox: (string) => void;
     emptyRequiredFields: string[];
     fieldValues: any;
     fields: AuthConfigField[];
     modalType: AuthConfigProvider;
-    onChange: (event) => void;
+    onChange: (name: string, value: string | boolean) => void;
     onFileChange: (attachment, logoType: string) => void;
     onFileRemoval: (name: string) => void;
 }
 
-export class DynamicFields extends PureComponent<DynamicFieldsProps> {
-    render() {
-        const {
-            fields,
-            emptyRequiredFields,
-            canEdit,
-            onChange,
-            checkCheckBox,
-            onFileChange,
-            onFileRemoval,
-            fieldValues,
-            authConfig,
-        } = this.props;
+export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
+    const { fields, emptyRequiredFields, canEdit, onChange, onFileChange, onFileRemoval, fieldValues, authConfig } =
+        props;
 
-        // If dictateFieldVisibility is set on a checkbox field, its value determines the visibility of all subsequent
-        // fields until the next checkbox with a dictateFieldVisibility value, or the end of the form
-        let on = true;
-        const fieldsToCreate = fields.filter(field => {
-            const returnVal = on;
+    // If dictateFieldVisibility is set on a checkbox field, its value determines the visibility of all subsequent
+    // fields until the next checkbox with a dictateFieldVisibility value, or the end of the form
+    let on = true;
+    const fieldsToCreate = fields.filter(field => {
+        const returnVal = on;
 
-            if ('dictateFieldVisibility' in field) {
-                on = fieldValues[field['name']];
-                return true;
-            }
-            return returnVal;
-        });
+        if ('dictateFieldVisibility' in field) {
+            on = fieldValues[field['name']];
+            return true;
+        }
+        return returnVal;
+    });
 
-        const allFields = fieldsToCreate.map((field, index) => {
-            const requiredFieldEmpty = emptyRequiredFields.indexOf(field.name) !== -1;
-            const name = fieldValues[field.name];
+    const allFields = fieldsToCreate.map((field, index) => {
+        const requiredFieldEmpty = emptyRequiredFields.indexOf(field.name) !== -1;
+        const name = fieldValues[field.name];
 
-            switch (field.type) {
-                case 'input':
-                    return (
-                        <TextInput
-                            key={index}
-                            onChange={onChange}
-                            value={name}
-                            canEdit={canEdit}
-                            requiredFieldEmpty={requiredFieldEmpty}
-                            defaultValue={field.defaultValue}
-                            name={field.name}
-                            caption={field.caption}
-                            description={field.description}
-                            required={field.required}
-                            type={field.type}
-                        />
-                    );
-                case 'checkbox':
-                    return (
-                        <CheckBoxInput
-                            key={index}
-                            checkCheckBox={checkCheckBox}
-                            value={name}
-                            canEdit={canEdit}
-                            defaultValue={field.defaultValue}
-                            name={field.name}
-                            caption={field.caption}
-                            description={field.description}
-                            required={field.required}
-                            type={field.type}
-                        />
-                    );
-                case 'password':
-                    if (!canEdit) {
-                        return;
-                    }
-                    return (
-                        <TextInput
-                            key={index}
-                            onChange={onChange}
-                            value={name}
-                            canEdit={canEdit}
-                            defaultValue={field.defaultValue}
-                            name={field.name}
-                            caption={field.caption}
-                            description={field.description}
-                            required={field.required}
-                            type="password"
-                        />
-                    );
+        switch (field.type) {
+            case 'input':
+                return (
+                    <TextInput
+                        key={field.name}
+                        onChange={onChange}
+                        value={name}
+                        canEdit={canEdit}
+                        requiredFieldEmpty={requiredFieldEmpty}
+                        defaultValue={field.defaultValue}
+                        name={field.name}
+                        caption={field.caption}
+                        description={field.description}
+                        required={field.required}
+                        type={field.type}
+                    />
+                );
+            case 'checkbox':
+                return (
+                    <CheckBoxInput
+                        key={field.name}
+                        onChange={onChange}
+                        value={name}
+                        canEdit={canEdit}
+                        defaultValue={field.defaultValue}
+                        name={field.name}
+                        caption={field.caption}
+                        description={field.description}
+                        required={field.required}
+                        type={field.type}
+                    />
+                );
+            case 'password':
+                if (!canEdit) {
+                    return <></>;
+                }
 
-                case 'pem':
-                    return (
-                        <SmallFileUpload
-                            key={index}
-                            onFileChange={onFileChange}
-                            onFileRemoval={onFileRemoval}
-                            value={name}
-                            index={index + 3} // There are two other FileAttachmentForms (from SSOFields) on modal
-                            canEdit={canEdit}
-                            requiredFieldEmpty={requiredFieldEmpty}
-                            defaultValue={field.defaultValue}
-                            name={field.name}
-                            caption={field.caption}
-                            required={field.required}
-                            type={field.type}
-                        />
-                    );
+                return (
+                    <TextInput
+                        key={field.name}
+                        onChange={onChange}
+                        value={name}
+                        canEdit={canEdit}
+                        defaultValue={field.defaultValue}
+                        name={field.name}
+                        caption={field.caption}
+                        description={field.description}
+                        required={field.required}
+                        type="password"
+                    />
+                );
 
-                case 'options':
-                    return (
-                        <Option
-                            key={index}
-                            onChange={onChange}
-                            value={name}
-                            canEdit={canEdit}
-                            options={field.options}
-                            defaultValue={field.defaultValue}
-                            name={field.name}
-                            caption={field.caption}
-                            description={field.description}
-                            required={field.required}
-                            type={field.type}
-                        />
-                    );
+            case 'pem':
+                return (
+                    <SmallFileUpload
+                        key={field.name}
+                        onFileChange={onFileChange}
+                        onFileRemoval={onFileRemoval}
+                        value={name}
+                        index={index + 3} // There are two other FileAttachmentForms (from SSOFields) on modal
+                        canEdit={canEdit}
+                        requiredFieldEmpty={requiredFieldEmpty}
+                        defaultValue={field.defaultValue}
+                        name={field.name}
+                        caption={field.caption}
+                        required={field.required}
+                        type={field.type}
+                    />
+                );
 
-                case 'fixedHtml':
-                    return (
-                        <FixedHtml
-                            key={index}
-                            caption={field.caption}
-                            html={field.html}
-                            description={field.description}
-                            authConfig={authConfig}
-                        />
-                    );
+            case 'options':
+                return (
+                    <Select
+                        key={field.name}
+                        onChange={onChange}
+                        value={name}
+                        canEdit={canEdit}
+                        options={field.options}
+                        defaultValue={field.defaultValue}
+                        name={field.name}
+                        caption={field.caption}
+                        description={field.description}
+                        required={field.required}
+                        type={field.type}
+                    />
+                );
 
-                default:
-                    return <div> Error: Invalid field type received. </div>;
-            }
-        });
-        return <>{allFields}</>;
-    }
-}
+            case 'fixedHtml':
+                return (
+                    <FixedHtml
+                        key={field.name}
+                        caption={field.caption}
+                        html={field.html}
+                        description={field.description}
+                        authConfig={authConfig}
+                    />
+                );
+
+            default:
+                return <div> Error: Invalid field type received. </div>;
+        }
+    });
+
+    return <>{allFields}</>;
+});

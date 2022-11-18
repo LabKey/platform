@@ -19,8 +19,8 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -223,20 +223,41 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, use JSONArray.collector()
+    // Note: If you have a stream, use LabKeyCollectors.toJsonArray()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
     }
 
-    public JSONObject toJsonObject(Collection<Object> c)
+    public JSONObject toJsonObject(Map<?, ?> c)
     {
         return new JSONObject(c);
     }
 
-    public JSONObject toJsonObject(Map<?, ?> c)
+    /**
+     * Make a pretty-printed and SafeToRender JSON text of this JSONArray
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return JavaScriptFragment holding the JSON representation
+     */
+    public JavaScriptFragment json(JSONArray array, int indentFactor)
     {
-        return new JSONObject(c);
+        return JavaScriptFragment.unsafe(array.toString(indentFactor));
+    }
+
+    /**
+     * Make a pretty-printed and SafeToRender JSON text of this JSONObject
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return JavaScriptFragment holding the JSON representation
+     */
+    public JavaScriptFragment json(JSONObject jsonObject, int indentFactor)
+    {
+        return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
+    }
+
+    @Deprecated // Just to help with migration. TODO: Eliminate usages and delete this
+    public JavaScriptFragment json(org.json.old.JSONObject jsonObject, int indentFactor)
+    {
+        return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
     }
 
     /**
