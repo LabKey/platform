@@ -406,17 +406,9 @@ public class RReport extends ExternalScriptEngineReport
             }
 
             // pipeline path to resolve data files in reports if we are using a remote engine
-            if (engine instanceof RserveScriptEngine)
+            if (engine instanceof RserveScriptEngine rengine)
             {
-                RserveScriptEngine rengine = (RserveScriptEngine) engine;
-
-                File pipelineRoot = getPipelineRoot(context);
-                String localPath = getLocalPath(pipelineRoot);
-                labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
-
-                // include remote paths so that the client can fixup any file references
-                String remotePath = rengine.getRemotePath(pipelineRoot);
-                labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
+                rengine.appendScriptProlog(labkey, context);
             }
 
             // The ${apikey} token will be replaced by the value in the map stashed in script context bindings ExternalScriptEngine.PARAM_REPLACEMENT_MAP
@@ -553,7 +545,7 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     // append the pipeline roots to the prolog
-    public File getPipelineRoot(ViewContext context)
+    public static File getPipelineRoot(ViewContext context)
     {
         //
         // currently we ignore the supplemental directory and only return the primary directory/override

@@ -2270,6 +2270,7 @@ public class CoreController extends SpringActionController
                     {
                         record.put("machine", def.getMachine());
                         record.put("port", String.valueOf(def.getPort()));
+                        record.put("fileExchange", def.getFileExchange());
 
                         PathMapper pathMap = def.getPathMap();
                         if (pathMap != null)
