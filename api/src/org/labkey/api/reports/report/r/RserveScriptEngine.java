@@ -150,7 +150,7 @@ public class RserveScriptEngine extends RScriptEngine
         {
             // getRemotePath(workingDir) will return ./ so call makeLocalToRemotePath() directly
             URI remote = makeLocalToRemotePath(_def, null, workingDir.toURI());
-            return PathMapper.UriToPath(remote);
+            return PathMapper.uriToPath(remote);
         }
     }
 
@@ -227,14 +227,18 @@ public class RserveScriptEngine extends RScriptEngine
 
         LOG.debug("Copy files in working directory to remote server");
         File wd = getWorkingDir(getContext());
-        // recursive???
         File[] files = Objects.requireNonNullElse(wd.listFiles(), new File[0]);
         for (var file : files)
         {
-            try (OutputStream os = rconn.createFile(file.getName());
-                 FileInputStream fis = new FileInputStream(file))
+            if (file.isDirectory())
+                throw new IllegalStateException("unexpected directory found in report working directory: " + file.getPath());
+            if (file.isFile())
             {
-                IOUtil.copyCompletely(fis,os);
+                try (OutputStream os = rconn.createFile(file.getName());
+                     FileInputStream fis = new FileInputStream(file))
+                {
+                    IOUtil.copyCompletely(fis, os);
+                }
             }
         }
     }
@@ -249,13 +253,14 @@ public class RserveScriptEngine extends RScriptEngine
         File wd = getWorkingDir(getContext());
         try
         {
-            String[] names = rconn.eval("list.files("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +")").asStrings();
+            String[] names = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
             for (var name : names)
             {
                 if ("input_data.tsv".equalsIgnoreCase(name))
                     continue;
                 if ("script.R".equalsIgnoreCase(name))
                     continue;
+                new File(wd,name).getParentFile().mkdirs();
                 try (InputStream is = rconn.openFile(name);
                      FileOutputStream fos = new FileOutputStream(new File(wd,name)))
                 {
@@ -424,7 +429,7 @@ public class RserveScriptEngine extends RScriptEngine
         // get absolute path to make sure the paths are consistent
         localFile = FileUtil.getAbsoluteCaseSensitiveFile(localFile);
         URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localFile.toURI());
-        return PathMapper.UriToPath(remote);
+        return PathMapper.uriToPath(remote);
     }
 
 
@@ -435,7 +440,7 @@ public class RserveScriptEngine extends RScriptEngine
         {
             URI localURI = PathMapper.pathToUri(local);
             URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localURI);
-            return PathMapper.UriToPath(remote);
+            return PathMapper.uriToPath(remote);
         }
         catch (URISyntaxException e)
         {

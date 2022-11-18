@@ -147,7 +147,7 @@ public class RDockerScriptEngine extends RScriptEngine
         // get absolute path to make sure the paths are consistent
         URI localUri = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI();
         URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
-        return PathMapper.UriToPath(remote);
+        return PathMapper.uriToPath(remote);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class RDockerScriptEngine extends RScriptEngine
         {
             URI localUri = PathMapper.pathToUri(local);
             URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
-            return PathMapper.UriToPath(remote);
+            return PathMapper.uriToPath(remote);
         }
         catch (URISyntaxException e)
         {

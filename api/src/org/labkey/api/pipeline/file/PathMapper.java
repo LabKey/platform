@@ -62,7 +62,7 @@ public interface PathMapper
         return FileUtil.getAbsoluteCaseSensitiveFile(new File(path)).toURI();
     }
 
-    static String UriToPath(URI uri)
+    static String uriToPath(URI uri)
     {
         return uri.getPath();
     }
