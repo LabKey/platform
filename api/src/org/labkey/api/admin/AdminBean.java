@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -76,10 +77,12 @@ public class AdminBean
     @JsonIgnore
     public static final DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-    private final static Map<String, String> propertyMap = new TreeMap<>();
+    private final static Map<String, String> PROPERTY_MAP;
 
     static
     {
+        Map<String, String> propertyMap = new TreeMap<>();
+
         Arrays.stream(AdminBean.class.getDeclaredFields())
             .filter(f -> Modifier.isStatic(f.getModifiers()))
             .filter(f -> f.getType().equals(String.class))
@@ -92,6 +95,8 @@ public class AdminBean
                 String key = StringUtils.uncapitalize(m.getName().substring(3));
                 propertyMap.put(key, getValue(m));
             });
+
+        PROPERTY_MAP = Collections.unmodifiableMap(propertyMap);
 
         //noinspection ConstantConditions,AssertWithSideEffects
         assert null != (asserts = "enabled");
@@ -148,6 +153,6 @@ public class AdminBean
 
     public static Map<String, String> getPropertyMap()
     {
-        return propertyMap;
+        return PROPERTY_MAP;
     }
 }

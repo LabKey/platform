@@ -51,6 +51,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
@@ -98,6 +99,7 @@ public class SearchController extends SpringActionController
     }
 
 
+    @SuppressWarnings("unused")
     public static class SearchUrlsImpl implements SearchUrls
     {
         @Override
@@ -286,7 +288,7 @@ public class SearchController extends SpringActionController
 
             if (null != t)
             {
-                HtmlStringBuilder builder = HtmlStringBuilder.of("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>");
+                HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>"));
                 builder.append(ExceptionUtil.renderException(t));
                 WebPartView configErrorView = new HtmlView(builder);
                 configErrorView.setTitle("Search Configuration Error");

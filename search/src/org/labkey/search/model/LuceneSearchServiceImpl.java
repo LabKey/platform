@@ -142,6 +142,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -269,8 +270,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public static File getIndexDirectory()
     {
         String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
-        // TODO: Still need to encode
-        File substitutedDirectory = new File(StringExpressionFactory.create(adminSpecifiedDirectory).eval(AdminBean.getPropertyMap()));
+        // Create Map of system properties with file-system escaped values
+        Map<String, String> escapedMap = AdminBean.getPropertyMap().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
+        String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
+        File substitutedDirectory = new File(encodedPath);
         return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
     }
 
@@ -428,7 +432,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void deleteIndex()
     {
         _log.info("Deleting Search Index");
-        if (_indexManager.isReal())
+        if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
         File indexDir = getIndexDirectory();
@@ -1323,13 +1327,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (ConfigurationException e)
         {
-            // Index may have become unwriteable don't log to mothership, and dont reinitialize index
+            // Index may have become unwriteable don't log to mothership, and don't reinitialize index
             throw e;
         }
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable.  Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
         }
