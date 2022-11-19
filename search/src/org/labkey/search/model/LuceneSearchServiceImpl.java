@@ -67,6 +67,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminBean;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -98,6 +99,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -266,8 +268,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // This prevents full index rebuilds when switching between branches with different major Lucene versions.
     public static File getIndexDirectory()
     {
-        File adminSpecifiedDirectory = SearchPropertyManager.getIndexDirectory();
-        return AppProps.getInstance().isDevMode() ? new File(adminSpecifiedDirectory, "Lucene" + Version.LATEST.major) : adminSpecifiedDirectory;
+        String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
+        // TODO: Still need to encode
+        File substitutedDirectory = new File(StringExpressionFactory.create(adminSpecifiedDirectory).eval(AdminBean.getPropertyMap()));
+        return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
     }
 
     @Override

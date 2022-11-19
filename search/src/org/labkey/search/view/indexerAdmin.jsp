@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.search.SearchController.AdminForm" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -50,7 +51,13 @@ else
             <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
             <tr>
                 <td>Path to full-text search index:&nbsp;</td>
-                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
+                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getUnsubstitutedIndexDirectory())%>"></td>
+            </tr>
+            <tr>
+                <td>Current path resolves to:</td><td><%=h(LuceneSearchServiceImpl.getIndexDirectory().getPath())%></td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
             </tr><%
         if (hasAdminOpsPerms)
         {

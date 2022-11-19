@@ -54,12 +54,12 @@ public class SearchPropertyManager
         setProperty(CRAWLER_RUNNING_STATE, String.valueOf(running));
     }
 
-    public static File getIndexDirectory()
+    public static String getUnsubstitutedIndexDirectory()
     {
         String path = getProperty(INDEX_PATH);
 
         // Use path if set, otherwise fall back to temp directory.
-        return (null != path ? new File(path) : new File(FileUtil.getTempDirectory(), "labkey_full_text_index"));
+        return null != path ? path : new File(FileUtil.getTempDirectory(), "labkey_full_text_index").getPath();
     }
 
     public static void setIndexPath(String path)
