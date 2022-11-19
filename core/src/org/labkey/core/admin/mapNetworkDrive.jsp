@@ -18,16 +18,12 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.NetworkDriveProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.ShowNetworkDriveTestAction" %>
-<%@ page import="org.labkey.core.admin.AdminController.SiteSettingsBean" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    SiteSettingsBean bean = ((JspView<SiteSettingsBean>) HttpView.currentView()).getModelBean();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 
@@ -76,7 +72,7 @@
     The user account that represents the service may not automatically have permissions to access a network share that the
     logged-in user does have access to. If you are running on Windows and using LabKey Server to access files on a remote server,
     for example via the LabKey Server pipeline, you'll need to configure the server to map the network drive for the service's user account.<br>
-    (<%=bean.helpLink%>)
+    (<%=helpLink("setRoots#map", "more info...")%>)
 </p>
 
 <labkey:errors/>

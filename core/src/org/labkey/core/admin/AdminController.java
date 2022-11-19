@@ -1019,7 +1019,7 @@ public class AdminController extends SpringActionController
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
 
-    private void validateNetworkDrive(SiteSettingsForm form, Errors errors)
+    private void validateNetworkDrive(NetworkDriveForm form, Errors errors)
     {
         if (isBlank(form.getNetworkDriveUser()) || isBlank(form.getNetworkDrivePath()) ||
             isBlank(form.getNetworkDrivePassword()) || isBlank(form.getNetworkDriveLetter()))
@@ -1139,9 +1139,8 @@ public class AdminController extends SpringActionController
             if (form.isUpgradeInProgress())
                 getPageConfig().setTemplate(Template.Dialog);
 
-            SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
+            SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress());
             setHelpTopic("configAdmin");
-            getPageConfig().setFocusId("defaultDomain");
             return new JspView<>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
         }
 
@@ -1270,30 +1269,72 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class NetworkDriveForm
+    {
+        private String _networkDriveLetter;
+        private String _networkDrivePath;
+        private String _networkDriveUser;
+        private String _networkDrivePassword;
+
+        public String getNetworkDriveLetter()
+        {
+            return _networkDriveLetter;
+        }
+
+        public void setNetworkDriveLetter(String networkDriveLetter)
+        {
+            _networkDriveLetter = networkDriveLetter;
+        }
+
+        public String getNetworkDrivePassword()
+        {
+            return _networkDrivePassword;
+        }
+
+        public void setNetworkDrivePassword(String networkDrivePassword)
+        {
+            _networkDrivePassword = networkDrivePassword;
+        }
+
+        public String getNetworkDrivePath()
+        {
+            return _networkDrivePath;
+        }
+
+        public void setNetworkDrivePath(String networkDrivePath)
+        {
+            _networkDrivePath = networkDrivePath;
+        }
+
+        public String getNetworkDriveUser()
+        {
+            return _networkDriveUser;
+        }
+
+        public void setNetworkDriveUser(String networkDriveUser)
+        {
+            _networkDriveUser = networkDriveUser;
+        }
+    }
+
     @RequiresPermission(AdminOperationsPermission.class)
     @AdminConsoleAction
-    public class MapNetworkDriveAction extends FormViewAction<SiteSettingsForm>
+    public class MapNetworkDriveAction extends FormViewAction<NetworkDriveForm>
     {
         @Override
-        public void validateCommand(SiteSettingsForm form, Errors errors)
+        public void validateCommand(NetworkDriveForm form, Errors errors)
         {
             validateNetworkDrive(form, errors);
         }
 
         @Override
-        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(NetworkDriveForm form, boolean reshow, BindException errors)
         {
-            SiteSettingsBean bean = new SiteSettingsBean(
-                    form.isUpgradeInProgress(),
-                    form.isTestInPage(),
-                    new HelpTopic("setRoots#map").getSimpleLinkHtml("more info...")
-            );
-
-            return new JspView<>("/org/labkey/core/admin/mapNetworkDrive.jsp", bean, errors);
+            return new JspView<>("/org/labkey/core/admin/mapNetworkDrive.jsp", null, errors);
         }
 
         @Override
-        public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(NetworkDriveForm form, BindException errors) throws Exception
         {
             NetworkDriveProps.setNetworkDriveLetter(form.getNetworkDriveLetter().trim());
             NetworkDriveProps.setNetworkDrivePath(form.getNetworkDrivePath().trim());
@@ -1304,7 +1345,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(SiteSettingsForm siteSettingsForm)
+        public URLHelper getSuccessURL(NetworkDriveForm siteSettingsForm)
         {
             return new ActionURL(FilesSiteSettingsAction.class, getContainer());
         }
@@ -1319,25 +1360,18 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public final HtmlString helpLink;
-        public final boolean upgradeInProgress;
-        public final boolean testInPage;
-        public final boolean showSelfReportExceptions;
+        public final boolean _upgradeInProgress;
+        public final boolean _showSelfReportExceptions;
 
-        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage)
+        private SiteSettingsBean(boolean upgradeInProgress)
         {
-            this.upgradeInProgress = upgradeInProgress;
-            this.testInPage = testInPage;
-            this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
-            helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
+            _upgradeInProgress = upgradeInProgress;
+            _showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
         }
 
-        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, HtmlString helpLink)
+        public HtmlString getSiteSettingsHelpLink(String fragment)
         {
-            this.upgradeInProgress = upgradeInProgress;
-            this.testInPage = testInPage;
-            this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
-            this.helpLink = helpLink;
+            return new HelpTopic("configAdmin", fragment).getSimpleLinkHtml("more info...");
         }
     }
 
@@ -1876,7 +1910,6 @@ public class AdminController extends SpringActionController
     public static class SiteSettingsForm
     {
         private boolean _upgradeInProgress = false;
-        private boolean _testInPage = false;
 
         private String _pipelineToolsDirectory;
         private boolean _sslRequired;
@@ -1894,10 +1927,6 @@ public class AdminController extends SpringActionController
         private String _usageReportingLevel;
         private String _administratorContactEmail;
 
-        private String _networkDriveLetter;
-        private String _networkDrivePath;
-        private String _networkDriveUser;
-        private String _networkDrivePassword;
         private String _baseServerURL;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
@@ -2058,46 +2087,6 @@ public class AdminController extends SpringActionController
             _maxBLOBSize = maxBLOBSize;
         }
 
-        public String getNetworkDriveLetter()
-        {
-            return _networkDriveLetter;
-        }
-
-        public void setNetworkDriveLetter(String networkDriveLetter)
-        {
-            _networkDriveLetter = networkDriveLetter;
-        }
-
-        public String getNetworkDrivePassword()
-        {
-            return _networkDrivePassword;
-        }
-
-        public void setNetworkDrivePassword(String networkDrivePassword)
-        {
-            _networkDrivePassword = networkDrivePassword;
-        }
-
-        public String getNetworkDrivePath()
-        {
-            return _networkDrivePath;
-        }
-
-        public void setNetworkDrivePath(String networkDrivePath)
-        {
-            _networkDrivePath = networkDrivePath;
-        }
-
-        public String getNetworkDriveUser()
-        {
-            return _networkDriveUser;
-        }
-
-        public void setNetworkDriveUser(String networkDriveUser)
-        {
-            _networkDriveUser = networkDriveUser;
-        }
-
         public String getBaseServerURL()
         {
             return _baseServerURL;
@@ -2106,16 +2095,6 @@ public class AdminController extends SpringActionController
         public void setBaseServerURL(String baseServerURL)
         {
             _baseServerURL = baseServerURL;
-        }
-
-        public boolean isTestInPage()
-        {
-            return _testInPage;
-        }
-
-        public void setTestInPage(boolean testInPage)
-        {
-            _testInPage = testInPage;
         }
 
         public String getCallbackPassword()
@@ -2261,16 +2240,16 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteSettingsForm>
+    public class ShowNetworkDriveTestAction extends SimpleViewAction<NetworkDriveForm>
     {
         @Override
-        public void validate(SiteSettingsForm form, BindException errors)
+        public void validate(NetworkDriveForm form, BindException errors)
         {
             validateNetworkDrive(form, errors);
         }
 
         @Override
-        public ModelAndView getView(SiteSettingsForm form, BindException errors)
+        public ModelAndView getView(NetworkDriveForm form, BindException errors)
         {
             NetworkDrive testDrive = new NetworkDrive();
             testDrive.setPassword(form.getNetworkDrivePassword());

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* search-0.00-10.10.sql */
-
 CREATE SCHEMA search;
 
 CREATE TABLE search.CrawlCollections
@@ -45,18 +43,3 @@ CREATE TABLE search.CrawlResources
     CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
 );
 CLUSTER PK_Resources ON search.CrawlResources;
-
-CREATE TABLE search.ParticipantIndex
-(
-    Container ENTITYID NOT NULL,          -- see core.containers
-    ParticipantId VARCHAR(32) NOT NULL,   -- see study.participantvisit
-    LastIndexed TIMESTAMP NOT NULL,
-    CONSTRAINT PK_ParticipantIndex PRIMARY KEY (Container,ParticipantId)
-);
-
-/* search-12.30-13.10.sql */
-
--- We now use the search index (not a side table) to boost participant results.
-DROP TABLE search.ParticipantIndex;
-
-DROP SCHEMA IF EXISTS umls CASCADE;
