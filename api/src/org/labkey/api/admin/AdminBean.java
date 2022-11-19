@@ -20,12 +20,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -154,5 +157,33 @@ public class AdminBean
     public static Map<String, String> getPropertyMap()
     {
         return PROPERTY_MAP;
+    }
+
+    public static HtmlString getPropertyGridHtml(Map<String, String> propertyMap)
+    {
+        HtmlStringBuilder builder = HtmlStringBuilder.of()
+            .append(HtmlString.unsafe("<table class=\"labkey-data-region-legacy labkey-show-borders\">"))
+            .append(HtmlString.unsafe("<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>"))
+            .append
+            (
+                propertyMap.entrySet().stream()
+                    .map(e -> HtmlStringBuilder.of(HtmlString.unsafe("<tr valign=top class=\"labkey-row\"><td>"))
+                        .append(e.getKey())
+                        .append(HtmlString.unsafe("</td><td>"))
+                        .append(formatValue(e.getKey(), e.getValue()))
+                        .append(HtmlString.unsafe("</td></tr>\n"))
+                        .getHtmlString())
+                    .collect(LabKeyCollectors.joining(HtmlString.unsafe("\n")))
+            )
+           .append(HtmlString.unsafe("</table>\n"));
+
+        return builder.getHtmlString();
+    }
+
+    private static HtmlString formatValue(String key, String value)
+    {
+        // Format GUID properties with monospace font
+        return key.endsWith("Guid") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
+            .append(value).append(HtmlString.unsafe("</span>")).getHtmlString() : HtmlString.of(value);
     }
 }

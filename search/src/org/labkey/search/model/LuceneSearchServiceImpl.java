@@ -68,6 +68,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.AdminBean;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -142,7 +143,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -270,12 +270,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public static File getIndexDirectory()
     {
         String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
-        // Create Map of system properties with file-system escaped values
-        Map<String, String> escapedMap = AdminBean.getPropertyMap().entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
+        Map<String, String> escapedMap = getEscapedSystemPropertyMap();
         String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
         File substitutedDirectory = new File(encodedPath);
         return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
+    }
+
+    // Create a Map of system properties with file-system escaped values
+    public static Map<String, String> getEscapedSystemPropertyMap()
+    {
+        return AdminBean.getPropertyMap().entrySet().stream()
+            .collect(LabKeyCollectors.toLinkedMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
     }
 
     @Override
