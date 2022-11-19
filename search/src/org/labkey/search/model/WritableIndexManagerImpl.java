@@ -337,6 +337,12 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         return true;
     }
 
+    @Override
+    public boolean isClosed()
+    {
+        return _closed;
+    }
+
     private void maybeRefresh()
     {
         _maybeRefreshRequests.incrementAndGet();
@@ -395,6 +401,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
     }
 
+    @Override
     public void refreshNow() throws IOException
     {
         _manager.maybeRefresh();

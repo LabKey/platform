@@ -67,6 +67,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminBean;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -98,6 +100,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -266,8 +269,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // This prevents full index rebuilds when switching between branches with different major Lucene versions.
     public static File getIndexDirectory()
     {
-        File adminSpecifiedDirectory = SearchPropertyManager.getIndexDirectory();
-        return AppProps.getInstance().isDevMode() ? new File(adminSpecifiedDirectory, "Lucene" + Version.LATEST.major) : adminSpecifiedDirectory;
+        String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
+        Map<String, String> escapedMap = getEscapedSystemPropertyMap();
+        String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
+        File substitutedDirectory = new File(encodedPath);
+        return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
+    }
+
+    // Create a Map of system properties with file-system escaped values
+    public static Map<String, String> getEscapedSystemPropertyMap()
+    {
+        return AdminBean.getPropertyMap().entrySet().stream()
+            .collect(LabKeyCollectors.toLinkedMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
     }
 
     @Override
@@ -424,7 +437,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void deleteIndex()
     {
         _log.info("Deleting Search Index");
-        if (_indexManager.isReal())
+        if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
         File indexDir = getIndexDirectory();
@@ -1319,13 +1332,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (ConfigurationException e)
         {
-            // Index may have become unwriteable don't log to mothership, and dont reinitialize index
+            // Index may have become unwriteable don't log to mothership, and don't reinitialize index
             throw e;
         }
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable.  Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
         }

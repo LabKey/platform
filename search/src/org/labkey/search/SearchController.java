@@ -27,6 +27,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -50,6 +51,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
@@ -61,7 +63,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -98,6 +99,7 @@ public class SearchController extends SpringActionController
     }
 
 
+    @SuppressWarnings("unused")
     public static class SearchUrlsImpl implements SearchUrls
     {
         @Override
@@ -286,7 +288,7 @@ public class SearchController extends SpringActionController
 
             if (null != t)
             {
-                HtmlStringBuilder builder = HtmlStringBuilder.of("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>");
+                HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>"));
                 builder.append(ExceptionUtil.renderException(t));
                 WebPartView configErrorView = new HtmlView(builder);
                 configErrorView.setTitle("Search Configuration Error");
@@ -434,30 +436,24 @@ public class SearchController extends SpringActionController
 
     /** for selenium testing */
     @RequiresSiteAdmin
-    public class WaitForIdleAction extends SimpleViewAction
+    public class WaitForIdleAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public URLHelper getRedirectURL(Object o) throws Exception
         {
             SearchService ss = SearchService.get();
             ss.waitForIdle();
-            throw new RedirectException(new ActionURL(AdminAction.class, getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
+            return new ActionURL(AdminAction.class, getContainer());
         }
     }
 
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
-    public class CancelAction extends SimpleRedirectAction
+    public class CancelAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public ActionURL getRedirectURL(Object o)
+        public ActionURL getRedirectURL(ReturnUrlForm form)
         {
-            // SimpleRedirectAction doesn't take a form
             SearchService ss = SearchService.get();
     
             if (null == ss)
@@ -470,16 +466,7 @@ public class SearchController extends SpringActionController
                     task.cancel(true);
             }
 
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
+            return form.getReturnActionURL(getSearchURL());
         }
     }
 
@@ -487,12 +474,11 @@ public class SearchController extends SpringActionController
     // UNDONE: remove; for testing only
     // cause the current directory to be crawled soon
     @RequiresSiteAdmin
-    public class CrawlAction extends SimpleRedirectAction
+    public class CrawlAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public ActionURL getRedirectURL(Object o)
+        public ActionURL getRedirectURL(ReturnUrlForm form)
         {
-            // SimpleRedirectAction doesn't take a form
             SearchService ss = SearchService.get();
 
             if (null == ss)
@@ -502,33 +488,57 @@ public class SearchController extends SpringActionController
                     WebdavService.getPath().append(getContainer().getParsedPath()),
                     new Date(System.currentTimeMillis()));
 
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
+            return form.getReturnActionURL(getSearchURL());
         }
     }
 
+    public static class IndexForm extends ReturnUrlForm
+    {
+        boolean _full = false;
+        boolean _wait = false;
+        boolean _since = false;
+
+        public boolean isFull()
+        {
+            return _full;
+        }
+
+        @SuppressWarnings("unused")
+        public void setFull(boolean full)
+        {
+            _full = full;
+        }
+
+        public boolean isWait()
+        {
+            return _wait;
+        }
+
+        @SuppressWarnings("unused")
+        public void setWait(boolean wait)
+        {
+            _wait = wait;
+        }
+
+        public boolean isSince()
+        {
+            return _since;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSince(boolean since)
+        {
+            _since = since;
+        }
+    }
 
     // for testing only
     @RequiresSiteAdmin
-    public class IndexAction extends SimpleRedirectAction
+    public class IndexAction extends SimpleRedirectAction<IndexForm>
     {
         @Override
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(IndexForm form) throws Exception
         {
-            // SimpleRedirectAction doesn't take a form
-            boolean full = "1".equals(getViewContext().getRequest().getParameter("full"));
-            String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-            boolean wait = "1".equals(getViewContext().getRequest().getParameter("wait"));
-            boolean since = "1".equals(getViewContext().getRequest().getParameter("since"));
-
             SearchService ss = SearchService.get();
 
             if (null == ss)
@@ -536,13 +546,13 @@ public class SearchController extends SpringActionController
 
             SearchService.IndexTask task = null;
 
-            try (var x = SpringActionController.ignoreSqlUpdates())
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                if (full)
+                if (form.isFull())
                 {
                     ss.indexFull(true);
                 }
-                else if (since)
+                else if (form.isSince())
                 {
                     task = ss.indexContainer(null, getContainer(), new Date(System.currentTimeMillis()- TimeUnit.DAYS.toMillis(1)));
                 }
@@ -552,26 +562,16 @@ public class SearchController extends SpringActionController
                 }
             }
 
-            if (wait && null != task)
+            if (form.isWait() && null != task)
             {
                 task.get(); // wait for completion
                 if (ss instanceof AbstractSearchService)
                     ((AbstractSearchService)ss).commit();
             }
 
-            try
-            {
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
+            return form.getReturnActionURL(getSearchURL());
         }
     }
-
-
 
     @RequiresPermission(ReadPermission.class)
     public class JsonAction extends ReadOnlyApiAction<SearchForm>

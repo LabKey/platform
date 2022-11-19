@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
@@ -34,6 +35,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -49,12 +52,14 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.DocumentConversionServiceImpl;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -131,6 +136,17 @@ public class SearchModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        ModuleLoader.getInstance().handleStartupProperties(
+            new StandardStartupPropertyHandler<>("SearchSettings", SearchStartupProperties.class)
+            {
+                @Override
+                public void handle(Map<SearchStartupProperties, StartupPropertyEntry> properties)
+                {
+                    System.out.println(properties);
+                }
+            }
+        );
+
         final SearchService ss = SearchService.get();
 
         if (null != ss)
@@ -152,7 +168,6 @@ public class SearchModule extends DefaultModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () ->
         {
-
             // Report the total number of search entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());

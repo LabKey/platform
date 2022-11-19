@@ -26,6 +26,9 @@
 <%@ page import="org.labkey.search.SearchController.AdminForm" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -45,12 +48,27 @@ if (null == ss)
 }
 else
 {
+    HtmlString indexPathHelp = HtmlStringBuilder.of("The index path setting supports string substitution of specific server properties. For example, the value:")
+        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;.\\temp\\${serverGuid}\\labkey_full_text_index</code><br><br>"))
+        .append("will currently result in this path:")
+        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;.\\temp\\" + AdminBean.serverGuid + "\\labkey_full_text_index</code><br><br>"))
+        .append("The supported properties and their current values are listed in the table below. Note that illegal file system characters are replaced with underscores in all the values.")
+        .append(HtmlString.unsafe("<br><br>"))
+        .append(AdminBean.getPropertyGridHtml(LuceneSearchServiceImpl.getEscapedSystemPropertyMap()))
+        .getHtmlString();
+
     %><p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
             <tr>
-                <td>Path to full-text search index:&nbsp;</td>
-                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
+                <td>Path to full-text search index<%=helpPopup("Path to full-text search index", indexPathHelp, 350)%>:&nbsp;</td>
+                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getUnsubstitutedIndexDirectory())%>"></td>
+            </tr>
+            <tr>
+                <td>Current path resolves to:</td><td><%=h(LuceneSearchServiceImpl.getIndexDirectory().getPath())%></td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
             </tr><%
         if (hasAdminOpsPerms)
         {

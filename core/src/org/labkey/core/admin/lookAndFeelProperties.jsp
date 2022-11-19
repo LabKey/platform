@@ -29,12 +29,12 @@
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -80,17 +80,14 @@
     // If this is a folder then skip everything except default date & number formats
     if (!folder)
     {
-        String shortNameHelp = "The header short name supports string substitution of specific server properties. For example, " +
-            "the value:<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>will currently result in this header text:<br><br><code>&nbsp;&nbsp;LabKey " + AdminBean.releaseVersion + "</code><br><br>" +
-            "The supported properties and their current values are listed in the table below.<br><br>" +
-            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
-            "<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>" +
-
-            AdminBean.getPropertyMap().entrySet().stream()
-                .map(e -> "<tr valign=top class=\"labkey-row\"><td>" + h(e.getKey()) + "</td><td>" + h(e.getValue()) + "</td></tr>\n")
-                .collect(Collectors.joining()) +
-
-            "</table>";
+        HtmlString shortNameHelp = HtmlStringBuilder.of("The header short name supports string substitution of specific server properties. For example, the value:")
+            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>"))
+            .append("will currently result in this header text:")
+            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey " + AdminBean.releaseVersion + "</code><br><br>"))
+            .append("The supported properties and their current values are listed in the table below.")
+            .append(HtmlString.unsafe("<br><br>"))
+            .append(AdminBean.getPropertyGridHtml(AdminBean.getPropertyMap()))
+            .getHtmlString();
 %>
 <tr>
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
@@ -100,7 +97,7 @@
     <td><input type="text" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, true, 350)%></td>
+    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, 350)%></td>
     <td><input type="text" name="<%=systemShortName%>" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
