@@ -253,7 +253,7 @@ public class SearchModule extends DefaultModule
                 }
                 if (_indexFull)
                 {
-                    LOG.info("Initiating an aggressive full-test search reindex because: " + _indexFullReasons);
+                    LOG.info("Initiating an aggressive full-text search reindex because: " + _indexFullReasons);
                     ss.indexFull(true);
                 }
             }
