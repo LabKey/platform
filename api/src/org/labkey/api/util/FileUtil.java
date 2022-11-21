@@ -1072,6 +1072,11 @@ quickScan:
             return "__null__";
         }
 
+        if (name.length() == 0)
+        {
+            return "__empty__";
+        }
+
         //limit to 255 chars (FAT and OS X)
         //replace illegal chars
         char[] ret = new char[Math.min(255, name.length())];
@@ -1645,6 +1650,11 @@ quickScan:
         public void testMakeLegalName()
         {
             assertEquals("__null__", makeLegalName(null));
+            assertEquals("__empty__", makeLegalName(""));
+            assertEquals("_", makeLegalName(" "));
+            assertEquals(" _", makeLegalName("  "));
+            assertEquals("_", makeLegalName("."));
+            assertEquals("._", makeLegalName(".."));
             assertEquals("foo", makeLegalName("foo"));
             assertEquals("foo_", makeLegalName("foo "));
             assertEquals("foo_", makeLegalName("foo."));
