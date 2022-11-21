@@ -1661,13 +1661,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getFolderType().isProductFeatureEnabled(feature);
     }
 
-    // don't use for ProductFeature.Projects, which should be atProjectOnly
     public boolean isFeatureEnabled(ProductFeature feature)
     {
+        if (ProductFeature.Projects == feature)
+            return isProductProjectsEnabled();
+
         return isFeatureEnabled(feature, false);
     }
 
-    // Projects feature should be check at Home Project only
+    // Projects feature should be checked at Home Project only
     public boolean isProductProjectsEnabled()
     {
         return isFeatureEnabled(ProductFeature.Projects, true);
