@@ -16,19 +16,20 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController.AdminAction" %>
 <%@ page import="org.labkey.search.SearchController.AdminForm" %>
+<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
-<%@ page import="org.labkey.api.admin.AdminBean" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="java.io.File" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -36,6 +37,8 @@ JspView<AdminForm> me = (JspView<AdminForm>) HttpView.currentView();
 AdminForm form = me.getModelBean();
 SearchService ss = SearchService.get();
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+File indexDirectory = LuceneSearchServiceImpl.getIndexDirectory();
+String indexDirectoryPath = null != indexDirectory ? indexDirectory.getPath() : "Invalid index directory. Path might include unknown substitution parameter(s).";
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>
@@ -65,7 +68,7 @@ else
                 <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getUnsubstitutedIndexDirectory())%>"></td>
             </tr>
             <tr>
-                <td>Current path resolves to:</td><td><%=h(LuceneSearchServiceImpl.getIndexDirectory().getPath())%></td>
+                <td>Current path resolves to:</td><td><%=h(indexDirectoryPath   )%></td>
             </tr>
             <tr>
                 <td colspan="2">&nbsp;</td>

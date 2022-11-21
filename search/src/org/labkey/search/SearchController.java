@@ -16,6 +16,7 @@
 
 package org.labkey.search;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +71,9 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.CrawlerRunningState;
 import org.labkey.search.model.IndexInspector;
+import org.labkey.search.model.LuceneDirectoryType;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
@@ -328,44 +331,43 @@ public class SearchController extends SpringActionController
 
             if (form.isStart())
             {
+                SearchPropertyManager.setCrawlerRunningState(getUser(), CrawlerRunningState.Start);
                 ss.startCrawler();
-                SearchPropertyManager.setCrawlerRunningState(true);
-                audit(getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
+                SearchPropertyManager.setCrawlerRunningState(getUser(), CrawlerRunningState.Pause);
                 ss.pauseCrawler();
-                SearchPropertyManager.setCrawlerRunningState(false);
-                audit(getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())
             {
-                ss.deleteIndex();
+                SearchPropertyManager.deleteIndex(ss, getUser());
                 ss.start();
                 _msgid = 1;
-                audit(getUser(), null, "(admin action)", "Index Deleted");
             }
             else if (form.isPath())
             {
-                SearchPropertyManager.setIndexPath(form.getIndexPath());
+                SearchPropertyManager.setIndexPath(getUser(), form.getIndexPath());
                 ss.updateIndex();
                 _msgid = 2;
-                audit(getUser(), null, "(admin action)", "Index Path Set");
             }
             else if (form.isDirectory())
             {
-                SearchPropertyManager.setDirectoryType(form.getDirectoryType());
+                LuceneDirectoryType type = EnumUtils.getEnum(LuceneDirectoryType.class, form.getDirectoryType());
+                if (null == type)
+                {
+                    errors.reject(ERROR_MSG, "Unrecognized value for \"directoryType\": \"" + form.getDirectoryType() + "\"");
+                    return false;
+                }
+                SearchPropertyManager.setDirectoryType(getUser(), type);
                 ss.resetIndex();
                 _msgid = 3;
-                audit(getUser(), null, "(admin action)", "Directory type set to " + form.getDirectoryType());
             }
             else if (form.isLimit())
             {
-                int limit = form.getFileLimitMB();
-                SearchPropertyManager.setFileSizeLimitMB(limit);
+                SearchPropertyManager.setFileSizeLimitMB(getUser(), form.getFileLimitMB());
                 ss.resetIndex();
                 _msgid = 4;
-                audit(getUser(), null, "(admin action)", String.format("File size limit set to %1$s MB", limit));
             }
 
             return true;
@@ -1113,9 +1115,9 @@ public class SearchController extends SpringActionController
     }
 
     
-    protected void audit(User user, @Nullable Container c, String query, String comment)
+    public static void audit(@Nullable User user, @Nullable Container c, String query, String comment)
     {
-        if (user.isSearchUser() || StringUtils.isEmpty(query))
+        if ((null != user && user.isSearchUser()) || StringUtils.isEmpty(query))
             return;
 
         AuditLogService audit = AuditLogService.get();
@@ -1138,13 +1140,13 @@ public class SearchController extends SpringActionController
     public static class SearchSettingsForm
     {
         private boolean _searchable;
-        private String _provider;
 
         public boolean isSearchable()
         {
             return _searchable;
         }
 
+        @SuppressWarnings("unused")
         public void setSearchable(boolean searchable)
         {
             _searchable = searchable;

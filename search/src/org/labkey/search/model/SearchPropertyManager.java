@@ -16,10 +16,13 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.search.SearchController;
 import org.labkey.search.SearchModule;
 
 import java.io.File;
@@ -49,9 +52,10 @@ public class SearchPropertyManager
             return !AppProps.getInstance().isDevMode();
     }
 
-    public static void setCrawlerRunningState(boolean running)
+    public static void setCrawlerRunningState(User user, CrawlerRunningState state)
     {
-        setProperty(CRAWLER_RUNNING_STATE, String.valueOf(running));
+        setProperty(CRAWLER_RUNNING_STATE, String.valueOf(state.isRunning()));
+        audit(user, state.getAuditMessage());
     }
 
     public static String getUnsubstitutedIndexDirectory()
@@ -62,9 +66,10 @@ public class SearchPropertyManager
         return null != path ? path : new File(FileUtil.getTempDirectory(), "labkey_full_text_index").getPath();
     }
 
-    public static void setIndexPath(String path)
+    public static void setIndexPath(User user, String path)
     {
         setProperty(INDEX_PATH, path);
+        audit(user, "Index Path Set to " + path);
     }
 
     public static String getDirectoryType()
@@ -73,20 +78,29 @@ public class SearchPropertyManager
         return null == type ? "Default" : type;
     }
 
+    public static void setDirectoryType(User user, LuceneDirectoryType type)
+    {
+        setProperty(DIRECTORY_TYPE, type.name());
+        audit(user, "Directory type set to " + type.name());
+    }
+
     public static long getFileSizeLimitMB()
     {
         String limit = getProperty(FILE_SIZE_LIMIT);
         return StringUtils.isNotBlank(limit) ? Long.valueOf(limit) : SearchService.DEFAULT_FILE_SIZE_LIMIT;
     }
 
-    public static void setFileSizeLimitMB(Integer fileSizeLimitMB)
+    public static void setFileSizeLimitMB(User user, int fileSizeLimitMB)
     {
-        setProperty(FILE_SIZE_LIMIT, fileSizeLimitMB.toString());
+        setProperty(FILE_SIZE_LIMIT, String.valueOf(fileSizeLimitMB));
+        audit(user, String.format("File size limit set to %1$s MB", fileSizeLimitMB));
     }
 
-    public static void setDirectoryType(String directoryType)
+    // Not really a "property" but included in this class for audit consistency, etc.
+    public static void deleteIndex(SearchService ss, User user)
     {
-        setProperty(DIRECTORY_TYPE, directoryType);
+        ss.deleteIndex();
+        audit(user, "Index Deleted");
     }
 
     private static String getProperty(String key)
@@ -100,5 +114,10 @@ public class SearchPropertyManager
         PropertyManager.PropertyMap m = PropertyManager.getWritableProperties(CATEGORY, true);
         m.put(key, value);
         m.save();
+    }
+
+    private static void audit(@Nullable User user, String comment)
+    {
+        SearchController.audit(user, null, null == user ? "(startup property)" : "(admin action)", comment);
     }
 }

@@ -265,14 +265,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         setConfigurationError(null);  // Clear out any previous error
     }
 
-    // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
-    // This prevents full index rebuilds when switching between branches with different major Lucene versions.
-    public static File getIndexDirectory()
+    // Returns null if file path includes an unknown substitution parameter
+    public static @Nullable File getIndexDirectory()
     {
         String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
         Map<String, String> escapedMap = getEscapedSystemPropertyMap();
         String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
+        if (null == encodedPath)
+            return null;
         File substitutedDirectory = new File(encodedPath);
+
+        // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
+        // This prevents full index rebuilds when switching between branches with different major Lucene versions.
         return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
     }
 

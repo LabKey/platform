@@ -16,6 +16,7 @@
 
 package org.labkey.search;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
@@ -41,6 +42,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement;
 import org.labkey.api.view.HttpView;
@@ -60,11 +62,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class SearchModule extends DefaultModule
 {
+    private static final Logger LOG = LogHelper.getLogger(SearchModule.class, "Search module startup issues");
+
     @Override
     public String getName()
     {
@@ -132,7 +138,6 @@ public class SearchModule extends DefaultModule
         DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
     }
 
-
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
@@ -142,7 +147,20 @@ public class SearchModule extends DefaultModule
                 @Override
                 public void handle(Map<SearchStartupProperties, StartupPropertyEntry> properties)
                 {
-                    System.out.println(properties);
+                    SearchService ss = SearchService.get();
+                    if (null == ss)
+                        LOG.error("Search service is not present");
+                    else
+                        properties.forEach((ssp, sp) -> {
+                            try
+                            {
+                                ssp.setProperty(ss, _searchStartupListener, sp.getValue());
+                            }
+                            catch (Exception e)
+                            {
+                                LOG.error("Exception while attempting to set startup property", e);
+                            }
+                        });
                 }
             }
         );
@@ -176,6 +194,8 @@ public class SearchModule extends DefaultModule
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
         });
+
+        ContextListener.addStartupListener(_searchStartupListener);
     }
 
 
@@ -191,6 +211,55 @@ public class SearchModule extends DefaultModule
         }
     }
 
+    private final SearchStartupListener _searchStartupListener = new SearchStartupListener();
+
+    public static class SearchStartupListener implements StartupListener
+    {
+        private volatile boolean _deleteIndex = false;
+        private volatile boolean _indexFull = false;
+
+        private final Queue<String> _deleteIndexReasons = new ConcurrentLinkedQueue<>();
+        private final Queue<String> _indexFullReasons = new ConcurrentLinkedQueue<>();
+
+        public void setDeleteIndex(String reason)
+        {
+            _deleteIndex = true;
+            _deleteIndexReasons.add(reason);
+        }
+
+        public void setIndexFull(String reason)
+        {
+            _indexFull = true;
+            _indexFullReasons.add(reason);
+        }
+
+        @Override
+        public String getName()
+        {
+            return "Search Service: delete index if requested";
+        }
+
+        @Override
+        public void moduleStartupComplete(ServletContext servletContext)
+        {
+            SearchService ss = SearchService.get();
+
+            if (null != ss)
+            {
+                if (_deleteIndex)
+                {
+                    LOG.info("Deleting full-text search index and clearing last indexed because: " + _deleteIndexReasons);
+                    ss.deleteIndex();
+                }
+                if (_indexFull)
+                {
+                    LOG.info("Initiating an aggressive full-test search reindex because: " + _indexFullReasons);
+                    ss.indexFull(true);
+                }
+            }
+        }
+    };
+
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
@@ -198,26 +267,8 @@ public class SearchModule extends DefaultModule
         // to rebuild the entire index, #35674 & #42617
         if (!moduleContext.isNewInstall() && moduleContext.needsUpgrade(getSchemaVersion()))
         {
-            ContextListener.addStartupListener(new StartupListener()
-            {
-                @Override
-                public String getName()
-                {
-                    return "Search Service: delete index";
-                }
-
-                @Override
-                public void moduleStartupComplete(ServletContext servletContext)
-                {
-                    SearchService ss = SearchService.get();
-
-                    if (null != ss)
-                    {
-                        ss.deleteIndex();
-                        ss.indexFull(true);
-                    }
-                }
-            });
+            _searchStartupListener.setDeleteIndex("Search schema upgrade");
+            _searchStartupListener.setIndexFull("Search schema upgrade");
         }
     }
 
