@@ -532,10 +532,14 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             var findMatchingField = function(f) {
                 if (f.isFormField) {
                     if (f.dataIndex) {
-                        this.addFieldListener(c);
+                        this.addFieldListener(f);
                     } else if (f.isComposite) {
                         f.items.each(findMatchingField, this);
                     }
+                }
+                // NOTE: this allows more complex nested containers
+                else if (f.isQueryable) {
+                    f.items.each(findMatchingField, this);
                 }
             };
             findMatchingField.call(this, c);
@@ -557,11 +561,11 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             // Can only contain one row of data.
             if (records.length == 0){
                 if(this.panel.bindConfig.createRecordOnLoad){
-                    var values = this.getForm.getFieldValues();
+                    var values = this.panel.getForm().getFieldValues();
                     var record = this.panel.store.model.create();
                     record.set(values); //otherwise record will not be dirty
                     record.phantom = true;
-                    this.store.add(record);
+                    this.panel.store.add(record);
                     this.bindRecord(record, true);
                 }
             }
