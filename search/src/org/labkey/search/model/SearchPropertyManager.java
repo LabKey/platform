@@ -96,13 +96,6 @@ public class SearchPropertyManager
         audit(user, String.format("File size limit set to %1$s MB", fileSizeLimitMB));
     }
 
-    // Not really a "property" but included in this class for audit consistency, etc.
-    public static void deleteIndex(SearchService ss, User user)
-    {
-        ss.deleteIndex();
-        audit(user, "Index Deleted");
-    }
-
     private static String getProperty(String key)
     {
         Map<String, String> m = PropertyManager.getProperties(CATEGORY);
@@ -116,7 +109,7 @@ public class SearchPropertyManager
         m.save();
     }
 
-    private static void audit(@Nullable User user, String comment)
+    public static void audit(@Nullable User user, String comment)
     {
         SearchController.audit(user, null, null == user ? "(startup property)" : "(admin action)", comment);
     }

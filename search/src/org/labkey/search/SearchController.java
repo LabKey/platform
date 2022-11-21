@@ -341,8 +341,9 @@ public class SearchController extends SpringActionController
             }
             else if (form.isDelete())
             {
-                SearchPropertyManager.deleteIndex(ss, getUser());
+                ss.deleteIndex();
                 ss.start();
+                SearchPropertyManager.audit(getUser(), "Index Deleted");
                 _msgid = 1;
             }
             else if (form.isPath())
