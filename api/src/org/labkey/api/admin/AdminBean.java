@@ -183,7 +183,7 @@ public class AdminBean
     private static HtmlString formatValue(String key, String value)
     {
         // Format GUID properties with monospace font
-        return key.endsWith("Guid") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
+        return StringUtils.endsWithIgnoreCase(key, "GUID") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
             .append(value).append(HtmlString.unsafe("</span>")).getHtmlString() : HtmlString.of(value);
     }
 }
