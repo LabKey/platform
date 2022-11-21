@@ -18,8 +18,8 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
@@ -88,19 +88,10 @@ public class ReturnUrlForm
         return _urlhash;
     }
 
-    // TODO: Remove this. There is only one override in List
-    @Deprecated
-    protected URLHelper getDefaultReturnURLHelper()
-    {
-        return null;
-    }
-
     @Nullable
     public URLHelper getReturnURLHelper()
     {
-        return firstOf(
-                _returnUrl != null ? _returnUrl.getURLHelper() : null,
-                getDefaultReturnURLHelper());
+        return _returnUrl != null ? _returnUrl.getURLHelper() : null;
     }
 
     @Nullable
