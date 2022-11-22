@@ -423,7 +423,7 @@ public interface SearchService
     void deleteContainer(String id);
 
     void deleteIndex();          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
-    void clearLastIndexed();     // just reset lastIndexed values. must be callable before (and after) start() has been called.
+    void clearLastIndexed();     // reset lastIndexed values and initiate aggressive crawl. must be callable before (and after) start() has been called.
     void maintenance();
 
     //

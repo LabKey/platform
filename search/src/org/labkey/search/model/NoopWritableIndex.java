@@ -108,6 +108,12 @@ public class NoopWritableIndex implements WritableIndexManager
         return false;
     }
 
+    @Override
+    public boolean isClosed()
+    {
+        return false;
+    }
+
     private void log(String action)
     {
         if (0 == (_errors.get() % 10000))
