@@ -157,7 +157,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", FileUtil.makeFileNameWithTimestamp(_baseName));
     }
 
     /**
