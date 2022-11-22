@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,6 +81,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
@@ -134,6 +134,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.join;
 
 /**
  * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
@@ -2190,14 +2191,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
         public void moduleStartupComplete(ServletContext servletContext)
         {
             // Log error for any unknown startup properties (admin error)
-            ModuleLoader.getInstance().getStartupPropertyEntries(null)
+            List<String> unknown = ModuleLoader.getInstance().getStartupPropertyEntries(null)
                 .stream()
                 .filter(entry -> null == entry.getStartupProperty())
-                .forEach(entry -> {
-                    // Suppress ERROR logging on this special snowflake. TODO: Remove this hack once Server Provisioner, Accounterer, etc. are updated. See Issue 45867 and Issue 45842
-                    Level logLevel = "SiteSettings".equals(entry.getScope()) && "experimentalFeature.disableGuestAccount".equals(entry.getName()) ? Level.WARN : Level.ERROR;
-                    _log.log(logLevel, "Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue());
-                });
+                .map(entry -> entry.getScope() + "." + entry.getName() + ": " + entry.getValue()).toList();
+
+            if (!unknown.isEmpty())
+                throw new NotFoundException("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();

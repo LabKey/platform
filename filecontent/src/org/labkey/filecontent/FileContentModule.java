@@ -171,9 +171,6 @@ public class FileContentModule extends DefaultModule
         {
             fsr.addFactories(new FileWriter.Factory(), new FileImporter.Factory());
         }
-
-        // populate File Site Root Settings with values read from startup properties as appropriate for not bootstrap
-        FileContentServiceImpl.populateSiteRootFileWithStartupProps();
     }
 
     @Override
