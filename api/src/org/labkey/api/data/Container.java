@@ -1638,7 +1638,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return false;
     }
 
-    public boolean isProductProjectsEnabled()
+    /**
+     * Check a feature is enabled at either its parent project, or itself
+     * @param feature
+     * @param atProjectOnly Only check Home Project for feature
+     * @return
+     */
+    public boolean isFeatureEnabled(ProductFeature feature, boolean atProjectOnly)
     {
         if (isWorkbook())
             return false;
@@ -1647,7 +1653,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (project == null)
             return false;
 
-        return project.getFolderType().isProductFeatureEnabled(ProductFeature.Projects);
+        boolean enabledAtProject = project.getFolderType().isProductFeatureEnabled(feature);
+        if (atProjectOnly || enabledAtProject)
+            return enabledAtProject;
+
+
+        return getFolderType().isProductFeatureEnabled(feature);
+    }
+
+    public boolean isFeatureEnabled(ProductFeature feature)
+    {
+        if (ProductFeature.Projects == feature)
+            return isProductProjectsEnabled();
+
+        return isFeatureEnabled(feature, false);
+    }
+
+    // Projects feature should be checked at Home Project only
+    public boolean isProductProjectsEnabled()
+    {
+        return isFeatureEnabled(ProductFeature.Projects, true);
     }
 
     /**
