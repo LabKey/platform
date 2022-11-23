@@ -332,7 +332,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         defaultVisible.add(FieldKey.fromParts(Column.Name));
 
         var folderCol = addContainerColumn(Column.Folder, null);
-        if (getContainer().getProductProjectsCount() > 0)
+        if (getContainer().hasProductProjects())
         {
             folderCol.setLabel("Project");
             defaultVisible.add(FieldKey.fromParts(Column.Folder));

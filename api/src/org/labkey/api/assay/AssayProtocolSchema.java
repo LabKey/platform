@@ -447,7 +447,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
             visibleColumns.add(FieldKey.fromParts(AssayQCFlagColumn.NAME));
         }
 
-        boolean hasProductProjects = getContainer().getProductProjectsCount() > 0;
+        boolean hasProductProjects = getContainer().hasProductProjects();
         if (hasProductProjects)
         {
             var folderColumn = runTable.getMutableColumn(ExpRunTable.Column.Folder);

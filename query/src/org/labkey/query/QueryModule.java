@@ -398,7 +398,7 @@ public class QueryModule extends DefaultModule
         Container container = context.getContainer();
         boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
         json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
-        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.getProductProjectsCount() > 0);
+        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
 
         return json;
     }

@@ -1653,17 +1653,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
     /**
      * Returns the subfolder count of the project container, if product projects feature is enabled in project
      */
-    public int getProductProjectsCount()
+    public boolean hasProductProjects()
     {
         if (!isProductProjectsEnabled())
-            return 0;
+            return false;
 
         Container project = getProject();
 
         if (project == null)
-            return 0;
+            return false;
 
-        return project.getChildren().size();
+        // need to exclude the notebook folders in particular here
+        return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
     }
 
     public boolean isDataspace()
