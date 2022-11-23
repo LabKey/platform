@@ -212,6 +212,13 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return LogManager.get().getAuditEvent(user, eventType, rowId);
     }
 
+    @Nullable
+    @Override
+    public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId, @Nullable ContainerFilter cf)
+    {
+        return LogManager.get().getAuditEvent(user, eventType, rowId, cf);
+    }
+
     @Override
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {

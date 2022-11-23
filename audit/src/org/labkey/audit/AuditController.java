@@ -15,6 +15,8 @@
  */
 package org.labkey.audit;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.QueryViewAction;
@@ -246,11 +248,22 @@ public class AuditController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class GetDetailedAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
     {
+        private @NotNull ContainerFilter getContainerFilter(AuditChangesForm form) throws IllegalArgumentException
+        {
+            Container container = getContainer();
+            User user = getUser();
+
+            if (!StringUtils.isEmpty(form.getContainerFilter()))
+                return ContainerFilter.Type.valueOf(form.getContainerFilter()).create(container, user);
+
+            return ContainerFilter.Type.Current.create(container, user);
+        }
+
         @Override
         public Object execute(AuditChangesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            DetailedAuditTypeEvent event = AuditLogService.get().getAuditEvent(getUser(), form.getAuditEventType(), form.getAuditRowId());
+            DetailedAuditTypeEvent event = AuditLogService.get().getAuditEvent(getUser(), form.getAuditEventType(), form.getAuditRowId(), getContainerFilter(form));
 
             if (event != null)
             {
@@ -328,6 +341,7 @@ public class AuditController extends SpringActionController
     {
         private int auditRowId;
         private String auditEventType;
+        private String _containerFilter;
 
         public int getAuditRowId()
         {
@@ -348,6 +362,17 @@ public class AuditController extends SpringActionController
         {
             this.auditEventType = auditEventType;
         }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
     }
 
     @RequiresPermission(ReadPermission.class)
