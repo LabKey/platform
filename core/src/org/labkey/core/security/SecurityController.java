@@ -1737,7 +1737,7 @@ public class SecurityController extends SpringActionController
         {
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .append(HtmlString.unsafe("<p>"))
-                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created"))
+                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
                 .append(HtmlString.unsafe("</p><p>"))
                 .append(getErrorMessage(errors))
                 .append(HtmlString.unsafe("</p>"))
