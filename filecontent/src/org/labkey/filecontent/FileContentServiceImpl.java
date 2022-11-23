@@ -1774,7 +1774,7 @@ public class FileContentServiceImpl implements FileContentService
          * Test that the Site Settings can be configured from startup properties
          */
         @Test
-        public void testStartupPropertiesForSiteRootSettings()
+        public void testStartupPropertiesForSiteRootSettings() throws IOException
         {
             // save the original Site Root File settings so that we can restore them when this test is done
             File originalSiteRootFile = FileContentService.get().getSiteDefaultRoot();
@@ -1782,6 +1782,7 @@ public class FileContentServiceImpl implements FileContentService
             // create the new site root file to test with as a child of the current site root file so that we know it is in a dir that exist
             String originalSiteRootFilePath = originalSiteRootFile.getAbsolutePath();
             File testSiteRootFile = new File(originalSiteRootFilePath, "testSiteRootFile");
+            testSiteRootFile.createNewFile();
 
             ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler(){
                 @Override
