@@ -252,6 +252,7 @@ public class AdminConsole
         return isProductFeatureEnabled(feature, null);
     }
 
+    // TODO This is currently (22.12) not in use, but could become useful. We will leave it for the time being.
     public static boolean isProductFeatureEnabled(ProductFeature feature, @Nullable String groupKey)
     {
         return getProductFeatureSet(groupKey).contains(feature.toString());
