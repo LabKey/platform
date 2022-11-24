@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.nab.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
@@ -29,10 +30,13 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,9 +57,12 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         setTitle(DilutionManager.NAB_SPECIMEN_TABLE_NAME);
         setName("Data");
 
+        Domain runDomain = schema.getProvider().getRunDomain(schema.getProtocol());
+        DomainProperty curveFitProperty = runDomain.getPropertyByName(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
+
         // TODO - add columns for all of the different cutoff values
-        ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
-        ExprColumn selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
+        ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false, curveFitProperty), JdbcType.DECIMAL);
+        ExprColumn selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true, curveFitProperty), JdbcType.DECIMAL);
         addColumn(selectedAUC);
         addColumn(selectedPositiveAUC);
 
@@ -82,7 +89,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         addCondition(sql, CONTAINER_FIELD_KEY);
     }
 
-    private SQLFragment getSelectedCurveFitAUC(boolean positive)
+    private SQLFragment getSelectedCurveFitAUC(boolean positive, @Nullable DomainProperty curveFitProp)
     {
         String prefix = positive ? "Positive" : "";
         SQLFragment sql = new SQLFragment("CASE (SELECT op.StringValue FROM ");
@@ -90,10 +97,9 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         sql.append(", ");
         sql.append(OntologyManager.getTinfoObjectProperty(), "op");
         sql.append(", ");
-        sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        sql.append(", ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
-        sql.append(" WHERE op.PropertyId = pd.PropertyId AND pd.PropertyURI LIKE '%#" + DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME + "'");
+        sql.append(" WHERE op.PropertyId = ?");
+        sql.add(curveFitProp == null ? null : curveFitProp.getPropertyId());
         sql.append(" AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".RunId)");
         sql.append("\nWHEN 'Polynomial' THEN ");
         sql.append(ExprColumn.STR_TABLE_ALIAS + ".");
