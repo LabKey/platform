@@ -25,6 +25,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.UserSchema;
@@ -88,14 +89,13 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
         objectids.append(")");
 
         SQLFragment[] fragments = getSQLFragments(arguments);
-        String expType = null;
+        ExpLineageOptions.LineageExpType expType = null;
         String cpasType = null;
         if (fragments.length > 0 && isSimpleString(fragments[0]))
         {
             String type = toSimpleString(fragments[0]);
-            if (type.equals("Data") || type.equals("Material") || type.equals("ExperimentRun"))
-                expType = type;
-            else
+            expType = ExpLineageOptions.LineageExpType.fromValue(type);
+            if (expType == null)
                 cpasType = type;
         }
 

@@ -17,7 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;

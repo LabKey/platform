@@ -296,4 +296,10 @@ public class MultiValuedForeignKey implements ForeignKey
     {
         return true;
     }
+
+    @Override
+    public boolean isShowAsPublicDependency()
+    {
+        return true;
+    }
 }

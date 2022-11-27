@@ -207,10 +207,9 @@ public class ListManager implements SearchService.DocumentProvider
      */
     String getListTableName(TableInfo ti)
     {
-        if (ti instanceof ListTable)
-            return ((ListTable)ti).getRealTable().getSelectName();
-        else
-            return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
+        if (ti instanceof ListTable lti)
+            return lti.getRealTable().getSelectName();
+        return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
     @Nullable
@@ -798,7 +797,7 @@ public class ListManager implements SearchService.DocumentProvider
         ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
         String documentId = getDocumentId(list);
 
-        // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
+        // First check if metadata needs to be indexed: if the setting is enabled and the definition has changed
         boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
 
         // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
@@ -856,7 +855,7 @@ public class ListManager implements SearchService.DocumentProvider
                     public void exec(Results results) throws StopIteratingException
                     {
                         body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        // Short circuit for very large list, #25366
+                        // Issue 25366: Short circuit for very large list
                         if (body.length() > fileSizeLimit)
                         {
                             body.setLength(fileSizeLimit); // indexer also checks size... make sure we're under the limit
@@ -959,7 +958,7 @@ public class ListManager implements SearchService.DocumentProvider
                 LOG.warn(getTemplateErrorMessage(list, "\"each item as a separate document\" title template", error));
         }
 
-        // If you're devious enough to put ${ in your list name then we'll just strip it out, #21794
+        // Issue 21794: If you're devious enough to put ${ in your list name then we'll just strip it out
         String name = list.getName().replaceAll("\\$\\{", "_{");
         template = createValidStringExpression("List " + name + " - ${" + PageFlowUtil.encode(listTable.getTitleColumn()) + "}", error);
 
@@ -994,7 +993,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 sb.append(sep);
                 sb.append("${");
-                sb.append(column.getFieldKey().encode());  // Must encode, #21794
+                sb.append(column.getFieldKey().encode());  // Issue 21794: Must encode
                 sb.append("}");
                 sep = " ";
             }
@@ -1009,7 +1008,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    // Perform some simple validation of custom indexing template, #21726.
+    // Issue 21726: Perform some simple validation of custom indexing template
     private @Nullable FieldKeyStringExpression createValidStringExpression(String template, StringBuilder error)
     {
         // Don't URL encode and use lenient substitution (replace nulls with blank)
@@ -1227,7 +1226,13 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    boolean importListSchema(ListDefinition unsavedList, String typeColumn, ImportTypesHelper importHelper, User user, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
+    boolean importListSchema(
+        ListDefinition unsavedList,
+        ImportTypesHelper importHelper,
+        User user,
+        Collection<ValidatorImporter> validatorImporters,
+        List<String> errors
+    ) throws Exception
     {
         if (!errors.isEmpty())
             return false;

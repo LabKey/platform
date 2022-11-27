@@ -73,7 +73,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     {
         if (null == entityId)
             entityId = GUID.makeGUID();
-        this.container = container;
+        this.container = Container.supplierOf(container);
         if (user != null)
             createdBy = user.getUserId();
         created = System.currentTimeMillis();

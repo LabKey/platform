@@ -15,6 +15,8 @@
  */
 package org.labkey.api.jsp;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.SafeToRender;
 
@@ -44,7 +46,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     public void print(Object obj) throws IOException
     {
         // These are the only objects we consider safe-to-render
-        if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean)
+        if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean || obj instanceof JSONObject || obj instanceof JSONArray)
         {
             super.print(obj);
         }

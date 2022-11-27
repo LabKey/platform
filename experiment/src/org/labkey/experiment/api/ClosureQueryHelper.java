@@ -224,13 +224,15 @@ public class ClosureQueryHelper
                 if (ret != null)
                 {
                     ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
-                    ret.setConceptURI(CONCEPT_URI);
                 }
                 return ret;
             }
         };
         ret.setFk(qfk);
-        ret.setConceptURI(CONCEPT_URI);
+
+        // Don't override an existing conceptUri
+        if(ret.getConceptURI() == null)
+            ret.setConceptURI(CONCEPT_URI);
         return ret;
     }
 
@@ -431,6 +433,7 @@ public class ClosureQueryHelper
         wrappedRowId.setReadOnly(true);
         wrappedRowId.setCalculated(true);
         wrappedRowId.setRequired(false);
+        wrappedRowId.setUserEditable(false);
         wrappedRowId.setFk(new AbstractForeignKey(parent.getUserSchema(),parent.getContainerFilter())
         {
             @Override
@@ -465,6 +468,8 @@ public class ClosureQueryHelper
         });
         wrappedRowId.setConceptURI(CONCEPT_URI);
         wrappedRowId.setShownInDetailsView(false);
+        wrappedRowId.setShownInInsertView(false);
+        wrappedRowId.setShownInUpdateView(false);
         return wrappedRowId;
     }
 

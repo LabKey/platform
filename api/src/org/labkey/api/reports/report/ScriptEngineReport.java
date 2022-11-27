@@ -39,6 +39,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;
@@ -105,6 +107,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static final String FILE_PREFIX = "rpt";
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
+
+    public static final String METRIC_FEATURE_AREA = "ReportInvocation";
 
     private static final Logger LOG = LogManager.getLogger(ScriptEngineReport.class);
 
@@ -569,7 +573,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
-         if (!StringUtils.isEmpty(script) && isRStudio)
+        if (!StringUtils.isEmpty(script) && isRStudio)
             script = ParamReplacementSvc.get().transformInlineReplacements(script); // transform old inline syntax to comment syntax
         if (includeProlog && (!StringUtils.isEmpty(script) || isRStudio))
             script = concatScriptProlog(engine, context, script == null ? "" : script, inputFile, inputParameters, isRStudio);

@@ -16,8 +16,8 @@
 package org.labkey.api.survey.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;

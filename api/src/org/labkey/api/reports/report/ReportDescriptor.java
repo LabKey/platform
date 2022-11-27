@@ -34,6 +34,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;

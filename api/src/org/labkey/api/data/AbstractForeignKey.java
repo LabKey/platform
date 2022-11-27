@@ -47,6 +47,8 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _tableName;
     protected String _columnName;
     protected String _displayColumnName;
+    private boolean _showAsPublicDependency = false;
+
 
     // foreignKey lazily creates the target tableinfo, in order to do that it needs to know the container filter to use
     // Some tables may chose to ignore/modify this container filter, but this indicates what the parent table/query/schema
@@ -387,4 +389,14 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return !candidates.isEmpty();
     }
 
+    @Override
+    public boolean isShowAsPublicDependency()
+    {
+        return _showAsPublicDependency;
+    }
+
+    public void setShowAsPublicDependency(boolean b)
+    {
+        _showAsPublicDependency = b;
+    }
 }

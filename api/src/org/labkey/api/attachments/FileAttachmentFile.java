@@ -90,7 +90,7 @@ public class FileAttachmentFile implements AttachmentFile
             _in = null;
         }
         else
-            LOG.warn("No input stream is active for this FileAttachmentFile");
+            LOG.debug("No input stream is active for this FileAttachmentFile");
     }
 
     @Override

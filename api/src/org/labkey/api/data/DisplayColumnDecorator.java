@@ -23,6 +23,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -116,6 +117,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     public String getURL()
     {
         return _column.getURL();
+    }
+
+    @Override
+    public void setURL(ActionURL url)
+    {
+        _column.setURL(url);
     }
 
     @Override

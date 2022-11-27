@@ -16,7 +16,7 @@
 
 package org.labkey.api.exp.property;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.SchemaKey;

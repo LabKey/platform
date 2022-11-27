@@ -19,7 +19,7 @@ package org.labkey.api.reports.report.r.view;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;

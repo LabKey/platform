@@ -58,5 +58,7 @@ public interface WritableIndexManager
      */
     boolean isReal();
 
+    boolean isClosed();
+
     void refreshNow() throws IOException;
 }

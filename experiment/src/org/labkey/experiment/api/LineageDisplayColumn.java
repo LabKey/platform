@@ -2,7 +2,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;

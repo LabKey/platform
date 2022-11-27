@@ -1,16 +1,19 @@
-import React, { PureComponent } from 'react';
-import { Panel, FormControl } from 'react-bootstrap';
+import React, { ChangeEvent, FC, memo, useCallback } from 'react';
 import { HelpLink, LabelHelpTip } from '@labkey/components';
 
-import FACheckBox from './FACheckBox';
 import { GlobalSettingsOptions } from './models';
 
-const ROW_TEXTS = [
+interface GlobalSettingFieldData {
+    id: string;
+    text: string;
+    tip: string;
+}
+
+const FIELD_DATA: GlobalSettingFieldData[] = [
     {
         id: 'SelfRegistration',
         text: 'Allow self sign up',
-        tip:
-            'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
+        tip: 'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
     },
     {
         id: 'SelfServiceEmailChanges',
@@ -24,91 +27,97 @@ const ROW_TEXTS = [
     },
 ];
 
-interface DefaultDomainProps {
-    defaultDomain: string;
-    globalAuthOnChange: (id: string, value: any) => void;
+interface GlobalSettingProps extends GlobalSettingFieldData {
+    canEdit: boolean;
+    onChange: (id: string, value: boolean) => void;
+    value: boolean;
 }
 
-class DefaultDomainField extends PureComponent<DefaultDomainProps> {
-    render() {
-        const { globalAuthOnChange, defaultDomain } = this.props;
+const GlobalSetting: FC<GlobalSettingProps> = memo(({ canEdit, id, onChange, text, tip, value }) => {
+    const onChange_ = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            onChange(id, event.target.checked);
+        },
+        [id, onChange]
+    );
 
-        return (
-            <div className="global-settings__default-domain">
-                System Default Domain
+    return (
+        <div className="global-settings__text-row">
+            <label>
+                <input checked={value} disabled={!canEdit} onChange={onChange_} type="checkbox" />
+                {text}
                 <LabelHelpTip title="Tip">
-                    <div>
-                        <div> Default domain for user sign in.</div>
-                        <HelpLink topic="authenticationModule#dom">More info</HelpLink>
-                    </div>
+                    <div> {tip} </div>
                 </LabelHelpTip>
-                <span className="global-settings__default-domain-field">
-                    <FormControl
-                        name="DefaultDomain"
-                        type="input"
-                        value={defaultDomain}
-                        onChange={e => {
-                            globalAuthOnChange('DefaultDomain', e.target.value);
-                        }}
-                        className="form-control global-settings__default-domain-form"
-                        placeholder="System default domain"
-                    />
-                </span>
-            </div>
-        );
-    }
-}
+            </label>
+        </div>
+    );
+});
 
 interface Props {
-    globalSettings: GlobalSettingsOptions;
-    canEdit: boolean;
-    globalAuthOnChange: (id: string, value: any) => void;
     authCount: number;
+    canEdit: boolean;
+    globalSettings: GlobalSettingsOptions;
+    onChange: (id: string, value: boolean | string) => void;
 }
 
-export default class GlobalSettings extends PureComponent<Props> {
-    render() {
-        let rowTexts = ROW_TEXTS;
-        const { canEdit, authCount, globalAuthOnChange, globalSettings } = this.props;
+export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, globalSettings }) => {
+    let fieldData = FIELD_DATA;
 
-        // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
-        if (authCount == 1) {
-            rowTexts = ROW_TEXTS.slice(0, -1);
-        }
-
-        const rowTextComponents = rowTexts.map(text => (
-            <div className="global-settings__text-row" key={text.id}>
-                <FACheckBox
-                    key={text.id}
-                    checked={globalSettings[text.id]}
-                    canEdit={canEdit}
-                    onClick={() => globalAuthOnChange(text.id, !globalSettings[text.id])}
-                />
-
-                <span className="global-settings__text">
-                    {text.text}
-                    <LabelHelpTip title="Tip">
-                        <div> {text.tip} </div>
-                    </LabelHelpTip>
-                </span>
-            </div>
-        ));
-
-        return (
-            <Panel>
-                <Panel.Heading>
-                    <span className="bold-text">Global Settings</span>
-                </Panel.Heading>
-
-                <Panel.Body>
-                    {rowTextComponents}
-
-                    <DefaultDomainField
-                        defaultDomain={globalSettings?.DefaultDomain}
-                        globalAuthOnChange={globalAuthOnChange}
-                    />
-                </Panel.Body>
-            </Panel>
-        );
+    // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
+    if (authCount === 1) {
+        fieldData = FIELD_DATA.slice(0, -1);
     }
-}
+
+    const onDefaultDomainChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            onChange('DefaultDomain', event.target.value);
+        },
+        [onChange]
+    );
+
+    return (
+        <div className="panel panel-default">
+            <div className="panel-heading">
+                <span className="bold-text">Global Settings</span>
+            </div>
+
+            <div className="panel-body">
+                {fieldData.map(data => (
+                    <GlobalSetting
+                        key={data.id}
+                        canEdit={canEdit}
+                        id={data.id}
+                        onChange={onChange}
+                        value={globalSettings[data.id]}
+                        text={data.text}
+                        tip={data.tip}
+                    />
+                ))}
+
+                <div className="global-settings__default-domain">
+                    <span>System Default Domain</span>
+
+                    <LabelHelpTip title="Tip">
+                        <div>
+                            <div> Default domain for user sign in.</div>
+                            <HelpLink topic="authenticationModule#dom">More info</HelpLink>
+                        </div>
+                    </LabelHelpTip>
+
+                    <span className="global-settings__default-domain-field">
+                        <input
+                            disabled={!canEdit}
+                            name="DefaultDomain"
+                            type="text"
+                            value={globalSettings?.DefaultDomain ?? ''}
+                            onChange={onDefaultDomainChange}
+                            className="form-control global-settings__default-domain-form"
+                            placeholder="System default domain"
+                        />
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+});

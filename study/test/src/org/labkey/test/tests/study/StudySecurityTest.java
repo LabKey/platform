@@ -26,12 +26,13 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.study.StudySecurityPage;
-import org.labkey.test.pages.study.StudySecurityPage.GroupSecuritySetting;
 import org.labkey.test.pages.study.StudySecurityPage.DatasetRoles;
+import org.labkey.test.pages.study.StudySecurityPage.GroupSecuritySetting;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.WebElement;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -739,7 +740,7 @@ public class StudySecurityTest extends BaseWebDriverTest
     private StudySecurityPage goToStudySecurityPage()
     {
         StudySecurityPage studySecurityPage;
-        if(!getCurrentRelativeURL().toLowerCase().contains("study-security-begin.view?"))
+        if(!getCurrentRelativeURL().toLowerCase().contains("study-security-begin.view"))
         {
             goToProjectFolder(getProjectName(), FOLDER_NAME);
             studySecurityPage = _studyHelper.enterStudySecurity();

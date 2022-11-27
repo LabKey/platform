@@ -50,6 +50,7 @@ import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
@@ -176,14 +177,14 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(),
                             Collections.singletonList(user.getEmail()), subject);
 
-                    // TODO: This approach means normal context isn't set on the JSPs, e.g., getContainer() returns null.
-                    // Perhaps we should use a mock ViewContext, like we do with email notifications
-                    msg.addContent(MimeType.HTML, request,
-                            new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
-                    msg.addContent(MimeType.PLAIN, request,
-                            new JspView<>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
-
-                    messages.add(msg);
+                    try (ViewContext.StackResetter x =  ViewContext.pushMockViewContext(user, c, null))
+                    {
+                        msg.addContent(MimeType.HTML, request,
+                                new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
+                        msg.addContent(MimeType.PLAIN, request,
+                                new JspView<>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
+                        messages.add(msg);
+                    }
                 }
                 // send messages in bulk
                 svc.sendMessages(messages, null, c);

@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.announcements.query.AnnouncementSchema;

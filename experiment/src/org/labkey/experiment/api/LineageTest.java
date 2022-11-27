@@ -1,8 +1,8 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;

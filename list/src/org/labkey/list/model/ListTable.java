@@ -54,8 +54,10 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -63,13 +65,17 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 import org.labkey.list.controllers.ListController;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -257,9 +263,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                         if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
-                            col.setURL(StringExpressionFactory.createURL(
-                                ListController.getDownloadURL(listDef, "${EntityId}", "${" + col.getName() + "}")
-                            ));
+                            configureAttachmentURL(col);
                         }
                     }
 
@@ -320,6 +324,36 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         }
 
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
+    }
+
+    @Override
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        super.overlayMetadata(metadata, schema, errors);
+
+        // Reset URLs in case the XML metadata changed the view/download format option for the file
+        for (MutableColumnInfo col : getMutableColumns())
+        {
+            if (col.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                configureAttachmentURL(col);
+            }
+        }
+    }
+
+    private void configureAttachmentURL(MutableColumnInfo col)
+    {
+        ActionURL url = ListController.getDownloadURL(_list, "${EntityId}", "${" + col.getName() + "}");
+        if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+        {
+            url.addParameter("inline", "false");
+            col.setURLTargetWindow(null);
+        }
+        else
+        {
+            col.setURLTargetWindow("_blank");
+        }
+        col.setURL(StringExpressionFactory.createURL(url));
     }
 
     @Override

@@ -17,7 +17,7 @@ package org.labkey.api.action;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
 import java.io.IOException;
@@ -48,6 +48,11 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
     public ApiSimpleResponse(JSONObject json)
     {
         _json = json;
+    }
+
+    public ApiSimpleResponse(org.json.JSONObject json)
+    {
+        this(json.toMap());
     }
 
     public ApiSimpleResponse(Map<String, ?> values)

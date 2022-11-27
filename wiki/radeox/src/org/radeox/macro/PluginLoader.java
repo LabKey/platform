@@ -41,13 +41,13 @@ import java.util.Iterator;
 public abstract class PluginLoader {
   private static Log log = LogFactory.getLog(PluginLoader.class);
 
-  protected Repository repository;
+  protected MacroRepository repository;
 
-  public Repository loadPlugins(Repository repository) {
+  public PluginRepository loadPlugins(PluginRepository repository) {
     return loadPlugins(repository, getLoadClass());
   }
 
-  public void setRepository(Repository repository) {
+  public void setRepository(MacroRepository repository) {
     this.repository = repository;
   }
 
@@ -55,7 +55,7 @@ public abstract class PluginLoader {
     return Service.providers(klass);
   }
 
-  public Repository loadPlugins(Repository repository, Class klass) {
+  public PluginRepository loadPlugins(PluginRepository repository, Class klass) {
     if (null != repository) {
       /* load all macros found in the services plugin control file */
       Iterator iterator = getPlugins(klass);
@@ -77,7 +77,7 @@ public abstract class PluginLoader {
    *
    * @param plugin Plugin to add
    */
-  public abstract void add(Repository repository, Object plugin);
+  public abstract void add(PluginRepository repository, Object plugin);
 
   public abstract Class getLoadClass();
 }

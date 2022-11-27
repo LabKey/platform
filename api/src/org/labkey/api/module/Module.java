@@ -368,12 +368,6 @@ public interface Module
     @NotNull
     List<File> getStaticFileDirectories();
 
-    /**
-     * Used in dev mode to verify that the module credits pages is complete.
-     * @return Jar filenames used by this module
-     */
-    @NotNull Collection<String> getJarFilenames();
-
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.
     boolean isAutoUninstall();
@@ -393,7 +387,7 @@ public interface Module
      * is true. However, individual modules can override this to return any content they choose. The method is called at page rendering time
      * once startup is complete, so all module schemas should be upgraded and services should be registered.
      * Note: this is written as plain text.
-     * @param context Current ViewContext for the page
+     * @param context ContainerUser of the request
      */
     JSONObject getPageContextJson(ContainerUser context);
 

@@ -27,14 +27,15 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -46,6 +47,7 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1494,19 +1496,20 @@ public class QueryController extends SpringActionController
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
                     (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
+                Set<String> tableNames = Sets.newCaseInsensitiveHashSet(qs.getTableNames());
 
-                ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
-                url.addParameter("schemaName", _schemaName);
-                String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink)
+                ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer())
+                    .addParameter("schemaName", _schemaName)
+                    .addParameter("query.queryName", null);
+                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", "TABLE_NAME", url)
                 {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {
                         // Only link to tables and views (not indexes or sequences). And only if they're defined in the query schema.
-                        String name = rs.getString(3);
-                        String type = rs.getString(4);
-                        return ("TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type)) && qs.getTableNames().contains(name);
+                        String name = rs.getString("TABLE_NAME");
+                        String type = rs.getString("TABLE_TYPE");
+                        return ("TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type)) && tableNames.contains(name);
                     }
                 };
             }
@@ -1691,7 +1694,7 @@ public class QueryController extends SpringActionController
 
         public String getFilename()
         {
-            return this.filename;
+            return filename;
         }
 
         public void setQueryForms(List<ExportQueryForm> queryForms)
@@ -1701,7 +1704,7 @@ public class QueryController extends SpringActionController
 
         public List<ExportQueryForm> getQueryForms()
         {
-            return this.queryForms;
+            return queryForms;
         }
 
         /**
@@ -1750,7 +1753,7 @@ public class QueryController extends SpringActionController
             for (JSONObject queryModel : models.toJSONObjectArray())
             {
                 ExportQueryForm qf = new ExportQueryForm();
-                qf.setViewContext(this.getViewContext());
+                qf.setViewContext(getViewContext());
 
                 qf.bindParameters(getPropertyValues(queryModel));
                 forms.add(qf);
@@ -1774,29 +1777,37 @@ public class QueryController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
             response.setHeader("Content-Disposition", "attachment");
+            ViewContext viewContext = getViewContext();
 
-            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
-            {
-                writer.setFilenamePrefix(form.getFilename());
-                ViewContext viewContext = getViewContext();
-                for(ExportQueryForm qf : form.getQueryForms())
+            ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
+                @Override
+                protected void renderSheets(Workbook workbook)
                 {
-                    qf.setViewContext(viewContext);
-                    qf.getSchema();
+                    for (ExportQueryForm qf : form.getQueryForms())
+                    {
+                        qf.setViewContext(viewContext);
+                        qf.getSchema();
 
-                    QueryView qv = qf.getQueryView();
-                    qv.exportToExcelSheet(writer,
-                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
-                                .setExcludeColumns(qf.getExcludeColumns())
-                                .setRenamedColumns(qf.getRenameColumnMap()),
-                            qf.getSheetName()
-                    );
+                        QueryView qv = qf.getQueryView();
+                        QueryView.ExcelExportConfig config = new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                            .setExcludeColumns(qf.getExcludeColumns())
+                            .setRenamedColumns(qf.getRenameColumnMap());
+                        String sheetName = qf.getSheetName();
+                        qv.configureExcelWriter(this, config);
+                        String name = StringUtils.isNotBlank(sheetName)? sheetName : qv.getQueryDef().getName();
+                        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(qv.getDataRegionName()) ? qv.getDataRegionName() : "Data";
+                        setSheetName(name);
+                        setAutoSize(true);
+                        renderNewSheet(workbook);
+                        qv.logAuditEvent("Exported to Excel", getDataRowCount());
+                    }
+
+                    workbook.setActiveSheet(0);
                 }
-
-                writer.getWorkbook().setActiveSheet(0);
-                writer.writeWorkbook(response);
-                return null; //Returning anything here will cause error as excel writer will close the response stream
-            }
+            };
+            writer.setFilenamePrefix(form.getFilename());
+            writer.renderWorkbook(response);
+            return null; //Returning anything here will cause error as excel writer will close the response stream
         }
     }
 
@@ -1833,7 +1844,7 @@ public class QueryController extends SpringActionController
 
         public FieldKey[] getIncludeColumn()
         {
-            return this.includeColumn;
+            return includeColumn;
         }
 
         public void setIncludeColumn(FieldKey[] includeColumn)
@@ -1848,7 +1859,7 @@ public class QueryController extends SpringActionController
 
         public void setFilenamePrefix(String prefix)
         {
-            this.filenamePrefix = prefix;
+            filenamePrefix = prefix;
         }
 
         public String getFileType()
@@ -1944,7 +1955,7 @@ public class QueryController extends SpringActionController
 
         public String getSheetName()
         {
-            return this.sheetName;
+            return sheetName;
         }
 
         public ColumnHeaderType getHeaderType()
@@ -2442,7 +2453,6 @@ public class QueryController extends SpringActionController
         {
             this.newName = newName;
         }
-
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3638,7 +3648,7 @@ public class QueryController extends SpringActionController
                 filter.addAllClauses(new SimpleFilter(url, dataRegionName));
             }
 
-            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
+            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName, Collections.emptyList(), getUser(), getContainer());
         }
 
         return filter;
@@ -5486,7 +5496,6 @@ public class QueryController extends SpringActionController
         {
             this.replace = replace;
         }
-
     }
 
     // Moves a session view into the database.
@@ -5985,7 +5994,6 @@ public class QueryController extends SpringActionController
         {
             this.validateIds = validateIds;
         }
-
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -7376,7 +7384,7 @@ public class QueryController extends SpringActionController
         @Override
         protected ObjectMapper createResponseObjectMapper()
         {
-            return this.createRequestObjectMapper();
+            return createRequestObjectMapper();
         }
 
         @Override
@@ -7410,7 +7418,7 @@ public class QueryController extends SpringActionController
         @Override
         protected ObjectMapper createResponseObjectMapper()
         {
-            return this.createRequestObjectMapper();
+            return createRequestObjectMapper();
         }
 
         @Override

@@ -25,9 +25,9 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -48,6 +48,8 @@ import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -75,6 +77,7 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -128,6 +131,7 @@ import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -180,6 +184,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
@@ -611,7 +616,7 @@ public class ExperimentController extends SpringActionController
             QueryView queryView = new SampleTypeContentsView(_sampleType, schema, settings, errors);
 
             DetailsView detailsView = new DetailsView(getSampleTypeRegion(getViewContext()), _sampleType.getRowId());
-            detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
+            detailsView.getDataRegion().getDisplayColumn("Name").setURL((ActionURL)null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("LabelColor").setVisible(false);
@@ -1115,10 +1120,42 @@ public class ExperimentController extends SpringActionController
         {
             ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
             UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
-            if (dataClassSchema == null)
-                throw new NotFoundException("exp.dataclass schema not found");
+            QuerySettings settings = dataClassSchema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName());
+            return new QueryView(dataClassSchema, settings, errors){
 
-            return dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
+                @Override
+                public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
+                {
+                    LinkedHashSet<ClientDependency> resources = super.getClientDependencies();
+                    resources.add(ClientDependency.fromPath("Ext4"));
+                    resources.add(ClientDependency.fromPath("dataregion/confirmDelete.js"));
+                    return resources;
+                }
+
+                @Override
+                public ActionButton createDeleteButton()
+                {
+                    ActionButton button = super.createDeleteButton();
+                    if (button != null)
+                    {
+                        String dependencyText = ExperimentService.get()
+                                .getObjectReferencers()
+                                .stream()
+                                .map(referencer -> referencer.getObjectReferenceDescription(ExpData.class))
+                                .collect(Collectors.joining(" or "));
+
+                        button.setScript("LABKEY.dataregion.confirmDelete(" +
+                                PageFlowUtil.jsString(getDataRegionName()) + ", " +
+                                PageFlowUtil.jsString(ExpSchema.SCHEMA_EXP_DATA.toString())  + ", " +
+                                PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
+                                "'experiment', 'getDataOperationConfirmationData.api', " +
+                                PageFlowUtil.jsString(getSelectionKey()) + ", " +
+                                "'data object', 'data objects', '" + dependencyText + "', {dataOperation: 'Delete'})");
+                        button.setRequiresSelection(true);
+                    }
+                    return button;
+                }
+            };
         }
 
         @Override
@@ -1467,9 +1504,10 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class AttachmentForm extends LsidForm
+    public static class AttachmentForm extends LsidForm implements BaseDownloadAction.InlineDownloader
     {
         private String _name;
+        private boolean _inline = true;
 
         public String getName()
         {
@@ -1479,6 +1517,17 @@ public class ExperimentController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
+        }
+
+        @Override
+        public boolean isInline()
+        {
+            return _inline;
+        }
+
+        public void setInline(boolean inline)
+        {
+            _inline = inline;
         }
     }
 
@@ -3051,6 +3100,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpRun> runs = new ArrayList<>();
+
+            Map<Integer, ExpRun> idToRunMap = new HashMap<>();
             for (int runId : deleteForm.getIds(false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
@@ -3062,7 +3113,36 @@ public class ExperimentController extends SpringActionController
                                 + " in " + run.getContainer());
 
                     runs.add(run);
+                    idToRunMap.put(run.getRowId(), run);
                 }
+            }
+
+            Map<Integer, ExpRun> referencedItems = new HashMap<>();
+            List<String> referenceDescriptions = new ArrayList<>();
+            AssayService assayService = AssayService.get();
+            if (!idToRunMap.isEmpty() && assayService != null )
+            {
+                // using the first run as a representative, since all interactions here are (I believe) using the same protocol.
+                ExpProtocol protocol = runs.get(0).getProtocol();
+                AssayProvider provider = assayService.getProvider(protocol);
+                if (provider != null)
+                {
+                    SchemaKey key = AssayProtocolSchema.schemaName(provider, protocol);
+                    ExperimentService.get().getObjectReferencers()
+                            .forEach(referencer -> {
+                                        Collection<Integer> referenced = referencer.getItemsWithReferences(
+                                                idToRunMap.keySet(),
+                                                key.toString(),
+                                                "Runs"
+                                        );
+                                        referenced.forEach(id -> {
+                                            referencedItems.put(id, idToRunMap.get(id));
+                                        });
+                                        referenceDescriptions.add(referencer.getObjectReferenceDescription(ExpRun.class));
+                                    }
+                            );
+                }
+
             }
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
@@ -3084,7 +3164,17 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
+            return new ConfirmDeleteView(
+                    "run",
+                    ShowRunGraphAction.class,
+                    runs.stream().filter(run -> !referencedItems.containsKey(run.getRowId())).toList(),
+                    deleteForm,
+                    Collections.emptyList(),
+                    "dataset(s) have one or more rows which",
+                    permissionDatasetRows,
+                    noPermissionDatasetRows,
+                    referencedItems.values().stream().toList(),
+                    referenceDescriptions.stream().filter(Objects::nonNull).collect(Collectors.joining(", or ")));
         }
 
         @Override
@@ -3179,8 +3269,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(CascadeDeleteForm form, Errors errors)
         {
-            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
-                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId, dataRegionSelectionKey, or rowIds is required");
         }
 
         @Override
@@ -3336,7 +3426,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
+            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets, Collections.emptyList(), null);
         }
 
         @Override
@@ -3358,6 +3448,8 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+            if (form.getDataOperation() == null)
+                errors.reject(ERROR_REQUIRED, "An operation type must be provided.");
         }
 
         @Override
@@ -3366,15 +3458,17 @@ public class ExperimentController extends SpringActionController
             Collection<Integer> requestIds = form.getIds(false);
             List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
+            Set<Integer> notPermittedIds = new HashSet<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
-                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
             return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
     }
 
-    public static class DataOperationConfirmationForm extends OperationConfirmationForm
+
+    public static class DataOperationConfirmationForm extends DataViewSelectionForm
     {
         private ExpDataImpl.DataOperations _dataOperation;
 
@@ -3389,10 +3483,10 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class OperationConfirmationForm extends ViewForm
+    public static class DataViewSelectionForm extends ViewForm
     {
-        private String _dataRegionSelectionKey;
-        private Set<Integer> _rowIds;
+        protected String _dataRegionSelectionKey;
+        protected Set<Integer> _rowIds;
 
         public String getDataRegionSelectionKey()
         {
@@ -3441,10 +3535,11 @@ public class ExperimentController extends SpringActionController
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
-            // We prevent deletion if a sample is used as a parent or has assay data
+            Set<Integer> notPermittedIds = new HashSet<>();
+            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
-                notPermittedIds = service.getMaterialsUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
             if (SampleStatusService.get().supportsSampleStatus())
                 notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
@@ -3458,7 +3553,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class MaterialOperationConfirmationForm extends OperationConfirmationForm
+    public static class MaterialOperationConfirmationForm extends DataViewSelectionForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
 
@@ -3700,7 +3795,7 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
-            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets);
+            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets, Collections.emptyList(), null);
         }
 
         private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)
@@ -3765,7 +3860,7 @@ public class ExperimentController extends SpringActionController
         dr.getDisplayColumn("parentcol").setVisible(false);
 
         ActionURL url = new ActionURL(ShowSampleTypeAction.class, model.getContainer());
-        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
+        dr.getDisplayColumn(1).setURL(url.addParameter("rowId", "${RowId}"));
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
 
         return dr;
@@ -7387,6 +7482,82 @@ public class ExperimentController extends SpringActionController
             _genId = genId;
         }
 
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    {
+        @Override
+        public void validateForm(CrossFolderSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
+            if (!"sample".equalsIgnoreCase(form.getDataType()) && !"data".equalsIgnoreCase(form.getDataType()))
+                errors.reject(ERROR_REQUIRED, "Data type (sample or data) must be specified.");
+        }
+
+        @Override
+        public Object execute(CrossFolderSelectionForm form, BindException errors)
+        {
+            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), "sample".equalsIgnoreCase(form.getDataType()), getContainer());
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("currentFolderSelectionCount", result.first);
+            resp.put("crossFolderSelectionCount", result.second);
+
+            return success(resp);
+        }
+    }
+
+    public static class CrossFolderSelectionForm extends DataViewSelectionForm
+    {
+        private String _dataType;
+        private String _picklistName;
+
+        public String getDataType()
+        {
+            return _dataType;
+        }
+
+        public void setDataType(String dataType)
+        {
+            _dataType = dataType;
+        }
+
+        public String getPicklistName()
+        {
+            return _picklistName;
+        }
+
+        public void setPicklistName(String picklistName)
+        {
+            _picklistName = picklistName;
+        }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null)
+                return _rowIds;
+            Set<Integer> selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+            if (_picklistName != null)
+            {
+                User user = getViewContext().getUser();
+                Container container = getViewContext().getContainer();
+                UserSchema schema = ListService.get().getUserSchema(user, container);
+                TableInfo tInfo = schema.getTable(_picklistName);
+                if (tInfo != null)
+                {
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+                    filter.addInClause(FieldKey.fromParts("id"), selectedIds);
+                    TableSelector selector = new TableSelector(tInfo, Collections.singleton("SampleID"), filter, null);
+                    return new HashSet<>(selector.getArrayList(Integer.class));
+                }
+            }
+            return selectedIds;
+        }
     }
 
 }

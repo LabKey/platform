@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.view.HttpView;

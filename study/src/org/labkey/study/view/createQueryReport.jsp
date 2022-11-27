@@ -43,7 +43,7 @@
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
     Container container = getContainer();
 
-    String paramStart = QueryParam.schemaName.toString() + "=" + StudySchema.getInstance().getSchemaName();
+    String paramStart = QueryParam.schemaName + "=" + StudySchema.getInstance().getSchemaName();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function verifyLabel()
@@ -121,7 +121,7 @@
                         if (def != null) {
                             String label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDatasetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName + '=' + u(name) + "&datasetId=" + def.getDatasetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
                 <%
                         }
                     }

@@ -59,7 +59,7 @@ public class CoreUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void handleUnknownModules(ModuleContext context)
     {
-        ModuleLoader.getInstance().handleUnkownModules();
+        ModuleLoader.getInstance().handleUnknownModules();
     }
 
     /**

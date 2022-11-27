@@ -30,6 +30,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
@@ -95,7 +96,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             (k, a) -> {
                 // The container may be null
                 Container c = k.second == null ? null : ContainerManager.getForRowId(k.second);
-                return createSelectorByUserOrType(c, null, k.first, true).getRowCount();
+                return createSelectorByUserOrType(c, null, k.first, true, null).getRowCount();
             });
 
     /* for compatibility with code that uses/used MailHelper directly */
@@ -207,9 +208,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly)
+    public List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
-        return getNotificationsByUserOrType(container, null, notifyUserId, unreadOnly);
+        return getNotificationsByUserOrType(container, null, notifyUserId, unreadOnly, containerFilter);
     }
 
     @Override
@@ -221,21 +222,23 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     @Override
     public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
     {
-        return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly);
+        return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly, null);
     }
 
     @Override
-    public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
+    public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
         List<String> types = new ArrayList<>();
         typeLabels.forEach(label -> types.addAll(_labelTypesMap.get(label)));
-        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly);
+        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter);
     }
 
-    private TableSelector createSelectorByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
+    private TableSelector createSelectorByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
         SimpleFilter filter = new SimpleFilter();
-        if (null != container)
+        if (containerFilter != null)
+            filter.addClause(containerFilter.createFilterClause(getTable().getSchema(), FieldKey.fromParts("Container")));
+        else if (null != container)
             filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
         if (types != null)
@@ -249,9 +252,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         return new TableSelector(getTable(), filter, sort);
     }
 
-    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
+    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
-        return createSelectorByUserOrType(container, types, notifyUserId, unreadOnly).getArrayList(Notification.class);
+        return createSelectorByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter).getArrayList(Notification.class);
     }
 
     @Override

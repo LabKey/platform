@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JobRunner;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -33,6 +34,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User: klum
@@ -71,9 +73,27 @@ public abstract class MessageDigest
         Date start = getStartRange(current, prev);
         Date end = getEndRange(current, prev);
 
-        for (Provider provider : _providers)
+        AtomicReference<Exception> ref = new AtomicReference<>();
+
+        // Issue 45978: Run in a background thread to better simulate being triggered by a timer
+        JobRunner.getDefault().execute(() -> {
+            try
+            {
+                for (Provider provider : _providers)
+                {
+                    provider.sendDigestForAllContainers(start, end);
+                }
+            }
+            catch (Exception e)
+            {
+                ref.set(e);
+            }
+        });
+
+        JobRunner.getDefault().waitForCompletion();
+        if (ref.get() != null)
         {
-            provider.sendDigestForAllContainers(start, end);
+            throw ref.get();
         }
 
         setLastSuccessful(end);

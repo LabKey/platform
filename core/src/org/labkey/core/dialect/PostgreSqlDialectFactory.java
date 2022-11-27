@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
@@ -64,7 +63,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql_10_Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql_11_Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
@@ -95,9 +94,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt());
 
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
-            throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+            throw new DatabaseNotSupportedException(getStandardWarningMessage("does not support", databaseProductVersion));
 
-        PostgreSql_10_Dialect dialect = psv.getDialect();
+        PostgreSql_11_Dialect dialect = psv.getDialect();
 
         Connection conn = md.getConnection();
         Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
@@ -109,17 +108,22 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             if (!psv.isTested())
             {
-                _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                _log.warn(getStandardWarningMessage("has not been tested against", databaseProductVersion));
             }
             else if (psv.isDeprecated())
             {
-                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                String deprecationWarning = getStandardWarningMessage("no longer supports", databaseProductVersion);
                 _log.warn(deprecationWarning);
                 dialect.setAdminWarning(HtmlString.of(deprecationWarning));
             }
         }
 
         return dialect;
+    }
+
+    public static String getStandardWarningMessage(String warning, String databaseProductVersion)
+    {
+        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
     }
 
     @Override
@@ -131,10 +135,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 10.x
-        PostgreSql_10_Dialect conforming = new PostgreSql_10_Dialect();
+        // PostgreSQL dialects are nearly identical, so just test 11.x
+        PostgreSql_11_Dialect conforming = new PostgreSql_11_Dialect();
         conforming.setStandardConformingStrings(true);
-        PostgreSql_10_Dialect nonconforming = new PostgreSql_10_Dialect();
+        PostgreSql_11_Dialect nonconforming = new PostgreSql_11_Dialect();
         nonconforming.setStandardConformingStrings(false);
 
         return PageFlowUtil.set(
@@ -150,11 +154,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 10.0 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 10.0, null, connectionUrl);
+            // < 11.0 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 11.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
             good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
@@ -187,7 +190,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                 "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql_10_Dialect();
+            SqlDialect dialect = new PostgreSql_11_Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
@@ -208,24 +211,24 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql_10_Dialect();
+                    return new PostgreSql_11_Dialect();
                 }
 
                 @NotNull
                 @Override
                 protected Set<String> getGoodUrls()
                 {
-                    return new CsvSet
+                    return Set.of
                     (
-                        "jdbc:postgresql:database," +
-                        "jdbc:postgresql://localhost/database," +
-                        "jdbc:postgresql://localhost:8300/database," +
-                        "jdbc:postgresql://www.host.com/database," +
-                        "jdbc:postgresql://www.host.com:8499/database," +
-                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true," +
-                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true," +
-                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true," +
-                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true," +
+                        "jdbc:postgresql:database",
+                        "jdbc:postgresql://localhost/database",
+                        "jdbc:postgresql://localhost:8300/database",
+                        "jdbc:postgresql://www.host.com/database",
+                        "jdbc:postgresql://www.host.com:8499/database",
+                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true",
+                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true",
+                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true",
+                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true",
                         "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true"
                     );
                 }
@@ -234,10 +237,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getBadUrls()
                 {
-                    return new CsvSet
+                    return Set.of
                     (
-                        "jddc:postgresql:database," +
-                        "jdbc:postgres://localhost/database," +
+                        "jddc:postgresql:database",
+                        "jdbc:postgres://localhost/database",
                         "jdbc:postgresql://www.host.comdatabase"
                     );
                 }

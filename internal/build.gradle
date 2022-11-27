@@ -21,7 +21,7 @@ dependencies {
     implementation("org.apache.commons:commons-lang3:${commonsLang3Version}")
     implementation("junit:junit:${junitVersion}")
     implementation("org.springframework:spring-webmvc:${springVersion}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}")
     implementation("org.quartz-scheduler:quartz:${quartzVersion}")
     implementation("org.springframework:spring-beans:${springVersion}")
 

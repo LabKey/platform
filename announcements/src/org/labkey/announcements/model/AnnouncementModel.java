@@ -23,7 +23,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.announcements.DiscussionService.StatusOption;

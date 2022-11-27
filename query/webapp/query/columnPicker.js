@@ -123,7 +123,6 @@ function TableInfoService(urlTableInfo)
         for (var i = 0; i < fieldKeys.length; i ++)
         {
             url = url + "&fieldKey=" + escapeField(fieldKeys[i]);
-
         }
         var xml = makeRequest(url);
         var ret = [];

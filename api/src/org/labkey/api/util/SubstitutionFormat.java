@@ -582,6 +582,12 @@ public class SubstitutionFormat
             if (SAMPLE_COUNTER_SUBSTITUTIONS.contains(formatName) && nameExpression.startsWith(":", start-1))
                 return messages;
 
+            if (NameGenerator.SubstitutionValue.DataInputs.name().equals(formatName) || NameGenerator.SubstitutionValue.MaterialInputs.name().equals(formatName))
+            {
+                // check for ancestor lookup
+                if (nameExpression.startsWith("..[", start-3))
+                    return messages;
+            }
             messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
         }
         // missing ending brace check handled by general check for matching begin and end braces

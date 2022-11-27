@@ -19,9 +19,9 @@ package org.labkey.study.controllers.reports;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -1649,7 +1649,7 @@ public class ReportsController extends BaseStudyController
 
                         MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()]));
                         xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + assayData.get("name"), "#"));
-                        xlWriter.renderSheetAndWrite(response);
+                        xlWriter.renderWorkbook(response);
                     }
                 }
             }

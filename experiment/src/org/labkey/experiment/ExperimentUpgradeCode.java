@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -30,6 +31,7 @@ import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
@@ -46,6 +48,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
@@ -58,9 +61,12 @@ import org.labkey.experiment.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE_NAMESPACE_PREFIX;
@@ -324,12 +330,105 @@ public class ExperimentUpgradeCode implements UpgradeCode
             LOG.info("Added 'name' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
         }
 
+        uniquifySampleNames(st, scope);
+
         fillSampleName(st, domain, scope);
 
         //addIndex
         Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name"))));
         StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
         LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added unique constraint on 'name'");
+    }
+
+    /**
+     * Samples created using xar could have manually constructed LSID, which might allow duplicate sample names
+     */
+    private static void uniquifySampleNames(ExpSampleTypeImpl st, DbScope scope)
+    {
+        String targetCpas = st.getLSID();
+        String lsidPrefix = st.getMaterialLSIDPrefix();
+
+        // check if duplicate exp.material.name exist for CpasType
+        // note that db unique key is of (name, cpastype, container). "container" is in the mix due to general cpastype="Material" for specimen
+        // for sample type material, name + cpastype SHOULD be unique. But exception might exist due to manually constructed LSIDs
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT LSID, name\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.name IN (").append("\n")
+                .append("  SELECT name FROM ").append(ExperimentService.get().getTinfoMaterial(), "mi").append("\n")
+                .append("  WHERE mi.CpasType = ? ")
+                .add(targetCpas)
+                .append("  GROUP BY (name) HAVING COUNT(*) > 1").append("\n")
+                .append(") \n")
+                .append("AND m.CpasType = ?")
+                .add(targetCpas);
+
+        TableInfo table = ExperimentService.get().getTinfoMaterial();
+        @NotNull Map<String, Object>[] results = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
+        if (results.length > 0)
+        {
+            LOG.warn(results.length + " duplicate name(s) found for sample type " + st.getName());
+
+            Set<String> existingValues = new CaseInsensitiveHashSet();
+            existingValues.addAll(new TableSelector(table, Collections.singleton(table.getColumn("name")), new SimpleFilter(FieldKey.fromParts("CpasType"), targetCpas), null).getCollection(String.class));
+
+            Set<String> newValues = new CaseInsensitiveHashSet();
+
+            Map<String, List<String>> sampleLsids = new HashMap<>();
+            for (Map<String, Object> result : results)
+            {
+                String name = (String) result.get("name");
+                String lsid = (String) result.get("lsid");
+                sampleLsids.putIfAbsent(name, new ArrayList<>());
+                sampleLsids.get(name).add(lsid);
+            }
+
+            for (String sampleName : sampleLsids.keySet())
+            {
+                List<String> lsids = sampleLsids.get(sampleName);
+                LOG.warn(lsids.size() + " samples with the name '" + sampleName + "' are found for sample type " + st.getName() + ". ");
+
+                // prefer to keep the sample whose LSID conforms to the sample type's defined prefix
+                String sampleLSIDToKeep = lsids.get(0);
+                for (String lsid : lsids)
+                {
+                    if (lsid.startsWith(lsidPrefix))
+                    {
+                        sampleLSIDToKeep = lsid;
+                        break;
+                    }
+                }
+
+                // rename all but one samples by adding suffix _2, _3, etc
+                for (String lsid : lsids)
+                {
+                    if (sampleLSIDToKeep.equals(lsid))
+                        continue;
+
+                    int i = 1;
+                    String candidateValue;
+
+                    do
+                    {
+                        i++;
+                        candidateValue = sampleName + "_" + i;
+                    }
+                    while(newValues.contains(candidateValue) || existingValues.contains(candidateValue));
+
+                    SQLFragment update = new SQLFragment()
+                            .append("UPDATE exp.material\n")
+                            .append("SET name = ?\n")
+                            .add(candidateValue)
+                            .append(" WHERE lsid = ?")
+                            .add(lsid);
+
+                    new SqlExecutor(scope).execute(update);
+                    LOG.warn("Renamed '" + sampleName + "' of lsid '" + lsid + "' to '" + candidateValue + "'.");
+
+                    newValues.add(candidateValue);
+                }
+            }
+        }
     }
 
     // populate name on provisioned sample tables

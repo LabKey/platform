@@ -246,6 +246,16 @@ public class ChildStudyDefinition
         _views = views;
     }
 
+    public void addView(String id)
+    {
+        List<String> viewsList = new ArrayList<>();
+        if (_views != null)
+            viewsList.addAll(Arrays.stream(_views).toList());
+        viewsList.add(id);
+        _views = new String[viewsList.size()];
+        _views = viewsList.toArray(_views);
+    }
+
     public boolean isIncludeSpecimens()
     {
         return _includeSpecimens;

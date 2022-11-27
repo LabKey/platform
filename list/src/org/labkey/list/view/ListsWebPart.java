@@ -99,6 +99,6 @@ public class ListsWebPart extends WebPartView<ViewContext>
         }
         out.write("</table>");
         if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            out.write(PageFlowUtil.textLink("manage lists", ListController.getBeginURL(model.getContainer())));
+            out.write(PageFlowUtil.link("manage lists").href(PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
     }
 }

@@ -16,7 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>

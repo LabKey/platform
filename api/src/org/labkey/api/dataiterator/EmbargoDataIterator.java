@@ -117,6 +117,8 @@ public class EmbargoDataIterator extends AbstractDataIterator
     @Override
     public Object get(int i)
     {
+        if (_currentRow == null)
+            return null;
         return _currentRow[i];
     }
 

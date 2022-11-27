@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -182,6 +181,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 result.put(key.getKey(), row);
         }
         return result;
+    }
+
+    @Override
+    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+    {
+        return false;
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)

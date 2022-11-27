@@ -596,6 +596,7 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="DerivationDataScope" type="dat:DerivationDataScopeTypes" minOccurs="0" maxOccurs="1" default="ParentOnly"/>
 		</xs:sequence>
     </xs:complexType>
 

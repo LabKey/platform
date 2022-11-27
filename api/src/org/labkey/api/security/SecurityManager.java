@@ -477,7 +477,7 @@ public class SecurityManager
         return sessionUser;
     }
 
-    private static User getSessionUser(HttpSession session)
+    public static User getSessionUser(HttpSession session)
     {
         User sessionUser = null;
 

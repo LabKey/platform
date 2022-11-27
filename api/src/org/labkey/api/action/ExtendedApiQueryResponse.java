@@ -59,6 +59,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         mvIndicator,
         mvRawValue,
         url,
+        urlTarget,
         style
     }
 
@@ -134,15 +135,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             boolean includeFormattedValue,
             boolean doItWithStyle)
     {
-        if (dc instanceof NestedPropertyDisplayColumn)
+        if (dc instanceof NestedPropertyDisplayColumn npc)
         {
-            NestedPropertyDisplayColumn npc = (NestedPropertyDisplayColumn) dc;
             return getNestedPropertiesArray(ctx, npc, arrayMultiValueColumns, includeFormattedValue, doItWithStyle);
         }
-        else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
+        else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn mdc)
         {
             // render MultiValue columns as an array of 'value', 'displayValue', and 'url' objects
-            IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
             return getMultiValuedColumnArray(ctx, includeFormattedValue, mdc);
         }
         else
@@ -161,13 +160,16 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         if (includeFormattedValue)
             formattedValue = dc.getFormattedText(ctx);
 
-        String url = null;
+        String url = null, urlTarget = null;
         if (null != value)
+        {
             url = dc.renderURL(ctx);
+            urlTarget = dc.getLinkTarget();
+        }
 
         //in the extended response format, each column will have a map of its own
         //that will contain entries for value, mvValue, mvIndicator, etc.
-        ColMap colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
+        ColMap colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue, urlTarget);
 
         //missing values
         if (dc instanceof MVDisplayColumn)
@@ -210,7 +212,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             if (includeFormattedValue)
                 formattedValue = formatted.get(i);
             String url = urls.get(i);
-            ColMap nested = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
+            ColMap nested = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue, null);
 
             // TODO: missing value indicators ?
 
@@ -240,7 +242,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     protected static ColMap makeColMap(
             @Nullable Object value, @Nullable Object displayValue, @Nullable String formattedValue, @Nullable String url,
-            boolean includeFormattedValue)
+            boolean includeFormattedValue, @Nullable String urlTarget)
     {
         ColMap colMap = new ColMap();
 
@@ -255,7 +257,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             colMap.put(ColMapEntry.formattedValue, formattedValue);
 
         if (value != null && url != null)
+        {
             colMap.put(ColMapEntry.url, url);
+            if (!StringUtils.isEmpty(urlTarget))
+                colMap.put(ColMapEntry.urlTarget, urlTarget);
+        }
 
         return colMap;
     }

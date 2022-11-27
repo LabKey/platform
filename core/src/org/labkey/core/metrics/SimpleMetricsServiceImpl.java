@@ -18,25 +18,30 @@ import org.labkey.api.util.logging.LogHelper;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implements simple counter-based metrics from either server- or client-side code. Persists the
  * current tally to the DB asynchronously to make the tally a cumulative one for the server.
- *
- * Backed by PropertyManager. Uses a single map to track all the feature areas for each module, and then a separate
- * map for each module/area combination to persist the counts.
+ * The metrics are stored by PropertyManager. Uses a single map to track all the feature areas for each module, and
+ * then a separate map for each module/area combination to persist the counts.
  */
 public class SimpleMetricsServiceImpl implements SimpleMetricsService
 {
     private static final Logger LOG = LogHelper.getLogger(SimpleMetricsServiceImpl.class, "Tallies and persists simple counter metrics");
 
-    /** Organized by module, featureArea, and metricName */
-    private final Map<Module, Map<String, Map<String, AtomicLong>>> _counts = new ConcurrentHashMap<>();
+    /**
+     * Organized by module, featureArea, and metricName.
+     * Store based on module name so that we don't hold a reference to the Module instance itself. They can be deleted,
+     * and automated tests that do so consider a lingering reference to be a memory leak.
+     */
+    private final Map<String, Map<String, Map<String, AtomicLong>>> _counts = new ConcurrentHashMap<>();
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
+    private boolean _shutdownStarted = false;
 
     public SimpleMetricsServiceImpl()
     {
@@ -50,7 +55,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
             }
 
             @Override
-            public void shutdownPre() {}
+            public void shutdownPre() { _shutdownStarted = true; }
 
             @Override
             public void shutdownStarted()
@@ -62,17 +67,17 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
     private class SimpleMetricsProvider implements UsageMetricsProvider
     {
-        private final Module _module;
+        private final String _moduleName;
 
-        public SimpleMetricsProvider(Module module)
+        public SimpleMetricsProvider(String moduleName)
         {
-            _module = module;
+            _moduleName = moduleName;
         }
 
         @Override
         public Map<String, Object> getUsageMetrics()
         {
-            return Collections.singletonMap("simpleMetricCounts", _counts.get(_module));
+            return Collections.singletonMap("simpleMetricCounts", _counts.get(_moduleName));
         }
     }
 
@@ -125,10 +130,10 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
     private Map<String, Map<String, AtomicLong>> getModuleMetrics(Module module)
     {
-        return _counts.computeIfAbsent(module, (k) ->
+        return _counts.computeIfAbsent(module.getName(), (k) ->
         {
             // The first time a module is referenced, register a new provider
-            UsageMetricsService.get().registerUsageMetrics(module.getName(), new SimpleMetricsProvider(module));
+            UsageMetricsService.get().registerUsageMetrics(module.getName(), new SimpleMetricsProvider(module.getName()));
             return new ConcurrentHashMap<>();
         });
     }
@@ -190,8 +195,21 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                 save();
                 _saver = null;
             };
-            // Save more frequently on dev machines to facilitate testing
-            JobRunner.getDefault().execute(_saver, TimeUnit.MINUTES.toMillis(AppProps.getInstance().isDevMode() ? 1 : 15));
+
+            // We're OK losing a few events if they're happening mid-shutdown
+            if (!_shutdownStarted)
+            {
+                try
+                {
+                    // Save more frequently on dev machines to facilitate testing
+                    JobRunner.getDefault().execute(_saver, TimeUnit.MINUTES.toMillis(AppProps.getInstance().isDevMode() ? 1 : 15));
+                }
+                catch (RejectedExecutionException e)
+                {
+                    LOG.warn("Failed to queue saving simple metric values. Saving synchronously");
+                    save();
+                }
+            }
         }
     }
 
@@ -202,12 +220,16 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         {
             for (var areas : modules.getValue().entrySet())
             {
-                PropertyManager.PropertyMap storedProps = PropertyManager.getWritableProperties(getScoping(modules.getKey(), areas.getKey()), true);
-                for (Map.Entry<String, AtomicLong> metricCount : areas.getValue().entrySet())
+                Module module = ModuleLoader.getInstance().getModule(modules.getKey());
+                if (module != null)
                 {
-                    storedProps.put(metricCount.getKey(), Long.toString(metricCount.getValue().longValue()));
+                    PropertyManager.PropertyMap storedProps = PropertyManager.getWritableProperties(getScoping(module, areas.getKey()), true);
+                    for (Map.Entry<String, AtomicLong> metricCount : areas.getValue().entrySet())
+                    {
+                        storedProps.put(metricCount.getKey(), Long.toString(metricCount.getValue().longValue()));
+                    }
+                    storedProps.save();
                 }
-                storedProps.save();
             }
         }
     }

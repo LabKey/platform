@@ -26,7 +26,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -385,7 +384,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         }
         if (null != c)
             _parsedUrl.setContainer(c);
-        if (query.isBlank() && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+        if (query.isBlank())
             return _parsedUrl.getPath();
         else
             return _parsedUrl.getPath() + "?" + query;

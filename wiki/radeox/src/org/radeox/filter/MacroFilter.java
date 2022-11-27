@@ -35,12 +35,10 @@ import org.radeox.filter.regex.RegexTokenFilter;
 import org.radeox.regex.MatchResult;
 import org.radeox.macro.Macro;
 import org.radeox.macro.MacroRepository;
-import org.radeox.macro.Repository;
 import org.radeox.macro.parameter.MacroParameter;
 import org.radeox.util.StringBufferWriter;
 
 import java.io.Writer;
-import java.util.Map;
 
 /*
  * Class that finds snippets (macros) like
@@ -78,7 +76,7 @@ public class MacroFilter extends RegexTokenFilter {
     macros.setInitialContext(context);
   }
 
-  protected Repository getMacroRepository() {
+  protected MacroRepository getMacroRepository() {
     return macros;
   }
 

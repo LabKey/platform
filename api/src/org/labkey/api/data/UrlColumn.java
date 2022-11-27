@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,7 +32,7 @@ public class UrlColumn extends SimpleDisplayColumn
         setURLExpression(urlExpression);
     }
 
-    public UrlColumn(String url, String text)
+    public UrlColumn(ActionURL url, String text)
     {
         setDisplayHtml(text);
         setURL(url);

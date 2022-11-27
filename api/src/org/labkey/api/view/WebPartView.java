@@ -136,17 +136,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             try (var init = HttpView.initForRequest(nested, request, mr))
             {
                 WebPartView.this.render(request, mr);
-                var config = HttpView.currentPageConfig();
-                var sw = new StringWriter();
-                config.endOfBodyScript(sw);
-                var script = sw.toString();
-                if (!script.isBlank())
-                {
-                    var out = mr.getWriter();
-                    out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
-                    out.print(script);
-                    out.print("</script>");
-                }
+                renderEndOfBodyScript(HttpView.currentPageConfig(), mr);
             }
             catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
             {
@@ -170,6 +160,20 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 writer.endResponse();
             }
         };
+    }
+
+    public static void renderEndOfBodyScript(PageConfig config, HttpServletResponse response) throws IOException
+    {
+        var sw = new StringWriter();
+        config.endOfBodyScript(sw);
+        var script = sw.toString();
+        if (!script.isBlank())
+        {
+            var out = response.getWriter();
+            out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
+            out.print(script);
+            out.print("</script>");
+        }
     }
 
     public WebPartView(FrameType ft)

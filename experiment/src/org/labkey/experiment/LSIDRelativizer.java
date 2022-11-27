@@ -56,9 +56,8 @@ public enum LSIDRelativizer implements SafeToRenderEnum
         @Override
         protected String relativize(ExpObject o, RelativizedLSIDs lsids)
         {
-            if (o instanceof ExpData)
+            if (o instanceof ExpData data)
             {
-                ExpData data = (ExpData)o;
                 // Most DataClass data don't have a dataFileUrl, but some do -- like NucSequence imported from a genbank file
                 if (data.getDataFileUrl() == null || data.getDataClass() != null)
                 {
@@ -100,7 +99,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                     id = suffix.substring(ind);
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
             }
-            else if (("Sample".equals(prefix) || "Material".equals(prefix)))
+            else if ("Sample".equals(prefix) || "Material".equals(prefix))
             {
                 String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
@@ -112,7 +111,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
                 return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
             }
-            else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
+            else if (suffix != null && (SUFFIX_PATTERN.matcher(suffix).matches() || XAR_IMPORT_SUFFIX_PATTERN.matcher(suffix).matches()))
             {
                 String xarFileId = "";
                 if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
@@ -189,6 +188,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids);
 
     private static final Pattern SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+");
+    private static final Pattern XAR_IMPORT_SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+.Xar-[0-9]+");
 
     LSIDRelativizer(String description)
     {

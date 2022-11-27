@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
@@ -94,7 +95,7 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
                     // Try-with-resources will close stream
                     try (InputStream is = _is)
                     {
-                        svc.svgToPng(Readers.getXmlReader(is), os, _type.getHeight());
+                        svc.svgToPng(SvgSource.of(Readers.getXmlReader(is)), os, _type.getHeight());
 
                         return os.getThumbnail("image/png");
                     }

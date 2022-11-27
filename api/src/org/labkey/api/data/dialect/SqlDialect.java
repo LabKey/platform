@@ -1141,8 +1141,8 @@ public abstract class SqlDialect
         {
             try
             {
-                Method getUrl = _ds.getClass().getMethod(methodName);
-                return (K)getUrl.invoke(_ds);
+                Method method = _ds.getClass().getMethod(methodName);
+                return (K)method.invoke(_ds);
             }
             catch (Exception e)
             {
@@ -1381,7 +1381,7 @@ public abstract class SqlDialect
 
 
     /**
-     * Encode wildcard characters in search string used by LIKE operator to force exact match of those charactors.
+     * Encode wildcard characters in search string used by LIKE operator to force exact match of those characters.
      * Currently only encodes single wildcard character '_' and '%' used by LIKE, while more complicated pattern such as [], {} are not encoded.
      * Example:
      *      String searchString = "search_string";
@@ -1390,7 +1390,7 @@ public abstract class SqlDialect
      *      sqlFragment.append(" LIKE ?");
      *      sqlFragment.add("_" + encodeLikeSearchString(searchString) + "%");
      *
-     *    ##encodeLikeSearchString(searchString) will ensure exact match of substring "search_string" and won't treate the the underscore as a wildcard.
+     *    ##encodeLikeSearchString(searchString) ensures an exact match of substring "search_string" and won't treat an underscore as a wildcard.
      * @param search
      * @return encoded search string
      */
@@ -1429,7 +1429,7 @@ public abstract class SqlDialect
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
     // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
     }
 

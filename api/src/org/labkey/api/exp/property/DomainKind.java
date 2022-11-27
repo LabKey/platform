@@ -374,4 +374,10 @@ abstract public class DomainKind<T>  implements Handler<String>
     {
         return true;
     }
+
+    // Is this domain kind considered "user managed"? e.g. list, sample type, etc
+    public boolean isUserCreatedType()
+    {
+        return true;
+    }
 }

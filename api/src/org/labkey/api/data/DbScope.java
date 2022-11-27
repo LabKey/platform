@@ -1002,7 +1002,7 @@ public class DbScope
 
             if (_transaction.isEmpty())
             {
-                log.info("There are no threads holding connections for the data source '" + this + "'");
+                log.info("There are no threads holding transactions for the data source '" + this + "'");
             }
             else
             {
@@ -1547,8 +1547,7 @@ public class DbScope
             }
             catch (Exception e)
             {
-                LOG.error("ensureDataBase", e);
-                throw new ServletException("Internal error", e);
+                throw new ServletException("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed", e);
             }
             finally
             {
@@ -1573,7 +1572,8 @@ public class DbScope
         return getRawConnection(props.getUrl(), props);
     }
 
-    // Establish a direct connection to the specified URL using the data source's driver and credentials. This bypasses the connection pool.
+    // Attempt to establish a direct connection to the specified URL using the data source's driver and credentials.
+    // This bypasses the connection pool.
     private static Connection getRawConnection(String url, DataSourceProperties props) throws ServletException, SQLException
     {
         Driver driver;
@@ -1597,6 +1597,9 @@ public class DbScope
         {
             throw new ServletException("Unable to retrieve data source properties", e);
         }
+
+        if (!driver.acceptsURL(url))
+            throw new ServletException("The specified driver (\"" + props.getDriverClassName() + "\") does not accept the specified URL (\"" + url + "\")");
 
         return driver.connect(url, info);
     }

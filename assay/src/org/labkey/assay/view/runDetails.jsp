@@ -34,12 +34,12 @@
     ExpRun run = bean.expRun;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
-    JSONObject runJson = AssayJSONConverter.serializeRun(run, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+    org.json.old.JSONObject runJson = AssayJSONConverter.serializeRun(run, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
-LABKEY.page.run = new LABKEY.Exp.Run(<%= runJson.getJavaScriptFragment(2) %>);
+LABKEY.page.assay = <%=json(new JSONObject(assay), 2)%>;
+LABKEY.page.run = new LABKEY.Exp.Run(<%=json(runJson, 2)%>);
 </script>
 <p>
 <%

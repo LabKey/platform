@@ -80,10 +80,9 @@ public interface PipelineStatusFile
 
         void join(PipelineJob job) throws IOException, NoSuchJobException;
 
-        String serializeToJSON(Object job);
-        String serializeToJSON(Object job, boolean ensureDeserialize);
+        String serializeToJSON(PipelineJob job, boolean ensureDeserialize);
 
-        Object deserializeFromJSON(String xml, Class<?> cls);
+        PipelineJob deserializeFromJSON(String xml, Class<? extends PipelineJob> cls);
     }
 
     Container lookupContainer();

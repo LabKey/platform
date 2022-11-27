@@ -28,7 +28,7 @@ package org.radeox.macro.table;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.radeox.macro.PluginLoader;
-import org.radeox.macro.Repository;
+import org.radeox.macro.PluginRepository;
 
 /**
  * Plugin loader for table functions
@@ -58,7 +58,7 @@ public class FunctionLoader extends PluginLoader {
    *
    * @param plugin Function to add
    */
-  public void add(Repository repository, Object plugin) {
+  public void add(PluginRepository repository, Object plugin) {
     if (plugin instanceof Function) {
       repository.put(((Function) plugin).getName().toLowerCase(), plugin);
     } else {

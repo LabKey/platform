@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -117,6 +117,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -131,6 +132,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.*;
 import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
@@ -1307,6 +1309,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
+            SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "GWTServiceCreation");
             return new AssayImportServiceImpl(getViewContext());
         }
     }
@@ -1719,6 +1722,57 @@ public class AssayController extends SpringActionController
 
             response.put("containers", containersInfo);
             return response;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    {
+
+        @Override
+        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> permittedIds = form.getIds(false);
+
+            Set<Integer> notPermittedIds = new HashSet<>();
+
+            ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
+            permittedIds.removeAll(notPermittedIds);
+            return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
+
+        }
+    }
+
+    public static class OperationConfirmationForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Set<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds(boolean clear)
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 }

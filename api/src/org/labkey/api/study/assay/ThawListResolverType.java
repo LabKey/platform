@@ -17,7 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayFileWriter;

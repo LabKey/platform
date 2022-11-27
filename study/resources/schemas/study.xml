@@ -71,18 +71,6 @@
       <column columnName="ShowPrivateDataByDefault">
         <description>Whether private data (as indicated by the data's quality control state) is visible by default.</description>
       </column>
-      <column columnName="AllowReload">
-        <description>Whether the study can be reloaded from disk-based files.</description>
-      </column>
-      <column columnName="ReloadInterval">
-        <description>How frequently automatic reloads of the study should take place.</description>
-      </column>
-      <column columnName="LastReload">
-        <description>The timestamp of the most recent study reload.</description>
-      </column>
-      <column columnName="ReloadUser">
-        <description>The user who initiated automatic reload.</description>
-      </column>
       <column columnName="AdvancedCohorts">
         <description>Whether advanced cohort assignment is enabled.  Advanced cohort support allows subjects to change cohorts over time.</description>
       </column>
@@ -1944,20 +1932,20 @@
     <description>Contains one row per defined sample availability rule.  Containers without defined rules will use a default set.</description>
     <columns>
       <column columnName="rowid">
-        <description>The unique ID of the availablility rule.</description>
+        <description>The unique ID of the availability rule.</description>
       </column>
       <column columnName="container"/>
       <column columnName="SortOrder">
-        <description>The order in which this availablility rule is run within its container.</description>
+        <description>The order in which this availability rule is run within its container.</description>
       </column>
       <column columnName="RuleType">
-        <description>The type the availablility rule.</description>
+        <description>The type the availability rule.</description>
       </column>
       <column columnName="RuleData">
-        <description>The data specifying how the availablility rule should be run.</description>
+        <description>The data specifying how the availability rule should be run.</description>
       </column>
       <column columnName="MarkType">
-        <description>The unique ID of the availablility rule.</description>
+        <description>The unique ID of the availability rule.</description>
       </column>
     </columns>
   </table>

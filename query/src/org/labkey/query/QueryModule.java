@@ -57,12 +57,12 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
-import org.labkey.api.reports.report.python.IpynbReport;
-import org.labkey.api.reports.report.python.IpynbReportDescriptor;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.python.IpynbReportDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -122,7 +121,6 @@ import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
-import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
@@ -341,7 +339,6 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            Query.QueryTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
@@ -357,6 +354,7 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/MultiValueTest.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
         return ret;
     }
 
@@ -397,7 +395,10 @@ public class QueryModule extends DefaultModule
         JSONObject json = super.getPageContextJson(context);
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
-        json.put(QueryServiceImpl.PRODUCT_PROJECTS_ENABLED, QueryService.get().isProductProjectsEnabled(context.getContainer()));
+        Container container = context.getContainer();
+        boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
+        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
+        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.getProductProjectsCount() > 0);
 
         return json;
     }

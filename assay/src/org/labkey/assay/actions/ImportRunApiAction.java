@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -71,6 +72,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
 import static org.labkey.api.assay.AssayFileWriter.createFile;
@@ -255,7 +257,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
                 file = createFile(protocol, dir, "tmp");
-                try (TSVMapWriter tsvWriter = new TSVMapWriter(rawData))
+                try (TSVMapWriter tsvWriter = new TSVMapWriter(
+                        provider.getResultsDomain(protocol).getProperties().stream().map(DomainProperty::getName).collect(Collectors.toList()),
+                        rawData))
                 {
                     tsvWriter.write(file);
                     factory.setRawData(null);

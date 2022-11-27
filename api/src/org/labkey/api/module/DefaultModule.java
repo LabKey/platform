@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -43,11 +42,11 @@ import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
@@ -96,7 +95,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
 
-    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
     private static final Logger _log = LogManager.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
 
@@ -1116,6 +1114,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             _log.error("error", x);
             throw new ServletException(x);
         }
+        finally
+        {
+            // Issue 45853 - Switch controllerHits metrics to cumulative totals instead of per-server-session tallies
+            SimpleMetricsService.get().increment(getName(), "controllerHits", url.getController());
+        }
     }
 
     @Override
@@ -1257,50 +1260,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir);
         else
             return FileUtil.getAbsoluteCaseSensitiveFile(dir);
-    }
-
-
-    protected Set<String> getDependenciesFromFile()
-    {
-        Set<String> fileNames = new CaseInsensitiveTreeSet();
-        Resource resource = getModuleResource(DEPENDENCIES_FILE_PATH);
-        if (resource != null)
-        {
-            try
-            {
-                fileNames.addAll(PageFlowUtil.getStreamContentsAsList(resource.getInputStream(), true));
-            }
-            catch (IOException e)
-            {
-                _log.error("Problem reading dependencies file for resource " + resource.getName(), e);
-            }
-        }
-
-        return fileNames;
-    }
-
-    @Override
-    @NotNull
-    public Collection<String> getJarFilenames()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
-        return getDependenciesFromFile();
-    }
-
-    /**
-     * List of .jar files that might be produced from module's own source.
-     * This default set is not meant to be definitive for every module; not all of these jars
-     * exist for all modules, but they are the most common.
-     * Some modules may have additional known internal jar artifacts; override and add to the list
-     * as needed.
-     *
-     */
-    @NotNull
-    protected Collection<String> getInternalJarFilenames()
-    {
-        return List.of(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
     }
 
     protected ApplicationContext _applicationContext = null;

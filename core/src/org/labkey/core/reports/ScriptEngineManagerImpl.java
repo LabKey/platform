@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
@@ -47,10 +47,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.RDockerScriptEngineFactory;
-import org.labkey.api.reports.RScriptEngineFactory;
-import org.labkey.api.reports.RemoteRNotEnabledException;
-import org.labkey.api.reports.RserveScriptEngineFactory;
+import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
+import org.labkey.api.reports.report.r.RScriptEngineFactory;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
@@ -73,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,7 +98,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
     private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
-        if (key == ALL_ENGINES)
+        if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
             return unmodifiableList(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getArrayList(ExternalScriptEngineDefinitionImpl.class));
@@ -290,12 +291,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                         return new RserveScriptEngineFactory(def).getScriptEngine();
                     else
                     {
-                        LOG.error(String.format("Remote R engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
-                        throw new RemoteRNotEnabledException(def);
+                        RemoteRNotEnabledException ex = new RemoteRNotEnabledException(def);
+                        LOG.error(ex.getMessage());
+                        throw ex;
                     }
                 }
                 else
                     return new RScriptEngineFactory(def).getScriptEngine();
+            }
+            else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
+            {
+                LOG.error(String.format("Jupyter Report engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+                throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
@@ -704,6 +711,53 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         ModuleLoader.getInstance().handleStartupProperties(new ScriptEngineStartupPropertyHandler());
     }
+
+
+    @Override
+    public Map<String,Object> getScriptEngineMetrics()
+    {
+        Map<String,Object> views = new LinkedHashMap<>();
+
+        for (ScriptEngineFactory factory : getEngineFactories())
+        {
+            Map<String, Object> record = new HashMap<>();
+
+            record.put("factoryClass", factory.getClass().getName());
+            record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+            record.put("external", factory instanceof ExternalScriptEngineFactory);
+            record.put("enabled", isFactoryEnabled(factory));
+
+            if (factory instanceof ExternalScriptEngineFactory externalFactory)
+            {
+                ExternalScriptEngineDefinition def = externalFactory.getDefinition();
+                record.put("type", String.valueOf(def.getType()));
+                record.put("remote", def.isRemote());
+                record.put("sandboxed", def.isSandboxed());
+            }
+
+            try
+            {
+                ScriptEngine engine = factory.getScriptEngine();
+                if (null != engine)
+                    record.put("engineClass", engine.getClass().getName());
+            }
+            catch (Exception x)
+            {
+                // pass
+            }
+
+            // add using a class as the key, uniquify if necessary.
+            String key = (String)record.get("factoryClass");
+            if (null != views.putIfAbsent(key, record))
+            {
+                int i=1;
+                while (null != views.putIfAbsent(key + "$" + i, record))
+                    i++;
+            }
+        }
+        return views;
+    }
+
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert

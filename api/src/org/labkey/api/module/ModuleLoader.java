@@ -172,7 +172,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_| \s
                               /                 \s""".indent(2);
 
-    private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
 
@@ -535,7 +534,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(@NotNull Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
                     for (HtmlString error : _duplicateModuleErrors)
                     {
@@ -616,7 +615,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(@NotNull Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
                     warnings.add(HtmlString.of(message));
                 }
@@ -1346,24 +1345,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
-        if (isUpgradeRequired())
-        {
-            setDeferUsageReport(true);
-        }
-
         filterChain.doFilter(servletRequest, servletResponse);
 
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-    }
-
-    public boolean isDeferUsageReport()
-    {
-        return _deferUsageReport;
-    }
-
-    public void setDeferUsageReport(boolean defer)
-    {
-        _deferUsageReport = defer;
     }
 
     // Run scripts using the default upgrade script runner
@@ -1680,7 +1664,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         if (performedUpgrade)
         {
-            handleUnkownModules();
+            handleUnknownModules();
             updateModuleProperties();
         }
 
@@ -1699,11 +1683,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
         WarningService.get().register(new WarningProvider()
         {
             @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
             {
                 if (context.getUser().hasSiteAdminPermission())
                 {
-                    if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                    if (showAllWarnings || !_missingViews.isEmpty())
                         warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
                             ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
                 }
@@ -1742,7 +1726,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
 
     // Remove all unknown modules that are marked as AutoUninstall
-    public void handleUnkownModules()
+    public void handleUnknownModules()
     {
         getUnknownModuleContexts()
             .values()
@@ -2274,13 +2258,18 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .collect(Collectors.toList());
     }
 
+    public File getStartupPropDirectory()
+    {
+        return new File(_webappDir.getParent(), "startup");
+    }
+
     /**
      * Loads startup/bootstrap properties from configuration files.
      * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using">Documentation Page</a>
      */
     private void loadStartupProps()
     {
-        File propsDir = new File(_webappDir.getParent(), "startup");
+        File propsDir = getStartupPropDirectory();
         if (propsDir.isDirectory())
         {
             File newinstall = new File(propsDir, "newinstall");

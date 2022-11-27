@@ -71,16 +71,17 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         saveForm(form, user);
     }
 
-    public static <F extends SaveConfigurationForm> void saveForm(F form, @Nullable User user)
+    public static <F extends SaveConfigurationForm> AuthenticationConfiguration<?> saveForm(F form, @Nullable User user)
     {
         // This method might throw. Invoke proactively so BeanObjectFactory doesn't translate exception into an assert.
         String ignore = form.getEncryptedProperties();
+        final AuthenticationConfiguration<?> newConfiguration;
 
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
             AuthenticationConfigurationCache.clear();
-            AuthenticationConfiguration<?> newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
+            newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
             String whatChanged = whatChanged(null, newConfiguration);
             AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" was created");
             event.setChanges(whatChanged);
@@ -91,7 +92,7 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
             AuthenticationConfiguration<?> oldConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
             Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
             AuthenticationConfigurationCache.clear();
-            AuthenticationConfiguration<?> newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
+            newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
             String whatChanged = whatChanged(oldConfiguration, newConfiguration);
 
             if (!whatChanged.isEmpty())
@@ -101,6 +102,8 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
                 AuditLogService.get().addEvent(user, event);
             }
         }
+
+        return newConfiguration;
     }
 
     private static @NotNull String whatChanged(AuthenticationConfiguration<?> oldConfiguration, AuthenticationConfiguration<?> newConfiguration)

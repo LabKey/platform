@@ -244,7 +244,7 @@ public class CrosstabView extends QueryView
     }
 
     @Override
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType)
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();

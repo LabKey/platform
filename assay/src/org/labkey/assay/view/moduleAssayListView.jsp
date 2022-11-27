@@ -29,7 +29,7 @@
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
+LABKEY.page.assay = <%=json(new JSONObject(assay), 2) %>;
 </script>
 <p>
 <%

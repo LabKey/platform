@@ -17,7 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.logging.log4j.Level;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;

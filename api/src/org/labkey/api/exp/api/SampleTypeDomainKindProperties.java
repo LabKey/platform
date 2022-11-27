@@ -1,7 +1,7 @@
 package org.labkey.api.exp.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 
 import java.io.IOException;
 import java.util.Collections;

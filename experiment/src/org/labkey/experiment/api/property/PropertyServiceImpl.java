@@ -513,6 +513,9 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (xProp.isSetScale())
             prop.getPropertyDescriptor().setScale(xProp.getScale());
 
+        if (xProp.isSetDerivationDataScope())
+            prop.setDerivationDataScope(xProp.getDerivationDataScope().toString());
+
         if (xProp.isSetDefaultType())
         {
             DefaultType.Enum xDefaultType = xProp.getDefaultType();

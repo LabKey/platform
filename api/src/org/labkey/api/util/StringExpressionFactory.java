@@ -964,7 +964,7 @@ public class StringExpressionFactory
 
     public static class SimpleStringExpression extends AbstractStringExpression
     {
-        boolean _urlEncodeSubstitutions = true;
+        private final boolean _urlEncodeSubstitutions;
 
         SimpleStringExpression(String source, boolean urlEncodeSubstitutions)
         {

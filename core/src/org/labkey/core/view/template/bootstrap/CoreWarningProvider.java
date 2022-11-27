@@ -18,7 +18,11 @@ package org.labkey.core.view.template.bootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.TableXmlUtils;
+import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
@@ -28,6 +32,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -35,8 +40,8 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
-import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
@@ -46,54 +51,77 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 public class CoreWarningProvider implements WarningProvider
 {
-    private static final boolean SHOW_ALL_WARNINGS = WarningService.get().showAllWarnings();
+    private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
 
     public CoreWarningProvider()
     {
         AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
     }
 
-    @Override
-    public void addStaticWarnings(@NotNull Warnings warnings)
+    public void startSchemaCheck()
     {
-        // Warn if running on a deprecated database version or some other non-fatal database configuration issue
-        DbScope labkeyScope = DbScope.getLabKeyScope();
-        labkeyScope.getSqlDialect().addAdminWarningMessages(warnings);
-
-        getHeapSizeWarnings(warnings);
-
-        getConnectionPoolSizeWarnings(warnings, labkeyScope);
-
-        getJavaWarnings(warnings);
-
-        getTomcatWarnings(warnings);
+        // Issue 46264 - proactively check all DB schemas against the schema XML
+        // Launch this in the background, but delay by 10 seconds to reduce impact on other startup tasks
+        JobRunner.getDefault().execute(TimeUnit.SECONDS.toMillis(10), () ->
+        {
+            for (DbSchema schema : DbSchema.getAllSchemasToTest())
+            {
+                var schemaWarnings = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
+                if (schemaWarnings.hasErrors())
+                {
+                    _dbSchemaWarnings.put(schema.getName(), schemaWarnings.getResults());
+                }
+            }
+        });
     }
 
     @Override
-    public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+    public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
+    {
+        // Warn if running on a deprecated database version or some other non-fatal database configuration issue
+        DbScope labkeyScope = DbScope.getLabKeyScope();
+        labkeyScope.getSqlDialect().addAdminWarningMessages(warnings, showAllWarnings);
+
+        getHeapSizeWarnings(warnings, showAllWarnings);
+
+        getConnectionPoolSizeWarnings(warnings, labkeyScope, showAllWarnings);
+
+        getJavaWarnings(warnings, showAllWarnings);
+
+        getTomcatWarnings(warnings, showAllWarnings);
+    }
+
+    @Override
+    public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
     {
         if (context.getUser().hasSiteAdminPermission())
         {
-            getUserRequestedAdminOnlyModeWarnings(warnings);
+            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings);
 
-            getModuleErrorWarnings(warnings, context);
+            getModuleErrorWarnings(warnings, context, showAllWarnings);
 
-            getProbableLeakCountWarnings(warnings);
+            getProbableLeakCountWarnings(warnings, showAllWarnings);
 
-            getWebSocketConnectionWarnings(warnings);
+            getWebSocketConnectionWarnings(warnings, showAllWarnings);
+
+            getDbSchemaWarnings(warnings, showAllWarnings);
 
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
 
-            if (null == upgradeMessage && SHOW_ALL_WARNINGS)
+            if (null == upgradeMessage && showAllWarnings)
             {
                 // Mock upgrade message for testing
                 upgradeMessage = HtmlStringBuilder.of("You really ought to upgrade this server! ").append(new LinkBuilder("Click here!").href(AppProps.getInstance().getHomePageActionURL()).clearClasses()).getHtmlString();
@@ -105,7 +133,7 @@ public class CoreWarningProvider implements WarningProvider
             }
         }
 
-        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), SHOW_ALL_WARNINGS);
+        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), showAllWarnings);
         if (null != warning)
             warnings.add(warning);
 
@@ -115,20 +143,53 @@ public class CoreWarningProvider implements WarningProvider
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
         }
-        else if (SHOW_ALL_WARNINGS)
+        else if (showAllWarnings)
         {
             warnings.add(HtmlString.of("Here is a sample ribbon message."));
         }
     }
 
-    private void getHeapSizeWarnings(Warnings warnings)
+    private static final int MAX_SCHEMA_PROBLEMS_TO_SHOW = 3;
+
+    private void getDbSchemaWarnings(Warnings warnings, boolean showAllWarnings)
+    {
+        Map<String, List<SiteValidationResult>> schemaProblems = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        schemaProblems.putAll(_dbSchemaWarnings);
+        if (showAllWarnings)
+        {
+            schemaProblems.put("WorstSchemaEver", List.of(SiteValidationResult.Level.ERROR.create("Your schema is very, very bad")));
+        }
+
+        int count = 0;
+        for (var entry : schemaProblems.entrySet())
+        {
+            for (SiteValidationResult result : entry.getValue())
+            {
+                if (count == 0)
+                {
+                    addStandardWarning(warnings, "One or more database schemas is not as expected. Adjust the module's schema or metadata, or contact LabKey support.", "sqlScripts", "docs for help with upgrade scripts");
+                }
+                if (++count <= MAX_SCHEMA_PROBLEMS_TO_SHOW)
+                {
+                    warnings.add(HtmlString.of("Problem with '" + entry.getKey() + "' schema. " + result.getMessage()));
+                }
+            }
+        }
+
+        if (count > MAX_SCHEMA_PROBLEMS_TO_SHOW)
+        {
+            addStandardWarning(warnings, (count - MAX_SCHEMA_PROBLEMS_TO_SHOW) + " additional schema problems.", "View full consistency check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()));
+        }
+    }
+
+    private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)
     {
         // Issue 9683 - show admins warning about inadequate heap size (< 2GB)
         MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
         long maxMem = membean.getHeapMemoryUsage().getMax();
 
         // Issue 45171 - have a little slop since -Xmx2G ends up with slightly different sized heaps on different VMs
-        if (SHOW_ALL_WARNINGS || maxMem > 0 && maxMem < 2_000_000_000L)
+        if (showAllWarnings || maxMem > 0 && maxMem < 2_000_000_000L)
         {
             HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 2GB). LabKey recommends ");
             html.append(new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers"));
@@ -138,9 +199,9 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     // Warn if running in production mode with an inadequate labkey db connection pool size
-    private void getConnectionPoolSizeWarnings(Warnings warnings, DbScope labkeyScope)
+    private void getConnectionPoolSizeWarnings(Warnings warnings, DbScope labkeyScope, boolean showAllWarnings)
     {
-        if (SHOW_ALL_WARNINGS || !AppProps.getInstance().isDevMode())
+        if (showAllWarnings || !AppProps.getInstance().isDevMode())
         {
             Integer maxTotal = labkeyScope.getDataSourceProperties().getMaxTotal();
 
@@ -148,16 +209,16 @@ public class CoreWarningProvider implements WarningProvider
             {
                 warnings.add(HtmlString.of("Could not determine the connection pool size for the labkeyDataSource; verify that the connection pool is properly configured in labkey.xml"));
             }
-            else if (SHOW_ALL_WARNINGS || maxTotal < 20)
+            else if (showAllWarnings || maxTotal < 20)
             {
                 addStandardWarning(warnings, "The configured labkeyDataSource connection pool size (" + maxTotal + ") is too small for a production server. Update the configuration and restart the server.", "troubleshootingAdmin#pool", "Connection Pool Size section of the Troubleshooting page");
             }
         }
     }
 
-    private void getJavaWarnings(Warnings warnings)
+    private void getJavaWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        if (SHOW_ALL_WARNINGS || ModuleLoader.getInstance().getJavaVersion().isDeprecated())
+        if (showAllWarnings || ModuleLoader.getInstance().getJavaVersion().isDeprecated())
         {
             String javaInfo = JavaVersion.getJavaVersionDescription();
             addStandardWarning(warnings, "The deployed version of Java, " + javaInfo + ", is not supported. We recommend installing " + JavaVersion.getRecommendedJavaVersion() + ".", "supported", "Supported Technologies page");
@@ -189,9 +250,9 @@ public class CoreWarningProvider implements WarningProvider
         return result;
     }
 
-    private void getTomcatWarnings(Warnings warnings)
+    private void getTomcatWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        if (SHOW_ALL_WARNINGS || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
+        if (showAllWarnings || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
             addStandardWarning(warnings, "The deployed version of Tomcat, " + serverInfo + ", is not supported.", "supported", "Supported Technologies page");
@@ -208,7 +269,7 @@ public class CoreWarningProvider implements WarningProvider
                 StringUtils.startsWithIgnoreCase(webapp,"manager")
             );
 
-            if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
+            if (showAllWarnings || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
                 addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed. These may include 'docs', 'examples', 'host-manager', and 'manager'.", "configTomcat", "Tomcat Configuration");
         }
         catch (Exception x)
@@ -217,13 +278,13 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getModuleErrorWarnings(Warnings warnings, ViewContext context)
+    private void getModuleErrorWarnings(Warnings warnings, ViewContext context, boolean showAllWarnings)
     {
         //module failures during startup--show to admins
         Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-        if (SHOW_ALL_WARNINGS || null != moduleFailures && moduleFailures.size() > 0)
+        if (showAllWarnings || null != moduleFailures && moduleFailures.size() > 0)
         {
-            if (SHOW_ALL_WARNINGS && moduleFailures.isEmpty())
+            if (showAllWarnings && moduleFailures.isEmpty())
             {
                 // Mock failures for testing purposes
                 moduleFailures = Map.of("core", new Throwable(), "flow",  new Throwable());
@@ -232,27 +293,27 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getWebSocketConnectionWarnings(Warnings warnings)
+    private void getWebSocketConnectionWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        if (SHOW_ALL_WARNINGS || WebSocketConnectionManager.getInstance().showWarning())
+        if (showAllWarnings || WebSocketConnectionManager.getInstance().showWarning())
             addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
-    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings)
+    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings, boolean showAllWarnings)
     {
         //admin-only mode--show to admins
-        if (SHOW_ALL_WARNINGS || AppProps.getInstance().isUserRequestedAdminOnlyMode())
+        if (showAllWarnings || AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
             addStandardWarning(warnings, "This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the", "site settings page", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL());
         }
     }
 
-    private void getProbableLeakCountWarnings(Warnings warnings)
+    private void getProbableLeakCountWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (AppProps.getInstance().isDevMode())
         {
             int leakCount = ConnectionWrapper.getProbableLeakCount();
-            if (SHOW_ALL_WARNINGS || leakCount > 0)
+            if (showAllWarnings || leakCount > 0)
             {
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 HtmlStringBuilder html = HtmlStringBuilder.of(new LinkBuilder(count + " DB connection" + (count == 1 ? "" : "s") + " in use.").href(PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()).clearClasses());

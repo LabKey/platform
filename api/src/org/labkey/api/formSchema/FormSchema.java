@@ -24,14 +24,14 @@ import java.util.List;
  */
 public class FormSchema
 {
-    private final List<Field> _fields; // The fields to render on the client
+    private final List<Field<?>> _fields; // The fields to render on the client
 
-    public FormSchema (List<Field> fields)
+    public FormSchema (List<Field<?>> fields)
     {
         _fields = fields;
     }
 
-    public List<Field> getFields()
+    public List<Field<?>> getFields()
     {
         return _fields;
     }

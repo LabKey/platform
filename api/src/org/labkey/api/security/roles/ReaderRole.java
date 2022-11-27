@@ -22,8 +22,11 @@ import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.NotebookReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+
+import java.util.Collection;
 
 /*
 * User: Dave
@@ -42,6 +45,11 @@ public class ReaderRole extends AbstractRole
                 NotebookReadPermission.class,
                 MediaReadPermission.class
         );
+    }
+
+    public ReaderRole(String name, String description, Collection<Class<? extends Permission>>... permCollections)
+    {
+        super(name, description, permCollections);
     }
 
     @Override

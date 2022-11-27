@@ -58,7 +58,7 @@ public class LineageTableInfo extends VirtualTable
     private @Nullable
     final Integer _depth;
     private @Nullable
-    final String _expType;
+    final ExpLineageOptions.LineageExpType _expType;
     private @Nullable
     final String _cpasType;
     private @Nullable
@@ -69,7 +69,7 @@ public class LineageTableInfo extends VirtualTable
                             @NotNull SQLFragment objectids,
                             boolean parents,
                             @Nullable Integer depth,
-                            @Nullable String expType,
+                            @Nullable ExpLineageOptions.LineageExpType expType,
                             @Nullable String cpasType,
                             @Nullable String runProtocolLsid,
                             @Nullable ContainerFilter cf)
@@ -124,7 +124,7 @@ public class LineageTableInfo extends VirtualTable
         setTitleColumn("Name");
     }
 
-    private ForeignKey createLsidLookup(String expType, String cpasType)
+    private ForeignKey createLsidLookup(ExpLineageOptions.LineageExpType expType, String cpasType)
     {
         ForeignKey fk = null;
         if (cpasType != null)
@@ -157,15 +157,15 @@ public class LineageTableInfo extends VirtualTable
         };
     }
 
-    private ForeignKey createExpTypeFK(String expType)
+    private ForeignKey createExpTypeFK(ExpLineageOptions.LineageExpType expType)
     {
         switch (expType)
         {
-            case "Data":
+            case Data:
                 return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Data", "LSID", "Name").build();
-            case "Material":
+            case Material:
                 return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Materials", "LSID", "Name").build();
-            case "ExperimentRun":
+            case ExperimentRun:
                 return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Runs", "LSID", "Name").build();
             default:
                 return null;

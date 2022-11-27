@@ -298,9 +298,6 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         result.setAllowBackgroundUpload(provider.supportsBackgroundUpload());
         result.setAllowEditableResults(provider.supportsEditableResults());
 
-        // allow spaces in path for non-linux OS
-        result.setAllowSpacesInPath(!System.getProperty("os.name").toLowerCase().contains("linux"));
-
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
 

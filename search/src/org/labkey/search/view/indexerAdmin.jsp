@@ -16,16 +16,20 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController.AdminAction" %>
 <%@ page import="org.labkey.search.SearchController.AdminForm" %>
+<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.io.File" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -33,6 +37,8 @@ JspView<AdminForm> me = (JspView<AdminForm>) HttpView.currentView();
 AdminForm form = me.getModelBean();
 SearchService ss = SearchService.get();
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+File indexDirectory = LuceneSearchServiceImpl.getIndexDirectory();
+String indexDirectoryPath = null != indexDirectory ? indexDirectory.getPath() : "Invalid index directory. Path might include unknown substitution parameter(s).";
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>
@@ -45,12 +51,29 @@ if (null == ss)
 }
 else
 {
+    HtmlString indexPathHelp = HtmlStringBuilder.of("The index path setting supports string substitution of specific server properties. For example, the value:")
+        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;./temp/${serverGuid}/labkey_full_text_index</code><br><br>"))
+        .append("will currently result in this path:")
+        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;"))
+        .append("./temp/" + AdminBean.serverGuid + "/labkey_full_text_index")
+        .append(HtmlString.unsafe("</code><br><br>"))
+        .append("The supported properties and their current values are listed in the table below. Note that illegal file system characters within the values are replaced with underscores.")
+        .append(HtmlString.unsafe("<br><br>"))
+        .append(AdminBean.getPropertyGridHtml(LuceneSearchServiceImpl.getEscapedSystemPropertyMap()))
+        .getHtmlString();
+
     %><p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
             <tr>
-                <td>Path to full-text search index:&nbsp;</td>
-                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
+                <td>Path to full-text search index<%=helpPopup("Path to full-text search index", indexPathHelp, 350)%>:&nbsp;</td>
+                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getUnsubstitutedIndexDirectory())%>"></td>
+            </tr>
+            <tr>
+                <td>Current path resolves to:</td><td><%=h(indexDirectoryPath   )%></td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
             </tr><%
         if (hasAdminOpsPerms)
         {

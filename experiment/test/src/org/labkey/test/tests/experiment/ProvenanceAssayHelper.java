@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
 {
@@ -36,7 +35,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
         _fileBrowserHelper.uploadFile(datFile);
         SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Data");
         selectCmd.setColumns(List.of("LSID"));
-        SelectRowsResponse selResp = selectCmd.execute(createDefaultConnection(false), getProjectName());
+        SelectRowsResponse selResp = selectCmd.execute(createDefaultConnection(), getProjectName());
         Map<String, Object> dataTableRow = selResp.getRows().get(0);
         return dataTableRow.get("LSID").toString();
     }
@@ -93,9 +92,9 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
         domainCommand.getDomainDesign().setFields(fields);
         domainCommand.getDomainDesign().setDescription(description);
 
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
+        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(), getProjectName());
         GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
+        return getDomainCommand.execute(createDefaultConnection(), getProjectName());
     }
 
     protected void createAndUploadAssayData() throws IOException, CommandException

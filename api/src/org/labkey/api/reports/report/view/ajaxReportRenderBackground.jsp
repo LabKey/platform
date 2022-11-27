@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.r.RReport" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>

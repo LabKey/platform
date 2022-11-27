@@ -26,7 +26,7 @@ import java.util.GregorianCalendar;
 // Abstract action that renders a portal image for a portal selection pages (e.g., GEL, Argos). Modules need an action
 // in their own controller that extends this class and handles security, creates the correct attachment parent, and
 // specifies the image filename.
-public abstract class BaseBackgroundImageAction<FORM> extends BaseDownloadAction<FORM>
+public abstract class BaseBackgroundImageAction<FORM extends BaseDownloadAction.InlineDownloader> extends BaseDownloadAction<FORM>
 {
     @Override
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception

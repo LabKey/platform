@@ -109,7 +109,7 @@ public class SpringAttachmentFile implements AttachmentFile
             _in = null;
         }
         else
-            LOG.warn("No input stream is active for this SpringAttachmentFile");
+            LOG.debug("No input stream is active for this SpringAttachmentFile");
     }
 
     public static List<AttachmentFile> createList(Map<String, MultipartFile> fileMap)

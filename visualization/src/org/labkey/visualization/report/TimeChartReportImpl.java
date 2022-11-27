@@ -16,6 +16,7 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -77,8 +78,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         // the only way thumbnails can be generated from these reports.
         try
         {
-            _svg = VisualizationController.filterSVGSource(_svg);
-            return ThumbnailUtil.getThumbnailFromSvg(_svg);
+            return ThumbnailUtil.getThumbnailFromSvg(SvgSource.of(_svg));
         }
         catch (NotFoundException e)
         {

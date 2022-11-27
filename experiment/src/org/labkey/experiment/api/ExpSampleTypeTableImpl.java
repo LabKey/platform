@@ -58,15 +58,15 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         switch (column)
         {
             case Folder:
+            {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer())));
                 return columnInfo;
+            }
             case Description:
             case LSID:
             case MaterialLSIDPrefix:
             case Name:
-            case NameExpression:
-            case AliquotNameExpression:
             case LabelColor:
             case MetricUnit:
             case AutoLinkTargetContainer:
@@ -81,6 +81,18 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
+            case NameExpression:
+            {
+                var columnInfo =  wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Naming Pattern");
+                return columnInfo;
+            }
+            case AliquotNameExpression:
+            {
+                var columnInfo =  wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Aliquot Naming Pattern");
+                return columnInfo;
+            }
             case SampleCount:
             {
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +

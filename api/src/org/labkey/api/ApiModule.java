@@ -71,7 +71,7 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
@@ -102,7 +102,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 
@@ -295,16 +294,6 @@ public class ApiModule extends CodeOnlyModule
             WorkbookContainerType.TestCase.class,
             WriteableLookAndFeelProperties.TestCase.class
         );
-    }
-
-    @Override
-    public @NotNull Collection<String> getJarFilenames()
-    {
-        // Filter out "labkey-client-api-XX.X.jar" -- we don't need credits for our own jar. All of its dependencies will
-        // appear on the credits page, though.
-        return super.getJarFilenames().stream()
-            .filter(fn->!fn.startsWith("labkey-client-api-"))
-            .collect(Collectors.toList());
     }
 
     @Override

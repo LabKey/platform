@@ -57,14 +57,14 @@ public class CustomViewSetKey implements Serializable
             return false;
         CustomViewSetKey that = (CustomViewSetKey) other;
         return Objects.equals(_containerId, that._containerId) &&
-                Objects.equals(_queryName, that._queryName) &&
+                Objects.equals(_queryName.toLowerCase(), that._queryName.toLowerCase()) &&
                 Objects.equals(_schema, that._schema);
     }
 
     public int hashCode()
     {
         return Objects.hashCode(_containerId) ^
-                Objects.hashCode(_queryName) ^
+                Objects.hashCode(_queryName.toLowerCase()) ^
                 Objects.hashCode(_schema);
     }
 

@@ -628,12 +628,17 @@ public class DomainImpl implements Domain
                             generateStorageColumnName(impl._pd);
                     }
 
-                    if (impl.isRecreateRequired())
+                    if (impl.isRecreateRequired() && !impl.isSystemPropertySwap())
                     {
                         impl.markAsNew();
                     }
 
-                    if (impl.isNew())
+                    if (impl.isSystemPropertySwap())
+                    {
+                        // Property descriptor was swapped for a different pd
+                        propChanged = true;
+                    }
+                    else if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
                             checkRequiredStatus.add(impl);
@@ -704,7 +709,11 @@ public class DomainImpl implements Domain
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
+                    {
+                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats);
+                        if (auditInfo.isChanged())
+                            propertyAuditInfo.add(auditInfo);
+                    }
                 }
             }
 
@@ -942,6 +951,8 @@ public class DomainImpl implements Domain
         {
             return _details;
         }
+
+        public boolean isChanged() { return !_details.isEmpty(); }
 
         private String makeNewPropAuditComment(DomainProperty prop)
         {

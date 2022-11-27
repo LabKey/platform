@@ -22,9 +22,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
@@ -71,12 +71,12 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.RConnectionHolder;
-import org.labkey.api.reports.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RConnectionHolder;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.RserveScriptEngine;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
@@ -87,8 +87,8 @@ import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportJob;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -2495,7 +2495,7 @@ public class ReportsController extends SpringActionController
                 if (report instanceof CrosstabReport)
                 {
                     ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
-                    writer.renderSheetAndWrite(getViewContext().getResponse());
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;

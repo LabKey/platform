@@ -25,25 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.DatabaseMetaDataWrapper;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScanner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -56,7 +38,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -104,6 +85,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private volatile boolean _groupConcatInstalled = false;
     private volatile String _versionYear = null;
     private volatile Edition _edition = null;
+
+    private HtmlString _adminWarning = null;
 
     @SuppressWarnings("unused")
     enum Edition
@@ -237,6 +220,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
         {
             // This is because the jtds driver has a bug where it returns these from the db as strings
+            // TODO: Is this true for the SQL Server JDBC driver?
             return "DATETIME";
         }
         else
@@ -778,8 +762,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState()) // jTDS driver
-                || ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
+        return ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
@@ -1002,61 +985,49 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
-        return new JtdsJdbcHelper();
+        return new SqlServerJdbcHelper();
     }
 
 
     /*
-        jTDS example connection URLs we need to parse:
+        SQL Server example connection URLs we need to parse:
 
-        jdbc:jtds:sqlserver://host:1433/database
-        jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
-        jdbc:jtds:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://;databaseName=foo
+        jdbc:sqlserver://;database=foo
+        jdbc:sqlserver://host;databaseName=foo
+        jdbc:sqlserver://host;database=foo
+        jdbc:sqlserver://host:1433;databaseName=foo
+        jdbc:sqlserver://host:1433;database=foo
+        jdbc:sqlserver://host:1433;databaseName=foo;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;database=foo;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;database=database
+
+        Note: SQL Server JDBC driver accepts connection URLs that lack a "databaseName" parameter (in which case the
+        server uses the "default" database). But LabKey requires this parameter, especially when creating a new database.
+        Although not documented, the driver will accept "database" as a synonym for "databaseName", so we allow it.
     */
 
-    private static final String JTDS_PREFIX = "jdbc:jtds:sqlserver://";
-
-    private static class JtdsJdbcHelper implements JdbcHelper
+    private static class SqlServerJdbcHelper implements JdbcHelper
     {
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (url.startsWith(JTDS_PREFIX))
-            {
-                int dbEnd = url.indexOf(';');
-                if (-1 == dbEnd)
-                    dbEnd = url.length();
-                int dbDelimiter = url.indexOf('/', JTDS_PREFIX.length());
-
-                // Didn't find /database after the prefix, so look for databaseName property. See #43751.
-                if (-1 == dbDelimiter)
-                {
-                    dbDelimiter = url.indexOf(";databaseName=");
-                    if (-1 == dbDelimiter)
-                        throw new ServletException("Invalid jTDS connection url - no database is specified: " + url);
-                    dbDelimiter = url.indexOf("=", dbDelimiter);
-                    dbEnd = url.indexOf(";", dbDelimiter);
-                    if (-1 == dbEnd)
-                        dbEnd = url.length();
-                }
-
-                return url.substring(dbDelimiter + 1, dbEnd);
-            }
-            else if (url.startsWith("jdbc:sqlserver"))
+            if (url.startsWith("jdbc:sqlserver://"))
             {
                 int dbDelimiter = url.indexOf(";database=");
                 if (-1 == dbDelimiter)
                     dbDelimiter = url.indexOf(";databaseName=");
                 if (-1 == dbDelimiter)
-                    throw new ServletException("Invalid sql server connection url: " + url);
-                dbDelimiter = url.indexOf("=",dbDelimiter)+1;
-                int dbEnd = url.indexOf(";",dbDelimiter);
+                    throw new ServletException("Invalid sql server connection url; \"databaseName\" property is required: " + url);
+                dbDelimiter = url.indexOf("=", dbDelimiter)+1;
+                int dbEnd = url.indexOf(";", dbDelimiter);
                 if (-1 == dbEnd)
                     dbEnd = url.length();
                 return url.substring(dbDelimiter, dbEnd);
             }
             else
-                throw new ServletException("Unsupported connection url: " + url);
+                throw new ServletException("Unsupported connection url; must begin with \"jdbc:sqlserver://\": " + url);
         }
     }
 
@@ -1703,13 +1674,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         GroupConcatInstallationManager.get().ensureInstalled(context);
     }
 
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
+        else if (showAllWarnings)
+            warnings.add(HtmlString.of(MicrosoftSqlServerDialectFactory.getStandardWarningMessage("no longer supports", _versionYear)));
     }
 
     @Override
@@ -1936,19 +1914,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 Map<ParamTraits, Integer> traitMap = new HashMap<>();
                 if (rs.getInt("COLUMN_TYPE") == DatabaseMetaData.procedureColumnReturn)
                 {
-                    // jtds reports a column name of "return_code" from the getProcedureColumns call,
-                    // but in the return from the execution, it's called "return_status".
-                    // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    if (isJTDS(scope))
-                    {
-                        parameters.put("return_status", new MetadataParameterInfo(traitMap));
-                    }
-                    else
-                    {
-                        parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
-                    }
+                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
                 }
                 else
                 {
@@ -1969,10 +1937,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
-            if (!isJTDS(procScope))
-            {
-                sb.append("{");
-            }
+            sb.append("{");
             sb.append("? = ");
             paramCount--;
         }
@@ -1983,7 +1948,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
-        if (hasReturn || assignResult && !isJTDS(procScope))
+        if (hasReturn || assignResult)
         {
             sb.append("}");
         }
@@ -1995,43 +1960,22 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         int index = 1;
-        boolean jTDS = isJTDS(scope);
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
-            String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
             int datatype = paramInfo.getParamTraits().get(ParamTraits.datatype);
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
             {
-                if (jTDS)
-                {
-                    stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
-                }
-                else
-                {
-                    stmt.setObject(index, paramInfo.getParamValue(), datatype);
-                }
+                stmt.setObject(index, paramInfo.getParamValue(), datatype);
             }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
             {
-                if (jTDS)
-                {
-                    stmt.registerOutParameter(paramName, datatype);
-                }
-                else
-                {
-                    stmt.registerOutParameter(index, datatype);
-                }
+                stmt.registerOutParameter(index, datatype);
             }
             index++;
         }
-    }
-
-    protected boolean isJTDS(DbScope scope)
-    {
-        return scope.getDriverName().contains("jTDS");
     }
 
     @Override

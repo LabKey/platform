@@ -235,9 +235,12 @@ public class FileUtil
             if (hasCloudScheme(dir))
             {
                 // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
-                for (Path path : Files.walk(dir).sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+                try (Stream<Path> paths = Files.walk(dir))
                 {
-                    Files.deleteIfExists(path);
+                    for (Path path : paths.sorted(Comparator.reverseOrder()).toList())
+                    {
+                        Files.deleteIfExists(path);
+                    }
                 }
             }
             else
@@ -349,6 +352,7 @@ public class FileUtil
      * Returns the file name extension without the dot, null if there
      * isn't one.
      */
+    @Nullable
     public static String getExtension(String name)
     {
         if (name != null && name.lastIndexOf('.') != -1)
@@ -498,12 +502,14 @@ public class FileUtil
         }
     }
 
+    @NotNull
     public static String getFileName(Path fullPath)
     {
         // We want unencoded fileName
         if (hasCloudScheme(fullPath))
         {
-            return fullPath.getFileName().toUri().getPath();
+            Path path = fullPath.getFileName();
+            return path == null ? "" : path.toUri().getPath();
         }
         else
         {
@@ -1048,7 +1054,8 @@ quickScan:
             os.write(buf,0,r);
     }
 
-    private static char[] illegalChars = {'/','\\',':','?','<','>','*','|','"','^'};
+    private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^'};
+    private static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
     public static boolean isLegalName(String name)
     {
@@ -1058,7 +1065,7 @@ quickScan:
         if (name.length() > 255)
             return false;
 
-        return !StringUtils.containsAny(name, illegalChars);
+        return !StringUtils.containsAny(name, ILLEGAL_CHARS);
     }
 
     public static String makeLegalName(String name)
@@ -1067,25 +1074,33 @@ quickScan:
         {
             return "__null__";
         }
+
+        if (name.length() == 0)
+        {
+            return "__empty__";
+        }
+
         //limit to 255 chars (FAT and OS X)
         //replace illegal chars
-        //can't end with space (windows)
-        //can't end with period (windows)
         char[] ret = new char[Math.min(255, name.length())];
         for(int idx = 0; idx < ret.length; ++idx)
         {
             char ch = name.charAt(idx);
-            if(ch == '/' || ch == '?' || ch == '<' || ch == '>' || ch == '\\' || ch == ':'
-                    || ch == '*' || ch == '|' || ch == '"' || ch == '^')
+            if (StringUtils.contains(ILLEGAL_CHARS_STRING, ch))
             {
                 ch = '_';
             }
 
-            if(idx == name.length() - 1 && (ch == ' ' || ch == '.'))
-                ch = '_';
-
             ret[idx] = ch;
         }
+
+        //can't end with space (windows)
+        //can't end with period (windows)
+        int lastIndex = ret.length - 1;
+        char ch = ret[lastIndex];
+        if (ch == ' ' || ch == '.')
+            ret[lastIndex] = '_';
+
         return new String(ret);
     }
 
@@ -1632,6 +1647,24 @@ quickScan:
                 // make sure we did not leave any temp files lying around
                 FileUtil.stopRequest();
             }
+        }
+
+        @Test
+        public void testMakeLegalName()
+        {
+            assertEquals("__null__", makeLegalName(null));
+            assertEquals("__empty__", makeLegalName(""));
+            assertEquals("_", makeLegalName(" "));
+            assertEquals(" _", makeLegalName("  "));
+            assertEquals("_", makeLegalName("."));
+            assertEquals("._", makeLegalName(".."));
+            assertEquals("foo", makeLegalName("foo"));
+            assertEquals("foo_", makeLegalName("foo "));
+            assertEquals("foo_", makeLegalName("foo."));
+            assertEquals(StringUtils.repeat('_', ILLEGAL_CHARS.length), makeLegalName(new String(ILLEGAL_CHARS)));
+            assertEquals(StringUtils.repeat('_', 255), makeLegalName(StringUtils.repeat(new String(ILLEGAL_CHARS), 50)));
+            assertEquals(StringUtils.repeat('.', 254) + "_", makeLegalName(StringUtils.repeat('.', 500)));
+            assertEquals(StringUtils.repeat(' ', 254) + "_", makeLegalName(StringUtils.repeat(' ', 500)));
         }
     }
 }

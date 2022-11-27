@@ -196,10 +196,10 @@ public class ListServiceImpl implements ListService
     @Nullable
     public ContainerFilter getPicklistContainerFilter(Container container, User user, @NotNull ListDefinition list)
     {
-        if (!QueryService.get().isProductProjectsEnabled(container))
+        if (container == null || !container.isProductProjectsEnabled())
             return null;
 
-        if (container == null || user == null || !list.isPicklist() || container.isRoot())
+        if (user == null || !list.isPicklist() || container.isRoot())
             return null;
 
         if (container.isProject())

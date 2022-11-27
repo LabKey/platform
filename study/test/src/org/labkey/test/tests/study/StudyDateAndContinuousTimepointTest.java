@@ -72,7 +72,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
                 .setName(datasetName);
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
-        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestDate", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDate"));
         editDatasetPage.clickSave();
 
         log("Inserting rows in the dataset");

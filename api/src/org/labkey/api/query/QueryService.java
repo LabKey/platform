@@ -19,7 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.query.column.ColumnInfoTransformer;
@@ -70,6 +70,7 @@ public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
+    String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -591,7 +592,7 @@ public interface QueryService
     @Nullable
     QueryAnalysisService getQueryAnalysisService();
 
-    TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
+    TableInfo analyzeQuery(UserSchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
 
 
     /* registry of column types (named by conceptURI) */
@@ -622,8 +623,4 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
-    /**
-     * Resolves if the product projects feature is enabled in the supplied container scope.
-     */
-    boolean isProductProjectsEnabled(Container container);
 }

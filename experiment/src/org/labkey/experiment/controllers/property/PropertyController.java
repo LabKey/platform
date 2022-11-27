@@ -26,8 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
@@ -355,11 +355,11 @@ public class PropertyController extends SpringActionController
     }
 
     /**
-     * DO NOT USE. This action has been deprecated in 20.3 in favor of GetDomainKindAction.
+     * @deprecated Use {@link GetDomainDetailsAction}
      * Only here for backwards compatibility to resolve requests and redirect.
      * //TODO: Deprecate/update docs
      */
-    @Deprecated
+    @Deprecated (since = "20.3")
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>

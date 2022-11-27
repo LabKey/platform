@@ -107,6 +107,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    /* public for testing only */
     @Override
     public TableInfo getTableInfo()
     {
@@ -437,7 +438,7 @@ public class QueryTable extends QueryRelation
     }
 
     
-    class TableColumn extends RelationColumn
+    public class TableColumn extends RelationColumn
     {
         final FieldKey _key;
         ColumnInfo _col;
@@ -508,7 +509,7 @@ public class QueryTable extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        public QueryRelation getTable()
         {
             return QueryTable.this;
         }
@@ -644,9 +645,7 @@ public class QueryTable extends QueryRelation
         boolean existed = selectedColumnMap.containsKey(tc.getFieldKey());
 
         if (!existed && tc instanceof TableColumn)
-        {
-            ((TableColumn)tc)._suggestedColumn = true;
-        }
+            tc._suggestedColumn = true;
 
         if (suggested.contains(tc))
             return null;

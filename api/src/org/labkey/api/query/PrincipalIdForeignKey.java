@@ -28,6 +28,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
     {
         super("UserId", "Name");
         _userSchema = userSchema;
+        setShowAsPublicDependency(false);
     }
 
     @Override

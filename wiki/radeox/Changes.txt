@@ -1,3 +1,7 @@
+1.0.5 2022-08-30
+
+- Expunge example and test files
+
 1.0.4 2022-02-16
 
 - Target Java 16

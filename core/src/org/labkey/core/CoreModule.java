@@ -21,6 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -29,6 +31,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.audit.DefaultAuditProvider;
@@ -116,6 +119,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -132,6 +136,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -166,6 +171,7 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
@@ -227,6 +233,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
@@ -261,9 +268,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -290,15 +299,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     static
     {
-        // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other module touches Quartz in its setup, it initializes with these setting.
+        // Accept most of the standard Quartz properties, but set the misfire threshold to five minutes. This prevents
+        // Quartz from dropping scheduled work if a lot of items fire at the same time, like a lot of ETLs triggering at 2AM.
+        // This can overwhelm the thread pool running them so they don't complete in the default 1 minute window. Set it early so
+        // if any other module touches Quartz in its setup, it initializes with this setting.
         Properties props = System.getProperties();
-        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
         props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
 
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
     }
+
+    private CoreWarningProvider _warningProvider;
 
     @Override
     public boolean hasScripts()
@@ -364,6 +376,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
+        DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
 
         try
         {
@@ -376,7 +389,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
-        WarningService.get().register(new CoreWarningProvider());
+        _warningProvider = new CoreWarningProvider();
+        WarningService.get().register(_warningProvider);
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
@@ -418,7 +432,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
-   }
+
+        deleteTempFiles();
+    }
+
+    private void deleteTempFiles()
+    {
+        try
+        {
+            // Issue 46598 - clean up previously created temp files from file uploads
+            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir().toPath());
+        }
+        catch (IOException e)
+        {
+            LOG.warn("Failed to clean up previously uploaded files from " + SpringActionController.getTempUploadDir(), e);
+        }
+    }
 
     private void registerHealthChecks()
     {
@@ -757,7 +786,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Users & guests can read from /home
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
-        home.setFolderType(collaborationType, (User)null);
+        home.setFolderType(collaborationType, null);
         addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
@@ -809,6 +838,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
@@ -833,6 +863,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Temp file cleanup";
+            }
+
+            @Override
+            public void shutdownPre()
+            {}
+
+            @Override
+            public void shutdownStarted()
+            {
+                deleteTempFiles();
+            }
+        });
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 
@@ -869,7 +917,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     catch (IOException e)
                     {
-                        LogManager.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                        LOG.error("Exception exporting action stats", e);
                     }
 
                     logger.info(buf.toString());
@@ -982,10 +1030,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
-                "No Question Marks in URLs",
-                "Don't append '?' to URLs unless there are query parameters.",
-                false);
 
         if (null != PropertyService.get())
         {
@@ -1013,6 +1057,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
                 .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
                 .collect(Collectors.toList()));
+            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
 
             // Report the total number of login entries in the audit log
@@ -1022,6 +1067,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
+            results.put("workbookCount", ContainerManager.getWorkbookCount());
+            Calendar cal = new GregorianCalendar();
+            cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
+            results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
+            results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             return results;
         });
 
@@ -1062,6 +1112,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         SystemMaintenance.setTimer();
         ThumbnailServiceImpl.startThread();
+        _warningProvider.startSchemaCheck();
 
         // Start up the default Quartz scheduler, used in many places
         try
@@ -1078,6 +1129,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         TempTableTracker.init();
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put("productFeatures", AdminConsole.getProductFeatureSet());
+        return json;
     }
 
     @Override
@@ -1301,6 +1360,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
     }
+
+
 
     /**
      * This method handles the home project settings

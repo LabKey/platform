@@ -124,6 +124,7 @@ public class ListQuerySchema extends UserSchema
     }
 
     @Override
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         ListDefinition def = ListService.get().getList(getContainer(), settings.getQueryName(), true);

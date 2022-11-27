@@ -450,8 +450,6 @@
     }%>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
-    <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
-    <input type="hidden" name="issueDefName" value="<%=h(StringUtils.trimToEmpty(issue.getIssueDefName()))%>">
     <input type="hidden" name="dirty" value="false">
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>

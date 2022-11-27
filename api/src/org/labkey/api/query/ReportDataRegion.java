@@ -17,7 +17,7 @@ package org.labkey.api.query;
 
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;

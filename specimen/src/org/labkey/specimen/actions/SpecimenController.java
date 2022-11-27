@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -1128,10 +1128,10 @@ public class SpecimenController extends SpringActionController
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            for (ExcelColumn col : xlWriter.getColumns())
-                col.setCaption(importer.label(col.getName()));
-
-            xlWriter.renderSheetAndWrite(getViewContext().getResponse());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(getViewContext().getResponse());
 
             return null;
         }
@@ -1194,7 +1194,7 @@ public class SpecimenController extends SpringActionController
         }
     }
 
-    public static class SpecimenEventAttachmentForm
+    public static class SpecimenEventAttachmentForm implements BaseDownloadAction.InlineDownloader
     {
         private int _eventId;
         private String _name;
@@ -5043,10 +5043,8 @@ public class SpecimenController extends SpringActionController
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    try (ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
-                    {
-                        writer.renderSheetAndWrite(getViewContext().getResponse());
-                    }
+                    ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type);
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;
@@ -5196,10 +5194,10 @@ public class SpecimenController extends SpringActionController
 
                     if (form.isSendXls())
                     {
-                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
                         {
-                            xlsWriter.renderSheetAndWrite(ostream);
-                            ostream.flush();
+                            ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
+                            xlsWriter.renderWorkbook(ostream);
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }
                     }

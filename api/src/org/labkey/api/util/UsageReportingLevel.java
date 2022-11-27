@@ -119,7 +119,6 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
 
-            putModuleControllerHits(modulesMap);
             putModulesMetrics(modulesMap);
             putModulesBuildInfo(modulesMap);
 
@@ -152,14 +151,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     public void scheduleUpgradeCheck()
     {
         cancelUpgradeCheck();
-        if (!ModuleLoader.getInstance().isDeferUsageReport())
+        TimerTask task = createTimerTask();
+        if (task != null)
         {
-            TimerTask task = createTimerTask();
-            if (task != null)
-            {
-                _timer = new Timer("UpgradeCheck", true);
-                _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
-            }
+            _timer = new Timer("UpgradeCheck", true);
+            _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
         }
     }
 
@@ -269,27 +265,6 @@ public enum UsageReportingLevel implements SafeToRenderEnum
 
             // Add to the module's info to be included in the submission
             moduleStats.put("buildInfo", moduleBuildInfo);
-        }
-    }
-
-    protected void putModuleControllerHits(Map<String, Map<String, Object>> allModulesStats)
-    {
-        try
-        {
-            ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
-                Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-                Map<String, Long> controllerStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                moduleStats.put("controllerHits", controllerStats);
-                controllersMap.forEach((controller, actionStatsMap) -> controllerStats.put(controller,
-                        actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum()));
-            });
-        }
-        catch (InstantiationException | IllegalAccessException e)
-        {
-            // Unlikely to hit this, but just in case, still give module list
-            ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
-            // And put the error in the errors section of the metrics
-            allModulesStats.computeIfAbsent(UsageMetricsService.ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put("controllerCounts", e.getMessage());
         }
     }
 

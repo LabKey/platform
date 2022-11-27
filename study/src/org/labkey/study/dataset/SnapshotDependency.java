@@ -127,9 +127,17 @@ public abstract class SnapshotDependency
                         List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
                         for (QuerySnapshotDefinition snapshot : snapshots)
                         {
-                            if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, dsDef))
+                            try
                             {
-                                dependencies.put(snapshot.getId(), snapshot);
+                                if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, dsDef))
+                                {
+                                    dependencies.put(snapshot.getId(), snapshot);
+                                }
+                            }
+                            catch (Throwable e)
+                            {
+                                // issue : 45996 don't fail all snapshots due to a dependency checking error
+                                _log.warn("An error occurred checking dependencies for snapshot : " + snapshot.getName() + " in folder : " + snapshot.getContainer().getPath(), e);
                             }
                         }
                     }
@@ -154,6 +162,10 @@ public abstract class SnapshotDependency
         private boolean hasDependency(QuerySnapshotDefinition qsDef, @NotNull org.labkey.api.study.Dataset dsDef)
         {
             if (QueryService.get().isQuerySnapshot(dsDef.getContainer(), StudySchema.getInstance().getSchemaName(), dsDef.getName()))
+                return false;
+
+            // if the snapshot is not configured to automatically update, check no further
+            if (qsDef.getUpdateDelay() == 0)
                 return false;
 
             if (dsDef.getContainer().getId().equals(qsDef.getQueryTableContainerId()))

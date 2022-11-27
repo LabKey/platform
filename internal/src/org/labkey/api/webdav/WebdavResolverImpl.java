@@ -23,6 +23,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -227,7 +228,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         private Container testContainer = null;
         
         @Test
-        public void testContainers()
+        public void testContainers() throws ValidationException
         {
             TestContext context = TestContext.get();
             User guest = UserManager.getGuestUser();

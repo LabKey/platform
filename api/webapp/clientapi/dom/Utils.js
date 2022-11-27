@@ -145,6 +145,15 @@ LABKEY.Utils = new function(impl, $) {
         return nextRow;
     };
 
+    var isValidQuerySelector = function(selector) {
+        try {
+            document.createDocumentFragment().querySelector(selector);
+        } catch(ignore) {
+            return false;
+        }
+        return true;
+    };
+
     /**
      * Shows an error dialog box to the user in response to an error from an AJAX request, including
      * any error messages from the server.
@@ -866,10 +875,21 @@ LABKEY.Utils = new function(impl, $) {
             return;
         const fn = function()
         {
-            if (typeof el === "string")
-                el = document.getElementById(el);
-            if (el)
-                el['on' + eventName] = handler;
+            if (typeof el === "string") {
+                // Issue 46371: LKS grid column header locking clones the header row which results in multiple
+                //      DOM elements with the same id attr, but only the first was getting the event handler attached
+                if (isValidQuerySelector(el)) {
+                    const list = document.querySelectorAll('#' + el);
+                    for (let i in list) {
+                        list[i]['on' + eventName] = handler;
+                    }
+                } else {
+                    el = document.getElementById(el);
+                    if (el) {
+                        el['on' + eventName] = handler;
+                    }
+                }
+            }
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };

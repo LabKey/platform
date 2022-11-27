@@ -15,6 +15,7 @@
  */
 package org.labkey.core.notification;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -27,6 +28,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -150,13 +152,16 @@ public class NotificationController extends SpringActionController
             try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 NotificationService service = NotificationService.get();
-                Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
+                Container notificationContainer = form.isByContainer() ? getContainer() : null;
+                ContainerFilter containerFilter = null;
+                if (form.isByContainer() && !StringUtils.isEmpty(form.getContainerFilter()))
+                    containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
 
                 List<Notification> notifications;
                 if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
-                    notifications = service.getNotificationsByUser(container, getUser().getUserId(), true);
+                    notifications = service.getNotificationsByUser(notificationContainer, getUser().getUserId(), true, containerFilter);
                 else
-                    notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), true);
+                    notifications = service.getNotificationsByTypeLabels(notificationContainer, form.getTypeLabels(), getUser().getUserId(), true, containerFilter);
 
                 for (Notification notification : notifications)
                 {
@@ -280,12 +285,16 @@ public class NotificationController extends SpringActionController
             NotificationService service = NotificationService.get();
 
             List<Map<String, Object>> notificationList = new ArrayList<>();
-            Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
+            Container notificationContainer = form.isByContainer() ? getContainer() : null;
+            ContainerFilter containerFilter = null;
+            if (form.isByContainer() && !StringUtils.isEmpty(form.getContainerFilter()))
+                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
+
             List<Notification> notifications;
             if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
-                notifications = service.getNotificationsByUser(container, getUser().getUserId(), false);
+                notifications = service.getNotificationsByUser(notificationContainer, getUser().getUserId(), false, containerFilter);
             else
-                notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), false);
+                notifications = service.getNotificationsByTypeLabels(notificationContainer, form.getTypeLabels(), getUser().getUserId(), false, containerFilter);
 
             int i = 0;
             int unreadCount = 0;
@@ -315,18 +324,29 @@ public class NotificationController extends SpringActionController
 
     public static class NotificationsForm
     {
-        private String _container;
+        private boolean _byContainer;
+        private String _containerFilter;
         private List<String> _typeLabels;
         private Integer _maxRows;
 
-        public String getContainer()
+        public boolean isByContainer()
         {
-            return _container;
+            return _byContainer;
         }
 
-        public void setContainer(String container)
+        public void setByContainer(boolean byContainer)
         {
-            _container = container;
+            _byContainer = byContainer;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
 
         public List<String> getTypeLabels()
@@ -372,7 +392,7 @@ public class NotificationController extends SpringActionController
             NotificationService service = NotificationService.get();
             if (service != null && user != null && !user.isGuest())
             {
-                List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
+                List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false, null);
                 for (Notification notification : userNotifications)
                 {
                     if (notification.getReadOn() != null)

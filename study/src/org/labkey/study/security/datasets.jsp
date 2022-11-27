@@ -195,17 +195,17 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         out.print(generateReturnUrlFormField(returnUrl));
 
     int row = 0;
-    %><br/><table class="table table-striped table-bordered table-hover labkey-data-region-header-lock" id="datasetSecurityFormTable"><colgroup>
+    %><br/><table class="table table-striped table-bordered table-hover labkey-data-region-header-lock labkey-data-region-column-lock" id="datasetSecurityFormTable"><colgroup>
     <%
     for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {
         %><col><%
     }
     %></colgroup>
-    <tr class="<%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
+    <tr class="<%=getShadeRowClass(row++)%>"><th>Dataset</th><%
     for (Group g : restrictedGroups)
     {
-        %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
+        %><th><%=h(groupName(g))%></th><%
     }
 
     List<Role> possibleRoles = new ArrayList<>();

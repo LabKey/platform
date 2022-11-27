@@ -65,13 +65,13 @@
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2)%>;
+LABKEY.page.assay = <%=json(new JSONObject(assay), 2)%>;
 <%
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
-    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
-    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.getJavaScriptFragment(2)%>);<%
+    org.json.old.JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=json(batchJson, 2)%>);<%
  }
  else
  {

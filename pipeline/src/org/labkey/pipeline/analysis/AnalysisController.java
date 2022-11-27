@@ -23,8 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -63,6 +63,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -107,11 +108,16 @@ public class AnalysisController extends SpringActionController
         setActionResolver(_resolver);
     }
 
-    public static ActionURL urlAnalyze(Container container, TaskId tid, String path)
+    public static ActionURL urlAnalyze(Container container, TaskId tid, String path, @Nullable ReturnURLString returnUrl)
     {
-        return new ActionURL(AnalyzeAction.class, container)
+        ActionURL result = new ActionURL(AnalyzeAction.class, container)
                 .addParameter(AnalyzeForm.Params.taskId, tid.toString())
                 .addParameter(AnalyzeForm.Params.path, path);
+        if (returnUrl != null)
+        {
+            result.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+        }
+        return result;
     }
 
     @RequiresPermission(InsertPermission.class)

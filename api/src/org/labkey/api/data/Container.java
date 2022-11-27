@@ -23,8 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
@@ -55,6 +53,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
@@ -90,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 
 /**
@@ -1378,7 +1378,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (this.hasPermission(user, ReadPermission.class))
         {
-            containerProps.put("startUrl", getStartURL(user));
+            containerProps.put("startUrl", getStartURL(user).toString());
             containerProps.put("iconHref", getIconHref());
             containerProps.put("id", getId());
             containerProps.put("sortOrder", getSortOrder());
@@ -1392,11 +1392,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("isWorkbook", isWorkbook());
             containerProps.put("isContainerTab", isContainerTab());
             containerProps.put("type", getContainerNoun());
-            JSONArray activeModuleNames = new JSONArray();
+            List<String> activeModuleNames = new ArrayList<>();
             Set<Module> activeModules = getActiveModules(user);
             for (Module module : activeModules)
             {
-                activeModuleNames.put(module.getName());
+                activeModuleNames.add(module.getName());
             }
             containerProps.put("activeModules", activeModuleNames);
             containerProps.put("folderType", getFolderType().getName());
@@ -1412,7 +1412,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
-        JSONObject formats = new JSONObject();
+        Map<String, Object> formats = new HashMap<>();
         formats.put("dateFormat", DateUtil.getDateFormatString(this));
         formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
         formats.put("numberFormat", props.getDefaultNumberFormat());
@@ -1638,6 +1638,59 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return false;
     }
 
+    /**
+     * Check a feature is enabled at either its parent project, or itself
+     * @param feature
+     * @param atProjectOnly Only check Home Project for feature
+     * @return
+     */
+    public boolean isFeatureEnabled(ProductFeature feature, boolean atProjectOnly)
+    {
+        if (isWorkbook())
+            return false;
+
+        Container project = getProject();
+        if (project == null)
+            return false;
+
+        boolean enabledAtProject = project.getFolderType().isProductFeatureEnabled(feature);
+        if (atProjectOnly || enabledAtProject)
+            return enabledAtProject;
+
+
+        return getFolderType().isProductFeatureEnabled(feature);
+    }
+
+    public boolean isFeatureEnabled(ProductFeature feature)
+    {
+        if (ProductFeature.Projects == feature)
+            return isProductProjectsEnabled();
+
+        return isFeatureEnabled(feature, false);
+    }
+
+    // Projects feature should be checked at Home Project only
+    public boolean isProductProjectsEnabled()
+    {
+        return isFeatureEnabled(ProductFeature.Projects, true);
+    }
+
+    /**
+     * Returns the subfolder count of the project container, if product projects feature is enabled in project
+     */
+    public int getProductProjectsCount()
+    {
+        if (!isProductProjectsEnabled())
+            return 0;
+
+        Container project = getProject();
+
+        if (project == null)
+            return 0;
+
+        return project.getChildren().size();
+    }
+
     public boolean isDataspace()
     {
         return StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(getFolderType().getName());
@@ -1725,5 +1778,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
+    }
+
+    /** Convert a container into a reference that can be used to get the latest version of the container object. See issue 46473 */
+    @NotNull
+    public static Supplier<Container> supplierOf(@Nullable Container c)
+    {
+        final GUID id = c == null ? null : c.getEntityId();
+        return new ContainerSupplier(id);
+    }
+
+    private static class ContainerSupplier implements Supplier<Container>, Serializable
+    {
+        private final GUID _entityId;
+
+        @JsonCreator
+        public ContainerSupplier(@JsonProperty("entityId") GUID entityId)
+        {
+            _entityId = entityId;
+        }
+
+        @Override
+        public @Nullable Container get()
+        {
+            return _entityId == null ? null : ContainerManager.getForId(_entityId);
+        }
     }
 }

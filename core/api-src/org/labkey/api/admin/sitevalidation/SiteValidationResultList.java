@@ -108,6 +108,11 @@ public class SiteValidationResultList
         this.eol = eol;
     }
 
+    public boolean hasErrors()
+    {
+        return !results.isEmpty();
+    }
+
     public String getResultsString()
     {
         if (results.isEmpty())

@@ -15,8 +15,10 @@
  */
 package org.labkey.api.view;
 
+import datadog.trace.api.CorrelationIdentifier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -183,6 +185,10 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
+        // Connect log messages with the active trace and span
+        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
         try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
         {
@@ -236,6 +242,12 @@ public class ViewServlet extends HttpServlet
                 _log.debug("<< " + request.getMethod());
             }
         }
+        finally
+        {
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
+        }
+
     }
 
 
@@ -410,6 +422,7 @@ public class ViewServlet extends HttpServlet
                 ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + paramName);
                 if (null != expand)
                 {
+                    expand = expand.clone();
                     // any parameters on the URL override those stored in the last filter:
                     for (Pair<String, String> parameter : url.getParameters())
                     {

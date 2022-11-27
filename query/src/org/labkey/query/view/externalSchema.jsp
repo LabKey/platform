@@ -16,7 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.old.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>

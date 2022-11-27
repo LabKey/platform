@@ -16,7 +16,7 @@
 package org.labkey.study.visualization;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;

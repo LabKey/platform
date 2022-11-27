@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
@@ -1438,7 +1438,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             .stream()
             .filter(columnInfo -> columnInfo.hasDbSequence() && !columnInfo.isUniqueIdField())
             .forEach(columnInfo -> {
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100, null);
+                // Issue 46326: Allow specific columns to specify preallocated batch size to avoid gaps
+                Integer dbSequenceBatchSize = columnInfo.getDbSequenceBatchSize();
+                if (dbSequenceBatchSize == null)
+                    dbSequenceBatchSize = 100;
+
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, dbSequenceBatchSize, null);
                 added.add(columnInfo.getName());
             });
         return added;
@@ -1470,7 +1475,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
         Supplier<?> containerCallable = containerFieldKeyName != null && inputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, inputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
         if (0 != addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable))
+        {
             added.add(SpecialColumn.Container.name());
+            added.add("Folder");
+        }
         if (0 != addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context))
             added.add(SpecialColumn.CreatedBy.name());
         if (0 != addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context))

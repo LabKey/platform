@@ -51,6 +51,11 @@ public class DOM
     public interface Renderable
     {
         Appendable appendTo(Appendable sb);
+
+        default String renderToString()
+        {
+            return appendTo(new StringBuilder()).toString();
+        }
     }
 
 

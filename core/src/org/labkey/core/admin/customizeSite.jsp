@@ -68,27 +68,36 @@ var enableTestButton = function(el, level) {
     }
 };
 
-var testUsageReport = function() {
-    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>');
+var testUsageReport = function(download) {
+    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>', download);
 };
 
-var testExceptionReport = function() {
+var testExceptionReport = function(download) {
     var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
-    testMothershipReport('ReportException', level);
+    testMothershipReport('ReportException', level, download);
 };
 
-var testMothershipReport = function (type, level) {
-    var url = LABKEY.ActionURL.buildURL("admin", "testMothershipReport", null, { type: type, level: level });
-    window.open(url, '_blank', 'noopener noreferrer');
+var testMothershipReport = function (type, level, download) {
+    var params = { type: type, level: level };
+    if (download) {
+        params.download = true;
+    }
+    var url = LABKEY.ActionURL.buildURL("admin", "testMothershipReport", null, params);
+    if (download) {
+        window.location = url;
+    }
+    else {
+        window.open(url, '_blank', 'noopener noreferrer');
+    }
 };
 </script>
 
 <labkey:form name="preferences" enctype="multipart/form-data" method="post">
-<input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 1 : 0%>" />
+<input type="hidden" name="upgradeInProgress" value="<%=bean._upgradeInProgress ? 1 : 0%>" />
 
 <table>
 <%
-if (bean.upgradeInProgress)
+if (bean._upgradeInProgress)
 {%>
 <tr>
     <td><p>You can use this page to customize your LabKey Server installation. If you prefer to customize it later, you can reach this page again by clicking <strong>Admin->Site->Admin Console->Site Settings</strong>.</p>
@@ -119,7 +128,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set site administrators (<%=bean.helpLink%>)</td>
+    <td colspan=2>Set site administrators (<%=bean.getSiteSettingsHelpLink("siteadmins")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -139,7 +148,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>URL settings (<%=bean.helpLink%>)</td>
+    <td colspan=2>URL settings (<%=bean.getSiteSettingsHelpLink("url")%>)</td>
 
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
@@ -158,11 +167,11 @@ Click the Save button at any time to accept the current settings and continue.</
 
 <tr>
     <td colspan=2>Automatically check for updates to LabKey Server and
-        report usage statistics to LabKey. (<%=bean.helpLink%>)</td>
+        report usage statistics to LabKey. (<%=bean.getSiteSettingsHelpLink("usage")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label" valign="top">Check for updates and report usage statistics to the LabKey team.<br>
+    <td class="labkey-form-label" style="vertical-align: top">Check for updates and report usage statistics to the LabKey team.<br>
         LabKey uses this data to prioritize LabKey Server enhancements. Turn this on to ensure the
         features you use are maintained and improved over time.<br>All data is transmitted securely over HTTPS.
     </td>
@@ -186,8 +195,10 @@ Click the Save button at any time to accept the current settings and continue.</
                 </td>
             </tr>
             <tr>
-                <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testUsageReport").onClick("testUsageReport(); return false;")%>
-                    Display an example usage report. <strong>No data will be submitted.</strong></td>
+                <td style="padding: 5px 0 5px;" colspan="2">
+                            <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>
+                            <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(true); return false;")%>
+                    Generate an example usage report. <strong>No data will be submitted.</strong></td>
             </tr>
         </table>
     </td>
@@ -196,11 +207,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Automatically report exceptions (<%=bean.helpLink%>)</td>
+    <td colspan=2>Automatically report exceptions (<%=bean.getSiteSettingsHelpLink("exception")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label" valign="top">Report exceptions to the LabKey team who will use this information to identify and fix product issues encountered on your deployment.<br>All data is transmitted securely over HTTPS.</td>
+    <td class="labkey-form-label" style="vertical-align: top">Report exceptions to the LabKey team who will use this information to identify and fix product issues encountered on your deployment.<br>All data is transmitted securely over HTTPS.</td>
     <td>
         <table>
             <tr>
@@ -236,14 +247,16 @@ Click the Save button at any time to accept the current settings and continue.</
                 </td>
             </tr>
             <tr >
-                <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testExceptionReport").onClick("testExceptionReport(); return false;").enabled(appProps.getExceptionReportingLevel() != NONE)%>
-                    Display an example report for the selected level. <strong>No data will be submitted.</strong></td>
+                <td style="padding: 5px 0 5px;" colspan="2">
+                    <%=button("View").id("testExceptionReport").onClick("testExceptionReport(false); return false;").enabled(appProps.getExceptionReportingLevel() != NONE)%>
+                    <%=button("Download").id("testExceptionReportDownload").onClick("testExceptionReport(true); return false;").enabled(appProps.getExceptionReportingLevel() != NONE)%>
+                    Generate an example report for the selected level. <strong>No data will be submitted.</strong></td>
             </tr>
         </table>
     </td>
 </tr>
 <%-- Only show this option if the mothership module has enabled it --%>
-<% if (bean.showSelfReportExceptions) { %>
+<% if (bean._showSelfReportExceptions) { %>
 <tr>
     <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
     <td>
@@ -258,7 +271,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Customize LabKey system properties (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize LabKey system properties (<%=bean.getSiteSettingsHelpLink("props")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -282,7 +295,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure Security (<%=bean.helpLink%>)</td>
+    <td colspan=2>Configure Security (<%=bean.getSiteSettingsHelpLink("security")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -298,7 +311,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure API Keys (<%=helpLink("configAdmin#apiKey", "more info...")%>)</td>
+    <td colspan=2>Configure API Keys (<%=bean.getSiteSettingsHelpLink("apiKey")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -332,7 +345,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure pipeline settings (<%=bean.helpLink%>)</td>
+    <td colspan=2>Configure pipeline settings (<%=bean.getSiteSettingsHelpLink("pipeline")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -344,7 +357,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Ribbon Bar Message (<%=bean.helpLink%>)</td>
+    <td colspan=2>Ribbon Bar Message (<%=bean.getSiteSettingsHelpLink("ribbon")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -360,7 +373,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
+    <td colspan=2>Put web site in administrative mode (<%=bean.getSiteSettingsHelpLink("adminonly")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -376,7 +389,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>HTTP security settings</td>
+    <td colspan=2>HTTP security settings (<%=bean.getSiteSettingsHelpLink("http")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -391,7 +404,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Customize navigation options</td>
+    <td colspan=2>Customize navigation options (<%=bean.getSiteSettingsHelpLink("nav")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>

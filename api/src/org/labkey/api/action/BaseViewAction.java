@@ -23,10 +23,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
@@ -73,7 +71,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -167,7 +164,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return pv == null ? null : pv.getValue();
     }
 
-
     public PropertyValues getPropertyValues()
     {
         return _pvs;
@@ -206,18 +202,41 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
         // Special flag puts actions in "debug" mode, during which they should log extra information that would be
         // helpful for testing or debugging problems
-        if (!_robot && null != StringUtils.trimToNull((String) getProperty("_debug")))
+        if (!_robot && hasStringValue("_debug"))
         {
             _debug = true;
         }
 
-        if (null != StringUtils.trimToNull((String) getProperty("_print")) ||
-            null != StringUtils.trimToNull((String) getProperty("_print.x")))
+        if (hasStringValue("_print") ||
+            hasStringValue("_print.x"))
         {
             _print = true;
         }
     }
 
+    private boolean hasStringValue(String propertyName)
+    {
+        Object o = getProperty(propertyName);
+        if (o == null)
+        {
+            return false;
+        }
+        if (o instanceof String s)
+        {
+            return null != StringUtils.trimToNull(s);
+        }
+        if (o instanceof String[] strings)
+        {
+            for (String s : strings)
+            {
+                if (null != StringUtils.trimToNull(s))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     public abstract ModelAndView handleRequest() throws Exception;
 

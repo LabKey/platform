@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.NotebookReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
@@ -36,6 +37,10 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
 /*
 * User: Dave
 * Date: Apr 27, 2009
@@ -43,25 +48,31 @@ import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 */
 public class EditorRole extends AbstractRole
 {
+    protected static Collection<Class<? extends Permission>> BASE_EDITOR_PERMISSIONS = Arrays.asList(
+            ReadPermission.class,
+            ReadSomePermission.class,
+            AssayReadPermission.class,
+            DataClassReadPermission.class,
+            MediaReadPermission.class,
+            NotebookReadPermission.class,
+            InsertPermission.class,
+            UpdatePermission.class,
+            EditSharedViewPermission.class,
+            ShareReportPermission.class,
+            EditSharedReportPermission.class,
+            SharedParticipantGroupPermission.class,
+            ManagePicklistsPermission.class,
+            SampleWorkflowJobPermission.class
+    );
+
     public EditorRole()
     {
-        super("Editor", "Editors may read, add, update and delete information.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                AssayReadPermission.class,
-                DataClassReadPermission.class,
-                MediaReadPermission.class,
-                NotebookReadPermission.class,
-                InsertPermission.class,
-                UpdatePermission.class,
-                DeletePermission.class,
-                EditSharedViewPermission.class,
-                ShareReportPermission.class,
-                EditSharedReportPermission.class,
-                SharedParticipantGroupPermission.class,
-                ManagePicklistsPermission.class,
-                SampleWorkflowJobPermission.class
-        );
+        this("Editor", "Editors may read, add, update and delete information.", BASE_EDITOR_PERMISSIONS, Collections.singleton(DeletePermission.class));
+    }
+
+    public EditorRole(String name, String description, Collection<Class<? extends Permission>>... permCollections)
+    {
+        super(name, description, permCollections);
     }
 
     @Override

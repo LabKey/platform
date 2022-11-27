@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -32,6 +33,7 @@ public class ListDefinitionForm extends ViewForm
     private String _name = null;
     private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
+    @NotNull
     public ListDefinition getList()
     {
         if (null == _listDef)

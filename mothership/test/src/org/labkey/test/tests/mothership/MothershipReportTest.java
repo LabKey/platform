@@ -15,12 +15,19 @@
  */
 package org.labkey.test.tests.mothership;
 
-import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.Assertions;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.OrderWith;
+import org.junit.runner.manipulation.Alphanumeric;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
@@ -28,17 +35,21 @@ import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
+import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
+import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
+import static org.labkey.test.util.mothership.MothershipHelper.SERVER_INSTALLATION_NAME_COLUMN;
+import static org.labkey.test.util.mothership.MothershipHelper.TEST_HOST_NAME;
 
 @Category({Daily.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 4)
+@BaseWebDriverTest.ClassTimeout(minutes = 4) @OrderWith(Alphanumeric.class)
 public class MothershipReportTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private MothershipHelper _mothershipHelper;
@@ -73,35 +84,81 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         _mothershipHelper = new MothershipHelper(this);
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
+        _mothershipHelper.enableDebugLoggers();
     }
 
     @Test
-    public void testTopLevelItems()
+    public void testTopLevelItems() throws Exception
     {
-        // TODO: Test others
-
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
-        assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
-        assertNotNull("Usage reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Usage Reporting Level")));
-        assertNotNull("Exception reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Exception Reporting Level")));
+        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
+        String distributionName = getDeployedDistributionName();
+        Assert.assertEquals("Distribution name.", distributionName, installDetail.getDistributionName());
+        checker().screenShotIfNewError("usage_report_items");
+    }
+
+    private String getDeployedDistributionName()
+    {
+        File distFile = new File(TestFileUtils.getDefaultDeployDir(), "labkeyWebapp/WEB-INF/classes/distribution");
+        if (distFile.exists())
+        {
+            // Deployed from distribution
+            return TestFileUtils.getFileContents(distFile).trim();
+        }
+        else if (distFile.getParentFile().isDirectory())
+        {
+            // Local dev build
+            return "localBuild";
+        }
+        else
+        {
+            // Couldn't find deploy directory. Might be a remote server; probably shouldn't run this test
+            throw new IllegalStateException("Unable to determine expected distribution.");
+        }
     }
 
     @Test
-    public void testJsonMetrics()
+    public void testJsonMetrics() throws Exception
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, false, null);
         assertTextPresent("jsonMetrics",
                 "modules",
-                "CoreController", // in the module page hit counts
+                "controllerHits", // Should have multiple sections for this across different modules
                 "folderTypeCounts",
                 "Collaboration", // a folder type guaranteed to exist, different from any module name
-                "runCount", // targetedMS runs. TODO: this makes the test dependent on the TargetedMS module. replace this once a base build module registers usage metrics.
+                "customViewCounts", // From Query module
                 "activeDayCount" // a LOW level metric, should also exist at MEDIUM
         );
 
-        // TODO: Verify jsonMetrics persisted?
+        Date lastPing = _mothershipHelper.getLastPing("localhost");
+        // Self-report so that we have some metrics to verify
+        beginAt(WebTestHelper.buildRelativeUrl("mothership", "selfReportMetrics"));
+        assertTextPresent("success");
+        Map<String, Object> latestServerInfo = _mothershipHelper.getLatestServerInfo();
+        Assert.assertEquals("Self reported metrics were associated with the wrong host.", "localhost",
+                latestServerInfo.get(SERVER_INSTALLATION_NAME_COLUMN));
+        Date nextPing = (Date) latestServerInfo.get("LastPing");
+        if (lastPing == null)
+        {
+            Assert.assertNotNull("No usage report found.", nextPing);
+        }
+        else
+        {
+            Assertions.assertThat(nextPing).as("Should be a new usage report.")
+                    .isAfter(lastPing);
+        }
+
+        String sessionId = String.valueOf(latestServerInfo.get("MostRecentSession"));
+
+        goToProjectHome("/_mothership");
+        goToSchemaBrowser();
+        var table = viewQueryData("mothership", "recentJsonMetricValues");
+        table.setFilter("ServerSessionId", "Equals", sessionId);
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        table.setFilter("DisplayKey", "Contains", "modules.Core.simpleMetricCounts.controllerHits.");
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        table.setFilter("DisplayKey", "Equals", "activeDayCount");
+        assertEquals("Should have one entry for activeDayCount", 1, table.getDataRowCount());
     }
 
     @Test
@@ -118,30 +175,38 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     }
 
     @Test
-    public void testForwardedRequest()
+    public void testForwardedRequest() throws Exception
     {
         log("Simulate receiving a report behind a load balancer");
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect forwarded IP address", forwardedFor, installDetail.getServerIP());
+        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this, TEST_HOST_NAME);
+        Assert.assertEquals("Forwarded for", forwardedFor, installDetail.getServerIP());
     }
 
-    @Test
-    public void testServerHostName() throws Exception
+    @Test @Ignore ("Proof of concept for future testing.")
+    public void testAPI() throws Exception
     {
-        log("Send test server host name from base server url");
-        String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
-        ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
+        _mothershipHelper.submitMockUsageReport("fake_server.test", "testServerGUID", "sessionGUID_" + (Math.random() * 1_000_000));
     }
 
     private int triggerNpeAndGetCount()
     {
         return _mothershipHelper.getReportCount(_mothershipHelper.triggerException(TestActions.ExceptionActions.npe));
     }
-    // TODO: Test output of each reporting level
 
-    // TODO: test the View sample report buttons from Customize Site page?
+    @Test
+    public void testServerHostName() throws Exception
+    {
+        log("Send test server host name from base server url");
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
+
+        String hostName = new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
+        String hostName2 = "TEST_" + hostName;
+
+        beginAt(WebTestHelper.buildURL("mothership", MothershipHelper.MOTHERSHIP_PROJECT, "showInstallations"));
+        assertElementPresent(Locator.linkWithText(hostName));
+        assertElementPresent(Locator.linkWithText(hostName2));
+    }
+
 }

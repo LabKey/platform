@@ -13,11 +13,11 @@ import org.labkey.api.data.PanelButton;
 import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,7 +42,7 @@ public class SampleTypeContentsView extends QueryView
         _source = source;
         setTitle("Sample Type Contents");
         addClientDependency(ClientDependency.fromPath("Ext4"));
-        addClientDependency(ClientDependency.fromPath("experiment/confirmDelete.js"));
+        addClientDependency(ClientDependency.fromPath("dataregion/confirmDelete.js"));
         setAllowableContainerFilterTypes(
             ContainerFilter.Type.Current,
             ContainerFilter.Type.CurrentAndSubfoldersPlusShared,
@@ -123,8 +123,7 @@ public class SampleTypeContentsView extends QueryView
                 "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString()) + ";" +
                 "   }" +
                 "   else {" +
-                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString() +
-                (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "") +
+                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString() + "?" +
                         (isOuput ? "materialOutputs" : "materialInputs") + "=") + "+encodeURIComponent(selected)" +
                 "   }" +
                 "}";
@@ -167,11 +166,19 @@ public class SampleTypeContentsView extends QueryView
         ActionButton button = super.createDeleteButton();
         if (button != null)
         {
-            button.setScript("LABKEY.experiment.confirmDelete(" +
+            String dependencyText = "derived sample, job, or assay data dependencies";
+            if (ModuleLoader.getInstance().hasModule("samplemanagement"))
+                dependencyText += " or status that prevents deletion";
+            if (ModuleLoader.getInstance().hasModule("labbook"))
+                dependencyText += " or references in one or more active notebooks";
+            button.setScript("LABKEY.dataregion.confirmDelete(" +
                     PageFlowUtil.jsString(getDataRegionName()) + ", " +
                     PageFlowUtil.jsString(getSchema().getName())  + ", " +
                     PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
-                    PageFlowUtil.jsString(getSelectionKey()) + ", 'sample', 'samples')");
+                    "'experiment', 'getMaterialOperationConfirmationData.api', " +
+                    PageFlowUtil.jsString(getSelectionKey()) +
+                    ", 'sample', 'samples', '" +
+                    dependencyText + "', {sampleOperation: 'Delete'})");
             button.setRequiresSelection(true);
         }
         return button;

@@ -219,8 +219,12 @@ public class ReportViewProvider implements DataViewProvider
                 ActionURL reportPermUrl = null;
                 if (c.hasPermission(user, AdminPermission.class))
                 {
-                    reportPermUrl = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
-                        addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+                    StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
+                    if (urls != null)
+                    {
+                        reportPermUrl = urls.getManageReportPermissions(c)
+                            .addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+                    }
 
                     URLHelper returnUrl = context.getActionURL().getReturnURL();
                     if (returnUrl != null)

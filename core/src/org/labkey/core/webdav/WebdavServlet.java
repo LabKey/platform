@@ -23,9 +23,9 @@ package org.labkey.core.webdav;
  */
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.Logger;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;

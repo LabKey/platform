@@ -66,6 +66,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataInput;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -867,6 +868,11 @@ public class XarExporter
 
         if (domainProp.isScannable())
             xProp.setScannable(domainProp.isScannable());
+
+        if (prop.getDerivationDataScope() != null)
+        {
+            xProp.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(prop.getDerivationDataScope()));
+        }
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)

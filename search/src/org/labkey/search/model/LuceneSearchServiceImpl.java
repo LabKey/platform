@@ -67,6 +67,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminBean;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -98,6 +100,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -262,12 +265,26 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         setConfigurationError(null);  // Clear out any previous error
     }
 
-    // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
-    // This prevents full index rebuilds when switching between branches with different major Lucene versions.
-    public static File getIndexDirectory()
+    // Returns null if file path includes an unknown substitution parameter
+    public static @Nullable File getIndexDirectory()
     {
-        File adminSpecifiedDirectory = SearchPropertyManager.getIndexDirectory();
-        return AppProps.getInstance().isDevMode() ? new File(adminSpecifiedDirectory, "Lucene" + Version.LATEST.major) : adminSpecifiedDirectory;
+        String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
+        Map<String, String> escapedMap = getEscapedSystemPropertyMap();
+        String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
+        if (null == encodedPath)
+            return null;
+        File substitutedDirectory = new File(encodedPath);
+
+        // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
+        // This prevents full index rebuilds when switching between branches with different major Lucene versions.
+        return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
+    }
+
+    // Create a Map of system properties with file-system escaped values
+    public static Map<String, String> getEscapedSystemPropertyMap()
+    {
+        return AdminBean.getPropertyMap().entrySet().stream()
+            .collect(LabKeyCollectors.toLinkedMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
     }
 
     @Override
@@ -424,7 +441,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void deleteIndex()
     {
         _log.info("Deleting Search Index");
-        if (_indexManager.isReal())
+        if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
         File indexDir = getIndexDirectory();
@@ -1319,13 +1336,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (ConfigurationException e)
         {
-            // Index may have become unwriteable don't log to mothership, and dont reinitialize index
+            // Index may have become unwriteable don't log to mothership, and don't reinitialize index
             throw e;
         }
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable.  Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
         }
@@ -1869,9 +1886,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "mov_sample.mov", 0);
             add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
+            add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 148, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 122, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");
@@ -1885,6 +1903,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
+            add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
             add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
 
             return map;

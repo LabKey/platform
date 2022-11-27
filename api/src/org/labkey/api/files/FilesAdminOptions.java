@@ -18,8 +18,8 @@ package org.labkey.api.files;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.pipeline.PipelineActionConfig;

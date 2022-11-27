@@ -28,14 +28,14 @@
 <%
     SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
     var bean = (ExpLineageOptions) HttpView.currentModel();
-    String expType = StringUtils.defaultString(bean.getExpType(), "ALL");
+    String expType = StringUtils.defaultString(bean.getExpTypeValue(), "ALL");
   // see bug 37332, better (but more complicated) fix for sql server would be to use "option (maxrecursion 1000)"
     int depth = bean.getDepth();
     if (depth == 0)
       depth = dialect.isSqlServer() ? 100 : 1000;
     var CONCAT = HtmlString.unsafe(dialect.isPostgreSQL() ? "||" : "+");
 
-    assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType) || "Object".equals(expType);
+    assert ExpLineageOptions.LineageExpType.fromValue(expType) != null;
 
 %>
   /* CTE */

@@ -109,7 +109,7 @@ public class AuthFilter implements Filter
             {
                 StringBuilder redirectURL = new StringBuilder();
                 redirectURL.append(req.getRequestURL()).append("/");
-                if (req.getQueryString() != null)
+                if (!StringUtils.isBlank(req.getQueryString()))
                 {
                     redirectURL.append("?").append(req.getQueryString());
                 }
@@ -129,7 +129,7 @@ public class AuthFilter implements Filter
             }
 
             StringBuffer originalURL = req.getRequestURL();
-            if (req.getQueryString() != null)
+            if (!StringUtils.isBlank(req.getQueryString()))
             {
                 originalURL.append("?");
                 originalURL.append(req.getQueryString());

@@ -77,7 +77,7 @@ public class MySqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
+        return "com.mysql.cj.jdbc.Driver".equals(driverClassName) || "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
     }
 
     private final static String RECOMMENDED = getProductName() + " 8.0.x is the recommended version.";

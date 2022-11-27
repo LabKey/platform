@@ -18,7 +18,7 @@ package org.labkey.api.security;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;

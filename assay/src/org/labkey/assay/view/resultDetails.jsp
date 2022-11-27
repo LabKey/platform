@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONArray" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
@@ -48,8 +48,8 @@
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
-LABKEY.page.result = <%= result.getJavaScriptFragment(2) %>;
+LABKEY.page.assay = <%=json(new org.json.JSONObject(assay), 2)%>;
+LABKEY.page.result = <%=json(result, 2)%>;
 </script>
 <p>
 <%

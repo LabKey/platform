@@ -45,8 +45,7 @@ Any user with READ access to this folder may view some summary data. However, ac
     if (returnUrl != null)
         out.print(generateReturnUrlFormField(returnUrl));
 %>
-    <table class="lk-fields-table">
-
+    <table class="table table-striped table-bordered labkey-data-region-header-lock" id="datasetSecurityGroupTable">
         <tr>
             <th>&nbsp;</th>
             <% if (includeEditOption)
@@ -56,7 +55,9 @@ Any user with READ access to this folder may view some summary data. However, ac
             %>
             <th width=100>READ&nbsp;ALL<%=helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
             <th width=100>PER&nbsp;DATASET<%=helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
-            <th width=100>NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
+            <th width=100>NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th>
+            <th>&nbsp;</th>
+        </tr>
     <%
     SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
@@ -81,13 +82,13 @@ Any user with READ access to this folder may view some summary data. However, ac
         %><tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {
-        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%> onchange="LABKEY.setDirty(true);"></th><%
+        %><td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%> onchange="LABKEY.setDirty(true);"></td><%
         }
         %>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%> onchange="LABKEY.setDirty(true);"></th>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%> onchange="LABKEY.setDirty(true);"></th>
-        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%> onchange="LABKEY.setDirty(true);"></th><%
-        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
+        <td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%> onchange="LABKEY.setDirty(true);"></td>
+        <td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%> onchange="LABKEY.setDirty(true);"></td>
+        <td><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%> onchange="LABKEY.setDirty(true);"></td><%
+        %><td id="<%=h(inputName)%>$WARN"><% if (!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)) {%><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="This group does not have folder read permissions." title="This group does not have folder read permissions."><% } %></td><%
         %></tr><%
     }
     %></table>

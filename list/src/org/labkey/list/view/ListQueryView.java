@@ -18,6 +18,7 @@ package org.labkey.list.view;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QuerySettings;
@@ -50,6 +51,12 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
+        setAllowableContainerFilterTypes(
+            ContainerFilter.Type.Current,
+            ContainerFilter.Type.CurrentAndSubfoldersPlusShared,
+            ContainerFilter.Type.CurrentPlusProjectAndShared,
+            ContainerFilter.Type.AllFolders
+        );
     }
 
     @Override
@@ -73,7 +80,6 @@ public class ListQueryView extends QueryView
         }
         if (canDelete())
             bar.add(super.createDeleteAllRowsButton("list"));
-
     }
 
     public ListDefinition getList()

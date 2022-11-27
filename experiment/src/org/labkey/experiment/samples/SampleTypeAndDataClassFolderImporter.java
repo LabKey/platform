@@ -43,12 +43,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_XML_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
@@ -56,6 +58,18 @@ import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.X
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
+    // registry data classes have to be imported in a particular order because they reference each other
+    private static final List<String> REGISTRY_CLASS_ORDER = List.of(
+            "ProtSequence",
+            "NucSequence",
+            "Molecule",
+            "Vector",
+            "Construct",
+            "CellLine",
+            "ExpressionSystem",
+            "Compound"
+    );
+
     protected SampleTypeAndDataClassFolderImporter()
     {
     }
@@ -137,11 +151,13 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
-                    // process any sample type data files and data class files
+                    // Import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class.
+                    // Registry files need to imported in a particular order because some files rely on data from other files.
+                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
+                            dataClassDataFiles, xarDir, true, false);
+
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
                             sampleTypeDataFiles, xarDir, true, false);
-                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir, true, false);
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
@@ -309,7 +325,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         log.error("Failed to find table '" + schemaName + "." + tableName + "' to import data file: " + dataFileName);
                     }
                 }
-                else if (fileRequired)
+                else if (fileRequired && !EXCLUDED_TYPES.contains(tableName))
                 {
                     log.error("Unable to import TSV data for table " + tableName + ". File not found.");
                 }

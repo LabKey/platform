@@ -42,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -62,7 +63,7 @@ public class QueryLookupWrapper extends QueryRelation
     private static final Logger _log = LogManager.getLogger(QueryLookupWrapper.class);
 
     final AliasManager _aliasManager;
-    final QueryRelation _source;
+    QueryRelation _source;
     boolean _hasLookups = false;
 
     Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
@@ -78,9 +79,12 @@ public class QueryLookupWrapper extends QueryRelation
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
         _alias = "qlw" + relation.getAlias();
-        _source = relation;
-        _inFromClause = relation._inFromClause;
-        relation._parent = this;
+        if (null != relation)
+        {
+            _source = relation;
+            _inFromClause = relation._inFromClause;
+            relation._parent = this;
+        }
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
@@ -103,7 +107,7 @@ public class QueryLookupWrapper extends QueryRelation
         super.setQuery(query);
         _source.setQuery(query);
     }
-    
+
 
     @Override
     protected void setAlias(String alias)
@@ -116,7 +120,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    private void setHasLookup()
+    protected void setHasLookup()
     {
         _hasLookups = true;
         _source.setAlias(getAlias() + "Wrapped");
@@ -140,7 +144,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    TableInfo getTableInfo()
+    public TableInfo getTableInfo()
     {
         if (!_hasLookups)
         {
@@ -173,12 +177,16 @@ public class QueryLookupWrapper extends QueryRelation
         FieldKey k = new FieldKey(null, name);
         RelationColumn ret = _selectedColumns.get(k);
         if (null != ret)
+        {
+            ret.addRef(this);
             return ret;
+        }
         RelationColumn c = _source.getColumn(name);
         if (null == c)
             return null;
         ret = new PassThroughColumn(k, c);
         _selectedColumns.put(k,ret);
+        ret.addRef(this);
         return ret;
     }
 
@@ -243,14 +251,15 @@ public class QueryLookupWrapper extends QueryRelation
             // fall through
         }
 
-        if (parentRelCol.getFk() == null)
+        var parentFk = parentRelCol.getFk();
+        if (parentFk == null)
+            return null;
+
+        QueryLookupColumn lc = createQueryLookupColumn(k, parentRelCol, parentFk);
+        if (null == lc)
             return null;
 
         setHasLookup();
-
-        QueryLookupColumn lc = createQueryLookupColumn(k, parentRelCol, parentRelCol.getFk());
-        if (null == lc)
-            return null;
         _selectedColumns.put(k,lc);
         return lc;
     }
@@ -342,14 +351,17 @@ public class QueryLookupWrapper extends QueryRelation
             if (rc instanceof PassThroughColumn)
                 unwrapped.add(((PassThroughColumn)rc)._wrapped);
         }
-        return _source.getOrderedSuggestedColumns(unwrapped);
+        return _source.getOrderedSuggestedColumns(unwrapped).stream()
+                .filter(sc -> sc.getFieldKey().getParent() == null)
+                .map(sc -> getColumn(sc.getFieldKey().getName()))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public void setQueryWith(QueryWith queryWith)
+    public void setCommonTableExpressions(CommonTableExpressions queryWith)
     {
         // Defer to source relation; that's where we'll look for the With
-        _source.setQueryWith(queryWith);
+        _source.setCommonTableExpressions(queryWith);
     }
 
     private static abstract class _WrapperColumn extends RelationColumn
@@ -592,5 +604,10 @@ public class QueryLookupWrapper extends QueryRelation
             _foreignKey.addRef(refer);
             return super.addRef(refer);
         }
+    }
+
+    public QueryRelation getSource()
+    {
+        return _source;
     }
 }

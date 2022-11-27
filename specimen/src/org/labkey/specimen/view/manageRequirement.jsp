@@ -44,9 +44,7 @@
     Location location = requirement.getLocation();
     String locationLabel = location != null ? location.getDisplayName() : "N/A";
 
-    ActionURL deleteURL = urlFor(DeleteRequirementAction.class)
-        .addParameter("id", requirement.getRequestId())
-        .addParameter("requirementId", requirement.getRowId());
+    ActionURL deleteURL = urlFor(DeleteRequirementAction.class);
 %>
 <labkey:errors />
 <table class="labkey-manage-display">

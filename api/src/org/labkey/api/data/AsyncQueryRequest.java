@@ -16,7 +16,13 @@
 
 package org.labkey.api.data;
 
+import datadog.trace.api.CorrelationIdentifier;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -98,9 +104,20 @@ public class AsyncQueryRequest<T>
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 
+        String traceId = CorrelationIdentifier.getTraceId();
+
+        // Create the span, so we can connect the async query with its owning thread
+        final Tracer tracer = GlobalTracer.get();
+        final Span span = tracer.buildSpan("AsyncRequest").start();
+        String spanId = CorrelationIdentifier.getSpanId();
+
         Runnable runnable = () -> {
             if (current != null)
                  MemTracker.get().startProfiler("async query");
+
+            // Connect log messages with the active trace and span
+            ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), traceId);
+            ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), spanId);
 
             qs.copyEnvironment(state);
             try
@@ -116,13 +133,19 @@ public class AsyncQueryRequest<T>
                 if (current != null)
                     MemTracker.get().merge(current);
                 qs.clearEnvironment();
+
+                // Wrap up the span
+                span.finish();
+                ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+                ThreadContext.remove(CorrelationIdentifier.getSpanId());
             }
         };
 
         Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
-        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread))
+        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread);
+             Scope ignore = tracer.activateSpan(span))
         {
             thread.start();
 

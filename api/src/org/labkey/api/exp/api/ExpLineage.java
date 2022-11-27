@@ -15,10 +15,11 @@
  */
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -194,6 +196,15 @@ public class ExpLineage
         Map<String, Identifiable> nodes = processNodes();
         Set<ExpLineage.Edge> outputEdges = nodeEdges.getValue();
         return outputEdges.stream().map(e -> nodes.get(e.child)).collect(Collectors.toSet());
+    }
+
+    public Set<Identifiable> findAncestorObjects(ExpRunItem seed, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths)
+    {
+        if (!_seeds.contains(seed))
+            throw new UnsupportedOperationException();
+
+        ExpLineageTree ancestorTree = ExpLineageTree.getAncestorTree(this, seed);
+        return ExpLineageTree.getNodes(ancestorTree, ancestorPaths);
     }
 
     /**
@@ -482,6 +493,107 @@ public class ExpLineage
         public String toString()
         {
             return "[" + parent + "] -(" + _role + ")-> [" + child + "]";
+        }
+    }
+
+    public static class ExpLineageTree
+    {
+        private Identifiable _expObject;
+        private final @NotNull List<ExpLineageTree> _children = new LinkedList<>();
+
+        public Identifiable getExpObject()
+        {
+            return _expObject;
+        }
+
+        public List<ExpLineageTree> getChildren()
+        {
+            return _children;
+        }
+
+        private ExpLineageTree(Identifiable expObject, List<ExpLineageTree> children)
+        {
+            _expObject = expObject;
+            if (children != null)
+                _children.addAll(children);
+        }
+
+        public static ExpLineageTree getAncestorTree(ExpLineage lineage, Identifiable seed)
+        {
+            Set<Identifiable> parentRuns = lineage.getNodeParents(seed);
+            List<ExpLineageTree> children = new LinkedList<>();
+            for (Identifiable run : parentRuns)
+            {
+                Set<Identifiable> parents = lineage.getNodeParents(run);
+                for (Identifiable parent : parents)
+                {
+                    if (parent != null)
+                        children.add(getAncestorTree(lineage, parent));
+                }
+            }
+
+            return new ExpLineageTree(seed, children);
+        }
+
+        private static boolean isValidNode(Identifiable expObject, ExpLineageOptions.LineageExpType expType, String cpas)
+        {
+            boolean isValidNode = false;
+
+            switch (expType)
+            {
+                case Material:
+                    if (expObject instanceof ExpMaterial material)
+                    {
+                        if (StringUtils.isEmpty(cpas))
+                            isValidNode = true;
+                        else
+                        {
+                            ExpSampleType sampleType = material.getSampleType();
+                            if (sampleType != null)
+                                isValidNode = sampleType.getLSID().equals(cpas);
+                        }
+                    }
+                    break;
+                case Data:
+                    if (expObject instanceof ExpData data)
+                    {
+                        if (StringUtils.isEmpty(cpas))
+                            isValidNode = true;
+                        else
+                        {
+                            ExpDataClass dataClass = data.getDataClass(null);
+                            if (dataClass != null)
+                                isValidNode = dataClass.getLSID().equals(cpas);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            return isValidNode;
+        }
+
+        public static Set<Identifiable> getNodes(ExpLineageTree tree, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths)
+        {
+            Set<Identifiable> targetNodes = new HashSet<>();
+            if (ancestorPaths == null || ancestorPaths.isEmpty())
+            {
+                targetNodes.add(tree.getExpObject());
+                return targetNodes;
+            }
+
+            Pair<ExpLineageOptions.LineageExpType, String> ancestorPath = ancestorPaths.get(0);
+            ExpLineageOptions.LineageExpType expType = ancestorPath.first;
+            String cpas = ancestorPath.second;
+
+            for (ExpLineageTree child : tree.getChildren())
+            {
+                if (isValidNode(child.getExpObject(), expType, cpas))
+                    targetNodes.addAll(getNodes(child, ancestorPaths.subList(1, ancestorPaths.size())));
+            }
+
+            return targetNodes;
         }
     }
 }
