@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.nab.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.data.ColumnInfo;
@@ -26,6 +27,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -57,8 +60,11 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         OORDisplayColumnFactory.addOORColumns(this, getRealTable().getColumn("IC_5pl"), getRealTable().getColumn("IC_5plOORIndicator"));
         OORDisplayColumnFactory.addOORColumns(this, getRealTable().getColumn("IC_Poly"), getRealTable().getColumn("IC_PolyOORIndicator"));
 
-        ColumnInfo selectedIC = new ExprColumn(this, "IC", getSelectedCurveFitIC(false), JdbcType.DECIMAL);
-        ColumnInfo selectedICOOR = new ExprColumn(this, "ICOORIndicator", getSelectedCurveFitIC(true), JdbcType.VARCHAR);
+        Domain runDomain = schema.getProvider().getRunDomain(schema.getProtocol());
+        DomainProperty curveFitProperty = runDomain.getPropertyByName(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
+
+        ColumnInfo selectedIC = new ExprColumn(this, "IC", getSelectedCurveFitIC(false, curveFitProperty), JdbcType.DECIMAL);
+        ColumnInfo selectedICOOR = new ExprColumn(this, "ICOORIndicator", getSelectedCurveFitIC(true, curveFitProperty), JdbcType.VARCHAR);
         OORDisplayColumnFactory.addOORColumns(this, selectedIC, selectedICOOR, selectedIC.getLabel(), false);
 
         SQLFragment protocolSQL = new SQLFragment("NAbSpecimenID IN (SELECT RowId FROM ");
@@ -68,7 +74,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         addCondition(protocolSQL, FieldKey.fromParts(PROTOCOL_FIELD_KEY));
     }
 
-    private SQLFragment getSelectedCurveFitIC(boolean oorIndicator)
+    private SQLFragment getSelectedCurveFitIC(boolean oorIndicator, @Nullable DomainProperty curveFitProp)
     {
         String suffix = oorIndicator ? "OORIndicator" : "";
         SQLFragment defaultICSQL = new SQLFragment("CASE (SELECT op.StringValue FROM ");
@@ -76,12 +82,11 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         defaultICSQL.append(", ");
         defaultICSQL.append(OntologyManager.getTinfoObjectProperty(), "op");
         defaultICSQL.append(", ");
-        defaultICSQL.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        defaultICSQL.append(", ");
         defaultICSQL.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
         defaultICSQL.append(", ");
         defaultICSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
-        defaultICSQL.append(" WHERE op.PropertyId = pd.PropertyId AND pd.PropertyURI LIKE '%#" + DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME + "' AND ns.RowId = ");
+        defaultICSQL.append(" WHERE op.PropertyId = ? AND ns.RowId = ");
+        defaultICSQL.add(curveFitProp == null ? null : curveFitProp.getPropertyId());
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS);
         defaultICSQL.append(".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
         defaultICSQL.append("\nWHEN 'Polynomial' THEN ");
