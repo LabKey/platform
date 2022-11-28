@@ -1128,8 +1128,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             var mergeRows = new ArrayList<Map<String,Object>>();
             String colName = _useAlias ? "s_alias" : "s";
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,colName,"TWO"));
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,colName,"THREE"));
+            String pkName = _useAlias ? "pk_alias" : "pk";
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             BatchValidationException errors = new BatchValidationException()
             {
                 @Override
@@ -1175,8 +1176,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             var mergeRows = new ArrayList<Map<String,Object>>();
             String colName = _useAlias ? "s_alias" : "s";
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,colName,"TWO"));
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,colName,"THREE"));
+            String pkName = _useAlias ? "pk_alias" : "pk";
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
             var count = qus.loadRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), context, null);
