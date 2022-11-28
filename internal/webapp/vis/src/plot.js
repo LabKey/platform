@@ -1656,7 +1656,9 @@ boxPlot.render();
     LABKEY.vis.TrendingLinePlotType = {
         LeveyJennings : 'Levey-Jennings',
         CUSUM : 'CUSUM',
-        MovingRange: 'MovingRange'
+        MovingRange: 'MovingRange',
+        TrailingMean: 'TrailingMean',
+        TrailingCV: 'TrailingCV'
     };
 
     LABKEY.vis.TrendingLinePlot = function(config){
@@ -1676,24 +1678,31 @@ boxPlot.render();
             throw new Error("Unable to create " + plotTypeLabel + " plot, properties object not specified. ");
         }
 
-        if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
             if (config.properties.value == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
                         + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, mouseOverFn, "
                         + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
-        else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
             if (config.properties.positiveValue == null || config.properties.negativeValue == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot."
                         + "Required: positiveValue, negativeValue, xTickLabel. Optional: positiveValueRight, negativeValueRight, "
                         + "xTickTagIndex, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, color, colorRange.");
             }
         }
-        else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
             if (config.properties.valueMR == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
                         + "Required: value, xTickLabel. Optional: meanMR, color, colorRange, hoverTextFn, mouseOverFn, "
+                        + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
+            }
+        }
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
+            if (config.properties.value == null) {
+                throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
+                        + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, mouseOverFn, "
                         + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
@@ -1906,8 +1915,7 @@ boxPlot.render();
             }
 
             // if we are grouping x values based on the xTick property, only increment index if we have a new xTick value
-            if (config.properties.xTick)
-            {
+            if (config.properties.xTick) {
                 var addValueToTrendLineData = function(dataArr, seqValue, arrKey, fieldName, rowValue, sumField, countField)
                 {
                     if (dataArr[arrKey] == undefined)
@@ -1934,29 +1942,24 @@ boxPlot.render();
                     }
                 };
 
-                var addAllValuesToTrendLineData = function(dataArr, seqValue, arrKey, row, hasYRightMetric)
-                {
+                var addAllValuesToTrendLineData = function(dataArr, seqValue, arrKey, row, hasYRightMetric) {
                     var plotValueName = config.properties.value, plotValueNameRight = config.properties.valueRight;
                     var plotValueNamePositive = config.properties.positiveValue, plotValueNameRightPositive = config.properties.positiveValueRight;
-                    if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange)
-                    {
+                    if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
                         plotValueName = config.properties.valueMR;
                         plotValueNameRight = config.properties.valueRightMR;
                     }
-                    else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
-                    {
+                    else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                         plotValueName = config.properties.negativeValue;
                         plotValueNameRight = config.properties.negativeValueRight;
                     }
 
                     addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueName, row[plotValueName], 'sum1', 'count1');
-                    if (hasYRightMetric)
-                    {
+                    if (hasYRightMetric) {
                         addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueNameRight, row[plotValueNameRight], 'sum2', 'count2');
                     }
 
-                    if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
-                    {
+                    if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                         addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueNamePositive, row[plotValueNamePositive], 'sum3', 'count3');
                         if (hasYRightMetric)
                         {
@@ -1987,10 +1990,8 @@ boxPlot.render();
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
 
-            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings)
-            {
-                if (config.properties.mean && config.properties.stdDev && !meanStdDevData[index])
-                {
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                if (config.properties.mean && config.properties.stdDev && !meanStdDevData[index]) {
                     meanStdDevData[index] = row;
                 }
             }
@@ -1998,8 +1999,7 @@ boxPlot.render();
 
         // min x-axis tick length is 10 by default
         var maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
-        for (var i = maxSeqValue; i < 10; i++)
-        {
+        for (var i = maxSeqValue; i < 10; i++) {
             var temp = {type: 'empty', seqValue: i};
             temp[config.properties.xTickLabel] = "";
             if (config.properties.color && config.data[0]) {
@@ -2057,8 +2057,7 @@ boxPlot.render();
             }
         };
 
-        if (hasYRightMetric)
-        {
+        if (hasYRightMetric) {
             config.scales.yRight = {
                 scaleType: 'continuous',
                 domain: config.properties.yAxisDomain,
@@ -2070,19 +2069,15 @@ boxPlot.render();
         }
 
         // Issue 23626: map line/point color based on legend data
-        if (config.legendData && config.properties.color && !config.properties.colorRange)
-        {
+        if (config.legendData && config.properties.color && !config.properties.colorRange) {
             var legendColorMap = {};
-            for (var i = 0; i < config.legendData.length; i++)
-            {
-                if (config.legendData[i].name)
-                {
+            for (var i = 0; i < config.legendData.length; i++) {
+                if (config.legendData[i].name) {
                     legendColorMap[config.legendData[i].name] = config.legendData[i].color;
                 }
             }
 
-            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM)
-            {
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 config.scales.color = {
                     scale: function(group) {
                         var normalizedGroup = group.replace('CUSUMmN', 'CUSUMm').replace('CUSUMmP', 'CUSUMm');
@@ -2146,7 +2141,7 @@ boxPlot.render();
         else {
             var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 4, 3);
 
-            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
 
                 // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
                 var stdDev3Layer = new LABKEY.vis.Layer({
@@ -2212,10 +2207,22 @@ boxPlot.render();
                     config.layers = [range];
                 }
             }
+            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
+                let range = new LABKEY.vis.Layer({
+                    geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, width: barWidth}),
+                    data: config.data,
+                    aes: {
+                        upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
+                        lower: function(){return LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT;},
+                        yLeft: config.properties.mean
+                    }
+                });
+                config.layers = [];
+
+            }
         }
 
-        if (config.properties.showTrendLine)
-        {
+        if (config.properties.showTrendLine) {
             var getPathLayerConfig = function(ySide, valueName, colorValue, negativeCusum)
             {
                 var pathLayerConfig = {
@@ -2307,8 +2314,7 @@ boxPlot.render();
         }
 
         // points based on the data value, color and hover text can be added via params to config
-        var getPointLayerConfig = function(ySide, valueName, colorValue, hasOutlierMap)
-        {
+        var getPointLayerConfig = function(ySide, valueName, colorValue, hasOutlierMap) {
             var pointLayerConfig = {
                 geom: new LABKEY.vis.Geom.Point({
                     position: config.properties.position,
@@ -2380,7 +2386,7 @@ boxPlot.render();
         }
 
         if (config.properties.showDataPoints) {
-            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1, true)));
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0, true)));

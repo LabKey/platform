@@ -203,10 +203,7 @@ public class Stats
         Double[] valuesFromRange = new Double[end-start+1];
         if (end - start >= 0)
         {
-            for (int i=0; i<valuesFromRange.length; i++)
-            {
-                valuesFromRange[i] = values[i];
-            }
+            if (end - start >= 0) System.arraycopy(values, start, valuesFromRange, 0, end - start);
         }
         return valuesFromRange;
     }
