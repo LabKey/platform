@@ -588,7 +588,7 @@ public class ContainerManager
             if (!c.getFolderType().getName().equals(folderType.getName()))
                 continue;
 
-            int childCount = c.getChildren().size();
+            int childCount = c.getChildren().stream().filter(Container::isInFolderNav).toList().size();
             counts.add(childCount);
         }
 
