@@ -56,11 +56,11 @@ public interface QueryUpdateService extends HasPermission
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, false, false, false),
+        MERGE(true, true, true, false, false),
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, false, true, false),
+        REPLACE(true, true, true, true, false),
         IMPORT_IDENTITY(true, false, true, false, true);
 
         final public boolean batch;
