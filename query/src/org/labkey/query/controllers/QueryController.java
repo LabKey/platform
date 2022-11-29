@@ -4116,7 +4116,7 @@ public class QueryController extends SpringActionController
             String containerPath = json.optString(PROP_CONTAINER_PATH);
             if (containerPath == null)
             {
-                return getContainer();
+                container = getContainer();
             }
             else
             {
@@ -4127,6 +4127,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
+            // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more downstream
             if (!container.hasPermission(getUser(), ReadPermission.class) &&
                     !container.hasPermission(getUser(), DeletePermission.class) &&
                     !container.hasPermission(getUser(), InsertPermission.class) &&
