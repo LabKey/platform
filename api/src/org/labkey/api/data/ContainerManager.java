@@ -2389,6 +2389,15 @@ public class ContainerManager
                 null);
     }
 
+    public static void removeDefaultSupportContainer(User user)
+    {
+        Container support = getDefaultSupportContainer();
+        if (support != null)
+        {
+            ContainerManager.delete(support, user);
+        }
+    }
+
     public static Container getDefaultSupportContainer()
     {
         return getForPath(DEFAULT_SUPPORT_PROJECT_PATH);
