@@ -16,15 +16,15 @@
 package org.labkey.test.util.mothership;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.Command;
@@ -258,27 +258,24 @@ public class MothershipHelper extends LabKeySiteWrapper
         report.computeIfPresent("jsonMetrics", (k, v) -> v.toString());
         String url = WebTestHelper.buildURL(MOTHERSHIP_CONTROLLER, MOTHERSHIP_PROJECT, "checkForUpdates");
         HttpContext context = WebTestHelper.getBasicHttpContext();
-        HttpPost method;
-        HttpResponse response = null;
 
-        try (CloseableHttpClient httpClient = (CloseableHttpClient)WebTestHelper.getHttpClient())
+        try (CloseableHttpClient httpClient = WebTestHelper.getHttpClient())
         {
-            method = new HttpPost(url);
+            HttpPost method = new HttpPost(url);
             List<NameValuePair> args = new ArrayList<>();
             for (Map.Entry<String, Object> reportVal : report.entrySet())
             {
                 args.add(new BasicNameValuePair(reportVal.getKey(), reportVal.getValue().toString()));
             }
             method.setEntity(new UrlEncodedFormEntity(args));
-            response = httpClient.execute(method, context);
-            int status = response.getStatusLine().getStatusCode();
-            assertEquals("Report submitted status", HttpStatus.SC_OK, status);
-            assertEquals("Success", response.getHeaders("MothershipStatus")[0].getValue());
-        }
-        finally
-        {
-            if (null != response)
+
+            try (CloseableHttpResponse response = httpClient.execute(method, context))
+            {
+                int status = response.getCode();
+                assertEquals("Report submitted status", HttpStatus.SC_OK, status);
+                assertEquals("Success", response.getHeaders("MothershipStatus")[0].getValue());
                 EntityUtils.consumeQuietly(response.getEntity());
+            }
         }
     }
 
