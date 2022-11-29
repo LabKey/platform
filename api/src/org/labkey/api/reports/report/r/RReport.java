@@ -416,6 +416,15 @@ public class RReport extends ExternalScriptEngineReport
             labkey.append("labkey.apiKey <- \"${" + SecurityManager.API_KEY + "}\"\n");
         }
 
+        // override quit() and q(), these really don't belong in R reports.  quit() can kill rserve for instance.
+        labkey.append("""
+                quit <- function(save = "default", status = 0, runLast = TRUE)
+                {
+                   stop("execution interrupted with quit()");
+                }
+                q <- quit
+                """);
+
         labkey.append(getKnitrEndChunk());
 
         return labkey.toString();
