@@ -869,25 +869,32 @@ LABKEY.Utils = new function(impl, $) {
     };
 
     // attach handlers to element events e.g. onclick=fn() etc.
-    impl.attachEventHandler = function(el, eventName, handler, immediate)
+    impl.attachEventHandler = function(el_, eventName, handler, immediate)
     {
+        const el = el_;
         if (!el || !eventName || !handler)
             return;
         const fn = function()
         {
-            if (typeof el === "string") {
-                // Issue 46371: LKS grid column header locking clones the header row which results in multiple
-                //      DOM elements with the same id attr, but only the first was getting the event handler attached
-                if (isValidQuerySelector(el)) {
+            if (typeof el !== "string")
+            {
+                el['on' + eventName] = handler;
+            }
+            else
+            {
+                try
+                {
+                    // Issue 46371: LKS grid column header locking clones the header row which results in multiple
+                    //      DOM elements with the same id attr, but only the first was getting the event handler attached
                     const list = document.querySelectorAll('#' + el);
-                    for (let i in list) {
+                    for (let i in list)
                         list[i]['on' + eventName] = handler;
-                    }
-                } else {
-                    el = document.getElementById(el);
-                    if (el) {
-                        el['on' + eventName] = handler;
-                    }
+                }
+                catch (ignore)
+                {
+                    const elById = document.getElementById(el);
+                    if (elById)
+                        elById['on' + eventName] = handler;
                 }
             }
         };

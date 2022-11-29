@@ -65,6 +65,12 @@ public class DefaultAuditProvider implements AuditLogService, AuditLogService.Re
     }
 
     @Override
+    public <K extends AuditTypeEvent> @Nullable K getAuditEvent(User user, String eventType, int rowId, @Nullable ContainerFilter cf)
+    {
+        return null;
+    }
+
+    @Override
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         return Collections.emptyList();

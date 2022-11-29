@@ -105,6 +105,9 @@ public interface AuditLogService
     @Nullable
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 
+    @Nullable
+    <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId, @Nullable ContainerFilter cf);
+
     <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
     <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf);

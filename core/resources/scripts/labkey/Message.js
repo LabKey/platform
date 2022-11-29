@@ -16,7 +16,7 @@ LABKEY.Utils = require("./Utils").Utils;/**
  *            <p>Additional documentation on SMTP setup for LabKey Server:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=configWindows">Install LabKey via the Installer</a></li>
- *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=cpasxml">Modify the Configuration File -- Includes SMTP Settings</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeyxml">Modify the Configuration File -- Includes SMTP Settings</a></li>
  *              </ul>
  *           </p>
  */

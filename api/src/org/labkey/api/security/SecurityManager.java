@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -2489,11 +2490,6 @@ public class SecurityManager
         }
     }
 
-    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters) throws Exception
-    {
-        addSelfRegisteredUser(context, email, extraParameters, null);
-    }
-
     public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters, @Nullable String registrationProviderName) throws Exception
     {
         User currentUser = context.getUser();
@@ -2527,13 +2523,13 @@ public class SecurityManager
             if (messageContentsURL != null)
             {
                 builder.append(" Alternatively, you can copy the ");
-                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank"));
+                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses());
                 builder.append(" into an email client and send it to the user manually.");
             }
 
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
-            builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
+            builder.append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
             builder.append(".").append(HtmlString.BR);
         }
         else
@@ -2807,10 +2803,10 @@ public class SecurityManager
 
     public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
     {
-        adminRotatePassword(email, errors, c, user, "");
+        adminRotatePassword(email, errors, c, user, HtmlString.EMPTY_STRING);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, String mailErrorText)
+    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, HtmlString mailErrorHtml)
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
@@ -2851,9 +2847,7 @@ public class SecurityManager
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
-                if (StringUtils.isNotBlank(mailErrorText))
-                    message += '\n' + mailErrorText;
-                errors.addError(new LabKeyError(new Exception(message, e)));
+                errors.addError(mailErrorHtml.length() != 0 ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
