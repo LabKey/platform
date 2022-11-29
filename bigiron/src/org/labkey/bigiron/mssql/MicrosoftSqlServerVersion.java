@@ -28,7 +28,7 @@ public enum MicrosoftSqlServerVersion
     SQL_SERVER_2016(130, false, true, true, MicrosoftSqlServer2016Dialect::new),
     SQL_SERVER_2017(140, false, true, true, MicrosoftSqlServer2017Dialect::new),
     SQL_SERVER_2019(150, false, true, true, MicrosoftSqlServer2019Dialect::new),
-    SQL_SERVER_2022(160, false, false, true, MicrosoftSqlServer2022Dialect::new),
+    SQL_SERVER_2022(160, false, true, true, MicrosoftSqlServer2022Dialect::new),
     SQL_SERVER_FUTURE(170, false, false, true, MicrosoftSqlServer2022Dialect::new);
 
     private final int _version;
