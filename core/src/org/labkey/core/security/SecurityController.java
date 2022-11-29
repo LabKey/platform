@@ -96,6 +96,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -1734,50 +1735,53 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getFailView(EmailForm form, BindException errors)
         {
-            String errorMessage = PageFlowUtil.filter(getErrorMessage(errors));
-
-            String page = String.format(
-                "<p>%1$s: Password %2$s.</p><p>%3$s</p>%4$s",
-                PageFlowUtil.filter(form.getEmail()),
-                _loginExists ? "reset" : "created",
-                errorMessage,
-                PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
-            );
+            HtmlStringBuilder builder = HtmlStringBuilder.of()
+                .append(HtmlString.unsafe("<p>"))
+                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
+                .append(HtmlString.unsafe("</p><p>"))
+                .append(getErrorMessage(errors))
+                .append(HtmlString.unsafe("</p>"))
+                .append(PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL())));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             setTitle("Password Reset Failed");
-            return new HtmlView(page);
+            return new HtmlView(builder);
         }
 
-        private String getErrorMessage(BindException errors)
+        private HtmlString getErrorMessage(BindException errors)
         {
-            StringBuilder sb = new StringBuilder();
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+
             for(ObjectError e : errors.getAllErrors())
             {
-                sb.append(e.getDefaultMessage()).append('\n');
+                if (e instanceof LabKeyError le)
+                    builder.append(le.renderToHTML(getViewContext()));
+                else
+                    builder.append(e.getDefaultMessage()).append('\n');
             }
 
-            return sb.toString();
+            return builder.getHtmlString();
         }
 
-        private String getMailHelpText(String emailAddress)
+        private HtmlString getMailHelpText(String emailAddress)
         {
             ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", emailAddress);
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<p>You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+            HtmlStringBuilder builder = HtmlStringBuilder.of()
+                .append(HtmlString.unsafe("<p>"))
+                .append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
             if (mailHref != null)
             {
-                sb.append(" Alternatively, you can copy the <a href=\"");
-                sb.append(mailHref);
-                sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
+                builder.append(" Alternatively, you can copy the ")
+                    .append(new Link.LinkBuilder("contents of the message").href(mailHref).target("_blank").clearClasses())
+                    .append(" into an email client and send it to the user manually.");
             }
-            sb.append("</p>");
-            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            sb.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"));
-            sb.append(".</p>");
+            builder.append(HtmlString.unsafe("</p>\n<p>"))
+                .append("For help on fixing your mail server settings, please consult the SMTP section of the ")
+                .append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"))
+                .append(HtmlString.unsafe(".</p>"));
 
-            return sb.toString();
+            return builder.getHtmlString();
         }
     }
 
