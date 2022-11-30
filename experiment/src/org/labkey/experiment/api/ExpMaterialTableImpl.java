@@ -611,7 +611,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setShownInInsertView(false);
 
         var folderCol = addContainerColumn(ExpMaterialTable.Column.Folder, null);
-        boolean hasProductProjects = getContainer().getProductProjectsCount() > 0;
+        boolean hasProductProjects = getContainer().hasProductProjects();
         if (hasProductProjects)
             folderCol.setLabel("Project");
 
