@@ -334,9 +334,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
-    ExpExperiment createExpExperiment(Container container, String name);
+    @NotNull ExpExperiment createExpExperiment(Container container, String name);
 
-    ExpExperiment getExpExperiment(int rowid);
+    @Nullable ExpExperiment getExpExperiment(int rowid);
 
     ExpExperiment getExpExperiment(String lsid);
 
@@ -454,7 +454,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
 
     @NotNull
-    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
+    SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.

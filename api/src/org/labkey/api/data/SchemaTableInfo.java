@@ -862,6 +862,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
+    public void fireColumnTrigger(Container container, User user, Set<String> columnNames)
+    {
+        throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
+    }
+
+    @Override
     public void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");

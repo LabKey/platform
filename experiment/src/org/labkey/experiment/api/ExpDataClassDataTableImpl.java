@@ -930,7 +930,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            return _insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
@@ -952,8 +952,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
             if (null != row)
             {
-                if (row instanceof ArrayListMap)
-                    ((ArrayListMap)row).getFindMap().remove("_row");
+                if (row instanceof ArrayListMap map)
+                    map.getFindMap().remove("_row");
                 else
                     row.remove("_row");
             }
@@ -1084,7 +1084,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
 
             /* setup mini dataiterator pipeline to process lineage */
-            DataIterator di = _toDataIterator("updateRows.lineage", ret);
+            DataIterator di = _toDataIterator("updateRows.lineage", container, user, ret);
             ExpDataIterators.derive(user, container, di, false, _dataClass, true);
 
             return ret;

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -84,6 +85,10 @@ public interface Trigger
      * True if this TriggerScript can be used in a streaming context; triggers will be called without old row values.
      */
     default boolean canStream() { return false; }
+
+    default void columnTrigger(TableInfo table, Container c, User user, Set<String> columnNames)
+    {
+    }
 
     default void batchTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {

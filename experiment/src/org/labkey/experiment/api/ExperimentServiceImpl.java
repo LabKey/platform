@@ -947,6 +947,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @Nullable
     public ExpExperimentImpl getExpExperiment(int rowid)
     {
         Experiment experiment = new TableSelector(getTinfoExperiment()).getObject(rowid, Experiment.class);
@@ -958,6 +959,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @NotNull
     public ExpExperimentImpl createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
@@ -975,7 +977,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return experiment == null ? null : new ExpExperimentImpl(experiment);
     }
 
-
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
@@ -984,20 +985,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExpProtocolImpl getExpProtocol(int rowid, boolean useCache)
     {
-        ExpProtocolImpl result = null;
-
         if (useCache)
         {
-            result = getProtocolCache().get("ROWID/" + rowid);
+            ExpProtocolImpl result = getProtocolCache().get("ROWID/" + rowid);
             if (null != result)
                 return result;
         }
 
         Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
-
         return toExpProtocol(p, useCache);
     }
-
 
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
@@ -1325,7 +1322,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, Class<? extends ExpObject> clazz)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz)
     {
         return generateLSIDWithDBSeq(container, getNamespacePrefix(clazz));
     }
@@ -1337,7 +1334,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -1377,7 +1374,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        return classes.stream().map(ExpDataClassImpl::new).sorted().collect(Collectors.toUnmodifiableList());
+        return classes.stream().map(ExpDataClassImpl::new).sorted().toList();
     }
 
     @Override
@@ -1574,11 +1571,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public ExpData findExpData(Container c, User user,
-                            @NotNull ExpDataClass dataClass,
-                            @NotNull String dataClassName, String dataName,
-                            RemapCache cache, Map<Integer, ExpData> dataCache)
-            throws ValidationException
+    public ExpData findExpData(Container c,
+                               User user,
+                               @NotNull ExpDataClass dataClass,
+                               @NotNull String dataClassName,
+                               String dataName,
+                               RemapCache cache, Map<Integer,
+                               ExpData> dataCache) throws ValidationException
     {
         StringBuilder errors = new StringBuilder();
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
@@ -2027,8 +2026,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             MaterialProtocolInput obj = ObjectFactory.Registry.getFactory(MaterialProtocolInput.class).fromMap(row);
             return new ExpMaterialProtocolInputImpl(obj);
         }
-        else
-            throw new IllegalStateException("objectType not supported: " + objectType);
+
+        throw new IllegalStateException("objectType not supported: " + objectType);
     }
 
     public List<? extends ExpProtocolInputImpl> getProtocolInputs(int protocolId)
@@ -2356,10 +2355,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // CONSIDER: add objectId to Identifiable?
             int objectId = -1;
-            if (seed instanceof ExpObject)
-                objectId = ((ExpObject)seed).getObjectId();
-            else if (seed instanceof IdentifiableBase)
-                objectId = ((IdentifiableBase)seed).getObjectId();
+            if (seed instanceof ExpObject expObjSeed)
+                objectId = expObjSeed.getObjectId();
+            else if (seed instanceof IdentifiableBase idBaseSeed)
+                objectId = idBaseSeed.getObjectId();
 
             if (objectId == -1)
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
@@ -2602,6 +2601,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @NotNull
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
@@ -7371,7 +7371,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @Nullable String name, @Nullable DataClassDomainKindProperties options,
                                         List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {

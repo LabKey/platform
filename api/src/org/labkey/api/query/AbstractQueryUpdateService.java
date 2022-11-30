@@ -435,7 +435,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
+        DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", container, user, rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
@@ -448,28 +448,34 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected DataIterator _toDataIterator(String debugName, List<Map<String, Object>> rows)
+    private Set<String> resolveColumnNames(Container container, User user, List<Map<String, Object>> rows)
     {
         // TODO probably can't assume all rows have all columns
         // TODO can we assume that all rows refer to columns consistently? (not PTID and MouseId for the same column)
         // TODO optimize ArrayListMap?
-        Set<String> colNames;
+        // Preserve casing by using wrapped CaseInsensitiveHashMap instead of CaseInsensitiveHashSet
+        Set<String> colNames = Sets.newCaseInsensitiveHashSet();
 
-        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
-        {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
-        }
+        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap<String, Object> map)
+            colNames.addAll(map.getFindMap().keySet());
         else
         {
-            // Preserve casing by using wrapped CaseInsensitiveHashMap instead of CaseInsensitiveHashSet
-            colNames = Sets.newCaseInsensitiveHashSet();
             for (Map<String,Object> row : rows)
                 colNames.addAll(row.keySet());
         }
 
-        ListofMapsDataIterator maps = new ListofMapsDataIterator(colNames, rows);
+        getQueryTable().fireColumnTrigger(container, user, colNames);
+
+        return colNames;
+    }
+
+
+    protected DataIterator _toDataIterator(String debugName, Container container, User user, List<Map<String, Object>> rows)
+    {
+        Set<String> columnNames = resolveColumnNames(container, user, rows);
+        ListofMapsDataIterator maps = new ListofMapsDataIterator(columnNames, rows);
         maps.setDebugName(debugName);
-        return LoggingDataIterator.wrap((DataIterator)maps);
+        return LoggingDataIterator.wrap(maps);
     }
 
 

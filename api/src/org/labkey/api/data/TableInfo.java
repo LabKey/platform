@@ -443,6 +443,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     Collection<QueryService.ParameterDecl> getNamedParameters();
 
+    void fireColumnTrigger(Container container, User user, Set<String> columnNames);
+
     /**
      * Executes any trigger scripts for this table.
      *

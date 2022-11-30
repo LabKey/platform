@@ -298,7 +298,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
 
         /* setup mini dataiterator pipeline to process lineage */
-        DataIterator di = _toDataIterator("updateRows.lineage", ret);
+        DataIterator di = _toDataIterator("updateRows.lineage", container, user, ret);
         ExpDataIterators.derive(user, container, di, true, _sampleType, true);
 
         if (ret.size() > 0)

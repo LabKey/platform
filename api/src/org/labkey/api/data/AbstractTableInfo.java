@@ -1704,6 +1704,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
+    public void fireColumnTrigger(Container c, User user, Set<String> columnNames)
+    {
+        Collection<Trigger> triggers = getTriggers(c);
+
+        for (Trigger script : triggers)
+        {
+            script.columnTrigger(this, c, user, columnNames);
+        }
+    }
+
+    @Override
     public final void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {

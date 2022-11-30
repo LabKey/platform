@@ -710,9 +710,9 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (ExperimentService.isInputOutputColumn(name) || _isSample && equalsIgnoreCase("parent",name))
+                if (ExperimentService.isInputOutputColumn(name) || _isSample && "parent".equalsIgnoreCase(name))
                 {
-                    _parentCols.put(entry.getValue(), entry.getKey());
+                    _parentCols.put(entry.getValue(), name);
                 }
                 else if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
                 {
