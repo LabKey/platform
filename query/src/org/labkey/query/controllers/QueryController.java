@@ -4119,7 +4119,7 @@ public class QueryController extends SpringActionController
         protected Container getContainerForCommand(JSONObject json)
         {
             Container container;
-            String containerPath = json.optString(PROP_CONTAINER_PATH);
+            String containerPath = StringUtils.trimToNull(json.optString(PROP_CONTAINER_PATH));
             if (containerPath == null)
             {
                 container = getContainer();
