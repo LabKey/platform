@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import static org.apache.poi.util.StringUtil.isBlank;
+
 /**
  * User: matthewb
  * Date: 2012-10-11
@@ -100,7 +102,10 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
                 if (null == d || d instanceof Date)
                     date = (Date) d;
                 else
-                    date = new Date(ConvertHelper.convert(d, Timestamp.class).getTime());
+                {
+                    var ts = ConvertHelper.convert(d, Timestamp.class);
+                    date = null==ts ? null : new Date(ts.getTime());     // blank string will convert to null ts
+                }
             }
             catch (ConversionException x)
             {
