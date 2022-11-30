@@ -15,7 +15,9 @@
  */
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.SQLFragment;
 
 /**
  * Captures options for doing a lineage search
@@ -53,6 +55,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     private boolean _useObjectIds = false;
     private boolean _onlyReturnObjectId = false;
     private String _runProtocolLsid;
+    private String _sourceKey;
 
     public ExpLineageOptions()
     {
@@ -167,4 +170,21 @@ public class ExpLineageOptions extends ResolveLsidsForm
         _runProtocolLsid = runProtocolLsid;
     }
 
+    public String getSourceKey()
+    {
+        return _sourceKey;
+    }
+
+    public @Nullable SQLFragment getSourceKeySQL()
+    {
+        String sourceKey = StringUtils.trimToNull(_sourceKey);
+        if (sourceKey == null)
+            return null;
+        return new SQLFragment("?", sourceKey);
+    }
+
+    public void setSourceKey(String sourceKey)
+    {
+        _sourceKey = sourceKey;
+    }
 }

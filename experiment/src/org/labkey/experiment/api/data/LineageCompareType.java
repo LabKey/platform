@@ -12,8 +12,8 @@ import java.util.Set;
 
 /**
  * <code>
- * Filter.create('lsid', '{json:["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1]}', Filter.Types.EXP_LINEAGE_OF)
- * Filter.create('lsid', ["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1], Filter.Types.EXP_LINEAGE_OF)
+ * Filter.create('lsid', '{json:["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1,"sourceKey"]}', Filter.Types.EXP_LINEAGE_OF)
+ * Filter.create('lsid', ["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1,"sourceKey"], Filter.Types.EXP_LINEAGE_OF)
  * </code>
  */
 public class LineageCompareType extends CompareType
@@ -30,10 +30,10 @@ public class LineageCompareType extends CompareType
     {
         Object[] values;
         Object collection;
-        if (value instanceof Collection)
+        if (value instanceof Collection valueCollection)
         {
             collection = value;
-            values = ((Collection) value).toArray();
+            values = valueCollection.toArray();
         }
         else
         {
@@ -47,12 +47,21 @@ public class LineageCompareType extends CompareType
         if (values.length > 1)
         {
             Object depthObj = values[1];
-            if (depthObj instanceof String)
-                depth = Integer.parseInt((String) depthObj);
-            else if (depthObj instanceof Integer)
-                depth = (Integer) depthObj;
+            if (depthObj instanceof String depthObjStr)
+                depth = Integer.parseInt(depthObjStr);
+            else if (depthObj instanceof Integer depthObjInt)
+                depth = depthObjInt;
         }
-        return new LineageClause(fieldKey, collection, lsid, depth);
+
+        String sourceKey = null;
+        if (values.length > 2)
+        {
+            Object sourceKeyObj = values[2];
+            if (sourceKeyObj instanceof String sourceKeyStr)
+                sourceKey = sourceKeyStr;
+        }
+
+        return new LineageClause(fieldKey, collection, lsid, depth, sourceKey);
     }
 
     @Override
