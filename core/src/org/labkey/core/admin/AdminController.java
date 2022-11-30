@@ -52,6 +52,8 @@ import org.labkey.api.admin.HealthCheckRegistry;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
+import org.labkey.api.admin.sitevalidation.SiteValidationResult;
+import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -3869,7 +3871,7 @@ public class AdminController extends SpringActionController
                         sqlcheck = DbSchema.checkAllContainerCols(getUser(), true);
                     if (fixRequested.equalsIgnoreCase("descriptor"))
                         sqlcheck = OntologyManager.doProjectColumnCheck(true);
-                    contentBuilder.append(sqlcheck);
+                    contentBuilder.append(PageFlowUtil.filter(sqlcheck));
                 }
                 else
                 {
@@ -3879,11 +3881,11 @@ public class AdminController extends SpringActionController
                     String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
                     if (strTemp.length() > 0)
                     {
-                        contentBuilder.append(strTemp);
+                        contentBuilder.append(PageFlowUtil.filter(strTemp));
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "container");
                         contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                        contentBuilder.append(currentUrl.getEncodedLocalURIString());
+                        contentBuilder.append(PageFlowUtil.filter(currentUrl.getEncodedLocalURIString()));
                         contentBuilder.append("\" >here</a> to attempt recovery .");
                     }
 
@@ -3892,28 +3894,36 @@ public class AdminController extends SpringActionController
                     strTemp = OntologyManager.doProjectColumnCheck(false);
                     if (strTemp.length() > 0)
                     {
-                        contentBuilder.append(strTemp);
+                        contentBuilder.append(PageFlowUtil.filter(strTemp));
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "descriptor");
                         contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                        contentBuilder.append(currentUrl);
+                        contentBuilder.append(PageFlowUtil.filter(currentUrl));
                         contentBuilder.append("\" >here</a> to attempt recovery .");
                     }
 
                     LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
+                    contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML.<br><br>");
                     Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
                     for (DbSchema schema : schemas)
                     {
-                        String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
-                        if (null != sOut)
+                        SiteValidationResultList schemaResult = TableXmlUtils.compareXmlToMetaData(schema, form.getFull(), false, true);
+                        List<SiteValidationResult> results = schemaResult.getResults(null);
+                        if (results.isEmpty())
                         {
-                            LOG.info("Inconsistency in Schema " + schema.getDisplayName()); // Debugging test timeout
-                            contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
-                            contentBuilder.append(schema.getDisplayName());
-                            contentBuilder.append("<br/>");
-                            contentBuilder.append(sOut);
+                            contentBuilder.append("<b>").append(PageFlowUtil.filter(schema.getDisplayName())).append(": OK</b><br>");
+                        }
+                        else
+                        {
+                            contentBuilder.append("<b>").append(PageFlowUtil.filter(schema.getDisplayName())).append("</b><br>");
+                            contentBuilder.append("<ul style=\"list-style: none;\">");
+                            for (var r : results)
+                            {
+                                String item = isBlank(r.getMessage()) ? "&nbsp" : PageFlowUtil.filter(r.getMessage());
+                                contentBuilder.append("<li>").append(item).append("</li>\n");
+                            }
+                            contentBuilder.append("</ul>");
                         }
                     }
 
@@ -3925,19 +3935,19 @@ public class AdminController extends SpringActionController
                     {
                         for (String error : dr.getErrors())
                         {
-                            contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
+                            contentBuilder.append("<div class=\"warning\">").append(PageFlowUtil.filter(error)).append("</div>");
                         }
                     }
                     for (String error : pr.getGlobalErrors())
                     {
-                        contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
+                        contentBuilder.append("<div class=\"warning\">").append(PageFlowUtil.filter(error)).append("</div>");
                     }
 
                     LOG.info("Database check complete"); // Debugging test timeout
                     contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
                 }
 
-                return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder.toString() + "</td></tr></table>");
+                return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder + "</td></tr></table>");
             }
         }
 

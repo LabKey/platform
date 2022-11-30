@@ -602,7 +602,7 @@ public class ContainerManager
             if (!c.getFolderType().getName().equals(folderType.getName()))
                 continue;
 
-            int childCount = c.getChildren().size();
+            int childCount = c.getChildren().stream().filter(Container::isInFolderNav).toList().size();
             counts.add(childCount);
         }
 
@@ -2387,6 +2387,15 @@ public class ContainerManager
                 RoleManager.getRole(AuthorRole.class),
                 RoleManager.getRole(ReaderRole.class),
                 null);
+    }
+
+    public static void removeDefaultSupportContainer(User user)
+    {
+        Container support = getDefaultSupportContainer();
+        if (support != null)
+        {
+            ContainerManager.delete(support, user);
+        }
     }
 
     public static Container getDefaultSupportContainer()

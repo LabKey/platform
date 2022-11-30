@@ -40,7 +40,33 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.ContainerServiceImpl;
+import org.labkey.api.data.ContainerTypeRegistry;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.NormalContainerType;
+import org.labkey.api.data.OutOfRangeDisplayColumn;
+import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TabContainerType;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.TestSchema;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -103,6 +129,7 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -748,7 +775,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             scope.getSqlDialect().prepare(scope);
 
         // Now that we know the standard containers have been created, add a listener that warms the just-cleared caches with
-        // core.Containers meta data and a few common containers. This may prevent some deadlocks during upgrade, #33550.
+        // core.Containers metadata and a few common containers. This may prevent some deadlocks during upgrade, #33550.
         CacheManager.addListener(() -> {
             ContainerManager.getRoot();
             ContainerManager.getHomeContainer();
