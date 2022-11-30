@@ -198,7 +198,6 @@
         <isReadOnly>false</isReadOnly>
       </column>
       <column columnName="Container">
-        <datatype>nvarchar</datatype>
         <columnTitle>Container</columnTitle>
         <inputType>text</inputType>
         <scale>255</scale>
@@ -325,7 +324,6 @@
         <isReadOnly>false</isReadOnly>
       </column>
       <column columnName="Container">
-        <datatype>nvarchar</datatype>
         <columnTitle>Container</columnTitle>
         <inputType>text</inputType>
         <scale>255</scale>
