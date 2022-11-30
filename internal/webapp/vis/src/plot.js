@@ -1712,6 +1712,13 @@ boxPlot.render();
                         + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
+            if (config.properties.value == null) {
+                throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
+                        + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, mouseOverFn, "
+                        + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
+            }
+        }
         else {
             throw new Error(plotTypeLabel + " plot type is not supported!");
         }
@@ -2224,6 +2231,19 @@ boxPlot.render();
                     }
                 });
                 config.layers = [];
+
+            }
+            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
+                let range = new LABKEY.vis.Layer({
+                    geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, width: barWidth}),
+                    data: config.data,
+                    aes: {
+                        upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
+                        lower: function(){return LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT;},
+                        yLeft: config.properties.mean
+                    }
+                });
+                config.layers = [range];
 
             }
         }
