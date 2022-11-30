@@ -678,6 +678,18 @@ public class DbScope
      */
     public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
+        return _executeWithRetry(true, fn, extraLocks);
+    }
+
+
+    public <ReturnType> ReturnType executeWithRetryReadOnly(RetryFn<ReturnType> fn)
+    {
+        return _executeWithRetry(false, fn);
+    }
+
+
+    private  <ReturnType> ReturnType _executeWithRetry(boolean useTx, RetryFn<ReturnType> fn, Lock... extraLocks)
+    {
         // don't retry if we're already in a transaction, it won't help
         ReturnType ret = null;
         int tries = isTransactionActive() ? 1 : 3;
@@ -686,11 +698,22 @@ public class DbScope
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
-            try (Transaction transaction = ensureTransaction(extraLocks))
+            try
             {
-                ret = fn.exec(transaction);
-                transaction.commit();
-                break;
+                if (useTx)
+                {
+                    try (Transaction transaction = ensureTransaction(extraLocks))
+                    {
+                        ret = fn.exec(transaction);
+                        transaction.commit();
+                        break;
+                    }
+                }
+                else
+                {
+                    ret = fn.exec(null);
+                    break;
+                }
             }
             catch (DeadlockLoserDataAccessException dldae)
             {
