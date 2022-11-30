@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.16.1",
-    "@labkey/components": "2.261.2-fb-textAreaResizing.0",
+    "@labkey/components": "2.263.0-fb-textAreaResizing.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
