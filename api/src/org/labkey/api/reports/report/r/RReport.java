@@ -416,6 +416,15 @@ public class RReport extends ExternalScriptEngineReport
             labkey.append("labkey.apiKey <- \"${" + SecurityManager.API_KEY + "}\"\n");
         }
 
+        // override quit() and q(), these really don't belong in R reports.  quit() can kill rserve for instance.
+        labkey.append("""
+                quit <- function(save = "default", status = 0, runLast = TRUE)
+                {
+                   stop("execution interrupted with quit()");
+                }
+                q <- quit
+                """);
+
         labkey.append(getKnitrEndChunk());
 
         return labkey.toString();
@@ -924,7 +933,7 @@ public class RReport extends ExternalScriptEngineReport
             assertEquals(pre, strip);
             assertTrue( post.endsWith(pre) );
             boolean isRStudioEnabled = report.getRStudioService() != null;
-            int[] expected = isRStudioEnabled ? new int[]{0, 12, -1, -1, 0, 584} : new int[]{0, 7, -1, -1, 0, post.indexOf("# >8")};
+            int[] expected = isRStudioEnabled ? new int[]{0, 22, -1, -1, 0, 709} : new int[]{0, 12, -1, -1, 0, post.indexOf("# >8")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
@@ -952,7 +961,7 @@ public class RReport extends ExternalScriptEngineReport
             assertTrue( post.endsWith("<b>hello world</b>\n") );
 
             boolean isRStudioEnabled = report.getRStudioService() != null;
-            int[] expected = isRStudioEnabled ? new int[]{0, 14, -1, -1, 0, 639} : new int[]{0, 9, -1, -1, 0, post.indexOf("<!-- >8 -->")};
+            int[] expected = isRStudioEnabled ? new int[]{0, 24, -1, -1, 0, 764} : new int[]{0, 14, -1, -1, 0, post.indexOf("<!-- >8 -->")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
@@ -985,7 +994,7 @@ public class RReport extends ExternalScriptEngineReport
             assertEquals(pre, strip);
 
             boolean isRStudioEnabled = report.getRStudioService() != null;
-            int[] expected = isRStudioEnabled ? new int[]{3, 17, 0, 2, 25, 646} : new int[]{3, 12, 0, 2, 25, post.indexOf("<!-- >8 -->")};
+            int[] expected = isRStudioEnabled ? new int[]{3, 27, 0, 2, 25, 771} : new int[]{3, 17, 0, 2, 25, post.indexOf("<!-- >8 -->")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
     }
