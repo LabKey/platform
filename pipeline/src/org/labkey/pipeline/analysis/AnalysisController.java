@@ -710,7 +710,7 @@ public class AnalysisController extends SpringActionController
         {
             File dir = FileUtil.getTempDirectory();
             String dot = buildDigraph(pipeline);
-            svgFile = File.createTempFile("pipeline", ".svg", dir);
+            svgFile = FileUtil.createTempFile("pipeline", ".svg", dir);
             DotRunner runner = new DotRunner(dir, dot);
             runner.addSvgOutput(svgFile);
             runner.execute();

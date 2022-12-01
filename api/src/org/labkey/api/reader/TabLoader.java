@@ -744,7 +744,7 @@ public class TabLoader extends DataLoader
 
         private File _createTempFile(String data, String ext) throws IOException
         {
-            File f = File.createTempFile("junit", ext);
+            File f = FileUtil.createTempFile("junit", ext);
             f.deleteOnExit();
 
             try (Writer w = PrintWriters.getPrintWriter(f))

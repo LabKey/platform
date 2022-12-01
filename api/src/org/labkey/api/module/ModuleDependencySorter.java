@@ -146,7 +146,7 @@ public class ModuleDependencySorter
         {
             File dir = FileUtil.getTempDirectory();
             String dot = buildDigraph(dependencies);
-            File svgFile = File.createTempFile("modules", ".svg", dir);
+            File svgFile = FileUtil.createTempFile("modules", ".svg", dir);
             DotRunner runner = new DotRunner(dir, dot);
             runner.addSvgOutput(svgFile);
             runner.execute();

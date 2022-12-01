@@ -129,7 +129,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         }
                         else
                         {
-                            dirParent = File.createTempFile(jobId, "", dirParent);
+                            dirParent = FileUtil.createTempFile(jobId, "", dirParent);
                             tempDirBase = dirParent;
                         }
 
@@ -164,7 +164,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                     }
                     else
                     {
-                        tempDir = File.createTempFile(name, WORK_DIR_SUFFIX, dirParent);
+                        tempDir = FileUtil.createTempFile(name, WORK_DIR_SUFFIX, dirParent);
                     }
 
                     if (_allowReuseExistingTempDirectory && tempDir.exists())

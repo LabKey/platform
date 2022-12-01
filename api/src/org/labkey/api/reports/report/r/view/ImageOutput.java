@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -66,9 +67,9 @@ public class ImageOutput extends AbstractParamReplacement
     {
         File file;
         if (directory != null)
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension(), directory);
+            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension(), directory);
         else
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension());
+            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension());
 
         addFile(file);
         return file;
