@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,7 +64,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
     {
         super(table.getSchema().getScope());
-        _table = table;
+        _table = Objects.requireNonNull(table);
         _columns = columns;
         _filter = filter;
         _sort = sort;

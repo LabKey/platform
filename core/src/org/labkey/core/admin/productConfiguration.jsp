@@ -58,7 +58,7 @@
     <% for (AdminConsole.Product product : productGroup.getProducts() ) { %>
     <div class="product-group-item">
         <label>
-            <input type="radio" id="<%=h(product.getKey())%>" name="<%=h(productGroup.getKey())%>" value="<%=h(product.getKey())%>" <%=checked(product.isEnabled())%>>
+            <input type="radio" id="<%=h(product.getKey())%>" name="productKey" value="<%=h(product.getKey())%>" <%=checked(product.isEnabled())%>>
             <span class="toggle-label-text"><%=h(product.getName())%> - Includes the following features: <%=h(StringUtils.join(product.getFeatureFlags(), ", "))%></span>
         </label>
     </div>

@@ -68,7 +68,7 @@ public class TableXmlUtils
 
         try
         {
-            TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
+            TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), bFull);
             TablesDocument tablesDocFromXml = DbScope.getSchemaXml(schema);
 
             if (null != tablesDocFromXml)
@@ -163,27 +163,29 @@ public class TableXmlUtils
 
                 if (bFull)
                 {
-                   compareStringProperty(tt.getTableTitle(), xmlTable.getTableTitle(), "TableTitle", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getTableTitle(), xmlTable.getTableTitle(), "TableTitle", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getTableGroup(), xmlTable.getTableGroup(), "TableGroup", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getTableGroup(), xmlTable.getTableGroup(), "TableGroup", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getDbTableName(), xmlTable.getDbTableName(), "DbTableName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getDbTableName(), xmlTable.getDbTableName(), "DbTableName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getPkColumnName(), xmlTable.getPkColumnName(), "PkColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getPkColumnName(), xmlTable.getPkColumnName(), "PkColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getVersionColumnName(), xmlTable.getVersionColumnName(), "VersionColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getVersionColumnName(), xmlTable.getVersionColumnName(), "VersionColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getTableUrl().getStringValue(), xmlTable.getTableUrl().getStringValue(), "TableUrl", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    String ttUrl = null == tt.getTableUrl() ? null : tt.getTableUrl().getStringValue();
+                    String xmlUrl = null == xmlTable.getTableUrl() ? null : xmlTable.getTableUrl().getStringValue();
+                    compareStringProperty(ttUrl, xmlUrl, "TableUrl", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getNextStep(), xmlTable.getNextStep(), "NextStep", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getNextStep(), xmlTable.getNextStep(), "NextStep", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                   compareStringProperty(tt.getTitleColumn(), xmlTable.getTitleColumn(), "TitleColumn", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
+                    compareStringProperty(tt.getTitleColumn(), xmlTable.getTitleColumn(), "TitleColumn", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
 
-                   compareBoolProperty((tt.isSetManageTableAllowed() ? tt.getManageTableAllowed() : null),
+                    compareBoolProperty((tt.isSetManageTableAllowed() ? tt.getManageTableAllowed() : null),
                             (xmlTable.isSetManageTableAllowed() ? xmlTable.getManageTableAllowed() : null),
                             "ManageTableAllowed", rlOut, schema.getName() + "." + tt.getTableName());
-                 }
+                }
 
                 dbCols = tt.getColumns().getColumnArray();
                 if (null != xmlTable.getColumns())
@@ -243,7 +245,7 @@ public class TableXmlUtils
                     {
                         SiteValidationResultList rlTmp = new SiteValidationResultList();
 
-                        compareStringProperty(columnType.getDatatype(), xmlCol.getDatatype(), "Datatype", rlTmp, bCaseSensitive, problematicItem);
+                        compareDatatypeProperty(columnType.getDatatype(), xmlCol.getDatatype(), "Datatype", rlTmp, problematicItem);
 
                         compareStringProperty(columnType.getColumnTitle(), xmlCol.getColumnTitle(), "ColumnTitle", rlTmp, bCaseSensitive, problematicItem);
 
@@ -259,7 +261,9 @@ public class TableXmlUtils
 
                         compareStringProperty(columnType.getOptionlistQuery(), xmlCol.getOptionlistQuery(), "OptionlistQuery", rlTmp, bCaseSensitive, problematicItem);
 
-                        compareStringProperty(columnType.getUrl().getStringValue(), xmlCol.getUrl().getStringValue(), "Url", rlTmp, bCaseSensitive, problematicItem);
+                        String ctUrl = null == columnType.getUrl() ? null : columnType.getUrl().getStringValue();
+                        String xmlUrl = null == xmlCol.getUrl() ? null : xmlCol.getUrl().getStringValue();
+                        compareStringProperty(ctUrl, xmlUrl, "Url", rlTmp, bCaseSensitive, problematicItem);
 
                         compareStringProperty(columnType.getFormatString(), xmlCol.getFormatString(), "FormatString", rlTmp, bCaseSensitive, problematicItem);
 
@@ -347,7 +351,7 @@ public class TableXmlUtils
                         if (!rlTmp.getResults().isEmpty())
                         {
                             rlOut.addBlank();
-                            rlOut.addInfo("Table ").append(tt.getTableName()).append(" column ").append(columnType.getColumnName()).append(" errors and warnings");
+                            rlOut.addInfo(tt.getTableName() + "." + columnType.getColumnName());
                             rlOut.addAll(rlTmp);
                         }
                     }
@@ -361,7 +365,8 @@ public class TableXmlUtils
                     SiteValidationResult result;
                     if (errorOnXmlMiss)
                         result = rlOut.addError("ERROR: ");
-                    else result = rlOut.addWarn("WARNING: ");
+                    else
+                        result = rlOut.addWarn("WARNING: ");
                     result.append("Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.");
                 }
 
@@ -389,6 +394,22 @@ public class TableXmlUtils
         }
     }
 
+    private static boolean compareDatatypeProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, String problematicItem)
+    {
+        if (null == targetProp)
+            return true;
+        targetProp = targetProp.toLowerCase();
+        if (null != refProp)
+        {
+            refProp = refProp.toLowerCase();
+            if (targetProp.equals(refProp))
+                return true;
+            if ("int".equals(targetProp) && "int4".equals(refProp))
+                return true;
+        }
+        return compareStringProperty(refProp, targetProp, propName, rlOut, false, problematicItem);
+    }
+
     private static boolean compareStringProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, boolean bCaseSensitive, String problematicItem)
     {
         return compareStringProperty(refProp, targetProp, propName, rlOut, bCaseSensitive, problematicItem, false);
@@ -404,7 +425,7 @@ public class TableXmlUtils
         if (null == targetProp)
         {
             if (reqd)
-                rlOut.addError("ERROR: property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" not found in XML:");
+                rlOut.addError("ERROR: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" not found in XML.");
             return false;
         }
 
@@ -420,12 +441,12 @@ public class TableXmlUtils
 
         if (!bMatch)
         {
-            mismatchWarn.append("property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used");
+            mismatchWarn.append("property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" doesn't match XML value '").append(targetProp).append("'.");
             // mismatch who wins?  assume xmlDoc wins
             return true;
         }
         else if (!reqd)
-            mismatchWarn.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" unnecessary in XML:");
+            mismatchWarn.append("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
 
         return false;
     }
@@ -441,10 +462,10 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" unnecessary in  XML:");
+            rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
             return false;
         }
-        rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used");
+        rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" doesn't match XML value '").append(targetProp).append("'.");
         return true;
     }
 
@@ -459,10 +480,10 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" for ").append(problematicItem).append(" unnecessary in XML.");
+            rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
             return false;
         }
-        rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append(" for ").append(problematicItem).append("  ; XML value used");
+        rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' doesn't match XML value '").append(targetProp).append("' for ").append(problematicItem).append(".");
         return true;
     }
 }
