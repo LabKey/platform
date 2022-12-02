@@ -3517,7 +3517,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
+    public static class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
     {
         @Override
         public void validateForm(MaterialOperationConfirmationForm form, Errors errors)
@@ -7515,6 +7515,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _dataType;
         private String _picklistName;
+        private boolean _useSnapshotSelection;
 
         public String getDataType()
         {
@@ -7536,12 +7537,26 @@ public class ExperimentController extends SpringActionController
             _picklistName = picklistName;
         }
 
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
+        }
+
         @Override
         public Set<Integer> getIds(boolean clear)
         {
             if (_rowIds != null)
                 return _rowIds;
-            Set<Integer> selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+            Set<Integer> selectedIds;
+            if (_useSnapshotSelection)
+                selectedIds = DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+            else
+                selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
             if (_picklistName != null)
             {
                 User user = getViewContext().getUser();
