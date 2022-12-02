@@ -148,7 +148,6 @@ import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
-import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.StashedStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -1388,8 +1387,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
     }
 
-
-
     /**
      * This method handles the home project settings
      */
@@ -1425,25 +1422,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
-        // TODO: Delete this (and inline replaceHomeProjectWebparts()) after transitioning to SiteSettings.homeProjectWebparts
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, DeprecatedProperties.class)
-        {
-            @Override
-            public void handle(Map<DeprecatedProperties, StartupPropertyEntry> properties)
-            {
-                if (!properties.isEmpty())
-                {
-                    LOG.warn("Support for the \"LookAndFeelSettings.homeProjectInitWebparts\" startup property will be removed shortly; use \"SiteSettings.homeProjectWebparts\" instead.");
-                    replaceHomeProjectWebparts(properties.get(DeprecatedProperties.homeProjectInitWebparts));
-                }
-            }
-        });
-
-        replaceHomeProjectWebparts(props.get(homeProjectWebparts));
-    }
-
-    private void replaceHomeProjectWebparts(StartupPropertyEntry webparts)
-    {
+        StartupPropertyEntry webparts = props.get(homeProjectWebparts);
         if (null != webparts)
         {
             // Clear existing webparts added by core and wiki modules
@@ -1455,18 +1434,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
                 if (webPartFactory != null)
                     addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
-            }
-        }
-    }
-
-    private enum DeprecatedProperties implements StartupProperty
-    {
-        homeProjectInitWebparts
-        {
-            @Override
-            public String getDescription()
-            {
-                return "Semicolon-separated list of webpart names to add to the home project. DO NOT USE... use SiteSettings.homeProjectWebparts instead.";
             }
         }
     }
