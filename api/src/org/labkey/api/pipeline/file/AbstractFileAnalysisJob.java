@@ -19,13 +19,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -33,7 +30,6 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -46,7 +42,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -106,7 +101,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         );
     }
 
-    public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
+    public AbstractFileAnalysisJob(@NotNull AbstractFileAnalysisProtocol protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,
                                    PipeRoot root,
@@ -157,7 +152,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", FileUtil.makeFileNameWithTimestamp(_baseName));
+        String logFile = protocol.isFromWatcher() ? FileUtil.makeFileNameWithTimestamp(_baseName) : _baseName;
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", logFile);
     }
 
     /**
@@ -195,23 +191,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
 
         setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
-
-        // CONSIDER: Remove writing out jobInfo file completely
-        // If parent job wrote a job info file, assume the child should too
-//        if (job._fileJobInfo != null)
-//        {
-//            try
-//            {
-//                String infoFileName = _baseName + "-jobInfo";
-//                _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
-//                writeJobInfoTSV(_fileJobInfo);
-//                getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
-//            }
-//            catch (IOException e)
-//            {
-//                throw new RuntimeException(e);
-//            }
-//        }
     }
 
     @Override
