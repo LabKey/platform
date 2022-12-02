@@ -59,7 +59,7 @@ public class DataRegionSelection
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
-    // example usage: set an filtered set of selected values in session
+    // example usage: set a filtered set of selected values in session
     public static final String SNAPSHOT_SELECTED_VALUES = ".snapshotSelectValues";
 
     private static @NotNull String getSessionAttributeKey(@NotNull String path, @NotNull String key, boolean useSnapshot)
