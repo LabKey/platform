@@ -970,9 +970,11 @@ public abstract class SqlDialect
         return true;
     }
 
+    /** @return null if dialect doesn't support this feature, otherwise the SQL to get the size of the specified DB in bytes */
+    @Nullable
     public SQLFragment getDatabaseSizeSql(String databaseName)
     {
-        return new SQLFragment("SELECT -1");
+        return null;
     }
 
     protected static class SQLSyntaxException extends SQLException

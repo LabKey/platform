@@ -143,9 +143,15 @@ public class DbScope
 
     private SqlDialect _dialect;
 
+    /** @return the size of the database in bytes, or -1 if we don't know how to get it */
     public long getDatabaseSize()
     {
-        return new SqlSelector(this, getSqlDialect().getDatabaseSizeSql(getDatabaseName())).getObject(Long.class);
+        SQLFragment sql = getSqlDialect().getDatabaseSizeSql(getDatabaseName());
+        if (sql != null)
+        {
+            return new SqlSelector(this, sql).getObject(Long.class);
+        }
+        return -1;
     }
 
     public interface TransactionKind
