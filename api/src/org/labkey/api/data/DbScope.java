@@ -143,6 +143,11 @@ public class DbScope
 
     private SqlDialect _dialect;
 
+    public long getDatabaseSize()
+    {
+        return new SqlSelector(this, getSqlDialect().getDatabaseSizeSql(getDatabaseName())).getObject(Long.class);
+    }
+
     public interface TransactionKind
     {
         /** A short description of what this transactions usage scenario is */

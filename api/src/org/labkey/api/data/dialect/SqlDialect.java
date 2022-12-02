@@ -970,6 +970,11 @@ public abstract class SqlDialect
         return true;
     }
 
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT -1");
+    }
+
     protected static class SQLSyntaxException extends SQLException
     {
         private final Collection<String> _errors;
