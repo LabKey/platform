@@ -173,12 +173,12 @@ public class SimpleFolderType extends MultiPortalFolderType
         {
             log.error(e);
             throw new RuntimeException("Unable to load custom folder type from file " +
-                    folderTypeFile.getPath() + ".", e);
+                    folderTypeFile + ".", e);
         }
         if(null == doc || null == doc.getFolderType())
         {
             IllegalStateException error = new IllegalStateException("Folder type definition file " +
-                    folderTypeFile.getPath() + " does not contain a root 'folderType' element!");
+                    folderTypeFile + " does not contain a root 'folderType' element!");
             log.error(error);
             throw error;
         }

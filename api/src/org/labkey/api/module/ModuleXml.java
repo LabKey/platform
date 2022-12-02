@@ -153,7 +153,7 @@ public class ModuleXml
         }
         catch(Exception e)
         {
-            LOG.error("Error trying to read and parse the metadata XML for module " + module.getName() + " from " + r.getPath(), e);
+            LOG.error("Error trying to read and parse the metadata XML for " + r, e);
         }
 
         _moduleProperties = Collections.unmodifiableMap(moduleProperties);
