@@ -156,7 +156,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                             if (results.getSize() == 0)
                                 return;
 
-                            File tempFile = File.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
+                            File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
 
                             // Figure out the subset of columns to actually export in the TSV, see issue 36746
                             Set<FieldKey> ignored = Set.of(FieldKey.fromParts("Run"), FieldKey.fromParts("RowId"), FieldKey.fromParts("DataId"), FieldKey.fromParts("Folder"));
