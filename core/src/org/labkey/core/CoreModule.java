@@ -1094,6 +1094,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
+            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             Calendar cal = new GregorianCalendar();
             cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
