@@ -172,7 +172,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             if (null == di)
                 return null;           // Can happen if context has errors
 
-            assert !di.supportsGetExistingRecord();
+            //assert !di.supportsGetExistingRecord();
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();

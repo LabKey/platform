@@ -818,15 +818,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.setDebugName("step0");
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
+
+            // if we are merging, to support existing row support we expect either the lsid to be present in the incoming data
+            Set<String> selectSet = context.getInsertOption().mergeRows
+                    ? Sets.newCaseInsensitiveHashSet("dataClass", "genId")
+                    : Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId");
+            step0.selectAll(selectSet);
 
             TableInfo expData = svc.getTinfoData();
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // TODO: validate dataFileUrl column, it will be saved later
 
-            // Generate LSID before inserting
-            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
+            // Generate LSID before inserting, but not when merging
+            if (!context.getInsertOption().mergeRows)
+                step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));

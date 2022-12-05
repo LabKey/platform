@@ -19,12 +19,14 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -65,12 +67,16 @@ public class TriggerDataBuilderHelper
     {
         final DataIteratorContext _context;
         final BatchValidationException _errors;
+        private TableInfo.TriggerType _triggerType = TableInfo.TriggerType.INSERT;
 
         protected TriggerDataIterator(DataIterator di, DataIteratorContext context)
         {
             super(DataIteratorUtil.wrapMap(di,true));
             _context = context;
             _errors = context._errors;
+
+            if (context.getInsertOption().mergeRows)
+                _triggerType = TableInfo.TriggerType.UPDATE;
         }
 
         BatchValidationException getErrors()
@@ -81,6 +87,11 @@ public class TriggerDataBuilderHelper
         MapDataIterator getInput()
         {
             return (MapDataIterator)_delegate;
+        }
+
+        TableInfo.TriggerType getTriggerType()
+        {
+            return _triggerType;
         }
 
         @Override
@@ -117,9 +128,12 @@ public class TriggerDataBuilderHelper
             if (!_target.hasTriggers(_c))
                 return pre;
             pre = LoggingDataIterator.wrap(pre);
-            DataIterator coerce = new CoerceDataIterator(pre, context, _target);
+            DataIterator coerce = new CoerceDataIterator(pre, context, _target, !context.getInsertOption().mergeRows);
             coerce = LoggingDataIterator.wrap(coerce);
-            return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
+            if (context.getInsertOption().mergeRows)
+                coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, Set.of(ExpDataTable.Column.LSID.toString()), true).getDataIterator(context);
+
+            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
         }
     }
 
@@ -149,7 +163,7 @@ public class TriggerDataBuilderHelper
 
             if (_firstRow)
             {
-                _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, getErrors(), _extraContext);
+                _target.fireBatchTrigger(_c, _user, getTriggerType(), true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
             }
@@ -160,7 +174,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, rowNumber, _currentRow, null, _extraContext);
+                    _target.fireRowTrigger(_c, _user, getTriggerType(), true, rowNumber, _currentRow, getExistingRecord(), _extraContext);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -226,7 +240,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getExistingRecord(), _extraContext);
                     }
                     catch (ValidationException vex)
                     {
@@ -238,7 +252,7 @@ public class TriggerDataBuilderHelper
             finally
             {
                 if (!hasNext && firedInit && !getErrors().hasErrors())
-                    _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
+                    _target.fireBatchTrigger(_c, _user, getTriggerType(), false, getErrors(), _extraContext);
             }
         }
     }

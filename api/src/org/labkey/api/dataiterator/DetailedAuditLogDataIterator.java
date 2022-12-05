@@ -121,6 +121,12 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data.close();
     }
 
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
+
     public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryService.AuditAction auditAction, final User user, final Container container)
     {
         return context ->
