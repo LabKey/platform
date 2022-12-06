@@ -3471,6 +3471,7 @@ public class ExperimentController extends SpringActionController
     public static class DataOperationConfirmationForm extends DataViewSelectionForm
     {
         private ExpDataImpl.DataOperations _dataOperation;
+        private boolean _useSnapshotSelection;
 
         public ExpDataImpl.DataOperations getDataOperation()
         {
@@ -3480,6 +3481,16 @@ public class ExperimentController extends SpringActionController
         public void setDataOperation(ExpDataImpl.DataOperations dataOperation)
         {
             _dataOperation = dataOperation;
+        }
+
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
         }
     }
 
@@ -3556,6 +3567,7 @@ public class ExperimentController extends SpringActionController
     public static class MaterialOperationConfirmationForm extends DataViewSelectionForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
+        private boolean _useSnapshotSelection;
 
         public SampleTypeService.SampleOperations getSampleOperation()
         {
@@ -3565,6 +3577,26 @@ public class ExperimentController extends SpringActionController
         public void setSampleOperation(SampleTypeService.SampleOperations sampleOperation)
         {
             _sampleOperation = sampleOperation;
+        }
+
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
+        }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null) return _rowIds;
+            if (_useSnapshotSelection)
+                return DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+            else
+                return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 
