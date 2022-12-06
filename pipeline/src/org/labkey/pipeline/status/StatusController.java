@@ -35,6 +35,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -70,6 +71,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.SpringErrorView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.AnalysisController;
@@ -83,6 +85,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Set;
@@ -298,6 +301,7 @@ public class StatusController extends SpringActionController
             if (c.isRoot())
                 gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            WebPartView.renderEndOfBodyScript(getPageConfig(), getViewContext().getResponse());
             return null;
         }
     }
@@ -556,9 +560,19 @@ public class StatusController extends SpringActionController
                     String basename = statusName.substring(0, statusName.lastIndexOf('.'));
 
                     Path dir = fileStatus.getParent();
-                    Path fileShow = dir.resolve(fileName);
+                    Path fileShow;
+                    try
+                    {
+                        fileShow = dir.resolve(fileName);
+                    }
+                    catch (InvalidPathException ex)
+                    {
+                        fileShow = null;
+                    }
 
-                    if (NetworkDrive.exists(fileShow))
+                    // Ensure that the requested file is under the root for this container
+                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                    if (root != null && fileShow != null && root.isUnderRoot(fileShow) && NetworkDrive.exists(fileShow))
                     {
                         boolean visible = isVisibleFile(fileName, basename);
 
@@ -743,7 +757,9 @@ public class StatusController extends SpringActionController
         @Override
         public void validateCommand(ConfirmDeleteStatusForm form, Errors errors)
         {
-            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
+            // Don't clear the state yet because we're just validating at this point. We'll clear it as part of the
+            // delete itself. See issue 44873
+            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), false);
 
             try
             {

@@ -17,9 +17,9 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.search.ConstantScoreScorer;
 import org.apache.lucene.search.ConstantScoreWeight;
 import org.apache.lucene.search.IndexSearcher;
@@ -33,9 +33,8 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.Module;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -48,6 +47,7 @@ import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -62,46 +62,29 @@ class SecurityQuery extends Query
     private final Container _currentContainer;
     private final boolean _recursive;
 
+    private final HashMap<String, Set<String>> _categoryContainers = new HashMap<>();
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private final InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
-    SecurityQuery(User user, Container searchRoot, Container currentContainer, boolean recursive, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
+    SecurityQuery(User user, SearchScope searchScope, Container currentContainer, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
         // These three are used for hashCode() & equals(). We have disabled query caching for now (see #26416), but this gets us close to being able to use it. We
         // need to add some indication that permissions haven't changed since the query was cached, for example, include in the hash a counter that SecurityManager
         // increments for every group or role assignment change.
         _user = user;
         _currentContainer = currentContainer;
-        _recursive = recursive;
-
+        _recursive = searchScope.isRecursive();
         _iTimer = iTimer;
 
-        if (recursive)
-        {
-            // Returns root plus all children (including workbooks & tabs) where user has read permissions
-            List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-            _containerIds = new HashMap<>(containers.size() * 2);
+        _containerIds = searchScope.getSearchableContainers(user, currentContainer);
 
-            for (Container c : containers)
-            {
-                boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isContainerFor(ContainerType.DataType.search) || c.shouldDisplay(user));
-
-                if (searchable)
-                {
-                    _containerIds.put(c.getId(), c);
+        SearchService.get().getSearchCategories().forEach(
+                category -> {
+                    _categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, _containerIds));
                 }
-            }
-        }
-        else
-        {
-            _containerIds = new HashMap<>();
-
-            if (searchRoot.hasPermission(user, ReadPermission.class))
-                _containerIds.put(searchRoot.getId(), searchRoot);
-        }
+        );
     }
-
 
     @Override
     public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost)
@@ -117,6 +100,15 @@ class SecurityQuery extends Query
                 return false;
             }
 
+            private boolean isReadable(String containerId, String categories)
+            {
+//                return _containerIds.containsKey(containerId);
+                if (StringUtils.isEmpty(categories) || !_categoryContainers.containsKey(categories))
+                    return _containerIds.containsKey(containerId);
+                else
+                    return _categoryContainers.get(categories).contains(containerId);
+            }
+
             @Override
             public Scorer scorer(LeafReaderContext context) throws IOException
             {
@@ -127,7 +119,7 @@ class SecurityQuery extends Query
                 int maxDoc = reader.maxDoc();
                 FixedBitSet bits = new FixedBitSet(maxDoc);
 
-                SortedDocValues securityContextDocValues = reader.getSortedDocValues(FIELD_NAME.securityContext.name());
+                BinaryDocValues securityContextDocValues = reader.getBinaryDocValues(FIELD_NAME.securityContext.name());
 
                 try
                 {
@@ -138,26 +130,26 @@ class SecurityQuery extends Query
                     {
                         while (NO_MORE_DOCS != (doc = securityContextDocValues.nextDoc()))
                         {
-                            BytesRef bytesRef = securityContextDocValues.lookupOrd(securityContextDocValues.ordValue());
+                            BytesRef bytesRef = securityContextDocValues.binaryValue();
                             String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
 
                             final String containerId;
                             final String resourceId;
-
-                            // SecurityContext is usually just a container ID, but in some cases it adds a resource ID.
-                            if (securityContext.length() > 36)
-                            {
-                                containerId = securityContext.substring(0, 36);
-                                resourceId = securityContext.substring(37);
-                            }
+                            final String categories;
+                            String[] parts = StringUtils.split(securityContext, "|");
+                            // SecurityContext is usually just a container ID and a string of categories, but in some cases it adds a resource ID.
+                            containerId = parts[0];
+                            if (parts.length > 1)
+                                categories = parts[1];
                             else
-                            {
-                                containerId = securityContext;
+                                categories = null;
+                            if (parts.length > 2)
+                                resourceId = parts[2];
+                            else
                                 resourceId = null;
-                            }
 
                             // Must have read permission on the container (always). Must also have read permissions on resource ID, if non-null.
-                            if (_containerIds.containsKey(containerId) && (null == resourceId || canReadResource(resourceId, containerId)))
+                            if (isReadable(containerId, categories) && (null == resourceId || canReadResource(resourceId, containerId)))
                                 bits.set(doc);
                         }
                     }

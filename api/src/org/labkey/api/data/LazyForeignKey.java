@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
@@ -18,13 +19,15 @@ import java.util.function.Supplier;
 public class LazyForeignKey implements ForeignKey
 {
     private final Supplier<ForeignKey> _supplier;
+    private final boolean _suggestColumns;
 
     private boolean _delegateCreationAttempted = false;
     private ForeignKey _delegate;
 
-    public LazyForeignKey(Supplier<ForeignKey> supplier)
+    public LazyForeignKey(Supplier<ForeignKey> supplier, boolean suggestColumns)
     {
         _supplier = supplier;
+        _suggestColumns = suggestColumns;
     }
 
     private ForeignKey getDelegate()
@@ -80,6 +83,12 @@ public class LazyForeignKey implements ForeignKey
     }
 
     @Override
+    public SchemaKey getLookupSchemaKey()
+    {
+        return getDelegate() == null ? null : getDelegate().getLookupSchemaKey();
+    }
+
+    @Override
     public String getLookupColumnName()
     {
         return getDelegate() == null ? null : getDelegate().getLookupColumnName();
@@ -100,6 +109,10 @@ public class LazyForeignKey implements ForeignKey
     @Override
     public @Nullable Set<FieldKey> getSuggestedColumns()
     {
+        if (!_suggestColumns)
+        {
+            return null;
+        }
         return getDelegate() == null ? null : getDelegate().getSuggestedColumns();
     }
 }

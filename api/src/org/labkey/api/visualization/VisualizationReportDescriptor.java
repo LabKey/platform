@@ -26,9 +26,14 @@ import java.util.Map;
  * User: brittp
  * Date: Feb 3, 2011 11:15:10 AM
  */
-public class VisualizationReportDescriptor extends ReportDescriptor
+abstract public class VisualizationReportDescriptor extends ReportDescriptor
 {
     public static final String VIEW_CLASS = "/org/labkey/visualization/views/chartWizard.jsp";
+
+    protected VisualizationReportDescriptor(String type)
+    {
+        super(type);
+    }
 
     public String getJSON()
     {

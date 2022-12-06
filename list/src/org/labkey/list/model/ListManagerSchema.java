@@ -122,13 +122,14 @@ public class ListManagerSchema extends UserSchema
     }
 
     @Override
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (null != settings.getQueryName() && settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
+        if (LIST_MANAGER.equalsIgnoreCase(settings.getQueryName()))
         {
-            return new QueryView(this, settings, errors)
+            QueryView qv = new QueryView(this, settings, errors)
             {
-                QuerySettings s = getSettings();
+                final QuerySettings s = getSettings();
 
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -169,31 +170,17 @@ public class ListManagerSchema extends UserSchema
                     urlDelete.addReturnURL(getReturnURL());
                     ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
                     btnDelete.setIconCls("trash");
-                    btnDelete.setActionType(ActionButton.Action.POST);
-                    btnDelete.isLocked();
+                    btnDelete.setActionType(ActionButton.Action.GET);
                     btnDelete.setDisplayPermission(DesignListPermission.class);
-                    btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+                    btnDelete.setRequiresSelection(true);
                     return btnDelete;
                 }
 
                 private ActionButton createExportArchiveButton()
                 {
-                    ActionURL urlExport;
-                    ActionButton btnExport;
-
-                    if (s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
-                    {
-                        urlExport = new ActionURL(getReturnURL().toString());
-                        btnExport = new ActionButton(urlExport, "Export List Archive");
-                        btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
-                    }
-                    else
-                    {
-                        urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
-                        btnExport = new ActionButton(urlExport, "Export List Archive");
-                        btnExport.setRequiresSelection(true);
-                    }
-
+                    ActionURL urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
+                    ActionButton btnExport = new ActionButton(urlExport, "Export List Archive");
+                    btnExport.setRequiresSelection(true);
                     btnExport.setActionType(ActionButton.Action.POST);
                     btnExport.setDisplayPermission(DesignListPermission.class);
                     return btnExport;
@@ -204,7 +191,7 @@ public class ListManagerSchema extends UserSchema
                 {
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
-                        SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
+                        ret.add(new SimpleDisplayColumn()
                         {
                             @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -212,15 +199,14 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink("Design", designUrl));
+                                out.write(PageFlowUtil.link("Design").href(designUrl).toString());
                             }
-                        };
-                        ret.add(designColumn);
+                        });
                     }
 
                     if (AuditLogService.get().isViewable())
                     {
-                        SimpleDisplayColumn historyColumn = new SimpleDisplayColumn()
+                        ret.add(new SimpleDisplayColumn()
                         {
                             @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -228,14 +214,23 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
                                 historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink("View History", historyUrl));
+                                out.write(PageFlowUtil.link("View History").href(historyUrl).toString());
                             }
-                        };
-                        ret.add(historyColumn);
+                        });
                     }
                 }
             };
+
+            qv.setAllowableContainerFilterTypes(
+                ContainerFilter.Type.Current,
+                ContainerFilter.Type.CurrentAndSubfolders,
+                ContainerFilter.Type.CurrentPlusProjectAndShared,
+                ContainerFilter.Type.AllFolders
+            );
+
+            return qv;
         }
+
         return super.createView(context, settings, errors);
     }
     @Override

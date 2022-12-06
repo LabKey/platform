@@ -97,7 +97,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
+                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -112,6 +113,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotCount");
         RESERVED_NAMES.add("AliquotVolume");
         RESERVED_NAMES.add("AliquotUnit");
+        RESERVED_NAMES.add("Ancestors");
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
@@ -123,7 +125,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
+                new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name")
         )));
 
         logger = LogManager.getLogger(SampleTypeDomainKind.class);
@@ -228,7 +231,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
@@ -337,7 +340,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -352,7 +355,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -365,10 +368,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         return new NameExpressionValidationResult(errors, warnings, previewNames);
     }
 
-    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    private @NotNull ValidationException getNamePatternValidationResult(String currentSampleType, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(currentSampleType, patten, properties, importAliases, container);
         if (results.errors() != null && !results.errors().isEmpty())
             results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
@@ -434,7 +437,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         SampleTypeService ss = SampleTypeService.get();
         ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
         Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain));
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 
@@ -486,14 +489,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         String errorMsg = "";
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), properties, aliasMap, container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), properties, aliasMap, container);
             if (errors.hasErrors())
                 errorMsg += "Invalid Name Expression:" + errors.getMessage();
         }
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(options.getAliquotNameExpression(), properties, aliasMap, container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getAliquotNameExpression(), properties, aliasMap, container);
             if (errors.hasErrors())
                 errorMsg += "Invalid Aliquot Name Expression:" + errors.getMessage();
         }
@@ -539,7 +542,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             aliquotNameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getAliquotNameExpression()));
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
-            autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
+            if (!StringUtils.isBlank(arguments.getAutoLinkTargetContainerId()))
+                autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
             autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
             category = StringUtils.trimToNull(arguments.getCategory());
             aliases = arguments.getImportAliases();

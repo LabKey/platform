@@ -9,11 +9,13 @@ public class IssuesDomainKindProperties
 
     private Integer _assignedToGroup;
     private Integer _assignedToUser;
+    private String _relatedFolderName;
 
     public IssuesDomainKindProperties()
     {}
 
-    public IssuesDomainKindProperties(String name, String singularName, String pluralName, String commentSortDirection, Integer assignedToGroup, Integer assignedToUser)
+    public IssuesDomainKindProperties(String name, String singularName, String pluralName, String commentSortDirection,
+                                      Integer assignedToGroup, Integer assignedToUser, String relatedFolderName)
     {
         _issueDefName = name;
         _singularItemName = singularName;
@@ -21,6 +23,7 @@ public class IssuesDomainKindProperties
         _commentSortDirection = commentSortDirection;
         _assignedToGroup = assignedToGroup;
         _assignedToUser = assignedToUser;
+        _relatedFolderName = relatedFolderName;
     }
 
     public String getIssueDefName()
@@ -81,5 +84,15 @@ public class IssuesDomainKindProperties
     public void setAssignedToUser(Integer assignedToUser)
     {
         _assignedToUser = assignedToUser;
+    }
+
+    public String getRelatedFolderName()
+    {
+        return _relatedFolderName;
+    }
+
+    public void setRelatedFolderName(String relatedFolderName)
+    {
+        _relatedFolderName = relatedFolderName;
     }
 }

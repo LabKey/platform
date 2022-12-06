@@ -4,6 +4,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
+import org.labkey.api.sql.LabKeySql;
 
 /**
  * method takes 3 params: fieldKey, lsid, depth (optional)
@@ -25,6 +26,7 @@ public class ChildOfMethod extends AbstractMethodInfo
         super(JdbcType.BOOLEAN);
     }
 
+
     @Override
     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
     {
@@ -34,7 +36,14 @@ public class ChildOfMethod extends AbstractMethodInfo
         if (arguments.length > 2)
             depth = Integer.parseInt(arguments[2].getRawSQL());
 
-        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createChildOfOptions(depth));
-    }
+        // ChildOfMethod currently only expects simple strings as second argument, usually we would validate that in
+        // SqlParser.convertNode(), but that code doesn't know about this MethodInfo.
+        // Unfortunately, this code doesn't 100% guarantee that the second arg was a simple string.
+        String raw = lsidFrag.getRawSQL();
+        if (!lsidFrag.getParams().isEmpty() || !raw.startsWith("'") || !raw.endsWith("'"))
+            throw new IllegalArgumentException("ExpChildOf expects a string as its second argument");
+        String lsid = LabKeySql.unquoteString(lsidFrag.getRawSQL());
 
+        return LineageHelper.createInSQL(fieldKeyFrag, lsid, LineageHelper.createChildOfOptions(depth));
+    }
 }

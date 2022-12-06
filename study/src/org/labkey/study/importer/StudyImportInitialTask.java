@@ -16,71 +16,42 @@
 
 package org.labkey.study.importer;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.pipeline.AbstractTaskFactory;
-import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
-import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
+import org.labkey.study.writer.StudySerializationRegistry;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
 * User: adam
 * Date: Aug 31, 2009
 * Time: 9:12:22 AM
 */
-public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialTask.Factory>
+public class StudyImportInitialTask
 {
-    private StudyImportInitialTask(Factory factory, PipelineJob job)
+    private StudyImportInitialTask()
     {
-        super(factory, job);
     }
 
     private static final int DELAY_INCREMENT = 10;
 
-    @Override
-    @NotNull
-    public RecordedActionSet run() throws PipelineJobException
-    {
-        PipelineJob job = getJob();
-        StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
-        StudyImportContext ctx = support.getImportContext();
-
-        if (support.useLocalImportDir(job, ctx.getRoot().getLocation()))
-        {
-            Path dirPath = FileUtil.getPath(job.getContainer(), FileUtil.createUri(ctx.getRoot().getLocation()));
-            job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(job, dirPath.resolve(support.getOriginalFilename()), support.getSpringErrors());
-        }
-
-        doImport(job, ctx, support.getSpringErrors(), support.getOriginalFilename());
-
-        return new RecordedActionSet();
-    }
-
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
         // Construct all the SimpleStudyImporters that are designated as "Early"
-        List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistryImpl.get().getSimpleStudyImporters().stream()
-            .filter(ssi->ssi.getTiming() == SimpleStudyImporter.Timing.Early)
-            .collect(Collectors.toList());
+        List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistry.get().getSimpleStudyImporters().stream()
+            .filter(ssi -> ssi.getTiming() == SimpleStudyImporter.Timing.Early)
+            .toList();
 
         try
         {
@@ -94,7 +65,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             // verify the archiveVersion
             double currVersion = AppProps.getInstance().getSchemaVersion();
             if (studyXml.isSetArchiveVersion() && studyXml.getArchiveVersion() > currVersion)
-                throw new PipelineJobException("Can't import study archive. The archive version " + studyXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
+                throw new PipelineJobException("Can't import study contents. The archive version " + studyXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
             // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way
             if (studyXml.isSetImportDelay() && studyXml.getImportDelay() > 0)
@@ -188,9 +159,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         processImporter(ctx, job, errors, new TopLevelStudyPropertiesImporter());
 
         // study.objective, study.personnel, and study.studyproperties tables
-        new StudyPropertiesImporter().process(ctx, ctx.getRoot(), errors);
-
-        new MissingValueImporterFactory().create().process(job, ctx, ctx.getRoot());
+        new StudyPropertiesImporter().process(ctx, ctx.getRoot());
 
         // check for legacy QC states file in study
         processImporter(ctx, job, errors, new StudyQcStatesImporter());
@@ -217,44 +186,5 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     {
         ObjectError firstError = errors.getAllErrors().get(0);
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
-    }
-
-
-    public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
-    {
-        public Factory()
-        {
-            super(StudyImportInitialTask.class);
-        }
-
-        @Override
-        public PipelineJob.Task createTask(PipelineJob job)
-        {
-            return new StudyImportInitialTask(this, job);
-        }
-
-        @Override
-        public List<FileType> getInputTypes()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<String> getProtocolActionNames()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public String getStatusName()
-        {
-            return "LOAD STUDY";
-        }
-
-        @Override
-        public boolean isJobComplete(PipelineJob job)
-        {
-            return false;
-        }
     }
 }

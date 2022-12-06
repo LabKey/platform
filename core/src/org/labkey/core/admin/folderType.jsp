@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONObject"%>
+<%@ page import="org.json.old.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.FolderTypeManager" %>
@@ -43,7 +43,7 @@
     }
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var requiredModules = {};
 var defaultModules = {};  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
 <% //Generate javascript objects...
@@ -51,7 +51,7 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     final ViewContext context = getViewContext();
     Container c = getContainer();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
-    Collection<FolderType> allFolderTypes = FolderTypeManager.get().getFolderTypes(userHasEnableRestrictedModulesPermission);
+    List<FolderType> allFolderTypes = new ArrayList<>(FolderTypeManager.get().getEnabledFolderTypes(userHasEnableRestrictedModulesPermission));
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     allModules.sort(Comparator.comparing(module -> module.getTabName(context), String.CASE_INSENSITIVE_ORDER));
     Set<Module> activeModules = c.getActiveModules();
@@ -67,6 +67,9 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     FolderType folderType = c.getFolderType();
     String path = c.getPath();
     boolean includeProjectLevelTypes = c.isProject();       // Only include Dataspace as an option if container is a project
+
+    // Sort by label, which may not match with the official name
+    allFolderTypes.sort(Comparator.comparing(x -> x.getLabel().toLowerCase()));
 
     for (FolderType ft : allFolderTypes)
     {
@@ -252,13 +255,17 @@ function validate()
         {
             if (!ft.isWorkbookType() && (includeProjectLevelTypes || !ft.isProjectOnlyType()))
             {
+                var inputId = "folderTypeRadio" + getRequestScopedUID();
+                addHandler(inputId, "click", "changeFolderType()");
+                var spanId = "folderTypeSpan" + getRequestScopedUID();
+                addHandler(spanId, "click", "document.folderModules.folderType[" + radioIndex + "].checked = true");
     %>
                 <tr>
                     <td valign="top">
-                        <input type="radio" name="folderType" value="<%=h(ft.getName())%>"<%=checked(folderType.equals(ft))%> onclick="changeFolderType();">
+                        <input id="<%=h(inputId)%>" type="radio" name="folderType" value="<%=h(ft.getName())%>"<%=checked(folderType.equals(ft))%>>
                      </td>
                     <td valign="top">
-                       <span style="cursor:pointer;font-weight:bold" onclick="document.folderModules.folderType[<%=radioIndex%>].checked = true;"><%=h(ft.getLabel())%></span><br>
+                       <span style="cursor:pointer;font-weight:bold"><%=h(ft.getLabel())%></span><br>
                         <%=h(ft.getDescription())%>
                     </td>
                 </tr>
@@ -314,12 +321,13 @@ for (Module module : allModules)
     {
         if (!module.canBeEnabled(c))
             continue;
+        var id = "activeModules[" + i + "]";
+        addHandler(id, "click", "return updateDefaultOptions(this)");
         %>
-        <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules"
+        <input type="checkbox" id="<%=h(id)%>" name="activeModules"
                title="<%= h(module.getTabName(context))%>"
                value="<%= h(module.getName())%>"
-               <%=disabled(!enabled)%><%=checked(active)%>
-               onClick="return updateDefaultOptions(this);">
+               <%=disabled(!enabled)%><%=checked(active)%>>
         <label for="activeModules[<%= i %>]" style="font-weight: normal;"><%= h(module.getTabName(context)) %></label>
         <br>
         <%
@@ -334,7 +342,7 @@ for (Module module : allModules)
 </table>
 </labkey:form>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function() {
         LABKEY.requiresExt4Sandbox(function() {
             Ext4.onReady(function() {

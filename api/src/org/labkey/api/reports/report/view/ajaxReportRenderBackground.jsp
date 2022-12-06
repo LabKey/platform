@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.r.RReport" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -34,7 +34,7 @@
     // TODO: Fix these URLs
     ActionURL startReportURL = urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function startJob()
     {
         Ext4.Ajax.request({

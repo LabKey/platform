@@ -16,9 +16,7 @@
 
 package org.labkey.api.specimen.importer;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -41,9 +39,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,6 +71,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     public static final String ADDITIVE_TYPE = "additive_type";
     public static final String PARTICIPANT_ID = "ptid";
 
+    private static final Logger LOG = LogHelper.getLogger(SimpleSpecimenImporter.class, "Specimen import status and errors");
     private static final Map<String, String> DEFAULT_COLUMN_LABELS = new CaseInsensitiveHashMap<>();
 
     static
@@ -89,7 +88,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         DEFAULT_COLUMN_LABELS.put(PARTICIPANT_ID, "Subject Id");
     }
 
-    private Map<String, String> _columnLabels;
+    private final Map<String, String> _columnLabels;
     private final TimepointType _timepointType;
 
     public SimpleSpecimenImporter(Container container, User user)
@@ -111,24 +110,9 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return str == null ? columnName : str;
     }
 
-    public void setColumnLabels(Map<String, String> map)
-    {
-        _columnLabels = map;
-    }
-
     public Map<String,String> getColumnLabels()
     {
         return _columnLabels;
-    }
-
-    // TODO: Remove this? Never called...
-    public void process(File tsvFile, boolean merge, Logger logger) throws IOException, ConversionException, ValidationException
-    {
-        TabLoader tl = new TabLoader(tsvFile);
-        tl.setThrowOnErrors(true);
-        fixupSpecimenColumns(tl);
-
-        _process(tl.load(), merge, logger);
     }
 
     public void fixupSpecimenColumns(TabLoader tl) throws IOException
@@ -171,7 +155,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             if (value instanceof String)
             {
                 SpecimenColumn specCol = findSpecimenColumn(key);
-                Class type = String.class;
+                Class<?> type = String.class;
                 if (null != specCol)
                     type = specCol.getColumnDescriptor().clazz;
                 value = ConvertUtils.convert((String)value, type);
@@ -209,12 +193,6 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     }
 
     public void process(List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
-    {
-        _process(rows, merge, LogManager.getLogger(getClass()));
-    }
-
-    // Avoid conflict with SpecimenImporter.process() (has similar signature)
-    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws IOException, ValidationException
     {
         //Map from column name to
         Container container = getContainer();
@@ -262,12 +240,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         try
         {
-            super.process(sifMap, merge, logger, null, true, false);
+            super.process(sifMap, merge, LOG, null, true, false);
         }
         catch (ValidationException ex)
         {
-            if (logger != null)
-                logger.error("Error during import", ex);
+            LOG.error("Error during import", ex);
             throw ex;
         }
         catch (BadSqlGrammarException ex)

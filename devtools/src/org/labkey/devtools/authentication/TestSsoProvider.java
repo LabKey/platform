@@ -16,7 +16,6 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
@@ -24,7 +23,6 @@ import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.SettingsField;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationAction;
-import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationForm;
 
 /**
  * Created by adam on 6/5/2016.
@@ -36,7 +34,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     @Override
     public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
-        return new TestSsoConfiguration(this, cs.getStandardSettings());
+        return new TestSsoConfiguration(this, cs.getStandardSettings(), cs.getProperties());
     }
 
     @Override
@@ -63,14 +61,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     public @NotNull JSONArray getSettingsFields()
     {
         return new JSONArray()
-            .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false));
-    }
-
-    // TODO: Remove this once we stop upgrading from 19.3
-
-    @Override
-    public @Nullable TestSsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
-    {
-        return active || hasLogos ? new TestSsoSaveConfigurationForm() : null;
+            .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false))
+            .put(SettingsField.getStandardDomainField());
     }
 }

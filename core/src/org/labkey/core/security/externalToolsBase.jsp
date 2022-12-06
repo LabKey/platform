@@ -27,6 +27,4 @@
     ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
     ActionURL returnURL = form.getReturnActionURL(alternativeURL);
 %>
-</br>
-</br>
 <%= button("Done").href(returnURL) %>

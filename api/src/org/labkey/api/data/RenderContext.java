@@ -28,6 +28,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
@@ -40,7 +41,10 @@ import org.springframework.validation.ObjectError;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -398,7 +402,38 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (!aggregates.isEmpty())
         {
-            TableSelector selector = new TableSelector(tinfo, cols, filter, null).setNamedParameters(parameters);
+            TableSelector selector = new TableSelector(tinfo, cols, filter, null)
+            {
+                private boolean _shouldClose = true;
+                @Override
+                public Connection getConnection() throws SQLException
+                {
+                    // Issue 44749 - piggyback on the primary ResultSet's connection when possible so that we're not using
+                    // two connections concurrently for a single grid render
+                    if (_results != null)
+                    {
+                        Connection c = _results.getConnection();
+                        if (c != null && !c.isClosed())
+                        {
+                            _shouldClose = false;
+                            return c;
+                        }
+                    }
+                    return super.getConnection();
+                }
+
+                @Override
+                protected void close(@Nullable ResultSet rs, @Nullable Connection conn)
+                {
+                    // Don't close if we're just borrowing someone else's connection
+                    if (_shouldClose)
+                    {
+                        super.close(rs, conn);
+                    }
+                }
+            };
+
+            selector.setNamedParameters(parameters);
 
             if (async)
                 return selector.getAggregatesAsync(aggregates, getViewContext().getResponse());
@@ -436,10 +471,17 @@ public class RenderContext implements Map<String, Object>, Serializable
             filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getFieldKey()));
         }
 
+        User user = null;
+        Container container = null;
+        if (_viewContext != null)
+        {
+            user = _viewContext.getUser();
+            container = _viewContext.getContainer();
+        }
         if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
             buildSelectedFilter(filter, tinfo, _showRows == ShowRows.UNSELECTED);
         else
-            filter.addUrlFilters(url, name, displayColumns);
+            filter.addUrlFilters(url, name, displayColumns, user, container);
 
         return filter;
     }

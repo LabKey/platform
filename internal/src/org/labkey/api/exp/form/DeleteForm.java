@@ -15,9 +15,13 @@
  */
 package org.labkey.api.exp.form;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.DataRegionSelection;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -30,14 +34,19 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     private boolean _forceDelete;
     private String _dataRegionSelectionKey;
     private Integer _singleObjectRowId;
+    private List<Integer> _rowIds;
 
+    @NotNull
     public Set<Integer> getIds(boolean clear)
     {
-        if (_singleObjectRowId != null)
-        {
-            return singleton(_singleObjectRowId);
-        }
-        return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        if (getSingleObjectRowId() != null)
+            return singleton(getSingleObjectRowId());
+        else if (getDataRegionSelectionKey() != null)
+            return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        else if (getRowIds() != null)
+            return new HashSet<>(getRowIds());
+        else
+            return Collections.emptySet();
     }
 
     public Integer getSingleObjectRowId()
@@ -76,5 +85,15 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     {
         if (_singleObjectRowId == null)
             DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
+    }
+
+    public List<Integer> getRowIds()
+    {
+        return _rowIds;
+    }
+
+    public void setRowIds(List<Integer> rowIds)
+    {
+        _rowIds = rowIds;
     }
 }

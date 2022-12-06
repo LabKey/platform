@@ -81,10 +81,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public final QueryView getQueryView()
     {
         init();
-        if (_schema == null)
-        {
-            throw new NotFoundException("Could not find schema: " + getSchemaName());
-        }
+
+        ensureSchemaExists();
 
         if (StringUtils.isEmpty(getQueryName()))
         {
@@ -95,10 +93,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         {
             throw new IllegalStateException("Expected _queryView to be initialized in call to init()");
         }
+
         // Don't treat a query with errors as if it doesn't exist at all
         if (_queryView.getTable() == null && _queryView.getParseErrors().isEmpty())
         {
-            throw new NotFoundException("Query '" + getQueryName() + "' in schema '" + getSchemaName() + "' doesn't exist.");
+            throw new NotFoundException("The specified query does not exist in schema '" + getSchemaName() + "'");
         }
 
         return _queryView;
@@ -449,5 +448,26 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public PropertyValues getInitParameters()
     {
         return _initParameters;
+    }
+
+    // Throws NotFoundException if schema doesn't exist, query isn't specified, or query doesn't exist
+    // Code paths that call getQueryView() don't need to call this. Other code paths should call this to ensure
+    // consistent and properly sanitized error messages.
+    public void ensureQueryExists() throws NotFoundException
+    {
+        getQueryView();
+    }
+
+    // Throws NotFoundException if schema doesn't exist. Code paths that call getQueryView() don't need to call this.
+    // Other code paths should call this to ensure consistent and properly sanitized error messages.
+    public void ensureSchemaExists() throws NotFoundException
+    {
+        ensureSchemaNotNull(getSchema());
+    }
+
+    public static void ensureSchemaNotNull(QuerySchema schema)
+    {
+        if (schema == null)
+            throw new NotFoundException("The specified schema does not exist");
     }
 }

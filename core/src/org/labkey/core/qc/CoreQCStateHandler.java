@@ -45,20 +45,26 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
         return AssayQCService.getProvider().isBlankQCStatePublic(container);
     }
 
+    @Override
+    public boolean isRequireCommentOnQCStateChange(Container container)
+    {
+        return AssayQCService.getProvider().isRequireCommentOnQCStateChange(container);
+    }
+
     public Integer getDefaultQCState(Container container)
     {
         DataState state = AssayQCService.getProvider().getDefaultDataImportState(container);
         return state != null ? state.getRowId() : null;
     }
 
-    private void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState)
+    private void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState, boolean isRequireCommentOnQCStateChange)
     {
         AssayQCService.getProvider().setIsBlankQCStatePublic(container, isBlankQCStatePublic);
+        AssayQCService.getProvider().setRequireCommentOnQCStateChange(container, isRequireCommentOnQCStateChange);
 
         DataState state = null;
         if (defaultQCState != null)
             state = QCStateManager.getInstance().getStateForRowId(container, defaultQCState);
-
         AssayQCService.getProvider().setDefaultDataImportState(container, state);
     }
 
@@ -79,10 +85,11 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
     @Override
     public void updateState(Container container, CoreController.ManageQCStatesForm form, User user)
     {
-        if (!DataStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState()) ||
-                isBlankStatePublic(container) != form.isBlankQCStatePublic())
+        if (!DataStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState())
+                || isBlankStatePublic(container) != form.isBlankQCStatePublic()
+                || isRequireCommentOnQCStateChange(container) != form.isRequireCommentOnQCStateChange())
         {
-            setProps(container, form.isBlankQCStatePublic(), form.getDefaultQCState());
+            setProps(container, form.isBlankQCStatePublic(), form.getDefaultQCState(), form.isRequireCommentOnQCStateChange());
         }
     }
 

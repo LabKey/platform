@@ -56,7 +56,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -65,7 +64,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -97,7 +95,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private ListDefinitionImpl _list;
-    private final static int MAX_NAME_LENGTH = 64;
+    private final static int MAX_NAME_LENGTH = 200;
 
     static
     {
@@ -232,7 +230,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> properties = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec pss : BASE_PROPERTIES)
@@ -267,7 +265,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String type = getType(keyType, category);
         StringBuilder typeURI = getBaseURI(name, type, c);
 
-        // 13131: uniqueify the lsid for situations where a preexisting list was renamed
+        // Issue 13131: uniqueify the lsid for situations where a preexisting list was renamed
         int i = 1;
         String sTypeURI = typeURI.toString();
         String uniqueURI = sTypeURI;
@@ -364,13 +362,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String keyName = listProperties.getKeyName();
 
         if (StringUtils.isEmpty(name))
-            throw new ApiUsageException("List name must not be null");
+            throw new ApiUsageException("List name is required");
         if (name.length() > MAX_NAME_LENGTH)
             throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name) != null)
+        if (ListService.get().getList(container, name, true) != null)
             throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
-            throw new ApiUsageException("List keyName must not be null");
+            throw new ApiUsageException("List keyName is required");
 
         KeyType keyType = getDefaultKeyType();
 
@@ -384,7 +382,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
 
         ListDefinition.Category category;
-        try {
+        try
+        {
             category = listProperties.getCategory() != null ? ListDefinition.Category.valueOf(listProperties.getCategory()) : null;
         }
         catch (IllegalArgumentException e)
@@ -398,8 +397,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo, category);
         list.setKeyName(keyName);
 
-        String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
-        list.setDescription(description);
+        // Issue 45042: Allow for the list description to be set via the create domain API calls
+        if (listProperties.getDescription() == null && domain.getDescription() != null)
+            listProperties.setDescription(domain.getDescription());
+        list.setDescription(listProperties.getDescription());
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -408,7 +409,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         {
             Domain d = list.getDomain();
 
-            Set<String> reservedNames = getReservedPropertyNames(d);
+            Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -496,7 +497,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
-                else if (ListService.get().getList(container, update.getName()) != null)
+                else if (ListService.get().getList(container, update.getName(), false) != null)
                 {
                     return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }
@@ -516,6 +517,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 if (!original.getDomainURI().equals(update.getDomainURI()))
                     return exception.addGlobalError("domainURI mismatch between old and new domain");
 
+                updateListProperties(container, user, listDefinition.getListId(), listProperties);
+            }
+            // Issue 45042: Allow for the list description to be set via the save domain API calls
+            else if (update.getDescription() != null)
+            {
+                listProperties = getListProperties(container, user, listDefinition.getListId());
+                listProperties.setDescription(update.getDescription());
                 updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
 
@@ -587,11 +595,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
     }
 
-    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    private ListDomainKindProperties getListProperties(Container container, User user, int listId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("ListId"), listId);
-        ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+        return new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+    }
+
+    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    {
+        ListDomainKindProperties existingListProps = getListProperties(container, user, listId);
 
         //merge existing and new properties
         ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
@@ -688,7 +701,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
-        if(!(template instanceof ListTemplateType))
+        if (!(template instanceof ListTemplateType))
             return false;
 
         ListOptionsType options = ((ListTemplateType) template).getOptions();
@@ -711,5 +724,4 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     {
         var props = getBaseProperties(d);
     }
-
 }

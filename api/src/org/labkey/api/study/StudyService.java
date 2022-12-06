@@ -18,7 +18,6 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -27,24 +26,17 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.FolderTab;
-import org.springframework.validation.BindException;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -180,8 +172,6 @@ public interface StudyService
 
     Set<? extends Study> getAllStudies(Container root);
 
-    boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
-
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 
     TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
@@ -197,20 +187,6 @@ public interface StudyService
     TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
 
     TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns);
-
-    /**
-     * Register an implementation of a reload source. A StudyReloadSource is a potential source for
-     * study artifacts to be created and reloaded automatically through the normal study reload framework.
-     * The source of the study artifacts could be an external repository or server.
-     */
-    void registerStudyReloadSource(StudyReloadSource reloadSource);
-
-    Collection<StudyReloadSource> getStudyReloadSources(Container container);
-
-    @Nullable
-    StudyReloadSource getStudyReloadSource(String name);
-
-    PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
 
     // consider will set hide==true for empty datasets, and clear (inherit) for non-empty datasets
     void hideEmptyDatasets(Container c, User user);
@@ -260,4 +236,6 @@ public interface StudyService
     Collection<String> getParticipantIds(Study study, User user);
 
     boolean participantExists(Study study, String participantId);
+
+    ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly);
 }

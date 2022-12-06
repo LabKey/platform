@@ -26,12 +26,12 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.XmlBeansUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -61,6 +61,11 @@ public abstract class AbstractFileXarSource extends XarSource
         super(description, container, user, job);
     }
 
+    public AbstractFileXarSource(String description, Container container, User user, @Nullable PipelineJob job, @Nullable Map<String, String> substitutions)
+    {
+        super(description, container, user, job, substitutions);
+    }
+
     @Override
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException
     {
@@ -85,14 +90,6 @@ public abstract class AbstractFileXarSource extends XarSource
                 }
             }
         }
-    }
-
-    @Override
-    @Nullable
-    @Deprecated
-    public File getRoot()
-    {
-        return null != getRootPath()? getRootPath().toFile() : null;
     }
 
     @Override

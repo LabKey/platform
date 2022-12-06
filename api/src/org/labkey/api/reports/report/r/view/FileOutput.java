@@ -56,7 +56,7 @@ public class FileOutput extends DownloadParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)
             return new FileoutReportView(this, getReport());

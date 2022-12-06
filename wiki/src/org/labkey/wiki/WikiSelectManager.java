@@ -50,7 +50,7 @@ import java.util.Set;
 public class WikiSelectManager
 {
     // List of page names in this folder, in depth-first tree order
-    public static List<String> getPageNames(Container c)
+    public static @NotNull List<String> getPageNames(Container c)
     {
         return getWikiCollections(c).getNames();
     }
@@ -76,6 +76,10 @@ public class WikiSelectManager
         return getWikiCollections(c).getNameTitleMap();
     }
 
+    public static Map<String, String> getNameAndAliasTitleMap(Container c)
+    {
+        return getWikiCollections(c).getNameAndAliasTitleMap();
+    }
 
     // Get a single wiki by rowId
     public static Wiki getWiki(Container c, int rowId)
@@ -103,7 +107,7 @@ public class WikiSelectManager
         {
             return null;
         }
-        return WikiCache.getWiki(c, name, new WikiCacheLoader<Wiki>()
+        return WikiCache.getWiki(c, name, new WikiCacheLoader<>()
         {
             @Override
             public Wiki load(String key, Container c)
@@ -113,10 +117,22 @@ public class WikiSelectManager
         });
     }
 
+    // Get a single wiki name based on its alias
+    public static String getNameForAlias(Container c, String alias)
+    {
+        return getWikiCollections(c).getNameForAlias(alias);
+    }
+
+    // Get a wiki's aliases
+    public static Collection<String> getAliases(Container c, int rowId)
+    {
+        return getWikiCollections(c).getAliases(rowId);
+    }
 
     private static WikiCollections getWikiCollections(Container c)
     {
-        return WikiCache.getWikiCollections(c, new WikiCacheLoader<WikiCollections>(){
+        return WikiCache.getWikiCollections(c, new WikiCacheLoader<>()
+        {
             @Override
             WikiCollections load(String key, Container c)
             {
@@ -139,11 +155,11 @@ public class WikiSelectManager
         if (null == wiki)
         {
             //Didn't find it with case-sensitive lookup, try case-sensitive (in case the
-            //underlying database is case sensitive)
+            //underlying database is case-sensitive)
             //Bug 2225
             wiki = new TableSelector(CommSchema.getInstance().getTableInfoPages(),
-                    SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
-                    null).getObject(Wiki.class);
+                SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
+                null).getObject(Wiki.class);
         }
 
         return wiki;

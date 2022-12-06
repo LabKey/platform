@@ -71,6 +71,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -150,13 +151,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
-import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
+import static org.labkey.api.util.HtmlString.NBSP;
 
 
 public class PageFlowUtil
@@ -240,6 +247,9 @@ public class PageFlowUtil
                     break;
                 case '>':
                     sb.append("&gt;");
+                    break;
+                case '\\':
+                    sb.append("&#92;");
                     break;
                 case '\n':
                     if (encodeSpace)
@@ -351,7 +361,12 @@ public class PageFlowUtil
     {
         if (value == null)
             return "null";
-        String ret = PageFlowUtil.filter("\"" + PageFlowUtil.groovyString(value.toString()) + "\"");
+        String s = value.toString();
+        //replace single backslash
+        s = s.replaceAll("\\\\", "\\\\\\\\");
+        //replace double quote
+        s = s.replaceAll("\"", "\\\\\"");
+        String ret = PageFlowUtil.filter("\"" + s + "\"");
         ret = ret.replace("&#039;", "\\&#039;");
         return ret;
     }
@@ -432,16 +447,6 @@ public class PageFlowUtil
         }
         js.append("'");
         return js.toString();
-    }
-
-    //used to output strings from Java in Groovy script.
-    private static String groovyString(String s)
-    {
-        //replace single backslash
-        s = s.replaceAll("\\\\", "\\\\\\\\");
-        //replace double quote
-        s = s.replaceAll("\"", "\\\\\"");
-        return s;
     }
 
     private static final List<Pair<String, String>> _emptyPairList = Collections.emptyList();
@@ -767,15 +772,15 @@ public class PageFlowUtil
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             Class cls = o.getClass();
-            final JSONObject json;
+            final org.json.old.JSONObject json;
             if (o instanceof Map)
             {
-                json = new JSONObject((Map)o);
+                json = new org.json.old.JSONObject((Map)o);
             }
             else
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new JSONObject();
+                json = new org.json.old.JSONObject();
                 f.toMap(o, json);
             }
             w.write(json.toString());
@@ -806,7 +811,7 @@ public class PageFlowUtil
         }
         try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            JSONObject json = new JSONObject(IOUtils.toString(r));
+            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
 
             if (cls == Map.class || cls == HashMap.class)
                 return (T)json;
@@ -820,6 +825,10 @@ public class PageFlowUtil
         catch (IllegalArgumentException x)
         {
             throw new IOException(x);
+        }
+        catch (ZipException x)
+        {
+            throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
         }
     }
 
@@ -1388,57 +1397,47 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
                                                   String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"labkey-menu-text-link dropdown-toggle\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";
+        if (StringUtils.isBlank(id))
+            id = HttpView.currentPageConfig().makeId("dropdown_");
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
+                SPAN(id(id+"PopupText"), text),
+                NBSP,
+                SPAN(cl("fa","fa-caret-down").at(style,"position:relative;color:lightgray;")))
+        );
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
+        var page = HttpView.currentPageConfig();
 
-        return "<a href=\"" + filter(href) +"\" " + additions +
-            " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\" src=\"" + imageSrc + "\" " +
-            (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
+        String anchorId = page.makeId("A_");
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        page.addHandler(anchorId, "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
+                IMG(id(imageId).at(title,text, DOM.Attribute.src,imageSrc,height,imageHeight,width,imageWidth)))
+        );
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
                                                        String imageId, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a href=\"" + filter(href) +"\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
-    }
-
-    // TODO: Why no HTML filtering?
-    private static String getAttributes(Map<String, String> properties)
-    {
-        if (properties == null || properties.isEmpty())
-            return "";
-
-        StringBuilder attributes = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            attributes.append(entry.getKey());
-            attributes.append("=\"");
-            attributes.append(entry.getValue());
-            attributes.append("\" ");
-        }
-
-        return attributes.toString();
+        PageConfig page = HttpView.currentPageConfig();
+        String id = page.makeId("a_");
+        page.addHandler(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id).at(DOM.Attribute.href,href),
+                SPAN(id(imageId).at(title,text).cl(imageCls)))
+        );
     }
 
     /**
@@ -1471,72 +1470,187 @@ public class PageFlowUtil
         return link(text).href(url).toString();
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return helpPopup(title, helpText, htmlHelpText, 0);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
         return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String onClickScript)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, onClickScript);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
-    {
-        if (title == null && !htmlHelpText)
-        {
-            // use simple tooltip
-            if (onClickScript == null)
-                onClickScript = "return false";
 
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(onClickScript).append("\" title=\"");
-            link.append(filter(helpText));
-            link.append("\">").append(linkHtml).append("</a>");
-            return link.toString();
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
+    public static String helpPopup(String titleText, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
+    {
+        if (null == titleText && !isHtmlHelpText)
+        {
+            return popupHelp(helpText).link(HtmlString.unsafe(linkHtml)).script(onClickScript).toString();
         }
         else
         {
-            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
-            showHelpDivArgs.append(filter(jsString(filter(title)), true)).append(", ");
-            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
-            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
-            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
-            showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
-            if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
+            HtmlString helpHtml = isHtmlHelpText ? HtmlString.unsafe(helpText) : HtmlString.unsafe(filter(helpText,true));
+            return popupHelp(helpHtml, titleText).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
+        }
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull String helpText)
+    {
+        return new HelpPopupBuilder(helpText);
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
+    {
+        return new HelpPopupBuilder(helpHtml, titleText);
+    }
+
+
+    public static class HelpPopupBuilder implements SafeToRender, HasHtmlString
+    {
+        final String helpText;
+        final String titleText;
+        final HtmlString helpHtml;
+        HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
+        int width = 0;
+        String onClickScript = null;
+        boolean inlineScript = false;
+
+        HelpPopupBuilder(@NotNull String helpText)
+        {
+            this.helpText = helpText;
+            this.helpHtml = null;
+            this.titleText = null;
+        }
+
+        HelpPopupBuilder(@NotNull HtmlString helpHtml, String titleText)
+        {
+            this.helpHtml = helpHtml;
+            this.helpText = null;
+            this.titleText = titleText;
+        }
+
+        public HelpPopupBuilder link(HtmlString linkHtml)
+        {
+            this.linkHtml = linkHtml;
+            return this;
+        }
+
+        public HelpPopupBuilder width(int width)
+        {
+            this.width = width;
+            return this;
+        }
+
+        public HelpPopupBuilder script(String onClickScript)
+        {
+            this.onClickScript = onClickScript;
+            return this;
+        }
+
+        /* ONLY USE TO RENDER INTO JAVASCRIPT CODE */
+        public HelpPopupBuilder inlineScript()
+        {
+            this.inlineScript = true;
+            return this;
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            assert(helpText != null || helpHtml != null);
+            if (null != helpText)
+                return textPopup();
+            else
+                return htmlPopup();
+        }
+
+        private HtmlString textPopup()
+        {
+            Objects.requireNonNull(helpText);
+
+            String id = null;
             if (onClickScript == null)
+                onClickScript = "return false";
+
+            if (!inlineScript)
             {
-                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+                var config = HttpView.currentPageConfig();
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
             }
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"");
-            link.append(onClickScript);
-            link.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
-            link.append(showHelpDivArgs).append(");\"");
-            link.append(">").append(linkHtml).append("</a>");
-            return link.toString();
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
+        }
+
+        private HtmlString htmlPopup()
+        {
+            Objects.requireNonNull(helpHtml);
+
+            String id = null;
+            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
+            showHelpDivArgs.append(jsString(filter(titleText,true))).append(", ");
+            showHelpDivArgs.append(jsString(helpHtml.toString()));
+            if (width == 0)
+                showHelpDivArgs.append(", ").append("'auto'");
+            else
+                showHelpDivArgs.append(", ").append(jsString(width + "px"));
+            if (onClickScript == null)
+                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+
+            if (!inlineScript)
+            {
+                var config = HttpView.currentPageConfig();
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
+                config.addHandler(id, "mouseout", "return hideHelpDivDelay();");
+                config.addHandler(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+            }
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
+                    .at(inlineScript, onclick, onClickScript)
+                    .at(inlineScript, onmouseout, "return hideHelpDivDelay();")
+                    .at(inlineScript, onmouseover, "return showHelpDivDelay(" + showHelpDivArgs + ");"),
+                    linkHtml));
         }
     }
 
@@ -1558,17 +1672,18 @@ public class PageFlowUtil
             Transformer t = TransformerFactory.newInstance().newTransformer();
             t.setOutputProperty(OutputKeys.METHOD, format.toString());
             t.setOutputProperty(OutputKeys.ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
-            ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-            t.transform(new DOMSource(node), new StreamResult(out));
-            out.close();
 
-            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream())
+            {
+                t.transform(new DOMSource(node), new StreamResult(out));
+                return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            }
         }
         catch (TransformerFactoryConfigurationError e)
         {
             throw new RuntimeException("There was a problem creating the XML transformer factory." +
-                    " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
-                    " please ensure that this class is included in the classpath for web application.", e);
+                " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
+                " please ensure that this class is included in the classpath for web application.", e);
         }
     }
 
@@ -1585,23 +1700,20 @@ public class PageFlowUtil
         }
     }
 
-
-    public static SafeToRender getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    public static SafeToRender getAppIncludes(ViewContext context, @NotNull PageConfig config)
     {
-        return _getStandardIncludes(context, null, resources, false, false);
+        return _getStandardIncludes(context, config, config.getClientDependencies(), false, false);
     }
-
 
     public static SafeToRender getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         return _getStandardIncludes(context, null, resources, true, includePostParameters);
     }
 
-    public static SafeToRender getStandardIncludes(ViewContext context, PageConfig config)
+    public static SafeToRender getStandardIncludes(ViewContext context, @NotNull PageConfig config)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
-
 
     private static SafeToRender _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
             boolean includeDefaultResources, boolean includePostParameters)
@@ -1807,7 +1919,7 @@ public class PageFlowUtil
         if (cssFiles.size() > 0)
         {
             SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
-            scriptBuilder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+            scriptBuilder.append(HttpView.currentPageConfig().getScriptTagStart());
             scriptBuilder.append(JavaScriptFragment.unsafe("LABKEY.requestedCssFiles("));
             String comma = "";
 
@@ -1938,19 +2050,20 @@ public class PageFlowUtil
         }
 
         return builder
-            .append(HtmlString.unsafe("<script type=\"text/javascript\">\n"))
+            .append(HttpView.currentPageConfig().getScriptTagStart())
             .append(JavaScriptFragment.unsafe("LABKEY.init("))
-            .append(jsInitObject(context, config, resources, includePostParameters))
+            .append(JavaScriptFragment.unsafe(jsInitObject(context, config, resources, includePostParameters).toString()))
             .append(JavaScriptFragment.unsafe(");\n"))
             .append(HtmlString.unsafe("</script>\n"));
     }
 
     public static HtmlString getScriptTag(String path)
     {
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         return HtmlStringBuilder.of()
             .append(HtmlString.unsafe("<script src=\""))
             .append(staticResourceUrl(path))
-            .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"))
+            .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"))
             .getHtmlString();
     }
 
@@ -1967,7 +2080,7 @@ public class PageFlowUtil
 
         SafeToRenderBuilder builder = SafeToRenderBuilder.of();
 
-        builder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+        builder.append(HttpView.currentPageConfig().getScriptTagStart());
         builder.append(JavaScriptFragment.unsafe("LABKEY.loadedScripts("));
         String comma = "";
         for (String s : implicitIncludes)
@@ -1981,12 +2094,13 @@ public class PageFlowUtil
         builder.append(JavaScriptFragment.unsafe(");\n"));
         builder.append(HtmlString.unsafe("</script>\n"));
 
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         for (String s : includes)
         {
-            HtmlStringBuilder scriptReference = HtmlStringBuilder.of(HtmlString.unsafe("<script src=\""))
-                .append(ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s))
-                .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"));
-            builder.append(scriptReference);
+            var path = ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s);
+            builder.append(HtmlString.unsafe("<script src=\""))
+                    .append(HtmlString.of(path))
+                    .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"));
         }
 
         return builder.getSafeToRender();
@@ -2011,7 +2125,6 @@ public class PageFlowUtil
 
         String trimmedHtml = StringUtils.trimToEmpty(htmlWithNoDegenerates);
 
-        // AARON: shouldn't re perseve the whitespace here and return html?
         if (trimmedHtml.length() == 0)
             return "";
 
@@ -2023,7 +2136,13 @@ public class PageFlowUtil
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
         String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
         if (errors.size() > 0)
+        {
+            if (scriptWarnings != null)
+            {
+                scriptWarnings.add("Unable to complete script check due to errors in HTML");
+            }
             return null;
+        }
 
         if (null != scriptWarnings)
         {
@@ -2048,6 +2167,7 @@ public class PageFlowUtil
             {
                 _log.error(e.getMessage(), e);
                 errors.add(e.getMessage());
+                scriptWarnings.add("Unable to complete script check due to errors in HTML");
             }
         }
 
@@ -2135,11 +2255,11 @@ public class PageFlowUtil
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     @SuppressWarnings("UnusedDeclaration")
-    public static JSONObject jsInitObject()
+    public static Map<String, Object> jsInitObject()
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, null, new LinkedHashSet<>(), false);
+        return jsInitObject(context, null, new LinkedHashSet<>(), false).toMap();
     }
 
     public static JSONObject jsInitObject(ContainerUser context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
@@ -2202,7 +2322,7 @@ public class PageFlowUtil
 
         if (null != container)
         {
-            json.put("container", container.toJSON(user, false));
+            json.put("container", container.toJSON(user, config != null && config.isIncludePermissions()));
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
 
@@ -2227,7 +2347,7 @@ public class PageFlowUtil
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationsByUser(null, user.getUserId(), true).size()));
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2533,6 +2653,31 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
+
+        @Test
+        public void testScriptDetection()
+        {
+            assertHtmlParsing("<b>No script here, friends</b>", 0, 0);
+            assertHtmlParsing("<p><script>alert('script');</script></p>", 0, 1);
+
+            // Bogus tag trips error reporting, so assume there might be script
+            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 1, 1);
+            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 1, 1);
+
+            // Unclosed tags - not considered an error
+            assertHtmlParsing("<b><script>alert('script');</script>", 0, 1);
+            assertHtmlParsing("<b>No script", 0, 0);
+        }
+
+        private void assertHtmlParsing(String html, int expectedErrors, int expectedScriptWarnings)
+        {
+            List<String> errors = new ArrayList<>();
+            List<String> scriptWarnings = new ArrayList<>();
+            PageFlowUtil.validateHtml(html, errors, scriptWarnings);
+            assertEquals("Wrong number of errors", expectedErrors, errors.size());
+            assertEquals("Wrong number of script warnings", expectedScriptWarnings, scriptWarnings.size());
+        }
+
         @Test
         public void testPhone()
         {
@@ -2640,7 +2785,7 @@ public class PageFlowUtil
             assertEquals(bean.s, copy.s);
             assertEquals(bean.d, copy.d);
 
-            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
+            Map<String, Object> map = ((Map<String,Object>)decodeObject(Map.class, s));
             assertNotNull(map);
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));
@@ -2740,12 +2885,16 @@ public class PageFlowUtil
         for (String paramName : clone.getParameterMap().keySet())
         {
             if (paramName.endsWith("." + QueryParam.offset))
-            {
                 clone.deleteParameter(paramName);
-            }
         }
 
+        // CONSIDER: Should we pass through only selected params that don't contain "."?  They are not usually dataregion related.
+        // We know pageId should not be persisted (Issue 45617)
+        clone.deleteParameter("pageId");
         clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
+
+        clone.setReadOnly();
+
         HttpSession session = context.getRequest().getSession(false);
         // We should already have a session at this point, but check anyway - see bug #7761
         if (session != null)

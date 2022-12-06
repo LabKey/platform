@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.core.login.LoginController.SetPasswordBean" %>
 <%@ page import="org.labkey.core.portal.ProjectController.HomeAction" %>
 <%@ page import="org.labkey.core.portal.ProjectController.StartAction" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -73,8 +74,8 @@
         <% } %>
 
         <% for (NamedObject input : bean.passwordInputs) {
-            String contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
-                    ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : "";
+            HtmlString contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
+                    ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : null;
         %>
             <p>
                 <%=h(contextContent)%>

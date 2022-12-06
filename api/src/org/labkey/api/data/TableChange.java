@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
@@ -23,6 +22,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 public class TableChange
 {
-    private static final Logger LOG = LogManager.getLogger(TableChange.class);
+    private static final Logger LOG = LogHelper.getLogger(TableChange.class, "Creates and alters provisioned tables");
 
     private final ChangeType _type;
     private final String _schemaName;
@@ -80,7 +80,7 @@ public class TableChange
     {
         if (isValidChange())
         {
-            DomainKind kind = _domain.getDomainKind();
+            DomainKind<?> kind = _domain.getDomainKind();
             DbScope scope = kind.getScope();
             SqlExecutor executor = new SqlExecutor(scope);
 
@@ -109,27 +109,15 @@ public class TableChange
 
         if (valid)
         {
-            switch (_type)
-            {
-                case AddColumns:
-                case DropColumns:
-                case ResizeColumns:
-                    valid = !getColumns().isEmpty();
-                    break;
-                case RenameColumns:
-                    valid = !getColumnRenames().isEmpty();
-                    break;
-                case DropIndices:
-                case AddIndices:
-                    valid = !getIndexedColumns().isEmpty();
-                    break;
-                case DropIndicesByName:
-                    valid = !getIndicesToBeDroppedByName().isEmpty();
-                    break;
-                case AddConstraints:
-                case DropConstraints:
-                    valid = !getConstraints().isEmpty();
-            }
+            valid = switch (_type)
+                    {
+                        case AddColumns, DropColumns, ResizeColumns -> !getColumns().isEmpty();
+                        case RenameColumns -> !getColumnRenames().isEmpty();
+                        case DropIndices, AddIndices -> !getIndexedColumns().isEmpty();
+                        case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
+                        case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
+                        default -> valid;
+                    };
         }
         return valid;
     }
@@ -285,7 +273,7 @@ public class TableChange
 
     /**
      * Map of existing columns to previous column size.  The new column scale is
-     * found the the column map.
+     * found the column map.
      * @return map where key = existing column name, value = old column scale
      */
     public Map<String, Integer> getColumnResizes()
@@ -366,6 +354,7 @@ public class TableChange
         DropColumns,
         RenameColumns,
         ResizeColumns,
+        ChangeColumnTypes,
         DropIndices,
         DropIndicesByName,
         AddIndices,

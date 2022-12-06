@@ -30,22 +30,21 @@ import org.labkey.wiki.model.WikiVersion;
  */
 public class WikiContentCache
 {
-    private static final Cache<String, HtmlString> CONTENT_CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Content");
+    private static final Cache<String, FormattedHtml> CONTENT_CACHE = CacheManager.getStringKeyCache(5000, CacheManager.DAY, "Wiki Content");
 
-    public static HtmlString getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
+    public static FormattedHtml getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {
         if (!cache)
-            return WikiManager.get().formatWiki(c, wiki, version).getHtml();
+            return WikiManager.get().formatWiki(c, wiki, version);
 
         String key = c.getId() + "/" + wiki.getName() + "/" + version.getVersion();
-        HtmlString html = CONTENT_CACHE.get(key);
+        FormattedHtml html = CONTENT_CACHE.get(key);
 
         if (null == html)
         {
-            FormattedHtml formattedHtml = WikiManager.get().formatWiki(c, wiki, version);
-            html = formattedHtml.getHtml();
+            html = WikiManager.get().formatWiki(c, wiki, version);
 
-            if (!formattedHtml.isVolatile())
+            if (!html.isVolatile())
                 CONTENT_CACHE.put(key, html);
         }
 

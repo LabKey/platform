@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -36,6 +36,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -48,8 +49,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
@@ -137,6 +136,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -147,7 +147,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -201,8 +200,6 @@ import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
-import org.labkey.study.importer.StudyReload.ReloadStatus;
-import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
@@ -233,7 +230,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -246,6 +242,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -549,8 +547,8 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("datasetProperties");
-            _addNavTrailDatasetAdmin(root);
-            root.addChild(_def.getLabel() + " Dataset Properties");
+            root.addChild(_def.getLabel(), urlProvider(StudyUrls.class).getDatasetURL(getContainer(), _def.getDatasetId()));
+            root.addChild("Dataset Properties");
         }
     }
 
@@ -628,7 +626,7 @@ public class StudyController extends BaseStudyController
             bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             bean.stats = form.getVisitStatistics();
-            bean.showSpecimens = SpecimenService.get() != null;
+            bean.showSpecimens = SpecimenManager.get().isSpecimenModuleActive(getContainer());
 
             if (QCStateManager.getInstance().showStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
@@ -1140,9 +1138,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
             if (customParticipantView != null && customParticipantView.isActive())
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-
                 vbox.addView(customParticipantView.getView());
             }
             else
@@ -3413,18 +3408,6 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public boolean hasQcStateDefaultsPanel()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean hasDataVisibilityPanel()
-        {
-            return true;
-        }
-
-        @Override
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
@@ -3447,6 +3430,12 @@ public class StudyController extends BaseStudyController
                 return getQCStateFilteredURL(successUrl, PUBLIC_STATES_LABEL, DATASET_DATAREGION_NAME, getContainer());
 
             return successUrl;
+        }
+
+        @Override
+        public boolean hasQcStateDefaultsPanel()
+        {
+            return true;
         }
 
         @Override
@@ -3478,6 +3467,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        public boolean hasDataVisibilityPanel()
+        {
+            return true;
+        }
+
+        @Override
         public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
@@ -3499,6 +3494,18 @@ public class StudyController extends BaseStudyController
             panelHtml.append("  </table>");
 
             return panelHtml.toString();
+        }
+
+        @Override
+        public boolean hasRequiresCommentPanel()
+        {
+            return false;
+        }
+
+        @Override
+        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        {
+            throw new IllegalStateException("This action does not support a requires comment panel.");
         }
     }
 
@@ -4022,32 +4029,6 @@ public class StudyController extends BaseStudyController
         public URLHelper getSuccessURL(PipelinePathForm pipelinePathForm)
         {
             return _successUrl;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
-    {
-        @Override
-        public ActionURL getRedirectURL(PipelinePathForm form)
-        {
-            Container c = getContainer();
-            Path studyPath = form.getValidatedSinglePath(c);
-            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyPath, true, null, false);
-        }
-
-        @Override
-        protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
-        {
-            try
-            {
-                throw e;
-            }
-            catch (ImportException sie)
-            {
-                errors.reject("studyImport", e.getMessage());
-                return new SimpleErrorView(errors);
-            }
         }
     }
 
@@ -4623,7 +4604,11 @@ public class StudyController extends BaseStudyController
             "       /* place the webpart into the 'participantData' div: */\n" +
             "       participantWebPart.render();\n" +
             "   });\n" +
-            "</script>";
+            "</script> \n" +
+            "/* Adjust width of first column: */\n" +
+            "<style>\n" +
+            "  .labkey-data-region tr td:first-child {width: 300px}\n" +
+            "</style>";
 
     public static class CustomizeParticipantViewForm extends ReturnUrlForm
     {
@@ -4705,9 +4690,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
                 form.setEditable(!view.isModuleParticipantView());
@@ -5081,7 +5063,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DatasetPropertyForm
+    public static class DatasetPropertyForm implements HasAllowBindParameter
     {
         private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
@@ -5093,6 +5075,23 @@ public class StudyController extends BaseStudyController
         public void setDataset(Map<Integer, DatasetVisibilityData> map)
         {
             _map = map;
+        }
+
+        private static final Pattern pat =  Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
+
+        @Override
+        public Predicate<String> allowBindParameter()
+        {
+            return (name) ->
+            {
+                if (name.startsWith(SpringActionController.FIELD_MARKER))
+                    name = name.substring(SpringActionController.FIELD_MARKER.length());
+                if (HasAllowBindParameter.getDefaultPredicate().test(name))
+                    return true;
+                if (pat.matcher(name).matches())
+                    return true;
+                return false;
+            };
         }
     }
 
@@ -6038,32 +6037,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ReloadForm
-    {
-        private boolean _queryValidation;
-        private boolean _failForUndefinedVisits;
-
-        public boolean isQueryValidation()
-        {
-            return _queryValidation;
-        }
-
-        public void setQueryValidation(boolean queryValidation)
-        {
-            _queryValidation = queryValidation;
-        }
-
-        public boolean isFailForUndefinedVisits()
-        {
-            return _failForUndefinedVisits;
-        }
-
-        public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
-        {
-            _failForUndefinedVisits = failForUndefinedVisits;
-        }
-    }
-
     private static class DatasetDetailRedirectForm extends ReturnUrlForm
     {
         private String _datasetId;
@@ -6154,43 +6127,6 @@ public class StudyController extends BaseStudyController
             }
 
             return url;
-        }
-    }
-
-
-    @RequiresLogin
-    @RequiresPermission(AdminPermission.class)
-    public class CheckForReloadAction extends MutatingApiAction<ReloadForm>
-    {
-        @Override
-        public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
-        {
-            ReloadTask task = new ReloadTask();
-            String message;
-
-            try
-            {
-                User user = getUser();
-                ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
-                options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
-                options.setSkipQueryValidation(!form.isQueryValidation());
-
-                final String source;
-
-                source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
-
-                ReloadStatus status = task.attemptReload(options, source);
-
-                message = status.getMessage();
-            }
-            catch (ImportException e)
-            {
-                message = "Error: " + e.getMessage();
-            }
-
-            // Plain text response for scripts
-            sendPlainText(message);
-            return null;
         }
     }
 
@@ -6419,7 +6355,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public @NotNull URLHelper getSuccessURL(Object o)
         {
             return new ActionURL(ShowVisitImportMappingAction.class, getContainer());
         }

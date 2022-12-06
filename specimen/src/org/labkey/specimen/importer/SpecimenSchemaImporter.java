@@ -31,7 +31,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.ImportTemplate;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporter;
@@ -42,6 +41,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 

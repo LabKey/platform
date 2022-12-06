@@ -1066,7 +1066,7 @@ Ext4.override(Ext4.tree.Column, {
 // EXTJS-13334 Tooltip is horizontally squished in Safari
 //
 // This override was found in a stackoverflow posting : https://stackoverflow.com/questions/15834689/extjs-4-2-tooltips-not-wide-enough-to-see-contents
-if (Ext4.isSafari || Ext4.isGecko) {
+if (Ext4.isSafari || Ext4.isGecko || Ext4.isChrome) {
     Ext4.override(Ext4.tip.QuickTip, {
         helperElId: 'ext-quicktips-tip-helper',
         initComponent: function ()

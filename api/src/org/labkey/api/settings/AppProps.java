@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Stores basic site-wide configuration.
@@ -39,16 +40,16 @@ public interface AppProps
 {
     AppProps _instance = new AppPropsImpl();
 
+    String SCOPE_SITE_SETTINGS = "SiteSettings";
+
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
-    String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
+    String SCOPE_EXPERIMENTAL_FEATURE = "ExperimentalFeature";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
-    String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
-    String EXPERIMENTAL_ERROR_PAGE = "errorPage";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
@@ -168,7 +169,7 @@ public interface AppProps
 
     boolean isShowRibbonMessage();
 
-    @Nullable String getRibbonMessageHtml();
+    @Nullable String getRibbonMessage();
 
     int getSSLPort();
 
@@ -224,7 +225,7 @@ public interface AppProps
     /**
      * @return "SAMEORIGIN" or "DENY" or "ALLOW"
      */
-    String getXFrameOptions();
+    String getXFrameOption();
 
     String getStaticFilesPrefix();
 
@@ -238,4 +239,6 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
+
+    Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties();
 }

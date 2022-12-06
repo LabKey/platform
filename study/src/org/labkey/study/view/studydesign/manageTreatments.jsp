@@ -63,7 +63,7 @@
     String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()
     {
             LABKEY.Query.selectDistinctRows({

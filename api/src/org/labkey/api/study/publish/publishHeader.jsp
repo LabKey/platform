@@ -41,7 +41,7 @@
 %>
 <labkey:errors/>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     window.onbeforeunload = LABKEY.beforeunload();
     LABKEY.setDirty(true);
 </script>

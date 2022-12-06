@@ -19,7 +19,7 @@ package org.labkey.api.security;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.compliance.ComplianceFolderSettings;
@@ -82,6 +82,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     private GUID _entityId;
     private ActionURL _avatarUrl;
+    private boolean _system = false;
 
     private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
 
@@ -213,6 +214,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _groups;
     }
 
+    public void refreshGroups()
+    {
+        _groups = null;
+    }
 
     public boolean isFirstLogin()
     {
@@ -587,6 +592,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return getAvatarUrl() != null ? getAvatarUrl().toString() : AvatarThumbnailProvider.THUMBNAIL_PATH;
     }
 
+    public boolean isSystem()
+    {
+        return _system;
+    }
+
+    public void setSystem(boolean system)
+    {
+        _system = system;
+    }
+
     public static JSONObject getUserProps(User user)
     {
         return getUserProps(user, user, null, false);
@@ -602,9 +617,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         JSONObject props = new JSONObject();
 
         props.put("id", user.getUserId());
+        // check for permission to see user details, users can always see their own details
+        if (container == null || currentUser.equals(user) || SecurityManager.canSeeUserDetails(container, currentUser))
+        {
+            props.put("email", user.getEmail());
+            props.put("phone", user.getPhone());
+        }
         props.put("displayName", user.getDisplayName(currentUser));
-        props.put("email", user.getEmail());
-        props.put("phone", user.getPhone());
         props.put("avatar", user.getAvatarThumbnailPath());
 
         if (includePermissionProps)
@@ -623,6 +642,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
             props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
             props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
+            props.put("isSystem", user.isSystem());
 
             // PHI level
             /** CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()} */

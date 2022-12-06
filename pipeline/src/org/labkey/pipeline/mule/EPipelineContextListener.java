@@ -43,8 +43,7 @@ public class EPipelineContextListener implements StartupListener, ShutdownListen
         // so don't initialize if it is not in use.
         if (PipelineService.get().isEnterprisePipeline())
         {
-            _muleListenerHelper = new MuleListenerHelper(servletContext,
-                    "org/labkey/pipeline/mule/config/webserverMuleConfig.xml");
+            _muleListenerHelper = new MuleListenerHelper(servletContext);
         }
     }
 

@@ -50,7 +50,7 @@ public class ListQueryForm extends QueryForm
     {
         this();
         setViewContext(context);
-        _primaryDef = ListService.get().getList(getContainer(), listName);
+        _primaryDef = ListService.get().getList(getContainer(), listName, true);
     }
 
     // Set by spring binding reflection
@@ -64,7 +64,7 @@ public class ListQueryForm extends QueryForm
     @SuppressWarnings({"UnusedDeclaration"})
     public void setName(String name)
     {
-        _reflectionBoundDef = ListService.get().getList(getContainer(), name);
+        _reflectionBoundDef = ListService.get().getList(getContainer(), name, true);
     }
 
     private ListDefinition getListDef(int listId)

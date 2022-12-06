@@ -18,12 +18,10 @@ package org.labkey.devtools.authentication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationAction;
-import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationForm;
 
 /**
  * User: adam
@@ -64,11 +62,5 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     public boolean bypass()
     {
         return false;
-    }
-
-    @Override
-    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
-    {
-        return active ? new TestSecondarySaveConfigurationForm() : null;
     }
 }

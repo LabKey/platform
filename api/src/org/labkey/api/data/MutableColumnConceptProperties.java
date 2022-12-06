@@ -2,9 +2,9 @@ package org.labkey.api.data;
 
 public interface MutableColumnConceptProperties
 {
-    public void setPrincipalConceptCode(String principalConceptCode);
-    public void setConceptImportColumn(String conceptImportColumn);
-    public void setConceptLabelColumn(String conceptLabelColumn);
-    public void setSourceOntology(String sourceOntology);
-    public void setConceptSubtree(String conceptSubtree);
+    void setPrincipalConceptCode(String principalConceptCode);
+    void setConceptImportColumn(String conceptImportColumn);
+    void setConceptLabelColumn(String conceptLabelColumn);
+    void setSourceOntology(String sourceOntology);
+    void setConceptSubtree(String conceptSubtree);
 }

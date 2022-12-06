@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
@@ -329,8 +330,11 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);
+    @Nullable TableInfo getTable(User user, Container c, @Nullable ContainerFilter cf);
+    @Nullable TableInfo getTableForInsert(User user, Container c);
 
     ActionURL urlShowDefinition();
+    ActionURL urlImport(Container container);
     ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper returnUrl);
     ActionURL urlDetails(@Nullable Object pk);
     ActionURL urlDetails(@Nullable Object pk, Container c);

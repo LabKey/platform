@@ -150,8 +150,8 @@ public class ErrorRenderer
             // Since there might be SQL in here, maybe don't dump for non-admin/dev
             if (null != user && user.isPlatformDeveloper())
             {
-                Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
-                for (Map.Entry<Enum,String> e : decorations.entrySet())
+                Map<Enum<?>,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
+                for (Map.Entry<Enum<?>, String> e : decorations.entrySet())
                 {
                     out.print(PageFlowUtil.filter(e.getKey()));
                     out.print(" = ");

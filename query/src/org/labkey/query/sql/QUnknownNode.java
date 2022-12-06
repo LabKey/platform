@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -50,8 +51,8 @@ public class QUnknownNode extends QNode implements SupportsAnnotations
     }
 
     @Override
-    public Map<String, Object> getAnnotations()
+    public @NotNull Map<String, Object> getAnnotations()
     {
-        return _annotations;
+        return null==_annotations ? Map.of() : _annotations;
     }
 }

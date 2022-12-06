@@ -24,7 +24,7 @@
     String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
 <div id="<%=text(uniqueDivName)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function()
     {
         // ========== Begin report writer's script ==========
@@ -36,8 +36,8 @@
                 if (bean.useGetDataApi)
                 {
             %>
-            var filterArray = <%=text(bean.model.getJSONFilters())%>;
-            var columnArray = <%=text(bean.model.getJSONColumns())%>;
+            var filterArray = <%= bean.model.getJSONFilters() %>;
+            var columnArray = <%= bean.model.getJSONColumns() %>;
 
             var getDataConfig = {
                 source: {

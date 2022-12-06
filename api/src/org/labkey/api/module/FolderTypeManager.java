@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -25,8 +24,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
+import static org.labkey.api.settings.StartupPropertyEntry.modifier.bootstrap;
 
 /**
  * Manager to registering and tracking the various {@link FolderType} implementations provided by modules.
@@ -48,7 +50,7 @@ import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
  */
 public class FolderTypeManager
 {
-    private static final Logger LOG = LogManager.getLogger(FolderTypeManager.class);
+    private static final Logger LOG = LogHelper.getLogger(FolderTypeManager.class, "Manages registry of folder types");
     private static final FolderTypeManager INSTANCE = new FolderTypeManager();
     private static final String SIMPLE_TYPE_DIR_NAME = "folderTypes";
     private static final String SIMPLE_TYPE_FILE_EXTENSION = ".foldertype.xml";
@@ -188,37 +190,11 @@ public class FolderTypeManager
         }
     }
 
-    /** @return an unmodifiable collection of ALL registered folder types, even those that have been disabled on this
-     * server by an administrator, except if the user does not have EnableRestrictedModules permission then folder types
-     * that have restricted modules are excluded */
-    public Collection<FolderType> getFolderTypes(boolean userHasEnableRestrictedModules)
+    /** @return an unmodifiable collection of registered folder types (those not disabled by site-wide configuration
+     *  by an admin). Optionally filter the list to skip folder types defined by restricted modules */
+    public Collection<FolderType> getEnabledFolderTypes(boolean includeRestrictedModules)
     {
-        if (userHasEnableRestrictedModules)
-        {
-            return getAllFolderTypes();
-        }
-
-        List<FolderType> allFolderTypes;
-        synchronized (FOLDER_TYPE_LOCK)
-        {
-            allFolderTypes = new LinkedList<>(ensureAllFolderTypes().values());
-        }
-
-        List<FolderType> folderTypes = new LinkedList<>();
-        for (FolderType folderType : allFolderTypes)
-        {
-            if (!Container.hasRestrictedModule(folderType))
-                folderTypes.add(folderType);
-        }
-        return folderTypes;
-    }
-
-    /** @return all of the folder types that have not been explicitly disabled by an administrator. New folder types
-     * that lack specific enabled/disabled state will be considered enabled.
-     */
-    public Collection<FolderType> getEnabledFolderTypes()
-    {
-        ArrayList<FolderType> result = new ArrayList<>();
+        List<FolderType> enabled = new ArrayList<>();
         synchronized (FOLDER_TYPE_LOCK)
         {
             Map<String, String> enabledStates = PropertyManager.getProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE);
@@ -227,11 +203,24 @@ public class FolderTypeManager
                 // Unless we have specific saved config setting it to disabled, treat it as enabled
                 if (!enabledStates.containsKey(folderType.getName()) || !enabledStates.get(folderType.getName()).equalsIgnoreCase(Boolean.FALSE.toString()))
                 {
-                    result.add(folderType);
+                    enabled.add(folderType);
                 }
             }
         }
-        return Collections.unmodifiableCollection(result);
+
+        if (includeRestrictedModules)
+        {
+            return Collections.unmodifiableList(enabled);
+        }
+
+        // Filter out the restricted ones
+        List<FolderType> folderTypes = new LinkedList<>();
+        for (FolderType folderType : enabled)
+        {
+            if (!Container.hasRestrictedModule(folderType))
+                folderTypes.add(folderType);
+        }
+        return Collections.unmodifiableList(folderTypes);
     }
 
     /**
@@ -324,16 +313,34 @@ public class FolderTypeManager
         }
     }
 
+    public enum FolderTypeStartupProperties implements StartupProperty
+    {
+        disabledTypes
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Comma-separated list of folder types to disable on this server";
+            }
+        };
+    }
+
+    private static final String SCOPE_FOLDER_TYPES = "FolderTypes";
+
     public void populateWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
-        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_FOLDER_TYPES)
-            .forEach(prop -> {
-                // only apply disabledTypes prop at bootstrap
-                if ("disabledTypes".equalsIgnoreCase(prop.getName()) && prop.getModifier() == bootstrap && isBootstrap)
-                    populateDisabledFolderTypesWithStartupProps(prop.getValue());
-            });
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_FOLDER_TYPES, FolderTypeStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<FolderTypeStartupProperties, StartupPropertyEntry> properties)
+            {
+                properties.forEach((sp, cp)->{
+                    // apply disabledTypes prop only at bootstrap
+                    if (cp.getModifier() == bootstrap)
+                        populateDisabledFolderTypesWithStartupProps(cp.getValue());
+                });
+            }
+        });
     }
 
     private void populateDisabledFolderTypesWithStartupProps(String value)

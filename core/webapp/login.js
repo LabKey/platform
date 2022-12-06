@@ -31,7 +31,7 @@
         //the intent of this is to allow custom login pages to supply an element where id=returnUrl, which will always redirect the user after login
         var returnUrlElement = document.getElementById('returnUrl');
 
-        setSubmitting(true, {msg: ''});
+        setSubmitting(true, [{msg: ''}]);
 
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
@@ -47,22 +47,22 @@
                 urlhash: document.getElementById('urlhash').value
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                setSubmitting(false, {msg: ''});
+                setSubmitting(false, [{msg: ''}]);
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function(response, request) {
-                let error;
+                let errors;
                 if (response && response.errors) {
-                    error = response.errors[0];
+                    errors = response.errors;
                 }
                 else {
                     let message = request && request.readyState === 4 && request.status === 0 ? 'Login failed. The server may be offline.' : 'Login failed.';
-                    error = {msg: message};
+                    errors = [{msg: message}];
                 }
 
-                setSubmitting(false, error);
+                setSubmitting(false, errors);
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
@@ -70,7 +70,7 @@
         });
     }
 
-    function setSubmitting(isSubmitting, error) {
+    function setSubmitting(isSubmitting, errors) {
         // no-op if already submitting
         if (submitting && isSubmitting) {
             return;
@@ -78,7 +78,7 @@
         // and if we are in the delay, re-queue this call to setSubmitting
         else if (delay) {
             setTimeout(function() {
-                setSubmitting(isSubmitting, error);
+                setSubmitting(isSubmitting, errors);
             }, DELAY_MS);
             return;
         }
@@ -98,7 +98,7 @@
             msgEl[0].hidden = !submitting;
         }
 
-        _setErrors(error);
+        _setErrors(errors);
     }
 
     function _toggleDelay() {
@@ -110,11 +110,17 @@
         }
     }
 
-    function _setErrors(error) {
+    function _setErrors(errors) {
         var el = document.getElementById('errors');
         if (el) {
-            el.innerHTML = LABKEY.Utils.encodeHtml(error.msg) +
-                (error.adviceText && error.adviceHref ? ' <a href="' + LABKEY.Utils.encodeHtml(error.adviceHref) + '">' + LABKEY.Utils.encodeHtml(error.adviceText) + '</a>' : '');
+            let html = '';
+            let br = '';
+            for (const error of errors) {
+                html += br + LABKEY.Utils.encodeHtml(error.msg) + (error.html ? error.html :
+                    (error.adviceText && error.adviceHref ? ' <a href="' + LABKEY.Utils.encodeHtml(error.adviceHref) + '">' + LABKEY.Utils.encodeHtml(error.adviceText) + '</a>' : ''));
+                br = '<br/><br/>';
+            }
+            el.innerHTML = html;
         }
     }
 
@@ -134,7 +140,7 @@
             },
             failure: LABKEY.Utils.getCallbackWrapper(function (response) {
                 if (response && response.errors) {
-                    _setErrors(response.errors[0]);
+                    _setErrors(response.errors);
                 }
             }, this)
         });

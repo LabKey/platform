@@ -136,7 +136,7 @@ public class DomainUtil
             Container lookupContainer = property.getLookup().getContainer();
             if (lookupContainer == null)
                 lookupContainer = property.getContainer();
-            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaKey());
             if (schema != null)
             {
                 TableInfo table = schema.getTable(property.getLookup().getQueryName());
@@ -260,7 +260,7 @@ public class DomainUtil
         d.setFields(list);
 
         // Handle reserved property names
-        Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
+        Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain, user);
         d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
         d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes());
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
@@ -298,13 +298,14 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
-        DomainKind kind = dd.getDomainKind();
+        DomainKind<?> kind = dd.getDomainKind();
         if (kind != null)
         {
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -320,6 +321,7 @@ public class DomainUtil
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -334,15 +336,23 @@ public class DomainUtil
 
     public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
     {
+        return getPropertyDescriptor(prop, false);
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop, boolean copy)
+    {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
 
-        gwtProp.setPropertyId(prop.getPropertyId());
+        if (!copy)
+        {
+            gwtProp.setPropertyId(prop.getPropertyId());
+            gwtProp.setPropertyURI(prop.getPropertyURI());
+        }
         gwtProp.setDescription(prop.getDescription());
         gwtProp.setFormat(prop.getFormat());
         gwtProp.setLabel(prop.getLabel());
         gwtProp.setConceptURI(prop.getConceptURI());
         gwtProp.setName(prop.getName());
-        gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
         gwtProp.setRangeURI(prop.getPropertyType() != null ? prop.getPropertyType().getTypeUri() : prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
@@ -378,10 +388,11 @@ public class DomainUtil
             GWTPropertyValidator gpv = new GWTPropertyValidator();
             Lsid lsid = new Lsid(pv.getTypeURI());
 
+            if (!copy)
+                gpv.setRowId(pv.getRowId());
             gpv.setName(pv.getName());
             gpv.setDescription(pv.getDescription());
             gpv.setExpression(pv.getExpressionValue());
-            gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
 
@@ -407,7 +418,9 @@ public class DomainUtil
         {
             gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
             gwtProp.setLookupQuery(prop.getLookup().getQueryName());
-            gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
+            var key = prop.getLookup().getSchemaKey();
+            if (null != key)
+               gwtProp.setLookupSchema(key.toString());
         }
         return gwtProp;
     }
@@ -515,6 +528,8 @@ public class DomainUtil
             gwtProp.setScale(columnXml.getScale());
         if (columnXml.isSetScannable())
             gwtProp.setScannable(columnXml.getScannable());
+        if (columnXml.isSetDerivationDataScope())
+            gwtProp.setDerivationDataScope(columnXml.getDerivationDataScope().toString());
 
         return gwtProp;
     }
@@ -546,7 +561,7 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null);
+        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null, user);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -562,10 +577,15 @@ public class DomainUtil
         return created;
     }
 
+    @NotNull
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    {
+        return updateDomainDescriptor(orig, update, container, user, false);
+    }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
 
@@ -578,7 +598,7 @@ public class DomainUtil
         }
 
         DomainKind<?> kind = d.getDomainKind();
-        ValidationException validationException = validateProperties(d, update, kind, orig);
+        ValidationException validationException = validateProperties(d, update, kind, orig, user);
 
         if (validationException.hasErrors())
         {
@@ -590,6 +610,9 @@ public class DomainUtil
             validationException.addError(new SimpleValidationError("Unauthorized"));
             return validationException;
         }
+
+        if (updateDomainName)
+            d.setName(update.getName());
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -948,6 +971,9 @@ public class DomainUtil
 
         if (from.isScannable())
             to.setScannable(from.isScannable());
+
+        if (from.getDerivationDataScope() != null)
+            to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
     @SuppressWarnings("unchecked")
@@ -1096,9 +1122,9 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();

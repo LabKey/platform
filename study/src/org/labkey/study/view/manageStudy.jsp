@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.SecurityManager.ViewFactory" %>
@@ -27,9 +28,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
-<%@ page import="org.labkey.api.study.StudyReloadSource" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
@@ -116,7 +117,7 @@
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
     int numDatasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER).size();
-    Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
+    Collection<FolderArchiveSource> reloadSources = PipelineService.get().getFolderArchiveSources(getContainer());
 
     ComplianceService complianceService = ComplianceService.get();
     String maxAllowedPhi = complianceService.getMaxAllowedPhi(c, getUser()).name();
@@ -159,18 +160,20 @@
                     <tr>
                         <td class="lk-study-prop-label">Study Properties</td>
                         <td class="lk-study-prop-desc">Study label, investigator, grant, description, etc.</td>
-                        <td><%= link("Change Study Properties", ManageStudyPropertiesAction.class) %></td>
+                        <td><%= link("Study Properties", ManageStudyPropertiesAction.class) %></td>
                     </tr>
                     <tr>
-                        <td class="lk-study-prop-label">Additional Properties</td>
-                        <td class="lk-study-prop-desc">This study has <%=numProperties%> additional <%=h(propString)%></td>
+                        <td class="lk-study-prop-label">Custom Study Properties</td>
+                        <td class="lk-study-prop-desc">All studies in this project have <%=numProperties%> custom <%=h(propString)%></td>
+
                         <td><%
                             Container p = c.getProject();
                             if (p.hasPermission(user, AdminPermission.class))
                             {
                                 ActionURL editDefinition = new ActionURL(EditStudyDefinitionAction.class, p)
                                     .addReturnURL(getActionURL());
-                                %><%=link("Edit Additional Properties", editDefinition).usePost()%><%
+                                %><%=link("Define Custom Study Properties", editDefinition).usePost()%><%
+
                             }
                             else
                             {
@@ -339,7 +342,7 @@
 <%
     }
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function showCreateStudyWizard(mode)
     {
         LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>, <%=q(maxAllowedPhi)%>);

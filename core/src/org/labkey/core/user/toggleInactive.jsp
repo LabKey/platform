@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -50,9 +51,20 @@
     }
 
     boolean showTemporaryLink = getContainer().isRoot() && AuthenticationManager.isAccountExpirationEnabled();
-
 %>
 <table>
+    <%
+        LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+
+        if (settings.isUserLimit())
+        {
+    %>
+    <tr><td>Number of users that can be added<%=h(getContainer().isRoot() ? " or reactivated" : "")%>: <%=settings.getRemainingUserCount()%></td></tr>
+    <tr><td>&nbsp;</td></tr>
+    <%
+        }
+    %>
+
     <tr>
         <td>
             <%=link(inactiveCaption, inactiveUrl)%>

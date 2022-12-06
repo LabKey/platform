@@ -103,7 +103,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @NotNull
     protected Map<String, ColumnInfo> _columnInfoMap = Collections.emptyMap();
     protected ColumnDescriptor[] _columns;
-    private boolean _initialized = false;
+    protected boolean _initialized = false;
     protected int _scanAheadLineCount = 7500; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers

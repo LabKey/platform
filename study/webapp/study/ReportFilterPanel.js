@@ -841,6 +841,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 this.allSelected();
 
                 this.fireEvent('initSelectionComplete', this.panelSelectCount, this);
+                LABKEY.Utils.signalWebDriverTest('initSelectionComplete', this.panelSelectCount);
             }
         }
     }

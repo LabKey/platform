@@ -92,7 +92,8 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     @Override
     protected void write()
     {
-        setResultsHandleAndClose(() -> {
+        setResultsHandleAndClose(results -> {
+            _results = results; // TODO: Change write() signature to take context and stop setting member variable
             TSVGridWriter.super.write();
             return null;
         });
@@ -100,7 +101,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     private interface ResultsHandler<T>
     {
-        T handle() throws IOException;
+        T handle(Results results) throws IOException;
     }
 
     private <T> T setResultsHandleAndClose(ResultsHandler<T> handler)
@@ -109,8 +110,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         {
             if (null == _displayColumns)
                 _displayColumns = init(results.getFieldMap().values());
-            _results = results;
-            return handler.handle();
+            return handler.handle(results);
         }
         catch (SQLException ex)
         {
@@ -137,17 +137,22 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     @Override
     protected void writeBody()
     {
+        writeBody(_results);
+    }
+
+    private void writeBody(Results results)
+    {
         try
         {
             RenderContext ctx = getRenderContext();
-            ctx.setResults(_results);
+            ctx.setResults(results);
 
             // Output all the data cells
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_results);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
 
-            while (_results.next())
+            while (results.next())
             {
-                ctx.setRow(factory.getRowMap(_results));
+                ctx.setRow(factory.getRowMap(results));
                 writeRow(ctx, _displayColumns);
             }
         }
@@ -173,15 +178,15 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         extension = StringUtils.trimToEmpty(extension);
         String ext = "".equals(extension) || extension.startsWith(".") ? extension : "." + extension;
 
-        return setResultsHandleAndClose(()->{
-            if (batchSize > 0 && null != batchColumn && !_results.hasColumn(batchColumn))
+        return setResultsHandleAndClose(results->{
+            if (batchSize > 0 && null != batchColumn && !results.hasColumn(batchColumn))
                 throw new IllegalArgumentException("Batch column " + batchColumn + " not found in results");
-            return writeResultSetBatches(_results, outputDir, baseName, ext, batchSize, batchColumn);
+            return writeResultSetBatches(results, outputDir, baseName, ext, batchSize, batchColumn);
         });
     }
 
     @NotNull
-    private List<File> writeResultSetBatches(Results rs, File outputDir, String baseName, String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
+    private List<File> writeResultSetBatches(Results results, File outputDir, String baseName, String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
     {
         int currentBatchSize = 0;
         int totalBatches = 1;
@@ -190,13 +195,13 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         List<File> outputFiles = new ArrayList<>();
         outputFiles.add(startBatchFile(outputDir, baseName, extension, batchSize, totalBatches));
         RenderContext ctx = getRenderContext();
-        ctx.setResults(rs);
+        ctx.setResults(results);
         try
         {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            while (rs.next())
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+            while (results.next())
             {
-                ctx.setRow(factory.getRowMap(rs));
+                ctx.setRow(factory.getRowMap(results));
                 if (batchSize > 0)
                 {
                     if (null != batchColumn)

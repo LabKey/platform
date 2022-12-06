@@ -17,7 +17,7 @@ package org.labkey.api.rstudio;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;

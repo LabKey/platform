@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * like PipelineQueue, or to simply run background tasks.
  * <p/>
  * ScheduledThreadPoolExecutor could, of course, be used directly.  One annoyance is
- * that is is hard to track when tasks start (except by wrapping the run method).
+ * that it is hard to track when tasks start (except by wrapping the run method).
  * Another annoyance is that the object you use to track the task (Future
  * returned by submit()) is different than the object you submit.
  * <p/>
@@ -113,7 +113,6 @@ public class JobRunner implements Executor
 
     /**
      * This will schedule the runnable to execute immediately, with no delay
-     * @param command
      */
     @Override
     public void execute(Runnable command)
@@ -123,8 +122,6 @@ public class JobRunner implements Executor
 
     /**
      * This will schedule the runnable using the provided delay
-     * @param command
-     * @param delay
      */
     public void execute(long delay, Runnable command)
     {

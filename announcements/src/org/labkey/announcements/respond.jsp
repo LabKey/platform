@@ -51,7 +51,7 @@
 
 %><%=formatMissedErrors("form")%>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function onSubmit(form){
         LABKEY.setSubmit(true);
         return LABKEY.discuss.validate(form);

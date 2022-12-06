@@ -15,19 +15,43 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
- * Captures options for doing an lineage search
+ * Captures options for doing a lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions extends ResolveLsidsForm
 {
+    public enum LineageExpType
+    {
+        ALL,
+        Data,
+        Material,
+        ExperimentRun,
+        Object;
+
+        public static @Nullable LineageExpType fromValue(String value)
+        {
+            for (LineageExpType type : LineageExpType.values()) {
+                if (type.name().equals(value)) {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+    }
+
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
-    private String _expType;
+    private LineageExpType _expType;
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
+    private boolean _onlyReturnObjectId = false;
     private String _runProtocolLsid;
 
     public ExpLineageOptions()
@@ -71,12 +95,12 @@ public class ExpLineageOptions extends ResolveLsidsForm
         _children = children;
     }
 
-    public String getExpType()
+    public String getExpTypeValue()
     {
-        return _expType;
+        return _expType == null ? null : _expType.name();
     }
 
-    public void setExpType(String expType)
+    public void setExpType(LineageExpType expType)
     {
         _expType = expType;
     }
@@ -112,6 +136,25 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public void setUseObjectIds(boolean useObjectIds)
     {
         _useObjectIds = useObjectIds;
+    }
+
+    /**
+     *  Use setOnlySelectObjectId() if you only care about the set of objectids returned form the lineage query.
+     *
+     * NOTE: that also means that there is no implicit container filter on the result.  The
+     * edges table does not know about containers, and we are not joining to the experiments
+     * tables to find a container.
+     */
+    public void setOnlySelectObjectId(boolean returnObjectId)
+    {
+        // obviously not interested in reconstructing the hierarchy, so use the lookup query
+        _forLookup = true;
+        _onlyReturnObjectId = returnObjectId;
+    }
+
+    public boolean isOnlySelectObjectId()
+    {
+        return _onlyReturnObjectId;
     }
 
     public String getRunProtocolLsid()

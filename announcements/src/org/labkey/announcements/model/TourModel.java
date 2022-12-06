@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements.model;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Entity;
 
 import java.io.Serializable;

@@ -39,7 +39,7 @@
     if (StringUtils.isBlank(contextPath))
         contextPath = "/";
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
 

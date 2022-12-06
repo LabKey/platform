@@ -57,21 +57,19 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
-import org.labkey.api.study.writer.AbstractContext;
+import org.labkey.api.study.writer.AbstractStudyContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -1291,7 +1289,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     }
 
     // Called on a study folder; return project-level table and container if appropriate; otherwise table from this container
-    public TablePackage getTablePackage(AbstractContext ctx, StudyQuerySchema projectSchema, String tableName, ContainerFilter cf)
+    public TablePackage getTablePackage(AbstractStudyContext ctx, StudyQuerySchema projectSchema, String tableName, ContainerFilter cf)
     {
         TableInfo tableInfo;
         Container container;

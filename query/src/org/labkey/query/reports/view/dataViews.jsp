@@ -46,7 +46,7 @@
     String renderId = "dataviews-panel-" + getRequestScopedUID();
 %>
 <div id="<%=h(renderId)%>" class="dvc"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
         Ext4.create('LABKEY.ext4.DataViewsPanel', {

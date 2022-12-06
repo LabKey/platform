@@ -15,18 +15,15 @@
  */
 package org.labkey.core.admin.importer;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.UnauthorizedException;
@@ -36,8 +33,6 @@ import org.labkey.folder.xml.SubfolderType;
 import org.labkey.folder.xml.SubfoldersDocument;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * User: cnathe
@@ -57,7 +52,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         return 100;
     }
 
-    public class SubfolderImporter implements FolderImporter<FolderDocument.Folder>
+    public static class SubfolderImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -72,7 +67,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             VirtualFile subfoldersDir = ctx.getDir("subfolders");
 
@@ -129,13 +124,13 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
 
                             // set the child container to inherit permissions from the parent by default
                             SecurityManager.setInheritPermissions(childContainer);
-                            ctx.getLogger().info("New container created with inherited permissions for " + subfolderName);
+                            ctx.getLogger().info("New folder created with inherited permissions: " + childContainer.getPath());
                         }
                         else
                         {
                             if (!childContainer.hasPermission(ctx.getUser(), AdminPermission.class))
                             {
-                                ctx.getLogger().error("You must have admin permissions to replace the subfolder: " + getFilePath(subfoldersDir, subfolderName));
+                                ctx.getLogger().error("You must have admin permissions to replace this subfolder: " + childContainer.getPath());
                                 continue;
                             }
                         }
@@ -156,13 +151,6 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         private String getFilePath(VirtualFile dir, String name)
         {
             return dir.getLocation() + "\\" + name;
-        }
-
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
         }
     }
 }

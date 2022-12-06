@@ -102,14 +102,14 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     /**
      * The custom fields to render when configuring a FileAnalysisTaskPipeline
      */
-    private List<Field> _customFields;
+    private List<Field<?>> _customFields;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
         super(FileAnalysisTaskPipeline.class, name);
     }
 
-    public FileAnalysisTaskPipelineSettings(Class namespaceClass, String name)
+    public FileAnalysisTaskPipelineSettings(Class<?> namespaceClass, String name)
     {
         super(namespaceClass, name);
     }
@@ -246,12 +246,12 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         _moveAvailable = moveAvailable;
     }
 
-    public List<Field> getCustomFields()
+    public List<Field<?>> getCustomFields()
     {
         return _customFields;
     }
 
-    public void setCustomFields(List<Field> customFields)
+    public void setCustomFields(List<Field<?>> customFields)
     {
         _customFields = customFields;
     }

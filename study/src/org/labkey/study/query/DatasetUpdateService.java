@@ -19,34 +19,48 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.security.StudySecurityEscalator;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -63,6 +77,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
+import static org.labkey.api.gwt.client.AuditBehaviorType.NONE;
 
 /*
 * User: Dave
@@ -110,6 +125,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     /** Mapping for MV column names */
     private Map<String, String> _columnMapping = Collections.emptyMap();
 
+    private boolean _skipAuditLogging = false;
+
     public DatasetUpdateService(DatasetTableImpl table)
     {
         super(table);
@@ -135,7 +152,44 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        return (Map<String, Object>)(new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class));
+        String lsid = keyFromMap(keys);
+        SimpleFilter filter = new SimpleFilter()
+                .addCondition(new FieldKey(null,"container"), container.getId())
+                .addCondition(new FieldKey(null,"lsid"),lsid);
+
+        // NOTE getQueryTable().getColumns() returns a bunch of columns that getDatasetRow() did not such as:
+        //      Container, Dataset, DatasetId, Datasets, Folder, Modified, ModifiedBy, MouseVisit, ParticipantSequenceNum, VisitDay, VisitRowId
+        // Mostly this is harmless, but there is some noise.
+        HashSet<String> nameset = new HashSet<>(getQueryTable().getColumnNameSet());
+        List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
+        List<ColumnInfo> columns = new ArrayList<>(getQueryTable().getColumns(nameset.toArray(new String[0])));
+
+        // filter out calculated columns which can be expensive to reselect
+        columns.removeIf(ColumnInfo::isCalculated);
+
+        // This is a general version of DatasetDefinition.canonicalizeDatasetRow()
+        // The caller needs to make sure names are unique.  Not suitable for use w/ lookups etc where there can be name collisions.
+        // CONSIDER: might be nice to make this a TableSelector method.
+        var map = new CaseInsensitiveHashMap<>();
+        try (var str = new TableSelector(getQueryTable(), columns, filter, null).uncachedResultSetStream())
+        {
+            str.forEach(rs -> {
+                try
+                {
+                    for (int i = 0; i < columns.size(); i++)
+                    {
+                        Object o = rs.getObject(i + 1);
+                        o = ResultSetRowMapFactory.translateResultSetObject(o, false);
+                        map.put(columns.get(i).getName(), o);
+                    }
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            });
+        }
+        return map.isEmpty() ? null : map;
     }
 
 
@@ -200,7 +254,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        if (!isBulkLoad())
+        if (_skipAuditLogging)
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, NONE);
+        else if (!isBulkLoad())
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
 
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
@@ -298,6 +354,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             context.putConfigParameter(Config.CheckForDuplicates, dupePolicy);
         }
 
+        // NOTE: This was done to help coalesce some old code paths.  However, this is a little weird, because
+        // the DI is over the DatasetSchemaTableInfo not the DatasetTableImpl you'd expect.  This all still works
+        // because of property URI matching in StatementDataIterator.
         return _dataset.getInsertDataIterator(user, data, context);
     }
 
@@ -463,10 +522,101 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = _dataset.updateDatasetRow(user, lsid, row);
+        String newLsid = null;
+        boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
+
+        DataState defaultQCState = null;
+        Integer defaultQcStateId = _dataset.getStudy().getDefaultDirectEntryQCState();
+        if (defaultQcStateId != null)
+            defaultQCState = DataStateManager.getInstance().getStateForRowId(container, defaultQcStateId.intValue());
+
+        String managedKey = null;
+        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && _dataset.getKeyManagementType() != Dataset.KeyManagementType.None)
+            managedKey = _dataset.getKeyPropertyName();
+
+        try (DbScope.Transaction transaction = StudyService.get().getDatasetSchema().getScope().ensureTransaction())
+        {
+            Map<String, Object> oldData = _dataset.getDatasetRow(user, lsid);
+
+            if (oldData == null)
+            {
+                // No old record found, so we can't update
+                ValidationException error = new ValidationException();
+                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
+                throw error;
+            }
+
+            Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
+            // don't default to using old qcstate
+            mergeData.remove("qcstate");
+
+            TableInfo target = _dataset.getTableInfo(user);
+            Map<String,ColumnInfo> colMap = DataIteratorUtil.createTableMap(target, allowAliasesInUpdate);
+
+            // If any fields aren't included, reuse the old values
+            for (Map.Entry<String,Object> entry : row.entrySet())
+            {
+                var col = colMap.get(entry.getKey());
+                String name = null == col ? entry.getKey() : col.getName();
+                if (name.equalsIgnoreCase(managedKey))
+                    continue;
+                mergeData.put(name,entry.getValue());
+            }
+
+            // these columns are always recalculated
+            mergeData.remove("lsid");
+            mergeData.remove("participantsequencenum");
+
+            _dataset.deleteRows(Collections.singletonList(lsid));
+
+            List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
+            BatchValidationException errors = new BatchValidationException();
+
+            Map<Enum, Object> options = new HashMap<>();
+            options.put(DatasetUpdateService.Config.AllowImportManagedKey, true);
+            if (defaultQCState != null)
+                options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
+            options.put(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceAndDestination);
+            // if we are being called by QUS we don't want to call triggers twice or resync twice
+            options.put(QueryUpdateService.ConfigParameters.SkipTriggers, true);
+            options.put(DatasetUpdateService.Config.SkipResyncStudy, true);
+            // we don't want to audit the insert in this case, the update audit entry is handled later in this method
+            _skipAuditLogging = true;
+            List<Map<String, Object>> newRows = insertRows(user,container, dataMap, errors, options, null);
+
+            if (errors.hasErrors())
+            {
+                // Update failed
+                ValidationException error = new ValidationException();
+                errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
+                throw error;
+            }
+
+            // lsid is not in the updated map by default since it is not editable,
+            // however it can be changed by the update
+            List<String> lsids = newRows.stream().map(r -> String.valueOf(r.get("lsid"))).toList();
+            newLsid = lsids.get(0);
+            mergeData.put("lsid", newLsid);
+
+            // Since we do a delete and an insert, we need to manually propagate the Created/CreatedBy values to the
+            // new row. See issue 18118
+            SQLFragment resetCreatedColumnsSQL = new SQLFragment("UPDATE ");
+            resetCreatedColumnsSQL.append(_dataset.getStorageTableInfo(), "");
+            resetCreatedColumnsSQL.append(" SET Created = ?, CreatedBy = CAST(? AS INTEGER) WHERE LSID = ?");
+            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED));
+            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
+            resetCreatedColumnsSQL.add(newLsid);
+            new SqlExecutor(_dataset.getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
+
+            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+                    List.of(mergeData), List.of(oldData));
+
+            // Successfully updated
+            transaction.commit();
+        }
+
         //update the lsid and return
         row.put("lsid", newLsid);
-
         row = getRow(user, container, row);
 
         String newParticipant = getParticipant(row, user, container);

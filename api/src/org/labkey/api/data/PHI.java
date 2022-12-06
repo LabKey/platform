@@ -22,6 +22,7 @@ import org.labkey.api.security.permissions.Permission;
 
 /**
  * Captures the different levels of access a user might have to view some, all, or no PHI data.
+ * Important: Keep this in sync with tableInfo.xsd PHIType enum.
  *
  * User: adam
  * Date: 1/17/14

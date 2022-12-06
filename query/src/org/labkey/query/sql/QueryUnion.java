@@ -20,12 +20,14 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,21 +42,32 @@ public class QueryUnion extends QueryRelation
 	QOrder _qorderBy;
     QLimit _limit;
 
+    // if this union is a direct child of a recurisive CTE, set that here so we know
+    CommonTableExpressions.QueryTableWith _queryTableWith;
 
     List<QueryRelation> _termList = new ArrayList<>();
-    Map<String, UnionColumn> _unionColumns = new LinkedHashMap<>();
+    LinkedCaseInsensitiveMap<UnionColumn> _unionColumns = new LinkedCaseInsensitiveMap<>();
     List<UnionColumn> _allColumns = new ArrayList<>();
 
-
-	QueryUnion(Query query, QUnion qunion)
+    // This constructor is used by CommonTableExpressions so that the QueryUnion object
+    // can be registered in the global namespace before it is fully constructed
+    private QueryUnion(Query query)
     {
         super(query);
-		_qunion = qunion;
-        collectUnionTerms(qunion);
-		_qorderBy = _qunion.getChildOfType(QOrder.class);
         MemTracker.getInstance().put(this);
     }
 
+    QueryUnion(Query query, CommonTableExpressions.QueryTableWith tableWith)
+    {
+        this(query);
+        _queryTableWith = tableWith;
+    }
+
+    QueryUnion(Query query, QUnion qunion)
+    {
+        this(query);
+        setQUnion(qunion);
+    }
 
     QueryUnion(QueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
     {
@@ -66,15 +79,25 @@ public class QueryUnion extends QueryRelation
         setAlias(alias);
     }
 
+    protected void setQUnion(QUnion qunion)
+    {
+        _qunion = qunion;
+        collectUnionTerms(qunion);
+        _qorderBy = _qunion.getChildOfType(QOrder.class);
+        MemTracker.getInstance().put(this);
+    }
 
     @Override
     void setQuery(Query query)
     {
-        super.setQuery(query);
-        for (QueryRelation r : _termList)
-            r.setQuery(query);
+        // UNION within a CTE can be recursive, need to guard against that.
+        if (query != _query)
+        {
+            super.setQuery(query);
+            for (QueryRelation r : _termList)
+                r.setQuery(query);
+        }
     }
-
 
     void collectUnionTerms(QUnion qunion)
     {
@@ -92,8 +115,6 @@ public class QueryUnion extends QueryRelation
                 QuerySelect select = new QuerySelect(_query, (QQuery)n, this, true);
                 select._queryText = null; // see issue 23918, we don't want to repeat the source sql for each term in devMode
                 select.markAllSelected(qunion);
-                if (_query.isParsingWith() && _termList.isEmpty())
-                    _query.setWithFirstTerm(select);
                 _termList.add(select);
             }
             else if (n instanceof QUnion && canFlatten(_qunion.getTokenType(),n.getTokenType()))
@@ -102,12 +123,29 @@ public class QueryUnion extends QueryRelation
 			}
 			else if (n instanceof QUnion)
 			{
-
 				QueryUnion union = new QueryUnion(_query, (QUnion)n);
 				_termList.add(union);
 			}
 			if (!getParseErrors().isEmpty())
 			    break;
+
+            // To handle CTE recursion we want to getAllColumns() to be available immediately after parsing the first union term.
+            // The first term should not be the recursive one.
+            if (_unionColumns.isEmpty())
+            {
+                Map<String,RelationColumn> all = _termList.get(0).getAllColumns();
+                // If all is empty, it is probably because the first term has illegal recursion.
+                if (all.isEmpty() && null != _queryTableWith && _queryTableWith.isSeenRecursiveReference())
+                {
+                    // postgres would give this error:" recursive reference to query "CTE" must not appear within its non-recursive term
+                    _query.getParseErrors().add(new QueryParseException("Recursive reference to query \"" + _queryTableWith.getCteName() + "\" must not appear within its non-recursive term.", null, n.getLine(), n.getColumn()));
+                    return;
+                }
+                for (Map.Entry<String,RelationColumn> e : all.entrySet())
+                {
+                    _unionColumns.put(e.getKey(), new UnionColumn(e.getKey(), e.getValue()));
+                }
+            }
         }
     }
 
@@ -126,7 +164,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         for (QueryRelation term : _termList)
         {
@@ -137,9 +175,9 @@ public class QueryUnion extends QueryRelation
         
         if (null != _qorderBy)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            for (var entry : _qorderBy.getSort())
             {
-                resolveFields(entry.getKey());
+                resolveFields(entry.expr());
             }
         }
     }
@@ -155,15 +193,6 @@ public class QueryUnion extends QueryRelation
 
     void initColumns()
     {
-        if (_unionColumns.isEmpty())
-        {
-            Map<String,RelationColumn> all = _termList.get(0).getAllColumns();
-            for (Map.Entry<String,RelationColumn> e : all.entrySet())
-            {
-                _unionColumns.put(e.getKey(), new UnionColumn(e.getKey(), e.getValue()));
-            }
-        }
-
         if (_allColumns.isEmpty())
         {
             for (QueryRelation relation : _termList)
@@ -172,16 +201,6 @@ public class QueryUnion extends QueryRelation
                     _allColumns.add(new UnionColumn(e.getKey(), e.getValue()));
             }
         }
-
-//        if (_tinfos.size() > 0)
-//			return;
-//		for (Object o : _termList)
-//		{
-//			if (o instanceof QuerySelect)
-//				_tinfos.add(((QuerySelect)o).getTableInfo());
-//			else
-//				_tinfos.add(((QueryUnion)o).getTableInfo());
-//        }
     }
 
 
@@ -270,7 +289,7 @@ public class QueryUnion extends QueryRelation
 			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
-        List<Map.Entry<QExpr,Boolean>> sort = null == _qorderBy ? null : _qorderBy.getSort();
+        List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
         
         if (null != sort && sort.size() > 0 || null != _limit)
         {
@@ -285,12 +304,12 @@ public class QueryUnion extends QueryRelation
 		{
             unionSql.append("\nORDER BY ");
             String comma = "";
-            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            for (var entry : sort)
             {
-                QExpr expr = resolveFields(entry.getKey());
+                QExpr expr = resolveFields(entry.expr());
                 unionSql.append(comma);
                 unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
-                if (!entry.getValue())
+                if (!entry.direction())
                     unionSql.append(" DESC");
                 comma = ", ";
             }
@@ -312,12 +331,6 @@ public class QueryUnion extends QueryRelation
                 f.append("(").append(getSql()).append(") ").append(alias);
                 return f;
             }
-
-            @Override
-            public boolean hasSort()
-            {
-                return _qorderBy != null && !_qorderBy.childList().isEmpty(); 
-            }
         };
 
         for (UnionColumn unioncol : _unionColumns.values())
@@ -334,7 +347,41 @@ public class QueryUnion extends QueryRelation
     }
 
 
-	// simplified version of resolve Field
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        if (_qorderBy == null || _qorderBy.childList().isEmpty())
+            return List.of();
+
+        List<Sort.SortField> ret = new ArrayList<>();
+        for (var entry : _qorderBy.getSort())
+        {
+            QExpr expr = resolveFields(entry.expr());
+            if (expr instanceof QIdentifier)
+            {
+                ret.add(new Sort.SortField(new FieldKey(null,expr.getTokenText()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else if (expr instanceof QNumber qNum)
+            {
+                double d = qNum.getValue().doubleValue();
+                int position = qNum.getValue().intValue();
+                if (d == (double)position && position >= 1 && position <= _allColumns.size())
+                {
+                    String alias = _allColumns.get(position-1).getAlias();
+                    ret.add(new Sort.SortField(new FieldKey(null,alias), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+                }
+            }
+            else
+            {
+                return List.of();
+            }
+        }
+
+        return ret;
+    }
+
+
+    // simplified version of resolve Field
 	private QExpr resolveFields(QExpr expr)
 	{
 		if (expr instanceof QQuery)
@@ -389,7 +436,7 @@ public class QueryUnion extends QueryRelation
     protected Map<String,RelationColumn> getAllColumns()
     {
         initColumns();
-        return new LinkedHashMap<String,RelationColumn>(_unionColumns);
+        return new LinkedHashMap<>(_unionColumns);
     }
 
 

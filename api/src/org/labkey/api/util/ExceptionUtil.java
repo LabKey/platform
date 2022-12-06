@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -53,10 +54,12 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.DavException;
+import org.labkey.api.writer.PrintWriters;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -95,7 +98,7 @@ public class ExceptionUtil
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
-    private static final Logger LOG = LogManager.getLogger(ExceptionUtil.class);
+    private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
     // Allow 10 report submissions to mothership per minute
     private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
@@ -171,7 +174,7 @@ public class ExceptionUtil
                 "</td></tr></table>");
     }
 
-    public static WebPartView getErrorWebPartView(int responseStatus, String message, Throwable ex,
+    public static WebPartView<?> getErrorWebPartView(int responseStatus, String message, Throwable ex,
                                                   HttpServletRequest request)
     {
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, true, false);
@@ -247,9 +250,8 @@ public class ExceptionUtil
                 t = ((RuntimeSQLException)t).getSQLException();
             }
 
-            if (t instanceof SQLException)
+            if (t instanceof SQLException sqlException)
             {
-                SQLException sqlException = (SQLException) t;
                 if (sqlException.getMessage() != null && sqlException.getMessage().contains("terminating connection due to administrator command"))
                 {
                     // Don't report exceptions from Postgres shutting down
@@ -339,12 +341,13 @@ public class ExceptionUtil
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
+    @Nullable
     public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode, @Nullable String sqlState, @Nullable String extraInfo)
     {
         if (!shouldSend(level, target.isLocal()))
             return null;
 
-        Map<Enum, String> decorations = getExceptionDecorations(ex);
+        Map<Enum<?>, String> decorations = getExceptionDecorations(ex);
 
         String exceptionMessage = null;
         if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
@@ -453,6 +456,7 @@ public class ExceptionUtil
         return send;
     }
 
+    @NotNull
     private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         try
@@ -506,7 +510,7 @@ public class ExceptionUtil
 
     public static boolean isIgnorable(Throwable ex)
     {
-        Map<Enum, String> decorations = getExceptionDecorations(ex);
+        Map<Enum<?>, String> decorations = getExceptionDecorations(ex);
         
         return ex == null ||
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
@@ -516,7 +520,7 @@ public class ExceptionUtil
                 JOB_RUNNER.getJobCount() > 10;
     }
 
-    static class WebPartErrorView extends WebPartView
+    static class WebPartErrorView extends WebPartView<Object>
     {
         private final ErrorRenderer _renderer;
 
@@ -583,17 +587,17 @@ public class ExceptionUtil
 
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null, null);
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable PageConfig pageConfig)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, ViewContext context, @Nullable PageConfig pageConfig)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, pageConfig);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log, @Nullable PageConfig pageConfig)
+        SearchService ss, Logger log, ViewContext context, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -632,10 +636,10 @@ public class ExceptionUtil
         }
 
         // Do redirects before response.reset() otherwise we'll lose cookies (e.g., login page)
-        if (ex instanceof RedirectException)
+        if (ex instanceof RedirectException rex)
         {
-            String url = ((RedirectException) ex).getURL();
-            doErrorRedirect(response, url);
+            String url = rex.getURL();
+            doErrorRedirect(response, url, rex.getHttpStatusCode());
             return null;
         }
 
@@ -647,9 +651,8 @@ public class ExceptionUtil
                 // mostly to make security scanners happy
                 if (ModuleLoader.getInstance().isStartupComplete())
                 {
-                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
-                    response.setHeader("X-XSS-Protection", "1; mode=block");
+                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
+                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
                     response.setHeader("X-Content-Type-Options", "nosniff");
                 }
             }
@@ -715,10 +718,8 @@ public class ExceptionUtil
             }
             unhandledException = null;
         }
-        else if (ex instanceof UnauthorizedException)
+        else if (ex instanceof UnauthorizedException uae)
         {
-            UnauthorizedException uae = (UnauthorizedException) ex;
-
             // This header allows for requests to explicitly ask to not get basic auth headers back
             // useful for when the page wants to handle 401s itself
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
@@ -858,13 +859,13 @@ public class ExceptionUtil
             response.setStatus(responseStatus);
             for (Map.Entry<String, String> entry : headers.entrySet())
                 response.addHeader(entry.getKey(), entry.getValue());
-            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
+            renderErrorPage(ex, responseStatus, message, request, response, context, pageConfig, errorType, log, startupFailure);
         }
 
         return null;
     }
 
-    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
+    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, ViewContext context, PageConfig originalConfig, ErrorRenderer.ErrorType errorType, Logger log, boolean startupFailure)
     {
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
@@ -878,20 +879,7 @@ public class ExceptionUtil
             errorType = ErrorRenderer.ErrorType.notFound;
         }
 
-        if (pageConfig == null)
-        {
-            pageConfig = new PageConfig();
-            pageConfig.setTemplate(PageConfig.Template.Home);
-        }
-
-        HttpView<?> errorView;
-        ViewContext context = null;
-
-        if (HttpView.hasCurrentView())
-        {
-            context = HttpView.currentContext();
-        }
-        else
+        if (context == null)
         {
             // context is null in cases of garbage urls, this helps in rendering error page in App template
             context = new ViewContext();
@@ -899,47 +887,66 @@ public class ExceptionUtil
             context.setResponse(response);
         }
 
-        try
+        // Setup a fresh PageConfig, as we don't want to pull in ClientDependencies or other config that might have
+        // been initialized from the "real" page that we ultimately didn't render due to an error
+        try (var ignored = HttpView.initForRequest(context, request, response))
         {
-            renderer.setErrorType(errorType);
+            PageConfig pageConfig = HttpView.currentPageConfig();
+
             // Issue 41891: do not add google analytics on error pages.
             pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
-            Path originalContainerPath = (Path)request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
-
-            // Issue 43387 - don't render the full header if the container referenced in the request isn't the same
-            if (ex instanceof UnauthorizedException && (context.getContainer() == null || !context.getContainer().getParsedPath().equals(originalContainerPath)))
+            if (originalConfig == null)
             {
-                renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, null);
+                pageConfig.setTemplate(PageConfig.Template.Home);
             }
             else
             {
-                if (HttpView.hasCurrentView())
+                pageConfig.setTemplate(originalConfig.getTemplate());
+                pageConfig.setFrameOption(originalConfig.getFrameOption());
+            }
+
+            HttpView<?> errorView;
+            try
+            {
+                renderer.setErrorType(errorType);
+
+                Path originalContainerPath = (Path) request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
+
+                // Issue 43387 - don't render the full header if the container referenced in the request isn't the same
+                if (ex instanceof UnauthorizedException && (context.getContainer() == null || !context.getContainer().getParsedPath().equals(originalContainerPath)))
                 {
-                    errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                    renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, null);
                 }
                 else
                 {
-                    // context can be null for configuration exceptions depending on how far server got through initialization
-                    errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                    if (HttpView.hasCurrentView())
+                    {
+                        errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                    }
+                    else
+                    {
+                        // context can be null for configuration exceptions depending on how far server got through initialization
+                        errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                    }
+
+                    addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+                }
+            }
+            catch (ConfigurationException ce)
+            {
+                throw ce;
+            }
+            catch (Exception e)
+            {
+                // non config exceptions like SqlScriptException that occur during startup
+                if (null != ModuleLoader.getInstance().getStartupFailure())
+                {
+                    throw new ConfigurationException(ex.getMessage(), ex);
                 }
 
-                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+                renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, e);
             }
-        }
-        catch (ConfigurationException ce)
-        {
-            throw ce;
-        }
-        catch (Exception e)
-        {
-            // non config exceptions like SqlScriptException that occur during startup
-            if (null != ModuleLoader.getInstance().getStartupFailure())
-            {
-                throw new ConfigurationException(ex.getMessage(), ex);
-            }
-
-            renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, e);
         }
     }
 
@@ -991,7 +998,7 @@ public class ExceptionUtil
             }
             else
             {
-                title += " -- " + ex.toString();
+                title += " -- " + ex;
             }
         }
         pageConfig.setTitle(title, false);
@@ -999,10 +1006,16 @@ public class ExceptionUtil
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
-
+    // Temporary redirect
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {
-        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        doErrorRedirect(response, url, HttpServletResponse.SC_MOVED_TEMPORARILY);
+    }
+
+    // Pass in HTTP status code to designate temporary vs. permanent redirect
+    private static void doErrorRedirect(HttpServletResponse response, String url, int httpStatusCode)
+    {
+        response.setStatus(httpStatusCode);
         response.setDateHeader("Expires", 0);
         response.setHeader("Location", url);
         response.setContentType("text/html; charset=UTF-8");
@@ -1024,8 +1037,6 @@ public class ExceptionUtil
         }
     }
 
-
-
     public enum ExceptionInfo
     {
         ResolveURL,     // suggestion for where to fix this e.g. sourceQuery.view
@@ -1040,16 +1051,14 @@ public class ExceptionUtil
     }
 
 
-    private final static WeakHashMap<Throwable, HashMap<Enum, String>> _exceptionDecorations = new WeakHashMap<>();
+    private final static WeakHashMap<Throwable, HashMap<Enum<?>, String>> _exceptionDecorations = new WeakHashMap<>();
     
-    public static boolean decorateException(Throwable t, Enum key, String value, boolean overwrite)
+    public static boolean decorateException(Throwable t, Enum<?> key, String value, boolean overwrite)
     {
         t = unwrapException(t);
         synchronized (_exceptionDecorations)
         {
-            HashMap<Enum, String> m = _exceptionDecorations.get(t);
-            if (null == m)
-                _exceptionDecorations.put(t, m = new HashMap<>());
+            HashMap<Enum<?>, String> m = _exceptionDecorations.computeIfAbsent(t, k -> new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
                 LOG.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
@@ -1062,9 +1071,9 @@ public class ExceptionUtil
 
 
     @NotNull
-    public static Map<Enum, String> getExceptionDecorations(Throwable start)
+    public static Map<Enum<?>, String> getExceptionDecorations(Throwable start)
     {
-        HashMap<Enum, String> collect = new HashMap<>();
+        HashMap<Enum<?>, String> collect = new HashMap<>();
         LinkedList<Throwable> list = new LinkedList<>();
 
         Throwable next = unwrapException(start);
@@ -1078,7 +1087,7 @@ public class ExceptionUtil
         {
             for (Throwable th : list)
             {
-                HashMap<Enum, String> m = _exceptionDecorations.get(th);
+                HashMap<Enum<?>, String> m = _exceptionDecorations.get(th);
                 if (null != m)
                     collect.putAll(m);
             }
@@ -1088,7 +1097,7 @@ public class ExceptionUtil
 
 
     @Nullable
-    public static String getExceptionDecoration(Throwable t, Enum e)
+    public static String getExceptionDecoration(Throwable t, Enum<?> e)
     {
         // could optimize...
         return getExceptionDecorations(t).get(e);
@@ -1099,7 +1108,7 @@ public class ExceptionUtil
     public static String getExtendedMessage(Throwable t)
     {
         StringBuilder sb = new StringBuilder(t.toString());
-        for (Map.Entry<Enum, String> e : getExceptionDecorations(t).entrySet())
+        for (Map.Entry<Enum<?>, String> e : getExceptionDecorations(t).entrySet())
             sb.append("\n").append(e.getKey()).append("=").append(e.getValue());
         return sb.toString();
     }
@@ -1130,7 +1139,7 @@ public class ExceptionUtil
 
     public static class TestCase extends Assert
     {
-        ExceptionResponse handleIt(final User user, Exception ex, @Nullable String message)
+        ExceptionResponse handleIt(final User user, Exception ex)
         {
             final MockServletResponse res = new MockServletResponse();
             InvocationHandler h = (o, method, objects) -> {
@@ -1190,7 +1199,7 @@ public class ExceptionUtil
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, null, false, dummySearch, dummyLog, null, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;
@@ -1207,34 +1216,34 @@ public class ExceptionUtil
             ExceptionResponse answer;
 
             // Guest Unauthorized
-            answer = handleIt(guest, new UnauthorizedException("Not on my watch"), null);
+            answer = handleIt(guest, new UnauthorizedException("Not on my watch"));
             assertNotNull("expect return url for login redirect", answer.redirect);
             assertEquals(0, answer.response.status);  // status not set
 
             // Non-Guest Unauthorized
-            answer = handleIt(me, new UnauthorizedException("Not on my watch"), null);
+            answer = handleIt(me, new UnauthorizedException("Not on my watch"));
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_FORBIDDEN, answer.response.status);
 
             // Guest Basic Unauthorized
-            answer = handleIt(guest, new RequestBasicAuthException(), null);
+            answer = handleIt(guest, new RequestBasicAuthException());
             assertNull("BasicAuth should not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
             assertTrue(answer.response.headers.containsKey("WWW-Authenticate"));
 
             // Non-Guest Basic Unauthorized
-            answer = handleIt(me, new RequestBasicAuthException(), null);
+            answer = handleIt(me, new RequestBasicAuthException());
             assertNull("BasicAuth should not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_FORBIDDEN, answer.response.status);
             assertFalse(answer.response.headers.containsKey("WWW-Authenticate"));
 
             // Guest CSRF
-            answer = handleIt(guest, new CSRFException(TestContext.get().getRequest()), null);
+            answer = handleIt(guest, new CSRFException(TestContext.get().getRequest()));
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
 
             // Non-Guest CSRF
-            answer = handleIt(me, new CSRFException(TestContext.get().getRequest()), null);
+            answer = handleIt(me, new CSRFException(TestContext.get().getRequest()));
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
         }
@@ -1243,11 +1252,10 @@ public class ExceptionUtil
         public void testRedirect()
         {
             User guest = UserManager.getGuestUser();
-            User me = TestContext.get().getUser();
             ExceptionResponse answer;
 
             ActionURL url = new ActionURL("controller", "action", JunitUtil.getTestContainer());
-            answer = handleIt(guest, new RedirectException(url), null);
+            answer = handleIt(guest, new RedirectException(url));
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Location"));
@@ -1257,10 +1265,9 @@ public class ExceptionUtil
         public void testNotFound()
         {
             User guest = UserManager.getGuestUser();
-            User me = TestContext.get().getUser();
             ExceptionResponse answer;
 
-            answer = handleIt(guest, new NotFoundException("Not here"), null);
+            answer = handleIt(guest, new NotFoundException("Not here"));
             assertNull("not found does not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
             assertTrue(answer.body.contains("Not here"));
@@ -1271,7 +1278,7 @@ public class ExceptionUtil
             orig.addParameter("_docid", "fred");
             req.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, orig);
 
-            answer = handleIt(guest, new NotFoundException("Not here"), null);
+            answer = handleIt(guest, new NotFoundException("Not here"));
             assertNull("not found does not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
             assertTrue(answer.body.contains("Not here"));
@@ -1284,7 +1291,7 @@ public class ExceptionUtil
             User me = TestContext.get().getUser();
             ExceptionResponse answer;
 
-            answer = handleIt(me, new NullPointerException(), null);
+            answer = handleIt(me, new NullPointerException());
             assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Logger.error"));
         }
@@ -1307,10 +1314,11 @@ public class ExceptionUtil
         String redirect = null;
         String contentType = null;
         String characterEncoding = null;
-        int contentLength = 0;
+        long contentLength = 0;
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Locale locale = null;
-        PrintWriter printWriter = new PrintWriter(os);
+        PrintWriter printWriter = PrintWriters.getPrintWriter(os);
+
 
         ServletOutputStream servletOutputStream = new ServletOutputStream()
         {
@@ -1318,6 +1326,18 @@ public class ExceptionUtil
             public void write(int i)
             {
                 os.write(i);
+            }
+
+            @Override
+            public boolean isReady()
+            {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener)
+            {
+                throw new UnsupportedOperationException();
             }
         };
 
@@ -1484,6 +1504,12 @@ public class ExceptionUtil
         public void setContentLength(int i)
         {
             contentLength = i;
+        }
+
+        @Override
+        public void setContentLengthLong(long len)
+        {
+            contentLength = len;
         }
 
         @Override

@@ -5,7 +5,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
+import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;

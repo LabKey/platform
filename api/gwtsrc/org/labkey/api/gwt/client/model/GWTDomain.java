@@ -44,6 +44,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private boolean allowAttachmentProperties;
     private boolean allowFlagProperties;
     private boolean allowTextChoiceProperties;
+    private boolean allowSampleSubjectProperties;
     private boolean allowTimepointProperties;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
@@ -88,6 +89,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowFlagProperties = src.allowFlagProperties;
         this.allowTextChoiceProperties = src.allowTextChoiceProperties;
+        this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
@@ -310,6 +312,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowTextChoiceProperties(boolean allowTextChoiceProperties)
     {
         this.allowTextChoiceProperties = allowTextChoiceProperties;
+    }
+
+    public boolean isAllowSampleSubjectProperties()
+    {
+        return allowSampleSubjectProperties;
+    }
+
+    public void setAllowSampleSubjectProperties(boolean allowSampleSubjectProperties)
+    {
+        this.allowSampleSubjectProperties = allowSampleSubjectProperties;
     }
 
     public boolean isAllowTimepointProperties()

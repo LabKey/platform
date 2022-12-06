@@ -40,7 +40,9 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -58,6 +60,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -67,12 +70,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,10 +88,20 @@ import java.util.stream.Collectors;
 public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
 {
     private static final String categoryName = "materialSource";
+    private static final String mediaCategoryName = "mediaMaterialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Set of Media Samples") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
     public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
+
+    private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
     private Domain _domain;
     private NameGenerator _nameGen;
@@ -381,8 +394,28 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getCategory();
     }
 
+    @NotNull
+    private NameGenerator createNameGenerator(@NotNull String expr, Container dataContainer)
+    {
+        Map<String, String> importAliasMap = null;
+        try
+        {
+            importAliasMap = getImportAliasMap();
+        }
+        catch (IOException e)
+        {
+            // do nothing
+        }
+
+        Container sampleTypeContainer = getContainer();
+        TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName());
+
+        Container nameGenContainer = dataContainer != null ? dataContainer : sampleTypeContainer;
+        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+    }
+
     @Nullable
-    public NameGenerator getNameGenerator()
+    public NameGenerator getNameGenerator(Container dataContainer)
     {
         if (_nameGen == null)
         {
@@ -407,58 +440,26 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 s = expr.toString();
             }
-            else
-            {
-                // CONSIDER: Create a default expression as a fallback? ${RowId}
-            }
 
             if (s != null)
-            {
-                TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-                Map<String, String> importAliasMap = null;
-                try
-                {
-                    importAliasMap = getImportAliasMap();
-                }
-                catch (IOException e)
-                {
-                    // do nothing
-                }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
-            }
+                _nameGen = createNameGenerator(s, dataContainer);
         }
 
         return _nameGen;
     }
 
     @NotNull
-    public NameGenerator getAliquotNameGenerator()
+    public NameGenerator getAliquotNameGenerator(Container dataContainer)
     {
         if (_aliquotNameGen == null)
         {
             String s;
-
             if (_object.getAliquotNameExpression() != null)
-            {
                 s = _object.getAliquotNameExpression();
-            }
             else
-            {
                 s = ALIQUOT_NAME_EXPRESSION;
-            }
 
-            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-            Map<String, String> importAliasMap = null;
-            try
-            {
-                importAliasMap = getImportAliasMap();
-            }
-            catch (IOException e)
-            {
-                // do nothing
-            }
-
-            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+            _aliquotNameGen = createNameGenerator(s, dataContainer);
         }
 
         return _aliquotNameGen;
@@ -490,7 +491,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
         else
         {
-            nameGen = getNameGenerator();
+            nameGen = getNameGenerator(getContainer());
             if (nameGen == null)
                 throw new ExperimentException("Error creating name expression generator");
         }
@@ -520,23 +521,30 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public String createSampleName(@NotNull Map<String, Object> rowMap) throws ExperimentException
     {
-        return createSampleName(rowMap, null, null);
+        return createSampleName(rowMap, null, null, null);
     }
 
     @Override
     public String createSampleName(@NotNull Map<String, Object> rowMap,
                                    @Nullable Set<ExpData> parentDatas,
-                                   @Nullable Set<ExpMaterial> parentSamples)
+                                   @Nullable Set<ExpMaterial> parentSamples,
+                                   @Nullable Container container)
             throws ExperimentException
     {
-        NameGenerator nameGen = getNameGenerator();
+        NameGenerator nameGen = getNameGenerator(container);
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
         try (NameGenerator.State state = nameGen.createState(true))
         {
             DbSequence sequence = genIdSequence();
-            Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
+            Supplier<Map<String, Object>> extraPropsFn = () -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("genId", sequence.next());
+                if (container != null)
+                    map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                return map;
+            };
             return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
         }
         catch (NameGenerator.NameGenerationException e)
@@ -545,11 +553,20 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
     }
 
+    private Container getGenIdSequenceContainer()
+    {
+        // use DBSeq at project level to avoid duplicate genId for samples in child folders
+        Container container = getContainer();
+        if (container.isProject() || container.getProject() == null)
+            return container;
+        return container.getProject();
+    }
+
     // The DbSequence used to generate the ${genId} column values
     public DbSequence genIdSequence()
     {
         long minGenId = getMinGenId();
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getGenIdSequenceContainer(), SEQUENCE_PREFIX, getRowId(), 100);
         if (minGenId > 1)
             seq.ensureMinimum(minGenId - 1);
         return seq;
@@ -558,38 +575,40 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public long getCurrentGenId()
     {
-        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        Container container = getGenIdSequenceContainer();
+        Integer seqRowId = DbSequenceManager.getRowId(container, SEQUENCE_PREFIX, getRowId());
         if (null == seqRowId)
             return 0;
 
-        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
         return seq.current();
     }
 
     @Override
-    public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
+    public void ensureMinGenId(long newSeqValue) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
+        Container container = getGenIdSequenceContainer();
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
         long current = seq.current();
         if (newSeqValue < current)
         {
-            if (!hasSamples(container))
-            {
-                seq.setSequenceValue(newSeqValue);
-                DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
-            }
-            else
+            if (hasSamples())
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
+
+            seq.setSequenceValue(newSeqValue);
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
         }
         else
+        {
             seq.ensureMinimum(newSeqValue);
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+        }
     }
 
-    private boolean hasSamples(Container container)
+    private boolean hasSamples()
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
-        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("CpasType"), filter, null).exists();
     }
 
     @Override
@@ -633,6 +652,31 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (material == null)
             return null;
         return new ExpMaterialImpl(material);
+    }
+
+    private ExpMaterialImpl getSampleByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
+        if (material == null)
+            return null;
+        return new ExpMaterialImpl(material);
+    }
+
+    @Override
+    public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c);
+        if (legacyObjectId != null)
+            return getSampleByObjectId(c, legacyObjectId);
+
+        ExpMaterial material = getSample(c, name);
+        if (material != null && material.getCreated().compareTo(effectiveDate) <= 0)
+            return material;
+
+        return null;
     }
 
     @Override
@@ -762,7 +806,19 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public Lsid.LsidBuilder generateSampleLSID()
     {
-        return UploadSamplesHelper.generateSampleLSID(this.getDataObject());
+        return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + MATERIAL_LSID_SUFFIX);
+    }
+
+    @Override
+    public Lsid.LsidBuilder generateNextDBSeqLSID()
+    {
+        String dbSeqStr = String.valueOf(getSampleLsidDbSeq(1, getContainer()).next());
+        return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + dbSeqStr);
+    }
+
+    public DbSequence getSampleLsidDbSeq(int batchSize, Container container)
+    {
+        return ExperimentServiceImpl.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
     }
 
     @Override
@@ -809,10 +865,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
 
-        // Name is identifier with highest weight
+        // Name is identifier with the highest weight
         identifiersHi.add(getName());
 
-        props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+        if (isMedia())
+            props.put(SearchService.PROPERTY.categories.toString(), mediaSearchCategory.toString());
+        else
+            props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), "Sample Type - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 

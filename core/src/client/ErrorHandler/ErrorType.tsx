@@ -1,13 +1,11 @@
 import React, { ReactNode } from 'react';
 import { Button } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { imageURL, HelpLink, HELP_LINK_REFERRER } from '@labkey/components';
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
 
-const ERROR_HEADING = 'Oops! An error has occurred.';
+const ERROR_HEADING = () => <>Oops! An error has occurred.</>
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
@@ -35,13 +33,15 @@ const DETAILS_SUB_INSTRUCTION = (
     </>
 );
 
-const NOTFOUND_HEADING = 'Oops! The requested page cannot be found.';
+const NOTFOUND_HEADING = (errorMessage?: string) => (<>
+        {errorMessage !== undefined ?
+            errorMessage : 'Oops! The requested page cannot be found.'}
+    </>);
+
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>
         {errorMessage !== undefined
-            ? errorMessage.endsWith('.')
-                ? errorMessage
-                : errorMessage + '.'
+            ? ''
             : 'It seems like something went wrong.'}
     </>
 );
@@ -89,7 +89,7 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Double check and
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Double check and
                 make sure that your URL has been correctly input.
             </div>
             <ul>
@@ -99,7 +99,7 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Contact your
                 administrator to request access.
             </div>
         </div>
@@ -114,18 +114,24 @@ const PERMISSION_SUBHEADING = (errorMessage: string) => (
 
 const PERMISSION_INSTRUCTION = (errorDetails: ErrorDetails) => <>{errorDetails.advice} </>;
 
-const PERMISSION_DETAILS = () => (
+const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
     <>
-        <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
+        {errorDetails.advice === undefined ?
+            <>
+                <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
 
-        <p className="labkey-error-details">
-            A permission error occurs when the account you've logged into does not have the set permissions to access
-            this page. <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read More &gt;</HelpLink>
-        </p>
-        <div className="labkey-error-details labkey-error-subdetails">
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
-            server administrator to request access to this page.
-        </div>
+                <p className="labkey-error-details">
+                    A permission error occurs when the account you've logged into does not have the required permissions to
+                    access
+                    this page. <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read
+                    More &gt;</HelpLink>
+                </p>
+                <div className="labkey-error-details labkey-error-subdetails">
+                    <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try contacting your
+                server administrator to request access to this page.
+                </div>
+            </> : <p className="labkey-error-details">{errorDetails.advice}</p>
+        }
         <div className="labkey-error-details">
             <ul>
                 <li>
@@ -141,7 +147,7 @@ const PERMISSION_DETAILS = () => (
         </div>
         {getServerContext().impersonatingUser !== undefined && (
             <div className="labkey-error labkey-error-details labkey-error-subdetails">
-                <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
+                <span className="fa fa-exclamation-circle permission-warning-icon" /> You are currently
                 impersonating: <b>{getServerContext().user.displayName} </b>
                 <div className="error-page-br" />
                 <div className="error-page-br" />
@@ -171,7 +177,7 @@ const PERMISSION_DETAILS = () => (
     </>
 );
 
-const CONFIGURATION_HEADING = 'Oops! A server configuration error has occurred.';
+const CONFIGURATION_HEADING = () => 'Oops! A server configuration error has occurred.';
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
         {'The requested page cannot be found. '}
@@ -205,7 +211,7 @@ const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try restarting your
                 current instance of LabKey.
             </div>
         </div>
@@ -243,7 +249,7 @@ const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre>{errorDetails.sta
 
 type ErrorTypeInfo = {
     details: (errorDetails?: ErrorDetails) => ReactNode;
-    heading: string;
+    heading: (errorMessage?: string) => ReactNode;
     subHeading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorDetails?: ErrorDetails) => ReactNode;
@@ -284,7 +290,7 @@ export const getErrorHeading = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <div className="labkey-error-heading">{info.heading}</div>;
+    return <div className="labkey-error-heading">{info.heading(errorDetails.message)}</div>;
 };
 
 export const getImage = (errorDetails: ErrorDetails): ReactNode => {

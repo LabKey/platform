@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
@@ -86,6 +87,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -121,11 +123,12 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
-import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX;
-import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX;
+import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
 
 public class XarReader extends AbstractXarImporter
 {
+    private static final Logger LOG = LogHelper.getLogger(XarReader.class, "XAR parsing");
+
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
     private final Map<Integer, String> _runWorkflowTaskMap = new HashMap<>();
@@ -513,10 +516,14 @@ public class XarReader extends AbstractXarImporter
 
     private ExpSampleTypeImpl loadSampleType(SampleSetType sampleSet) throws XarFormatException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
-        ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
+        String sampleSetName = sampleSet.getName();
+        ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(getContainer(), sampleSetName);
 
-        getLog().debug("Importing SampleType with LSID '" + lsid + "'");
+        getLog().debug("Importing SampleType with name '" + sampleSetName + "'");
+        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
+        if (existingMaterialSource == null)
+            existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
+
         ExpSampleTypeImpl materialSource = SampleTypeServiceImpl.get().createSampleType();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
@@ -609,7 +616,11 @@ public class XarReader extends AbstractXarImporter
             if (_strictValidateExistingSampleType)
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
-                IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
+                IdentifiableEntity.diff(materialSource.getNameExpression(), existingMaterialSource.getNameExpression(), "Name Expression", diffs);
+                IdentifiableEntity.diff(materialSource.getAliquotNameExpression(), existingMaterialSource.getAliquotNameExpression(), "Aliquot Name Expression", diffs);
+                IdentifiableEntity.diff(materialSource.getLabelColor(), existingMaterialSource.getLabelColor(), "Label Color", diffs);
+                IdentifiableEntity.diff(materialSource.getMetricUnit(), existingMaterialSource.getMetricUnit(), "Metric Unit", diffs);
+                IdentifiableEntity.diff(materialSource.getCategory(), existingMaterialSource.getCategory(), "Category", diffs);
 
                 // Issue 37936 - Skip validation of description for the magic specimen/sample link, which is auto-generated based on the container name
                 if (!existingMaterialSource.getName().equalsIgnoreCase(SpecimenService.SAMPLE_TYPE_NAME))
@@ -620,15 +631,16 @@ public class XarReader extends AbstractXarImporter
                 }
                 if (!diffs.isEmpty())
                 {
-                    getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    getLog().error("The SampleSet specified with name '" + sampleSetName + "' has " + diffs.size() + " differences from the one that has already been loaded");
                     for (IdentifiableEntity.Difference diff : diffs)
                     {
                         getLog().error(diff.toString());
                     }
-                    throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
+                    throw new XarFormatException("SampleSet with name '" + sampleSetName + "' does not match existing SampleSet");
                 }
             }
 
+            _xarSource.addSampleType(lsid, existingMaterialSource);
             return existingMaterialSource;
         }
 
@@ -639,10 +651,14 @@ public class XarReader extends AbstractXarImporter
 
     private ExpDataClass loadDataClass(DataClassType dataClassType) throws ExperimentException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
-        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(lsid);
+        String dataClassName = dataClassType.getName();
+        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(getContainer(), dataClassName);
 
-        getLog().debug("Importing DataClass with LSID '" + lsid + "'");
+        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
+        if (existingDataClass == null)
+            existingDataClass = ExperimentService.get().getDataClass(lsid);
+
+        getLog().debug("Importing DataClass with name '" + dataClassName + "'");
         DataClass bean = new DataClass();
         bean.setContainer(getContainer());
         bean.setName(dataClassType.getName());
@@ -672,7 +688,6 @@ public class XarReader extends AbstractXarImporter
             if (_strictValidateExistingSampleType)
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
-                IdentifiableEntity.diff(dataClassType.getName(), existingDataClass.getName(), "Name", diffs);
                 IdentifiableEntity.diff(dataClassType.getDescription(), existingDataClass.getDescription(), "Description", diffs);
                 IdentifiableEntity.diff(dataClassType.getNameExpression(), existingDataClass.getNameExpression(), "Name Expression", diffs);
                 IdentifiableEntity.diff(dataClassType.getCategory(), existingDataClass.getCategory(), "Category", diffs);
@@ -687,6 +702,8 @@ public class XarReader extends AbstractXarImporter
                     throw new XarFormatException("DataClass with LSID '" + lsid + "' does not match existing DataClass");
                 }
             }
+
+            _xarSource.addDataClass(lsid, existingDataClass);
             return existingDataClass;
         }
         dataClass.save(getUser());
@@ -831,10 +848,15 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null && (_reloadExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(_xarSource.getRoot()))))
+            if (existingRun != null)
             {
-                getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
-                existingRun.delete(getUser());
+                Path existingFilePathRoot = existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitivePath(getRootContext().getContainer(), existingRun.getFilePathRootPath());
+                Path newFilePathRoot = _xarSource.getRootPath() == null ? null : FileUtil.getAbsoluteCaseSensitivePath(getRootContext().getContainer(), _xarSource.getRootPath());
+                if (_reloadExistingRuns || !Objects.equals(existingFilePathRoot, newFilePathRoot))
+                {
+                    getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
+                    existingRun.delete(getUser());
+                }
             }
         }
     }
@@ -891,8 +913,7 @@ public class XarReader extends AbstractXarImporter
                 experimentDataObject.setBatchProtocolId(batchProtocol.getRowId());
             }
 
-            experimentDataObject = Table.insert(getUser(), tiExperiment, experimentDataObject);
-            experiment = new ExpExperimentImpl(experimentDataObject);
+            Table.insert(getUser(), tiExperiment, experimentDataObject);
 
             ObjectProperty contactProperty = null;
             if (null != exp.getContact())
@@ -1024,8 +1045,11 @@ public class XarReader extends AbstractXarImporter
 
                 workflowTaskLSID = workflowTaskLSID.split(":")[1];
             }
-            // remember which job created the run so we can show this run on the job details page
-            vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
+            if (_job != null)
+            {
+                // remember which job created the run so we can show this run on the job details page
+                vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
+            }
 
             ExpRunImpl impl = new ExpRunImpl(vals);
             try
@@ -1235,7 +1259,7 @@ public class XarReader extends AbstractXarImporter
             protocolApp.setLSID(protAppLSID);
             protocolApp.setName(trimString(xmlProtocolApp.getName()));
             String cpasType = trimString(xmlProtocolApp.getCpasType());
-            checkProtocolApplicationCpasType(cpasType, getLog());
+            checkProtocolApplicationCpasType(cpasType);
             protocolApp.setCpasType(cpasType);
             protocolApp.setProtocolLSID(protocolLSID);
             protocolApp.setActivityDate(sqlDateTime);
@@ -1295,14 +1319,23 @@ public class XarReader extends AbstractXarImporter
 
         for (InputOutputRefsType.DataLSID inputDataLSID : inputDataLSIDs)
         {
-            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : "Data");
-            checkDataCpasType(declaredType);
+            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : ExpData.DEFAULT_CPAS_TYPE);
+            if (declaredType.contains("${"))
+            {
+                declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, ExpDataClassImpl.NAMESPACE_PREFIX);
+            }
+            ExpDataClass dataClass = checkDataCpasType(declaredType);
             String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), getContainer(), _xarSource));
 
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
                 _xarSource.addData(experimentRun.getLSID(), data, null);
+            }
+
+            if (dataClass != null)
+            {
+                data.setCpasType(dataClass.getLSID());
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());
@@ -1339,7 +1372,7 @@ public class XarReader extends AbstractXarImporter
         if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
                 !material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
             return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.EditLineage);
-        if ((protocolLSID.contains(SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) || protocolLSID.contains(SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+        if ((ExpProtocol.isSampleWorkflowProtocol(protocolLSID))
                 && !material.isOperationPermitted(SampleTypeService.SampleOperations.AddToWorkflow))
             return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddToWorkflow);
         return null;
@@ -1348,7 +1381,7 @@ public class XarReader extends AbstractXarImporter
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
                                   @Nullable ExperimentRun run,
                                   Integer sourceApplicationId,
-                                  XarContext context) throws XarFormatException
+                                  XarContext context) throws ExperimentException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
@@ -1359,7 +1392,9 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
-        ExpSampleTypeImpl sampleSet = checkMaterialCpasType(declaredType);
+        ExpSampleType sampleSet = checkMaterialCpasType(declaredType);
+        if (sampleSet != null)
+            declaredType = sampleSet.getLSID();
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
         String rootMaterialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getRootMaterialLSID(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
@@ -1369,7 +1404,7 @@ public class XarReader extends AbstractXarImporter
         if (material == null && sampleSet != null)
         {
             // Try resolving it by name within the sample type in case we have it under a different LSID
-            material = sampleSet.getSample(context.getContainer(), xbMaterial.getName());
+            material = (ExpMaterialImpl) sampleSet.getSample(context.getContainer(), xbMaterial.getName());
             if (material != null)
             {
                 // Remember this as an alternate LSID during import
@@ -1388,6 +1423,11 @@ public class XarReader extends AbstractXarImporter
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
             m.setCpasType(declaredType);
+            for (ExpSampleType sampleType : _loadedSampleTypes)
+            {
+                if (sampleType.getLSID().equals(declaredType))
+                    m.setMaterialSourceId(sampleType.getRowId());
+            }
 
             if (null != run)
                 m.setRunId(run.getRowId());
@@ -1571,15 +1611,16 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "Data");
         }
-        checkDataCpasType(declaredType);
+        ExpDataClass expDataClass = checkDataCpasType(declaredType);
+        if (expDataClass != null)
+            declaredType = expDataClass.getLSID();
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
-        ExpDataClassImpl expDataClass = ExperimentServiceImpl.get().getDataClass(declaredType);
         if (expData == null && expDataClass != null)
         {
             // Try resolving it by name within the data class in case we have it under a different LSID
-            ExpDataImpl data = expDataClass.getData(getContainer(), xbData.getName());
+            ExpDataImpl data = (ExpDataImpl) expDataClass.getData(getContainer(), xbData.getName());
             if (data != null)
             {
                 // Remember this as an alternate LSID during import
@@ -2004,14 +2045,18 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) || xarProtocol.getLSID().equals(SAMPLE_ALIQUOT_PROTOCOL_LSID))
+            final String xarProtocolLSID = xarProtocol.getLSID();
+            if (xarProtocolLSID.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) ||
+                    xarProtocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) ||
+                    xarProtocolLSID.equals(STUDY_PUBLISH_PROTOCOL_LSID))
             {
-                // create derivation and aliquot protocol using shared folder
-                if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
-                    ExperimentServiceImpl.get().ensureSampleDerivationProtocol(getUser());
-                else
-                    ExperimentServiceImpl.get().ensureSampleAliquotProtocol(getUser());
-
+                // derivation, aliquot, and publish protocols are created in the shared folder
+                switch (xarProtocolLSID)
+                {
+                    case SAMPLE_DERIVATION_PROTOCOL_LSID -> ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+                    case SAMPLE_ALIQUOT_PROTOCOL_LSID -> ExperimentServiceImpl.get().ensureSampleAliquotProtocol(getUser());
+                    case STUDY_PUBLISH_PROTOCOL_LSID -> StudyPublishService.get().ensureStudyPublishProtocol(getUser());
+                }
                 ExpProtocolImpl ensuredExpProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
 
                 if (ensuredExpProtocol == null)
@@ -2028,7 +2073,7 @@ public class XarReader extends AbstractXarImporter
         ExpProtocolImpl protocolImpl = new ExpProtocolImpl(protocol);
 
         _xarSource.addProtocol(protocolImpl);
-        XarReaderRegistry.get().postProcessImportedProtocol(getContainer(), getUser(), protocolImpl, _job.getLogger());
+        XarReaderRegistry.get().postProcessImportedProtocol(getContainer(), getUser(), protocolImpl, _job == null ? LOG : _job.getLogger());
     }
 
     private void loadActionSet(ProtocolActionSetType actionSet) throws XarFormatException
@@ -2356,20 +2401,13 @@ public class XarReader extends AbstractXarImporter
             SimpleTypeNames.Enum valType = sVal.getValueType();
             try
             {
-                switch (valType.intValue())
-                {
-                    case (SimpleTypeNames.INT_INTEGER):
-                        val = Integer.valueOf(sVal.getStringValue());
-                        break;
-                    case (SimpleTypeNames.INT_DOUBLE):
-                        val = Double.valueOf(sVal.getStringValue());
-                        break;
-                    case (SimpleTypeNames.INT_DATE_TIME):
-                        val = new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));
-                        break;
-                    default:
-                        val = sVal.getStringValue();
-                }
+                val = switch (valType.intValue())
+                        {
+                            case (SimpleTypeNames.INT_INTEGER) -> Integer.valueOf(sVal.getStringValue());
+                            case (SimpleTypeNames.INT_DOUBLE) -> Double.valueOf(sVal.getStringValue());
+                            case (SimpleTypeNames.INT_DATE_TIME) -> new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));
+                            default -> sVal.getStringValue();
+                        };
             }
             catch (ConversionException e)
             {
@@ -2414,7 +2452,7 @@ public class XarReader extends AbstractXarImporter
 
         XmlCursor c = xObj.newCursor();
         XmlCursor cTest;
-        Map m = new HashMap();
+        Map<String, String> m = new HashMap<>();
         c.getAllNamespaces(m);
         String nsObject = c.getName().getNamespaceURI();
 

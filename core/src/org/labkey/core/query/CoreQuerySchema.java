@@ -89,6 +89,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String QCSTATE_TABLE_NAME = "QCState";
     public static final String DATA_STATES_TABLE_NAME = "DataStates";
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
+    public static final String MISSING_VALUE_INDICATOR_TABLE_NAME = "MVIndicators";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
@@ -119,7 +120,8 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
+            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
+            VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -173,6 +175,8 @@ public class CoreQuerySchema extends UserSchema
             return new ApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
+        if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
+            return getMVIndicatorTable(cf);
         return null;
     }
 
@@ -657,6 +661,21 @@ public class CoreQuerySchema extends UserSchema
     protected TableInfo getDataStatesTable()
     {
         return new DataStatesTableInfo(this);
+    }
+
+    protected TableInfo getMVIndicatorTable(ContainerFilter cf)
+    {
+        // MV indicators are often inherited from parent containers. If that's the case, swap the container filter
+        // so that the table shows the ones being used in this container
+        Container owningContainer = MvUtil.getIndicatorsAndLabelsWithContainer(getContainer()).first;
+        if ((cf == null || cf.getType() == ContainerFilter.Type.Current) && !owningContainer.equals(getContainer()))
+        {
+            cf = new ContainerFilter.SimpleContainerFilter(Collections.singleton(owningContainer));
+        }
+        FilteredTable<CoreQuerySchema> result = new FilteredTable<>(getDbSchema().getTable(MISSING_VALUE_INDICATOR_TABLE_NAME), this, cf);
+        result.setDescription("Contains a row for each missing value indicator");
+        result.wrapAllColumns(true);
+        return result;
     }
 
     public TableInfo getQCStatesTable()

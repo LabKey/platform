@@ -216,7 +216,11 @@
           </column>
           <column columnName="Container" />
           <column columnName="Name" >
-              <url>/list/grid.view?listId=${ListId}</url>
+              <!--
+                Resolve lists by "name" instead of "listId" as "name" will resolve cross-folder
+                where as "listId"s are only unique within a folder.
+              -->
+              <url>/list/grid.view?name=${Name}</url>
           </column>
           <column columnName="DomainId" />
           <column columnName="KeyName" />
@@ -264,6 +268,7 @@
       <column columnName="SourceApplicationId">
           <description>Contains a reference to the protocol application that created this sample, if available</description>
       </column>
+      <column columnName="MaterialSourceId"/>
       <column columnName="RunId">
           <description>Contains a reference to the experiment run that created this sample, if available</description>
       </column>
@@ -534,6 +539,18 @@
       <column columnName="DateTimeValue"/>
       <column columnName="StringValue"/>
       <column columnName="MvIndicator"/>
+    </columns>
+  </table>
+  <table tableName="ObjectLegacyNames" tableDbType="TABLE">
+    <columns>
+        <column columnName="RowId"/>
+        <column columnName="ObjectId"/>
+        <column columnName="ObjectType"/>
+        <column columnName="Name"/>
+        <column columnName="Created"/>
+        <column columnName="CreatedBy"/>
+        <column columnName="Modified"/>
+        <column columnName="ModifiedBy"/>
     </columns>
   </table>
   <table tableName="Protocol" tableDbType="TABLE">
@@ -954,6 +971,7 @@
       <column columnName="Name"/>
       <column columnName="Description"/>
       <column columnName="CpasType"/>
+      <column columnName="MaterialSourceId"/>
       <column columnName="SourceApplicationId"/>
       <column columnName="RunId"/>
       <column columnName="Created"/>
@@ -1121,6 +1139,8 @@
             <column columnName="fromObjectId"/>
             <column columnName="toObjectId"/>
             <column columnName="runId"/>
+            <column columnName="sourceId"/>
+            <column columnName="sourceKey"/>
         </columns>
     </table>
     <table tableName="Exclusions" tableDbType="UNKNOWN">

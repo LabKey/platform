@@ -27,6 +27,11 @@ public class ExcelFormatException extends IOException
 {
     public ExcelFormatException(InvalidFormatException e)
     {
-        super("Unable to open Excel file." + (e.getMessage() == null ? "" : " (" + e.getMessage() + ")"));
+        super("Unable to open Excel file." + (e.getMessage() == null ? "" : " (" + e.getMessage() + ")"), e);
+    }
+
+    public ExcelFormatException(String message, Throwable e)
+    {
+        super(message, e);
     }
 }

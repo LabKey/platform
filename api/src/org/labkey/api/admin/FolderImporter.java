@@ -15,7 +15,6 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -26,6 +25,7 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 
@@ -34,25 +34,28 @@ import java.util.Map;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface FolderImporter<DocumentRoot extends XmlObject>
+public interface FolderImporter
 {
     String getDataType();
 
     /** Brief description of the types of objects this class imports */
     String getDescription();
 
-    void process(@Nullable PipelineJob job, ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
+    void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception;
 
-    @NotNull
-    Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
+    /**
+     * Execute any post processing and return warnings. This is called after process() has been called on all importers.
+     * Default is to do nothing and return no warnings.
+     */
+    default @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root) throws Exception
+    {
+        return Collections.emptyList();
+    }
 
     /**
      * Map of children data type names to boolean indicating if it is valid for the given import archive context.
-     * @param ctx
-     * @return Map
-     * @throws ImportException
      */
-    default @Nullable Map<String, Boolean> getChildrenDataTypes(ImportContext ctx) throws ImportException
+    default @Nullable Map<String, Boolean> getChildrenDataTypes(String archiveFilePath, User user, Container container) throws ImportException, IOException
     {
         return null;
     }
@@ -61,13 +64,8 @@ public interface FolderImporter<DocumentRoot extends XmlObject>
      * Validate if the folder importer is valid for the given import context. Default to true.
      * @return boolean
      */
-    default boolean isValidForImportArchive(ImportContext<DocumentRoot> ctx) throws ImportException
+    default boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return true;
-    }
-
-    default ImportContext getImporterSpecificImportContext(String archiveFilePath, User user, Container container) throws IOException
-    {
-        return null;
     }
 }

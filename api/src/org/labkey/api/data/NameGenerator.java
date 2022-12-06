@@ -24,11 +24,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -40,7 +45,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -51,6 +58,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -61,6 +69,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,6 +114,20 @@ public class NameGenerator
     public static final String GENID_WITH_START_IND_REGEX = ".*\\$\\{genId:minValue\\('?(\\d*)?'?\\)}.*";
     public static final Pattern GENID_WITH_START_IND_PATTERN = Pattern.compile(GENID_WITH_START_IND_REGEX);
 
+    /**
+     * Ancestor lookup example:
+     * ..[MaterialInputs]
+     * ..[DataInputs]
+     * ..[MaterialInputs/SampleType1]
+     * ..[MaterialInputs::SampleType1]
+     */
+    public static final String ANCESTOR_INPUT_PREFIX_MATERIAL = "..[MaterialInputs/";
+    public static final String ANCESTOR_INPUT_PREFIX_MATERIAL_NOSLASH = "..[MaterialInputs::";
+    public static final String ANCESTOR_INPUT_PREFIX_DATA = "..[DataInputs/";
+    public static final String ANCESTOR_INPUT_PREFIX_DATA_NOSLASH = "..[DataInputs::";
+    public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?(.*))]";
+    public static final Pattern ANCESTOR_INPUT_PATTERN = Pattern.compile(ANCESTOR_INPUT_REGEX);
+
     public static Date PREVIEW_DATE_VALUE;
     public static Date PREVIEW_MODIFIED_DATE_VALUE;
 
@@ -124,7 +147,7 @@ public class NameGenerator
 
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
 
-    enum SubstitutionValue
+    public enum SubstitutionValue
     {
         AliquotedFrom("Sample112"),
         DataInputs("Data101"),
@@ -180,6 +203,8 @@ public class NameGenerator
 
     }
 
+    public static final Set<String> SAMPLE_COUNTER_SUBSTITUTIONS = new HashSet<>(Arrays.asList(SubstitutionValue.dailySampleCount.name(), SubstitutionValue.weeklySampleCount.name(), SubstitutionValue.monthlySampleCount.name(), SubstitutionValue.yearlySampleCount.name()));
+
     private final TableInfo _parentTable;
 
     public FieldKeyStringExpression getParsedNameExpression()
@@ -195,6 +220,7 @@ public class NameGenerator
     private boolean _exprHasLineageLookup = false;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
     private Map<String, List<String>> _expLineageLookupFields = new CaseInsensitiveHashMap<>();
+    private Map<String/*part field key*/, NameExpressionAncestorPartOption> _partAncestorOptions;
 
     private final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
@@ -212,14 +238,22 @@ public class NameGenerator
 
     private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
+    private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
     {
         _parentTable = parentTable;
         _container = container;
         _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
+        _currentDataTypeName = currentDataTypeName;
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -239,6 +273,7 @@ public class NameGenerator
         _container = container;
         _validateSyntax = false;
         _domainProperties = null;
+        _currentDataTypeName = null;
         initialize(null);
     }
 
@@ -267,7 +302,7 @@ public class NameGenerator
         _previewName = previewName;
     }
 
-    public static NameExpressionValidationResult getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static NameExpressionValidationResult getValidationMessages(@Nullable String currentDataTypeName, @NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         Pair<List<String>, List<String>> reservedFieldResults = getReservedFieldValidationResults(nameExpression);
@@ -278,15 +313,15 @@ public class NameGenerator
 
         warningMessages.addAll(getFieldMissingBracesWarnings(nameExpression, properties, importAliases));
 
-        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
+        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container, currentDataTypeName);
         errorMessages.addAll(fieldMessages.errors());
         warningMessages.addAll(fieldMessages.warnings());
         return new NameExpressionValidationResult(errorMessages, warningMessages, fieldMessages.previews());
     }
 
-    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container, @Nullable String currentDataTypeName)
     {
-        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
+        NameGenerator generator = new NameGenerator(nameExpression, null,true, importAliases, container, null, null, true, properties, currentDataTypeName);
         return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
     }
 
@@ -543,7 +578,25 @@ public class NameGenerator
         Stream<String> values;
         if (value instanceof String)
         {
-            values = Arrays.stream(((String)value).split(","));
+            if (StringUtils.isEmpty(((String) value).trim()))
+                return Stream.empty();
+
+            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+            // using TabLoader instead of just splitting on the comma.
+            try (TabLoader tabLoader = new TabLoader((String) value))
+            {
+                tabLoader.setDelimiterCharacter(',');
+                tabLoader.setUnescapeBackslashes(false);
+                try
+                {
+                    String[][] parsedValues = tabLoader.getFirstNLines(1);
+                    values = Arrays.stream(parsedValues[0]);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                }
+            }
         }
         else if (value instanceof Collection)
         {
@@ -560,7 +613,25 @@ public class NameGenerator
                 .filter(s -> !s.isEmpty());
     }
 
-    public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
+    public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        return isLineageToken(token, importAliases) || isLineageInputWithDataType(token.toString().split("/"), currentDataTypeName, container, user);
+    }
+
+    public static boolean isLineageLookup(List<String> fieldParts, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        if (!isLineageToken(fieldParts.get(0), importAliases))
+            return false;
+
+        if (fieldParts.size() == 2 && isLineageInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, container, user))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean isLineageToken(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString();
         Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
@@ -573,11 +644,52 @@ public class NameGenerator
                 || aliasesInsensitive.containsKey(sTok);
     }
 
-    private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
+    public static boolean isLineageInputWithDataType(String[] parts, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        if (parts.length != 2)
+            return false;
+
+        String inputToken = parts[0];
+        String dataType = parts[1];
+
+        boolean isInput = INPUT_PARENT.equalsIgnoreCase(inputToken);
+        boolean isData = ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(inputToken);
+        boolean isMaterial = ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(inputToken);
+
+        if (!(isInput || isData || isMaterial))
+            return false;
+
+        if (dataType.equalsIgnoreCase(currentDataTypeName))
+            return true;
+
+        if (isMaterial || isInput)
+        {
+            if (SampleTypeService.get().getSampleType(container, user, dataType) != null)
+                return true;
+
+            if (isMaterial)
+                return false;
+        }
+
+        return ExperimentService.get().getDataClass(container, user, dataType) != null;
+    }
+
+    private Object getLineageLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, String lookupField, User user, Map<String, String> dataClassNames, Map<String, String> sampleTypeNames)
     {
         boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
         boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
-        switch (lookupField)
+        boolean isAncestor = ancestorPaths != null && !ancestorPaths.isEmpty();
+        if (isAncestor)
+        {
+            Pair<ExpLineageOptions.LineageExpType, String> ancestorType = ancestorPaths.get(ancestorPaths.size() - 1);
+            isMaterial = ExpLineageOptions.LineageExpType.Material == ancestorType.first;
+            isData = ExpLineageOptions.LineageExpType.Data == ancestorType.first;
+            if (!StringUtils.isEmpty(ancestorType.second))
+                inputDataType = isMaterial ? sampleTypeNames.get(ancestorType.second) : dataClassNames.get(ancestorType.second);
+            else
+                inputDataType = null;
+        }
+        switch (lookupField.toLowerCase())
         {
             case "rowid":
             case "createdby":
@@ -586,7 +698,7 @@ public class NameGenerator
             case "name":
             case "lsid":
             case "description":
-                return "parent" + lookupField;
+                return (isAncestor ? "ancestor" : "parent") + lookupField;
             case "created":
                 return PREVIEW_DATE_VALUE;
             case "modified":
@@ -596,7 +708,7 @@ public class NameGenerator
         List<ExpObject> dataTypes = new ArrayList<>();
         if (isMaterial)
         {
-            if (inputDataType != null)
+            if (!StringUtils.isEmpty(inputDataType))
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleType(_container, user, inputDataType);
                 if (sampleType != null)
@@ -607,7 +719,7 @@ public class NameGenerator
         }
         if (isData)
         {
-            if (inputDataType != null)
+            if (!StringUtils.isEmpty(inputDataType))
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(_container, user, inputDataType);
                 if (dataClass != null)
@@ -616,10 +728,16 @@ public class NameGenerator
             else
                 dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
         }
+
+        boolean isCurrentDataType = inputDataType != null && inputDataType.equals(currentDataType);
+
         if (inputDataType != null && dataTypes.isEmpty())
         {
-            _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
-            return null;
+            if (!isCurrentDataType)
+            {
+                _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+                return null;
+            }
         }
 
         for (ExpObject dataType : dataTypes)
@@ -642,12 +760,34 @@ public class NameGenerator
                     {
                         Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
                         if (result instanceof String)
-                            return "parent" + result;
+                            return (isAncestor ? "ancestor" : "parent") + result;
                         return result;
                     }
                 }
             }
 
+        }
+
+        if ((isCurrentDataType || inputDataType == null) && _domainProperties != null && !_domainProperties.isEmpty())
+        {
+            Map<String, GWTPropertyDescriptor> domainFields = new CaseInsensitiveHashMap<>();
+            _domainProperties.forEach(prop -> domainFields.put(prop.getName(), prop));
+
+            GWTPropertyDescriptor col = domainFields.get(lookupField);
+            if (col != null)
+            {
+                PropertyType pt = null;
+                if (col.getConceptURI() != null || col.getRangeURI() != null)
+                    pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+
+                if (pt != null)
+                    return getNamePartPreviewValue(pt, lookupField);
+                else
+                {
+                    _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+                    return null;
+                }
+            }
         }
 
         _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
@@ -694,6 +834,28 @@ public class NameGenerator
             }
         }
 
+        Map<String, NameExpressionAncestorPartOption> partAncestorOptions = new HashMap<>();
+
+        Map<String, String> dataClassLSIDs = new CaseInsensitiveHashMap<>();
+        Map<String, String> dataClassNames = new CaseInsensitiveHashMap<>();
+        Map<String, String> sampleTypeLSIDs = new CaseInsensitiveHashMap<>();
+        Map<String, String> sampleTypeNames = new CaseInsensitiveHashMap<>();
+
+        if (_container != null)
+        {
+            for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, user, true))
+            {
+                dataClassLSIDs.put(dataClass.getName(), dataClass.getLSID());
+                dataClassNames.put(dataClass.getLSID(), dataClass.getName());
+            }
+
+
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(_container, user, true))
+            {
+                sampleTypeLSIDs.put(sampleType.getName(), sampleType.getLSID());
+                sampleTypeNames.put(sampleType.getLSID(), sampleType.getName());
+            }
+        }
 
         for (StringExpressionFactory.StringPart part : parts)
         {
@@ -709,16 +871,21 @@ public class NameGenerator
                 }
 
                 String sTok = token.toString().toLowerCase();
-                if (isLineageInput(sTok, importAliases))
+                if (isLineageInput(sTok, importAliases, _currentDataTypeName, _container, user))
                 {
                     isLineagePart = true;
                     hasLineageInputs = true;
                 }
 
-                if (token instanceof FieldKey)
+                if (token instanceof FieldKey fkTok)
                 {
-                    FieldKey fkTok = (FieldKey)token;
-                    List<String> fieldParts = fkTok.getParts();
+                    int previousErrorCount = _syntaxErrors.size();
+                    List<String> fieldParts = processFieldParts(fkTok, partAncestorOptions, user, dataClassLSIDs, sampleTypeLSIDs);
+                    if (!_syntaxErrors.isEmpty() && _syntaxErrors.size() > previousErrorCount) // if ancestor lookup syntax error, continue
+                        continue;
+                    List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = null;
+                    if (partAncestorOptions.containsKey(fkTok.encode()))
+                        ancestorPaths = partAncestorOptions.get(fkTok.encode()).ancestorPaths();
 
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
@@ -757,10 +924,11 @@ public class NameGenerator
                         continue;
                     }
 
-                    boolean isLineageLookup = isLineageInput(fieldParts.get(0), importAliases);
+                    boolean isLineageLookup = isLineageLookup(fieldParts, importAliases, _currentDataTypeName, _container, user);
 
                     if (isLineageLookup)
                     {
+
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
@@ -774,22 +942,22 @@ public class NameGenerator
                             lineageLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
                             String[] inputParts = dataTypeToken.split("/");
-                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, inputParts[0], inputParts[1], lookupField, user);
+                            lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, inputParts[0], inputParts[1], ancestorPaths, lookupField, user, dataClassNames, sampleTypeNames);
                         }
                         else if (!isParentAlias && fieldParts.size() <= 3)
                         {
                             if (fieldParts.size() == 2)
                             {
-                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
+                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup, MaterialInputs/SampleType1
                                 lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
+                                lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), null, ancestorPaths, fieldParts.get(1), user, dataClassNames, sampleTypeNames);
                             }
                             else if (fieldParts.size() == 3)
                             {
                                 // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
                                 lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
-                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(1), fieldParts.get(2), user);
+                                lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), fieldParts.get(1), ancestorPaths, fieldParts.get(2), user, dataClassNames, sampleTypeNames);
                             }
                         }
                         else
@@ -802,7 +970,15 @@ public class NameGenerator
                         }
 
                         if (lookupValuePreview != null)
-                            previewCtx.put(fkTok.toString(), lookupValuePreview);
+                        {
+                            String fkTokStr = fkTok.toString();
+                            if (ancestorPaths != null && !ancestorPaths.isEmpty())
+                            {
+                                fkTokStr = fkTok.encode();
+                            }
+
+                            previewCtx.put(fkTokStr, lookupValuePreview);
+                        }
 
                         continue;
                     }
@@ -817,16 +993,26 @@ public class NameGenerator
                             throw new UnsupportedOperationException(errorMsg);
                     }
 
-                    if (_parentTable == null && domainFields.isEmpty())
+                    if (isLineagePart)
                     {
-                        String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
-                        if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
-                        else
-                            throw new UnsupportedOperationException(errorMsg);
+                        boolean isInput = sTok.startsWith(INPUT_PARENT.toLowerCase());
+                        boolean isMaterial = sTok.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase());
+                        Object preview = isInput ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
+                        previewCtx.put(fkTok.toString(), preview);
                     }
+                    else
+                    {
+                        if (_parentTable == null && domainFields.isEmpty())
+                        {
+                            String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
+                            if (_validateSyntax)
+                                _syntaxErrors.add(errorMsg);
+                            else
+                                throw new UnsupportedOperationException(errorMsg);
+                        }
 
-                    lookups.add(fkTok);
+                        lookups.add(fkTok);
+                    }
                 }
             }
         }
@@ -890,7 +1076,16 @@ public class NameGenerator
                     GWTPropertyDescriptor col = domainFields.get(root);
                     if (col != null)
                     {
-                        UserSchema fkSchema = QueryService.get().getUserSchema(user, _container, col.getLookupSchema());
+                        Container lookupContainer = null;
+                        String containerId = StringUtils.trimToNull(col.getLookupContainer());
+                        if (containerId != null)
+                        {
+                            if (GUID.isGUID(containerId))
+                                lookupContainer = ContainerManager.getForId(containerId);
+                            if (null == lookupContainer)
+                                lookupContainer = ContainerManager.getForPath(containerId);
+                        }
+                        UserSchema fkSchema = QueryService.get().getUserSchema(user, lookupContainer == null ? _container : lookupContainer, col.getLookupSchema());
 
                         if (fkSchema != null)
                         {
@@ -940,8 +1135,97 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
         _expLineageLookupFields = lineageLookupFields;
+        _partAncestorOptions = partAncestorOptions;
         if (_validateSyntax && _syntaxErrors.isEmpty())
             _previewName = _parsedNameExpression.eval(previewCtx);
+    }
+
+    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions, User user, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs)
+    {
+        List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorTypes = new ArrayList<>();
+        List<String> allFieldParts = fkTok.getParts();
+
+        List<String> fieldParts = new ArrayList<>();
+        int partInd = 0, ancestorLevel = 0;
+
+        String fkTokDisplay = fkTok.toString().replaceAll("\\$P", ".").replaceAll("::", "/");
+        boolean hasLookupColumn = false; // needs to specify an explicit ancestor lookup column: ..[MaterialInput/Type]/lookupColumnName
+        for (String fPart : allFieldParts)
+        {
+            if (!StringUtils.isEmpty(fPart) && !isAncestorPart(fPart))
+            {
+                hasLookupColumn = true;
+                fieldParts.add(fPart);
+            }
+            else
+            {
+                hasLookupColumn = false;
+                ancestorLevel++;
+
+                if (partInd == 0)
+                {
+                    // Syntax should be ${MaterialInput/..[MaterialInputs]/name} where the first input is the direct parent, instead of ${..[MaterialInputs]/name}.
+                    _syntaxErrors.add("Invalid substitution token, parent input must be specified for ancestor lookup: ${" + fkTokDisplay + "}.");
+                    return fieldParts;
+                }
+
+                if (ancestorLevel > 4) // 1 generation of direct parent + 4 extra generations of ancestors
+                {
+                    _syntaxErrors.add("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
+                    return fieldParts;
+                }
+
+                Pair<ExpLineageOptions.LineageExpType, String> ancestorPart = getAncestorPart(fPart, dataClassLSIDs, sampleTypeLSIDs);
+                ancestorTypes.add(ancestorPart);
+            }
+
+            partInd++;
+        }
+
+        if (!ancestorTypes.isEmpty())
+        {
+            if (!hasLookupColumn)
+            {
+                _syntaxErrors.add("Invalid substitution token, lookup column name not specified: ${" + fkTokDisplay + "}.");
+                return fieldParts;
+            }
+
+            ExpLineageOptions options = new ExpLineageOptions();
+            options.setForLookup(false);
+            options.setParents(true);
+            options.setChildren(false);
+            options.setDepth((ancestorTypes.size() + 1) * 2); // (ancestor + 1 direct parent) * 2 (1 for data, 1 for run)
+
+            partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, ancestorTypes, allFieldParts.get(allFieldParts.size() - 1)));
+        }
+
+        return fieldParts;
+    }
+
+    public static Pair<ExpLineageOptions.LineageExpType, String> getAncestorPart(String part, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs)
+    {
+        Matcher ancestorTypeMatcher = ANCESTOR_INPUT_PATTERN.matcher(part);
+        if (ancestorTypeMatcher.find())
+        {
+            ExpLineageOptions.LineageExpType expType = ExpLineageOptions.LineageExpType.Material;
+            String expTypeStr = ancestorTypeMatcher.group(2);
+            if (ExpLineageOptions.LineageExpType.Data.name().equalsIgnoreCase(expTypeStr))
+                expType = ExpLineageOptions.LineageExpType.Data;
+
+            String dataType = ancestorTypeMatcher.group(4);
+
+            if (!StringUtils.isEmpty(dataType))
+                dataType = expType == ExpLineageOptions.LineageExpType.Data ? dataClassLSIDs.get(dataType) : sampleTypeLSIDs.get(dataType);
+
+            return new Pair<>(expType, dataType);
+        }
+        return null;
+    }
+
+    public static boolean isAncestorPart(String part)
+    {
+        Matcher ancestorTypeMatcher = ANCESTOR_INPUT_PATTERN.matcher(part);
+        return ancestorTypeMatcher.find();
     }
 
     public static Object getNamePartPreviewValue(PropertyType pt, @Nullable String prefix)
@@ -1032,17 +1316,17 @@ public class NameGenerator
         return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
     }
 
-
     public class State implements AutoCloseable
     {
         private final boolean _incrementSampleCounts;
-
+        private final User _user;
         private final Map<String, Object> _batchExpressionContext;
         private Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction;
         private final Map<String, Integer> _newNames = new CaseInsensitiveHashMap<>();
 
         private int _rowNumber = 0;
-        private Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
+        private final Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
+        private final Map<String, ArrayList<Object>> _ancestorCache;
 
         private State(boolean incrementSampleCounts)
         {
@@ -1053,10 +1337,10 @@ public class NameGenerator
             batchContext.put("BatchRandomId", StringUtilsLabKey.getUniquifier(4));
             batchContext.put("Now", new Date());
             _batchExpressionContext = Collections.unmodifiableMap(batchContext);
-
+            _user = User.getSearchUser();
             _lookupCache = new HashMap<>();
+            _ancestorCache = new HashMap<>();
         }
-
 
         @Override
         public void close()
@@ -1064,7 +1348,11 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable List<Supplier<Map<String, Object>>> extraPropsFns, @Nullable FieldKeyStringExpression altExpression)
+        private String nextName(Map<String, Object> rowMap,
+                                Set<ExpData> parentDatas,
+                                Set<ExpMaterial> parentSamples,
+                                @Nullable List<Supplier<Map<String, Object>>> extraPropsFns,
+                                @Nullable FieldKeyStringExpression altExpression)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -1165,10 +1453,10 @@ public class NameGenerator
                     return parentObject.getName();
                 case "description":
                 {
-                    if (parentObject instanceof ExpMaterial)
-                        return ((ExpMaterial) parentObject).getDescription();
-                    else if (parentObject instanceof ExpData)
-                        return ((ExpData) parentObject).getDescription();
+                    if (parentObject instanceof ExpMaterial material)
+                        return material.getDescription();
+                    else if (parentObject instanceof ExpData data)
+                        return data.getDescription();
                 }
                 case "created":
                     return parentObject.getCreated();
@@ -1183,7 +1471,7 @@ public class NameGenerator
                     if (objectPropertiesCache.containsKey(parentObject.getLSID()))
                         return objectPropertiesCache.get(parentObject.getLSID()).get(field);
                     Map<String, Object> properties = new CaseInsensitiveHashMap<>();
-                    parentObject.getObjectProperties().values().forEach(prop -> {
+                    parentObject.getObjectProperties(_user).values().forEach(prop -> {
                         PropertyType pt = null;
                         if (prop.getConceptURI() != null || prop.getRangeURI() != null)
                             pt = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI(), null);
@@ -1206,12 +1494,18 @@ public class NameGenerator
             }
         }
 
-        private void addLineageLookupValues(String parentTypeName, boolean isMaterialParent, Map<String, String> parentImportAliases, ExpObject parentObject, Map<String, ArrayList<Object>> inputLookupValues)
+        private void addParentLookupValues(String parentTypeName,
+                                           boolean isMaterialParent,
+                                           @Nullable Map<String, String> parentImportAliases,
+                                           ExpObject parentObject,
+                                           Map<String, ArrayList<Object>> inputLookupValues)
         {
             String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
+            String inputCol = inputType + "/" + parentTypeName;
+
             List<String> fieldNames = new ArrayList<>();
-            if (_expLineageLookupFields.containsKey(inputType + "/" + parentTypeName))
-                fieldNames.addAll(_expLineageLookupFields.get(inputType + "/" + parentTypeName));
+            if (_expLineageLookupFields.containsKey(inputCol))
+                fieldNames.addAll(_expLineageLookupFields.get(inputCol));
             if (_expLineageLookupFields.containsKey(inputType))
                 fieldNames.addAll(_expLineageLookupFields.get(inputType));
             if (_expLineageLookupFields.containsKey(INPUT_PARENT))
@@ -1223,87 +1517,122 @@ public class NameGenerator
                 if (lookupValue == null)
                     continue;
 
-                // add to Input/lookupfield
+                // add to Input/<LookupField>
                 inputLookupValues.computeIfAbsent(INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
 
-                // add to importAlias/lookupfield
-                String inputCol = (isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT) + "/" + parentTypeName;
-                parentImportAliases
-                        .entrySet()
-                        .stream()
-                        .filter(entry -> entry.getValue().equalsIgnoreCase(inputCol))
-                        .forEach(entry -> {
-                            inputLookupValues.computeIfAbsent(entry.getKey() + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                        });
-
-                if (isMaterialParent)
+                // add to importAlias/<LookupField>
+                if (parentImportAliases != null)
                 {
-                    // add to MaterialInputs/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                    // add to MaterialInputs/SampleType/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-
+                    parentImportAliases
+                            .entrySet()
+                            .stream()
+                            .filter(entry -> inputCol.equalsIgnoreCase(entry.getValue()))
+                            .forEach(entry -> inputLookupValues.computeIfAbsent(entry.getKey() + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue));
                 }
-                else
+
+                // add to <Type>Inputs/<LookupField>
+                inputLookupValues.computeIfAbsent(inputType + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                // add to <Type>Inputs/<TypeName>/<LookupField>
+                inputLookupValues.computeIfAbsent(inputCol + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+            }
+        }
+
+        private void addAncestorLookupValues(ExpRunItem parentObject, Map<String, ArrayList<Object>> inputLookupValues)
+        {
+            String parentLsid = parentObject.getLSID();
+
+            for (String ancestorFieldKey : _partAncestorOptions.keySet())
+            {
+                NameExpressionAncestorPartOption ancestorOptions = _partAncestorOptions.get(ancestorFieldKey);
+                if (ancestorOptions != null)
                 {
-                    // add to DataInputs/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpData.DATA_INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                    // add to DataInputs/DataClass/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                    String ancestorKey = ancestorFieldKey + "-" + parentObject.getObjectId();
+
+                    ArrayList<Object> ancestorLookupValues = new ArrayList<>();
+
+                    if (_ancestorCache.containsKey(ancestorKey))
+                        ancestorLookupValues = _ancestorCache.get(ancestorKey);
+                    else
+                    {
+                        ExpLineageOptions options = ancestorOptions.options();
+                        List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = ancestorOptions.ancestorPaths();
+                        String fieldName = ancestorOptions.lookupColumn();
+                        Identifiable seed = LsidManager.get().getObject(parentLsid);
+                        ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+
+                        Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths);
+
+                        for (Identifiable ancestorObject : ancestorObjects)
+                        {
+                            if (ancestorObject instanceof ExpMaterial || ancestorObject instanceof ExpData)
+                            {
+                                Object lookupValue = getParentFieldValue((ExpObject) ancestorObject, fieldName);
+                                if (lookupValue != null)
+                                    ancestorLookupValues.add(lookupValue);
+                            }
+                        }
+
+                        _ancestorCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
+                    }
+
+                    if (!ancestorLookupValues.isEmpty())
+                        inputLookupValues.put(ancestorFieldKey, ancestorLookupValues);
+
                 }
             }
 
         }
 
-        private void addLineageLookupContext(String parentTypeName, String parentName, boolean isMaterialParent, Map<String, String> parentImportAliases, Map<String, ArrayList<Object>> inputLookupValues)
+        private void addLineageLookupContext(String parentTypeName,
+                                             String parentName,
+                                             boolean isMaterialParent,
+                                             @Nullable Map<String, String> parentImportAliases,
+                                             Map<String, ArrayList<Object>> inputLookupValues)
         {
             if (!_exprHasLineageLookup || StringUtils.isEmpty(parentTypeName) || StringUtils.isEmpty(parentName))
                 return;
 
+            boolean hasTypeLookup = _expLineageLookupFields.containsKey(INPUT_PARENT);
 
-            boolean hasTypeLookup = false;
-            if (_expLineageLookupFields.containsKey(INPUT_PARENT))
-                hasTypeLookup = true;
-
-            if (!hasTypeLookup && isMaterialParent)
+            if (!hasTypeLookup)
             {
-                if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
-                    hasTypeLookup = true;
-
-                if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
-                    hasTypeLookup = true;
-            }
-
-            if (!hasTypeLookup && !isMaterialParent)
-            {
-                if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
-                    hasTypeLookup = true;
-
-                if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
-                    hasTypeLookup = true;
+                if (isMaterialParent)
+                {
+                    if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
+                        hasTypeLookup = true;
+                    else if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
+                        hasTypeLookup = true;
+                }
+                else
+                {
+                    if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
+                        hasTypeLookup = true;
+                    else if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
+                        hasTypeLookup = true;
+                }
             }
 
             if (!hasTypeLookup)
                 return;
 
-            User user = User.getSearchUser();
-
             ExpObject parentObjectType = isMaterialParent ?
-                    _sampleTypes.computeIfAbsent(parentTypeName, (name) -> SampleTypeService.get().getSampleType(_container, user, name))
-                    : _dataClasses.computeIfAbsent(parentTypeName, (name) -> ExperimentService.get().getDataClass(_container, user, name));
+                    _sampleTypes.computeIfAbsent(parentTypeName, (name) -> SampleTypeService.get().getSampleType(_container, _user, name))
+                    : _dataClasses.computeIfAbsent(parentTypeName, (name) -> ExperimentService.get().getDataClass(_container, _user, name));
             if (parentObjectType == null)
                 throw new RuntimeValidationException("Invalid parent type: " + parentTypeName);
 
             try
             {
-                ExpObject parentObject = isMaterialParent ?
-                        ExperimentService.get().findExpMaterial(_container, user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
-                        : ExperimentService.get().findExpData(_container, user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
+                ExpRunItem parentObject = isMaterialParent ?
+                        ExperimentService.get().findExpMaterial(_container, _user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
+                        : ExperimentService.get().findExpData(_container, _user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
 
                 if (parentObject == null)
                     throw new RuntimeValidationException("Unable to find parent " + parentName);
 
-                addLineageLookupValues(parentTypeName, isMaterialParent, parentImportAliases, parentObject, inputLookupValues);
+                addParentLookupValues(parentTypeName, isMaterialParent, parentImportAliases, parentObject, inputLookupValues);
+
+                addAncestorLookupValues(parentObject, inputLookupValues);
             }
             catch (ValidationException validationErrors)
             {
@@ -1311,12 +1640,11 @@ public class NameGenerator
             }
         }
 
-        private Map<String, Object> additionalContext(
-                @NotNull Map<String, Object> rowMap,
-                Set<ExpData> parentDatas,
-                Set<ExpMaterial> parentSamples,
-                @Nullable Map<String, Long> sampleCounts,
-                @Nullable Map<String, Object> extraProps)
+        private Map<String, Object> additionalContext(@NotNull Map<String, Object> rowMap,
+                                                      Set<ExpData> parentDatas,
+                                                      Set<ExpMaterial> parentSamples,
+                                                      @Nullable Map<String, Long> sampleCounts,
+                                                      @Nullable Map<String, Object> extraProps)
         {
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
@@ -1363,10 +1691,11 @@ public class NameGenerator
 
                     if (_exprHasLineageLookup)
                     {
-                        parentDatas.forEach(parentObject -> {
-                            addLineageLookupValues(parentObject.getDataClass().getName(), false, parentImportAliases, parentObject, inputLookupValues);
-
-                        });
+                        for (ExpData parentObject : parentDatas)
+                        {
+                            addParentLookupValues(parentObject.getDataClass(_user).getName(), false, parentImportAliases, parentObject, inputLookupValues);
+                            addAncestorLookupValues(parentObject, inputLookupValues);
+                        }
                     }
                 }
 
@@ -1381,10 +1710,11 @@ public class NameGenerator
                     }
                     if (_exprHasLineageLookup)
                     {
-                        parentSamples.forEach(parentObject -> {
-                            addLineageLookupValues(parentObject.getSampleType().getName(), true, parentImportAliases, parentObject, inputLookupValues);
-
-                        });
+                        for (ExpMaterial parentObject : parentSamples)
+                        {
+                            addParentLookupValues(parentObject.getSampleType().getName(), true, parentImportAliases, parentObject, inputLookupValues);
+                            addAncestorLookupValues(parentObject, inputLookupValues);
+                        }
                     }
                 }
 
@@ -1401,7 +1731,7 @@ public class NameGenerator
                         if (_exprHasLineageInputs)
                             addInputs(parts, colName, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
-                            addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
+                            addLineageLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                     else if (parentImportAliases != null && parentImportAliases.containsKey(colName))
                     {
@@ -1410,13 +1740,22 @@ public class NameGenerator
                         if (_exprHasLineageInputs)
                             addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
-                            addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
+                            addLineageLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                 }
 
-                ctx.putAll(inputs);
+                // if a single input or lookup is found, return the object, not the list
+                Map<String, Object> inputValues = new HashMap<>();
+                inputs.forEach((key, value) -> {
+                    Object inputValue = value;
+                    if (value.size() == 1)
+                        inputValue = value.iterator().next();
+                    else if (value.size() == 0)
+                        inputValue = null;
+                    inputValues.put(key, inputValue);
+                });
+                ctx.putAll(inputValues);
 
-                // if a single lookup is found, return the object, not the list
                 Map<String, Object> lookupValues = new HashMap<>();
                 inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : value.get(0)));
                 ctx.putAll(lookupValues);
@@ -1479,7 +1818,11 @@ public class NameGenerator
             return ctx;
         }
 
-        private void addLineageInput(String[] parts, String colName, Object value, Map<String, String> parentImportAliases, Map<String, ArrayList<Object>> inputLookupValues)
+        private void addLineageLookupInput(String[] parts,
+                                           String colName,
+                                           Object value,
+                                           @Nullable Map<String, String> parentImportAliases,
+                                           Map<String, ArrayList<Object>> inputLookupValues)
         {
             boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
             boolean isDataParent = parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
@@ -1495,7 +1838,11 @@ public class NameGenerator
             return NameGenerator.parentNames(value, parentColName).collect(Collectors.toList());
         }
 
-        private void addInputs(String[] parts, String colName, Object value, Map<String, Set<String>> inputs, Map<String, String> parentImportAliases)
+        private void addInputs(String[] parts,
+                               String colName,
+                               Object value,
+                               Map<String, Set<String>> inputs,
+                               @Nullable Map<String, String> parentImportAliases)
         {
             if (parts.length == 2)
             {
@@ -1508,6 +1855,7 @@ public class NameGenerator
                 {
                     Collection<String> parents = parentNames(value, colName);
                     inputs.get(INPUT_PARENT).addAll(parents);
+                    inputs.computeIfAbsent(INPUT_PARENT + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
                     inputs.get(inputsCategory).addAll(parents);
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
                     if (parentImportAliases != null)
@@ -1517,10 +1865,12 @@ public class NameGenerator
                             inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
                         });
                     }
+
+                    if (value instanceof String) // convert "parent1,parent2" to [parent1, parent2]
+                        inputs.computeIfAbsent(parts[0] + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
             }
         }
-
     }
 
     /**
@@ -1592,6 +1942,13 @@ public class NameGenerator
                 }
 
                 return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn, _counterSeqPrefix);
+            }
+
+            // if contains ancestor expression, substitute ..[MaterialInputs/type1] with ..[MaterialInputs::type1] before parsing, to avoid splitting at /.
+            if (ANCESTOR_INPUT_PATTERN.matcher(expression).find())
+            {
+                expression = expression.replaceAll(ANCESTOR_INPUT_PREFIX_MATERIAL.replace("[", "\\["), ANCESTOR_INPUT_PREFIX_MATERIAL_NOSLASH);
+                expression = expression.replaceAll(ANCESTOR_INPUT_PREFIX_DATA.replace("[", "\\["), ANCESTOR_INPUT_PREFIX_DATA_NOSLASH);
             }
 
             return super.parsePart(expression);
@@ -2156,7 +2513,7 @@ public class NameGenerator
         private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             Container c = JunitUtil.getTestContainer();
-            NameExpressionValidationResult results = getValidationMessages(expression, fields, importAliases, c);
+            NameExpressionValidationResult results = getValidationMessages("SampleTypeBeingCreated", expression, fields, importAliases, c);
             assertEquals(expectedResult, results);
         }
 
@@ -2204,6 +2561,8 @@ public class NameGenerator
             validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
             validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
+
+            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Lineage lookup field does not exist: Inputs/SampleTypeNotExist"));
         }
 
         @Test
@@ -2269,6 +2628,19 @@ public class NameGenerator
             validateNameResult("${${AliquotedFrom}-:withCounter(abc)}", withErrors("Invalid starting value abc for 'withCounter' starting at position 20."));
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
+
+        }
+
+        @Test
+        public void testNameExpressionAncestorLookupFieldErrors()
+        {
+            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token, parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]/}."));
+
         }
 
         private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
@@ -2316,11 +2688,28 @@ public class NameGenerator
             verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
 
+            verifyPreview("S-${FieldStr}-${FieldDate:dailySampleCount}", "S-FieldStrValue-14", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate:yearlySampleCount}", "S-FieldStrValue-412", null, fields);
+            verifyPreview("S-${FieldStr}-${dailySampleCount}", "S-FieldStrValue-14", null, fields);
+            verifyPreview("S-${FieldStr}-${yearlySampleCount}", "S-FieldStrValue-412", null, fields);
+
             // with input
             verifyPreview("S-${Inputs}", "S-Parent101");
+            verifyPreview("S-${Inputs/SampleTypeBeingCreated}", "S-Parent101");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated}", "S-Sample101");
             verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${Inputs/SampleTypeBeingCreated/name}", "S-parentname");
             verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+
+            // ancestor lookup
+            verifyPreview("S-${MaterialInputs/..[MaterialInputs]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/GrandParentSampleType]/..[DataInputs/GreatGrandParentDataType]/name}", "S-ancestorname");
+            verifyPreview("S-${parentAlias/..[MaterialInputs/GrandParentSampleType]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", "S-ancestorname");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname");
+            verifyPreview("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/name}", "S-ancestorname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 
         @After

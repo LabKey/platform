@@ -302,10 +302,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                             var fieldKey = values.fieldKey;
                             var fieldMeta = me.fieldMetaStore.getById(fieldKey);
                             if (fieldMeta) {
-                                // caption is already htmlEncoded
                                 var caption = fieldMeta.get('caption');
-                                if (caption && caption != '&nbsp;') {
-                                    return caption;
+                                if (caption) {
+                                    return Ext4.htmlEncode(caption);
                                 }
                                 return Ext4.htmlEncode(fieldMeta.get('name'));
                             }

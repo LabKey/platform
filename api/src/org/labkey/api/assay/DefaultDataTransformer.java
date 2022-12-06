@@ -67,6 +67,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     public static final String LEGACY_SESSION_COOKIE_NAME_REPLACEMENT = "sessionCookieName";
     public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
     public static final String CONTAINER_PATH = "containerPath";
+    public static final String ORIGINAL_SOURCE_PATH = "OriginalSourcePath";
 
     @Override
     public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException

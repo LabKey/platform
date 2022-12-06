@@ -16,9 +16,12 @@
 
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -64,6 +67,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -80,6 +84,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +107,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     // Constant used by ExpDataIterators.AliasDataIterator
     String ALIASCOLUMNALIAS = "org.labkey.experiment.ExpDataIterators$AliasDataIterator#ALIAS";
+
+    String LSID_COUNTER_DB_SEQUENCE_PREFIX = "LsidCounter-";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
@@ -166,6 +173,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull
     List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
 
+    @NotNull
+    List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds);
+
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
 
     @NotNull
@@ -179,6 +189,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData getExpData(ExpDataClass dataClass, String name);
 
     ExpData getExpData(ExpDataClass dataClass, int rowId);
+
+    /**
+     * Get a Data with name at a specific time.
+     */
+    @Nullable
+    ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container);
 
     /**
      * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
@@ -229,6 +245,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
 
     /**
+     * Get a DataClass with name at a specific time.
+     */
+    ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate);
+
+    /**
      * Get a DataClass by name within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
@@ -275,6 +296,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpMaterial getExpMaterial(int rowid);
 
+    @Nullable
+    ExpMaterial getExpMaterial(int rowid, ContainerFilter containerFilter);
+
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *
@@ -289,7 +313,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
-    ExpMaterial getExpMaterial(String lsid);
+    @Nullable ExpMaterial getExpMaterial(String lsid);
 
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
@@ -377,6 +401,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start);
 
+    static boolean isInputOutputColumn(String columnName)
+    {
+        if (StringUtils.isBlank(columnName))
+            return false;
+
+        String prefix = columnName.split("[./]")[0];
+
+        return ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(prefix) ||
+               ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(prefix) ||
+               ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
+               ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
+    }
+
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
      * ignoring any sample children derived from ExpData children.
@@ -415,6 +452,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     @NotNull
     ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
+
+    @NotNull
+    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
@@ -462,9 +502,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
 
+    Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz);
+
     String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
 
     String generateGuidLSID(Container container, DataType type);
+
+    Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, @NotNull DataType type);
 
     DataType getDataType(String namespacePrefix);
 
@@ -545,6 +589,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoMaterialAliasMap();
 
     TableInfo getTinfoEdge();
+
+    TableInfo getTinfoObjectLegacyNames();
 
     /**
      * Get all runs associated with these materials, including the source runs and any derived runs
@@ -682,6 +728,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
+    void registerObjectReferencer(ObjectReferencer referencer);
+
+    void registerColumnExporter(ColumnExporter exporter);
+
+    List<ColumnExporter> getColumnExporters();
+
+    @NotNull
+    List<ObjectReferencer> getObjectReferencers();
+
+    @NotNull
+    String getObjectReferenceDescription(Class referencedClass);
+
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
     @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);
@@ -697,7 +755,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpProtocol> getAllExpProtocols();
 
-    List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c);
+    List<? extends ExpProtocol> getExpProtocolsWithParameterValue(
+        @NotNull String parameterURI,
+        @NotNull String parameterValue,
+        @Nullable Container c,
+        @Nullable User user,
+        boolean includeProjectAndShared
+    );
 
     void registerRunEditor(ExpRunEditor editor);
 
@@ -791,6 +855,65 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
+
+    List<QueryViewProvider<ExpRun>> getRunInputsViewProviders();
+
+    List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
+
+    void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
+
+    void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
+
+    void addObjectLegacyName(int objectId, String objectType, String legacyName, User user);
+
+    /**
+     *
+     * @param name The legacy name of the object
+     * @param dataType: One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
+     * @param effectiveDate The effective date that the legacy name was active
+     * @param c
+     * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
+     */
+    Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
+
+    /**
+     * Persists a collection of lineage relationships (a.k.a. "edges") between experiment objects.
+     * Adding edges with a runId is not supported and this method will throw an exception if any run-based edges
+     * are supplied. Use experiment protocol inputs/outputs if run support is necessary.
+     * @param edges Collection of edges to persist.
+     */
+    void addEdges(Collection<ExpLineageEdge> edges);
+
+    /**
+     * Fetch a collection of lineage relationships (a.k.a. "edges") between experiment objects. The constraints
+     * for which edges to fetch is provided via the ExpLineageEdge.FilterOptions parameter. Example:
+     *
+     * new ExpLineageEdge.FilterOptions().sourceId(42).sourceKey("happy")
+     *
+     * fetches edges where:
+     *
+     * sourceId = 42 AND sourceKey = "happy"
+     *
+     * @param options Filtering options used to constrain the edge's fetched.
+     * @return The collection of currently persisted lineage relationships matching the supplied filter options.
+     */
+    @NotNull
+    List<ExpLineageEdge> getEdges(ExpLineageEdge.FilterOptions options);
+
+    /**
+     * Removes lineage relationships (a.k.a. "edges") between experiment objects. The constraints for which edges
+     * are removed is provided via the ExpLineageEdge.FilterOptions parameter. Example:
+     *
+     * new ExpLineageEdge.FilterOptions().sourceId(24).sourceKey("cheerful")
+     *
+     * removes edges where:
+     *
+     * sourceId = 24 AND sourceKey = "cheerful"
+     *
+     * @param options Filtering options used to constrain the edge's removed.
+     * @return The number of edges removed.
+     */
+    int removeEdges(ExpLineageEdge.FilterOptions options);
 
     class XarExportOptions
     {

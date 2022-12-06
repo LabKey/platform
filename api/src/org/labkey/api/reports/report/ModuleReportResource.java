@@ -64,7 +64,7 @@ public class ModuleReportResource
         }
     }
 
-    protected ReportDescriptorType loadMetaData()
+    public ReportDescriptorType loadMetaData()
     {
         ReportDescriptorType d = null;
         if (null != _metaDataFile && _metaDataFile.isFile())

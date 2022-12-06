@@ -19,11 +19,11 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
@@ -39,7 +39,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -48,6 +47,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -55,10 +55,10 @@ import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
@@ -85,6 +85,13 @@ import java.util.stream.Collectors;
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media samples"){
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)
     {
@@ -102,24 +109,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void setName(String name)
     {
-        if (null != getLSID() && !name.equals(new Lsid(getLSID()).getObjectId()))
-            throw new IllegalStateException("name="+name + " lsid="+getLSID());
         super.setName(name);
     }
 
     @Override
     public void setLSID(String lsid)
     {
-        if (null != getName() && !getName().equals(new Lsid(lsid).getObjectId()))
-            throw new IllegalStateException("name="+getName() + " lsid="+lsid);
         super.setLSID(lsid);
     }
 
     @Override
     public void setLSID(Lsid lsid)
     {
-        if (null != getName() && !getName().equals(lsid.getObjectId()))
-            throw new IllegalStateException("name=" + getName() + " lsid=" + lsid);
         super.setLSID(lsid);
     }
 
@@ -304,7 +305,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid, name) SELECT ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getName(), getLSID());
             }
         }
         index(null);
@@ -377,8 +378,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as
-        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
+        // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
+        // from being indexed as samples
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || "Material".equals(getCpasType()))
         {
             return;
         }
@@ -418,7 +420,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             identifiersHi.addAll(aliases);
         }
 
-
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
         props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
@@ -442,6 +443,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleType st = getSampleType();
         if (null != st)
         {
+            if (st.isMedia())
+                props.put(SearchService.PROPERTY.categories.toString(), mediaSearchCategory.toString());
             String sampleTypeName = st.getName();
             ActionURL show = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()).addParameter("rowId", st.getRowId());
             NavTree t = new NavTree("SampleType - " + sampleTypeName, show);
@@ -628,8 +631,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     boolean skipError = false;
                     if (dp.getLookup() != null)
                     {
-                        Container container = dp.getLookup().getContainer() != null ? dp.getLookup().getContainer() : getContainer();
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(dp.getLookup().getSchemaName()), dp.getLookup().getQueryName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                        Object remappedValue = OntologyManager.getRemappedValueForLookup(user, getContainer(), cache, dp.getLookup(), value);
                         if (remappedValue != null)
                         {
                             value = remappedValue;
@@ -643,7 +645,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 converted.put(dp.getName(), value);
                 values.remove(key);
             }
-            Table.update(user, st.getTinfo(), converted, getLSID());
+            TableInfo tableInfo = st.getTinfo();
+            ColumnInfo lsidCol = tableInfo.getColumn(ExpMaterialTable.Column.LSID.name());
+            Table.update(user, st.getTinfo(), converted, lsidCol, getLSID(), null, Level.WARN);
         }
         for (var entry : values.entrySet())
         {

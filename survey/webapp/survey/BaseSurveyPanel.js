@@ -355,9 +355,13 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 }
 
                 for (n = 0; n < names.length; n++) {
-                    handlers = this.changeHandlers[names[n]] || [];
+                    var name = names[n];
+                    if (this.forceLowerCaseNames)
+                        name = name.toLowerCase();
+
+                    handlers = this.changeHandlers[name] || [];
                     handlers.push({name: config.name, fn: new Function('', "return " + changeListen.fn)});
-                    this.changeHandlers[names[n]] = handlers;
+                    this.changeHandlers[name] = handlers;
                 }
             }
         }

@@ -41,5 +41,9 @@ public interface Tracking
     // Current number of elements in the cache
     int size();
 
+    int getExpirations();
+
+    int getEvictions();
+
     long getDefaultExpires();
 }

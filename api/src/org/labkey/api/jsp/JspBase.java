@@ -36,16 +36,17 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -62,9 +63,11 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -83,6 +86,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     private ViewContext _viewContext;
+    private PageConfig _pageConfig;
 
     @Override
     public ViewContext getViewContext()
@@ -94,6 +98,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
+        _pageConfig = HttpView.currentPageConfig();
     }
 
     public ActionURL getActionURL()
@@ -218,15 +223,41 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, use JSONArray.collector()
+    // Note: If you have a stream, use LabKeyCollectors.toJsonArray()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
     }
 
-    public JSONObject toJsonObject(Collection<Object> c)
+    public JSONObject toJsonObject(Map<?, ?> c)
     {
         return new JSONObject(c);
+    }
+
+    /**
+     * Make a pretty-printed and SafeToRender JSON text of this JSONArray
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return JavaScriptFragment holding the JSON representation
+     */
+    public JavaScriptFragment json(JSONArray array, int indentFactor)
+    {
+        return JavaScriptFragment.unsafe(array.toString(indentFactor));
+    }
+
+    /**
+     * Make a pretty-printed and SafeToRender JSON text of this JSONObject
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return JavaScriptFragment holding the JSON representation
+     */
+    public JavaScriptFragment json(JSONObject jsonObject, int indentFactor)
+    {
+        return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
+    }
+
+    @Deprecated // Just to help with migration. TODO: Eliminate usages and delete this
+    public JavaScriptFragment json(org.json.old.JSONObject jsonObject, int indentFactor)
+    {
+        return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
     }
 
     /**
@@ -255,6 +286,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
         return q(null != url ? url.toString() : null);
+    }
+
+    final protected JavaScriptFragment q(SafeToRender str)
+    {
+        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str.toString()));
     }
 
     protected HtmlString hq(String str)
@@ -481,39 +517,43 @@ public abstract class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
 
-    public HtmlString helpPopup(String helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String helpText)
     {
-        return helpPopup(null, helpText, false);
+        return PageFlowUtil.popupHelp(helpText);
     }
 
-    public HtmlString helpPopup(String title, String helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+        if (null == title && !htmlHelpText)
+            return PageFlowUtil.popupHelp(helpText);
+        if (!htmlHelpText)
+            return PageFlowUtil.popupHelp(HtmlString.unsafe(filter(helpText,true)), title);
+        return PageFlowUtil.popupHelp(HtmlString.unsafe(helpText), title);
     }
 
-    public HtmlString helpPopup(String title, HtmlString helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true));
+        return PageFlowUtil.popupHelp(helpHtml, title);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+        return helpPopup(title, helpText, htmlHelpText).width(width);
     }
 
-    public HtmlString helpPopup(String title, HtmlString helpText, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true, width));
+        return PageFlowUtil.popupHelp(helpHtml, title).width(width);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, String linkText, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, linkHtml, width));
+        return helpPopup(title, helpText, htmlHelpText).link(HtmlString.of(linkText)).width(width);
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)
@@ -551,17 +591,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
             return "";
         return getViewContext().getMessage(e);
     }
-
-    JspView<?> _me = null;
-
-    JspView<?> getView()
-    {
-        if (null == _me)
-            _me = (JspView<?>)HttpView.currentView();
-        return _me;
-    }
-
-
 
     //
     // Spring error handling helpers
@@ -650,7 +679,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
-    IdentityHashMap<ObjectError,String> _returnedErrors = new IdentityHashMap<>();
+    IdentityHashMap<ObjectError, String> _returnedErrors = new IdentityHashMap<>();
 
     // For extra credit, return list of errors not returned by formatErrorsForPath() or formatErrorForPath()
     public List<ObjectError> getMissedErrors(String bean)
@@ -757,9 +786,15 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     // Provides a unique integer within the context of this request. Handy for generating element ids, etc. See UniqueID for caveats and warnings.
+    @Deprecated // makeId() is preferred
     protected int getRequestScopedUID()
     {
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
+    }
+
+    protected String makeId(String prefix)
+    {
+        return _pageConfig.makeId(prefix);
     }
 
     // JSPs must override addClientDependencies(ClientDependencies) to add their own dependencies.
@@ -797,5 +832,20 @@ public abstract class JspBase extends JspContext implements HasViewContext
             return EMPTY_STRING;
         else
             return HtmlStringBuilder.of(prefix).append(HtmlString.unsafe("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")).append(suffix).getHtmlString();
+    }
+
+    protected HtmlString getScriptNonce()
+    {
+        return _pageConfig.getScriptNonce();
+    }
+
+    protected void addHandler(String id, String event, String handler)
+    {
+        _pageConfig.addHandler(id,event,handler);
+    }
+
+    protected PageConfig getPageConfig()
+    {
+        return _pageConfig;
     }
 }

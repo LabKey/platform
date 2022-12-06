@@ -15,7 +15,6 @@
  */
 package org.labkey.specimen.pipeline;
 
-import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.SpecimenTransform;
 
 import java.io.File;

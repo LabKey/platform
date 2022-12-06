@@ -67,7 +67,12 @@ public interface WikiService
     /**
      * Returns the raw (unformatted) content
      */
-    String getContent(Container c, String wikiName);
+    @Nullable String getContent(Container c, String wikiName);
+
+    /**
+     * Returns the raw (unformatted) content for every version of the wiki
+     */
+    @Nullable List<String> getAllContent(Container c, String wikiName);
 
     /**
      * Update the content of a wiki

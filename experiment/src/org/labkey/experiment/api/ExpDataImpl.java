@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,12 +59,14 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.permissions.DataClassReadPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.Input.InputBuilder;
@@ -81,7 +82,6 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,7 +101,37 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
     private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
-    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
+    public enum DataOperations {
+        EditLineage("editing lineage"),
+        Delete("deleting");
+
+        private final String _description; // used as a suffix in messaging users about what is not allowed
+
+        DataOperations(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+        }
+    };
+    public static final SearchService.SearchCategory expMediaDataCategory = new SearchService.SearchCategory("mediaData", "ExpData for media objects") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     /** Cache this because it can be expensive to recompute */
     private Boolean _finalRunOutput;
@@ -553,6 +583,11 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return getObjectProperties(getDataClass());
     }
 
+    public Map<String, ObjectProperty> getObjectProperties(@Nullable User user)
+    {
+        return getObjectProperties(getDataClass(user));
+    }
+
     private Map<String, ObjectProperty> getObjectProperties(ExpDataClassImpl dataClass)
     {
         HashMap<String,ObjectProperty> ret = new HashMap<>(super.getObjectProperties());
@@ -564,8 +599,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return ret;
     }
 
-    @Nullable
-    public static ExpDataImpl fromDocumentId(String resourceIdentifier)
+    private static Pair<Integer, ExpDataClass> getRowIdClassNameContainerFromDocumentId(String resourceIdentifier, Map<String, ExpDataClassImpl> dcCache)
     {
         if (resourceIdentifier.startsWith("data:"))
             resourceIdentifier = resourceIdentifier.substring("data:".length());
@@ -577,22 +611,41 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         String dataClassName = path.get(1);
         String rowIdString = path.get(2);
 
+        int rowId;
+        try
+        {
+            rowId = Integer.parseInt(rowIdString);
+            if (rowId == 0)
+                return null;
+        }
+        catch (NumberFormatException ex)
+        {
+            return null;
+        }
+
         Container c = ContainerManager.getForId(containerId);
         if (c == null)
             return null;
 
         ExpDataClass dc = null;
         if (dataClassName.length() > 0 && !dataClassName.equals("-"))
-            dc = ExperimentService.get().getDataClass(c, dataClassName);
-        Integer rowId;
-        try
         {
-            rowId = Integer.parseInt(rowIdString);
+            String dcKey = containerId + '-' + dataClassName;
+            dc = dcCache.computeIfAbsent(dcKey, (x) -> ExperimentServiceImpl.get().getDataClass(c, dataClassName));
         }
-        catch (NumberFormatException ex)
-        {
+
+        return new Pair<>(rowId, dc);
+    }
+
+    @Nullable
+    public static ExpDataImpl fromDocumentId(String resourceIdentifier)
+    {
+        Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, new HashMap<>());
+        if (rowIdDataClass == null)
             return null;
-        }
+
+        Integer rowId = rowIdDataClass.first;
+        ExpDataClass dc = rowIdDataClass.second;
 
         if (dc != null)
             return ExperimentServiceImpl.get().getExpData(dc, rowId);
@@ -600,9 +653,62 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return ExperimentServiceImpl.get().getExpData(rowId);
     }
 
+    @Nullable
+    public static Map<String, ExpData> fromDocumentIds(Collection<String> resourceIdentifiers)
+    {
+        Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+        Map<String, ExpDataClassImpl> dcCache = new HashMap<>();
+        Map<Integer, ExpDataClass> dcMap = new HashMap<>();
+        Map<Integer, List<Integer>> dcRowIdMap = new HashMap<>(); // data rowIds with dataClass
+        List<Integer> rowIds = new ArrayList<>(); // data rowIds without dataClass
+        for (String resourceIdentifier : resourceIdentifiers)
+        {
+            Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, dcCache);
+            if (rowIdDataClass == null)
+                continue;
+
+            Integer rowId = rowIdDataClass.first;
+            ExpDataClass dc = rowIdDataClass.second;
+
+            rowIdIdentifierMap.put(rowId, resourceIdentifier);
+
+            if (dc != null)
+            {
+                dcMap.put(dc.getRowId(), dc);
+                dcRowIdMap
+                        .computeIfAbsent(dc.getRowId(), (k) -> new ArrayList<>())
+                        .add(rowId);
+            }
+            else
+                rowIds.add(rowId);
+        }
+
+        List<ExpData> expDatas = new ArrayList<>();
+        if (!rowIds.isEmpty())
+            expDatas.addAll(ExperimentServiceImpl.get().getExpDatas(rowIds));
+
+        if (!dcRowIdMap.isEmpty())
+        {
+            for (Integer dataClassId : dcRowIdMap.keySet())
+            {
+                ExpDataClass dc = dcMap.get(dataClassId);
+                if (dc != null)
+                    expDatas.addAll(ExperimentServiceImpl.get().getExpDatas(dc, dcRowIdMap.get(dataClassId)));
+            }
+        }
+
+        Map<String, ExpData> identifierDatas = new HashMap<>();
+        for (ExpData data : expDatas)
+        {
+            identifierDatas.put(rowIdIdentifierMap.get(data.getRowId()), data);
+        }
+
+        return identifierDatas;
+    }
+
     @Override
     @Nullable
-    public String getWebDavURL(@NotNull PathType type)
+    public String getWebDavURL(@NotNull FileContentService.PathType type)
     {
         java.nio.file.Path path = getFilePath();
         if (path == null)
@@ -610,50 +716,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return null;
         }
 
-        if (getContainer() == null)
+        Container c = getContainer();
+        if (c == null)
         {
             return null;
         }
 
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(getContainer());
-        if (root == null)
-            return null;
-
-        try
-        {
-            path = path.toAbsolutePath();
-
-            //currently only report if the file is under the container for this ExpData
-            if (root.isUnderRoot(path))
-            {
-                String relPath = root.relativePath(path);
-                if (relPath == null)
-                    return null;
-
-                if(!FileContentService.get().isCloudRoot(getContainer()))
-                {
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
-                }
-                else
-                {
-                    // Do not encode path from S3 folder.  It is already encoded.
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
-                }
-                switch (type)
-                {
-                    case folderRelative: return relPath;
-                    case serverRelative: return root.getWebdavURL() + relPath;
-                    case full: return AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
-                    default:
-                        throw new IllegalArgumentException("Unexpected path type: " + type);
-                }
-            }
-        }
-        catch (InvalidPathException e)
-        {
-            LOG.error("Invalid path for expData: " + getRowId(), e);
-        }
-        return null;
+        return FileContentService.get().getWebDavUrl(path, c, type);
     }
 
     public void index(SearchService.IndexTask task)
@@ -736,7 +805,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // === Stored, not indexed
 
-        props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
+        if (dc != null && dc.isMedia())
+            props.put(SearchService.PROPERTY.categories.toString(), expMediaDataCategory.toString());
+        else
+            props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
@@ -811,10 +883,27 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return NAME;
         }
 
+        private ExpDataClass getDataClass()
+        {
+            if (HttpView.hasCurrentView())
+            {
+                ViewContext ctx = HttpView.currentContext();
+                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+                if (dataclass != null)
+                    return ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
+            }
+            return null;
+        }
+
         @Nullable
         @Override
         public String getCategories()
         {
+            ExpDataClass dataClass = getDataClass();
+
+            if (dataClass != null && dataClass.isMedia())
+                return expMediaDataCategory.getName();
+
             return expDataCategory.getName();
         }
 
@@ -829,18 +918,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         @Override
         public String getResultNameSingular()
         {
-            if (HttpView.hasCurrentView())
-            {
-                ViewContext ctx = HttpView.currentContext();
-                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
-                if (dataclass != null)
-                {
-                    ExpDataClass dc = ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
-                    if (dc != null)
-                        return dc.getName();
-                }
-            }
-
+            ExpDataClass dc = getDataClass();
+            if (dc != null)
+                return dc.getName();
             return "data";
         }
 

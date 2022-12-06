@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -42,10 +41,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -56,6 +51,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -70,7 +66,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
-import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
@@ -79,12 +74,10 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -92,7 +85,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
 import org.labkey.study.query.DatasetTableImpl;
@@ -106,10 +98,9 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.springframework.validation.BindException;
+import org.labkey.study.reports.ReportManager;
 
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -121,7 +112,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -131,8 +121,6 @@ public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private static final List<StudyManagementOption> _managementOptions = new ArrayList<>();
-
-    private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
 
     private StudyServiceImpl() {}
 
@@ -574,20 +562,6 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
-    {
-        try
-        {
-            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot, options));
-            return true;
-        }
-        catch (PipelineValidationException e)
-        {
-            return false;
-        }
-    }
-
-    @Override
     public ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c)
     {
         // join to the study.participant table to get the participant's alternateId
@@ -837,7 +811,7 @@ public class StudyServiceImpl implements StudyService
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
-            throw new IllegalStateException("Unable to construct class instance.");
+            throw new IllegalStateException("Unable to construct class instance.", e);
         }
     }
 
@@ -979,44 +953,6 @@ public class StudyServiceImpl implements StudyService
             union = "\nUNION ALL\n";
         }
         return sqlf;
-    }
-
-    @Override
-    public void registerStudyReloadSource(StudyReloadSource source)
-    {
-        if (!_reloadSourceMap.containsKey(source.getName()))
-            _reloadSourceMap.put(source.getName(), source);
-        else
-            throw new IllegalStateException("A study reload source implementation with the name: " + source.getName() + " is already registered");
-    }
-
-    @Override
-    public Collection<StudyReloadSource> getStudyReloadSources(Container container)
-    {
-        List<StudyReloadSource> sources = new ArrayList<>();
-
-        for (StudyReloadSource source : _reloadSourceMap.values())
-        {
-            if (source.isEnabled(container))
-                sources.add(source);
-        }
-        return sources;
-    }
-
-    @Nullable
-    @Override
-    public StudyReloadSource getStudyReloadSource(String name)
-    {
-        return _reloadSourceMap.get(name);
-    }
-
-    @Override
-    public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url)
-    {
-        PipeRoot root = PipelineService.get().findPipelineRoot(container);
-        StudyReloadSourceJob job = new StudyReloadSourceJob(new ViewBackgroundInfo(container, user, url), root, reloadSource.getName());
-
-        return job;
     }
 
     @Override
@@ -1177,5 +1113,11 @@ public class StudyServiceImpl implements StudyService
     public boolean participantExists(Study study, String participantId)
     {
         return null != StudyManager.getInstance().getParticipant(study, participantId);
+    }
+
+    @Override
+    public ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly)
+    {
+        return new ReportManager.StudyReportFilter(editOnly);
     }
 }

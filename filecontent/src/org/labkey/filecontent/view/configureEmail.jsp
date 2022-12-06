@@ -25,6 +25,6 @@
     }
 %>
 <div id="email-props"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() { Ext4.create('File.panel.EmailProps', { renderTo: 'email-props' }); });
 </script>

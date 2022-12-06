@@ -51,6 +51,14 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
+    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+    {
+        var ret = _service.hasExistingRowsInOtherContainers(container, keys);
+        clearCache();
+        return ret;
+    }
+
+    @Override
     public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {

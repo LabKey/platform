@@ -34,11 +34,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
@@ -54,6 +56,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,8 +73,8 @@ import java.util.function.Function;
 public interface SearchService
 {
     // create logger for package which can be set via logger-manage.view
-    Logger _packageLogger = LogManager.getLogger(SearchService.class.getPackage().getName());
-    Logger _log = LogManager.getLogger(SearchService.class);
+    Logger _packageLogger = LogHelper.getLogger(SearchService.class.getPackage(), "Full text search module rollup");
+    Logger _log = LogHelper.getLogger(SearchService.class, "Full text search service");
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
 
@@ -226,6 +229,15 @@ public interface SearchService
         default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
         default HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
         default Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier) { return null; }
+        default Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+        {
+            Map<String, Map<String, Object>> results = new HashMap<>();
+            for (String resourceIdentifier : resourceIdentifiers)
+            {
+                results.put(resourceIdentifier, getCustomSearchJson(user, resourceIdentifier));
+            }
+            return results;
+        }
     }
 
 
@@ -261,6 +273,21 @@ public interface SearchService
         public String toString()
         {
             return _name;
+        }
+
+        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        {
+            Set<String> containerIds = new HashSet<>();
+            containers.forEach((id, container) -> {
+                if (container.hasPermission(user, perm))
+                    containerIds.add(id);
+            });
+            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
+        }
+
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return containers.keySet();
         }
     }
 
@@ -396,7 +423,7 @@ public interface SearchService
     void deleteContainer(String id);
 
     void deleteIndex();          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
-    void clearLastIndexed();     // just reset lastIndexed values. must be callable before (and after) start() has been called.
+    void clearLastIndexed();     // reset lastIndexed values and initiate aggressive crawl. must be callable before (and after) start() has been called.
     void maintenance();
 
     //
@@ -410,6 +437,7 @@ public interface SearchService
     WebdavResource resolveResource(@NotNull String resourceIdentifier);
     HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier);
     Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier);
+    Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers);
 
     void addSearchResultTemplate(@NotNull SearchResultTemplate template);
     @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);

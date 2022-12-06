@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class BigIronController extends SpringActionController
 {
-    private static ActionResolver _actionResolver = new DefaultActionResolver(BigIronController.class);
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(BigIronController.class);
 
     public BigIronController()
     {
@@ -42,7 +42,7 @@ public class BigIronController extends SpringActionController
 
     @RequiresPermission(AdminOperationsPermission.class)
     @AllowedDuringUpgrade
-    public class DownloadGroupConcatInstallScriptAction extends ExportAction<Object>
+    public static class DownloadGroupConcatInstallScriptAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception

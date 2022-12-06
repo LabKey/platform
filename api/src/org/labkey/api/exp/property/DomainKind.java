@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -33,9 +34,11 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Tuple3;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -104,7 +107,7 @@ abstract public class DomainKind<T>  implements Handler<String>
      * the names of columns from the hard table underlying this type
      * @return set of strings containing the names. This will be compared ignoring case
      */
-    abstract public Set<String> getReservedPropertyNames(Domain domain);
+    abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
 
     public Set<String> getReservedPropertyNamePrefixes()
     {
@@ -305,6 +308,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
     public boolean allowTextChoiceProperties() { return true; }
+    public boolean allowSampleSubjectProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
 
@@ -364,5 +368,16 @@ abstract public class DomainKind<T>  implements Handler<String>
     public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
     {
         return null;
+    }
+
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull UserSchema userSchema)
+    {
+        return true;
+    }
+
+    // Is this domain kind considered "user managed"? e.g. list, sample type, etc
+    public boolean isUserCreatedType()
+    {
+        return true;
     }
 }

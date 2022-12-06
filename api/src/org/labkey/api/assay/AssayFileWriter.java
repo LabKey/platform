@@ -57,7 +57,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public static final String DIR_NAME = "assaydata";
     public static final String ARCHIVED_DIR_NAME = "archived";
-    public static final String TEMP_DIR_NAME = "uploadTemp";
+    public static final String TEMP_DIR_NAME = ".uploadTemp";
 
     /** Make sure there's an assaydata subdirectory available for this container */
     public static File ensureUploadDirectory(Container container) throws ExperimentException
@@ -117,7 +117,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     public static File createFile(ExpProtocol protocol, File dir, String extension)
     {
         Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss");
+        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss-SSS");
         int id = 0;
 
         String protocolName = protocol.getName();

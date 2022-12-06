@@ -54,8 +54,8 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -75,9 +75,8 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
@@ -133,11 +132,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         IssuesQuerySchema schema = getUserSchema();
         Set<String> baseProps = new CaseInsensitiveHashSet();
         Map<String, String> colNameMap = new HashMap<>();
-        for (String colName : getDomainKind().getReservedPropertyNames(getDomain()))
+        for (String colName : getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()))
         {
             colNameMap.put(colName.toLowerCase(), colName);
         }
-        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain()));
+        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()));
 
         setDescription("Contains a row for each issue created in this folder.");
 
@@ -716,26 +715,26 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
      */
     static class IssuesPdLookupForeignKey extends PdLookupForeignKey
     {
-        private User _user;
-        private Container _container;
-        private String _propName;
+        private final User _user;
+        private final Container _container;
+        private final String _propName;
 
         public IssuesPdLookupForeignKey(IssuesQuerySchema schema, PropertyDescriptor pd)
         {
-            super(schema, schema.getContainer(), schema.getUser(), null, pd, pd.getLookupSchema(), pd.getLookupQuery(), pd.getContainer());
+            super(schema, schema.getContainer(), schema.getUser(), null, pd);
             _user = schema.getUser();
             _container = schema.getContainer();
             _propName = pd.getName();
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             NamedObjectList objectList = super.getSelectList(ctx);
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             if (issueId != null)
             {
-                Issue issue = IssueManager.getIssue(_container, _user, issueId);
+                IssueObject issue = IssueManager.getIssue(_container, _user, issueId);
                 if (issue != null)
                 {
                     Object value = issue.getProperties().get(_propName);
@@ -777,7 +776,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             String issueDefName = ctx.get(FieldKey.fromParts("IssueDefName"), String.class);
             Integer assignedTo = ctx.get(FieldKey.fromParts("AssignedTo"), Integer.class);
-            Issue issue = null;
+            IssueObject issue = null;
             boolean hasAssignedTo = false;
 
             if (issueId != null)

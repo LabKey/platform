@@ -20,9 +20,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
@@ -55,9 +55,6 @@ import java.util.Map;
 
 /**
  * Common base class for all API actions
- *
- * User: Dave
- * Date: Feb 8, 2008
  */
 public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 {
@@ -501,10 +498,15 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         if (null == jsonObj)
             return new NullSafeBindException(form, "form");
 
-        if (form instanceof CustomApiForm)
+        if (form instanceof CustomApiForm caf)
         {
-            ((CustomApiForm)form).bindProperties(jsonObj);
-            return new NullSafeBindException(form, "form");
+            caf.bindProperties(jsonObj);
+            return new NullSafeBindException(caf, "form");
+        }
+        else if (form instanceof NewCustomApiForm ncaf)
+        {
+            ncaf.bindJson(jsonObj.toNewJSONObject()); // Temporary. TODO: Pass new JSONObject to populateForm() once all forms have been migrated to NewCustomApiForm
+            return new NullSafeBindException(ncaf, "form");
         }
         else
         {
@@ -513,9 +515,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         }
     }
 
-    private static class JsonPropertyValues extends MutablePropertyValues
+    public static class JsonPropertyValues extends MutablePropertyValues
     {
-        private JsonPropertyValues(JSONObject jsonObj) throws JSONException
+        public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {
             addPropertyValues(jsonObj);
         }

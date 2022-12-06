@@ -40,7 +40,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -181,7 +180,9 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);
 
-        SpecimenRequestManager.get().clearCaches(visit.getContainer());
+        SpecimenMigrationService SMS = SpecimenMigrationService.get();
+        if (null != SMS)
+            SMS.clearRequestCaches(visit.getContainer());
     }
 
     @Nullable
@@ -248,7 +249,11 @@ public class SpecimenManager
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragment);
 
         if (clearCaches)
-            SpecimenRequestManager.get().clearCaches(vial.getContainer());
+        {
+            SpecimenMigrationService SMS = SpecimenMigrationService.get();
+            if (null != SMS)
+                SMS.clearRequestCaches(vial.getContainer());
+        }
     }
 
     public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
@@ -271,7 +276,9 @@ public class SpecimenManager
         Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
-        SpecimenRequestRequirementProvider.get().purgeContainer(c);
+        SpecimenMigrationService SMS = SpecimenMigrationService.get();
+        if (null != SMS)
+            SMS.purgeRequestRequirementsAndActors(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
 
@@ -307,7 +314,8 @@ public class SpecimenManager
         // VIEW: if this view gets removed, remove this line
         assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
 
-        SpecimenRequestManager.get().clearGroupedValuesForColumn(c);
+        if (null != SMS)
+            SMS.clearGroupedValuesForColumn(c);
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)

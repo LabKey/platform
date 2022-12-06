@@ -33,6 +33,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -50,10 +52,12 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -65,6 +69,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +122,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        Domain domain = getDomain();
+        if (domain != null)
+        {
+            DomainKind<?> domainKind = domain.getDomainKind();
+            if (!domainKind.hasPermission(user, perm, _userSchema))
+                return false;
+        }
+
+        return super.hasPermission(user, perm);
+    }
+
+    @Override
     public void setInputMaterial(ExpMaterial material)
     {
         checkLocked();
@@ -164,7 +183,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public void setRuns(List<ExpRun> runs)
+    public void setRuns(Collection<ExpRun> runs)
     {
         checkLocked();
         if (runs.isEmpty())
@@ -174,7 +193,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         else
         {
             SQLFragment sql = new SQLFragment();
-            //sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun());
             sql.append("RowID IN (");
             String separator = "";
             for (ExpRun run : runs)
@@ -535,12 +553,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Links);
         addColumn(Column.Name);
         setTitleColumn(Column.Name.toString());
+        addContainerColumn(Column.Folder, null);
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
-        addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
         addColumn(Column.JobId).setFk(schema.getJobForeignKey());
         addColumn(Column.Replaced);
@@ -574,7 +592,19 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.WorkflowTask));
         setDefaultVisibleColumns(defaultVisibleColumns);
+
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        var ret = wrapColumn("_ExpRunTableImpl_object", _rootTable.getColumn("objectid"));
+        ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+        return ret;
+    }
+
 
     /**
      * This DisplayColumn renders a list of RunGroups.  The url expression
@@ -790,9 +820,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public String getLookupSchemaName()
+        public SchemaKey getLookupSchemaKey()
         {
-            return ExpSchema.SCHEMA_NAME;
+            return new SchemaKey(null, ExpSchema.SCHEMA_NAME);
         }
 
         @Override
@@ -913,6 +943,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         else if (entry.getKey().equalsIgnoreCase(Column.WorkflowTask.toString()))
                         {
                             Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                            Integer oldWorkflowTaskID = null;
+                            if (run.getWorkflowTask() != null)
+                                oldWorkflowTaskID = run.getWorkflowTask().getRowId();
+
+                            appendPropertyIfChanged(sb, "WorkflowTask", oldWorkflowTaskID, newWorkflowTaskId);
                             run.setWorkflowTaskId(newWorkflowTaskId);
                         }
 

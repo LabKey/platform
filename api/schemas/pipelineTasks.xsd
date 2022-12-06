@@ -418,5 +418,111 @@
             <xs:element name="select" minOccurs="0" type="SelectField"/>
         </xs:choice>
     </xs:complexType>
+
+    <!-- Pipeline-specific task definitions. Previously defined in pipeline/pipelineTasks.xsd, but defining these in a
+         separate, module-based file stopped working on XMLBeans 5.0.3. -->
+
+    <xs:complexType name="ExecTaskType">
+        <xs:complexContent>
+            <xs:extension base="p:TaskType">
+                <xs:sequence>
+                    <xs:element name="exec" type="ExecType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ScriptTaskType">
+        <xs:complexContent>
+            <xs:extension base="p:TaskType">
+                <xs:sequence>
+                    <xs:element name="script" type="ScriptType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ScriptType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="interpreter" type="xs:string" />
+                <xs:attribute name="file" type="xs:string" />
+                <xs:attribute name="timeout" type="xs:int">
+                    <xs:annotation><xs:documentation>Optional timeout in seconds.</xs:documentation></xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ExecType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="exe" type="xs:string" />
+                <xs:attribute name="installPath" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Path to directory containing the executable.
+                            Use the installPath if the executable isn't on the server's PATH environment variable.
+                            Environment variables in the installPath will be replaced before locating the executable.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="timeout" type="xs:int">
+                    <xs:annotation><xs:documentation>Optional timeout in seconds.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <!-- TODO:
+                <xs:attribute name="softwarePackage" type="xs:string" />
+                  - version could be literal "1.0" or a parameter name, e.g "exeVersion"
+                  - the ${version} token in the exe path will be replaced by the version provided.
+                <xs:attribute name="version" type="xs:string" />
+                -->
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- Assay-specific task definitions. Previously defined in assay/assayPipelineTasks.xsd, but defining these in a
+         separate, module-based file stopped working on XMLBeans 5.0.3. -->
+
+    <!-- Intermediate type introduced only to remove the 'outputs' element from base TaskType -->
+    <xs:complexType name="AssayImportRunTaskIntermediateType" abstract="true">
+        <xs:complexContent>
+            <xs:restriction base="p:TaskType">
+                <xs:sequence>
+                    <xs:group ref="InfoGroup"/>
+                    <xs:element name="author" type="xs:string" minOccurs="0"/>
+                    <xs:element name="location" type="xs:string" minOccurs="0"/>
+                    <xs:element name="inputs" type="InputsType" minOccurs="0"/>
+                    <!-- removed 'outputs' element -->
+                </xs:sequence>
+                <xs:attributeGroup ref="NameVersionAttrGroup"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="AssayImportRunTaskType">
+        <xs:annotation>
+            <xs:documentation>Import an output file from a previous task into the target assay.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="p:AssayImportRunTaskIntermediateType">
+                <xs:sequence>
+                    <xs:element name="providerName" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>Either an assay provider name or a job parameter name enclosed in ${}.
+                                If not provided, the assay provider will be looked up using the "${providerName}" parameter.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="protocolName" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>Either an assay protocol name or a job parameter name enclosed in ${}.
+                                If not provided, the assay protocol will be looked up using the "${protocolName}" parameter.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>
 

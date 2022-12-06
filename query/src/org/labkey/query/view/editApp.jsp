@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -37,7 +37,7 @@
     JSONObject defaults = (JSONObject)context.get("defaults");
     JSONObject values = (JSONObject)context.get("values");
 %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function updateApp()
     {
         var contextName = document.getElementById("contextName").value;

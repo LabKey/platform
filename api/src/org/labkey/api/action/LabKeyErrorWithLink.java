@@ -2,7 +2,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ViewContext;
 
 public class LabKeyErrorWithLink extends LabKeyError
@@ -21,7 +21,8 @@ public class LabKeyErrorWithLink extends LabKeyError
     public HtmlString renderToHTML(ViewContext context)
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of(super.renderToHTML(context));
-        builder.append(new Link.LinkBuilder(getAdviceText()).href(getAdviceHref()));
+        builder.append(" ");
+        builder.append(new LinkBuilder(getAdviceText()).href(getAdviceHref()).clearClasses());
 
         return builder.getHtmlString();
     }

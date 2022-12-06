@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
@@ -23,11 +24,15 @@ import java.util.Set;
 
 public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
 {
-    final R _wrapped;
+    R _wrapped;
 
-    QueryRelationWrapper(R wrapped)
+    QueryRelationWrapper(Query query)
     {
-        super(wrapped._query);
+        super(query);
+    }
+
+    void setWrapped(R wrapped)
+    {
         _wrapped = wrapped;
     }
 
@@ -83,9 +88,22 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        public ForeignKey getFk()
+        {
+            return _wrapped.getFk();
+        }
+
+        @Override
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
+        }
+
+        @Override
+        public int addRef(@NotNull Object refer)
+        {
+            _wrapped.addRef(refer);
+            return super.addRef(refer);
         }
     }
 
@@ -94,6 +112,13 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         if (null == c)
             return null;
         return new _RelationColumn(c);
+    }
+
+    RelationColumn unwrap(RelationColumn c)
+    {
+        if (null == c)
+            return null;
+        return ((_RelationColumn)c)._wrapped;
     }
 
     @Override
@@ -183,14 +208,14 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
     @Nullable
     public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
-        return wrap(_wrapped.getLookupColumn(parent, name));
+        return wrap(_wrapped.getLookupColumn(unwrap(parent), name));
     }
 
     @Override
     @Nullable
     public RelationColumn getLookupColumn(@NotNull RelationColumn parent, ColumnType.@NotNull Fk fk, @NotNull String name)
     {
-        return wrap(_wrapped.getLookupColumn(parent, fk, name));
+        return wrap(_wrapped.getLookupColumn(unwrap(parent), fk, name));
     }
 
     @Override
@@ -274,15 +299,15 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
     }
 
     @Override
-    public QueryWith getQueryWith()
+    public CommonTableExpressions getCommonTableExpressions()
     {
-        return _wrapped.getQueryWith();
+        return _wrapped.getCommonTableExpressions();
     }
 
     @Override
-    public void setQueryWith(QueryWith queryWith)
+    public void setCommonTableExpressions(CommonTableExpressions queryWith)
     {
-        _wrapped.setQueryWith(queryWith);
+        _wrapped.setCommonTableExpressions(queryWith);
     }
 
     @Override

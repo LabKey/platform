@@ -35,7 +35,7 @@ public class JavaScriptExportScriptFactory implements ExportScriptFactory
     }
 
     @Override
-    public ExportScriptModel getModel(QueryView queryView)
+    public JavaScriptExportScriptModel getModel(QueryView queryView)
     {
         return new JavaScriptExportScriptModel(queryView);
     }

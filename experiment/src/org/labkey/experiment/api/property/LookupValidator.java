@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ForeignKey;
@@ -32,6 +33,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -130,12 +132,11 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         }
     }
 
-    private class LookupValues extends HashSet<Object>
+    private static class LookupValues extends HashSet<Object>
     {
-        private TableInfo _tableInfo;
         final private Container _container;
 
-        public LookupValues(ColumnInfo field, Container defaultContainer, User user, List<ValidationError> errors)
+        public LookupValues(ColumnInfo field, Container defaultContainer, List<ValidationError> errors)
         {
             if (field.getFk().getLookupContainer() != null)
             {
@@ -171,29 +172,27 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             }
             else
             {
-                UserSchema userSchema = QueryService.get().getUserSchema(user, _container, field.getLookupSchema());
+                QuerySchema userSchema = QueryService.get().getUserSchema(user, _container, field.getLookupSchema());
                 if (userSchema == null)
                 {
                     errors.add(new SimpleValidationError("Could not find the lookup's target schema ('" + field.getLookupSchema() + "') for field '" + field.getNonBlankCaption() + "'"));
                 }
                 else
                 {
-                    processTableInfo(userSchema.getTable(field.getLookupQuery()), field.getJdbcType(), field.getLookupQuery(), field.getNonBlankCaption(), errors);
+                    processTableInfo(userSchema.getTableForInsert(field.getLookupQuery()), field.getJdbcType(), field.getLookupQuery(), field.getNonBlankCaption(), errors);
                 }
             }
         }
 
-        private void processTableInfo(TableInfo ti, JdbcType jdbcType, String queryName, String label, List<ValidationError> errors)
+        private void processTableInfo(TableInfo tableInfo, JdbcType jdbcType, String queryName, String label, List<ValidationError> errors)
         {
-            _tableInfo = ti;
-            if (_tableInfo == null)
+            if (tableInfo == null)
             {
                 errors.add(new SimpleValidationError("Could not find the lookup's target query ('" + queryName + "') for field '" + label + "'"));
             }
             else
             {
-
-                List<ColumnInfo> keyCols = _tableInfo.getPkColumns();
+                List<ColumnInfo> keyCols = tableInfo.getPkColumns();
 
                 if (keyCols.size() != 1)
                 {
@@ -203,9 +202,9 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                 {
                     ColumnInfo lookupTargetCol = keyCols.get(0);
                     // Hack for sample types - see also revision 37612
-                    if (lookupTargetCol.getJdbcType() != jdbcType && jdbcType.isText() && _tableInfo instanceof ExpMaterialTableImpl)
+                    if (lookupTargetCol.getJdbcType() != jdbcType && jdbcType.isText() && tableInfo instanceof ExpMaterialTableImpl)
                     {
-                        ColumnInfo nameCol = _tableInfo.getColumn(ExpMaterialTableImpl.Column.Name.toString());
+                        ColumnInfo nameCol = tableInfo.getColumn(ExpMaterialTableImpl.Column.Name.toString());
                         assert nameCol != null : "Could not find Name column in SampleType table";
                         if (nameCol != null)
                         {
@@ -225,7 +224,11 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
     }
 
     @Override
-    public boolean validate(IPropertyValidator validator, ColumnRenderProperties crpField, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+    public boolean validate(IPropertyValidator validator,
+                            ColumnRenderProperties crpField,
+                            @NotNull Object value,
+                            List<ValidationError> errors,
+                            ValidatorContext validatorCache)
     {
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";
@@ -233,10 +236,8 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         if (value != null)
             value = ConvertHelper.convert(value, crpField.getJavaObjectClass());
 
-        if (crpField instanceof PropertyDescriptor)
+        if (crpField instanceof PropertyDescriptor field)
         {
-            PropertyDescriptor field = (PropertyDescriptor) crpField;
-
             if (field.getLookupQuery() != null && field.getLookupSchema() != null)
             {
                 LookupKey key = new LookupKey(field);
@@ -250,10 +251,8 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                         field.getLookupQuery(), field.getNonBlankCaption(), validValues);
             }
         }
-        else if (crpField instanceof ColumnInfo)
+        else if (crpField instanceof ColumnInfo field)
         {
-            ColumnInfo field = (ColumnInfo) crpField;
-
             if (field.getFk() != null)
             {
                 LookupKey key = new LookupKey(field.getFk(), field.getJdbcType());
@@ -261,7 +260,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
 
                 if (validValues == null)
                 {
-                    validValues = new LookupValues(field, validatorCache.getContainer(), validatorCache.getUser(), errors);
+                    validValues = new LookupValues(field, validatorCache.getContainer(), errors);
                 }
                 return isLookupValid(value, errors, validatorCache, key, field.getFk().getLookupSchemaName(),
                         field.getFk().getLookupTableName(), field.getNonBlankCaption(), validValues);
@@ -275,11 +274,15 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         return true;
     }
 
-    private boolean isLookupValid(@NotNull Object value, List<ValidationError> errors,
-                                           ValidatorContext validatorCache, LookupKey key,
-                                           String schemaName, String queryName, String label, LookupValues validValues)
+    private boolean isLookupValid(@NotNull Object value,
+                                  List<ValidationError> errors,
+                                  ValidatorContext validatorCache,
+                                  LookupKey key,
+                                  String schemaName,
+                                  String queryName,
+                                  String label,
+                                  LookupValues validValues)
     {
-
         validatorCache.put(LookupValidator.class, key, validValues);
 
         if (validValues.contains(value))

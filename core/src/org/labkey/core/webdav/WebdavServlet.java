@@ -23,9 +23,9 @@ package org.labkey.core.webdav;
  */
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.Logger;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
@@ -139,14 +139,10 @@ public class WebdavServlet extends HttpServlet
         dav.setUrlResourcePath(fullPath);
         int stackSize = HttpView.getStackSize();
         // Only track non-GET requests
-        try (RequestInfo t = "GET".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath))
+        try (RequestInfo t = "GET".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath);
+            var autoClose= HttpView.initForRequest(context, request, response))
         {
-            HttpView.initForRequest(context, request, response);
             dav.handleRequest(request, response);
-        }
-        finally
-        {
-            HttpView.resetStackSize(stackSize);
         }
     }
 

@@ -16,7 +16,7 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;

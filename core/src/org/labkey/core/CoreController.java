@@ -16,10 +16,10 @@
 
 package org.labkey.core;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -38,14 +37,13 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -125,7 +123,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -139,6 +139,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
@@ -161,7 +162,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -188,9 +188,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -201,7 +202,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -212,7 +213,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-    private static final Logger _log = LogManager.getLogger(CoreController.class);
+    private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -436,23 +437,30 @@ public class CoreController extends SpringActionController
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
 
-                Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
-                SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                try
                 {
-                    if (results.getSize() != 1 || !results.next())
-                        throw new NotFoundException("Row not found for primary key");
+                    Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
+                    SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
+                    try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                    {
+                        if (results.getSize() != 1 || !results.next())
+                            throw new NotFoundException("Row not found for primary key");
 
-                    String filename = results.getString(col.getFieldKey());
-                    if (filename == null)
-                        throw new NotFoundException();
+                        String filename = results.getString(col.getFieldKey());
+                        if (filename == null)
+                            throw new NotFoundException();
 
-                    file = new File(filename);
+                        file = new File(filename);
+                    }
+                }
+                catch (ConversionException e)
+                {
+                    throw new NotFoundException("Invalid value specified for PK, could not convert to " + pkCol.getJavaClass());
                 }
             }
             else
             {
-                throw new IllegalArgumentException("objectURI or schemaName, queryName, and pk required.");
+                throw new NotFoundException("objectURI or schemaName, queryName, and pk required.");
             }
 
             // For security reasons, make sure the user hasn't tried to download a file that's not under
@@ -485,9 +493,10 @@ public class CoreController extends SpringActionController
             {
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
-                MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = MimeMap.DEFAULT.canInlineFor(file.getName());
+                // Default to rendering inline when possible, but let caller force download as an attachment
+                boolean asAttachment = !canInline || (form.getInline() != null && !form.getInline().booleanValue());
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), asAttachment);
             }
             return null;
         }
@@ -712,19 +721,19 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             if (json == null)
             {
                 throw new NotFoundException("No JSON posted");
             }
-            String name = StringUtils.trimToNull(json.getString("name"));
-            String title = StringUtils.trimToNull(json.getString("title"));
-            String description = StringUtils.trimToNull(json.getString("description"));
-            String typeName = StringUtils.trimToNull(json.getString("type"));
+            String name = StringUtils.trimToNull(json.optString("name"));
+            String title = StringUtils.trimToNull(json.optString("title"));
+            String description = StringUtils.trimToNull(json.optString("description"));
+            String typeName = StringUtils.trimToNull(json.optString("type"));
             boolean isWorkbook = false;
             if (typeName == null)
             {
-                isWorkbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+                isWorkbook = json.optBoolean("isWorkbook");
                 typeName = isWorkbook ? WorkbookContainerType.NAME : NormalContainerType.NAME;
             }
             ContainerType type = ContainerTypeRegistry.get().getType(typeName);
@@ -745,11 +754,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                String folderTypeName = json.getString("folderType");
-                if (folderTypeName == null && isWorkbook)
-                {
-                    folderTypeName = WorkbookFolderType.NAME;
-                }
+                String folderTypeName = json.optString("folderType", isWorkbook ? WorkbookFolderType.NAME : null);
 
                 FolderType folderType = null;
                 if (folderTypeName != null)
@@ -765,8 +770,8 @@ public class CoreController extends SpringActionController
                 Set<Module> ensureModules = new HashSet<>();
                 if (json.has("ensureModules") && !json.isNull("ensureModules"))
                 {
-                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
-                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    List<String> requestedModules = StreamSupport.stream(json.getJSONArray("ensureModules").spliterator(), false)
+                        .map(Object::toString).toList();
                     for (String moduleName : requestedModules)
                     {
                         Module module = ModuleLoader.getInstance().getModule(moduleName);
@@ -782,7 +787,7 @@ public class CoreController extends SpringActionController
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
-                    newContainer.setFolderType(folderType, getUser());
+                    newContainer.setFolderType(folderType, getUser(), errors);
                 }
                 if (!ensureModules.isEmpty())
                 {
@@ -839,8 +844,8 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getJsonObject();
-            String targetIdentifier = object.getString("container");
+            JSONObject object = form.getNewJsonObject();
+            String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
             {
@@ -848,7 +853,7 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            String parentIdentifier = object.getString("parent");
+            String parentIdentifier = object.optString("parent", null);
 
             if (null == parentIdentifier)
             {
@@ -896,7 +901,7 @@ public class CoreController extends SpringActionController
                 List<Container> children = parent.getChildren();
                 for (Container child : children)
                 {
-                    if (child.getName().toLowerCase().equals(target.getName().toLowerCase()))
+                    if (child.getName().equalsIgnoreCase(target.getName()))
                     {
                         errors.reject(ERROR_MSG, "Subfolder of '" + parent.getPath() + "' with name '" +
                                 target.getName() + "' already exists.");
@@ -924,11 +929,10 @@ public class CoreController extends SpringActionController
             }
 
             // Prepare aliases
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
-            
-            List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
+
+            List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
@@ -1448,7 +1452,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors)
         {
             Map<String, Object> folderTypes = new HashMap<>();
-            for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes())
+            for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes(true))
             {
                 Map<String, Object> folderTypeJSON = new HashMap<>();
                 folderTypeJSON.put("name", folderType.getName());
@@ -1493,7 +1497,7 @@ public class CoreController extends SpringActionController
         {
             JSONObject ret = new JSONObject();
 
-            if(form.getModuleName() == null)
+            if (form.getModuleName() == null)
             {
                 errors.reject(ERROR_MSG, "Must provide the name of the module");
                 return null;
@@ -1632,7 +1636,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
-            JSONObject formData = form.getJsonObject();
+            JSONObject formData = form.getNewJsonObject();
             JSONArray a = formData.getJSONArray("properties");
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
@@ -1654,13 +1658,14 @@ public class CoreController extends SpringActionController
                     if (mp == null)
                         throw new IllegalArgumentException("Invalid module property: " + name);
 
-                    Container ct = ContainerManager.getForId(row.getString("container"));
-                    if (ct == null && (Boolean.TRUE == row.getBoolean("currentContainer")))
+                    String containerId = row.optString("container", null);
+                    Container ct = null != containerId ? ContainerManager.getForId(containerId) : null;
+                    if (ct == null && row.getBoolean("currentContainer"))
                         ct = getContainer();
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.getString("value"));
+                    mp.saveValue(ctx.getUser(), ct, row.optString("value", null));
                 }
                 transaction.commit();
             }
@@ -1778,11 +1783,11 @@ public class CoreController extends SpringActionController
                     writerMap.put("name", dataType);
                     writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
 
-                    Collection<Writer> childWriters = writer.getChildren(true, form.isForTemplate());
-                    if (childWriters != null && childWriters.size() > 0)
+                    Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
+                    if (!childWriters.isEmpty())
                     {
                         List<String> children = new ArrayList<>();
-                        for (Writer child : childWriters)
+                        for (Writer<?, ?> child : childWriters)
                         {
                             dataType = child.getDataType();
                             if (dataType != null)
@@ -1817,12 +1822,12 @@ public class CoreController extends SpringActionController
         private String _exportType;
         private boolean _forTemplate;
 
-        public AbstractFolderContext.ExportType getExportType()
+        public ExportType getExportType()
         {
             if ("study".equalsIgnoreCase(_exportType))
-                return AbstractFolderContext.ExportType.STUDY;
+                return ExportType.STUDY;
 
-            return AbstractFolderContext.ExportType.ALL;
+            return ExportType.ALL;
         }
 
         public void setExportType(String exportType)
@@ -1851,7 +1856,7 @@ public class CoreController extends SpringActionController
             if (null == registry)
                 throw new RuntimeException();
 
-            List<FolderImporter<?>> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
+            List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
                 registeredImporters.sort(new ImporterAlphaComparator());
 
@@ -1868,7 +1873,7 @@ public class CoreController extends SpringActionController
         private static final String DESCRIPTION_KEY = "description";
         private static final String IS_VALID_FOR_ARCHIVE_KEY = "isValidForImportArchive";
 
-        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception
         {
             return getSelectableImporters(form, registeredImporters, true, null);
         }
@@ -1878,18 +1883,18 @@ public class CoreController extends SpringActionController
             return FileUtil.hasCloudScheme(form.getArchiveFilePath());
         }
 
-        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception
         {
-            ImportContext folderImportCtx = getFolderImportContext(form);
+            FolderImportContext folderImportCtx = getFolderImportContext(form);
             boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
 
             return getSelectableImporters(form, registeredImporters, isZipArchive, folderImportCtx);
         }
 
-        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters, boolean isZipOrCloudArchive, @Nullable FolderImportContext folderImportCtx) throws Exception
         {
             List<Map<String, Object>> selectableImporters = new ArrayList<>();
-            for (FolderImporter<?> importer : registeredImporters)
+            for (FolderImporter importer : registeredImporters)
             {
                 if (importer.getDataType() != null)
                 {
@@ -1900,15 +1905,14 @@ public class CoreController extends SpringActionController
             return selectableImporters;
         }
 
-        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter<?> importer, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter importer, boolean isZipOrCloudArchive, @Nullable FolderImportContext folderImportCtx) throws Exception
         {
             Map<String, Object> importerMap = new HashMap<>();
             importerMap.put(DATATYPE_KEY, importer.getDataType());
             importerMap.put(DESCRIPTION_KEY, importer.getDescription());
             importerMap.put(IS_VALID_FOR_ARCHIVE_KEY, isZipOrCloudArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
 
-            ImportContext ctx = isZipOrCloudArchive ? folderImportCtx : getImporterSpecificImportContext(form, importer, folderImportCtx);
-            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
+            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(form.getArchiveFilePath(), getUser(), getContainer());
             if (childrenDataTypes != null)
             {
                 importerMap.put("children", getChildProps(childrenDataTypes, isZipOrCloudArchive));
@@ -1932,13 +1936,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    private ImportContext<?> getImporterSpecificImportContext(FolderImporterForm form, FolderImporter<?> importer, ImportContext<?> defaultCtx) throws IOException
-    {
-        ImportContext<?> ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
-        return ctx != null ? ctx : defaultCtx;
-    }
-
-    private ImportContext getFolderImportContext(FolderImporterForm form) throws IOException
+    private FolderImportContext getFolderImportContext(FolderImporterForm form) throws IOException
     {
         VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
         if (vf != null)
@@ -1953,11 +1951,11 @@ public class CoreController extends SpringActionController
 
     private boolean isZipArchive(FolderImporterForm form) throws IOException
     {
-        // consider this a zip archive if the file ends with .zip and isn't sitting next to a folder.xml or study.xml file
+        // consider this a zip archive if the file ends with .zip and isn't sitting next to a folder.xml
         if (form.getArchiveFilePath() != null && form.getArchiveFilePath().toLowerCase().endsWith(".zip"))
         {
             VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
-            return null != vf && vf.getXmlBean("folder.xml") == null && vf.getXmlBean("study.xml") == null;
+            return null != vf && vf.getXmlBean("folder.xml") == null;
         }
         return false;
     }
@@ -1976,7 +1974,7 @@ public class CoreController extends SpringActionController
         return null;
     }
 
-    private class ImporterAlphaComparator implements Comparator<FolderImporter>
+    private static class ImporterAlphaComparator implements Comparator<FolderImporter>
     {
         @Override
         public int compare(FolderImporter o1, FolderImporter o2)
@@ -2049,15 +2047,11 @@ public class CoreController extends SpringActionController
         public Object execute(LoadLibraryForm form, BindException errors)
         {
             String[] requestLibraries = form.getLibrary();
-
-            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
-
-            JSONArray resources;
             JSONObject libraries = new JSONObject();
 
             for (String library : requestLibraries)
             {
-                if (library.length() > 0)
+                if (!StringUtils.isBlank(library))
                 {
                     ClientDependency cd = ClientDependency.fromPath(library);
 
@@ -2067,18 +2061,12 @@ public class CoreController extends SpringActionController
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
                         dependencies.addAll(cd.getJsPaths(getContainer()));
-
-                        resources = new JSONArray(dependencies);
+                        libraries.put(library, new JSONArray(dependencies));
                     }
-                    else
-                    {
-                        resources = new JSONArray();
-                    }
-
-                    libraries.put(library, resources);
                 }
             }
 
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("libraries", libraries);
 
             return response;
@@ -2282,6 +2270,7 @@ public class CoreController extends SpringActionController
                     {
                         record.put("machine", def.getMachine());
                         record.put("port", String.valueOf(def.getPort()));
+                        record.put("fileExchange", def.getFileExchange());
 
                         PathMapper pathMap = def.getPathMap();
                         if (pathMap != null)
@@ -2290,6 +2279,9 @@ public class CoreController extends SpringActionController
                             record.put("pathMap", null);
 
                         record.put("user", def.getUser());
+
+                        if (def.getRemoteUrl() != null)
+                            record.put("remoteUrl", def.getRemoteUrl());
                         // don't send down password
                         //record.put("password", def.getPassword());
                     }
@@ -2337,6 +2329,18 @@ public class CoreController extends SpringActionController
                                 errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
                             }
                         }
+                    }
+                }
+
+                if (def.getRemoteUrl() != null)
+                {
+                    try
+                    {
+                        new URL(def.getRemoteUrl());
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        errors.rejectValue("remoteUrl", ERROR_MSG, e.getMessage());
                     }
                 }
 
@@ -2451,10 +2455,17 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            svc.deleteDefinition(getUser(), def);
-
-            return new ApiSimpleResponse("success", true);
+            ExternalScriptEngineDefinition savedDef = svc.getEngineDefinition(def.getRowId(), def.getType());
+            if (savedDef != null)
+            {
+                svc.deleteDefinition(getUser(), savedDef);
+                response.put("success", true);
+            }
+            else
+                response.put("success", false);
+            return response;
         }
     }
 
@@ -2528,6 +2539,7 @@ public class CoreController extends SpringActionController
     public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultQCState;
+        private boolean _requireCommentOnQCStateChange;
 
         public Integer getDefaultQCState()
         {
@@ -2537,6 +2549,16 @@ public class CoreController extends SpringActionController
         public void setDefaultQCState(Integer defaultQCState)
         {
             _defaultQCState = defaultQCState;
+        }
+
+        public boolean isRequireCommentOnQCStateChange()
+        {
+            return _requireCommentOnQCStateChange;
+        }
+
+        public void setRequireCommentOnQCStateChange(boolean requireCommentOnQCStateChange)
+        {
+            _requireCommentOnQCStateChange = requireCommentOnQCStateChange;
         }
     }
 
@@ -2552,12 +2574,6 @@ public class CoreController extends SpringActionController
         public boolean hasQcStateDefaultsPanel()
         {
             return true;
-        }
-
-        @Override
-        public boolean hasDataVisibilityPanel()
-        {
-            return false;
         }
 
         @Override
@@ -2581,9 +2597,44 @@ public class CoreController extends SpringActionController
         }
 
         @Override
+        public boolean hasDataVisibilityPanel()
+        {
+            return false;
+        }
+
+        @Override
         public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
-            throw new IllegalStateException("This action does not support a data visibility panel");
+            throw new IllegalStateException("This action does not support a data visibility panel.");
+        }
+
+        @Override
+        public boolean hasRequiresCommentPanel()
+        {
+            return true;
+        }
+
+        @Override
+        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        {
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">This setting determines whether a comment is required when updating an assay run QC state.");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Require Comment on QC State Change:</th>");
+            panelHtml.append("          <td>");
+            panelHtml.append("              <select name=\"requireCommentOnQCStateChange\">");
+            panelHtml.append("                  <option value=\"false\">No</option>");
+            String selectedText = (qcStateHandler.isRequireCommentOnQCStateChange(container)) ? " selected" : "";
+            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">Yes</option>");
+            panelHtml.append("              </select>");
+            panelHtml.append("          </td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
         }
 
         @Override
@@ -2722,13 +2773,14 @@ public class CoreController extends SpringActionController
             String metricName = form.getMetricName();
             response.put("featureArea", featureArea);
             response.put("metricName", metricName);
-            response.put("count", ClientSideMetricManager.get().increment(featureArea, metricName));
+            response.put("count", SimpleMetricsService.get().increment(form.getModuleName(), featureArea, metricName));
             return response;
         }
     }
 
     public static class ClientSideMetricForm
     {
+        private String _moduleName = CoreModule.CORE_MODULE_NAME;
         private String _featureArea;
         private String _metricName;
 
@@ -2751,90 +2803,15 @@ public class CoreController extends SpringActionController
         {
             _metricName = metricName;
         }
-    }
 
-    @RequiresNoPermission
-    public class TestLoggerAction extends BaseApiAction
-    {
-        private String[] nouns = { "LabKey", "Beaker", "Lab", "San Diego", "Seattle",
-                "Server", "Java", "Science", "Maths" };
-
-        private String[] verbs = { "kept", "developed", "made",
-                "found", "coined" };
-
-        private String[] phrases = { "tech is cool",
-                "computers and corn",
-                "One or two things that money can't buy",
-                "that's true about home grown tomatoes",
-                "drove my chevy to the levy but the levy was dry",
-                "them good old boys were drinking whiskey and rye",
-                "we're waxing down out surf boards, we can't wait for June",
-                "tell the teacher we are surfing",
-                "it's a 59,60,61,62,63,64,65,66,67,68,69 automobile..",
-                "beers and horn" };
-
-        private Logger log = LogManager.getLogger(TestLoggerAction.class);
-
-        void randomSentence()
+        public String getModuleName()
         {
-            for (int i=0; i<50; i++)
-            {
-                randomSimpleSentence();
-
-                if (Math.random() > 0.5)
-                {
-                    log.info(" and ");
-                    randomSimpleSentence();
-                }
-            }
+            return _moduleName;
         }
 
-        void randomSimpleSentence()
+        public void setModuleName(String moduleName)
         {
-            if (Math.random() > 0.5)
-            {
-                log.info("the Bus Is Outta Control! ");
-                randomNounPhrase();
-            }
-            else
-                log.info("these pretzels are making me thirsty");
-        }
-
-        void randomNounPhrase()
-        {
-            int n = (int)(Math.random()*nouns.length);
-            log.info(phrases[n]);
-
-            if (Math.random() > 0.5)
-            {
-                int m = (int)(Math.random()*phrases.length);
-                log.info(" " + nouns[m]);
-            }
-            else
-            {
-                int v = (int) (Math.random() * verbs.length);
-                log.info(" that " + verbs[v] + " ");
-            }
-
-        }
-
-
-        @Override
-        protected ModelAndView handleGet()
-        {
-            Runnable testThread = this::randomSentence;
-
-            for (int i=0; i < 4000; i++)
-            {
-                (new Thread(testThread)).start();
-            }
-            return null;
-        }
-
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            return null;
+            _moduleName = moduleName;
         }
     }
 }

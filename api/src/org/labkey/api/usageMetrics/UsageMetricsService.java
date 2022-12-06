@@ -17,7 +17,6 @@ package org.labkey.api.usageMetrics;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.UsageReportingLevel;
 
 import java.util.Map;
 
@@ -29,7 +28,7 @@ import java.util.Map;
  *         UsageMetricsService svc = UsageMetricsService.get();
  *         if (null != svc)
  *         {
- *             svc.registerUsageMetrics(moduleName, () -> {
+ *             svc.registerUsageMetrics(DataIntegrationModule.NAME, () -> {
  *                 Map<String, Object> metric = new HashMap<>();
  *                 metric.put("etlRunCount", new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class));
  *                 return metric;
@@ -58,8 +57,9 @@ public interface UsageMetricsService
      *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
      * @param moduleName The name of the module
-     * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically
+     * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically,
      *                this will return a map of metric name -> value pairs.
+     * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
      */
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
 }

@@ -100,7 +100,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LISTID_FIELD_NAME = "listId";
 
 
-    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions"), new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {
@@ -130,25 +130,28 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getPicklists(Container container)
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
-        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
-        return scopedLists.stream().filter(ListDef::isPicklist).collect(Collectors.toList());
+        return getLists(container, true).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
     }
 
     public Collection<ListDef> getLists(Container container)
     {
-        return getLists(container, null, false, true);
+        return getLists(container, false);
     }
 
-    public Collection<ListDef> getLists(Container container, boolean includePicklists)
+    public Collection<ListDef> getLists(Container container, boolean includeProjectAndShared)
     {
-        return getLists(container, null, false, includePicklists);
+        return getLists(container, null, false, true, includeProjectAndShared);
     }
 
-    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
+    public Collection<ListDef> getLists(
+        @NotNull Container container,
+        @Nullable User user,
+        boolean checkVisibility,
+        boolean includePicklists,
+        boolean includeProjectAndShared
+    )
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
-        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
+        Collection<ListDef> scopedLists = getAllScopedLists(container, includeProjectAndShared);
         if (!includePicklists)
             scopedLists = scopedLists.stream().filter(listDef -> !listDef.isPicklist()).collect(Collectors.toList());
         if (checkVisibility)
@@ -157,30 +160,44 @@ public class ListManager implements SearchService.DocumentProvider
             return scopedLists;
     }
 
-    private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
+    /**
+     * Returns all list definitions defined within the scope of the container. This can optionally include list
+     * definitions from the container's project as well as the Shared folder. In the event of a name collision the
+     * closest container's list definition will be returned (i.e. container > project > Shared).
+     */
+    private Collection<ListDef> getAllScopedLists(@NotNull Container container, boolean includeProjectAndShared)
     {
-        // Workbooks can see parent lists. In the event of a name collision, the child workbook list wins.
-        // In future, may add additional ways to cross-folder scope lists
+        List<ListDef> ownLists = _listDefCache.get(container.getId());
+        Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
+
+        if (includeProjectAndShared)
+        {
+            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer().getId()))
+                listDefMap.put(sharedList.getName(), sharedList);
+
+            Container project = container.getProject();
+            if (project != null)
+            {
+                for (ListDef projectList : _listDefCache.get(project.getId()))
+                    listDefMap.put(projectList.getName(), projectList);
+            }
+        }
+
+        // Workbooks can see parent lists.
         if (container.isWorkbook())
         {
-            List<ListDef> parentLists = _listDefCache.get(container.getParent().getId());
-            if (ownLists.size() > 0 && parentLists.size() > 0)
+            Container parent = container.getParent();
+            if (parent != null)
             {
-                Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
-                for (ListDef def : parentLists)
-                {
-                    listDefMap.put(def.getName(), def);
-                }
-                for (ListDef def : ownLists)
-                {
-                    listDefMap.put(def.getName(), def);
-                }
-                return listDefMap.values();
+                for (ListDef parentList : _listDefCache.get(parent.getId()))
+                    listDefMap.put(parentList.getName(), parentList);
             }
-            else if (parentLists.size() > 0)
-                return parentLists;
         }
-        return ownLists;
+
+        for (ListDef ownList : ownLists)
+            listDefMap.put(ownList.getName(), ownList);
+
+        return listDefMap.values();
     }
 
     /**
@@ -190,11 +207,12 @@ public class ListManager implements SearchService.DocumentProvider
      */
     String getListTableName(TableInfo ti)
     {
-        if (ti instanceof ListTable)
-            return ((ListTable)ti).getRealTable().getSelectName();
-        else return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
+        if (ti instanceof ListTable lti)
+            return lti.getRealTable().getSelectName();
+        return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
+    @Nullable
     public ListDef getList(Container container, int listId)
     {
         SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
@@ -315,18 +333,7 @@ public class ListManager implements SearchService.DocumentProvider
     private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
     {
         _listDefCache.remove(c.getId());
-        if (!oldName.equals(updatedName))
-        {
-            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(updatedName),
-                    QueryChangeListener.QueryProperty.Name,
-                    oldName,
-                    updatedName
-            );
-
-            QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
-                    QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
-        }
+        QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
     // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency
@@ -790,7 +797,7 @@ public class ListManager implements SearchService.DocumentProvider
         ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
         String documentId = getDocumentId(list);
 
-        // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
+        // First check if metadata needs to be indexed: if the setting is enabled and the definition has changed
         boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
 
         // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
@@ -848,7 +855,7 @@ public class ListManager implements SearchService.DocumentProvider
                     public void exec(Results results) throws StopIteratingException
                     {
                         body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        // Short circuit for very large list, #25366
+                        // Issue 25366: Short circuit for very large list
                         if (body.length() > fileSizeLimit)
                         {
                             body.setLength(fileSizeLimit); // indexer also checks size... make sure we're under the limit
@@ -951,7 +958,7 @@ public class ListManager implements SearchService.DocumentProvider
                 LOG.warn(getTemplateErrorMessage(list, "\"each item as a separate document\" title template", error));
         }
 
-        // If you're devious enough to put ${ in your list name then we'll just strip it out, #21794
+        // Issue 21794: If you're devious enough to put ${ in your list name then we'll just strip it out
         String name = list.getName().replaceAll("\\$\\{", "_{");
         template = createValidStringExpression("List " + name + " - ${" + PageFlowUtil.encode(listTable.getTitleColumn()) + "}", error);
 
@@ -986,7 +993,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 sb.append(sep);
                 sb.append("${");
-                sb.append(column.getFieldKey().encode());  // Must encode, #21794
+                sb.append(column.getFieldKey().encode());  // Issue 21794: Must encode
                 sb.append("}");
                 sep = " ";
             }
@@ -1001,7 +1008,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    // Perform some simple validation of custom indexing template, #21726.
+    // Issue 21726: Perform some simple validation of custom indexing template
     private @Nullable FieldKeyStringExpression createValidStringExpression(String template, StringBuilder error)
     {
         // Don't URL encode and use lenient substitution (replace nulls with blank)
@@ -1162,7 +1169,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (null != ti)
         {
             Map<String, String> recordChangedMap = new CaseInsensitiveHashMap<>();
-            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain());
+            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), user);
 
             // Match props to columns
             for (Map.Entry<String, Object> entry : props.entrySet())
@@ -1219,7 +1226,13 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    boolean importListSchema(ListDefinition unsavedList, String typeColumn, ImportTypesHelper importHelper, User user, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
+    boolean importListSchema(
+        ListDefinition unsavedList,
+        ImportTypesHelper importHelper,
+        User user,
+        Collection<ValidatorImporter> validatorImporters,
+        List<String> errors
+    ) throws Exception
     {
         if (!errors.isEmpty())
             return false;

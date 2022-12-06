@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -88,6 +89,14 @@ public class BooleanFormat extends Format
     public static BooleanFormat getInstance()
     {
         return _definstance;
+    }
+
+    /**
+     * @return An instance for the specified format string, or the default instance when null
+     */
+    public static BooleanFormat getInstance(@Nullable String format)
+    {
+        return format == null ? _definstance : new BooleanFormat(format);
     }
 
     /**

@@ -2,11 +2,11 @@ package org.labkey.specimen.actions;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.requirements.RequirementProvider;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
+import org.labkey.specimen.model.SpecimenRequestActor;
+import org.labkey.specimen.requirements.RequirementProvider;
+import org.labkey.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementType;
 
 public class ManageReqsBean
 {

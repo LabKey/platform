@@ -16,7 +16,7 @@
 package org.labkey.api.files;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 
 /**
  * User: klum

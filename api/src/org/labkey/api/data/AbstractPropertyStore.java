@@ -202,6 +202,12 @@ public abstract class AbstractPropertyStore implements PropertyStore
         _cache.remove(propertyMap);
     }
 
+    // Call this only if you must
+    void clearCache()
+    {
+        _cache.clear();
+    }
+
     protected class PropertyLoader implements CacheLoader<String, PropertyManager.PropertyMap>
     {
         @Override

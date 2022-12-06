@@ -19,7 +19,6 @@ package org.labkey.list.model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.BaseColumnInfo;
@@ -86,18 +85,18 @@ public class ListWriter
     static final String SCHEMA_FILENAME = "lists.xml";
     static final String SETTINGS_FILENAME = "settings.xml";
 
-    public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
+    public boolean write(Container c, User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception
     {
         // We exclude picklists because they contain just sampleIds, which will be different in the new container.
         // Picklists are meant to be transient, so not including them in the export makes sense.
-        Map<String, ListDefinition> lists = ListService.get().getLists(c, false);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false, false, false);
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
         {
             if (ctx != null && ctx.getClass().equals(FolderExportContext.class))
             {
-                Set<Integer> listsToExport = ((FolderExportContext)ctx).getListIds();
+                Set<Integer> listsToExport = ctx.getListIds();
                 if (listsToExport != null)
                 {
                     // If we have a list of lists to export then we only want to export the ones in the list.

@@ -35,7 +35,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimenTableManager;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.api.study.Study;
@@ -46,7 +45,6 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -207,20 +205,6 @@ public class SpecimenWriter extends AbstractSpecimenWriter
             sql.append(convertListToString(ctx.getParticipants(), true));
             sql.append(")");
             conjunction = " AND ";
-        }
-
-        if (null != ctx.getVials() && !ctx.getVials().isEmpty())
-        {
-            List<Vial> vials = ctx.getVials();
-            List<String> uniqueIds = new LinkedList<>();
-
-            for (Vial vial : vials)
-                uniqueIds.add(vial.getGlobalUniqueId());
-
-            sql.append(conjunction).append("\n s.GlobalUniqueId IN (");
-            sql.append(convertListToString(uniqueIds, true));
-            sql.append(")");
-            conjunction = " AND";
         }
 
         sql.append("\nORDER BY se.ExternalId");

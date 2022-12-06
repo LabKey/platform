@@ -123,6 +123,10 @@ public interface FileContentService
 
     void setSiteDefaultRoot(File root, User user);
 
+    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
+
+    boolean isFileRootSetViaStartupProperty();
+
     @NotNull
     File getUserFilesRoot();
 
@@ -201,6 +205,8 @@ public interface FileContentService
     FilesAdminOptions getAdminOptions(Container c);
 
     void setAdminOptions(Container c, FilesAdminOptions options);
+
+    void setAdminOptions(Container c, String properties);
 
     /**
      * Returns the default file root of the specified container.  This will default to a path
@@ -313,6 +319,11 @@ public interface FileContentService
      * @return folder relative to file root
      */
     String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container);
+
+    enum PathType { full, serverRelative, folderRelative }
+
+    @Nullable
+    String getWebDavUrl(@NotNull Path path, @NotNull Container container, @NotNull PathType type);
 
     /**
      * Ensure an entry in the exp.data table exists for all files in the container's file root.

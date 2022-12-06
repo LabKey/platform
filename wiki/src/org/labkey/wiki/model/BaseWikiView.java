@@ -22,6 +22,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -34,6 +35,7 @@ import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Mark Igra
@@ -116,12 +118,14 @@ public abstract class BaseWikiView extends JspView<Object>
             {
                 try
                 {
-                    html = wikiVersion.getHtml(c, wiki);
-                    addClientDependencies(wikiVersion.getClientDependencies(c, wiki));
+                    // Issue 46346 - make a single call to get the HTML and dependency info to avoid double-rendering
+                    Pair<HtmlString, Set<ClientDependency>> rendered = wikiVersion.render(c, wiki);
+                    html = rendered.first;
+                    addClientDependencies(rendered.second);
                 }
                 catch (Exception e)
                 {
-                    HtmlString.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
+                    html = HtmlString.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
                 }
             }
             else
@@ -173,14 +177,20 @@ public abstract class BaseWikiView extends JspView<Object>
             updateContentURL.addParameter("redirect", url.getLocalURIString());
         }
 
-        if (isWebPart() && perms.allowAdmin())
+        if (isWebPart())
         {
-            // the customize URL should always be for the current container (not the wiki webpart's container)
-            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
-            customizeURL.addParameter("webPartId", _webPartId);
-            customizeURL.addReturnURL(getViewContext().getActionURL());
+            if (perms.allowAdmin())
+            {
+                // the customize URL should always be for the current container (not the wiki webpart's container)
+                customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
+                customizeURL.addParameter("webPartId", _webPartId);
+                customizeURL.addReturnURL(getViewContext().getActionURL());
+            }
 
-            setTitleHref(WikiController.getPageURL(wiki, c));
+            if (perms.allowRead(wiki))
+            {
+                setTitleHref(WikiController.getPageURL(wiki, c));
+            }
         }
 
         if (null == context.getRequest().getParameter("_print"))

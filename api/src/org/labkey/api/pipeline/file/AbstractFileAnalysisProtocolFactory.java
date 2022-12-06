@@ -42,6 +42,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
@@ -376,7 +377,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             }
             return result;
         }
-        catch (IOException e)
+        catch (IOException|InvalidPathException e)
         {
             _log.warn("Error loading protocol file.", e);
             return null;

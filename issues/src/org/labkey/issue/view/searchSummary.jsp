@@ -19,14 +19,14 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.issue.model.Issue"%>
+<%@ page import="org.labkey.issue.model.IssueObject"%>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Issue> me = (JspView<Issue>) HttpView.currentView();
-    final Issue issue = me.getModelBean();
+    JspView<IssueObject> me = (JspView<IssueObject>) HttpView.currentView();
+    final IssueObject issue = me.getModelBean();
     final User user = getUser();
     final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");
     final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
@@ -46,7 +46,7 @@
     <%
         StringBuilder html = new StringBuilder();
         boolean hasTextComment = false;
-        for (Issue.Comment comment : issue.getComments())
+        for (IssueObject.CommentObject comment : issue.getCommentObjects())
         {
             String s = comment.getHtmlComment().toString();
             String pattern1 = "<div class=\"labkey-wiki\">";

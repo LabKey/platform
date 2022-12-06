@@ -29,7 +29,7 @@
     boolean useCustomView = bean.isUseCustomView();
     String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     window.onbeforeunload = LABKEY.beforeunload();
 
     var DEFAULT_SCRIPT_VALUE = <%= q(bean.getDefaultScript()) %>;

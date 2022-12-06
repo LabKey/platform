@@ -159,6 +159,16 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return result;
     }
 
+    public static synchronized void clearFileQueue(HttpSession session, Container c, ExpProtocol protocol)
+    {
+        Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        if (collections == null)
+            return;
+
+        Pair<Container, Integer> key = new Pair<>(c, protocol.getRowId());
+        collections.remove(key);
+    }
+
     @Override
     @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, ExperimentException

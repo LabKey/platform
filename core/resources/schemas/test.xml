@@ -167,6 +167,7 @@
             <column columnName="Active"/>
             <column columnName="HasPassword"/>
             <column columnName="ExpirationDate"/>
+            <column columnName="System"/>
         </columns>
     </table>
     <table tableName="a\b" tableDbType="VIEW">
@@ -193,6 +194,7 @@
             <column columnName="Active"/>
             <column columnName="HasPassword"/>
             <column columnName="ExpirationDate"/>
+            <column columnName="System"/>
         </columns>
     </table>
 </tables>

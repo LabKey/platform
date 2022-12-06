@@ -36,7 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
+import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 
 /**
  * Resolver that tries to resolve subject and timepoint information using sample IDs
@@ -44,7 +44,7 @@ import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKe
 public class SampleParticipantVisitResolver extends StudyParticipantVisitResolver
 {
     private final Map<Integer, Pair<Boolean, ParticipantVisit>> _resolvedSamples = new HashMap<>();
-    private Map<ExtraColFieldKeys, FieldKey> _fieldKeyMap;
+    private Map<LinkToStudyKeys, FieldKey> _fieldKeyMap;
 
     public SampleParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)
     {
@@ -126,22 +126,22 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                                     Double visitId = null;
                                     Date visitDate = null;
 
-                                    if (_fieldKeyMap.containsKey(ExtraColFieldKeys.ParticipantId) &&
-                                            selectColumns.containsKey(_fieldKeyMap.get(ExtraColFieldKeys.ParticipantId)))
+                                    if (_fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) &&
+                                            selectColumns.containsKey(_fieldKeyMap.get(LinkToStudyKeys.ParticipantId)))
                                     {
-                                        var col = selectColumns.get(_fieldKeyMap.get(ExtraColFieldKeys.ParticipantId));
+                                        var col = selectColumns.get(_fieldKeyMap.get(LinkToStudyKeys.ParticipantId));
                                         ptid = PublishResultsQueryView.convertObjectToString(PublishResultsQueryView.getColumnValue(col, ctx));
                                     }
-                                    if (_fieldKeyMap.containsKey(ExtraColFieldKeys.VisitId) &&
-                                            selectColumns.containsKey(_fieldKeyMap.get(ExtraColFieldKeys.VisitId)))
+                                    if (_fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) &&
+                                            selectColumns.containsKey(_fieldKeyMap.get(LinkToStudyKeys.VisitId)))
                                     {
-                                        var col = selectColumns.get(_fieldKeyMap.get(ExtraColFieldKeys.VisitId));
+                                        var col = selectColumns.get(_fieldKeyMap.get(LinkToStudyKeys.VisitId));
                                         visitId = PublishResultsQueryView.convertObjectToDouble(PublishResultsQueryView.getColumnValue(col, ctx));
                                     }
-                                    if (_fieldKeyMap.containsKey(ExtraColFieldKeys.Date) &&
-                                            selectColumns.containsKey(_fieldKeyMap.get(ExtraColFieldKeys.Date)))
+                                    if (_fieldKeyMap.containsKey(LinkToStudyKeys.Date) &&
+                                            selectColumns.containsKey(_fieldKeyMap.get(LinkToStudyKeys.Date)))
                                     {
-                                        var col = selectColumns.get(_fieldKeyMap.get(ExtraColFieldKeys.Date));
+                                        var col = selectColumns.get(_fieldKeyMap.get(LinkToStudyKeys.Date));
                                         visitDate = PublishResultsQueryView.convertObjectToDate(getRunContainer(), PublishResultsQueryView.getColumnValue(col, ctx));
                                     }
 

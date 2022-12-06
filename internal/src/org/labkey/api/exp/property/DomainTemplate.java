@@ -497,6 +497,13 @@ public class DomainTemplate
             else
                 throw new RuntimeSQLException(x);
         }
+        finally
+        {
+            if (dl != null)
+            {
+                dl.close();
+            }
+        }
 
         return 0;
     }

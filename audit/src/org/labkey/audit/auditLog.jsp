@@ -33,9 +33,11 @@
         selectedProvider = providers.get(0);
     }
 
+    var selectId = makeId("formsSubmit");
+    addHandler(selectId,"change","this.form.submit()");
 %>
 <labkey:form action="" method="GET">
-    <select name="view" onchange="this.form.submit()">
+    <select id="<%=h(selectId)%>" name="view">
 <%
     for (AuditTypeProvider provider : providers)
     {

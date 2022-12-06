@@ -128,7 +128,7 @@ public abstract class SpringModule extends DefaultModule
 
     /**
      * A module may define a pipeline configuration file in the deployed webapp at /WEB-INF/[lower_case_module_name]Context.xml.
-     * Context may be overridden outside the the module after installation, by specifying a path to
+     * Context may be overridden outside the module after installation, by specifying a path to
      * the configuration files in the <code>ServletContext</code> parameter
      * <code>INIT_PARAMETER_CONFIG_PATH</code>.
      * <p/>
@@ -499,6 +499,12 @@ public abstract class SpringModule extends DefaultModule
         }
 
         @Override
+        public ServletRegistration.Dynamic addJspFile(String servletName, String jspFile)
+        {
+            return null;
+        }
+
+        @Override
         public <T extends Servlet> T createServlet(Class<T> aClass)
         {
             return null;
@@ -602,6 +608,48 @@ public abstract class SpringModule extends DefaultModule
 
         @Override
         public void declareRoles(String... strings)
+        {
+
+        }
+
+        @Override
+        public String getVirtualServerName()
+        {
+            return null;
+        }
+
+        @Override
+        public int getSessionTimeout()
+        {
+            return 0;
+        }
+
+        @Override
+        public void setSessionTimeout(int sessionTimeout)
+        {
+
+        }
+
+        @Override
+        public String getRequestCharacterEncoding()
+        {
+            return null;
+        }
+
+        @Override
+        public void setRequestCharacterEncoding(String encoding)
+        {
+
+        }
+
+        @Override
+        public String getResponseCharacterEncoding()
+        {
+            return null;
+        }
+
+        @Override
+        public void setResponseCharacterEncoding(String encoding)
         {
 
         }

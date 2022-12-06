@@ -74,8 +74,8 @@ public interface Selector
 
     /**
      * Returns an uncached sequential Stream of objects representing rows from the database. Converts each result row into
-     * an object of the specified class. The Stream is backed by a live ResultSet with an open Connection, so it must be
-     * closed, typically using try-with-resources. This is less convenient than a cached Stream, but useful when large
+     * an object of the specified class. The Stream is backed by a live ResultSet with an open Connection, so <b>it must be
+     * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when large
      * results are expected.
      *
      * An example showing proper closing:
@@ -102,9 +102,9 @@ public interface Selector
 
     /**
      * Returns an uncached sequential Stream of maps representing rows from the database. Converts each result row into a
-     * {@code Map<String, Object>}. The Stream is backed by a live ResultSet with an open Connection, so it must be closed,
-     * typically using try-with-resources. This is less convenient than a cached Stream, but useful when large results are
-     * expected.
+     * {@code Map<String, Object>}. The Stream is backed by a live ResultSet with an open Connection, so it <b>must be
+     * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when
+     * large results are expected.
      */
     Stream<Map<String, Object>> uncachedMapStream();
 
@@ -117,8 +117,8 @@ public interface Selector
 
     /**
      * Returns an uncached sequential Stream that iterates a ResultSet. The Stream is backed by a live ResultSet with an
-     * open Connection, so it must be closed, typically using try-with-resources. This is less convenient than a cached
-     * Stream, but useful when large results are expected.
+     * open Connection, so <b>it must be closed</b>, typically using try-with-resources. This is less convenient than a
+     * cached Stream, but useful when large results are expected.
      */
     Stream<ResultSet> uncachedResultSetStream();
 

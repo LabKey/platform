@@ -17,9 +17,11 @@ package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.MutableColumnInfo;
@@ -61,9 +63,10 @@ public class PropertyColumn extends LookupColumn
     /**
      * @param container container in which the query is going to be executed. Used optionally as a join condition, and
      * to construct the appropriate TableInfo for lookups.
-     * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container 
+     * @param joinOnContainer when creating the join as a LookupColumn, whether to also match based on container
+     * @param containerFilter container filter to use for property column data
      */
-    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer, @Nullable ContainerFilter containerFilter)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
@@ -72,15 +75,42 @@ public class PropertyColumn extends LookupColumn
 
         _pd = pd;
         _container = container;
-        
-        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey());
+
+        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey(), containerFilter);
+    }
+
+    /**
+     * @param container container in which the query is going to be executed. Used optionally as a join condition, and
+     * to construct the appropriate TableInfo for lookups.
+     * @param joinOnContainer when creating the join as a LookupColumn, whether to also match based on container
+     */
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
+    {
+        this(pd, lsidColumn, container, user, joinOnContainer, null);
     }
 
     // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
     // TODO handle pd.copyTo(MutableColumnInfo)
-    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, FieldKey lsidColumnFieldKey)
+    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, @Nullable FieldKey lsidColumnFieldKey)
     {
-        copyAttributes(user, (BaseColumnInfo)to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey);
+        copyAttributes(user, to, dp, container, lsidColumnFieldKey, null);
+    }
+
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey, @Nullable ContainerFilter containerFilter)
+    {
+        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, containerFilter);
+    }
+
+    public static void copyAttributes(
+        User user,
+        MutableColumnInfo to,
+        DomainProperty dp,
+        Container container,
+        @Nullable FieldKey lsidColumnFieldKey,
+        @Nullable final ContainerFilter cf
+    )
+    {
+        copyAttributes(user, to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey, cf);
         Map<DomainProperty, Object> map = DefaultValueService.get().getDefaultValues(container, dp.getDomain(), user);
 
         Object value = map.get(dp);
@@ -91,19 +121,35 @@ public class PropertyColumn extends LookupColumn
 
     public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
     {
-        copyAttributes(user, (BaseColumnInfo)to, pd, container, null, null, null, lsidColumnFieldKey);
+        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, null);
     }
 
     public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey)
     {
-        copyAttributes(user, (BaseColumnInfo)to, pd, container, schemaKey, queryName, pkFieldKey, null);
+        copyAttributes(user, to, pd, container, schemaKey, queryName, pkFieldKey, null, null);
+    }
+
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey, @Nullable ContainerFilter cf)
+    {
+        copyAttributes(user, to, pd, container, schemaKey, queryName, pkFieldKey, null, cf);
     }
 
     // TODO handle pd.copyTo(MutableColumnInfo)
-    private static void copyAttributes(User user, BaseColumnInfo to, final PropertyDescriptor pd, final Container container, final SchemaKey schemaKey, final String queryName, final FieldKey pkFieldKey, final FieldKey lsidColumnFieldKey)
+    // TODO: Refactor to builder pattern
+    private static void copyAttributes(
+        User user,
+        @NotNull MutableColumnInfo to,
+        @NotNull final PropertyDescriptor pd,
+        final Container container,
+        @Nullable final SchemaKey schemaKey,
+        @Nullable final String queryName,
+        @Nullable final FieldKey pkFieldKey,
+        @Nullable final FieldKey lsidColumnFieldKey,
+        @Nullable final ContainerFilter cf
+    )
     {
         // ColumnRenderProperties
-        pd.copyTo(to);
+        pd.copyTo((BaseColumnInfo) to);
 
         to.setPropertyType(pd.getPropertyType());
         to.setRequired(pd.isRequired());
@@ -133,7 +179,7 @@ public class PropertyColumn extends LookupColumn
         }
 
         if (user != null && ((pd.getLookupSchema() != null && pd.getLookupQuery() != null) || pd.getConceptURI() != null))
-            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd));
+            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd, cf));
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
@@ -149,13 +195,11 @@ public class PropertyColumn extends LookupColumn
         setSqlTypeName(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR));
     }
 
-
     public void setParentIsObjectId(boolean id)
     {
         _parentIsObjectId = id;
     }
     
-
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
@@ -173,17 +217,17 @@ public class PropertyColumn extends LookupColumn
         {
             sql.append(getPropertyCol(_pd));
         }
-        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + _pd.getPropertyId());
+        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
         sql.append(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
             sql.append(_foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias(tableAlias) + ".ObjectId");
+            sql.append(getTableAlias(tableAlias)).append(".ObjectId");
         sql.append(")");
         if (null != cast)
         {
             sql.insert(0, "CAST(");
-            sql.append(" AS " + cast + ")");
+            sql.append(" AS ").append(cast).append(")");
         }
 
         return sql;
@@ -196,25 +240,19 @@ public class PropertyColumn extends LookupColumn
             super.declareJoins(baseAlias, map);
     }
 
-
     static private String getPropertyCol(@NotNull PropertyDescriptor pd)
     {
         if (pd.getPropertyType() == null)
             throw new IllegalStateException("No storage type");
 
-        switch (pd.getPropertyType().getStorageType())
-        {
-            case 's':
-                return "StringValue";
-            case 'f':
-                return "FloatValue";
-            case 'd':
-                return "DateTimeValue";
-            default:
-                throw new IllegalStateException("Bad storage type");
-        }
+        return switch (pd.getPropertyType().getStorageType())
+                {
+                    case 's' -> "StringValue";
+                    case 'f' -> "FloatValue";
+                    case 'd' -> "DateTimeValue";
+                    default -> throw new IllegalStateException("Bad storage type");
+                };
     }
-
 
     private String getPropertySqlCastType()
     {
@@ -230,7 +268,6 @@ public class PropertyColumn extends LookupColumn
         else
             return getParentTable().getSqlDialect().getSqlTypeName(JdbcType.VARCHAR) + "(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
     }
-
 
     public PropertyDescriptor getPropertyDescriptor()
     {
@@ -259,7 +296,7 @@ public class PropertyColumn extends LookupColumn
         }
 
         strJoinNoContainer.append(" AND ");
-        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container"), _container));
+        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container")));
 
         return strJoinNoContainer;
     }
@@ -307,7 +344,7 @@ public class PropertyColumn extends LookupColumn
     }
 
     @Override
-    public Class getJavaClass(boolean isNullable)
+    public Class<?> getJavaClass(boolean isNullable)
     {
         if (isMvIndicatorColumn())
         {

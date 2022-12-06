@@ -125,7 +125,7 @@ public class NotificationEndpoint extends Endpoint
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response)
         {
             HttpSession session = (HttpSession) request.getHttpSession();
-            User user = SecurityManager.getSessionUser(session);
+            User user = SecurityManager.getSessionUser(request);
 
             // config.getUserProperties() is backed by a ConcurrentHashMap which does not allow null keys or values.
             if (session != null)
@@ -133,15 +133,6 @@ public class NotificationEndpoint extends Endpoint
 
             config.getUserProperties().put("userId", null == user ? 0 : user.getUserId());
         }
-    }
-
-    private boolean isSameHttpSession(HttpSession session)
-    {
-        if (session == null)
-            return false;
-
-        HttpSession boundSession = (HttpSession)this.session.getUserProperties().get("httpSession");
-        return boundSession != null && boundSession.getId().equals(session.getId());
     }
 
     interface Fn
@@ -200,20 +191,6 @@ public class NotificationEndpoint extends Endpoint
         return false;
     }
 
-    private static void doClose(int userId, @Nullable HttpSession httpSession, String message)
-    {
-        // Close WebSockets for the user AND httpSession
-        final CloseReason reason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, message);
-        long count = getEndpoints(userId)
-                .stream()
-                .filter(e -> e.isSameHttpSession(httpSession))
-                .map(e -> e.safely(() -> e.session.close(reason)))
-                .count();
-
-        if (count == 0)
-            LOG.debug("WebSocket: no sessions to close for " + userId + " (" + (httpSession != null ? httpSession.getId() : "all sessions") + "): " + message);
-    }
-
     private static void sendEvent(int userId, String eventName)
     {
         sendEvent(Collections.singletonList(userId), eventName);
@@ -262,11 +239,6 @@ public class NotificationEndpoint extends Endpoint
     public static void sendEvent(List<Integer> userIds, Class clazz)
     {
         sendEvent(userIds, clazz.getCanonicalName());
-    }
-
-    public static void close(int userId, @Nullable HttpSession session, String message)
-    {
-        doClose(userId, session, message);
     }
 
     static

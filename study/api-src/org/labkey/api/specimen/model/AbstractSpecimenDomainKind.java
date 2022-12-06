@@ -42,7 +42,6 @@ import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -108,7 +107,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return new HashSet<>();
     }

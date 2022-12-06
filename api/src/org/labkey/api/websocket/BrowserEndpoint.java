@@ -74,7 +74,7 @@ public abstract class BrowserEndpoint extends Endpoint
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response)
         {
             HttpSession httpSession = (HttpSession) request.getHttpSession();
-            User user = SecurityManager.getSessionUser(httpSession);
+            User user = SecurityManager.getSessionUser(request);
 
             config.getUserProperties().put("requestHeaders", request.getHeaders());
             if (httpSession != null)

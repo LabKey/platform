@@ -104,7 +104,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         if (!data.isFinalRunOutput())
             return defaultName;
 
-        if (defaultName.startsWith("uploadTemp"))
+        if (defaultName.startsWith(AssayFileWriter.TEMP_DIR_NAME))
             return FilenameUtils.getBaseName(defaultName) + ".tsv";
         else
             return FilenameUtils.getFullPath(defaultName) + FilenameUtils.getBaseName(defaultName) + ".tsv";

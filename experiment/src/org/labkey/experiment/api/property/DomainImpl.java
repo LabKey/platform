@@ -63,6 +63,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -81,11 +82,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
@@ -256,6 +257,12 @@ public class DomainImpl implements Domain
     public int getTypeId()
     {
         return _dd.getDomainId();
+    }
+
+    @Override
+    public void setName(String name)
+    {
+        _dd = _dd.edit().setName(name).build();
     }
 
     @Override
@@ -458,7 +465,7 @@ public class DomainImpl implements Domain
         if (dp.getLookup() != null)
         {
             Container lookupContainer = dp.getLookup().getContainer();
-            String schemaName = dp.getLookup().getSchemaName();
+            SchemaKey schemaKey = dp.getLookup().getSchemaKey();
             String queryName = dp.getLookup().getQueryName();
 
             if (lookupContainer == null)
@@ -466,7 +473,7 @@ public class DomainImpl implements Domain
                 lookupContainer = dp.getContainer();
             }
 
-            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, schemaKey);
             if (schema != null)
             {
                 TableInfo table = schema.getTable(queryName);
@@ -483,7 +490,7 @@ public class DomainImpl implements Domain
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!dp.getPropertyType().getJdbcType().equals(pkColumnInfo.getJdbcType()))
                         {
-                            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": Lookup table " + schemaName + "." + queryName
+                            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": Lookup table " + schemaKey + "." + queryName
                                     + " pk does not match property data type. Expected: " + pkColumnInfo.getJdbcType() + ", Actual: " + dp.getPropertyType().getJdbcType());
                         }
                     }
@@ -621,12 +628,17 @@ public class DomainImpl implements Domain
                             generateStorageColumnName(impl._pd);
                     }
 
-                    if (impl.isRecreateRequired())
+                    if (impl.isRecreateRequired() && !impl.isSystemPropertySwap())
                     {
                         impl.markAsNew();
                     }
 
-                    if (impl.isNew())
+                    if (impl.isSystemPropertySwap())
+                    {
+                        // Property descriptor was swapped for a different pd
+                        propChanged = true;
+                    }
+                    else if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
                             checkRequiredStatus.add(impl);
@@ -697,7 +709,11 @@ public class DomainImpl implements Domain
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
+                    {
+                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats);
+                        if (auditInfo.isChanged())
+                            propertyAuditInfo.add(auditInfo);
+                    }
                 }
             }
 
@@ -790,11 +806,11 @@ public class DomainImpl implements Domain
         SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
         DbScope scope = table.getSchema().getScope();
 
-        List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).collect(Collectors.toList());
+        List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).toList();
         if (uniqueIdProps.isEmpty())
             return;
 
-        Set<ColumnInfo> uniqueIndexCols = new HashSet<>();
+        Set<ColumnInfo> uniqueIndexCols = new LinkedHashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
         // but exclude the uniqueId fields themselves.
         table.getUniqueIndices().values().forEach(idx -> idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
@@ -936,6 +952,8 @@ public class DomainImpl implements Domain
             return _details;
         }
 
+        public boolean isChanged() { return !_details.isEmpty(); }
+
         private String makeNewPropAuditComment(DomainProperty prop)
         {
             StringBuilder str = new StringBuilder();
@@ -951,7 +969,7 @@ public class DomainImpl implements Domain
                 str.append("Lookup: [");
                 if (null != lookup.getContainer())
                     str.append("Container: ").append(lookup.getContainer().getName()).append(", ");
-                str.append("Schema: ").append(lookup.getSchemaName()).append(", ")
+                str.append("Schema: ").append(lookup.getSchemaKey()).append(", ")
                    .append("Query: ").append(lookup.getQueryName()).append("]; ");
             }
 
@@ -1036,6 +1054,8 @@ public class DomainImpl implements Domain
                 str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
             if (pdOld.isScannable() != prop.isScannable())
                 str.append("Scannable: ").append(renderOldVsNew(renderBool(pdOld.isScannable()), renderBool(prop.isScannable()))).append("; ");
+            if (!StringUtils.equals(pdOld.getDerivationDataScope(), prop.getDerivationDataScope()))
+                str.append("DerivationDataScope: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDerivationDataScope()), renderCheckingBlank(prop.getDerivationDataScope()))).append("; ");
             return str.toString();
         }
 
@@ -1345,7 +1365,8 @@ public class DomainImpl implements Domain
     @Override
     public boolean isProvisioned()
     {
-        return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
+        DomainKind<?> domainKind = getDomainKind();
+        return getStorageTableName() != null && domainKind != null && domainKind.getStorageSchemaName() != null;
     }
 
     @Override

@@ -28,7 +28,7 @@
         margin-bottom: 5px;
     }
 </style>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList() {
     var itemList = "";
     var itemSelect = document.reorder.items;

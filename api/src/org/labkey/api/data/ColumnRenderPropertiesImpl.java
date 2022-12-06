@@ -568,11 +568,13 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
             return _measure;
     }
 
+    @Override
     public String getNameExpression()
     {
         return _nameExpression;
     }
 
+    @Override
     public void setNameExpression(String nameExpression)
     {
         assert _checkLocked();

@@ -57,7 +57,7 @@
 
     ActionURL completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURL(c);
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function updateControls(selection)
     {

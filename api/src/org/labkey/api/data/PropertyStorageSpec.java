@@ -68,6 +68,16 @@ public class PropertyStorageSpec
         this.importAliases = importAliases;
     }
 
+    public void setPrecision(int precision)
+    {
+        _precision = precision;
+    }
+
+    public int getPrecision()
+    {
+        return _precision;
+    }
+
     public static class ForeignKey
     {
         private String _columnName;
@@ -141,6 +151,7 @@ public class PropertyStorageSpec
     private String description;
     private String importAliases;
     private Integer size = DEFAULT_SIZE;
+    private Integer _precision;
     private Object defaultValue = null;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
@@ -153,6 +164,7 @@ public class PropertyStorageSpec
         }
         setJdbcType(propertyDescriptor.getJdbcType());
         _setSize(propertyDescriptor.getScale(), propertyDescriptor.getJdbcType());
+        setPrecision(propertyDescriptor.getPrecision());
         setNullable(propertyDescriptor.isNullable());
         setAutoIncrement(propertyDescriptor.isAutoIncrement());
         setMvEnabled(propertyDescriptor.isMvEnabled());
@@ -441,7 +453,7 @@ public class PropertyStorageSpec
          * Determines if two indices are the same modulo the isClustered setting.   This is useful for updating
          * indices when an audit domain type changes, for example.
          */
-        public static boolean isSameIndex(PropertyStorageSpec.Index propertyIndex, PropertyStorageSpec.Index tableIndex)
+        public static boolean isSameIndex(Index propertyIndex, Index tableIndex)
         {
             if (propertyIndex.isUnique != tableIndex.isUnique || propertyIndex.columnNames.length != tableIndex.columnNames.length)
                 return false;

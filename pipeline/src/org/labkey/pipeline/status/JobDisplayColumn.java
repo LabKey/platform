@@ -81,7 +81,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                     out.write("<tr class=\"labkey-row\">");
 
                 out.write("<td nowrap><a href=\"");
-                out.write(StatusController.urlDetails(ctx.getContainer(), sf.getRowId()).getLocalURIString());
+                out.write(PageFlowUtil.filter(StatusController.urlDetails(ctx.getContainer(), sf.getRowId()).getLocalURIString()));
                 out.write("\">");
                 out.write(PageFlowUtil.filter(sf.getStatus()));
                 out.write("</a></td>");

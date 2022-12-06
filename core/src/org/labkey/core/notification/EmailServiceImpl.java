@@ -15,8 +15,8 @@
  */
 package org.labkey.core.notification;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -25,6 +25,8 @@ import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
@@ -331,11 +333,13 @@ public class EmailServiceImpl implements EmailService
         private static final String NON_EXISTENT_ATTACHMENT_NAME = "fake_file.txt";
         private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
 
+        private final Module module = ModuleLoader.getInstance().getModule("Study");
+
         @Test
         public void testEmailAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
-            File attachment = JunitUtil.getSampleData(null, PROTOCOL_ATTACHMENT_PATH);
+            File attachment = JunitUtil.getSampleData(module, PROTOCOL_ATTACHMENT_PATH);
 
             assertTrue("Couldn't find " + attachment, attachment.isFile());
 
@@ -369,7 +373,7 @@ public class EmailServiceImpl implements EmailService
         private void testAttachmentExceptions(String name) throws IOException
         {
             EmailMessage msg = getBaseMessage();
-            File studySampleData = JunitUtil.getSampleData(null, "study");
+            File studySampleData = JunitUtil.getSampleData(module, "study");
 
             List<File> attachmentList = Collections.singletonList(new File(studySampleData, name));
 

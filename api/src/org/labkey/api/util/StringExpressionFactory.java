@@ -453,7 +453,7 @@ public class StringExpressionFactory
             // Allow substitution format to transform the value, including nulls
             for (SubstitutionFormat f : _formats)
             {
-                o = f.format(o);
+                o = f.format(o, isPreviewMode());
             }
 
             if (o == null)
@@ -964,7 +964,7 @@ public class StringExpressionFactory
 
     public static class SimpleStringExpression extends AbstractStringExpression
     {
-        boolean _urlEncodeSubstitutions = true;
+        private final boolean _urlEncodeSubstitutions;
 
         SimpleStringExpression(String source, boolean urlEncodeSubstitutions)
         {

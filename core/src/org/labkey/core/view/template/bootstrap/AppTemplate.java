@@ -46,6 +46,7 @@ public class AppTemplate extends PageTemplate
 
         // don't show the header on body template
         page.setShowHeader(false);
+        page.setIncludePermissions(true);
 
         setBody(body);
         setView("bodyTemplate", getBodyTemplate(page, body));

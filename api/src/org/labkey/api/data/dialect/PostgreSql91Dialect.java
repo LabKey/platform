@@ -82,6 +82,9 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private HtmlString _adminWarning = null;
 
+    // Default to 9 and let newer versions be refreshed later
+    private int _majorVersion = 9;
+
     protected InClauseGenerator _inClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
@@ -131,6 +134,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt);
         configureStatementWrapper(statementWrapper);
         return statementWrapper;
+    }
+
+    @Override
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
     }
 
     @Override
@@ -253,6 +262,15 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
     }
 
+    public int getMajorVersion()
+    {
+        return _majorVersion;
+    }
+
+    public void setMajorVersion(int majorVersion)
+    {
+        _majorVersion = majorVersion;
+    }
 
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
@@ -292,41 +310,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return limitRows(frag, maxRows, 0);
-    }
-
-    private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
-    {
-        if (rowCount != Table.ALL_ROWS)
-        {
-            frag.append("\nLIMIT ");
-            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
-
-            if (offset > 0)
-            {
-                frag.append(" OFFSET ");
-                frag.append(Long.toString(offset));
-            }
-        }
-        return frag;
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, true);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        if (select == null)
-            throw new IllegalArgumentException("select");
-        if (from == null)
-            throw new IllegalArgumentException("from");
-
-        SQLFragment sql = new SQLFragment();
-        sql.append(select);
-        sql.append("\n").append(from);
-        if (filter != null) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-
-        return limitRows(sql, maxRows, offset);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, true);
     }
 
     @Override
@@ -606,7 +596,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public boolean isSortableDataType(String sqlDataTypeName)
     {
-        return true;
+        return !"json".equals(sqlDataTypeName) && !"jsonb".equals(sqlDataTypeName);
     }
 
     @Override
@@ -948,7 +938,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         return "template1";
     }
@@ -1018,39 +1008,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
-            case CreateTable:
-                sql.addAll(getCreateTableStatements(change));
-                break;
-            case DropTable:
-                sql.add("DROP TABLE " + makeTableIdentifier(change));
-                break;
-            case AddColumns:
-                sql.addAll(getAddColumnsStatements(change));
-                break;
-            case DropColumns:
-                sql.add(getDropColumnsStatement(change));
-                break;
-            case RenameColumns:
-                sql.addAll(getRenameColumnsStatement(change));
-                break;
-            case DropIndicesByName:
-                sql.addAll(getDropIndexByNameStatements(change));
-                break;
-            case DropIndices:
-                sql.addAll(getDropIndexStatements(change));
-                break;
-            case AddIndices:
-                sql.addAll(getCreateIndexStatements(change));
-                break;
-            case ResizeColumns:
-                sql.add(getResizeColumnStatement(change));
-                break;
-            case DropConstraints:
-                sql.addAll(getDropConstraintsStatement(change));
-                break;
-            case AddConstraints:
-                sql.addAll(getAddConstraintsStatement(change));
-                break;
+            case CreateTable -> sql.addAll(getCreateTableStatements(change));
+            case DropTable -> sql.add("DROP TABLE " + makeTableIdentifier(change));
+            case AddColumns -> sql.addAll(getAddColumnsStatements(change));
+            case DropColumns -> sql.add(getDropColumnsStatement(change));
+            case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
+            case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
+            case DropIndices -> sql.addAll(getDropIndexStatements(change));
+            case AddIndices -> sql.addAll(getCreateIndexStatements(change));
+            case ResizeColumns, ChangeColumnTypes -> sql.add(getChangeColumnTypeStatement(change));
+            case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
+            case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
+            default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
         }
 
         return sql;
@@ -1082,27 +1051,38 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     /**
-     * Generate the Alter Table statement to change the size of a column
+     * Generate the Alter Table statement to change the size or type of a column
      *
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
-     * @param change
-     * @return
      */
-    private String getResizeColumnStatement(TableChange change)
+    private String getChangeColumnTypeStatement(TableChange change)
     {
         StringBuilder sb = new StringBuilder();
         String comma = "";
 
         //Postgres allows executing multiple Alter Column statements under one Alter Table
         //  Reducing column size may cause a rebuild of the data so it can be expensive
-        sb.append( String.format("ALTER TABLE %s.%s ", change.getSchemaName(), change.getTableName()));
+        sb.append( String.format("ALTER TABLE %s ", makeTableIdentifier(change)));
         for (PropertyStorageSpec column : change.getColumns())
         {
-            //Using the common default max size to make type change to text
-            String dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    getSqlTypeName(JdbcType.LONGVARCHAR) :
-                    getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+            String dbType;
+            if (column.getJdbcType().isText())
+            {
+                //Using the common default max size to make type change to text
+                dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                        getSqlTypeName(JdbcType.LONGVARCHAR) :
+                        getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+            }
+            else if (column.getJdbcType().isDecimal())
+            {
+                dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
+            }
+            else
+            {
+                dbType = getSqlTypeName(column.getJdbcType());
+
+            }
 
             sb.append(comma);
             comma = ", ";
@@ -1342,7 +1322,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add("(15,4)");
+            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
 
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
@@ -1577,7 +1557,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
@@ -1905,10 +1885,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
+        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
+            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. PostgreSQL 15.x is the recommended version."));
+
     }
 
     @Override

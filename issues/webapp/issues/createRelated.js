@@ -32,6 +32,8 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
     getPanel : function() {
 
         var items = [];
+        this.defaultRelatedFolder = this.params.defaultRelatedFolder;
+        this.currentIssueDef = this.params.currentIssueDef;
 
         this.createCombo = Ext4.create('Ext.form.field.ComboBox', {
             store           : this.getStore(),
@@ -50,8 +52,8 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
             listeners : {
                 scope: this,
                 'change': function(cb, value) {
-
-                    rec = cb.getStore().findRecord('key', value);
+                    // translate the select target folder
+                    var rec = cb.getStore().findRecord('key', value);
                     if (rec){
                         this.containerPath = rec.get('containerPath');
                         this.destIssueDefName = rec.get('issueDefName');
@@ -86,37 +88,54 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
 
     getStore: function(){
         // define data models
-        if (!Ext4.ModelManager.isRegistered('Issues.model.Containers')) {
-            Ext4.define('Issues.model.Containers', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'key', type: 'string'},
-                    {name: 'containerPath', type: 'string'},
-                    {name: 'displayName', type: 'string'},
-                    {name: 'issueDefName', type: 'string'}
-                ]
+        if (!this.store) {
+            if (!Ext4.ModelManager.isRegistered('Issues.model.Containers')) {
+                Ext4.define('Issues.model.Containers', {
+                    extend: 'Ext.data.Model',
+                    fields: [
+                        {name: 'key', type: 'string'},
+                        {name: 'containerPath', type: 'string'},
+                        {name: 'displayName', type: 'string'},
+                        {name: 'issueDefName', type: 'string'}
+                    ]
+                });
+            }
+
+            this.store = Ext4.create('Ext.data.Store', {
+                model: 'Issues.model.Containers',
+                autoLoad: true,
+                proxy: {
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('issues', 'getRelatedFolder.api', LABKEY.container.path, {issueDefName : this.issueDefName}),
+                    reader: {
+                        type: 'json',
+                        root: 'containers'
+                    }
+                },
+                listeners: {
+                    scope: this,
+                    load: {
+                        fn : function(cmp, records, success){
+                            // if the configured related folder is available and accessible to the current user, select it
+                            // by default, else just use this existing issue def
+                            if (cmp.findRecord('key', this.defaultRelatedFolder)){
+                                this.createCombo.setValue(this.defaultRelatedFolder);
+                            }
+                            else if (cmp.findRecord('key', this.currentIssueDef)){
+                                this.createCombo.setValue(this.currentIssueDef);
+                            }
+                        }
+                    }
+                }
             });
         }
-
-        return Ext4.create('Ext.data.Store', {
-            model: 'Issues.model.Containers',
-            autoLoad: true,
-            proxy: {
-                type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('issues', 'getRelatedFolder.api', LABKEY.container.path, {issueDefName : this.issueDefName}),
-                reader: {
-                    type: 'json',
-                    root: 'containers'
-                }
-            }
-        });
+        return this.store;
     },
 
     handleCreate : function(){
         var formPanel = this.down('form');
 
         if (formPanel && formPanel.getForm() && formPanel.getForm().isValid()){
-
             var form = formPanel.getForm();
             form.submit({
                 url : LABKEY.ActionURL.buildURL('issues', 'insert.view', this.containerPath, {issueDefName : this.destIssueDefName}),

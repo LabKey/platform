@@ -31,7 +31,7 @@ public class CrosstabReportDescriptor extends QueryReportDescriptor
 
     public CrosstabReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
         setStats(new String[]{"Count"});
         setProperty("statField", "SequenceNum");
     }

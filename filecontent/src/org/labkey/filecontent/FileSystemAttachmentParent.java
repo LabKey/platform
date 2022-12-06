@@ -129,7 +129,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

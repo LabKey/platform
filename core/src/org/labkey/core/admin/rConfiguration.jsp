@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.reports.LabKeyScriptEngineManager" %>
-<%@ page import="org.labkey.api.reports.RemoteRNotEnabledException" %>
+<%@ page import="org.labkey.api.reports.report.r.RemoteRNotEnabledException" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -155,7 +155,7 @@
 </div>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function($) {
     var useParent = $("input[name='overrideDefault'][value='parent']");
     var overrideParent = $("input[name='overrideDefault'][value='override']");

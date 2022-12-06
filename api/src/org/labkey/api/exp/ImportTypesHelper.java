@@ -482,6 +482,9 @@ public class ImportTypesHelper
                             // UNDONE: don't import date format until we have default format for study
                             // UNDONE: it looks bad to have mixed formats
                             break;
+                        case BOOLEAN:
+                            _format = format;
+                            break;
                         case STRING:
                         case MULTI_LINE:
                         default:
@@ -678,9 +681,10 @@ public class ImportTypesHelper
             return _principalConceptCode;
         }
 
+        @Override
         public void setPrincipalConceptCode(String principalConceptCode)
         {
-            this._principalConceptCode = principalConceptCode;
+            _principalConceptCode = principalConceptCode;
         }
 
         public String getConceptImportColumn()
@@ -688,9 +692,10 @@ public class ImportTypesHelper
             return _conceptImportColumn;
         }
 
+        @Override
         public void setConceptImportColumn(String conceptImportColumn)
         {
-            this._conceptImportColumn = conceptImportColumn;
+            _conceptImportColumn = conceptImportColumn;
         }
 
         public String getConceptLabelColumn()
@@ -698,9 +703,10 @@ public class ImportTypesHelper
             return _conceptLabelColumn;
         }
 
+        @Override
         public void setConceptLabelColumn(String conceptLabelColumn)
         {
-            this._conceptLabelColumn = conceptLabelColumn;
+            _conceptLabelColumn = conceptLabelColumn;
         }
 
         public String getSourceOntology()
@@ -708,9 +714,10 @@ public class ImportTypesHelper
             return _sourceOntology;
         }
 
+        @Override
         public void setSourceOntology(String sourceOntology)
         {
-            this._sourceOntology = sourceOntology;
+            _sourceOntology = sourceOntology;
         }
 
         public String getConceptSubtree()
@@ -718,9 +725,10 @@ public class ImportTypesHelper
             return _conceptSubtree;
         }
 
+        @Override
         public void setConceptSubtree(String conceptSubtree)
         {
-            this._conceptSubtree = conceptSubtree;
+            _conceptSubtree = conceptSubtree;
         }
 
         private String convertNumberFormatChars(String format)

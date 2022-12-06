@@ -57,8 +57,18 @@ public interface SimpleCache<K, V>
     // Current number of elements in the cache
     int size();
 
+    /**
+     * @return Number of expired elements
+     */
+    int getExpirations();
+
+    /**
+     * @return Number of evicted elements
+     */
+    int getEvictions();
+
     // Is this cache empty?
-    public boolean isEmpty();
+    boolean isEmpty();
 
     long getDefaultExpires();
 

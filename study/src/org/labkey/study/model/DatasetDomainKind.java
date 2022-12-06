@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -54,6 +55,7 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -282,7 +284,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public abstract Set<String> getReservedPropertyNames(Domain domain);
+    public abstract Set<String> getReservedPropertyNames(Domain domain, User user);
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
@@ -396,7 +398,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         arguments.setName(domain.getName());
         String name = arguments.getName();
-        String description = arguments.getDescription();
+        String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
@@ -489,7 +491,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
                 {
-                    Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                    Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
                     Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -500,7 +502,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
                             if (arguments.isStrictFieldValidation())
-                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                                throw new ApiUsageException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                         }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
@@ -525,7 +527,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            UnexpectedException.rethrow(e);     // don't re-wrap runtime exceptions
+            return null;                        // can't get here
         }
     }
 

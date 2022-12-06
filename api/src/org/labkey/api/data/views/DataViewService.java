@@ -18,8 +18,8 @@ package org.labkey.api.data.views;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
@@ -218,6 +218,7 @@ public class DataViewService
         o.put("category", vc.toJSON(user));
 
         o.put("visible", info.isVisible());
+        o.put("hideInManageViews", info.hideInManageViews());
         o.put("showInDashboard", info.showInDashboard());
         o.put("shared", info.isShared());
         o.put("readOnly", info.isReadOnly());

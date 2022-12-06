@@ -42,6 +42,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;
+    private final String _creatingThreadName;
     private int _maxRows;
     private boolean _countComplete;
 
@@ -50,7 +51,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     protected int _size;
 
     // for resource tracking
-    private StackTraceElement[] _debugCreated = null;
+    private final StackTraceElement[] _debugCreated;
     protected boolean _wasClosed = false;
 
 
@@ -65,14 +66,34 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         this(null, null, rs, maxRows, queryLogging);
     }
 
-
     public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows, QueryLogging queryLogging)
     {
         super(rs, queryLogging);
         MemTracker.getInstance().put(this);
+        // Capturing the full stack can be expensive so only do it when enabled
         _debugCreated = MiniProfiler.getTroubleshootingStackTrace();
+        // Capturing the thread name is cheap and provides useful context for troubleshooting failures to close
+        _creatingThreadName = Thread.currentThread().getName();
         _maxRows = maxRows;
-        _connection = connection;
+        try
+        {
+            if (connection != null)
+            {
+                _connection = connection;
+            }
+            else if (rs.getStatement() != null)
+            {
+                _connection = rs.getStatement().getConnection();
+            }
+            else
+            {
+                _connection = null;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         _scope = scope;
     }
 
@@ -198,8 +219,14 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         if (!_wasClosed)
         {
             close();
-            _log.error("ResultSet was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_debugCreated));
+            _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
         }
         super.finalize();
+    }
+
+    @Override
+    public @Nullable Connection getConnection()
+    {
+        return _connection;
     }
 }

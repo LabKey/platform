@@ -34,6 +34,9 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class AnalyticsController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AnalyticsController.class);
@@ -50,8 +53,9 @@ public class AnalyticsController extends SpringActionController
 
     static public class SettingsForm extends ViewForm
     {
-        public AnalyticsServiceImpl.TrackingStatus ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
+        public Set<AnalyticsServiceImpl.TrackingStatus> ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
         public String ff_accountId = AnalyticsServiceImpl.get().getAccountId();
+        public String ff_measurementId = AnalyticsServiceImpl.get().getMeasurementId();
         public String ff_trackingScript = AnalyticsServiceImpl.get().getSavedScript();
 
         public void setFf_accountId(String ff_accountId)
@@ -59,14 +63,27 @@ public class AnalyticsController extends SpringActionController
             this.ff_accountId = ff_accountId;
         }
 
-        public void setFf_trackingStatus(String ff_trackingStatus)
+        public void setFf_trackingStatus(String[] statuses)
         {
-            this.ff_trackingStatus = AnalyticsServiceImpl.TrackingStatus.valueOf(ff_trackingStatus);
+            ff_trackingStatus = new HashSet<>();
+            for (String s : statuses)
+            {
+                try
+                {
+                    ff_trackingStatus.add(AnalyticsServiceImpl.TrackingStatus.valueOf(s));
+                }
+                catch (IllegalArgumentException ignored) {}
+            }
         }
 
         public void setFf_trackingScript(String ff_trackingScript)
         {
             this.ff_trackingScript = StringUtils.trimToNull(ff_trackingScript);
+        }
+
+        public void setFf_measurementId(String ff_measurementId)
+        {
+            this.ff_measurementId = StringUtils.trimToNull(ff_measurementId);
         }
     }
 
@@ -82,6 +99,17 @@ public class AnalyticsController extends SpringActionController
         @Override
         public void validateCommand(SettingsForm target, Errors errors)
         {
+            if (target.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.ga4FullUrl) &&
+                    StringUtils.isEmpty(target.ff_measurementId))
+            {
+                errors.reject("form", "Please specify a Measurement ID when using GA4");
+            }
+
+            if (target.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabled) &&
+                    target.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabledFullURL))
+            {
+                errors.reject("form", "Please choose only one Universal Google Analytics option");
+            }
         }
 
         @Override
@@ -94,7 +122,7 @@ public class AnalyticsController extends SpringActionController
         @Override
         public boolean handlePost(SettingsForm settingsForm, BindException errors)
         {
-            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_trackingScript, getUser());
+            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_measurementId, settingsForm.ff_trackingScript, getUser());
             return true;
         }
 

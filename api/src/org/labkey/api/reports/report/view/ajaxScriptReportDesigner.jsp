@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport" %>
-<%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.r.RReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
@@ -47,6 +47,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.reports.report.python.IpynbReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -100,7 +101,7 @@
     initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
-    String renderId = "report-design-panel-" + getRequestScopedUID();
+    String renderId = makeId("report-design-panel-");
     ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> sharedScripts = new ArrayList<>();
@@ -126,6 +127,7 @@
     reportConfig.put("viewName", PageFlowUtil.filter(bean.getViewName()));
     reportConfig.put("dataRegionName", PageFlowUtil.filter(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
+    reportConfig.put("reportName", bean.getReportName());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
     reportConfig.put("reportAccess", bean.getReportAccess());
     reportConfig.put("shareReport", bean.isShareReport());
@@ -152,6 +154,8 @@
     if (report.supportsDynamicThumbnail())
         reportConfig.put("thumbnailType", bean.getThumbnailType() != null ? bean.getThumbnailType() : DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
 
+    reportConfig.put("jupyterOptions", report instanceof IpynbReport);
+
     StudyService svc = StudyService.get();
     reportConfig.put("studyOptions", (report instanceof RReport) && (svc != null && svc.getStudy(c) != null));
     reportConfig.put("filterParam", bean.getFilterParam());
@@ -160,7 +164,7 @@
     reportConfig.put("helpHtml", helpHtml);
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     <labkey:loadClientDependencies>
 

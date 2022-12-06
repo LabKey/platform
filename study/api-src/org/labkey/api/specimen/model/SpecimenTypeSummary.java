@@ -135,7 +135,8 @@ public class SpecimenTypeSummary
 
     private class DerivativeTypeCount extends TypeCount
     {
-        private PrimaryTypeCount _parent;
+        private final PrimaryTypeCount _parent;
+
         private DerivativeTypeCount(Container container, SpecimenTypeSummary.PrimaryTypeCount parent, String label, Integer id)
         {
             super(container, parent, label, id);
@@ -175,8 +176,8 @@ public class SpecimenTypeSummary
         }
     }
 
-    private Container _container;
-    private SpecimenTypeSummaryRow[] _rows;
+    private final Container _container;
+    private final SpecimenTypeSummaryRow[] _rows;
 
     public SpecimenTypeSummary(Container container, SpecimenTypeSummaryRow[] rows)
     {
@@ -232,9 +233,7 @@ public class SpecimenTypeSummary
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
             }
         }
-        List<DerivativeTypeCount> returnValues = new ArrayList<>();
-        returnValues.addAll(counts.values());
-        return returnValues;
+        return new ArrayList<>(counts.values());
     }
 
     public List<? extends TypeCount> getAdditives()
@@ -272,16 +271,6 @@ public class SpecimenTypeSummary
             if (label == null || label.length() == 0 || "None".equalsIgnoreCase(label))
                 return Collections.emptyList();
         }
-        List<AdditiveTypeCount> returnValues = new ArrayList<>();
-        returnValues.addAll(counts.values());
-        return returnValues;
-    }
-
-    public boolean isVialCountZero()
-    {
-        for (SpecimenTypeSummaryRow row : _rows)
-            if (row.getVialCount() > 0)
-                return false;
-        return true;
+        return new ArrayList<>(counts.values());
     }
 }

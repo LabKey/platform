@@ -13,6 +13,19 @@ dependencies {
    antlr "org.antlr:antlr:${antlrVersion}"
     jspImplementation "org.olap4j:olap4j:${olap4jVersion}"
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    // we add this bridge jar because certain Mondrian classes require the log4j interface
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "org.apache.logging.log4j:log4j-1.2-api:${log4j2Version}",
+                    "Log4j",
+                    "Apache",
+                    "https://logging.apache.org/log4j/2.x/",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "Logging"
+            )
+    )
 
     BuildUtils.addExternalDependency(
         project,
@@ -47,8 +60,8 @@ dependencies {
             "Mondrian",
             "Pentaho",
             "http://mondrian.pentaho.com/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,  //From Maven
-            ExternalDependency.APACHE_2_LICENSE_URL,   //From Maven
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
             "Part of Mondrian distribution"
         )
     )
@@ -63,7 +76,14 @@ dependencies {
             "Eclipse Public License - v 1.0",
             "http://www.eclipse.org/legal/epl-v10.html",
             "Part of Mondrian distribution"
-        )
+        ),
+            {
+                // exclude these because they cause interference with the tomcat versions
+                exclude group: "javax.servlet", module:"jsp-api"
+                exclude group: "javax.servlet", module:"servlet-api"
+                // exclude this because it brings older version of log4j
+                exclude group: "log4j", module:"log4j"
+            }
     )
 
     BuildUtils.addExternalDependency(
@@ -77,14 +97,7 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Part of Mondrian distribution",
 
-        ),
-        {
-            // exclude these because they cause interference with the tomcat versions
-            exclude group: "javax.servlet", module:"jsp-api"
-            exclude group: "javax.servlet", module:"servlet-api"
-            // exclude this because it brings older version of log4j
-            exclude group: "log4j", module:"log4j"
-        }
+        )
     )
 }
 

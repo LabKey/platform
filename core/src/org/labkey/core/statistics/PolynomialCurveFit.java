@@ -16,7 +16,7 @@
 package org.labkey.core.statistics;
 
 import Jama.Matrix;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;

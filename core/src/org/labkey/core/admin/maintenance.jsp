@@ -30,7 +30,7 @@
 <% if (bean.loginURL != null) { %>
 <p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function() {
     // grab the returnUrl if present, otherwise set to loginURL
     var nextURL = LABKEY.ActionURL.getReturnUrl() || <%=q(bean.loginURL == null ? null : bean.loginURL)%>;

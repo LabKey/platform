@@ -51,7 +51,7 @@
             <td><%= link("test").href(shortURLRecord.renderShortURL()) %></td>
             <td>
                 <%= link("copy to clipboard").onClick("return false;").id("copyToClipboardId" + index).attributes(Collections.singletonMap("data-clipboard-text", shortURLRecord.renderShortURL())) %>
-                <script>new Clipboard('#copyToClipboardId' + <%= index %>)</script>
+                <script type="text/javascript" nonce="<%=getScriptNonce()%>">new Clipboard('#copyToClipboardId' + <%= index %>)</script>
             </td>
             <td><labkey:form method="post"><input type="text" name="fullURL" value="<%= h(shortURLRecord.getFullURL())%>" size="40"/> <%= button("Update").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></labkey:form></td>
             <td><labkey:form method="post"><input type="hidden" name="delete" value="true" /><%= button("Delete").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></labkey:form></td>

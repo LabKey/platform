@@ -58,6 +58,7 @@ import org.labkey.data.xml.queryCustomView.SortsType;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.view.CustomViewSetKey;
+import org.json.old.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -443,7 +444,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));
     }
 
-    public void update(org.json.JSONObject jsonView, boolean saveFilterAndSort)
+    public void update(JSONObject jsonView, boolean saveFilterAndSort)
     {
         CustomViewUtil.update(this, jsonView, saveFilterAndSort);
     }

@@ -57,6 +57,8 @@ public class ContextListener implements ServletContextListener
             // Only set this if the user hasn't overridden it
             System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
         }
+        // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
+        System.setProperty("log4j2.Script.enableLanguages", "rhino");
     }
 
     // NOTE: this line of code with LogManager.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)

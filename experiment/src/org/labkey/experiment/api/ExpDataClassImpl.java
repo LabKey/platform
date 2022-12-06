@@ -32,12 +32,16 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DataClassReadPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -61,9 +65,23 @@ import java.util.stream.Collectors;
  */
 public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> implements ExpDataClass
 {
-    protected static final String NAMESPACE_PREFIX = "DataClass";
+    public static final String NAMESPACE_PREFIX = "DataClass";
     private static final String SEARCH_CATEGORY_NAME = "dataClass";
-    public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects");
+    private static final String MEDIA_SEARCH_CATEGORY_NAME = "media";
+    public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+        }
+    };
+    public static final SearchService.SearchCategory MEDIA_SEARCH_CATEGORY = new SearchService.SearchCategory(MEDIA_SEARCH_CATEGORY_NAME, "Collections of media data and samples") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     private Domain _domain;
 
@@ -145,6 +163,25 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         _object.setCategory(category);
     }
 
+    @Override
+    public boolean isMedia()
+    {
+        return ExpSchema.DataClassCategoryType.media.name().equalsIgnoreCase(getCategory());
+    }
+
+    @Override
+    public boolean isRegistry()
+    {
+        return ExpSchema.DataClassCategoryType.registry.name().equalsIgnoreCase(getCategory());
+    }
+
+    @Override
+    public boolean isSource()
+    {
+        return ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(getCategory());
+    }
+
+
     @Nullable
     @Override
     public ExpSampleType getSampleType()
@@ -220,6 +257,22 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
             }
         }
+
+        Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
+        if (domain != null)
+        {
+            for (DomainProperty property : domain.getProperties())
+            {
+                if (StringUtils.isEmpty(property.getConceptURI()))
+                    continue;
+
+                ConceptURIVocabularyDomainProvider provider = PropertyService.get().getConceptUriVocabularyDomainProvider(property.getConceptURI());
+                if (provider != null)
+                    provider.ensureDomain(property.getName(), this, user);
+            }
+        }
+
+        ExperimentServiceImpl.get().clearDataClassCache(getContainer());
         ExperimentServiceImpl.get().indexDataClass(this);
     }
 
@@ -328,7 +381,10 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         // Name is identifier with highest weight
         identifiersHi.add(getName());
 
-        props.put(SearchService.PROPERTY.categories.toString(), SEARCH_CATEGORY.toString());
+        if (isMedia())
+            props.put(SearchService.PROPERTY.categories.toString(), MEDIA_SEARCH_CATEGORY.toString());
+        else
+            props.put(SearchService.PROPERTY.categories.toString(), SEARCH_CATEGORY.toString());
         props.put(SearchService.PROPERTY.title.toString(), getDocumentTitle());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 

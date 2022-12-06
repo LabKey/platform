@@ -19,20 +19,16 @@ package org.labkey.mothership;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -40,15 +36,14 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +67,7 @@ public class MothershipManager
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
 
-    private static final Logger log = LogManager.getLogger(MothershipManager.class);
+    private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
 
     public static MothershipManager get()
     {
@@ -249,10 +244,11 @@ public class MothershipManager
         return "No VCS URL";
     }
 
-    public ServerInstallation getServerInstallation(String serverGUID, Container c)
+    public ServerInstallation getServerInstallation(@NotNull String serverGUID, @NotNull String serverHostName, @NotNull Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromString("ServerInstallationGUID"), serverGUID);
+        filter.addCondition(FieldKey.fromString("ServerHostName"), serverHostName);
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
@@ -294,27 +290,13 @@ public class MothershipManager
        sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET ModifiedBy = NULL WHERE ModifiedBy = ?", u.getUserId());
     }
 
-    public synchronized ServerSession updateServerSession(@Nullable String hostName, ServerSession session, ServerInstallation installation, Container container)
+    public synchronized ServerSession updateServerSession(MothershipController.ServerInfoForm form, String serverIP, ServerSession session, ServerInstallation installation, Container container)
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container);
+            String hostName = form.getBestServerHostName(serverIP);
+            ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), hostName, container);
 
-            if (null == hostName || MothershipReport.BORING_HOSTNAMES.contains(hostName))
-            {
-                try
-                {
-                    hostName = InetAddress.getByName(installation.getServerIP()).getCanonicalHostName();
-                }
-                catch (UnknownHostException e)
-                {
-                    // That's OK, not a big deal
-                }
-            }
-            else
-            {
-                hostName = StringUtils.left(hostName, 256);
-            }
             if (existingInstallation == null)
             {
                 installation.setContainer(container.getId());
@@ -323,42 +305,43 @@ public class MothershipManager
             }
             else
             {
-                existingInstallation.setLogoLink(getBestString(existingInstallation.getLogoLink(), installation.getLogoLink()));
-                existingInstallation.setOrganizationName(getBestString(existingInstallation.getOrganizationName(), installation.getOrganizationName()));
-                existingInstallation.setServerIP(installation.getServerIP());
                 existingInstallation.setServerHostName(hostName);
-                existingInstallation.setSystemDescription(getBestString(existingInstallation.getSystemDescription(), installation.getSystemDescription()));
-                if (installation.getUsedInstaller())
-                {
-                    // The existing installation may have been an upgrade from an earlier version before we started recording usage of the installer
-                    existingInstallation.setUsedInstaller(true);
-                }
                 installation = Table.update(null, getTableInfoServerInstallation(), existingInstallation,  existingInstallation.getServerInstallationId());
             }
 
             Date now = new Date();
             ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container);
+            if (existingSession != null)
+            {
+                Calendar existingCal = Calendar.getInstance();
+                existingCal.setTime(existingSession.getLastKnownTime());
+                Calendar nowCal = Calendar.getInstance();
+
+                // Check if this session is straddling months. If so, break it into two so that we
+                // retain metrics with month level granularity
+                if (existingCal.get(Calendar.MONTH) != nowCal.get(Calendar.MONTH))
+                {
+                    // Chain the two sessions together
+                    session.setOriginalServerSessionId(existingSession.getServerSessionId());
+
+                    // Update the GUID for the old one as we're capturing in a new record going forward
+                    existingSession.setServerSessionGUID(GUID.makeGUID());
+                    Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
+                    existingSession = null;
+                }
+            }
+
             if (existingSession == null)
             {
                 session.setEarliestKnownTime(now);
-                session.setLastKnownTime(now);
                 session.setServerInstallationId(installation.getServerInstallationId());
+
+                configureSession(session, now, serverIP, form);
                 session = Table.insert(null, getTableInfoServerSession(), session);
             }
             else
             {
-                existingSession.setLastKnownTime(now);
-                existingSession.setContainerCount(getBestInteger(existingSession.getContainerCount(), session.getContainerCount()));
-                existingSession.setProjectCount(getBestInteger(existingSession.getProjectCount(), session.getProjectCount()));
-                existingSession.setActiveUserCount(getBestInteger(existingSession.getActiveUserCount(), session.getActiveUserCount()));
-                existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
-                existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
-                existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
-                existingSession.setDistribution(getBestString(existingSession.getDistribution(), session.getDistribution()));
-                existingSession.setUsageReportingLevel(getBestString(existingSession.getUsageReportingLevel(), session.getUsageReportingLevel()));
-                existingSession.setExceptionReportingLevel(getBestString(existingSession.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
-                existingSession.setJsonMetrics(getBestJson(existingSession.getJsonMetrics(), session.getJsonMetrics(), existingSession.getServerSessionGUID()));
-
+                configureSession(existingSession, now, serverIP, form);
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
 
@@ -367,9 +350,33 @@ public class MothershipManager
         }
     }
 
+    private void configureSession(@NotNull ServerSession session, Date now, String serverIP, MothershipController.ServerInfoForm form)
+    {
+        session.setLastKnownTime(now);
+        session.setServerIP(serverIP);
+        session.setServerHostName(form.getBestServerHostName(serverIP));
+
+        session.setLogoLink(getBestString(session.getLogoLink(), form.getLogoLink()));
+        session.setOrganizationName(getBestString(session.getOrganizationName(), form.getOrganizationName()));
+        session.setSystemDescription(getBestString(session.getSystemDescription(), form.getSystemDescription()));
+        session.setSystemShortName(getBestString(session.getSystemShortName(), form.getSystemShortName()));
+
+        session.setContainerCount(getBestInteger(session.getContainerCount(), form.getContainerCount()));
+        session.setProjectCount(getBestInteger(session.getProjectCount(), form.getProjectCount()));
+        session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), form.getRecentUserCount()));
+        session.setUserCount(getBestInteger(session.getUserCount(), form.getUserCount()));
+        session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), form.getAdministratorEmail()));
+        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), form.isEnterprisePipelineEnabled()));
+        session.setDistribution(getBestString(session.getDistribution(), form.getDistribution()));
+        session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), form.getUsageReportingLevel()));
+        session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), form.getExceptionReportingLevel()));
+        session.setJsonMetrics(getBestJson(session.getJsonMetrics(), form.getJsonMetrics(), session.getServerSessionGUID()));
+
+    }
+
     private String getBestString(String currentValue, String newValue)
     {
-        if (newValue == null || newValue.equals(""))
+        if (StringUtils.isEmpty(newValue))
         {
             return currentValue;
         }
@@ -400,7 +407,7 @@ public class MothershipManager
         {
             return currentValue;
         }
-        else if (StringUtils.isEmpty(currentValue))
+        if (StringUtils.isEmpty(currentValue))
         {
             // Verify the newValue as valid json; if it is, return it. Otherwise, return null.
             try
@@ -419,9 +426,10 @@ public class MothershipManager
         ObjectMapper mapper = new ObjectMapper();
         try
         {
-            Map currentMap = mapper.readValue(currentValue, Map.class);
+            log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
+            Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
             ObjectReader updater = mapper.readerForUpdating(currentMap);
-            Map merged = updater.readValue(newValue);
+            Map<String, Object> merged = updater.readValue(newValue);
             return mapper.writeValueAsString(merged);
         }
         catch (IOException e)
@@ -545,33 +553,6 @@ public class MothershipManager
     {
         bean.setContainer(container.getId());
         Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
-    }
-
-    public Collection<ServerInstallation> getServerInstallationsActiveOn(Calendar cal)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation(), "si");
-        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession(), "ss");
-        sql.append(" WHERE earliestknowntime <= ? AND lastknowntime >= ?)");
-        sql.add(cal.getTime());
-        sql.add(cal.getTime());
-
-        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
-    }
-
-    public Collection<ServerInstallation> getServerInstallationsActiveBefore(Calendar cal)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation(), "si");
-        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession(), "ss");
-        sql.append(" WHERE earliestknowntime <= ?)");
-        sql.add(cal.getTime());
-
-        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
     }
 
     public ServerInstallation getServerInstallation(int id, Container c)

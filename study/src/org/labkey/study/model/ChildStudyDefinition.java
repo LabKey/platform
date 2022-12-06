@@ -17,7 +17,6 @@ package org.labkey.study.model;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.PHI;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.StudySnapshotType;
 
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ public class ChildStudyDefinition
     private Integer[] _lists;
     private String[] _views;
     private String[] _reports;
+    private String[] _queries;
     private int[] _datasets = new int[0];
     private boolean update;
     private int _updateDelay;
@@ -56,16 +56,13 @@ public class ChildStudyDefinition
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
 
-    private Integer _requestId;  // RowId of a specimen request
-    private String[] _specimenIds = null;  // List of globally unique specimen IDs
-    private List<Vial> _vials = null;
-
     // used to persist the snapshot settings (i.e. all vs selected subset)
     private boolean _participantGroupsAll;
     private boolean _studyPropsAll;
     private boolean _folderPropsAll;
     private boolean _viewsAll;
     private boolean _reportsAll;
+    private boolean _queriesAll;
 
     public String getName()
     {
@@ -229,8 +226,16 @@ public class ChildStudyDefinition
         return _reports;
     }
 
-    public void setReports(String[] views){
-        _reports = views;
+    public void setReports(String[] reports){
+        _reports = reports;
+    }
+
+    public String[] getQueries(){
+        return _queries;
+    }
+
+    public void setQueries(String[] queries){
+        _queries = queries;
     }
 
     public String[] getViews(){
@@ -239,6 +244,16 @@ public class ChildStudyDefinition
 
     public void setViews(String[] views){
         _views = views;
+    }
+
+    public void addView(String id)
+    {
+        List<String> viewsList = new ArrayList<>();
+        if (_views != null)
+            viewsList.addAll(Arrays.stream(_views).toList());
+        viewsList.add(id);
+        _views = new String[viewsList.size()];
+        _views = viewsList.toArray(_views);
     }
 
     public boolean isIncludeSpecimens()
@@ -259,39 +274,6 @@ public class ChildStudyDefinition
     public void setSpecimenRefresh(boolean specimenRefresh)
     {
         _specimenRefresh = specimenRefresh;
-    }
-
-    // Callers can post either a specimen request id OR an array of SpecimenIds; either will cause us to resolve
-    // to a Specimen[] which is set back on the form and used to drive the child study creation process.
-
-    public Integer getRequestId()
-    {
-        return _requestId;
-    }
-
-    public void setRequestId(Integer requestId)
-    {
-        _requestId = requestId;
-    }
-
-    public String[] getSpecimenIds()
-    {
-        return _specimenIds;
-    }
-
-    public void setSpecimenIds(String[] specimenIds)
-    {
-        _specimenIds = specimenIds;
-    }
-
-    public List<Vial> getVials()
-    {
-        return _vials;
-    }
-
-    public void setVials(List<Vial> vials)
-    {
-        _vials = vials;
     }
 
     public StudySnapshotType getMode()
@@ -342,6 +324,16 @@ public class ChildStudyDefinition
     public void setReportsAll(boolean reportsAll)
     {
         _reportsAll = reportsAll;
+    }
+
+    public boolean isQueriesAll()
+    {
+        return _queriesAll;
+    }
+
+    public void setQueriesAll(boolean queriesAll)
+    {
+        _queriesAll = queriesAll;
     }
 
     public boolean isParticipantGroupsAll()

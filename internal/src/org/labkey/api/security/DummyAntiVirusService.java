@@ -21,8 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reader.Readers;
@@ -55,14 +53,7 @@ public class DummyAntiVirusService implements AntiVirusService
                 if (StringUtils.equals(TEST_VIRUS_CONTENT, s.trim()))
                 {
                     String logmessage = "File failed virus scan: LABKEY test virus detected";
-                    LOG.warn( (null!=info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage );
-                    FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
-                            info.getContainer().getId(), logmessage
-                    );
-                    if (null != info.getURL())
-                        event.setDirectory(info.getURL().getPath());
-                    event.setFile(originalName);
-                    AuditLogService.get().addEvent(info.getUser(), event);
+                    warnAndAuditLog(LOG, logmessage, info, originalName);
 
                     return new ScanResult(originalName, FAILED, "LABKEY test virus detected in file: '" + originalName + "'");
                 }

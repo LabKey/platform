@@ -51,6 +51,7 @@ public interface Domain extends IPropertyType
     Set<Container> getInstanceContainers();
     Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm);
 
+    void setName(String name);
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);
     @NotNull

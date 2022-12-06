@@ -25,7 +25,6 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SampleTypeHelper;
-import org.openqa.selenium.WebElement;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -135,10 +134,10 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         row.put(domainResponse.getDomain().getFields().get(2).getPropertyURI(), listRow1RowId);
 
         insertRowsCommand.addRow(row);
-        insertRowsCommand.execute(createDefaultConnection(false), getProjectName());
+        insertRowsCommand.execute(createDefaultConnection(), getProjectName());
 
         SelectRowsCommand cmdsel = new SelectRowsCommand(sampleSchemaName, sampleSetName);
-        SelectRowsResponse srresp = cmdsel.execute(createDefaultConnection(false), getProjectName());
+        SelectRowsResponse srresp = cmdsel.execute(createDefaultConnection(), getProjectName());
         assert srresp.getRowCount().intValue() == sampleSetRowCount + 1;
 
         log("goto dataclass grid .. open customize grid panel");
@@ -235,7 +234,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         run.setProperties(Map.of(vocabDomainPropURI1, propValueLab, vocabDomainPropURI2, listRow1RowId));
 
         SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(run));
-        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(false), getProjectName());
+        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(), getProjectName());
 
         log("Go to runs grid");
         goToProjectHome();

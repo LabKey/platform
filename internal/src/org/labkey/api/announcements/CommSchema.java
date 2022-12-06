@@ -93,5 +93,10 @@ public class CommSchema
     {
         return getSchema().getTable("Tours");
     }
+
+    public TableInfo getTableInfoPageAliases()
+    {
+        return getSchema().getTable("PageAliases");
+    }
 }
 

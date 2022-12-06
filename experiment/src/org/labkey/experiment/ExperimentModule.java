@@ -26,6 +26,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -37,6 +39,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -131,6 +134,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -161,7 +165,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 22.000;
+        return 22.006;
     }
 
     @Nullable
@@ -197,8 +201,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
         QueryService.get().addCompareType(new LineageCompareType());
-        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), null, 2, 3);
-        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), null, 2, 3);
+        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -218,6 +222,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
 
         WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
+        ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
     }
 
     @Override
@@ -296,6 +301,154 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return result;
     }
 
+    private void addDataResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver()
+        {
+            @Override
+            public WebdavResource resolve(@NotNull String resourceIdentifier)
+            {
+                ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                if (data == null)
+                    return null;
+
+                return data.createDocument();
+            }
+
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                if (data == null)
+                    return null;
+
+                return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
+            }
+
+            @Override
+            public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+            {
+                Map<String, ExpData> idDataMap = ExpDataImpl.fromDocumentIds(resourceIdentifiers);
+                if (idDataMap == null)
+                    return null;
+
+                Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
+                for (String resourceIdentifier : idDataMap.keySet())
+                    searchJsonMap.put(resourceIdentifier, ExperimentJSONConverter.serializeData(idDataMap.get(resourceIdentifier), user, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                return searchJsonMap;
+            }
+        });
+    }
+
+    private void addDataClassResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
+                if (dataClass == null)
+                    return null;
+
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                //Need to map to proper Icon
+                properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
+
+                return properties;
+            }
+        });
+    }
+
+    private void addSampleTypeResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
+                if (sampleType == null)
+                    return null;
+
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                //Need to map to proper Icon
+                properties.put("type", "sampleSet");
+
+                return properties;
+            }
+        });
+    }
+
+    private void addSampleResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
+                if (material == null)
+                    return null;
+
+                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
+            }
+
+            @Override
+            public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+            {
+                Set<Integer> rowIds = new HashSet<>();
+                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                for (String resourceIdentifier : resourceIdentifiers)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                    if (rowId != 0)
+                    {
+                        rowIds.add(rowId);
+                        rowIdIdentifierMap.put(rowId, resourceIdentifier);
+                    }
+
+                }
+
+                Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
+                for (ExpMaterial material : ExperimentService.get().getExpMaterials(rowIds))
+                {
+                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                }
+
+                return searchJsonMap;
+            }
+
+        });
+    }
+
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
@@ -303,87 +456,23 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != ss)
         {
 //            ss.addSearchCategory(OntologyManager.conceptCategory);
+            ss.addSearchCategory(ExpSampleTypeImpl.searchCategory);
+            ss.addSearchCategory(ExpSampleTypeImpl.mediaSearchCategory);
             ss.addSearchCategory(ExpMaterialImpl.searchCategory);
+            ss.addSearchCategory(ExpMaterialImpl.mediaSearchCategory);
+            ss.addSearchCategory(ExpDataClassImpl.SEARCH_CATEGORY);
+            ss.addSearchCategory(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY);
             ss.addSearchCategory(ExpDataImpl.expDataCategory);
+            ss.addSearchCategory(ExpDataImpl.expMediaDataCategory);
             ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
-            ss.addResourceResolver("data", new SearchService.ResourceResolver()
-            {
-                @Override
-                public WebdavResource resolve(@NotNull String resourceIdentifier)
-                {
-                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
-                    if (data == null)
-                        return null;
-
-                    return data.createDocument();
-                }
-
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
-                    if (data == null)
-                        return null;
-
-                    return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
-                }
-            });
-            ss.addResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName(), new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(ExpDataClassImpl.SEARCH_CATEGORY.getName() + ":", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
-                    if (dataClass == null)
-                        return null;
-
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
-
-                    //Need to map to proper Icon
-                    properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
-
-                    return properties;
-                }
-            });
-            ss.addResourceResolver(ExpSampleTypeImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("materialSource:", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
-                    if (sampleType == null)
-                        return null;
-
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
-
-                    //Need to map to proper Icon
-                    properties.put("type", "sampleSet");
-
-                    return properties;
-                }
-            });
-
-            ss.addResourceResolver("material", new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("material:", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
-                    if (material == null)
-                        return null;
-
-                    return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
-                }
-            });
+            addDataResourceResolver(ExpDataImpl.expDataCategory.getName());
+            addDataResourceResolver(ExpDataImpl.expMediaDataCategory.getName());
+            addDataClassResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName());
+            addDataClassResourceResolver(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY.getName());
+            addSampleTypeResourceResolver(ExpSampleTypeImpl.searchCategory.getName());
+            addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
+            addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
+            addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
             ss.addDocumentProvider(this);
         }
 
@@ -476,9 +565,42 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
+                    assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+
+                    Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
+                    SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
+
+                    SQLFragment batchAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    batchAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Batch.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("batchDomain", new SqlSelector(ExperimentService.get().getSchema(), batchAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment runAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    runAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("runDomain", new SqlSelector(ExperimentService.get().getSchema(), runAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment resultAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
+                    resultAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("resultDomain", new SqlSelector(ExperimentService.get().getSchema(), resultAssaySampleLookupSQL).getObject(Long.class));
+
+                    SQLFragment resultAssayMultipleSampleLookupSQL = new SQLFragment(
+                    "SELECT COUNT(*) FROM (\n" +
+                        "    SELECT PD.domainid, COUNT(*) AS PropCount\n" +
+                        "    FROM exp.propertydescriptor D\n" +
+                        "        JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "    WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery = 'Materials'))\n" +
+                        "        AND propertyuri LIKE ?\n" +
+                        "    GROUP BY PD.domainid\n" +
+                        ") X WHERE X.PropCount > 1"
+                    );
+                    resultAssayMultipleSampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
+                    sampleLookupCountMetrics.put("resultDomainWithMultiple", new SqlSelector(ExperimentService.get().getSchema(), resultAssayMultipleSampleLookupSQL).getObject(Long.class));
+
+                    assayMetrics.put("sampleLookupCount", sampleLookupCountMetrics);
+
                     results.put("assay", assayMetrics);
                 }
 
+                results.put("autoLinkedSampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class));
                 results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
                 results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
@@ -507,6 +629,22 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
 
+                results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentOnlyField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentAndAliquotField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
+
                 results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
                 results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
@@ -515,6 +653,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
 
                 results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
+
+                results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
+                results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
                 return results;
             });

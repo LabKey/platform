@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -182,6 +181,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 result.put(key.getKey(), row);
         }
         return result;
+    }
+
+    @Override
+    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
+    {
+        return false;
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
@@ -965,6 +970,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
+        private boolean _useAlias = false;
+
         static TabLoader getTestData() throws IOException
         {
             TabLoader testData = new TabLoader(new StringReader("pk,i,s\n0,0,zero\n1,1,one\n2,2,two"),true);
@@ -999,6 +1006,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 p.setPropertyURI(d.getName() + hash + "#" + testData.getColumns()[i].name);
                 p.setName(testData.getColumns()[i].name);
                 p.setRangeURI(testData.getColumns()[i].clazz == Integer.class ? PropertyType.INTEGER.getTypeUri() : PropertyType.STRING.getTypeUri());
+                p.setImportAliasSet(Set.of(p.getName() + "_alias"));
             }
             R.save(user);
             TableInfo rTableInfo = lists.getTable("R", null);
@@ -1119,8 +1127,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             var mergeRows = new ArrayList<Map<String,Object>>();
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
+            String colName = _useAlias ? "s_alias" : "s";
+            String pkName = _useAlias ? "pk_alias" : "pk";
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             BatchValidationException errors = new BatchValidationException()
             {
                 @Override
@@ -1165,8 +1175,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
             QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
             var mergeRows = new ArrayList<Map<String,Object>>();
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
-            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
+            String colName = _useAlias ? "s_alias" : "s";
+            String pkName = _useAlias ? "pk_alias" : "pk";
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
             var count = qus.loadRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), context, null);
@@ -1188,6 +1200,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             if (null == ListService.get())
                 return;
             // TODO
+        }
+
+        @Test
+        public void ALIAS_MERGE() throws Exception
+        {
+            _useAlias = true;
+            MERGE();
+        }
+
+        @Test
+        public void ALIAS_REPLACE() throws Exception
+        {
+            _useAlias = true;
+            REPLACE();
         }
     }
 }

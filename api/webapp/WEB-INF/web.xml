@@ -9,6 +9,10 @@
         <listener-class>org.labkey.api.util.ContextListener</listener-class>
     </listener>
 
+    <listener>
+        <listener-class>org.labkey.api.security.UserManager$SessionListener</listener-class>
+    </listener>
+
     <!-- Example filter to set character encoding on each request -->
     <filter>
         <filter-name>Set Character Encoding</filter-name>

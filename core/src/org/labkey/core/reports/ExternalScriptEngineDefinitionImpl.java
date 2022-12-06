@@ -26,18 +26,30 @@ import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import static org.labkey.api.reports.RScriptEngine.DOCKER_R_IMAGE_TYPE;
+import static org.labkey.api.reports.report.r.RScriptEngine.DOCKER_IMAGE_TYPE;
+import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
 {
+    // Most definitions don't require encryption, so retrieve AES128 lazily
+    static final Supplier<Algorithm> AES = () -> {
+        if (!Encryption.isEncryptionPassPhraseSpecified())
+            throw new RuntimeException("Unable to save credentials. EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
+
+        return Encryption.getAES128(ENCRYPTION_MIGRATION_HANDLER);
+    };
+
     private Integer _rowId;
     private String _name;
     private boolean _enabled;
@@ -56,6 +68,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private String _user;
     private boolean _changePassword;
     private String _password;
+    private String _fileExchange;               // specific to Rserve at the moment
     private String _pathMap;
     private boolean _external;
     private boolean _remote;
@@ -66,6 +79,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private PathMapper _pathMapper;
     private Integer _dockerImageRowId;
     private String _dockerImageConfig;
+    private String _remoteUrl;
 
     @Override
     public Integer getRowId()
@@ -126,7 +140,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         {
             addIfNotNull(json, "user", getUser());
             if (getPassword() != null)
-                addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(getPassword())));
+                addIfNotNull(json, "password", Base64.encodeBase64String(AES.get().encrypt(getPassword())));
         }
         else
         {
@@ -141,7 +155,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 {
                     addIfNotNull(json, "user", existingDef.getUser());
                     if (existingDef.getPassword() != null)
-                        addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(existingDef.getPassword())));
+                        addIfNotNull(json, "password", Base64.encodeBase64String(AES.get().encrypt(existingDef.getPassword())));
                 }
             }
         }
@@ -149,10 +163,12 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "remote", isRemote());
         addIfNotNull(json, "docker", isDocker());
         addIfNotNull(json, "pandocEnabled", isPandocEnabled());
+        addIfNotNull(json, "fileExchange", getFileExchange());
         addIfNotNull(json, "pathMap", _pathMap);
         addIfNotNull(json, "default", isDefault());
         addIfNotNull(json, "sandboxed", isSandboxed());
         addIfNotNull(json, "dockerImageRowId", getDockerImageRowId());
+        addIfNotNull(json, "remoteUrl", getRemoteUrl());
 
         _configuration = json.toString();
     }
@@ -192,7 +208,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         {
             String password = json.getString("password");
             if (decrypt)
-                setPassword(Encryption.getAES128().decrypt(Base64.decodeBase64(password)));
+                setPassword(AES.get().decrypt(Base64.decodeBase64(password)));
             else
                 setPassword(password);
         }
@@ -204,6 +220,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setDocker(json.getBoolean("docker"));
         if (json.has("pandocEnabled"))
             setPandocEnabled(json.getBoolean("pandocEnabled"));
+        if (json.has("fileExchange"))
+            setFileExchange(json.getString("fileExchange"));
         if (json.has("pathMap"))
             setPathMap(json.getString("pathMap"));
         if (json.has("default"))
@@ -225,6 +243,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 }
             }
         }
+        if (json.has("remoteUrl"))
+            setRemoteUrl(json.getString("remoteUrl"));
 
         _configuration = configuration;
     }
@@ -390,6 +410,24 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     }
 
     @Override
+    public String getFileExchange()
+    {
+        if (_fileExchange == null)
+        {
+            if (getPathMap() != null)
+                return RserveScriptEngine.ModusOperandi.FileShare.name();
+            else
+                return RserveScriptEngine.ModusOperandi.Cloud.name();
+        }
+        return _fileExchange;
+    }
+
+    public void setFileExchange(String fileExchange)
+    {
+        _fileExchange = fileExchange;
+    }
+
+    @Override
     public PathMapper getPathMap()
     {
         if (_pathMapper != null)
@@ -488,6 +526,17 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _sandboxed = sandboxed;
     }
 
+    @Override
+    public String getRemoteUrl()
+    {
+        return _remoteUrl;
+    }
+
+    public void setRemoteUrl(String remoteUrl)
+    {
+        _remoteUrl = remoteUrl;
+    }
+
     private void addIfNotNull(JSONObject json, String key, Object value)
     {
         if (value != null)
@@ -502,9 +551,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         BaseViewAction.defaultBindParameters(this, "form", params);
 
         // Handle pathMap
-        JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
-        if (jsonPathMap != null)
-            _pathMap = jsonPathMap.toString();
+        if (props.get("pathMap") != null)
+            _pathMap = props.get("pathMap").toString();
     }
 
     @Override
@@ -525,7 +573,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         return _dockerImageConfig;
     }
 
-
     @Override
     public void setDockerImageConfig(String dockerImageConfig)
     {
@@ -544,9 +591,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             }
             else
             {
-                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker R - " + getName(), DOCKER_R_IMAGE_TYPE, "", null));
+                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker - " + getName(), DOCKER_IMAGE_TYPE, "", null));
             }
         }
-
     }
 }

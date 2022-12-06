@@ -188,8 +188,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     protected TestDataGenerator createEmptySampleSet(String dataClassName, String path)
     {
         List<FieldDefinition> fields = new ArrayList<>();
-        fields.add(new FieldDefinition("name")
-                .setType(FieldDefinition.ColumnType.String));
+        fields.add(new FieldDefinition("name"));
         return createEmptyDomain("exp.materials", "SampleSet", dataClassName, path, fields);
     }
 

@@ -63,6 +63,7 @@ public class DefaultViewInfo implements DataViewInfo
     private boolean _visible = true;
     private boolean _shared = true;
     private boolean _showInDashboard;
+    private boolean _hideInManageViews;
     private boolean _readOnly;
     private String _access;
     private ActionURL _accessUrl;
@@ -309,6 +310,17 @@ public class DefaultViewInfo implements DataViewInfo
     public void setShowInDashboard(boolean showInDashboard)
     {
         _showInDashboard = showInDashboard;
+    }
+
+    @Override
+    public boolean hideInManageViews()
+    {
+        return _hideInManageViews;
+    }
+
+    public void setHideInManageViews(boolean hideInManageViews)
+    {
+        _hideInManageViews = hideInManageViews;
     }
 
     public void setVisible(boolean visible)

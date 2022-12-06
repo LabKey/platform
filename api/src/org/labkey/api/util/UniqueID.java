@@ -21,6 +21,7 @@ import org.labkey.api.view.ViewServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /*
 * User: adam
@@ -34,7 +35,16 @@ public class UniqueID
     // Initialize a unique counter to use within this request
     public static void initializeRequestScopedUID(HttpServletRequest request)
     {
-        request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
+        initializeSessionScopedUID(request);
+        if (null == request.getAttribute(ViewServlet.REQUEST_UID_COUNTER))
+            request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
+    }
+
+    // Initialize a unique counter to use within a session
+    private static void initializeSessionScopedUID(HttpServletRequest request)
+    {
+        if (null == request.getSession(true).getAttribute(ViewServlet.REQUEST_UID_COUNTER))
+            request.getSession(true).setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
     }
 
     /*
@@ -58,6 +68,17 @@ public class UniqueID
 
         return counter.incrementAndGet();
     }
+
+    public static int getSessionScopedUID(HttpServletRequest request)
+    {
+        AtomicInteger counter = (AtomicInteger)request.getSession(true).getAttribute(ViewServlet.REQUEST_UID_COUNTER);
+
+        if (null == counter)
+            throw new IllegalStateException("Unique session counter was not initialized");
+
+        return counter.incrementAndGet();
+    }
+
 
     /*
         Provides a unique long within the context of an entire server session. This is handy for generating identifiers

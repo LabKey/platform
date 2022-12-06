@@ -63,7 +63,7 @@ public class CrosstabExcelWriter extends ExcelWriter
         {
             Row dimensionRow = sheet.createRow(getCurrentRow());
             Cell dimensionCell = dimensionRow.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
-            dimensionCell.setCellStyle(getBoldFormat());
+            dimensionCell.setCellStyle(getBoldFormat(sheet.getWorkbook()));
             dimensionCell.setCellValue(_table.getSettings().getColumnAxis().getCaption());
 
             incrementRow();
@@ -86,7 +86,7 @@ public class CrosstabExcelWriter extends ExcelWriter
             if (currentMember != null)
             {
                 Cell cell = row.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                cell.setCellStyle(getBoldFormat());
+                cell.setCellStyle(getBoldFormat(sheet.getWorkbook()));
                 cell.setCellValue(currentMember.getCaption());
                 column += memberColumns.size();
                 if (column >= _docType.getMaxColumns())

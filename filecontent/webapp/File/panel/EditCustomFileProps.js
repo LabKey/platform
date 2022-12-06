@@ -83,6 +83,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
                 if (fieldConfig.name == "Flag/Comment") {
                     fieldConfig.label = "Description";
+                    fieldConfig.fieldLabel = "Description";
                     fieldConfig.itemId = "descriptionField";
                 }
 

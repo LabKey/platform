@@ -16,7 +16,7 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-<script type="text/javascript"><!--
+<script type="text/javascript" nonce="<%=getScriptNonce()%>"><!--
 
 var requestedURLs = {};
 

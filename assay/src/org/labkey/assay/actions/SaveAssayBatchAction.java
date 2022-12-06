@@ -15,8 +15,8 @@
  */
 package org.labkey.assay.actions;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;

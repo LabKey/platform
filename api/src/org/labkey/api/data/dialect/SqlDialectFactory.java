@@ -44,7 +44,7 @@ public interface SqlDialectFactory
     // Caller must invoke initialize() on the dialects.
     Collection<? extends SqlDialect> getDialectsToTest();
 
-    // Factories can override if they want the ability to replace their standard TableResolver
+    // Do not call; this is a complete no-op! Left in place to keep Synonym module building for now. TODO: Remove
     default void setTableResolver(TableResolver tableResolver)
     {
     }

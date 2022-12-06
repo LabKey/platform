@@ -15,7 +15,7 @@
  */
 package org.labkey.api.visualization;
 
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
@@ -55,7 +55,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     
     public GenericChartReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
     }
 
     @Override

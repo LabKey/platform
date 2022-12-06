@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.CustomizeMenuForm" %>
@@ -33,7 +33,7 @@
     CustomizeMenuForm bean = me.getModelBean();
 %>
 <div id="someUniqueElement2"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext.onReady(function() {
 
         var bean = <%= text(new JSONObject(bean).toString()) %>;

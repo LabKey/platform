@@ -1,8 +1,8 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
@@ -54,6 +54,12 @@ public interface ProvenanceService
     String DATA_INPUTS = "dataInputs";
     String DATA_OUTPUTS = "dataOutputs";
     String PROPERTIES = "properties";
+
+    String ACTIVITY_DATE = "activityDate";
+    String START_TIME = "startTime";
+    String END_TIME = "endTime";
+    String RECORD_COUNT = "recordCount";
+    String COMMENTS = "comments";
 
     @NotNull
     static ProvenanceService get()

@@ -88,7 +88,6 @@ import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -122,6 +121,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.ExperimentListenerImpl;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.PublishAuditProvider;
+import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.DatasetController;
@@ -140,10 +140,7 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.MissingValueImporterFactory;
-import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.importer.ViewCategoryImporter;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DatasetDefinition;
@@ -177,7 +174,6 @@ import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
-import org.labkey.study.reports.ReportViewProvider;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
@@ -193,10 +189,7 @@ import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
-import org.labkey.study.writer.MissingValueWriterFactory;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
-import org.labkey.study.writer.ViewCategoryWriter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -242,7 +235,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 22.000;
+        return 22.002;
     }
 
     @Override
@@ -295,12 +288,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
-
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
 
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
-        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
@@ -364,7 +354,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
-        PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
         // This is in the First group because when a container is deleted,
         // the Experiment listener needs to be called after the Study listener,
@@ -381,6 +370,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
+        AuditLogService.get().registerAuditType(new ParticipantGroupAuditProvider());
 
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new ExternalReport());
@@ -416,17 +406,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
-            folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
-            folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
         }
 
         FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
-        AdminConsole.addExperimentalFeatureFlag(SpecimenService.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
-            "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
 
@@ -454,8 +440,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
                 );
 
-                metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload = ? AND ReloadInterval > ?", true, 0).getObject(Long.class));
                 metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
+                metric.put("timepointType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap());
 
                 metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
@@ -859,7 +845,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "studyReloadCount",
+                "timepointType",
                 "reportCountsByType"
             );
             assertTrue("Mothership report missing expected metrics",

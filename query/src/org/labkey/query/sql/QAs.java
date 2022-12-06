@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
 public class QAs extends QNode implements SupportsAnnotations
@@ -53,8 +55,8 @@ public class QAs extends QNode implements SupportsAnnotations
     }
 
     @Override
-    public Map<String, Object> getAnnotations()
+    public @NotNull Map<String, Object> getAnnotations()
     {
-        return _annotations;
+        return null==_annotations ? Map.of() : _annotations;
     }
 }

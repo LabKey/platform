@@ -23,7 +23,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
 {
@@ -75,7 +75,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
     void setInputData(ExpData expData);
     ExpData getInputData();
 
-    void setRuns(List<ExpRun> runs);
+    void setRuns(Collection<ExpRun> runs);
 
     /**
      * Returns a column which links to a data input of the specified type.

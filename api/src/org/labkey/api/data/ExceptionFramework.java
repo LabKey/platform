@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DebugInfoDumper;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
 
@@ -33,14 +34,19 @@ public enum ExceptionFramework
     Spring
         {
             @Override
-            public DataAccessException translate(DbScope scope, String task, SQLException e)
+            public RuntimeException translate(DbScope scope, String task, SQLException e)
             {
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
                 if (SqlDialect.isTransactionException(e))
                 {
                     DebugInfoDumper.dumpThreads(1);
                 }
-                return translator.translate(task, null, e);
+                RuntimeException result = translator.translate(task, null, e);
+                if (result == null)
+                {
+                    result = new UncategorizedSQLException(task, null, e);
+                }
+                return result;
             }
         },
     JDBC

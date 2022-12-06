@@ -46,6 +46,7 @@ import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -96,7 +97,7 @@ import static java.util.stream.Collectors.joining;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 40000, "Property maps");
+    private static final Cache<Pair<String, String>, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
@@ -211,7 +212,7 @@ public class OntologyManager
             return Collections.unmodifiableList(propertyURIs);
         }
     });
-    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
+    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -711,6 +712,12 @@ public class OntologyManager
         void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
+    @NotNull
+    private static Pair<String, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    {
+        return Pair.of(container != null ? container.getEntityId().toStringNoDashes() : null, objectLSID);
+    }
+
 
     /**
      * Get ordered map of property values for an object. The order of the properties in the
@@ -718,9 +725,10 @@ public class OntologyManager
      *
      * @return map from PropertyURI to ObjectProperty
      */
-    public static Map<String, ObjectProperty> getPropertyObjects(Container container, String objectLSID)
+    public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Map<String, ObjectProperty> m = mapCache.get(objectLSID);
+        Pair<String, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        Map<String, ObjectProperty> m = mapCache.get(cacheKey);
         if (null != m)
             return m;
 
@@ -788,7 +796,7 @@ public class OntologyManager
         }
 
         m = unmodifiableMap(m);
-        mapCache.put(objectLSID, m);
+        mapCache.put(cacheKey, m);
         return m;
     }
 
@@ -2649,11 +2657,29 @@ public class OntologyManager
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable String ownerObjectLsid, boolean insertNullValues) throws ValidationException
     {
         ObjectProperty oprop;
+        RemapCache cache = new RemapCache();
+
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), container, pd.getContainer());
 
-            oprop = new ObjectProperty(lsid, container, pd, value);
+            try
+            {
+                oprop = new ObjectProperty(lsid, container, pd, value);
+            }
+            catch (ConversionException x)
+            {
+                // Issue 43529: Assay run property with large lookup doesn't resolve text input by value
+                // Attempt to resolve lookups by display value and then try creating the ObjectProperty again
+                if (pd.getLookup() != null)
+                {
+                    Object remappedValue = getRemappedValueForLookup(user, container, cache, pd.getLookup(), value);
+                    if (remappedValue != null)
+                        value = remappedValue;
+                }
+                oprop = new ObjectProperty(lsid, container, pd, value);
+            }
+
             if (value != null || insertNullValues)
             {
                 oprop.setPropertyId(pd.getPropertyId());
@@ -2670,6 +2696,12 @@ public class OntologyManager
             transaction.commit();
         }
         return oprop;
+    }
+
+    public static Object getRemappedValueForLookup(User user, Container container, RemapCache cache, Lookup lookup, Object value)
+    {
+        Container lkContainer = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
     public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
@@ -2788,7 +2820,7 @@ public class OntologyManager
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        mapCache.remove(parentObjectURI);
+        mapCache.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
 
@@ -2876,6 +2908,7 @@ public class OntologyManager
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
         p.setDefaultValueTypeEnum(pd.getDefaultValueTypeEnum());
         p.setScannable(pd.isScannable());
+        p.setDerivationDataScope(pd.getDerivationDataScope());
     }
 
     @TestWhen(TestWhen.When.BVT)

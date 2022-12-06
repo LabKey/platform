@@ -560,7 +560,8 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public String getResourceName()
     {
-        return FileUtil.getFileName(getRootNioPath());
+        String fileName = FileUtil.getFileName(getRootNioPath());
+        return fileName.isEmpty() ? "Root for " + getContainer().getName() : fileName;
     }
 
     @Override

@@ -18,8 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -37,6 +35,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
@@ -68,18 +67,17 @@ import java.util.Set;
 public class DataColumn extends DisplayColumn
 {
     public static final String EXPERIMENTAL_USE_QUERYSELECT_COMPONENT = "experimental-use-queryselect-component";
-    private static final Logger LOG = LogManager.getLogger(DataColumn.class);
 
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
     private List<FieldKey> _sortFieldKeys;
-    private ColumnInfo _filterColumn;
+    private final ColumnInfo _filterColumn;
 
     private String _inputType;
     private int _inputRows;
     private int _inputLength;
     private boolean _preserveNewlines;
-    private boolean _editable = true;
+    private boolean _editable;
 
     //Careful, a renderer without a resultset is only good for input forms
     public DataColumn(ColumnInfo col)
@@ -97,7 +95,13 @@ public class DataColumn extends DisplayColumn
             _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
-        _width = _displayColumn.getWidth();
+        // Issue 45559 - use the width set on the bound column when configured. If not set, use the display column's
+        // width (in non-lookup cases they will be the same)
+        _width = _boundColumn.getWidth();
+        if ("".equals(_width))
+        {
+            _width = _displayColumn.getWidth();
+        }
         StringExpression url = withLookups ?
                 _boundColumn.getEffectiveURL() :
                 _boundColumn.getURL();
@@ -131,7 +135,7 @@ public class DataColumn extends DisplayColumn
             /* fall through */
         }
         _inputRows = _boundColumn.getInputRows();
-        // Assume that if the use can enter the value in a text area that they'll want to see
+        // Assume that if the user can enter the value in a text area that they'll want to see
         // their newlines in grid views as well
         _preserveNewlines = _inputRows > 1;
         _inputLength = _boundColumn.getInputLength();
@@ -249,18 +253,18 @@ public class DataColumn extends DisplayColumn
     {
         super.addQueryFieldKeys(keys);
         if (_boundColumn != null)
+        {
             keys.add(_boundColumn.getFieldKey());
+            StringExpression effectiveURL = _boundColumn.getEffectiveURL();
+            if (effectiveURL instanceof DetailsURL)
+                keys.addAll(((DetailsURL) effectiveURL).getFieldKeys());
+        }
         if (_displayColumn != null)
             keys.add(_displayColumn.getFieldKey());
         if (_filterColumn != null)
             keys.add(_filterColumn.getFieldKey());
         if (_sortFieldKeys != null)
             keys.addAll(_sortFieldKeys);
-        StringExpression effectiveURL = _boundColumn.getEffectiveURL();
-        if (effectiveURL instanceof DetailsURL)
-        {
-            keys.addAll(((DetailsURL) effectiveURL).getFieldKeys());
-        }
     }
 
     @Override
@@ -432,7 +436,7 @@ public class DataColumn extends DisplayColumn
         if (url == null)
         {
             // See if the value is itself a URL
-            Object value = ctx.get(_displayColumn.getFieldKey());
+            Object value = getDisplayValue(ctx);
             if (value != null)
             {
                 String toString = value.toString();
@@ -535,7 +539,7 @@ public class DataColumn extends DisplayColumn
     public HtmlString getFormattedHtml(RenderContext ctx)
     {
         HtmlStringBuilder hsb = HtmlStringBuilder.of();
-        Object value = ctx.get(_displayColumn.getFieldKey());
+        Object value = getDisplayValue(ctx);
         if (value == null)
         {
             // If we couldn't find it by FieldKey, check by alias as well
@@ -766,7 +770,6 @@ public class DataColumn extends DisplayColumn
         if (!entryList.isComplete())
         {
             // When incomplete, there are too many select options to render -- use a simple text input instead.
-            String textInputValue = strVal;
             Object displayValue = null;
             TableViewForm viewForm = ctx.getForm();
             if (viewForm != null && viewForm.contains(this, ctx))
@@ -776,7 +779,7 @@ public class DataColumn extends DisplayColumn
             }
             if (displayValue == null)
                 displayValue = getDisplayValue(ctx);
-            textInputValue = Objects.toString(displayValue, strVal);
+            String textInputValue = Objects.toString(displayValue, strVal);
 
             renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
         }
@@ -789,7 +792,7 @@ public class DataColumn extends DisplayColumn
     protected void renderFileFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
-        Input.InputBuilder input = new Input.InputBuilder()
+        var input = new Input.InputBuilder<>()
                 .type("file")
                 .name(getInputPrefix() + formFieldName)
                 .disabled(disabledInput)
@@ -803,7 +806,7 @@ public class DataColumn extends DisplayColumn
     {
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
 
-        Input.InputBuilder input = new Input.InputBuilder()
+        var input = new Input.InputBuilder<>()
                 .type("checkbox")
                 .name(getInputPrefix() + formFieldName)
                 .disabled(disabledInput)
@@ -850,7 +853,7 @@ public class DataColumn extends DisplayColumn
     protected void renderTextFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
-        Input.InputBuilder input = new Input.InputBuilder()
+        var input = new Input.InputBuilder<>()
                 .name(getInputPrefix() + formFieldName)
                 .disabled(disabledInput)
                 .size(_inputLength)
@@ -868,28 +871,26 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<script type=\"text/javascript\">");
-        sb.append("Ext4.onReady(function(){\n" +
-                "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                "            sharedStore     : true,\n" +
-                "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                "            tagConfig   : {\n" +
-                "                tag     : 'input',\n" +
-                "                type    : 'text',\n" +
-                "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
-                "                size    : " + _inputLength + ",\n" +
-                "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
-                "                autocomplete : 'off'\n" +
-                "            }\n" +
-                "        });\n" +
-                "      });\n");
-        sb.append("</script>\n");
-        sb.append("<div id='").append(renderId).append("'></div>");
-        out.write(sb.toString());
+        out.write("<div id='" + renderId + "'></div>");
+        String initScript =
+                        "Ext4.onReady(function(){\n" +
+                        "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                        "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                        "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+                        "            sharedStore     : true,\n" +
+                        "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+                        "            tagConfig   : {\n" +
+                        "                tag     : 'input',\n" +
+                        "                type    : 'text',\n" +
+                        "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
+                        "                size    : " + _inputLength + ",\n" +
+                        "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
+                        "                autocomplete : 'off'\n" +
+                        "            }\n" +
+                        "        });\n" +
+                        "      });\n"
+                ;
+        HttpView.currentPageConfig().addDOMContentLoadedHandler(JavaScriptFragment.unsafe(initScript));
     }
 
     protected @Nullable ActionURL getAutoCompleteURLPrefix()

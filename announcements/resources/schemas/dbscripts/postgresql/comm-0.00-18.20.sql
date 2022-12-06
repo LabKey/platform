@@ -37,6 +37,7 @@ CREATE TABLE comm.Announcements
     DiscussionSrcIdentifier VARCHAR(100) NULL,
     DiscussionSrcURL VARCHAR(1000) NULL,
     LastIndexed TIMESTAMP NULL,
+    Approved TIMESTAMP NULL,
 
     CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
     CONSTRAINT UQ_Announcements UNIQUE (Container, Parent, RowId)
@@ -88,69 +89,6 @@ CREATE TABLE comm.PageVersions
 ALTER TABLE comm.Pages
     ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
 
-/* Managed by the core module, as of 20.1.x
-CREATE TABLE comm.EmailOptions
-(
-    EmailOptionId INT4 NOT NULL,
-    EmailOption VARCHAR(50),
-    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
-
-    CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
-);
-
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
-
--- new file email notification options
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES
-  (512, 'No Email', 'files'),
-  (513, '15 minute digest', 'files'),
-  (514, 'Daily digest', 'files');
-
-CREATE TABLE comm.EmailFormats
-(
-    EmailFormatId INT4 NOT NULL,
-    EmailFormat VARCHAR(20),
-
-    CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
-);
-
-INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (0, 'Plain Text');
-INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (1, 'HTML');
-
-CREATE TABLE comm.PageTypes
-(
-    PageTypeId INT4 NOT NULL,
-    PageType VARCHAR(20),
-
-    CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
-);
-
-INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (0, 'Message');
-INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (1, 'Wiki');
-
-CREATE TABLE comm.EmailPrefs
-(
-    Container ENTITYID,
-    UserId USERID,
-    EmailOptionId INT4 NOT NULL,
-    EmailFormatId INT4 NOT NULL,
-    PageTypeId INT4 NOT NULL,
-    LastModifiedBy USERID,
-    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
-    SrcIdentifier VARCHAR(100) NOT NULL, -- allow subscriptions to multiple forums within a single container
-
-    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier),
-    CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-    CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
-    CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
-    CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
-    CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
-);
-*/
 -- Discussions can be private, constrained to a certain subset of users (like a Cc: line)
 CREATE TABLE comm.UserList
 (
@@ -183,23 +121,17 @@ CREATE TABLE comm.RSSFeeds
 
 CREATE TABLE comm.Tours
 (
-  RowId SERIAL,
-  Title VARCHAR(500) NOT NULL,
-  Description VARCHAR(4000),
-  Container ENTITYID NOT NULL,
-  EntityId ENTITYID NOT NULL,
-  Created TIMESTAMP,
-  CreatedBy USERID,
-  Modified TIMESTAMP,
-  ModifiedBy USERID,
-  Json VARCHAR,
-  Mode INT NOT NULL DEFAULT 0,
+    RowId SERIAL,
+    Title VARCHAR(500) NOT NULL,
+    Description VARCHAR(4000),
+    Container ENTITYID NOT NULL,
+    EntityId ENTITYID NOT NULL,
+    Created TIMESTAMP,
+    CreatedBy USERID,
+    Modified TIMESTAMP,
+    ModifiedBy USERID,
+    Json VARCHAR,
+    Mode INT NOT NULL DEFAULT 0,
 
-  CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
+    CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
 );
-
-/* comm-18.10-18.20.sql */
-
-ALTER TABLE comm.Announcements ADD COLUMN Approved TIMESTAMP NULL;
-
-UPDATE comm.Announcements SET Approved = Created;

@@ -44,7 +44,7 @@
         padding-left: 50px;
     }
 </style>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList(listName, hiddenElName)
 {
     var itemList = "";

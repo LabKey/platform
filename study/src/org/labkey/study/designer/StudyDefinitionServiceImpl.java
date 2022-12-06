@@ -36,6 +36,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.StudyPublishManager;
@@ -127,6 +128,9 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                 version = StudyDesignManager.get().getStudyDesignVersion(container, studyId, revision);
             else
                 version = StudyDesignManager.get().getStudyDesignVersion(container, studyId);
+
+            if (null == version)
+                throw new NotFoundException("Protocol " + studyId + (revision >= 0 ? ", Revision " + revision : "") + " not found!");
 
             GWTStudyDefinition template = getTemplate();
             GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template, getUser(), container);

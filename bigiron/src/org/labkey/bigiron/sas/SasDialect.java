@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.StandardTableResolver;
@@ -100,19 +101,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        if (select == null)
-            throw new IllegalArgumentException("select");
-        if (from == null)
-            throw new IllegalArgumentException("from");
-
-        SQLFragment sql = new SQLFragment();
-        sql.append(select);
-        sql.append("\n").append(from);
-        if (filter != null) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-
-        return sql;
+        return LimitRowsSqlGenerator.appendFromFilterOrderAndGroupBy(select, from, filter, order, groupBy);
     }
 
     @Override

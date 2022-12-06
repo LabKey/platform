@@ -17,17 +17,19 @@ package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.poi.hssf.OldExcelFormatException;
+import org.apache.poi.UnsupportedFileFormatException;
+import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -41,20 +43,25 @@ import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.model.SharedStringsTable;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.logging.LogHelper;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -63,10 +70,12 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,11 +86,145 @@ import java.util.Map;
  */
 public class ExcelFactory
 {
-    private static final Logger LOG = LogManager.getLogger(ExcelFactory.class);
+    private static final Logger LOG = LogHelper.getLogger(ExcelFactory.class, "Excel file parsing (.xls, .xlsx)");
 
     public static final String SUB_TYPE_XSSF = "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
+
+
+    public static class WorkbookMetadata implements Closeable
+    {
+        private final List<String> _names;
+        private final boolean _isSpreadSheetML;
+        private final Boolean _isStart1904;
+        private final Workbook _workbook;
+        private final String[] _sharedStrings;
+
+        WorkbookMetadata(Workbook workbook, boolean isXML, @Nullable List<String> names, @Nullable Boolean isStart1904, @Nullable SharedStringsTable sharedStrings)
+        {
+            this._workbook = workbook;
+            this._isSpreadSheetML = isXML;
+            this._isStart1904 = _isSpreadSheetML ? isStart1904 : null;
+
+            if (null == names)
+            {
+                names = new ArrayList<>();
+                for (int i=0 ; i < workbook.getNumberOfSheets() ; i++)
+                    names.add(workbook.getSheetName(i));
+            }
+            this._names = names;
+
+            if (null == sharedStrings)
+                this._sharedStrings = null;
+            else
+            {
+                var items = sharedStrings.getSharedStringItems();
+                String[] strings = new String[items.size()];
+                for (int i = 0; i < items.size(); i++)
+                    strings[i] = items.get(i).getString();
+                this._sharedStrings = strings;
+            }
+        }
+
+        public boolean isSpreadSheetML()
+        {
+            return _isSpreadSheetML;
+        }
+        public List<String> getSheetNames()
+        {
+            return _names;
+        }
+        // returns null if we don't know (.XLS).
+        // Consider moving code from ExcelLoader.computeIsStartDate1904() to here
+        @Nullable
+        public Boolean isStart1904()
+        {
+            return _isStart1904;
+        }
+        /* I can't seem to avoid loading the shared strings so might as well return them */
+        public String[] getSharedStrings()
+        {
+            return _sharedStrings;
+        }
+        /* returns non-null value if workbook is the same as returned by create(File) */
+        public Workbook getWorkbook()
+        {
+            return _workbook;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            if (getWorkbook() != null)
+            {
+                getWorkbook().close();
+            }
+        }
+    }
+
+
+    // throw FileNotFoundException instead of InvalidOperationException or InvalidFormatException
+    static OPCPackage openOPCPackage(@NotNull File file) throws IOException, InvalidFormatException
+    {
+        if (!file.isFile())
+            throw new FileNotFoundException("file not found");
+        return OPCPackage.open(file, PackageAccess.READ);
+    }
+
+
+    public static WorkbookMetadata getMetadata(@NotNull File file) throws IOException, InvalidFormatException
+    {
+        try (OPCPackage opc = openOPCPackage(file))
+        {
+            return getMetadata(opc);
+        }
+        // might be OLE2 formet
+        catch (InvalidFormatException|UnsupportedFileFormatException e)
+        {
+            Workbook wb = create(file);
+            return getMetadata(wb, null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
+        }
+    }
+
+
+    @NotNull
+    public static WorkbookMetadata getMetadata(@NotNull OPCPackage opc) throws IOException, InvalidFormatException
+    {
+        final ArrayList<String> sheetNames = new ArrayList<>();
+        Workbook wb = new XSSFWorkbook(opc)
+        {
+            @Override
+            public void parseSheet(Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
+            {
+                sheetNames.add(ctSheet.getName());
+            }
+        };
+        return getMetadata(wb, sheetNames);
+    }
+
+
+    public static WorkbookMetadata getMetadata(Workbook wb) throws IOException, InvalidFormatException
+    {
+        ArrayList<String> names = new ArrayList<>();
+        for (int i=0 ; i<wb.getNumberOfSheets() ; i++)
+            names.add(wb.getSheetName(i));
+        return getMetadata(wb, names);
+    }
+
+
+    public static WorkbookMetadata getMetadata(Workbook wb, List<String> names) throws IOException, InvalidFormatException
+    {
+        if (wb instanceof XSSFWorkbook)
+            return new WorkbookMetadata(null, true, names, ((XSSFWorkbook)wb).isDate1904(), ((XSSFWorkbook)wb).getSharedStringSource());
+        else
+            return new WorkbookMetadata(wb, false, names, null, null);
+    }
+
 
     /**
      * Sniffs the file type and returns the appropriate parser
@@ -90,50 +233,48 @@ public class ExcelFactory
     @NotNull
     public static Workbook create(@NotNull File file) throws IOException, InvalidFormatException
     {
-        FileInputStream fIn = new FileInputStream(file);
-        try
+        try (OPCPackage opc = openOPCPackage(file))
         {
-            return WorkbookFactory.create(fIn);
-        }
-        catch (OldExcelFormatException e)
-        {
-            try { fIn.close(); } catch (IOException ignored) {}
-            fIn = new FileInputStream(file);
-            return new JxlWorkbook(fIn);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
-        }
-        finally
-        {
-            try { fIn.close(); } catch (IOException ignored) {}
-        }
-    }
+            return new XSSFWorkbook(opc)
+            {
+                // This overload is here to make it easy to see which code paths are inadvertently loading spreadsheet data the expensive way!
 
-    /** Creates a temp file from the InputStream, then attempts to parse using the new and old formats. */
-    public static Workbook create(InputStream is) throws IOException, InvalidFormatException
-    {
-
-        File temp = File.createTempFile("excel", "tmp");
-        try
-        {
-            FileUtil.copyData(is, temp);
-            return create(temp);
+                @Override
+                public void parseSheet(Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
+                {
+                    super.parseSheet(shIdMap, ctSheet);
+                }
+            };
         }
-        finally
+        catch (UnsupportedFileFormatException not_xssf)
         {
-            temp.delete();
-        }
-/*
-        DefaultDetector detector = new DefaultDetector();
-        MediaType type = detector.detect(TikaInputStream.get(dataFile), new Metadata());
+            try
+            {
+                return WorkbookFactory.create(file);
+            }
+            catch (UnsupportedFileFormatException|IOException not_ole2_either)
+            {
+                if (not_ole2_either instanceof IOException && !not_ole2_either.getMessage().contains("unsupported file type"))
+                    throw not_ole2_either;
 
-        if (SUB_TYPE_BIFF5.equals(type.getSubtype()))
-            return new JxlWorkbook(dataFile);
-        else
-            return WorkbookFactory.create(new FileInputStream(dataFile));
-*/
+                try (FileInputStream fis = new FileInputStream(file))
+                {
+                    return new JxlWorkbook(fis);
+                }
+            }
+        }
+        catch (IllegalArgumentException | POIXMLException e)
+        {
+            // Issue 45464 - improve error message for .xlsx variant that's unsupported by POI
+            if (e.getMessage() != null && e.getMessage().contains("57699"))
+            {
+                throw new ExcelFormatException("Unable to open file as an Excel document. \"Strict Open XML Spreadsheet\" versions of .xlsx files are not supported.", e);
+            }
+            else
+            {
+                throw new ExcelFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()), e);
+            }
+        }
     }
 
     /**
@@ -437,18 +578,24 @@ public class ExcelFactory
     /** Supports .xls (BIFF8 only), and .xlsx */
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(WorkbookFactory.create(in), extended, -1);
+        try (Workbook workbook = WorkbookFactory.create(in))
+        {
+            return convertExcelToJSON(workbook, extended, -1);
+        }
     }
 
     /** Supports both new and old style .xls (BIFF5 and BIFF8), and .xlsx because we can reopen the stream if needed */
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, -1);
+        return convertExcelToJSON(excelFile, extended, -1);
     }
 
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended, int maxRows) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, maxRows);
+        try (Workbook workbook = ExcelFactory.create(excelFile))
+        {
+            return convertExcelToJSON(workbook, extended, maxRows);
+        }
     }
 
     /** Supports .xls (BIFF8 only) and .xlsx */
@@ -491,7 +638,7 @@ public class ExcelFactory
                             }
                         }
                         // Workaround for issue 15437
-                        catch (NullPointerException ignored) {}
+                        catch (NullPointerException|UnsupportedOperationException ignored) {}
 
                         if ("General".equalsIgnoreCase(formatString))
                         {
@@ -568,7 +715,7 @@ public class ExcelFactory
 
                             case BOOLEAN:
                                 value = cell.getBooleanCellValue();
-                                formattedValue = value == null ? null : value.toString();
+                                formattedValue = value.toString();
                                 break;
 
                             case ERROR:
@@ -659,68 +806,70 @@ public class ExcelFactory
             JSONObject root      = new JSONObject(source);
             JSONArray sheetArray = root.getJSONArray("sheets");
 
-            Workbook wb = ExcelFactory.createFromArray(sheetArray, ExcelWriter.ExcelDocumentType.xls);
-            wb.write(os);
+            try (Workbook wb = ExcelFactory.createFromArray(sheetArray, ExcelWriter.ExcelDocumentType.xls))
+            {
+                wb.write(os);
 
-            Sheet sheet = wb.getSheet("FirstSheet");
-            assertNotNull(sheet);
-            Cell cell = sheet.getRow(0).getCell(0);
-            assertEquals("Row1Col1", cell.getStringCellValue());
-            cell = sheet.getRow(1).getCell(1);
-            assertEquals("Row2Col2", cell.getStringCellValue());
+                Sheet sheet = wb.getSheet("FirstSheet");
+                assertNotNull(sheet);
+                Cell cell = sheet.getRow(0).getCell(0);
+                assertEquals("Row1Col1", cell.getStringCellValue());
+                cell = sheet.getRow(1).getCell(1);
+                assertEquals("Row2Col2", cell.getStringCellValue());
 
-            // Validate equaility with '5 Mar 2009 05:14:17'
-            sheet = wb.getSheet("SecondSheet");
-            cell = sheet.getRow(1).getCell(1);
-            Calendar cal = new GregorianCalendar();
-            cal.setTime(cell.getDateCellValue());
-            assertEquals(cal.get(Calendar.DATE), 5);
-            assertEquals(cal.get(Calendar.MONTH), Calendar.MARCH);
-            assertEquals(cal.get(Calendar.YEAR), 2009);
-            assertEquals(cal.get(Calendar.HOUR), 5);
-            assertEquals(cal.get(Calendar.MINUTE), 14);
-            assertEquals(cal.get(Calendar.SECOND), 17);
+                // Validate equaility with '5 Mar 2009 05:14:17'
+                sheet = wb.getSheet("SecondSheet");
+                cell = sheet.getRow(1).getCell(1);
+                Calendar cal = new GregorianCalendar();
+                cal.setTime(cell.getDateCellValue());
+                assertEquals(cal.get(Calendar.DATE), 5);
+                assertEquals(cal.get(Calendar.MONTH), Calendar.MARCH);
+                assertEquals(cal.get(Calendar.YEAR), 2009);
+                assertEquals(cal.get(Calendar.HOUR), 5);
+                assertEquals(cal.get(Calendar.MINUTE), 14);
+                assertEquals(cal.get(Calendar.SECOND), 17);
 
-            // Now make sure that it round-trips back to JSON correctly
-            JSONArray array = convertExcelToJSON(wb, true);
-            assertEquals(2, array.length());
+                // Now make sure that it round-trips back to JSON correctly
+                JSONArray array = convertExcelToJSON(wb, true);
+                assertEquals(2, array.length());
 
-            JSONObject sheet1JSON = array.getJSONObject(0);
-            assertEquals("FirstSheet", sheet1JSON.getString("name"));
-            JSONArray sheet1Values = sheet1JSON.getJSONArray("data");
-            assertEquals("Wrong number of rows", 2, sheet1Values.length());
-            assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(0).length());
-            assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(1).length());
-            assertEquals("Row1Col1", sheet1Values.getJSONArray(0).getJSONObject(0).getString("value"));
-            assertEquals("Row1Col2", sheet1Values.getJSONArray(0).getJSONObject(1).getString("value"));
-            assertEquals("Row2Col1", sheet1Values.getJSONArray(1).getJSONObject(0).getString("value"));
-            assertEquals("Row2Col2", sheet1Values.getJSONArray(1).getJSONObject(1).getString("value"));
+                JSONObject sheet1JSON = array.getJSONObject(0);
+                assertEquals("FirstSheet", sheet1JSON.getString("name"));
+                JSONArray sheet1Values = sheet1JSON.getJSONArray("data");
+                assertEquals("Wrong number of rows", 2, sheet1Values.length());
+                assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(0).length());
+                assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(1).length());
+                assertEquals("Row1Col1", sheet1Values.getJSONArray(0).getJSONObject(0).getString("value"));
+                assertEquals("Row1Col2", sheet1Values.getJSONArray(0).getJSONObject(1).getString("value"));
+                assertEquals("Row2Col1", sheet1Values.getJSONArray(1).getJSONObject(0).getString("value"));
+                assertEquals("Row2Col2", sheet1Values.getJSONArray(1).getJSONObject(1).getString("value"));
 
-            JSONObject sheet2JSON = array.getJSONObject(1);
-            assertEquals("SecondSheet", sheet2JSON.getString("name"));
-            JSONArray sheet2Values = sheet2JSON.getJSONArray("data");
-            assertEquals("Wrong number of rows", 3, sheet2Values.length());
-            assertEquals("Wrong number of columns in row 0", 2, sheet2Values.getJSONArray(0).length());
-            assertEquals("Wrong number of columns in row 1", 2, sheet2Values.getJSONArray(1).length());
-            assertEquals("Wrong number of columns in row 2", 2, sheet2Values.getJSONArray(2).length());
-            assertEquals("Col1Header", sheet2Values.getJSONArray(0).getJSONObject(0).getString("value"));
-            assertEquals("Col2Header", sheet2Values.getJSONArray(0).getJSONObject(1).getString("value"));
+                JSONObject sheet2JSON = array.getJSONObject(1);
+                assertEquals("SecondSheet", sheet2JSON.getString("name"));
+                JSONArray sheet2Values = sheet2JSON.getJSONArray("data");
+                assertEquals("Wrong number of rows", 3, sheet2Values.length());
+                assertEquals("Wrong number of columns in row 0", 2, sheet2Values.getJSONArray(0).length());
+                assertEquals("Wrong number of columns in row 1", 2, sheet2Values.getJSONArray(1).length());
+                assertEquals("Wrong number of columns in row 2", 2, sheet2Values.getJSONArray(2).length());
+                assertEquals("Col1Header", sheet2Values.getJSONArray(0).getJSONObject(0).getString("value"));
+                assertEquals("Col2Header", sheet2Values.getJSONArray(0).getJSONObject(1).getString("value"));
 
-            assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
-            assertEquals("1,000.50", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
-            assertEquals("0,000.00", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formatString"));
+                assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
+                assertEquals("1,000.50", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
+                assertEquals("0,000.00", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formatString"));
 
-            assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
-            assertEquals("2,000.60", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
-            assertEquals("0,000.00", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formatString"));
+                assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
+                assertEquals("2,000.60", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
+                assertEquals("0,000.00", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formatString"));
 
 //            assertEquals("Thu Mar 05 05:14:17 PST 2009", sheet2Values.getJSONArray(1).getJSONObject(1).getString("value"));
-            assertEquals("2009 Mar 05", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formattedValue"));
-            assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formatString"));
+                assertEquals("2009 Mar 05", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formattedValue"));
+                assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formatString"));
 
 //            assertEquals("Fri Mar 06 07:17:10 PST 2009", sheet2Values.getJSONArray(2).getJSONObject(1).getString("value"));
-            assertEquals("2009 Mar 06", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formattedValue"));
-            assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formatString"));
+                assertEquals("2009 Mar 06", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formattedValue"));
+                assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formatString"));
+            }
         }
 
         @Test
@@ -762,7 +911,7 @@ public class ExcelFactory
 
             attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), IOException.class);
+            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
         private void attemptImportExpectError(File excelFile, Class exceptionClass)

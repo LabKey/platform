@@ -27,6 +27,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -43,6 +44,8 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -55,6 +58,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
 
 public abstract class Method
 {
@@ -330,6 +336,14 @@ public abstract class Method
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("now", new JdbcMethod("now", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("nullif", new Method("nullif", JdbcType.OTHER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new PassthroughInfo("nullif", null, JdbcType.OTHER);
+            }
+        });
         labkeyMethod.put("pi", new JdbcMethod("pi", JdbcType.DOUBLE, 0, 0));
         labkeyMethod.put("power", new JdbcMethod("power", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
@@ -428,6 +442,64 @@ public abstract class Method
         // ========== Methods above this line have been documented ==========
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
+
+
+        // ========== Don't document these ==========
+        labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment("SELECT 2 as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression("__test__two__", "_two", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+                };
+            }
+        });
+        labkeyMethod.put("__cte_three__", new Method(JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment("SELECT 3 as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression("__test_three__", "_three", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+                };
+            }
+        });
+        labkeyMethod.put("__cte_times__", new Method(JdbcType.INTEGER, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment();
+                        cte.append("SELECT (").append(arguments[0]).append(")*(").append(arguments[1]).append(") as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression(GUID.makeGUID(), "_times", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+                };
+            }
+        });
     }
 
 
@@ -985,7 +1057,7 @@ public abstract class Method
         }
 
         @Override
-        public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        public MutableColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
             var c = super.createColumnInfo(parentTable, arguments, alias);
             UserSchema schema = parentTable.getUserSchema();
@@ -1247,15 +1319,10 @@ public abstract class Method
     
     public static Method resolve(SqlDialect d, String name)
     {
+        Method m = null;
         name = name.toLowerCase();
-        // UNDONE
-        Method m = labkeyMethod.get(name);
-        if (null != m)
-            return m;
         if (null != d )
         {
-            if (name.startsWith("::"))
-                name = name.substring(2);
             if (d.isPostgreSQL())
                 m = postgresMethods.get(name);
             else if (d.isSqlServer())
@@ -1266,6 +1333,9 @@ public abstract class Method
             if (null != m)
                 return m;
         }
+        m = labkeyMethod.get(name);
+        if (null != m)
+            return m;
         throw new IllegalArgumentException(name);
     }
 
@@ -1433,8 +1503,9 @@ public abstract class Method
         postgresMethods.put("to_date",new PassthroughMethod("to_date",JdbcType.DATE,2,2));
         postgresMethods.put("to_timestamp",new PassthroughMethod("to_timestamp",JdbcType.TIMESTAMP,2,2));
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
-        postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,3));
         postgresMethods.put("unnest",new PassthroughMethod("unnest",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("row",new PassthroughMethod("row",JdbcType.VARCHAR,1, Integer.MAX_VALUE));
 
         addPostgresJsonMethods();
     }
@@ -1495,23 +1566,86 @@ public abstract class Method
         addJsonPassthroughMethod("object", JdbcType.OTHER, 1, 2);
 
         addJsonPassthroughMethod("array_length", JdbcType.INTEGER, 1, 1);
-        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("extract_path", JdbcType.OTHER, 2, Integer.MAX_VALUE);
         addJsonPassthroughMethod("extract_path_text", JdbcType.VARCHAR, 2, Integer.MAX_VALUE);
         addJsonPassthroughMethod("object_keys", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
-        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
         addJsonPassthroughMethod("array_elements", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("array_elements_text", JdbcType.VARCHAR, 1, 1);
         addJsonPassthroughMethod("typeof", JdbcType.VARCHAR, 1, 1);
-        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
 
+        // Not fully supported because they can't be used in the FROM clause of a query, and they produce more than
+        // one column as an output, but leaving because they work in other contexts
+        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
+
+
+        // Not supported because they require an AS clause that LabKey SQL doesn't handle
+        // Example: select * from json_to_record('{"a":1,"b":[1,2,3],"c":[1,2,3],"e":"bar","r": {"a": 123, "b": "a b c"}}') as x(a int, b text, c int[], d text, r myrowtype)
+//        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
+//        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
+
+        // Not supported because they require a first argument (base/type) that LabKey SQL doesn't handle
+        // Example: select * from json_populate_record(null::myrowtype, '{"a": 1, "b": ["2", "a b"], "c": {"d": 4, "e": "a b c"}, "x": "foo"}')
+//        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
+//        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
+
+
         postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
-        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_set_lax", new PassthroughMethod("jsonb_set_lax", JdbcType.OTHER, 3, 5));
+        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_insert", JdbcType.OTHER, 3, 4));
         postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
+
+        // New in Postgres 12, 13, and 14
+        postgresMethods.put("jsonb_path_exists", new PassthroughMethod("jsonb_path_exists", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_match", new PassthroughMethod("jsonb_path_match", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query", new PassthroughMethod("jsonb_path_query", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_array", new PassthroughMethod("jsonb_path_query_array", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_first", new PassthroughMethod("jsonb_path_query_first", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_exists_tz", new PassthroughMethod("jsonb_path_exists_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_match_tz", new PassthroughMethod("jsonb_path_match_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_tz", new PassthroughMethod("jsonb_path_query_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_array_tz", new PassthroughMethod("jsonb_path_query_array_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
+
+        // "is distinct from" and "is not distinct from" operators in method form
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS);
+            }
+        });
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS_NOT);
+            }
+        });
+    }
+
+    private static class IsDistinctFromMethodInfo extends AbstractMethodInfo
+    {
+        final int token;
+
+        IsDistinctFromMethodInfo(int token)
+        {
+            super(JdbcType.BOOLEAN);
+            this.token = token;
+        }
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append(" ((").append(arguments[0]).append(")");
+            if (token == IS)
+                ret.append(" IS DISTINCT FROM ");
+            else
+                ret.append(" IS NOT DISTINCT FROM ");
+            ret.append("(").append(arguments[1]).append(")) ");
+            return ret;
+        }
     }
 
     private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
@@ -1542,6 +1676,8 @@ public abstract class Method
         mssqlMethods.put("space",new PassthroughMethod("space",JdbcType.VARCHAR,1,1));
         mssqlMethods.put("str",new PassthroughMethod("str",JdbcType.VARCHAR,1,3));
         mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
+        mssqlMethods.put("ucase", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
+        mssqlMethods.put("upper", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
     }
 
     final static Map<String, Method> oracleMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());

@@ -16,7 +16,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     bodyStyle: 'background-color: transparent;',
 
     statics: {
-        RESERVED_VIEW_NAMES : ['Default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
+        RESERVED_VIEW_NAMES : ['default', '~~details~~', '~~insert~~', '~~update~~'],
         saveCustomizeViewPrompt: function(config) {
             var success = config.success,
                     scope = config.scope,
@@ -133,7 +133,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                                 return "Blank grid view name is not allowed.";
                             else if (trimmedValue.length > 50)
                                 return "The grid view name must be less than 50 characters long.";
-                            else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue) > -1) {
+                            else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue.toLowerCase()) > -1) {
                                 return "The grid view name '" + value + "' is not allowed.";
                             }
                             return true;
@@ -247,6 +247,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                                 // Issue 13594: disallow setting inherit bit if query view has no available container filters
                                 o.inherit = containerFilterable && win.down('#inheritField').getValue();
                             }
+
+                            if (o.name && (!viewName || o.name.toLowerCase() !== viewName.toLowerCase()))
+                                o.replace = false;
                         }
 
                         if (o.inherit) {
@@ -1268,7 +1271,24 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     this.fireEvent('viewsave', this, savedViewsInfo, urlParameters);
                 },
                 failure: function(errorInfo) {
-                    Ext4.Msg.alert('Error saving grid view', errorInfo.exception);
+                    if (errorInfo.exception && errorInfo.exception.indexOf('A saved view by the name') === 0) {
+                        Ext4.Msg.show({
+                            title : "Duplicate View Name",
+                            msg : errorInfo.exception + " Would you like to replace it?",
+                            cls : 'data-window',
+                            icon : Ext4.Msg.QUESTION,
+                            buttons : Ext4.Msg.YESNO,
+                            fn : function(btn) {
+                                if (btn === 'yes') {
+                                    properties.replace = true;
+                                    scope.save(properties, callback, scope);
+                                }
+                            },
+                            scope : this
+                        });
+                    }
+                    else
+                        Ext4.Msg.alert('Error saving grid view', errorInfo.exception);
                 },
                 scope: this
             });

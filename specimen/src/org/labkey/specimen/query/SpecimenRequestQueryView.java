@@ -29,10 +29,8 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.query.BaseSpecimenQueryView;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
@@ -42,9 +40,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
 import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
 import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
+import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -129,18 +129,24 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
                         ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
                         ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
 
-                        content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING));
-                        content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING));
+                        content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING).inlineScript());
+                        content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING).inlineScript());
                     }
                 }
 
                 ActionURL detailsUrl = new ActionURL(ManageRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
 
-                content.append(PageFlowUtil.button("Details").href(detailsUrl));
+                content.append(PageFlowUtil.button("Details").href(detailsUrl).inlineScript());
             }
             content.append("</div>");
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);
+        }
+
+        @Override
+        public String getName()
+        {
+            return "RequestOptions";
         }
     }
 
@@ -222,4 +228,6 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
     {
         getSettings().setAllowCustomizeView(showCustomizeLink);
     }
+
+
 }

@@ -16,8 +16,7 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,7 +69,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
@@ -91,6 +91,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,6 +106,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+
+import static org.labkey.api.settings.AppProps.SCOPE_SITE_SETTINGS;
 
 /**
  * User: klum
@@ -121,11 +124,7 @@ public class FileContentServiceImpl implements FileContentService
 
     private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
 
-    enum Props
-    {
-        root,
-        rootDisabled,
-    }
+    private volatile boolean _fileRootSetViaStartupProperty = false;
 
     enum FileAction
     {
@@ -625,9 +624,12 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public void setSiteDefaultRoot(File root, User user)
     {
-        if (root == null || !root.exists())
-            throw new IllegalArgumentException("Invalid site root: does not exist");
-        
+        if (root == null)
+            throw new IllegalArgumentException("Invalid site root: specified root is null");
+
+        if (!root.exists())
+            throw new IllegalArgumentException("Invalid site root: " + root.getAbsolutePath() + " does not exist");
+
         File prevRoot = getSiteDefaultRoot();
         WriteableAppProps props = AppProps.getWriteableInstance();
 
@@ -934,7 +936,7 @@ public class FileContentServiceImpl implements FileContentService
 
     /**
      * Move the file or directory into a ".deleted" directory under the parent directory.
-     * @return True if succesfully moved.
+     * @return True if successfully moved.
      */
     private static boolean moveToDeleted(File fileToMove)
     {
@@ -986,11 +988,17 @@ public class FileContentServiceImpl implements FileContentService
     {
         if (options != null)
         {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
-
-            root.setProperties(options.serialize());
-            FileRootManager.get().saveFileRoot(null, root);
+            setAdminOptions(c, options.serialize());
         }
+    }
+
+    @Override
+    public void setAdminOptions(Container c, String properties)
+    {
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+
+        root.setProperties(properties);
+        FileRootManager.get().saveFileRoot(null, root);
     }
 
     public static final String NAMESPACE_PREFIX = "FileProperties";
@@ -1208,18 +1216,15 @@ public class FileContentServiceImpl implements FileContentService
         return frag;
     }
 
-    public static void populateSiteRootFileWithStartupProps()
+    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty)
     {
-        // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
-        // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
-        startupProps.stream()
-                .filter( prop -> prop.getName().equals("siteRootFile"))
-                .forEach(prop -> {
-                    File fileRoot = new File(prop.getValue());
-                    FileContentService.get().setSiteDefaultRoot(fileRoot, null);
-                });
+        _fileRootSetViaStartupProperty = fileRootSetViaStartupProperty;
+    }
+
+    @Override
+    public boolean isFileRootSetViaStartupProperty()
+    {
+        return _fileRootSetViaStartupProperty;
     }
 
     public ContainerListener getContainerListener()
@@ -1304,6 +1309,53 @@ public class FileContentServiceImpl implements FileContentService
         return FileUtil.getAbsolutePath(container, FileUtil.createUri(dataFileUrl));
     }
 
+    @Nullable
+    @Override
+    public String getWebDavUrl(java.nio.file.@NotNull Path path, @NotNull Container container, @NotNull PathType type)
+    {
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+
+        if (root == null)
+            return null;
+
+        try
+        {
+            path = path.toAbsolutePath();
+
+            // currently, only report if the file is under the parent container
+            if (root.isUnderRoot(path))
+            {
+                String relPath = root.relativePath(path);
+                if (relPath == null)
+                    return null;
+
+                if(!isCloudRoot(container))
+                {
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                }
+                else
+                {
+                    // Do not encode path from S3 folder.  It is already encoded.
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+                }
+
+                return switch (type)
+                        {
+                            case folderRelative -> relPath;
+                            case serverRelative -> Path.parse(root.getWebdavURL()).encode() + relPath;
+                            case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(root.getWebdavURL()).encode() + relPath;
+                            default -> throw new IllegalArgumentException("Unexpected path type: " + type);
+                        };
+            }
+        }
+        catch (InvalidPathException e)
+        {
+            _log.error("Invalid WebDav URL from: " + path, e);
+        }
+
+        return null;
+    }
+
     @Override
     public String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container)
     {
@@ -1377,11 +1429,6 @@ public class FileContentServiceImpl implements FileContentService
                 filesRoot = rootPathVal;
 
             String rootDavUrl = (String) child.get("webdavURL");
-
-            // Hack for issue 43374 - encode special characters in container paths. Need to push this encoding
-            // into FilesWebPart._getRootPath(), but other codepaths are doing their own compensation so it's a more
-            // involved change
-            rootDavUrl = rootDavUrl.replace("%", "%25").replace("+", "%2B");
 
             WebdavResource resource = getResource(rootDavUrl);
             if (resource == null)
@@ -1510,15 +1557,12 @@ public class FileContentServiceImpl implements FileContentService
         if (!FileUtil.hasCloudScheme(path))
         {
             File file = path.toFile();
-            if (null != file)
-            {
-                String legacyUrl = file.toURI().toString();
-                if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
-                    return true;
+            String legacyUrl = file.toURI().toString();
+            if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
+                return true;
 
-                if (existingUrls.contains(file.getPath()))
-                    return true;
-            }
+            if (existingUrls.contains(file.getPath()))
+                return true;
         }
         return false;
     }
@@ -1730,7 +1774,7 @@ public class FileContentServiceImpl implements FileContentService
          * Test that the Site Settings can be configured from startup properties
          */
         @Test
-        public void testStartupPropertiesForSiteRootSettings() throws Exception
+        public void testStartupPropertiesForSiteRootSettings() throws IOException
         {
             // save the original Site Root File settings so that we can restore them when this test is done
             File originalSiteRootFile = FileContentService.get().getSiteDefaultRoot();
@@ -1740,11 +1784,19 @@ public class FileContentServiceImpl implements FileContentService
             File testSiteRootFile = new File(originalSiteRootFilePath, "testSiteRootFile");
             testSiteRootFile.createNewFile();
 
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties(testSiteRootFile);
+            ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
+                {
+                    return List.of(new StartupPropertyEntry("siteFileRoot", testSiteRootFile.getAbsolutePath(), "startup", SCOPE_SITE_SETTINGS));
+                }
 
-            // call the method that makes use of the test startup properties to change the Site Root File settings on the server
-            populateSiteRootFileWithStartupProps();
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // now check that the expected changes occurred to the Site Root File settings on the server
             File newSiteRootFile = FileContentService.get().getSiteDefaultRoot();
@@ -1753,19 +1805,6 @@ public class FileContentServiceImpl implements FileContentService
             // restore the Site Root File server settings to how they were originally
             FileContentService.get().setSiteDefaultRoot(originalSiteRootFile, null);
             testSiteRootFile.delete();
-        }
-
-        private void prepareTestStartupProperties(File testSiteRootFile)
-        {
-            // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-            // prepare test Site Root Settings properties
-            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS, testSiteRootSettingsProp1);
-
-            // set these test startup test properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
 
         @After

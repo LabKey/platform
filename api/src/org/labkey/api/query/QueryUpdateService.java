@@ -56,11 +56,11 @@ public interface QueryUpdateService extends HasPermission
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, false, false, false),
+        MERGE(true, true, true, false, false),
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, false, true, false),
+        REPLACE(true, true, true, true, false),
         IMPORT_IDENTITY(true, false, true, false, true);
 
         final public boolean batch;
@@ -93,7 +93,8 @@ public interface QueryUpdateService extends HasPermission
         // used by Dataspace currently
         TargetMultipleContainers,    // (Bool) allow multi container import
         SkipTriggers,         // (Bool) skip setup and firing of trigger scripts
-        SkipRequiredFieldValidation        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
+        SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
+        BulkLoad                // (Bool) skips detailed auditing
     }
 
 
@@ -123,6 +124,8 @@ public interface QueryUpdateService extends HasPermission
      */
     Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+
+    boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys);
 
     /**
      * Inserts or merges the given values into the source table of this query.

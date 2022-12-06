@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -73,7 +73,7 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(FolderExportContext context)
     {
         return false;
     }

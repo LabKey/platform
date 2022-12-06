@@ -17,7 +17,9 @@ package org.labkey.api.products;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -35,7 +37,7 @@ public abstract class ProductMenuProvider
 
     public String getDocumentationLabel()
     {
-        return "Documentation";
+        return "Help";
     }
 
     public @NotNull List<MenuItem> getUserMenuItems(ViewContext context)
@@ -61,7 +63,10 @@ public abstract class ProductMenuProvider
     }
 
     @NotNull
-    public abstract Collection<String> getSectionNames();
+    public abstract ActionURL getAppURL(Container container);
+
+    @NotNull
+    public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);
 
     @Nullable
     public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Integer itemLimit);
@@ -82,6 +87,6 @@ public abstract class ProductMenuProvider
     @NotNull
     public List<MenuSection> getSections(@NotNull ViewContext context, Integer itemLimit)
     {
-        return getSections(context, getSectionNames(), itemLimit);
+        return getSections(context, getSectionNames(context), itemLimit);
     }
 }

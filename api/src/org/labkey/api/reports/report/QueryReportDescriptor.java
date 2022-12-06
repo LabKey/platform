@@ -31,7 +31,12 @@ public class QueryReportDescriptor extends ReportDescriptor
 
     public QueryReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
+    }
+
+    public QueryReportDescriptor(String type)
+    {
+        super(type);
     }
 
     public void setQueryViewGenerator(QueryViewGenerator generator){_qvGenerator = generator;}

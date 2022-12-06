@@ -54,9 +54,11 @@ public class QOrder extends QNode
         builder.popPrefix();
     }
 
-    public List<Map.Entry<QExpr, Boolean>> getSort()
+    record SortEntry(QExpr expr, Boolean direction, String selectAlias) {};
+
+    public List<SortEntry> getSort()
     {
-        List<Map.Entry<QExpr, Boolean>> ret = new ArrayList();
+        List<SortEntry> ret = new ArrayList<>();
         Pair<QExpr,Boolean> entry = null;
         for (QNode child : children())
         {
@@ -64,10 +66,8 @@ public class QOrder extends QNode
             {
                 default:
                     if (entry != null)
-                    {
-                        ret.add(entry);
-                    }
-                    entry = new Pair(child, Boolean.TRUE);
+                        ret.add(new SortEntry(entry.getKey(), entry.getValue(), null));
+                    entry = new Pair<>((QExpr)child, Boolean.TRUE);
                     break;
                 case SqlBaseParser.DESCENDING:
                     assert entry != null;
@@ -80,36 +80,7 @@ public class QOrder extends QNode
             }
         }
         if (entry != null)
-        {
-            ret.add(entry);
-        }
+            ret.add(new SortEntry(entry.getKey(), entry.getValue(), null));
         return ret;
-    }
-
-    public Map<FieldKey, Boolean> getOrderByMap()
-    {
-        LinkedHashMap<FieldKey, Boolean> ret = new LinkedHashMap();
-        List<Map.Entry<QExpr, Boolean>> list = getSort();
-        for (Map.Entry<QExpr, Boolean> entry : list)
-        {
-            FieldKey fieldKey = entry.getKey().getFieldKey();
-            if (fieldKey == null)
-            {
-                continue;
-            }
-            ret.put(fieldKey, entry.getValue());
-        }
-        return ret;
-    }
-
-    public void addOrderByClause(QExpr expr, boolean ascending)
-    {
-        appendChild(expr);
-        if (!ascending)
-        {
-            QNode desc = new QUnknownNode();
-            desc.setTokenType(SqlBaseParser.DESCENDING);
-            appendChild(desc);
-        }
     }
 }

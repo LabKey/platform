@@ -83,7 +83,7 @@
 <div id="folderdiv" class="extContainer"></div>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var folderTree;
     var selectedNode;

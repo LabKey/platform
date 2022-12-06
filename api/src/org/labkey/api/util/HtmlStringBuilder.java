@@ -101,10 +101,14 @@ public class HtmlStringBuilder implements HasHtmlString, SafeToRender
         return this;
     }
 
-
     public int length()
     {
         return _sb.length();
+    }
+
+    public boolean isEmpty()
+    {
+        return length() == 0;
     }
 
     private static String h(String s)

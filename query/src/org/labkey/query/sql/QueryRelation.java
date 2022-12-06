@@ -25,6 +25,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -58,7 +59,7 @@ public abstract class QueryRelation
     protected Query _query;
     protected QuerySchema _schema;
     protected String _alias = null;
-    private QueryWith _queryWith = null;
+    private CommonTableExpressions _commonTableExpressions = null;
 
     // used to resolve column in outer scope
     protected QueryRelation _parent;
@@ -113,14 +114,15 @@ public abstract class QueryRelation
     }
 
 
-    abstract void declareFields();
+    public abstract void declareFields();
 
 
     /** actually bind all field references */
     abstract protected void resolveFields();
 
 
-    abstract TableInfo getTableInfo();
+    /* public for testing only */
+    abstract public TableInfo getTableInfo();
 
     /**
      * Return a list all the columns it is possible to select from this relation, NOT including lookup columns
@@ -232,14 +234,14 @@ public abstract class QueryRelation
         return _query.getResolvedTables();
     }
 
-    public QueryWith getQueryWith()
+    public CommonTableExpressions getCommonTableExpressions()
     {
-        return _queryWith;
+        return _commonTableExpressions;
     }
 
-    public void setQueryWith(QueryWith queryWith)
+    public void setCommonTableExpressions(CommonTableExpressions queryWith)
     {
-        _queryWith = queryWith;
+        _commonTableExpressions = queryWith;
     }
 
     /**
@@ -362,12 +364,17 @@ public abstract class QueryRelation
     }
 
 
-
     public String toStringDebug()
     {
         if (null == _parent)
             return getClass().getSimpleName() + ":" +getAlias();
         else
             return _parent.toStringDebug() + "/" + getClass().getSimpleName() + ":" +getAlias();
+    }
+
+
+    public List<Sort.SortField> getSortFields()
+    {
+        return List.of();
     }
 }

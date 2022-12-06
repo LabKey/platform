@@ -27,6 +27,7 @@ import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -71,7 +72,7 @@ public class ProductRegistry
 
         _productMap.put(provider.getProductId(), provider);
         _moduleProviderMap.put(provider.getModuleName(), provider);
-        provider.getSectionNames().forEach(name -> _sectionMap.put(name, provider));
+        provider.getSectionNames(null).forEach(name -> _sectionMap.put(name, provider));
     }
 
     public void unregisterMenuItemsProvider(ProductMenuProvider provider)
@@ -81,7 +82,7 @@ public class ProductRegistry
             _productMap.remove(provider.getProductId());
             _moduleProviderMap.remove(provider.getModuleName());
         }
-        provider.getSectionNames().forEach((name) -> {
+        provider.getSectionNames(null).forEach((name) -> {
             _sectionMap.remove(name);
         });
     }
@@ -99,6 +100,13 @@ public class ProductRegistry
         }
 
         return productIds;
+    }
+
+    @Nullable
+    public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
+    {
+        List<String> productIds = getProductIdsForContainer(container);
+        return getRegisteredProducts().stream().filter(product -> productIds.contains(product.getProductId())).findFirst().orElse(null);
     }
 
     @NotNull
@@ -219,7 +227,13 @@ public class ProductRegistry
             }
 
             @Override
-            public @NotNull Collection<String> getSectionNames()
+            public @NotNull ActionURL getAppURL(Container container)
+            {
+                return new ActionURL();
+            }
+
+            @Override
+            public @NotNull Collection<String> getSectionNames(@Nullable ViewContext viewContext)
             {
                 return _sectionNames;
             }

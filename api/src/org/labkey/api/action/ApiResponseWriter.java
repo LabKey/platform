@@ -17,8 +17,8 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
@@ -321,6 +321,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
         else
             status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
+        e = ExceptionUtil.unwrapException(e);
+
         try
         {
             writeAndClose(e, status);
@@ -500,10 +502,14 @@ public abstract class ApiResponseWriter implements AutoCloseable
             String severity = ValidationException.SEVERITY.ERROR.toString();
             String help = null;
 
-            if (error instanceof FieldError)
+            if (error instanceof FieldError fe)
             {
-                FieldError ferror = (FieldError) error;
-                key = ferror.getField();
+                key = fe.getField();
+
+                // Strip off nested exception details from field error messages in JSON responses, Issue 45567
+                int idx = msg.indexOf("; nested exception");
+                if (idx != -1)
+                    msg = msg.substring(0, idx);
             }
 
             if (error instanceof SimpleValidationError.FieldWarning)
@@ -530,6 +536,11 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 jsonError.put("adviceText", errorWithLink.getAdviceText());
                 jsonError.put("adviceHref", errorWithLink.getAdviceHref());
+            }
+
+            if (error instanceof LabKeyErrorWithHtml errorWithHtml)
+            {
+                jsonError.put("html", errorWithHtml.getHtml());
             }
 
             if (null == exceptionMessage)

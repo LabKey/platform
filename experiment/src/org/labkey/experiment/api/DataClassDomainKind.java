@@ -210,7 +210,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return RESERVED_NAMES;
     }
@@ -282,10 +282,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
     }
 
-    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    private @NotNull ValidationException getNamePatternValidationResult(String dataClassName, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(dataClassName, patten, properties, importAliases, container);
         if (results.errors() != null && !results.errors().isEmpty())
             results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
@@ -300,7 +300,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             List<String> warnings = new ArrayList<>();
             List<String> previewNames = new ArrayList<>();
 
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), null, container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -319,7 +319,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), updatedDomainDesign.getFields(), null, container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), null, container);
             if (errors.hasErrors())
                 throw new IllegalArgumentException(errors.getMessage());
         }
@@ -332,6 +332,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         String name = domain.getName();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+
+        // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
+        if (options.getDescription() == null && domain.getDescription() != null)
+            options.setDescription(domain.getDescription());
 
         try
         {
@@ -404,5 +408,11 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
         return new DataClassDomainKindProperties(dc);
+    }
+
+    @Override
+    public boolean allowTimepointProperties()
+    {
+        return true;
     }
 }

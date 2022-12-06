@@ -32,12 +32,11 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -154,7 +153,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
             Object o = getValue(ctx);
             if (o instanceof Integer)
             {
-                Issue issue = IssueManager.getIssue(_container, _user, (Integer)o);
+                IssueObject issue = IssueManager.getIssue(_container, _user, (Integer)o);
                 if (issue != null)
                 {
                     return issue.getTitle();

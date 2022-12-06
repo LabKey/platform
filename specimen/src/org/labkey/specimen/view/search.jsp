@@ -40,7 +40,7 @@
     String renderTarget = "labkey-specimen-search-"+ webPartId;
 %>
 <div id="<%=text(renderTarget)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 Ext4.onReady(function(){
     var multi = new LABKEY.MultiRequest();
     var errorMessages = [];

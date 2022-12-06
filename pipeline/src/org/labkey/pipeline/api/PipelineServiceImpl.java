@@ -60,6 +60,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -105,6 +106,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -427,7 +429,7 @@ public class PipelineServiceImpl implements PipelineService
     public void queueJob(PipelineJob job, @Nullable String jobNotificationProvider) throws PipelineValidationException
     {
         // Test serialization by serializing and deserializating every job
-        PipelineJob deserializedJob = PipelineJob.deserializeJob(PipelineJob.serializeJob(job, false));
+        PipelineJob deserializedJob = PipelineJob.deserializeJob(job.serializeJob(false));
         getPipelineQueue().addJob(deserializedJob);
 
         PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(jobNotificationProvider, job);
@@ -455,7 +457,7 @@ public class PipelineServiceImpl implements PipelineService
                 if (sf != null)
                 {
                     sf.setActiveHostName(null);  //indicates previous task was complete
-                    PipelineStatusManager.updateStatusFile(sf);
+                    PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.activeHostName);
                 }
 
                 EPipelineQueueImpl.dispatchJob(job);
@@ -475,7 +477,7 @@ public class PipelineServiceImpl implements PipelineService
         {
             //Use the absolute Path helper to strip user element
             sf.setFilePath(FileUtil.getAbsolutePath(otherFile));
-            PipelineStatusManager.updateStatusFile(sf);
+            PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.filePath);
         }
     }
 
@@ -629,7 +631,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public PipelineStatusFile getStatusFile(String jobGuid)
+    public PipelineStatusFileImpl getStatusFile(String jobGuid)
     {
         return PipelineStatusManager.getJobStatusFile(jobGuid);
     }
@@ -751,29 +753,79 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public boolean runFolderImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
+    public boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options)
     {
-        try{
-            PipelineService.get().queueJob(new FolderImportJob(c, user, url, studyXml, originalFilename, pipelineRoot, options));
+        try
+        {
+            PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
             return true;
         }
-        catch (PipelineValidationException e){
+        catch (PipelineValidationException e)
+        {
             return false;
         }
+    }
+
+    private final Map<String, FolderArchiveSource> _reloadSourceMap = new ConcurrentHashMap<>();
+
+    @Override
+    public void registerFolderArchiveSource(FolderArchiveSource source)
+    {
+        if (!_reloadSourceMap.containsKey(source.getName()))
+            _reloadSourceMap.put(source.getName(), source);
+        else
+            throw new IllegalStateException("A folder archive source implementation with the name: " + source.getName() + " is already registered!");
+    }
+
+    @Override
+    public Collection<FolderArchiveSource> getFolderArchiveSources(Container container)
+    {
+        List<FolderArchiveSource> sources = new ArrayList<>();
+
+        for (FolderArchiveSource source : _reloadSourceMap.values())
+        {
+            if (source.isEnabled(container))
+                sources.add(source);
+        }
+        return sources;
+    }
+
+    @Nullable
+    @Override
+    public FolderArchiveSource getFolderArchiveSource(String name)
+    {
+        return _reloadSourceMap.get(name);
+    }
+
+    @Override
+    public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName)
+    {
+        ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
+        options.setFolderArchiveSourceName(sourceName);
+        // Issue 45531 : query validation is off by default
+        options.setSkipQueryValidation(true);
+
+        return runGenerateFolderArchiveAndImportJob(c, user, url, options);
+    }
+
+    @Override
+    public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options)
+    {
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
+        Path folderXml = new File(pipelineRoot.getRootPath(), "folder.xml").toPath();
+
+        return runFolderImportJob(c, user, null, folderXml, "folder.xml", pipelineRoot, options);
     }
 
     @Override
     public Integer getJobId(User u, Container c, String jobGUID)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("job"), jobGUID);
-        Collection<Map<String, Object>> selectResults = new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null).getMapCollection();
-        Integer rowId = null;
-
-        for (Map<String, Object> m : selectResults)
+        PipelineStatusFileImpl statusFile = getStatusFile(jobGUID);
+        if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
         {
-            rowId = (Integer)m.get("RowId");
+            return null;
         }
-        return rowId;
+        return statusFile.getRowId();
     }
 
     @Override

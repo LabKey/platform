@@ -35,7 +35,7 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
 <br/>
 <div id="progressBarDiv"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     // TODO: Move this all out of global
     try
     {

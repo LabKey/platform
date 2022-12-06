@@ -93,7 +93,7 @@ public class Table
 
     private static final Logger _log = LogHelper.getLogger(Table.class, "SQL generation and execution, some TableInfo-scoped DB operations");
 
-    // Return all rows instead of limiting to the top n
+    // Don't limit the rows returned to a specific count (filters and offsets can still eliminate rows)
     public static final int ALL_ROWS = -1;
     // Return no rows -- useful for query validation or when you need just metadata
     public static final int NO_ROWS = 0;
@@ -469,7 +469,7 @@ public class Table
                 // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
                 if (Level.WARN.isMoreSpecificThan(logLevel))
                 {
-                    _log.warn("SQL Exception", e);
+                    _log.warn("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
                     _logQuery(Level.WARN, sql, conn);
                 }
             }
@@ -478,7 +478,7 @@ public class Table
                 // Log this SQLException if log level is ERROR or lower.
                 if (Level.ERROR.isMoreSpecificThan(logLevel))
                 {
-                    _log.error("SQL Exception", e);
+                    _log.error("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
                     _logQuery(Level.ERROR, sql, conn);
                 }
             }
@@ -1075,7 +1075,7 @@ public class Table
     }
 
 
-    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
+    public static void ensureRequiredColumns(TableInfo table, Map<FieldKey, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
         Set<FieldKey> requiredColumns = new HashSet<>();
@@ -1098,14 +1098,14 @@ public class Table
 
         for (ColumnInfo column : allColumns)
         {
-            if (cols.containsKey(column.getAlias()))
+            if (cols.containsKey(column.getFieldKey()))
                 continue;
             if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
             else if (column.isVersionColumn())
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
         }
     }
 

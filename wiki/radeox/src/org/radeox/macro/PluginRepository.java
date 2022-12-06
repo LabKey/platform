@@ -37,11 +37,11 @@ import java.util.Map;
  * @version $Id: PluginRepository.java,v 1.5 2003/12/17 13:41:54 stephan Exp $
  */
 
-public class PluginRepository implements Repository {
+public class PluginRepository {
   protected Map plugins;
   protected List list;
 
-  protected static Repository instance;
+  protected static PluginRepository instance;
 
   public PluginRepository() {
     plugins = new HashMap();

@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
 
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
+
 /**
  * Container-specific configuration settings, primarily related to look-and-feel or parsing options
  * that are not necessarily consistent across an entire project.
@@ -29,12 +31,11 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 {
     static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
 
-    protected static final String DEFAULT_DATE_FORMAT = "defaultDateFormatString";
-    protected static final String DEFAULT_DATE_TIME_FORMAT = "defaultDateTimeFormatString";
-    protected static final String RESTRICTED_COLUMNS_ENABLED = "restrictedColumnsEnabled";
-    protected static final String DEFAULT_NUMBER_FORMAT = "defaultNumberFormatString";
-    protected static final String EXTRA_DATE_PARSING_PATTERN = "extraDateParsingPattern";
-    protected static final String EXTRA_DATE_TIME_PARSING_PATTERN = "extraDateTimeParsingPattern";
+    // These are the legacy property names for the format patterns
+    protected static final String defaultDateFormatString = "defaultDateFormatString";
+    protected static final String defaultDateTimeFormatString = "defaultDateTimeFormatString";
+    protected static final String defaultNumberFormatString = "defaultNumberFormatString";
+
 
     protected final Container _c;
 
@@ -91,65 +92,65 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     public String getDefaultDateFormat()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, DEFAULT_DATE_FORMAT, DateUtil.getStandardDateFormatString());
+        return lookupStringValue(_c, defaultDateFormatString, DateUtil.getStandardDateFormatString());
     }
 
     public String getDefaultDateTimeFormat()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, DEFAULT_DATE_TIME_FORMAT, DateUtil.getStandardDateTimeFormatString());
+        return lookupStringValue(_c, defaultDateTimeFormatString, DateUtil.getStandardDateTimeFormatString());
     }
 
     public String getDefaultNumberFormat()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
+        return lookupStringValue(_c, defaultNumberFormatString, null);
     }
 
     public String getExtraDateParsingPattern()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, EXTRA_DATE_PARSING_PATTERN, null);
+        return lookupStringValue(_c, extraDateParsingPattern, null);
     }
 
     public String getExtraDateTimeParsingPattern()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, EXTRA_DATE_TIME_PARSING_PATTERN, null);
+        return lookupStringValue(_c, extraDateTimeParsingPattern, null);
     }
 
     public boolean areRestrictedColumnsEnabled()
     {
-        return lookupBooleanValue(_c, RESTRICTED_COLUMNS_ENABLED, false);
+        return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getDefaultDateFormatStored()
     {
-        return super.lookupStringValue(_c, DEFAULT_DATE_FORMAT, null);
+        return super.lookupStringValue(_c, defaultDateFormatString, null);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getDefaultDateTimeFormatStored()
     {
-        return super.lookupStringValue(_c, DEFAULT_DATE_TIME_FORMAT, null);
+        return super.lookupStringValue(_c, defaultDateTimeFormatString, null);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getDefaultNumberFormatStored()
     {
-        return super.lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
+        return super.lookupStringValue(_c, defaultNumberFormatString, null);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getExtraDateParsingPatternStored()
     {
-        return super.lookupStringValue(_c, EXTRA_DATE_PARSING_PATTERN, null);
+        return super.lookupStringValue(_c, extraDateParsingPattern, null);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getExtraDateTimeParsingPatternStored()
     {
-        return super.lookupStringValue(_c, EXTRA_DATE_TIME_PARSING_PATTERN, null);
+        return super.lookupStringValue(_c, extraDateTimeParsingPattern, null);
     }
 }

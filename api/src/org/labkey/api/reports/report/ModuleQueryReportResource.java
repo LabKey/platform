@@ -37,7 +37,7 @@ public class ModuleQueryReportResource extends ModuleReportResource
     }
 
     @Override
-    protected ReportDescriptorType loadMetaData()
+    public ReportDescriptorType loadMetaData()
     {
         ReportDescriptorType d = null;
 

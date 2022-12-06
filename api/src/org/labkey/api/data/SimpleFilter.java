@@ -1030,6 +1030,11 @@ public class SimpleFilter implements Filter
 
     public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName, @NotNull List<ColumnInfo> selectColumns)
     {
+        addUrlFilters(urlHelp, regionName, selectColumns, null, null);
+    }
+
+    public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName, @NotNull List<ColumnInfo> selectColumns, @Nullable User user, @Nullable Container container)
+    {
         String prefixDot = regionName == null ? "" : regionName + ".";
 
         // for "dataRegion.column~op" filters
@@ -1067,7 +1072,7 @@ public class SimpleFilter implements Filter
 
                     try
                     {
-                        FilterClause fc = type.createFilterClause(fieldKey, param);
+                        FilterClause fc = type.createFilterClause(fieldKey, param, user, container);
                         fc.setSelectColumns(selectColumns);
                         fc._needsTypeConversion = true;
                         _clauses.add(fc);

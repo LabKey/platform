@@ -73,7 +73,7 @@
         <input type="hidden" id="urlhash" name="urlhash">
     </form>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     <% // Provide support for persisting the url hash through a login redirect %>
     (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();
 </script>

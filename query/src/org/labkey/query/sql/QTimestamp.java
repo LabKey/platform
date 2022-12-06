@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 
 import java.sql.Timestamp;
@@ -29,7 +30,7 @@ import java.sql.Timestamp;
  */
 public class QTimestamp extends QExpr implements IConstant
 {
-    Timestamp _value = null;
+    final private Timestamp _value;
 
     public QTimestamp(CommonTree n, Timestamp value)
     {
@@ -47,13 +48,13 @@ public class QTimestamp extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("{ts '" + DateUtil.toISO(_value) + "'}");
+        builder.append("{ts '").append(DateUtil.toISO(_value)).append("'}");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("{ts " + getTokenText() + "}");
+        builder.append("{ts ").append(getTokenText()).append("}");
     }
 
     @NotNull
@@ -66,13 +67,13 @@ public class QTimestamp extends QExpr implements IConstant
     @Override
     public String getValueString()
     {
-        return"{ts " + QString.quote(getTokenText()) + "}";
+        return "{ts " + LabKeySql.quoteString(getTokenText()) + "}";
     }
 
     @Override
     public boolean equalsNode(QNode other)
     {
-        return other instanceof QTimestamp && getValue().equals(((QNumber) other).getValue());
+        return other instanceof QTimestamp && getValue().equals(((QTimestamp) other).getValue());
     }
 
     @Override

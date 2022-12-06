@@ -31,6 +31,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -73,6 +74,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     // these three fields are accessed by QueryPivot
     QGroupBy _groupBy;
     QOrder _orderBy;
+    List<QOrder.SortEntry> _sortEntries;
     QLimit _limit;
     boolean _forceAllowOrderBy = false; // when we know this will not be wrapped by another SELECT
 
@@ -96,6 +98,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private final SQLTableInfo _sti;
     private final AliasManager _aliasManager;
 //    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
+
+    // This is set by initializeSelect(), it will remain false ONLY when there is a recursive union.
+    // In that case initializeSelect() will have to be called again in a 2nd pass see QueryWith constructor
+    private boolean initialized = false;
 
     private boolean  skipSuggestedColumns = false;  // set to skip normal getSuggestedColumns() code
 
@@ -283,12 +289,11 @@ public class QuerySelect extends QueryRelation implements Cloneable
             }
             else if (node instanceof QIdentifier && null != key)
             {
-                // Check With
-                relation = _query.lookupWithTable(QueryWith.getLegalName(getSqlDialect(), key.getName()));
+                // Check WITH
+                relation = _query.lookupCteTable(CommonTableExpressions.getLegalName(getSqlDialect(), key.getName()));
 
-                if (relation instanceof QueryWith.QueryTableWith)
+                if (relation instanceof CommonTableExpressions.QueryTableWith queryTableWith)
                 {
-                    QueryWith.QueryTableWith queryTableWith = (QueryWith.QueryTableWith) relation;
                     if (queryTableWith.isParsingWith())
                     {
                         if (queryTableWith.isSeenRecursiveReference())
@@ -296,39 +301,20 @@ public class QuerySelect extends QueryRelation implements Cloneable
                             parseError("Cannot reference query in WITH recursively more than once: " + ((QIdentifier) node).getIdentifier(), node);
                         }
                         queryTableWith.setSeenRecursiveReference(true);
+                        _query.setHasRecursiveWith(true);
                     }
-                    if (getParseErrors().isEmpty() && null == queryTableWith.getTableInfo())
+
+                    if (getParseErrors().isEmpty() && null == queryTableWith._wrapped)
                     {
-                        // Can happen in a recursive query. To be valid, WITH must be in a UNION, not in the first child of the UNION
-                        // Use the tableInfo from the first child of the UNION
-                        if (_inFromClause && null != _query.getWithFirstTerm())
-                        {
-                            TableInfo firstTableInfo = _query.getWithFirstTerm().getTableInfo();
-                            if (null != firstTableInfo)             // Could be null if parse error found
-                                queryTableWith.setTableInfo(firstTableInfo);
-                        }
-                        if (getParseErrors().isEmpty())
-                        {
-                            if (null != queryTableWith.getTableInfo())
-                            {
-                                if (getSqlDialect().isRecursiveLabKeyWithSupported())
-                                {
-                                    _query.setHasRecursiveWith(true);
-                                }
-                                else
-                                {
-                                    parseError("Recursive WITH not supported for " + getSqlDialect().getProductName(), node);
-                                }
-                            }
-                            else
-                            {
-                                parseError("TableInfo not found for " + ((QIdentifier) node).getIdentifier(), node);
-                            }
-                        }
+                        if (!getSqlDialect().isRecursiveLabKeyWithSupported())
+                            parseError("Recursive WITH not supported for " + getSqlDialect().getProductName(), node);
+                        else
+                            parseError("Reference not found for " + key.getName(), node);
+                        return;
                     }
+
                     // wrap this 'global' relation to capture the FROM alias (setAlias() is called below)
-                    relation = new QueryWithWrapper(queryTableWith);
-                    relation.setAlias(alias);       // legal alias is created below with makeRelationName()
+                    relation = new QueryWithWrapper(queryTableWith, alias);
                 }
             }
 
@@ -488,6 +474,41 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 column.setAlias(_aliasManager.decideAlias(column.getName()));
             _columns.put(column._key, column);
         }
+
+        // fix up ORDER BY position and associate each entry with an alias in the columnList
+        if (null != _orderBy)
+        {
+            _sortEntries = _orderBy.getSort();
+            for (int i=_sortEntries.size()-1 ; i>=0 ; i--)
+            {
+                var entry = _sortEntries.get(i);
+                if (entry.expr() instanceof QIdentifier qId)
+                {
+                    _sortEntries.set(i, new QOrder.SortEntry(entry.expr(), entry.direction(), entry.expr().getTokenText()));
+                }
+                else if (entry.expr() instanceof QNumber qNum)
+                {
+                    double d = qNum.getValue().doubleValue();
+                    int position = qNum.getValue().intValue();
+                    if (d == (double)position && position >= 1 && position <= columnList.size())
+                    {
+                        String alias = columnList.get(position-1).getAlias();
+                        QIdentifier qid = new QIdentifier(alias);
+                        _sortEntries.set(i, new QOrder.SortEntry(qid, entry.direction(), alias));
+                    }
+                    else
+                    {
+                        _sortEntries.remove(i);
+                    }
+                }
+                else if (entry.expr().isConstant())
+                {
+                    _sortEntries.remove(i);
+                }
+            }
+        }
+
+        initialized = true;
     }
 
 
@@ -1083,7 +1104,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private boolean _declareCalled = false;
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         if (_declareCalled)
             return;
@@ -1125,14 +1146,13 @@ public class QuerySelect extends QueryRelation implements Cloneable
             {
                 declareFields((QExpr)expr);
             }
-        if (null != _orderBy)
+        if (null != _sortEntries)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            for (var entry : _sortEntries)
             {
-                QExpr expr = entry.getKey();
-                if (expr instanceof QIdentifier && selectAliases.contains(expr.getTokenText()))
+                if (entry.expr() instanceof QIdentifier && selectAliases.contains(entry.expr().getTokenText()))
                     continue;
-                declareFields(expr);
+                declareFields(entry.expr());
             }
         }
 
@@ -1346,11 +1366,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 return f;
             }
 
-            @Override
-            public boolean hasSort()
-            {
-                return _orderBy != null && !_orderBy.childList().isEmpty();
-            }
 
             @Override
             public void setContainerFilter(@NotNull ContainerFilter containerFilter)
@@ -1359,6 +1374,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 // This changes the SQL we'll need to generate, so clear out the cached version
                 _sqlAllColumns = null;
             }
+
 
             @Override
             public String getPublicSchemaName()
@@ -1391,6 +1407,37 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 aliasedColumn.setKeyField(true);
         }
         MemTracker.getInstance().put(ret);
+        return ret;
+    }
+
+
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        if (null == _sortEntries || _sortEntries.isEmpty())
+            return List.of();
+
+        Set<String> selectAliases = new CaseInsensitiveHashSet();
+        for (SelectColumn col : _columns.values())
+            if (null != col.getAlias())
+                selectAliases.add(col.getAlias());
+
+        List<Sort.SortField> ret = new ArrayList<>();
+        for (var entry : _sortEntries)
+        {
+            if (entry.expr() instanceof QIdentifier qid && selectAliases.contains(qid.getIdentifier()))
+            {
+                ret.add(new Sort.SortField(new FieldKey(null, qid.getIdentifier()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else
+            {
+                // fail for non-trivial expression
+                QExpr r = resolveFields(entry.expr(), _orderBy, _orderBy);
+                if (r instanceof QNull)
+                    continue;
+                return List.of();
+            }
+        }
         return ret;
     }
 
@@ -1438,15 +1485,14 @@ public class QuerySelect extends QueryRelation implements Cloneable
             for (QNode expr : _having.children())
                 resolveFields((QExpr)expr, null, _having);
         }
-        if (_orderBy != null)
+        if (_sortEntries != null)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            for (var entry : _sortEntries)
             {
-                QExpr expr = entry.getKey();
-                if (expr instanceof QIdentifier && aliasSet.containsKey(expr.getTokenText()))
-                    aliasSet.get(expr.getTokenText()).addRef(_orderBy);
+                if (entry.expr() instanceof QIdentifier && aliasSet.containsKey(entry.expr().getTokenText()))
+                    aliasSet.get(entry.expr().getTokenText()).addRef(_orderBy);
                 else
-                    resolveFields(expr, _orderBy, _orderBy);
+                    resolveFields(entry.expr(), _orderBy, _orderBy);
             }
         }
     }
@@ -1454,21 +1500,27 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
     void resolveFields(QJoinOrTable qt)
     {
-        if (qt instanceof QJoin)
+        if (qt instanceof QJoin qJoin)
         {
-            if (null != ((QJoin)qt)._on)
-                resolveFields(((QJoin)qt)._on, null, qt);
-            resolveFields(((QJoin)qt)._left);
-            resolveFields(((QJoin)qt)._right);
+            if (null != qJoin._on)
+                resolveFields(qJoin._on, null, qt);
+            resolveFields(qJoin._left);
+            resolveFields(qJoin._right);
         }
-        else if (qt instanceof QValuesTable)
+        else if (qt instanceof QValuesTable qValuesTable)
         {
-            ((QTable)qt).getQueryRelation().resolveFields();
+            qValuesTable.getQueryRelation().resolveFields();
         }
-        else if (qt instanceof QTable)
+        else if (qt instanceof QTable qTable)
         {
-            if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
-                ((QTable)qt).getQueryRelation().resolveFields();
+            if (qTable.getQueryRelation() instanceof QuerySelect qSelect)
+                qSelect.resolveFields();
+            else if (qTable.getQueryRelation() instanceof QueryWithWrapper qWith)
+                qWith.resolveFields();
+        }
+        else
+        {
+            assert false : "need top handle all the cases here";
         }
     }
 
@@ -1699,7 +1751,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             }
             sql.popPrefix();
         }
-        if (_orderBy != null)
+        if (_sortEntries != null && !_sortEntries.isEmpty())
         {
             if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
@@ -1708,21 +1760,20 @@ public class QuerySelect extends QueryRelation implements Cloneable
             else
             {
                 sql.pushPrefix("\nORDER BY ");
-                for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+                for (var entry : _sortEntries)
                 {
-                    QExpr expr = entry.getKey();
-                    if (expr instanceof QIdentifier && aliasMap.containsKey(expr.getTokenText()))
+                    if (entry.expr() instanceof QIdentifier && aliasMap.containsKey(entry.expr().getTokenText()))
                     {
-                        sql.append(aliasMap.get(expr.getTokenText()));
+                        sql.append(aliasMap.get(entry.expr().getTokenText()));
                     }
                     else
                     {
-                        QExpr r = resolveFields(expr, _orderBy, _orderBy);
+                        QExpr r = resolveFields(entry.expr(), _orderBy, _orderBy);
                         if (r instanceof QNull)
                             continue;
                         r.appendSql(sql, _query);
                     }
-                    if (!entry.getValue().booleanValue())
+                    if (!entry.direction())
                         sql.append(" DESC");
                     sql.nextPrefix(",");
                 }
@@ -1972,7 +2023,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         List<RelationColumn> rcs;
         for (SelectColumn sc : _columns.values())
         {
-            if (null == sc._field)
+            if (null == sc._field || sc._suggestedColumn)
                 continue;
             QExpr expr = sc.getResolvedField();
             if (!(expr instanceof QField))
@@ -2087,7 +2138,11 @@ public class QuerySelect extends QueryRelation implements Cloneable
         public SelectColumn(QNode node)
         {
             if (node instanceof SupportsAnnotations)
-                _annotations = ((SupportsAnnotations)node).getAnnotations();
+            {
+                _annotations = new CaseInsensitiveHashMap<>(((SupportsAnnotations) node).getAnnotations());
+                // concepturi annotation is not supported, if that is considered, make it consistent with BaseColumnInfo.loadFromXML().
+                _annotations.remove("concepturi");
+            }
 
             _node = node;
             if (node instanceof QAs && node.childList().size() > 1)
@@ -2475,6 +2530,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return false;
         releaseAllSelected(_orderBy);
         _orderBy = null;
+        _sortEntries = null;
         return true;
     }
 
@@ -2493,7 +2549,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return false;
         if (_where != null)
             return false;
-        if (_orderBy != null)
+        if (_sortEntries != null)
             return false;
         if (_limit != null)
             return false;
@@ -2512,36 +2568,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
             if (null != c._annotations && !c._annotations.isEmpty())
                 return false;
         }
-
-/*
-        // I think we could get distinct to work
-        // however, we should write a bunch of specific tests first
-        // also need to be wary of destructive optimization
-        // QueryPivot re-uses part of the query tree for getPivotValues()
-        if (null != selectChild._limit)
-            return false;
-        if (null != _distinct)
-        {
-            Map<FieldKey,SelectColumn> map = new HashMap<FieldKey, SelectColumn>();
-            for (SelectColumn col : from._columns.values())
-                if (col.ref.count() > 0)
-                    map.put(col.getFieldKey(), col);
-            for (SelectColumn c : _columns.values())
-            {
-                RelationColumn selectCol = ((QField)c.getResolvedField()).getRelationColumn();
-                if (null == selectCol)
-                    continue;
-                assert selectCol.getTable() == from;
-                map.remove(selectCol.getFieldKey());
-            }
-            // ORDER BY can cause a select reference, that's one reason we might bail here
-            if (!map.isEmpty())
-                return false;
-
-            if (null != from._distinct)
-                from._distinct = _distinct;
-            _distinct = null;
-        } */
 
         _generateSelectSQL = false;
 
@@ -2569,19 +2595,49 @@ public class QuerySelect extends QueryRelation implements Cloneable
         return clone;
     }
 
+
     // A CTE can be used more than once in FROM, but we can't have two FROM entries point to same QueryRelation, because
     // unlike TableInfo we expect the QueryRelation to know it's own Alias (mistake?)
-    private static class QueryWithWrapper extends QueryRelationWrapper<QueryWith.QueryTableWith>
+    private static class QueryWithWrapper extends QueryLookupWrapper
     {
-        QueryWithWrapper(QueryWith.QueryTableWith wrapped)
+        String cteAlias;
+
+        QueryWithWrapper(CommonTableExpressions.QueryTableWith wrapped, String alias)
         {
-            super(wrapped);
+            super(wrapped._query, wrapped, null);
+            _alias = alias;
+            cteAlias = alias;
+        }
+
+        @Override
+        protected void setAlias(String alias)
+        {
+            cteAlias = alias;
         }
 
         @Override
         public SQLFragment getFromSql()
         {
-            return _wrapped.getFromSql(getAlias());
+            // Ideally we wouldn't change the alias of the shared QueryTableWith, but let's at least restore it
+            // We lie and say that we have lookups, to force QLW to wrap the inner SQL.  See comment above,
+            // This is awkward because we have QueryRelation objects remember their own aliases.
+            String savedSourceAlias = _source.getAlias();
+            setHasLookup();
+            try
+            {
+                super.setAlias(cteAlias);
+                return super.getFromSql();
+            }
+            finally
+            {
+                _source.setAlias(savedSourceAlias);
+            }
+        }
+
+        @Override
+        protected void resolveFields()
+        {
+            super.resolveFields();
         }
     }
 }

@@ -22,9 +22,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
@@ -71,12 +71,12 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.RConnectionHolder;
-import org.labkey.api.reports.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RConnectionHolder;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.RserveScriptEngine;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
@@ -87,11 +87,12 @@ import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportJob;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -169,6 +170,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -188,9 +190,11 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
+import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
@@ -621,7 +625,6 @@ public class ReportsController extends SpringActionController
                 }
                 catch(Exception e)
                 {
-
                     String message = ReportUtil.makeExceptionString(e, "%s: %s");
                     scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, e.getClass().getName(), message));
                 }
@@ -832,6 +835,7 @@ public class ReportsController extends SpringActionController
             Report report = bean.getReport(getViewContext());
             if (report != null)
             {
+                _log.trace("Executing report: " + report.getClass().getSimpleName());
                 if (bean.getIsDirty())
                     report.clearCache();
 
@@ -840,9 +844,17 @@ public class ReportsController extends SpringActionController
                 {
                     if (report instanceof RReport)
                         resultsView.addView(new RenderBackgroundRReportView((RReport)report));
+                    else
+                        resultsView.addView(new HtmlView(DIV(cl("labkey-error"), "Report type not support background execution: " + report.getClass().getSimpleName())));
                 }
                 else
-                    resultsView.addView(report.renderReport(getViewContext()));
+                {
+                    HttpView<?> renderedReport = report.renderReport(getViewContext());
+                    _log.trace("Report views: " + (renderedReport == null ? null : (
+                            renderedReport.getViews() == null ? renderedReport.getClass().getSimpleName() :
+                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")))));
+                    resultsView.addView(renderedReport);
+                }
             }
 
             Map<String, Object> resultProperties = new HashMap<>();
@@ -857,14 +869,37 @@ public class ReportsController extends SpringActionController
 
             MockHttpServletResponse mr = new MockHttpServletResponse();
             mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
-            resultsView.render(getViewContext().getRequest(), mr);
 
-            if (mr.getStatus() != HttpServletResponse.SC_OK){
+            ViewContext nested = new ViewContext(getViewContext());
+            nested.setResponse(mr);
+            try (var init = HttpView.initForRequest(nested, getViewContext().getRequest(), mr))
+            {
+                _log.trace("Rendering report");
+                resultsView.render(getViewContext().getRequest(), mr);
+                var config = HttpView.currentPageConfig();
+                var sw = new StringWriter();
+                config.endOfBodyScript(sw);
+                var script = sw.toString();
+                if (!script.isBlank())
+                {
+                    _log.trace("Append end of body script.");
+                    var out = mr.getWriter();
+                    out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
+                    out.print(script);
+                    out.print("</script>");
+                }
+            }
+
+            if (mr.getStatus() != HttpServletResponse.SC_OK)
+            {
+                _log.trace("Report error. Status: " + mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
 
-            resultProperties.put("html", mr.getContentAsString());
+            final String html = mr.getContentAsString();
+            _log.trace("Report rendered. Size: " + html.length());
+            resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
             resultProperties.put("implicitJsIncludes", implicitIncludes);
@@ -1216,11 +1251,11 @@ public class ReportsController extends SpringActionController
     {
         if (report != null)
         {
-            if (report.getDescriptor().isNew())
+            if (report.getDescriptor().isNew() && report instanceof ScriptEngineReport scriptEngineReport)
             {
                 try
                 {
-                    ScriptEngine engine = report.getScriptEngine(context.getContainer());
+                    ScriptEngine engine = scriptEngineReport.getScriptEngine(context.getContainer());
 
                     if (engine != null)
                     {
@@ -2460,7 +2495,7 @@ public class ReportsController extends SpringActionController
                 if (report instanceof CrosstabReport)
                 {
                     ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
-                    writer.write(getViewContext().getResponse());
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;
@@ -2733,6 +2768,7 @@ public class ReportsController extends SpringActionController
 
                 info.put("name", type.getName());
                 info.put("visible", visible);
+                info.put("description", type.getDescription());
 
                 types.put(type.getName(), info);
 
@@ -2887,7 +2923,7 @@ public class ReportsController extends SpringActionController
             String typeName = type.getName();
 
             if (typeName.equalsIgnoreCase("reports") ||
-                typeName.equalsIgnoreCase("queries"))
+                typeName.equalsIgnoreCase("grid views"))
             {
                 props.put(typeName, "1");
             }

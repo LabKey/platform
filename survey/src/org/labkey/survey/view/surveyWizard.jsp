@@ -79,7 +79,7 @@
 <div id=<%=q(headerRenderId)%>></div>
 <div id=<%=q(formRenderId)%>></div>
 <div id=<%=q(footerRenderId)%>></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function(){
 
@@ -99,6 +99,11 @@
             autosaveInterval: 60000
         });
 
+        var _resize = function() {
+            if (panel && panel.doLayout) { panel.doLayout(); }
+        };
+
+        Ext4.EventManager.onWindowResize(_resize);
     });
 
 </script>

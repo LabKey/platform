@@ -32,15 +32,18 @@ import java.util.Set;
  */
 public class FolderExportContext extends AbstractFolderContext
 {
-    private String _format = "new";
-    private boolean _includeSubfolders = false;
-    private PHI _phiLevel = null;
-    private boolean _shiftDates = false;
-    private boolean _alternateIds = false;
-    private boolean _maskClinic = false;
+    private final String _format;
+    private final PHI _phiLevel;
+    private final boolean _shiftDates;
+    private final boolean _alternateIds;
+    private final boolean _maskClinic;
+
+    private boolean _includeFolderXml;
+    private boolean _includeSubfolders;
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
+    private Set<String> _queryKeys;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
@@ -61,6 +64,7 @@ public class FolderExportContext extends AbstractFolderContext
         }
 
         _format = format;
+        _includeFolderXml = true;
         _includeSubfolders = includeSubfolders;
         _phiLevel = phiLevel;
         _shiftDates = shiftDates;
@@ -74,6 +78,16 @@ public class FolderExportContext extends AbstractFolderContext
         return _format;
     }
 
+    public void setIncludeFolderXml(boolean includeFolderXml)
+    {
+        _includeFolderXml = includeFolderXml;
+    }
+
+    public boolean isIncludeFolderXml()
+    {
+        return _includeFolderXml;
+    }
+
     @Override
     public void setIncludeSubfolders(boolean includeSubfolders)
     {
@@ -81,7 +95,7 @@ public class FolderExportContext extends AbstractFolderContext
     }
 
     @Override
-    public boolean  isIncludeSubfolders()
+    public boolean isIncludeSubfolders()
     {
         return _includeSubfolders;
     }
@@ -125,6 +139,16 @@ public class FolderExportContext extends AbstractFolderContext
     public void setReportIds(String[] reportIds)
     {
         _reportIds = new HashSet<>(Arrays.asList(reportIds));
+    }
+
+    public Set<String> getQueryKeys()
+    {
+        return _queryKeys;
+    }
+
+    public void setQueryKeys(String[] queryKeys)
+    {
+        _queryKeys = new HashSet<>(Arrays.asList(queryKeys));
     }
 
     public Set<String> getViewIds()

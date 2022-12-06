@@ -66,6 +66,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataInput;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -99,6 +100,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -118,6 +120,8 @@ public class XarExporter
 
     private String _xarXmlFileName = "experiment.xar.xml";
 
+    public static final String MATERIAL_PREFIX_PLACEHOLDER_SUFFIX = "sfx";
+
     /**
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
@@ -132,6 +136,8 @@ public class XarExporter
     /** Use a TreeMap so that we order domains by their RowIds, see issue 22459 */
     private final Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
     private final Set<String> _domainLSIDs = new HashSet<>();
+
+    private final Set<Integer> _expDataClasses = new HashSet<>();
     private final Set<Integer> _expDataIDs = new HashSet<>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
@@ -423,7 +429,17 @@ public class XarExporter
                 }
             }
             else
-                dataLSID.setCpasType(data.getCpasType());
+            {
+                dataLSID.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
+                if (data.getCpasType() != null && !ExpData.DEFAULT_CPAS_TYPE.equalsIgnoreCase(data.getCpasType()))
+                {
+                    ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(data.getCpasType());
+                    if (dataClass != null)
+                    {
+                        addDataClass(dataClass);
+                    }
+                }
+            }
         }
 
         List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
@@ -591,8 +607,6 @@ public class XarExporter
 
     public void addSampleType(ExpSampleType sampleType) throws ExperimentException
     {
-        final String PLACEHOLDER_SUFFIX = "sfx";
-
         if (sampleType == null || _sampleSetLSIDs.contains(sampleType.getLSID()))
         {
             return;
@@ -608,9 +622,9 @@ public class XarExporter
         xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
 
         // we need to temporarily fake up a full Lsid in order to relativize properly
-        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + PLACEHOLDER_SUFFIX);
-        if (materialPrefix.endsWith(PLACEHOLDER_SUFFIX))
-            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - PLACEHOLDER_SUFFIX.length());
+        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + MATERIAL_PREFIX_PLACEHOLDER_SUFFIX);
+        if (materialPrefix.endsWith(MATERIAL_PREFIX_PLACEHOLDER_SUFFIX))
+            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.length());
         xSampleSet.setMaterialLSIDPrefix(materialPrefix);
         xSampleSet.setName(sampleType.getName());
         if (sampleType.getDescription() != null)
@@ -692,6 +706,11 @@ public class XarExporter
 
     public void addDataClass(ExpDataClass dataClass)
     {
+        if (!_expDataClasses.add(dataClass.getRowId()))
+        {
+            return;
+        }
+
         if (_archive.getDataClasses() == null)
         {
             _archive.addNewDataClasses();
@@ -784,7 +803,7 @@ public class XarExporter
         {
             PropertyDescriptorType.FK xFK = xProp.addNewFK();
             xFK.setQuery(lookup.getQueryName());
-            xFK.setSchema(lookup.getSchemaName());
+            xFK.setSchema(Objects.toString(lookup.getSchemaKey(),null));
             if (lookup.getContainer() != null && !lookup.getContainer().equals(prop.getContainer()))
             {
                 // Export the lookup's target path if it's set and it's not the same as the property descriptor's container
@@ -849,6 +868,11 @@ public class XarExporter
 
         if (domainProp.isScannable())
             xProp.setScannable(domainProp.isScannable());
+
+        if (prop.getDerivationDataScope() != null)
+        {
+            xProp.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(prop.getDerivationDataScope()));
+        }
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)

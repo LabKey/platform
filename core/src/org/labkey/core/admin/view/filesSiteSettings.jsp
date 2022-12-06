@@ -131,7 +131,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var isUpgrade = <%=bean.isUpgrade()%>;
 
     Ext4.onReady(function(){
@@ -165,9 +165,6 @@
                     header:'Project',
                     width:330,
                     dataIndex:'name',
-                    renderer: function(val){
-                        return Ext4.util.Format.htmlEncode(val);
-                    }
                 },{
                     header:'Directory',
                     width:420,

@@ -75,8 +75,7 @@ public class RegexReplaceFilter extends RegexFilter {
         log.warn("Exception for: " + this+" "+e);
      } catch (Error err) {
         //log.warn("<span class=\"error\">Error</span>: " + this + ": " + err);
-        log.warn("Error for: " + this);
-        err.printStackTrace();
+        log.warn("Error for: " + this + " " + err);
       }
     }
     return result;

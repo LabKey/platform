@@ -17,7 +17,7 @@ package org.labkey.api.audit.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -60,6 +60,7 @@ import java.util.Set;
  */
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
+
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 
@@ -71,13 +72,17 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
+    public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
+    public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
+
+    public static final String AUDIT_RECORD_DATA_MAP_CONCEPT_URI = "http://www.labkey.org/types#auditRecordDataMap";
 
     static
     {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
-        // The default type here for an autoincrement field from the database is INTEGER.  If supplying a RowId
+        // The default type here for an autoincrement field from the database is BIGINT.  If supplying a RowId
         // through a DbSequence, override getBaseFields and set the type to JdbcType.BIGINT without autoincrement
-        baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
+        baseFields.add(createFieldSpec("RowId", JdbcType.BIGINT, true, true));       // pk
         baseFields.add(createFieldSpec("Container", JdbcType.GUID).setNullable(false));
         baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
         baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
@@ -291,7 +296,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> names = new HashSet<>();
 
@@ -362,6 +367,22 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         return pd;
     }
 
+    protected PropertyDescriptor createOldDataMapPropertyDescriptor()
+    {
+        PropertyDescriptor d = createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1); // varchar max
+        d.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
+        d.setLabel(OLD_RECORD_PROP_CAPTION);
+        return d;
+    }
+
+    protected PropertyDescriptor createNewDataMapPropertyDescriptor()
+    {
+        PropertyDescriptor d = createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1); // varchar max
+        d.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
+        d.setLabel(NEW_RECORD_PROP_CAPTION);
+        return d;
+    }
+
     @Override
     public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
     {
@@ -391,5 +412,12 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     public String getMetaDataTableName()
     {
         return null;
+    }
+
+
+    @Override
+    public boolean isUserCreatedType()
+    {
+        return false;
     }
 }

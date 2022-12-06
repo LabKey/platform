@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.notification.NotificationService;
@@ -26,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -45,11 +43,11 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
-import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.Portal;
@@ -96,13 +94,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
-/**
- */
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = LogManager.getLogger(PipelineModule.class);
+    private static final Logger _log = LogHelper.getLogger(PipelineModule.class, "Module responsible for managing pipeline jobs and logs");
 
     @Override
     public String getName()
@@ -113,7 +110,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 22.000;
+        return 22.001;
     }
 
     @Override
@@ -211,21 +208,45 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
-        UsageMetricsService.get().registerUsageMetrics("Pipeline", new UsageMetricsProvider()
-        {
-            @Override
-            public Map<String, Object> getUsageMetrics()
-            {
-                Map<String, Long> jobCounts = new HashMap<>();
-                SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
-                sql.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-                sql.append(" GROUP BY Provider");
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+            Map<String, Object> result = new HashMap<>();
 
-                new SqlSelector(PipelineSchema.getInstance().getSchema(), sql).forEach(rs ->
-                        jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+            Map<String, Long> jobCounts = new HashMap<>();
+            SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+            jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+            jobSQL.append(" GROUP BY Provider");
 
-                return Collections.singletonMap("jobCounts", jobCounts);
-            }
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), jobSQL).forEach(rs ->
+                    jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+            result.put("jobCounts", jobCounts);
+
+            Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
+            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ? THEN 1 ELSE 0 END) AS Enabled, ");
+            triggerSQL.append("SUM(CASE WHEN Enabled != ? THEN 1 ELSE 0 END) AS Disabled, ");
+            triggerSQL.append("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
+            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
+            triggerSQL.append(" LEFT OUTER JOIN \n");
+            triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+            triggerSQL.append(" ON tc.PipelineId = sf.TaskPipelineId\n");
+            triggerSQL.append(" GROUP BY PipelineId");
+            triggerSQL.add(true);
+            triggerSQL.add(true);
+
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), triggerSQL).forEach((rs) ->
+                {
+                    String pipelineId = rs.getString("PipelineId");
+                    if (pipelineId.contains(":"))
+                    {
+                        pipelineId = pipelineId.split(":")[1];
+                    }
+                    Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
+                    m.put("Enabled", rs.getLong("Enabled"));
+                    m.put("Disabled", rs.getLong("Disabled"));
+                    m.put("Jobs", rs.getLong("Jobs"));
+                });
+            result.put("triggerCounts", triggerCounts);
+
+            return result;
         });
     }
 
@@ -350,7 +371,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
 
             // TODO: is this the correct spot to start all of the trigger configs?
-            for (PipelineTriggerType triggerType : PipelineTriggerRegistry.get().getTypes())
+            for (PipelineTriggerType<?> triggerType : PipelineTriggerRegistry.get().getTypes())
             {
                 triggerType.startAll();
             }

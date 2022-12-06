@@ -42,7 +42,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -136,13 +135,6 @@ public class ListModule extends SpringModule
         {
             folderRegistry.addFactories(new FolderListWriter.Factory(), new FolderListImporter.Factory());
         }
-
-        // support importing lists from the study archive for backwards compatibility
-        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
-        if (null != studyRegistry)
-        {
-            studyRegistry.addImportFactory(new FolderListImporter.Factory());
-        }                  
 
         SearchService ss = SearchService.get();
         if (null != ss)

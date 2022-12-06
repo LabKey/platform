@@ -3,7 +3,7 @@ package org.labkey.api.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.security.User;
 
 import java.util.Date;

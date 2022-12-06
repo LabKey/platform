@@ -18,15 +18,14 @@ package org.labkey.search.model;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.document.BinaryDocValuesField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericDocValuesField;
-import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -51,6 +50,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.Version;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
@@ -67,6 +67,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminBean;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -83,6 +85,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -97,6 +100,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -113,11 +117,15 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -252,9 +260,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private void attemptInitialize() throws IOException
     {
-        File indexDir = SearchPropertyManager.getIndexDirectory();
+        File indexDir = getIndexDirectory();
         _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
         setConfigurationError(null);  // Clear out any previous error
+    }
+
+    // Returns null if file path includes an unknown substitution parameter
+    public static @Nullable File getIndexDirectory()
+    {
+        String adminSpecifiedDirectory = SearchPropertyManager.getUnsubstitutedIndexDirectory();
+        Map<String, String> escapedMap = getEscapedSystemPropertyMap();
+        String encodedPath = StringExpressionFactory.create(adminSpecifiedDirectory).eval(escapedMap);
+        if (null == encodedPath)
+            return null;
+        File substitutedDirectory = new File(encodedPath);
+
+        // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
+        // This prevents full index rebuilds when switching between branches with different major Lucene versions.
+        return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
+    }
+
+    // Create a Map of system properties with file-system escaped values
+    public static Map<String, String> getEscapedSystemPropertyMap()
+    {
+        return AdminBean.getPropertyMap().entrySet().stream()
+            .collect(LabKeyCollectors.toLinkedMap(Map.Entry::getKey, e->FileUtil.makeLegalName(e.getValue())));
     }
 
     @Override
@@ -411,10 +441,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void deleteIndex()
     {
         _log.info("Deleting Search Index");
-        if (_indexManager.isReal())
+        if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
-        File indexDir = SearchPropertyManager.getIndexDirectory();
+        File indexDir = getIndexDirectory();
 
         if (indexDir.exists())
             FileUtil.deleteDir(indexDir);
@@ -453,6 +483,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
         FileStream fs = null;
+        _BodyContentHandler handler = null;
 
         try
         {
@@ -516,16 +547,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 keywordsMed.append(" ").append(description);
 
             final String type = r.getContentType();
-            final String body;
 
             String title = (String)props.get(PROPERTY.title.toString());
 
             // Don't load content of images or zip files (for now), but allow searching by name and properties
-            if (isImage(type) || isZip(type))
-            {
-                body = "";
-            }
-            else
+            if (!isImage(type) && !isZip(type))
             {
                 InputStream is = fs.openInputStream();
 
@@ -545,9 +571,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (r.getContentType().startsWith("text"))
                     metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                handler = _BodyContentHandler.create();     // no write limit on the handler -- rely on file size check to limit content
                 parse(r, fs, is, handler, metadata, isTooBig(fs, type));
-                body = handler.toString();
 
                 if (StringUtils.isBlank(title))
                     title = metadata.get(TikaCoreProperties.TITLE);
@@ -576,9 +601,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String identifiersLo = StringUtils.join(c.getParsedPath(), " ");
 
             // Use summary text provided by the document props, otherwise use the document body
-            String summary = StringUtils.trimToNull(Objects.toString(props.get(PROPERTY.summary.toString()), null));
-            if (summary == null)
-                summary = body;
+            String summary = StringUtils.trimToEmpty(Objects.toString(props.get(PROPERTY.summary.toString()), null));
+            if (StringUtils.isEmpty(summary) && null != handler)
+                summary = handler.getSummary();
 
             // extract and trim summary
             summary = extractSummary(summary, title);
@@ -602,7 +627,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
 
             // See: https://stackoverflow.com/questions/29695307/sortiing-string-field-alphabetically-in-lucene-5-0
-            doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
+            // But note that Lucene 9.0.0 changed to require BinaryDocValuesField instead
+            doc.add(new BinaryDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
 
             // === Index and analyze, don't store ===
 
@@ -618,7 +644,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
             addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
 
-            doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
+            if (null != handler)
+                doc.add(new TextField(FIELD_NAME.body.toString(), handler.getReader()));
+            else
+                doc.add(new TextField(FIELD_NAME.body.toString(), "", Field.Store.NO));
 
             addTerms(doc, FIELD_NAME.keywordsLo, PROPERTY.keywordsLo, props, null);
             addTerms(doc, FIELD_NAME.keywordsMed, PROPERTY.keywordsMed, props, keywordsMed.toString());
@@ -634,9 +663,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             // === Store security context in DocValues field ===
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
-            String securityContext = r.getContainerId() + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
-            // TODO: As of Lucene 9.0.0, BinaryDocValues is recommended instead of SortedDocValues (for performance)
-            doc.add(new SortedDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
+            String securityContext = r.getContainerId()
+                    + "|" + props.get(PROPERTY.categories.toString()) // multiple categories are separated by spaces, but we shouldn't need to distinguish here
+                    + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+            doc.add(new BinaryDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
@@ -660,8 +690,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (_log.isDebugEnabled())
             {
-                String dump = dump(r, doc);
-                _log.debug("indexing " + dump);
+                if (_log.isTraceEnabled())
+                    _log.trace("indexing " + dump(r, doc));
+                else
+                    _log.debug("indexing docid: " + r.getDocumentId());
             }
 
             return index(r.getDocumentId(), r, doc);
@@ -719,6 +751,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
+            if (null != handler)
+                IOUtils.closeQuietly(handler);
             if (null != fs)
             {
                 try
@@ -970,7 +1004,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             String contentType = r.getContentType();
-            if (isImage(contentType) || isZip(contentType))
+            if (isImage(contentType) || isZip(contentType) || isWorkingFile(r))
                 return false;
             FileStream fs = r.getFileStream(User.getSearchUser());
             if (null == fs)
@@ -983,6 +1017,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     DocumentParser p = detectParser(r, null);
                     return p != null;
                 }
+
                 return true;
             }
             finally
@@ -996,6 +1031,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    private boolean isWorkingFile(@NotNull WebdavResource r)
+    {
+        // MS Office opens temp/working files with '~', ignore these. Issue #45005
+        return r.getName().startsWith("~") || r.getName().startsWith(".~");
+    }
 
     private boolean isTooBig(FileStream fs, String contentType) throws IOException
     {
@@ -1184,7 +1224,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             // Run the query before delete, but only if Log4J debug level is set
-            if (_log.isDebugEnabled())
+            if (_log.isDebugEnabled() && _indexManager.isReal())
             {
                 _log.debug("Deleting " + getDocCount(query) + " docs with prefix \"" + prefix + "\"");
             }
@@ -1244,7 +1284,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Query query = new TermQuery(new Term(FIELD_NAME.container.toString(), id));
 
             // Run the query before delete, but only if Log4J debug level is set
-            if (_log.isDebugEnabled())
+            if (_log.isDebugEnabled() && _indexManager.isReal())
             {
                 _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
             }
@@ -1273,7 +1313,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     .build();
 
             // Run the query before delete, but only if Log4J debug level is set
-            if (_log.isDebugEnabled())
+            if (_log.isDebugEnabled() && _indexManager.isReal())
             {
                 _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
             }
@@ -1296,13 +1336,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (ConfigurationException e)
         {
-            // Index may have become unwriteable don't log to mothership, and dont reinitialize index
+            // Index may have become unwriteable don't log to mothership, and don't reinitialize index
             throw e;
         }
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable.  Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
         }
@@ -1499,7 +1539,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 if (!user.isSearchUser())
                 {
-                    Query securityFilter = new SecurityQuery(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
+                    Query securityFilter = new SecurityQuery(user, scope, current, iTimer);
                     queryBuilder.add(securityFilter, BooleanClause.Occur.FILTER);
                 }
 
@@ -1754,7 +1794,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         Pair<Integer, String[]> expectation = expectations.get(file.getName());
                         assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
                         // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
-                        assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
+                        assertEquals("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first), (0 == expectation.second.length));
 
                         if (expectation.first != body.length())
                         {
@@ -1842,13 +1882,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "jar_sample.jar", 712120, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator", "public synchronized class ApiVersionException extends CommandException", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
             add(map, "jpg_sample.jpg", 0);
-            add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
+            add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array");
             add(map, "mov_sample.mov", 0);
             add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
+            add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 110, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 122, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");
@@ -1862,7 +1903,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
-            add(map, "zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+            add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
+            add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
 
             return map;
         }
@@ -2081,7 +2123,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static class ContainerFieldComparatorSource extends FieldComparatorSource
     {
         @Override
-        public FieldComparator<?> newComparator(String fieldname, int numHits, int sortPos, boolean reversed)
+        public FieldComparator<?> newComparator(String fieldname, int numHits, boolean enabledSkipping, boolean reversed)
         {
             return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
                 @Override
@@ -2116,6 +2158,49 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (IOException x)
         {
             /* pass */
+        }
+    }
+
+    // to avoid generating a lot of garbage, try to avoid excessive allocating and freeing a lot of ByteBuffers
+    static final ThreadLocal<SoftReference<ByteBuffer>> bufferStash = ThreadLocal.withInitial(() -> new SoftReference<>(null));
+
+    static class _BodyContentHandler extends BodyContentHandler implements Closeable
+    {
+        final FileUtil.TempTextFileWrapper tempFileWrapper;
+        final ByteBuffer byteBuffer;
+
+        static _BodyContentHandler create() throws IOException
+        {
+            var ref = bufferStash.get();
+            var buf = null == ref ? null : ref.get();
+            if (null == buf)
+                buf = ByteBuffer.allocate(128*1024);
+            return new _BodyContentHandler(buf, new FileUtil.TempTextFileWrapper(buf.asCharBuffer()));
+        }
+
+        _BodyContentHandler(ByteBuffer buf, FileUtil.TempTextFileWrapper tempFileWrapper)
+        {
+            super(tempFileWrapper.getWriter());
+            this.byteBuffer = buf;
+            this.tempFileWrapper = tempFileWrapper;
+        }
+
+        public String getSummary()
+        {
+            return tempFileWrapper.getSummary(SUMMARY_LENGTH+100);
+        }
+
+        public Reader getReader() throws IOException
+        {
+            return tempFileWrapper.getReader();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            tempFileWrapper.close();
+            byteBuffer.clear();
+            bufferStash.set(new SoftReference<>(byteBuffer));
         }
     }
 }

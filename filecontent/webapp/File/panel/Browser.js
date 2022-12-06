@@ -275,8 +275,13 @@ Ext4.define('File.panel.Browser', {
          * @private
          */
         _getActions : function(cb, containerPath, scope) {
+            var params = {path : scope.getFullFolderOffset() };
+            var returnUrl = LABKEY.ActionURL.getReturnUrl();
+            if (returnUrl) {
+                params.returnUrl = returnUrl;
+            }
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : scope.getFullFolderOffset() }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, params),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -1247,6 +1252,8 @@ Ext4.define('File.panel.Browser', {
             }
         }
 
+        items.push(this.getFileDeleteProgressWindow())
+
         return items;
     },
 
@@ -1385,7 +1392,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset()));
     },
 
     getFolderOffset : function() {
@@ -1434,7 +1441,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getCurrentDirectory : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset()));
     },
 
     /**
@@ -1445,6 +1452,7 @@ Ext4.define('File.panel.Browser', {
     _initFolderOffset : function(offsetPath) {
         // Replace the base URL so only offsets are used
         var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
+
         // If we don't go anywhere, don't fire a folder change
         if (this.rootOffset != path) {
             this.rootOffset = path;
@@ -1768,7 +1776,7 @@ Ext4.define('File.panel.Browser', {
             this.tree.getView().expand(rec);
         }
         else {
-            this.changeFolder(rec);
+            this.changeFolder(rec, false);
             this.tree.getView().expand(rec);
         }
     },
@@ -2226,6 +2234,7 @@ Ext4.define('File.panel.Browser', {
                         if (files[j] == selections[i].data.name)
                         {
                             var fileField = document.createElement("input");
+                            fileField.setAttribute("type", "hidden");
                             fileField.setAttribute("name", "file");
                             fileField.setAttribute("value", selections[i].data.name);
                             form.appendChild(fileField);
@@ -2240,6 +2249,7 @@ Ext4.define('File.panel.Browser', {
                     }
                 }
                 var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
                 hiddenField.setAttribute("name", "X-LABKEY-CSRF");
                 hiddenField.setAttribute("value", LABKEY.CSRF);
                 form.appendChild(hiddenField);
@@ -2294,7 +2304,7 @@ Ext4.define('File.panel.Browser', {
 
             if (!selections.length && count > 0) {
                 emptySelection = true;
-                selections = store.getRange(0, count-1); // get all the available records
+                selections = store.data.getRange(0, count-1); // get all the loaded records without loading more into buffer
             }
 
             // Issue 25493: Intermittent JS error from FileBrowser.
@@ -2541,7 +2551,7 @@ Ext4.define('File.panel.Browser', {
      * @param {boolean} [skipHistory=false]
      */
     changeFolder : function(model, skipHistory) {
-        var url = model.data.id;
+        var url = this.fileSystem.getURLWithCharsReplaced(model.data.id);
         this.setFolderOffset(url, model, skipHistory);
     },
 
@@ -2752,6 +2762,7 @@ Ext4.define('File.panel.Browser', {
         var onCreateDir = function(panel) {
 
             var path = this.getFolderURL();
+
             if (!LABKEY.Utils.endsWith(path, this.folderSeparator))
                 path = path + this.folderSeparator;
             if (panel.getForm().isValid()) {
@@ -2759,7 +2770,6 @@ Ext4.define('File.panel.Browser', {
                 if (values && values.folderName) {
                     var folder = values.folderName;
                     var browser = this;
-                    var modifiedPath = path;
                     this.fileSystem.createDirectory({
                         path : this.fileSystem.encodeForURL(path + folder),
                         success : function(path) {
@@ -2848,6 +2858,76 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
+    getFileDeleteProgressWindow : function() {
+        if (this.fileDeleteProgressWindow)
+            return this.fileDeleteProgressWindow;
+
+        this.deleteProgressBar = Ext4.create('Ext.ProgressBar', {
+            width: 500,
+            height: 25,
+            border: false,
+            autoRender : true,
+            style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
+        });
+
+        var progressBarContainer = Ext4.create('Ext.container.Container', {
+            width: 500,
+            margin: 4,
+            items: [this.deleteProgressBar]
+        });
+
+        this.statusText = Ext4.create('Ext.form.Label', {
+            text: '',
+            style: 'display: inline-block ;text-align: center',
+            width: 500,
+            margin: 4,
+            border: false
+        });
+
+        this.fileDeleteProgressWindow = Ext4.create('Ext.window.Window', {
+            title: 'Delete Progress',
+            layout: 'vbox',
+            bodyPadding: 5,
+            closable: false,
+            border: false,
+            items: [this.statusText, progressBarContainer]
+        });
+
+        return this.fileDeleteProgressWindow;
+    },
+
+    showDeleteProgressWindow : function()
+    {
+        if (this.getFileDeleteProgressWindow())
+        {
+            this.getFileDeleteProgressWindow().show();
+            this.getFileDeleteProgressWindow().center();
+        }
+        if (this.deleteProgressBar)
+            this.deleteProgressBar.setVisible(true);
+    },
+
+    hideDeleteProgressWindow : function()
+    {
+        if (this.fileDeleteProgressWindow)
+        {
+            this.fileDeleteProgressWindow.hide();
+            this.fileDeleteProgressWindow.center();
+        }
+        if (this.deleteProgressBar)
+            this.deleteProgressBar.reset(true);
+        if (this.statusText)
+            this.statusText.setText('');
+    },
+
+    onDeleteProgress : function(progress) {
+        if (progress == 100) {
+            this.hideDeleteProgressWindow();
+        } else {
+            this.deleteProgressBar.updateProgress(progress/100);
+        }
+    },
+
     onDelete : function() {
 
         var recs = this.getGridSelection();
@@ -2864,11 +2944,26 @@ Ext4.define('File.panel.Browser', {
                 icon : Ext4.Msg.QUESTION,
                 fn : function(btn) {
                     if (btn === 'yes') {
+                        this.showDeleteProgressWindow();
+                        this.statusText.setText('Deleting ' + recs[0].data.name + ' ...');
+                        if (recs.length === 1 && recs[0].data.collection) {
+                            // delete a potentially large directory
+                            this.deleteProgressBar.wait({
+                                interval: 500,
+                                increment: 15,
+                                text: 'Deleting...',
+                                scope: this
+                            });
+                        }
+
                         for (var i = 0; i < recs.length; i++) {
                             this.fileSystem.deletePath({
                                 path : recs[i].data.href,
                                 success : function(path) {
                                     deleted++;
+                                    this.statusText.setText('Deleted ' + path + ' successfully.');
+                                    if ( (deleted * 20) % recs.length === 0)
+                                        this.onDeleteProgress(deleted/recs.length * 100);
                                     if (deleted === recs.length) {
                                         this.afterFileSystemChange();
                                     }
@@ -2885,6 +2980,7 @@ Ext4.define('File.panel.Browser', {
                                     else {
                                         message = 'Failed to delete.';
                                     }
+                                    this.hideDeleteProgressWindow();
                                     this.showErrorMsg('Error', message);
                                 },
                                 scope : this
@@ -3051,11 +3147,13 @@ Ext4.define('File.panel.Browser', {
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
 
+            var dest = this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name));
+
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
                 fileRecord : selected,
-                source: selected.record.data.id,
-                destination: this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name)),
+                source: LABKEY.ActionURL.encodePath(selected.record.data.id),
+                destination: LABKEY.ActionURL.encodePath(dest),
                 isFile: !selected.record.data.collection,
                 success: function() {
                     this.afterFileSystemChange();

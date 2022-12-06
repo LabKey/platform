@@ -15,7 +15,7 @@
  */
 package org.labkey.specimen.writer;
 
-import org.labkey.api.study.writer.AbstractContext;
+import org.labkey.api.study.writer.AbstractStudyContext;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.study.xml.StudyDocument;
 
@@ -33,7 +33,7 @@ abstract class AbstractSpecimenWriter implements SimpleStudyWriter
         return true;
     }
 
-    protected StudyDocument.Study.Specimens ensureSpecimensElement(AbstractContext ctx) throws Exception
+    protected StudyDocument.Study.Specimens ensureSpecimensElement(AbstractStudyContext ctx) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Specimens specimensXml;

@@ -43,18 +43,12 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     private static Logger _log = LogManager.getLogger(PipelineJobStoreImpl.class);
 
     @Override
-    public Object deserializeFromJSON(String json, Class<?> cls)
+    public PipelineJob deserializeFromJSON(String json, Class<? extends PipelineJob> cls)
     {
-        Object obj = super.deserializeFromJSON(json, cls);
-        if (obj instanceof PipelineJob)
-        {
-            PipelineJob job = (PipelineJob)obj;
-            job.restoreQueue(PipelineService.get().getPipelineQueue());
-            job.restoreLocalDirectory();
-            return job;
-        }
-        _log.warn("Expected PipelineJob subclass: " + obj.getClass().getName());
-        return obj;
+        PipelineJob job = super.deserializeFromJSON(json, cls);
+        job.restoreQueue(PipelineService.get().getPipelineQueue());
+        job.restoreLocalDirectory();
+        return job;
     }
 
     @Override
@@ -124,7 +118,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     @Override
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
-        PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job, true));
+        PipelineStatusManager.storeJob(job.getJobGUID(), job.serializeJob(true));
     }
 
     // Synchronize all splitting and joining to avoid SQL deadlocks.  Splitting

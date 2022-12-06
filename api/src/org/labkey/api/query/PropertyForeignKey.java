@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
@@ -128,7 +129,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    protected FieldKey decideColumnName(ColumnInfo parent, String displayField, PropertyDescriptor pd)
+    protected @NotNull FieldKey decideColumnName(@NotNull ColumnInfo parent, @NotNull String displayField, @NotNull PropertyDescriptor pd)
     {
         return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
     }

@@ -27,7 +27,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
@@ -183,8 +182,8 @@ public class SimpleUserSchema extends UserSchema
         if (table == null)
             throw new NotFoundException("Table '" + queryName + "' not found in this container '" + getContainer().getPath() + "'.");
 
-        if (table instanceof SimpleTable)
-            return ((SimpleTable)table).getDomainURI();
+        if (table instanceof SimpleTable st)
+            return st.getDomainURI();
         return null;
     }
 

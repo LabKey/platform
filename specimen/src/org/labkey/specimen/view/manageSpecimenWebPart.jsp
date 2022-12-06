@@ -40,7 +40,7 @@
 </div>
 <div id="configurePanel"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var dataFieldName = 'name';
     function createCombo(fieldLabel, name, id, allowBlank, width)

@@ -17,7 +17,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -99,7 +99,7 @@ abstract public class QExpr extends QNode
     }
 
 
-    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
+    public ColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
     {
         return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
         {

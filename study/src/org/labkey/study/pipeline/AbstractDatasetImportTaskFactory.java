@@ -26,14 +26,9 @@ import java.util.List;
 
 public abstract class AbstractDatasetImportTaskFactory<FactoryType extends AbstractDatasetImportTaskFactory<FactoryType>> extends AbstractTaskFactory<AbstractTaskFactorySettings, FactoryType>
 {
-    AbstractDatasetImportTaskFactory(Class namespaceClass)
+    AbstractDatasetImportTaskFactory(Class<?> namespaceClass)
     {
         super(namespaceClass);
-    }
-
-    AbstractDatasetImportTaskFactory(Class namspaceClass, String name)
-    {
-        super(namspaceClass, name);
     }
 
     @Override

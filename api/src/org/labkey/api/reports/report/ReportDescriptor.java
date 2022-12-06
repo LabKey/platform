@@ -22,7 +22,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
@@ -34,6 +34,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
@@ -119,13 +120,19 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         json,
         serializedReportName,
         moduleReportCreatedDate, // creation date of module report, used by cds
-        showInDashboard, // used in Argos (show visible reports in the grid, show in my links if this is true)
-        showInParticipantView // boolean used in participant view for showing the saved charts for a dataset
+        showInDashboard, // show visible reports in the grid, show in my links if this is true or null
+        showInParticipantView, // boolean used in participant view for showing the saved charts for a dataset,
+        hideInManageViews // boolean used to hide the view from Managed Views. By default, hidden views are still visible in manage mode.
     }
 
     public ReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        this(TYPE);
+    }
+
+    public ReportDescriptor(String descriptorType)
+    {
+        setDescriptorType(descriptorType);
 
         // set the report version to the one that is stored in the query module
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
@@ -244,7 +251,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return null;
     }
 
-    public void setDescriptorType(String type)
+    private void setDescriptorType(String type)
     {
         setProperty(Prop.descriptorType, type);
     }
@@ -480,16 +487,15 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return getDescriptorDocument(c, null, false, null);
     }
 
-    public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    public ReportDescriptorDocument getDescriptorDocument(FolderExportContext context)
     {
         return getDescriptorDocument(context.getContainer(), context, true, null);
     }
 
     /**
      * Builds an XML representation of this descriptor
-     * @return
      */
-    protected final ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context, boolean savePermissions, Set<String> propsToSkip)
+    protected final ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable FolderExportContext context, boolean savePermissions, Set<String> propsToSkip)
     {
         if (null == propsToSkip)
             propsToSkip = Collections.emptySet();
@@ -501,7 +507,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         // directory element
         if (context != null)
         {
-            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
+            ReportNameContext rnc = context.getContext(ReportNameContext.class);
             if (null != rnc && null != rnc.getSerializedName())
                 descriptor.setAttachmentDir(rnc.getSerializedName());
         }
@@ -563,7 +569,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return true;
     }
 
-    private void addProperty(@Nullable ImportContext context, ReportPropertyList props, String key, Object value)
+    private void addProperty(@Nullable FolderExportContext context, ReportPropertyList props, String key, Object value)
     {
         ReportPropertyList.Prop prop = props.addNewProp();
         prop.setName(key);
@@ -572,7 +578,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     // Let subclasses transform the property value based on the current context. For example, time charts
     // and participant reports need to map participant IDs to alternate IDs, if that's been requested.
-    protected String adjustPropertyValue(@Nullable ImportContext context, String key, Object value)
+    protected String adjustPropertyValue(@Nullable FolderExportContext context, String key, Object value)
     {
         return String.valueOf(value);
     }
@@ -584,7 +590,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return false;
     }
 
-    public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
+    public void serialize(FolderExportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptorDocument doc = getDescriptorDocument(context);
         dir.saveXmlBean(filename, doc);

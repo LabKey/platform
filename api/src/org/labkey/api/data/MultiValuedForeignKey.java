@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -261,6 +262,12 @@ public class MultiValuedForeignKey implements ForeignKey
     }
 
     @Override
+    public SchemaKey getLookupSchemaKey()
+    {
+        return _fk.getLookupSchemaKey();
+    }
+
+    @Override
     public String getLookupColumnName()
     {
         return _fk.getLookupColumnName();
@@ -286,6 +293,12 @@ public class MultiValuedForeignKey implements ForeignKey
 
     // default is to render a multi-selection form input
     public boolean isMultiSelectInput()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean isShowAsPublicDependency()
     {
         return true;
     }

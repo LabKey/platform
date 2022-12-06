@@ -160,4 +160,19 @@ public interface ExpProtocol extends ExpObject
     {
         return String.join(":",getContainer().getId(), "assay", String.valueOf(getRowId()));
     }
+
+    static boolean isSampleWorkflowJobProtocol(String lsid)
+    {
+        return lsid.contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX);
+    }
+
+    static boolean isSampleWorkflowTaskProtocol(String lsid)
+    {
+        return lsid.contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX);
+    }
+
+    static boolean isSampleWorkflowProtocol(String lsid)
+    {
+        return isSampleWorkflowTaskProtocol(lsid) || isSampleWorkflowJobProtocol(lsid);
+    }
 }

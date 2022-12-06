@@ -15,23 +15,28 @@
  */
 package org.labkey.api.admin;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.Writer;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Writer for a particular type of data, used for folder exports.
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface FolderWriter extends Writer<Container, ImportContext<FolderDocument.Folder>>
+public interface FolderWriter extends Writer<Container, FolderExportContext>
 {
-    @Nullable Collection<Writer> getChildren(boolean sort, boolean forTemplate);
+    default @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
+    {
+        return Collections.emptyList();
+    }
+
     boolean show(Container c);
-    boolean selectedByDefault(AbstractFolderContext.ExportType type);
-    void initialize(ImportContext<FolderDocument.Folder> context);
+    boolean selectedByDefault(ExportType type);
+    void initialize(FolderExportContext context);
     boolean includeWithTemplate();
 }

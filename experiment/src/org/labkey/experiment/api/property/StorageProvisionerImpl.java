@@ -18,7 +18,6 @@ package org.labkey.experiment.api.property;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,6 +56,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
@@ -67,6 +67,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
@@ -80,11 +81,11 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -94,7 +95,7 @@ import java.util.stream.Collectors;
  */
 public class StorageProvisionerImpl implements StorageProvisioner
 {
-    private static final Logger log = LogManager.getLogger(StorageProvisionerImpl.class);
+    private static final Logger log = LogHelper.getLogger(StorageProvisionerImpl.class, "Creates and maintains DB tables for admin-defined types");
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
     private static final StorageProvisionerImpl instance = new StorageProvisionerImpl();
@@ -116,6 +117,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
+        //noinspection AssertWithSideEffects
         assert create.start();
 
         // CONSIDER: could combine the two SELECT here: SELECT...FOR UPDATE (domain.getDatabaseLock()) and the SELECT (getDomainDescriptor())
@@ -125,7 +127,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                LogManager.getLogger(StorageProvisionerImpl.class).warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                log.warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
@@ -207,6 +209,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
         finally
         {
+            //noinspection AssertWithSideEffects
             assert create.stop();
         }
     }
@@ -233,7 +236,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         if (null == domain)
             return;
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         if (kind == null)
         {
             if (null != domain.getStorageTableName())
@@ -269,6 +272,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             log.warn(String.format("Table %s in schema %s for domain %s does not exist. Ignoring drop.", tableName, schemaName, domain.getName()));
         }
+        // Issue 44467: Update DbSchema caches
+        kind.invalidate(domain);
     }
 
     @Override
@@ -390,7 +395,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     public void addMvIndicator(DomainProperty prop)
     {
         Domain domain = prop.getDomain();
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -409,7 +414,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     public void dropStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
@@ -525,7 +530,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
      * Generate and execute the appropriate SQL statements to resize properties
      * @param domain to execute within
      */
-    public void resizeProperty(Domain domain, DomainProperty prop, Integer scale) throws ChangePropertyDescriptorException
+    public void resizeProperty(Domain domain, DomainProperty prop, Integer oldScale) throws ChangePropertyDescriptorException
     {
         DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -541,12 +546,37 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 base.add(s.getName()));
 
         if (!base.contains(prop.getName()))
-            resizePropChange.addColumnResize(prop.getPropertyDescriptor(), scale);
+            resizePropChange.addColumnResize(prop.getPropertyDescriptor(), oldScale);
 
         resizePropChange.execute();
     }
 
-    public String makeTableName(DomainKind kind, Domain domain)
+    /**
+     * Generate and execute the appropriate SQL statements to resize properties
+     * @param domain to execute within
+     */
+    public void changePropertyType(Domain domain, DomainProperty prop) throws ChangePropertyDescriptorException
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        // should be in a transaction with propertydescriptor changes
+        if (!scope.isTransactionActive())
+            throw new ChangePropertyDescriptorException("Unable to change property type. Transaction is not active within change scope");
+
+        TableChange propChange = new TableChange(domain, ChangeType.ChangeColumnTypes);
+
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
+        kind.getBaseProperties(domain).forEach(s ->
+                base.add(s.getName()));
+
+        if (!base.contains(prop.getName()))
+            propChange.addColumn(prop.getPropertyDescriptor());
+
+        propChange.execute();
+    }
+
+    public String makeTableName(DomainKind<?> kind, Domain domain)
     {
         String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
         SqlDialect dialect = kind.getScope().getSqlDialect();
@@ -563,21 +593,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @NotNull
     public TableInfo createTableInfoImpl(@NotNull Domain domain)
     {
-        DomainKind kind = getDomainKind(domain);
-
-        DbScope scope = kind.getScope();
-        String schemaName = kind.getStorageSchemaName();
-
-        if (null == scope || null == schemaName)
-            throw new IllegalArgumentException();
-
-        String tableName = ensureStorageTable(domain, kind, scope);
-
-        assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned, but type " + kind + " declared " + kind.getSchemaType();
-
-        DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
-
-        SchemaTableInfo sti = getSchemaTableInfo(domain, schemaName, tableName, schema);
+        SchemaTableInfo sti = getSchemaTableInfo(domain);
 
         // NOTE we could handle this in ProvisionedSchemaOptions.afterLoadTable(), but that would require
         // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
@@ -590,7 +606,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 map.put(scn, name);
         }
 
-        _VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
+        _VirtualTable wrapper = new _VirtualTable(sti.getSchema(), sti.getName(), sti, map, domain);
         wrapper.wrapAllColumns();
 
         return wrapper;
@@ -608,18 +624,18 @@ public class StorageProvisionerImpl implements StorageProvisioner
     }
 
     @NotNull
-    private static DomainKind getDomainKind(@NotNull Domain domain)
+    private static DomainKind<?> getDomainKind(@NotNull Domain domain)
     {
         if (null == domain)
             throw new NullPointerException("domain is null");
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         if (null == kind)  // TODO: Consider using TableNotFoundException or something similar
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
         return kind;
     }
 
 
-    public static class _VirtualTable extends VirtualTable implements UpdateableTableInfo
+    public static class _VirtualTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
     {
         private final SchemaTableInfo _inner;
         private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
@@ -832,7 +848,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
      * This is public to support upgrade scenarios only.
      */
     @Override
-    public String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
+    public String ensureStorageTable(Domain domain, DomainKind<?> kind, DbScope scope)
     {
         String tableName = domain.getStorageTableName();
 
@@ -949,7 +965,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
         {
             boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
-            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.keySet().contains(index.getKey().toLowerCase());
+            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
 
             if(!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices){
                 indicesToDrop.add(index.getKey());
@@ -1032,7 +1048,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public SchemaTableInfo getSchemaTableInfo(Domain domain)
     {
-        DomainKind kind = getDomainKind(domain);
+        DomainKind<?> kind = getDomainKind(domain);
 
         DbScope scope = kind.getScope();
 
@@ -1053,7 +1069,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         String tableName = domain.getStorageTableName();
@@ -1121,7 +1137,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             if (null == c)
             {
-                LogManager.getLogger(StorageProvisionerImpl.class).info("Column not found in storage table: " + tableName + "." + s.getName());
+                log.info("Column not found in storage table: " + tableName + "." + s.getName());
                 continue;
             }
 
@@ -1202,7 +1218,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 errors.reject(SpringActionController.ERROR_MSG, "Could not find domain: " + domainUri);
                 return false;
             }
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             if (null == kind)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Could not find domain kind: " + domainUri);
@@ -1288,7 +1304,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         final TreeSet<Path> provisionedTables = new TreeSet<>();
         if (null == domainuri)
         {
-            for (DomainKind dk : PropertyService.get().getDomainKinds())
+            for (DomainKind<?> dk : PropertyService.get().getDomainKinds())
             {
                 String schemaName = dk.getStorageSchemaName();
                 if (null != schemaName)
@@ -1387,9 +1403,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (kind.hasPropertiesIncludeBaseProperties())
             {
                 basePropertyNames.addAll(kind.getBaseProperties(domain)
-                    .stream()
-                    .map(spec -> spec.getName().toLowerCase())
-                    .collect(Collectors.toList()));
+                        .stream()
+                        .map(spec -> spec.getName().toLowerCase()).toList());
             }
 
             for (DomainProperty domainProp : domain.getProperties())
@@ -1469,7 +1484,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
                         status.hasProblem = true;
                 }
             }
-            for (String name : hardColumnNames.toArray(new String[hardColumnNames.size()]))
+            // Copy the set because we modify it in the loop
+            for (String name : new HashSet<>(hardColumnNames))
             {
                 if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX))
                     continue;
@@ -1537,7 +1553,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         public void afterLoadTable(SchemaTableInfo ti)
         {
             Domain domain = getDomain();
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             kind.afterLoadTable(ti, domain);
 
             fixupProvisionedDomain(ti, kind, domain, ti.getName());
@@ -1594,7 +1610,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.delete();
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
 
             Assert.assertNull("column for dropped property is gone", getJdbcColumnMetadata(domain, propNameB));
         }
@@ -1609,7 +1625,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setName(newName);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
 
             Assert.assertNull("renamed column is not present in old name", getJdbcColumnMetadata(domain, oldColumnName));
 
@@ -1639,7 +1655,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
 
             ColumnInfo col = getJdbcColumnMetadata(domain, propBMvColumnName);
             Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned", col);
@@ -1654,13 +1670,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
 
             propB = domain.getPropertyByName(propNameB);
             propB.setMvEnabled(false);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
 
             Assert.assertNull("property with disabled mvindicator has no mvindicator column", getJdbcColumnMetadata(domain, propBMvColumnName));
         }
@@ -1713,7 +1729,7 @@ renaming a property AND toggling mvindicator on in the same change.
             if (!report.getGlobalErrors().isEmpty())
                 sb.append(report.getGlobalErrors().toString());
             //18775: StorageProvisioner junit test fails when external modules are not present
-            //Assert.assertTrue(sb.toString(), success);
+            Assert.assertTrue(sb.toString(), success);
         }
 
 
@@ -1721,7 +1737,7 @@ renaming a property AND toggling mvindicator on in the same change.
         public void testEnsureBaseProperties() throws Exception
         {
             final Set<PropertyStorageSpec> baseProperties = new LinkedHashSet<>();
-            DomainKind k = new AbstractDomainKind()
+            DomainKind<?> k = new AbstractDomainKind<String>()
             {
                 @Override
                 public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
@@ -1748,9 +1764,9 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public Class getTypeClass()
+                public Class<String> getTypeClass()
                 {
-                    return this.getClass();
+                    return String.class;
                 }
 
                 @Override
@@ -1778,13 +1794,13 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public Set<String> getReservedPropertyNames(Domain domain)
+                public Set<String> getReservedPropertyNames(Domain domain, User user)
                 {
                     return Set.of();
                 }
 
                 @Override
-                public @Nullable Priority getPriority(Object object)
+                public @Nullable Priority getPriority(String object)
                 {
                     return null;
                 }
@@ -1811,7 +1827,7 @@ renaming a property AND toggling mvindicator on in the same change.
                 StorageProvisioner.get().ensureStorageTable(d, k, k.getScope());
 
                 // check that prop exists
-                d = (DomainImpl)PropertyService.get().getDomain(c, uri);
+                d = Objects.requireNonNull(PropertyServiceImpl.get().getDomain(c, uri));
                 d._dd.setDomainKind(k); // needed for d.delete() otherwise it will try to lookup the DomainKind
                 TableInfo t = StorageProvisioner.get().getSchemaTableInfo(d);
                 assertNotNull(t.getColumn("first"));
@@ -1855,7 +1871,7 @@ renaming a property AND toggling mvindicator on in the same change.
 
         private @Nullable ColumnInfo getJdbcColumnMetadata(Domain domain, String columnName) throws Exception
         {
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             String schemaName = kind.getStorageSchemaName();
             String tableName = domain.getStorageTableName();
 

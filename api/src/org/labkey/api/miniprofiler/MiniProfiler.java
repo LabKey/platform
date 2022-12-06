@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
@@ -53,7 +54,7 @@ public class MiniProfiler
 
     static boolean _collectTroubleshootingStackTraces = false;
 
-    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "miniprofiler settings", (user, argument) -> {
+    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "Mini profiler settings", (user, argument) -> {
         // site-wide settings keyed by guest user, otherwise per-user settings
         RequestInfo current = MemTracker.get().current();
         boolean ignored = current != null && current.isIgnored();
@@ -156,7 +157,7 @@ public class MiniProfiler
         Settings settings = getSettings(user);
 
         return JavaScriptFragment.unsafe(
-            "<script type='text/javascript'>\n" +
+            HttpView.currentPageConfig().getScriptTagStart().toString() +
             "LABKEY.internal.MiniProfiler.init({\n" +
             "  currentId:" + currentId + ",\n" +
             "  ids:" + ids + ",\n" +

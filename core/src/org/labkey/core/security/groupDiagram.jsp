@@ -31,7 +31,7 @@
 %>
 <div id="unconnected" style="padding:5px;"></div>
 <div id="groupDiagram"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
         if (Ext4.isIE && (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8))
         {

@@ -22,6 +22,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 
 import java.util.Set;
 
@@ -71,7 +72,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
     protected abstract TableInfo getTableInfo();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         TableInfo table = getTableInfo();
         return table.getColumnNameSet();

@@ -53,6 +53,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -79,6 +80,8 @@ public abstract class SqlDialect
     protected static final Logger LOG = LogManager.getLogger(SqlDialect.class);
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
+
+    public static final String DEFAULT_DECIMAL_SCALE_PRECISION = "(15,4)";
 
     private DialectStringHandler _stringHandler = null;
 
@@ -342,9 +345,10 @@ public abstract class SqlDialect
     public static boolean isCancelException(SQLException x)
     {
         String sqlState = x.getSQLState();
-        if (null == sqlState || !sqlState.startsWith("57"))
+        if (null == sqlState)
             return false;
-        return sqlState.equals("57014"); // TODO verify SQL Server
+        return sqlState.equals("57014") || // Postgres
+               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
 
@@ -441,7 +445,12 @@ public abstract class SqlDialect
         Set<String> keywordSet = new CaseInsensitiveHashSet();
         keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
         String keywords = executor.getConnection().getMetaData().getSQLKeywords();
-        keywordSet.addAll(new CsvSet(keywords));
+
+        // Microsoft JDBC driver reports "within group" as a single keyword, so split it out
+        for (String metadataKeyword : new CsvSet(keywords))
+        {
+            keywordSet.addAll(Arrays.asList(metadataKeyword.split(" ")));
+        }
 
         return keywordSet;
     }
@@ -576,6 +585,11 @@ public abstract class SqlDialect
 
     public abstract boolean supportsSelectConcat();
 
+    public boolean supportsGroupConcatSubSelect()
+    {
+        return true;
+    }
+
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
@@ -600,7 +614,11 @@ public abstract class SqlDialect
      */
     protected abstract @NotNull Pattern getSQLScriptProcPattern();
 
-    public abstract String getMasterDataBaseName();
+    /**
+     * Database that's created by default on this database server. This is the database to which we'll connect if the
+     * specified labkey database doesn't exist and we need to create it.
+     */
+    public abstract String getDefaultDatabaseName();
 
     public abstract String getDefaultDateTimeDataType();
 
@@ -952,6 +970,13 @@ public abstract class SqlDialect
         return true;
     }
 
+    /** @return null if dialect doesn't support this feature, otherwise the SQL to get the size of the specified DB in bytes */
+    @Nullable
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return null;
+    }
+
     protected static class SQLSyntaxException extends SQLException
     {
         private final Collection<String> _errors;
@@ -1123,8 +1148,8 @@ public abstract class SqlDialect
         {
             try
             {
-                Method getUrl = _ds.getClass().getMethod(methodName);
-                return (K)getUrl.invoke(_ds);
+                Method method = _ds.getClass().getMethod(methodName);
+                return (K)method.invoke(_ds);
             }
             catch (Exception e)
             {
@@ -1363,7 +1388,7 @@ public abstract class SqlDialect
 
 
     /**
-     * Encode wildcard characters in search string used by LIKE operator to force exact match of those charactors.
+     * Encode wildcard characters in search string used by LIKE operator to force exact match of those characters.
      * Currently only encodes single wildcard character '_' and '%' used by LIKE, while more complicated pattern such as [], {} are not encoded.
      * Example:
      *      String searchString = "search_string";
@@ -1372,7 +1397,7 @@ public abstract class SqlDialect
      *      sqlFragment.append(" LIKE ?");
      *      sqlFragment.add("_" + encodeLikeSearchString(searchString) + "%");
      *
-     *    ##encodeLikeSearchString(searchString) will ensure exact match of substring "search_string" and won't treate the the underscore as a wildcard.
+     *    ##encodeLikeSearchString(searchString) ensures an exact match of substring "search_string" and won't treat an underscore as a wildcard.
      * @param search
      * @return encoded search string
      */
@@ -1411,7 +1436,7 @@ public abstract class SqlDialect
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
     // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
     }
 
@@ -1549,14 +1574,16 @@ public abstract class SqlDialect
 
     /**
      * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
+     *
      * @param procSchema
      * @param procName
-     * @param paramCount The total number of parameters to include in the invocation string
-     * @param hasReturn  true if the procedure has a return code/status, false if not
+     * @param paramCount   The total number of parameters to include in the invocation string
+     * @param hasReturn    true if the procedure has a return code/status, false if not
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
+     * @param procScope
      * @return
      */
-    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult);
+    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
@@ -1571,23 +1598,16 @@ public abstract class SqlDialect
 
     /**
      * Read the values of each INPUT/OUTPUT or OUTPUT parameter, and write them into the parameters map.
-     * @param scope
-     * @param stmt
-     * @param parameters
      * @return The return code/status from the procedure, if any. Return -1 if procedure does not have a return code.
-     * @throws SQLException
      */
     public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException;
 
     /**
      * Convert parameter names between dialect specific conventions (for example, SQL Server parameters have a "@" prefix), and plain
      * alphanumeric text.
-     * @param name
      * @param dialectSpecific true to convert to dialect specific convention, false to convert to plain alphanumeric text
-     * @return
      */
     public abstract String translateParameterName(String name, boolean dialectSpecific);
-
 
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {

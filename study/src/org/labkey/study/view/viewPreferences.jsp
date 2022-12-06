@@ -46,7 +46,7 @@
         for (Pair<String, String> view : bean.getViews())
         {
 %>
-            <tr><td><%=getLabel(view, defaultView)%></td>
+            <tr data-viewLabel="<%=h(view.getKey())%>"><td><%=getLabel(view, defaultView)%></td>
                 <td>&nbsp;</td>
                 <td><%=link("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue())).usePost()%></td>
             </tr>

@@ -105,6 +105,9 @@
       <column columnName="ActiveTaskId">
         <description>Contains a pipeline-configuration identifier for the active task in the sequence of tasks</description>
       </column>
+      <column columnName="TaskPipelineId">
+        <description>Reference to the job's pipeline task definition</description>
+      </column>
       <column columnName="ActiveHostName">
         <description>The assigned server for jobs in a RUNNING state. NULL for local webserver jobs, an arbitrary value for locations handled by remote servers</description>
       </column>

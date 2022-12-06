@@ -56,7 +56,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -65,6 +64,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.AUDIT_RECORD_DATA_MAP_CONCEPT_URI;
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.NEW_RECORD_PROP_NAME;
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.OLD_RECORD_PROP_NAME;
 
 /**
  * User: klum
@@ -85,11 +88,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
-
-    public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
-    public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
-    public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
-    public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
+    public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
     final AbstractAuditDomainKind domainKind;
 
@@ -348,7 +347,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         {
             var added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
-            added.setLabel(OLD_RECORD_PROP_CAPTION);
+            added.setLabel(AbstractAuditDomainKind.OLD_RECORD_PROP_CAPTION);
+            added.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
             oldCol.setHidden(true);
         }
 
@@ -356,13 +356,14 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         {
             var added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
-            added.setLabel(NEW_RECORD_PROP_CAPTION);
+            added.setLabel(AbstractAuditDomainKind.NEW_RECORD_PROP_CAPTION);
+            added.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
             newCol.setHidden(true);
         }
 
         // add a column to show the differences between old and new values
         if (oldCol != null && newCol != null)
-            table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
+            table.addColumn(new DataMapDiffColumn(table, COLUMN_NAME_DATA_CHANGES, oldCol, newCol));
     }
 
     @Override

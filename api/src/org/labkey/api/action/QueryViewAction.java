@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -107,6 +108,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if (QueryAction.exportScript.name().equals(form.getExportType()))
         {
+            CSRFUtil.validate(getViewContext());
             return ExportScriptModel.getExportScriptView(createInitializedQueryView(form, errors, true, form.getExportRegion()), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
         else if (QueryAction.selectAll.name().equals(form.getExportType()))

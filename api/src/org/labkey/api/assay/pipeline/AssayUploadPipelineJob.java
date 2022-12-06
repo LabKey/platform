@@ -17,7 +17,7 @@ package org.labkey.api.assay.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssayFileWriter;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
@@ -28,7 +28,10 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobNotificationProvider;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -87,6 +90,12 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     }
 
     @Override
+    public @Nullable TaskPipeline<?> getTaskPipeline()
+    {
+        return PipelineJobService.get().getTaskPipeline(new TaskId(AssayUploadPipelineJob.class));
+    }
+
+    @Override
     public String getDescription()
     {
         // Generate a description that matches what the run's name/ID will be
@@ -105,8 +114,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         return "Assay upload";
     }
 
-    @Override
-    public void run()
+    public void doWork()
     {
         PipelineJobNotificationProvider notificationProvider = getNotificationProvider();
 
@@ -114,7 +122,6 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         {
             _context.setLogger(getLogger());
 
-            setStatus(TaskStatus.running);
             getLogger().info("Starting assay upload");
 
             if (notificationProvider != null)

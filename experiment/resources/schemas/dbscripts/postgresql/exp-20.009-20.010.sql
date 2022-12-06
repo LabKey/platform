@@ -1,1 +1,0 @@
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN PrincipalConceptCode VARCHAR(50) NULL;

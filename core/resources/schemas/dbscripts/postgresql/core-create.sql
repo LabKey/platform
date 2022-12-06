@@ -34,7 +34,8 @@ CREATE OR REPLACE RULE Users_Update AS
             Description = NEW.Description,
             LastLogin = NEW.LastLogin,
             DisplayName = NEW.DisplayName,
-            ExpirationDate = NEW.ExpirationDate
+            ExpirationDate = NEW.ExpirationDate,
+            System = NEW.System
         WHERE UserId = NEW.UserId;
 
 CREATE VIEW core.ActiveUsers AS

@@ -19,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.reports.report.JavaScriptReport;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.security.User;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -45,12 +46,29 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
 
     public String render() throws Exception
     {
-        StringWriter out = new StringWriter();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
-        include(this, out, new MockHttpServletRequest("GET", null), response);
-        String errorMessage = response.getErrorMessage();
+        ViewContext context = getViewContext();
+        if (null == context)
+        {
+            context = new ViewContext();
+            context.setUser(User.guest);
+            context.setContainer(HttpView.currentContext().getContainer());
+            context.setActionURL(new ActionURL());
+            setViewContext(context);
+        }
 
+        StringWriter out = new StringWriter();
+
+        // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
+        context.setRequest(new MockHttpServletRequest("GET", null));
+        var mockResponse = new MockHttpServletResponse();
+        context.setResponse(mockResponse);
+        try (var init = HttpView.initForRequest(context, context.getRequest(), context.getResponse()))
+        {
+            // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
+            include(this, out, context.getRequest(), context.getResponse());
+        }
+
+        String errorMessage = mockResponse.getErrorMessage();
         if (null != errorMessage)
             throw new IllegalStateException(errorMessage);
 

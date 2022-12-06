@@ -51,6 +51,11 @@ public class DOM
     public interface Renderable
     {
         Appendable appendTo(Appendable sb);
+
+        default String renderToString()
+        {
+            return appendTo(new StringBuilder()).toString();
+        }
     }
 
 
@@ -350,6 +355,7 @@ public class DOM
         multiple,
         muted,
         name,
+        nonce,
         novalidate
         {
             @Override
@@ -360,76 +366,6 @@ public class DOM
                 return builder;
             }
         },
-        onabort,
-        onafterprint,
-        onbeforeprint,
-        onbeforeunload,
-        onblur,
-        oncanplay,
-        oncanplaythrough,
-        onchange,
-        onclick,
-        oncontextmenu,
-        oncopy,
-        oncuechange,
-        oncut,
-        ondblclick,
-        ondrag,
-        ondragend,
-        ondragenter,
-        ondragleave,
-        ondragover,
-        ondragstart,
-        ondrop,
-        ondurationchange,
-        onemptied,
-        onended,
-        onerror,
-        onfocus,
-        onhashchange,
-        oninput,
-        oninvalid,
-        onkeydown,
-        onkeypress,
-        onkeyup,
-        onload,
-        onloadeddata,
-        onloadedmetadata,
-        onloadstart,
-        onmousedown,
-        onmousemove,
-        onmouseout,
-        onmouseover,
-        onmouseup,
-        onmousewheel,
-        onoffline,
-        ononline,
-        onpagehide,
-        onpageshow,
-        onpaste,
-        onpause,
-        onplay,
-        onplaying,
-        onpopstate,
-        onprogress,
-        onratechange,
-        onreset,
-        onresize,
-        onscroll,
-        onsearch,
-        onseeked,
-        onseeking,
-        onselect,
-        onstalled,
-        onstorage,
-        onsubmit,
-        onsuspend,
-        ontimeupdate,
-        ontoggle,
-        onunload,
-        onvolumechange,
-        onwaiting,
-        onwheel,
         open,
         optimum,
         pattern,
@@ -486,7 +422,81 @@ public class DOM
         valign,
         value,
         width,
-        wrap;
+        wrap,
+
+        /* ON attributes should be deprecated and go away
+        onabort,
+        onafterprint,
+        onbeforeprint,
+        onbeforeunload,
+        onblur,
+        oncanplay,
+        oncanplaythrough,
+        onchange, */
+        onclick,  /*
+        oncontextmenu,
+        oncopy,
+        oncuechange,
+        oncut,
+        ondblclick,
+        ondrag,
+        ondragend,
+        ondragenter,
+        ondragleave,
+        ondragover,
+        ondragstart,
+        ondrop,
+        ondurationchange,
+        onemptied,
+        onended,
+        onerror,
+        onfocus,
+        onhashchange,
+        oninput,
+        oninvalid,
+        onkeydown,
+        onkeypress,
+        onkeyup,
+        onload,
+        onloadeddata,
+        onloadedmetadata,
+        onloadstart,
+        onmousedown,
+        onmousemove, */
+        onmouseout,
+        onmouseover, /*
+        onmouseup,
+        onmousewheel,
+        onoffline,
+        ononline,
+        onpagehide,
+        onpageshow,
+        onpaste,
+        onpause,
+        onplay,
+        onplaying,
+        onpopstate,
+        onprogress,
+        onratechange,
+        onreset,
+        onresize,
+        onscroll,
+        onsearch,
+        onseeked,
+        onseeking,
+        onselect,
+        onstalled,
+        onstorage, */
+        onsubmit, /*
+        onsuspend,
+        ontimeupdate,
+        ontoggle,
+        onunload,
+        onvolumechange,
+        onwaiting,
+        onwheel
+        END ON ATTRIBUTES */
+        ;
 
         Appendable render(Appendable builder, Object value) throws IOException
         {
@@ -1832,7 +1842,7 @@ public class DOM
     }
     public static Renderable SCRIPT(Object... body)
     {
-        return (html) -> Element.script.render(html, NOAT, body);
+        return (html) -> Element.script.render(html, at(Attribute.type,"text/javascript", Attribute.nonce, HttpView.currentPageConfig().getScriptNonce()), body);
     }
     public static Renderable SECTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {

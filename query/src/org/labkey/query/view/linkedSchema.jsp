@@ -16,7 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.old.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -56,7 +56,7 @@
 <labkey:errors/>
 <div id="form"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function () {
 
         var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;

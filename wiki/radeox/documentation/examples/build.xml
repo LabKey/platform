@@ -15,7 +15,6 @@
    </target>
 
   <path id="classpath">
-    <pathelement location="../../lib/picocontainer.jar"/>
     <pathelement location="../../lib/commons-logging.jar"/>
     <pathelement location="../../lib/junit.jar"/>
     <pathelement location="../../lib/groovy.jar"/>

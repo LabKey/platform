@@ -66,7 +66,7 @@
     <%= hasAdminPerm ? button("Save").submit(true) : HtmlString.EMPTY_STRING %>
     <%= generateBackButton(!hasAdminPerm ? "Done" : "Cancel") %>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     // If a folder type is disabled but it is currently selected as the default folder type, uncheck the radio button.
     function removeAsDefaultIfDisabled(checkbox)

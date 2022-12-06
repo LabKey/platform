@@ -54,7 +54,7 @@
 
 <div class="extContainer" id="manageStudyPropertiesDiv"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 Ext4.QuickTips.init();
 

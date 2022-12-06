@@ -36,7 +36,7 @@
 <labkey:errors/>
 <div id="form"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
         Ext4.define('Schema', {

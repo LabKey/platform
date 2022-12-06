@@ -30,6 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
@@ -219,29 +220,26 @@ abstract class OracleDialect extends SimpleSqlDialect
         return ret;
     }
 
-
-    private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
+    @Override
+    public boolean supportsOffset()
     {
-        // TODO: Oracle doesn't support offset and limit clauses. Implement by using rownum >= offset or some similar trickery
-        // TODO: Below functionality has been taken from PostgreSql83Dialect
-        /*if (rowCount != Table.ALL_ROWS)
-        {
-            frag.append("\nLIMIT ");
-            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
-
-            if (offset > 0)
-            {
-                frag.append(" OFFSET ");
-                frag.append(Long.toString(offset));
-            }
-        } */
-        return frag;
+        return true;
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return limitRows(frag, maxRows, 0);
+        if (maxRows == Table.ALL_ROWS)
+            return frag;
+
+        // Use rownum approach here since row_number() (used in _limitRows() below) requires an explicit ORDER BY
+        // parameter which this method doesn't provide.
+        SQLFragment sql = new SQLFragment("SELECT * FROM (\n");
+        sql.append(frag);
+        sql.append("\n)\n");
+        sql.append("WHERE rownum <= ").append(maxRows);
+
+        return sql;
     }
 
     @Override
@@ -252,57 +250,67 @@ abstract class OracleDialect extends SimpleSqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS || (maxRows > 0 && offset == 0))
+        if (maxRows == Table.ALL_ROWS && offset == Table.NO_OFFSET)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append(select);
-            sql.append("\n").append(from);
-
-            if (filter != null) sql.append("\n").append(filter);
-            if (groupBy != null) sql.append("\n").append(groupBy);
-            if (order != null) sql.append("\n").append(order);
-            return sql;
+            return LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
         }
         else
         {
+            if (StringUtils.isBlank(order))
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use maxRows or offset");
+
             return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
     }
 
-    /* Construct the query by adding rownum as one of the columns, defined as _row_num. (I didn't use camel case as to follow oracles naming conventions)
-
-       Tom Kyte discusses alternative techniques: http://www.oracle.com/technetwork/issue-archive/2007/07-jan/o17asktom-093877.html
-
-       Also, someone on the labkey forum suggested: http://stackoverflow.com/questions/241622/paging-with-oracle
-
-     */
-    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    // This is very similar to MicrosoftSqlServer2008R2Dialect._limitRows() except that it requires an extra subselect
+    // plus an alias.
+    //
+    // Example SQL: SELECT * FROM (SELECT x.*, row_number() OVER (ORDER BY ALTERNATE_TYPE_ID) rn__ FROM (SELECT * FROM granite.alternate_type) x) WHERE rn__ > 100 AND rn__ <= 201
+    //
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        SQLFragment sql = new SQLFragment();
-
-        sql.append("SELECT * FROM (\n");
-        // sql.append(select).append(", rownum row_num").append("\n");
-        //sql.append(select);
-        int aliasOffset = 7;
-        if (select.getSQL().length() >= 16 && select.getSQL().substring(0, 16).equalsIgnoreCase("SELECT DISTINCT"))
-            aliasOffset = 16;
-        //x seems to be the alias assigned to the result set, so hardcoding x. before the * (otherwise rownum doesnt work)
-        select.insert(aliasOffset, " x.");
-        // The MSSQL Server Dialect uses _RowNum - but starting with _ is not supported in Oracle, so left it as default
-        // rownum and to avoid duplicate col's (as rownum is a reserved word, so it should be possible to add to the query)
-        select.append(", rownum ");
+        SQLFragment sql = new SQLFragment("SELECT * FROM (SELECT x.*, row_number() OVER (");
+        sql.append(order);
+        sql.append(") rn__ FROM (\n");
         sql.append(select);
         sql.append(from);
         if (filter != null) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-        sql.append("\n)\n");
-        sql.append("WHERE rownum > ").append(offset);
-        sql.append(" AND rownum <= ").append(rowCount + offset);
+        sql.append("\n) x\n)");
+        sql.append("WHERE rn__ > ").append(offset);
+
+        if (maxRows != Table.ALL_ROWS)
+            sql.append(" AND rn__ <= ").append(maxRows + offset);
 
         return sql;
     }
 
+    /*
+        This rownum approach mostly works, but the ORDER BY doesn't seem to be respected 100% by the rownum.
+     */
+//    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+//    {
+//        SQLFragment sql = new SQLFragment();
+//
+//        sql.append("SELECT * FROM (\n");
+//        int aliasOffset = 7;
+//        if (select.getSQL().length() >= 16 && select.getSQL().substring(0, 16).equalsIgnoreCase("SELECT DISTINCT"))
+//            aliasOffset = 16;
+//        //x seems to be the alias assigned to the result set, so hardcoding x. before the * (otherwise rownum doesnt work)
+//        select.insert(aliasOffset, " x.");
+//        select.append(", rownum AS rn__ ");
+//        sql.append(select);
+//        sql.append(from);
+//        if (filter != null) sql.append("\n").append(filter);
+//        if (groupBy != null) sql.append("\n").append(groupBy);
+//        if (order != null) sql.append("\n").append(order);
+//        sql.append("\n)\n");
+//        sql.append("WHERE rn__ > ").append(offset);
+//        sql.append(" AND rn__ <= ").append(maxRows + offset);
+//
+//        return sql;
+//    }
 
     @Override
     public boolean allowSortOnSubqueryWithoutLimit()
@@ -348,7 +356,7 @@ abstract class OracleDialect extends SimpleSqlDialect
     }
 
 
-    private class OracleColumnMetaDataReader extends ColumnMetaDataReader
+    private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
         private OracleColumnMetaDataReader(ResultSet rsCols)
         {

@@ -93,7 +93,7 @@
 <% if (!c.isRoot()) { %>
 <div style="font-style:italic;">* indicates permissions are inherited</div>
 <% } %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 var viewTabs = [];
 
@@ -171,7 +171,7 @@ Ext4.onReady(function(){
         view.setFrame(WebPartView.FrameType.NONE);
         me.include(view,out);
         %></div>
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
             viewTabs.push({contentEl:<%=q(id)%>, title:<%=q(view.getTitle())%>, autoScroll:true, autoHeight: false});
         </script>
         <%

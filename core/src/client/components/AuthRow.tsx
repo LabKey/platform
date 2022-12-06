@@ -1,9 +1,7 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import { Col, Modal, Button } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faInfoCircle, faTimesCircle, faCircle } from '@fortawesome/free-solid-svg-icons';
-import { DragDropHandle } from "@labkey/components";
+import { DragDropHandle } from '@labkey/components';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
@@ -11,20 +9,20 @@ import { AuthConfig, AuthConfigProvider } from './models';
 
 interface Props {
     authConfig: AuthConfig;
-    index?: string;
-    modalType?: AuthConfigProvider;
-    configType?: string;
     canEdit: boolean;
+    configType?: string;
     draggable: boolean;
+    index?: string;
+    isDragging?: boolean;
+    modalType?: AuthConfigProvider;
     onDelete?: Function;
     toggleModalOpen?: Function;
     updateAuthRowsAfterSave?: Function;
-    isDragging?: boolean;
 }
 
 interface State {
-    editModalOpen: boolean;
     deleteModalOpen: boolean;
+    editModalOpen: boolean;
 }
 
 export default class AuthRow extends PureComponent<Props, Partial<State>> {
@@ -54,19 +52,26 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             onDelete,
             isDragging,
         } = this.props;
-        const isDatabaseAuth = authConfig.provider == 'Database';
+        const isDatabaseAuth = authConfig.provider === 'Database';
 
-        const handle = draggable && canEdit
-            ? <DragDropHandle highlighted={isDragging ? true : undefined /* use undefined instead of false to allow for css to handle the highlight color for hover*/}/>
-            : null;
+        const handle =
+            draggable && canEdit ? (
+                <DragDropHandle
+                    highlighted={
+                        isDragging
+                            ? true
+                            : undefined /* use undefined instead of false to allow for css to handle the highlight color for hover*/
+                    }
+                />
+            ) : null;
 
         const enabledField = authConfig.enabled ? (
             <>
-                <FontAwesomeIcon icon={faCircle} color="#75B666" /> &nbsp; Enabled
+                <span className="fa fa-circle" style={{ color: '#75B666' }} /> &nbsp; Enabled
             </>
         ) : (
             <>
-                <FontAwesomeIcon icon={faCircle} color="#999999" /> &nbsp; Disabled
+                <span className="fa fa-circle" style={{ color: '#999999' }} /> &nbsp; Disabled
             </>
         );
 
@@ -79,7 +84,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                         toggleModalOpen(true);
                     }}
                 >
-                    <FontAwesomeIcon icon={faTimesCircle} />
+                    <span className="fa fa-times-circle" />
                 </div>
             ) : null;
 
@@ -89,12 +94,13 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                 onClick={() => {
                     this.onToggleModal('editModalOpen', this.state.editModalOpen);
                     toggleModalOpen(true);
-                }}>
-                <FontAwesomeIcon size="1x" icon={faPencilAlt} />
+                }}
+            >
+                <span className="fa fa-pencil" />
             </div>
         ) : (
             <div className="clickable" onClick={() => this.onToggleModal('editModalOpen', this.state.editModalOpen)}>
-                <FontAwesomeIcon size="1x" icon={faInfoCircle} />
+                <span className="fa fa-info-circle" />
             </div>
         );
 
@@ -152,7 +158,8 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                             onClick={() => {
                                 this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
                                 toggleModalOpen(false);
-                            }}>
+                            }}
+                        >
                             Cancel
                         </Button>
 
@@ -166,7 +173,11 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
         return (
             <div>
-                <div className={classNames("auth-row domain-field-row domain-row-border-default", { "dragging": isDragging })}>
+                <div
+                    className={classNames('auth-row domain-field-row domain-row-border-default', {
+                        dragging: isDragging,
+                    })}
+                >
                     <div className="domain-row-container">
                         <div className="domain-row-handle">{handle}</div>
 

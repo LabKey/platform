@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.SparseBitSet;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Hierarchy;
@@ -48,9 +49,10 @@ import java.util.Set;
  */
 
 
-public class MemberSet extends AbstractSet<Member>
+public class MemberSet extends AbstractSet<Member> implements CacheManager.Sealable
 {
     Map<String,LevelMemberSet> levelMap = new HashMap<>();
+    boolean sealed = false;
 
 
     public MemberSet()
@@ -94,11 +96,19 @@ public class MemberSet extends AbstractSet<Member>
             LevelMemberSet s = entry.getValue();
             s._set.seal();
         }
+        sealed = true;
     }
+
+
+    public boolean isSealed()
+    {
+        return sealed;
+    }
+
 
     // NOTE : Don't need to do this if the cube is a CachedCube.
     // For olap4j cube we can't hang onto metadata when sitting in a cache (e.g. Level objects)
-    // we need a way to detach and reattch a MemberSet to a cube
+    // we need a way to detach and reattach a MemberSet to a cube
 
     MemberSet detach()
     {

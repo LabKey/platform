@@ -43,7 +43,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             type: 'string',
             mapping: 'name',
             convert: function(v, rec) {
-                if (!Ext4.isEmpty(rec.raw.caption) && rec.raw.caption != '&nbsp;') {
+                if (!Ext4.isEmpty(rec.raw.caption)) {
                     return rec.raw.caption; // + (rec.raw.hidden === true ? ' (hidden)' : '');
                 }
                 return v;

@@ -297,7 +297,7 @@ public class SqlScriptExecutor
                 if (null == r || !r.isFile())
                     throw new IllegalStateException("Data file not found for data loading: " + path.toString());
                 String contentType = new MimeMap().getContentTypeFor(r.getName());
-                DataLoader loader;
+                DataLoader loader = null;
 
                 // I'm not sure ExcelLoader closes its input stream, so let's just make sure
                 try (InputStream is = r.getInputStream())
@@ -334,6 +334,13 @@ public class SqlScriptExecutor
                         if (rowNumber > 0)
                             msg.append(" in file row ").append(rowNumber).append(" (including header row)");
                         throw new IllegalStateException(msg.toString(), errors);
+                    }
+                }
+                finally
+                {
+                    if (loader != null)
+                    {
+                        loader.close();
                     }
                 }
             }

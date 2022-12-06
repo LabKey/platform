@@ -291,14 +291,16 @@ public class PathMapperImpl implements PathMapper
 
     public static PathMapperImpl fromJSON(JSONObject json, boolean trackValidationErrors)
     {
-        JSONArray jsonPaths = (JSONArray)json.get("paths");
+        JSONArray jsonPaths = (JSONArray )json.get("paths");
         ValidationException errors = trackValidationErrors ? new ValidationException() : null;
 
         Map<String, String> map = new LinkedHashMap<>();
-        for (Map<String, Object> pairs : jsonPaths.toMapList())
+        for (Object entry : jsonPaths)
         {
-            String localURI = StringUtils.trimToNull((String) pairs.get("localURI"));
-            String remoteURI = StringUtils.trimToNull((String) pairs.get("remoteURI"));
+            if (!(entry instanceof JSONObject mapEntry))
+                continue;
+            String localURI = StringUtils.trimToNull(mapEntry.getString("localURI"));
+            String remoteURI = StringUtils.trimToNull(mapEntry.getString("remoteURI"));
 
             //Ignore blank rows, could throw an error here -- but lets be flexible
             if (localURI == null && remoteURI == null)

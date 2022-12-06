@@ -98,7 +98,7 @@
     </table>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var fileTree;
 
     function setFileRoot() {

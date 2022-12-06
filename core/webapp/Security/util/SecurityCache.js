@@ -381,11 +381,27 @@ Ext4.define('Security.util.SecurityCache', {
         LABKEY.Security.createNewUser({email:email, sendEmail:sendEmail,
             successCallback : function(user,response)
             {
-                // make user match the Principals query
                 var jsonResponse = Ext4.JSON.decode(response.responseText);
+                if (!jsonResponse.success) {
+                    Ext4.Msg.show({
+                        title: 'Error',
+                        msg: jsonResponse.htmlErrors.join(' '),
+                        buttons: Ext4.Msg.OK,
+                        icon: Ext4.Msg.ERROR,
+                        width: 450,
+                    });
+                    return;
+                }
+
+                // make user match the Principals query
                 if(jsonResponse.message)
                 {
-                    Ext4.Msg.alert("Success", jsonResponse.message);
+                    Ext4.Msg.show({
+                        title: 'Success',
+                        msg: jsonResponse.message,
+                        buttons: Ext4.Msg.OK,
+                        width: 450,
+                    });
                 }
                 var data = {UserId:user.userId, Name:user.email, Type:'u', Container:null};
                 var record = me._addPrincipal(data);

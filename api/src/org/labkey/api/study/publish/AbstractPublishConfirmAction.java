@@ -126,6 +126,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (_allObjects == null) // On first post, this is empty, so use the current selection
             _allObjects = new ArrayList<>(_selectedObjects);
+
+        if (form.getReturnURLHelper() == null)
+            errors.reject(SpringActionController.ERROR_MSG, "No return URL configured for this form");
     }
 
     @Override
@@ -191,7 +194,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
      * Generate the map of field keys which will be added to publish results query view to represent the subject,
      * timepoint editable columns etc.
      */
-    protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
+    protected abstract Map<StudyPublishService.LinkToStudyKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
      * Perform the link to study operation

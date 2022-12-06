@@ -38,7 +38,7 @@
     String renderId = "survey-design-panel-" + getRequestScopedUID();
 %>
 <div id="<%= h(renderId)%>" class="dvc"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function(){
 

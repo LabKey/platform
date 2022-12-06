@@ -17,7 +17,7 @@ LABKEY.Ajax = new function () {
     var DEFAULT_HEADERS = LABKEY.defaultHeaders;
 
     // Download the file from the ajax response.
-    // For now, we assume we are in a browser enviornment and use the browser's download
+    // For now, we assume we are in a browser environment and use the browser's download
     // file prompt by clicking an <a> element or navigating by updating window.location.
     var downloadFile = function (xhr, config) {
         var filename = "";

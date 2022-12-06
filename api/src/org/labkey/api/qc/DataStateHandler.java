@@ -27,6 +27,7 @@ public interface DataStateHandler<FORM extends AbstractManageDataStatesForm>
     List<DataState> getStates(Container container);
     boolean isStateInUse(Container container, DataState state);
     boolean isBlankStatePublic(Container container);
+    boolean isRequireCommentOnQCStateChange(Container container);
 
     /**
      * Check if a given state allows for changes based on things like if it is in-use, etc. and return the error

@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -76,7 +76,7 @@ public class HtmlOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new HtmlOutputView(this, getLabel());
     }

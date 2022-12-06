@@ -19,6 +19,7 @@ package org.labkey.test.tests.study;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
@@ -30,7 +31,7 @@ import java.sql.Timestamp;
 
 public abstract class StudyManualTest extends StudyTest
 {
-    private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/datasets/schema.tsv");
+    private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/schema.tsv");
     protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
@@ -65,7 +66,7 @@ public abstract class StudyManualTest extends StudyTest
         }
 
         // change study label
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), getStudyLabel());
         clickButton("Submit");
@@ -105,7 +106,7 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
 
         // upload datasets:
-        setPipelineRoot(StudyHelper.getPipelinePath());
+        setPipelineRoot(StudyHelper.getStudySubfolderPath());
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
         clickButton("Process and Import Data");
@@ -223,18 +224,18 @@ public abstract class StudyManualTest extends StudyTest
                 .setType(FieldDefinition.ColumnType.String).setImportAliases("aliasedColumn");
 
         editDatasetPage.setAdditionalKeyColDataField("SampleId");
-        editDatasetPage
+        ImportDataPage importDataPage = editDatasetPage
                 .clickSave()
                 .clickViewData()
                 .getDataRegion()
                 .clickImportBulkData();
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
-        setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);
-        _listHelper.submitImportTsv_error(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
+        importDataPage.setText(_tsv + "\n" + errorRow);
+        importDataPage.submitExpectingErrorContaining(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
         assertTextPresent(getConversionErrorMessage("text", "DateField", Timestamp.class));
 
-        _listHelper.submitTsvData(_tsv);
+        importDataPage.setText(_tsv).submit();
         assertTextPresent("1234", "2006-02-01", "1.2", "aliasedData");
     }
 }

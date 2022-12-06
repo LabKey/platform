@@ -21,6 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -29,6 +31,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.audit.DefaultAuditProvider;
@@ -37,13 +40,41 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.ContainerServiceImpl;
+import org.labkey.api.data.ContainerTypeRegistry;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.NormalContainerType;
+import org.labkey.api.data.OutOfRangeDisplayColumn;
+import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TabContainerType;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.TestSchema;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
+import org.labkey.api.files.FileBrowserConfigImporter;
+import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -61,6 +92,7 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -84,6 +116,8 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LimitActiveUsersService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
@@ -94,6 +128,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -101,7 +137,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -109,7 +144,12 @@ import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureSer
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.ProductConfiguration;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.settings.StashedStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -117,10 +157,12 @@ import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -128,6 +170,7 @@ import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -135,6 +178,7 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
@@ -153,6 +197,7 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
@@ -161,6 +206,7 @@ import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
+import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.RoleAssignmentsImporterFactory;
@@ -168,6 +214,7 @@ import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
+import org.labkey.core.admin.logger.LoggingTestCase;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
@@ -175,6 +222,7 @@ import org.labkey.core.admin.test.SchemaXMLTestCase;
 import org.labkey.core.admin.usageMetrics.UsageMetricsServiceImpl;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
+import org.labkey.core.admin.writer.MissingValueWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
 import org.labkey.core.admin.writer.PageWriterFactory;
 import org.labkey.core.admin.writer.RoleAssignmentsWriterFactory;
@@ -189,7 +237,7 @@ import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
@@ -211,6 +259,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
@@ -220,6 +269,7 @@ import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
+import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
@@ -244,15 +294,25 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 
 /**
  * User: migra
@@ -261,27 +321,22 @@ import java.util.Set;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = LogManager.getLogger(CoreModule.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
 
     static
     {
-        // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other module touches Quartz in its setup, it initializes with these setting.
+        // Accept most of the standard Quartz properties, but set the misfire threshold to five minutes. This prevents
+        // Quartz from dropping scheduled work if a lot of items fire at the same time, like a lot of ETLs triggering at 2AM.
+        // This can overwhelm the thread pool running them so they don't complete in the default 1 minute window. Set it early so
+        // if any other module touches Quartz in its setup, it initializes with this setting.
         Properties props = System.getProperties();
-        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
         props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
 
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
     }
 
-    @Override
-    public int compareTo(@NotNull Module m)
-    {
-        //core module always sorts first
-        // TODO: Nice try, but this doesn't work consistently, since no one told DefaultModule.compareTo() that core is special -- fix this or remove the override
-        return (m instanceof CoreModule) ? 0 : -1;
-    }
+    private CoreWarningProvider _warningProvider;
 
     @Override
     public boolean hasScripts()
@@ -296,6 +351,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
         ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
+        LimitActiveUsersService.setInstance(() -> new LimitActiveUsersSettings().isUserLimitReached());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
@@ -329,6 +385,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
 
+        WarningService.setInstance(new WarningServiceImpl());
+
         ViewService.setInstance(ViewServiceImpl.getInstance());
         ExperimentalFeatureService.setInstance(new ExperimentalFeatureServiceImpl());
         ThumbnailService.setInstance(new ThumbnailServiceImpl());
@@ -339,12 +397,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SummaryStatisticRegistry.setInstance(new SummaryStatisticRegistryImpl());
         UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
-        WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
+        DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
 
         try
         {
@@ -357,7 +415,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
-        WarningService.get().register(new CoreWarningProvider());
+        _warningProvider = new CoreWarningProvider();
+        WarningService.get().register(_warningProvider);
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
@@ -385,6 +444,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
                         "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
                         "search to find the other select values.", false);
+        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -395,7 +456,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
-   }
+
+        ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
+
+        deleteTempFiles();
+    }
+
+    private void deleteTempFiles()
+    {
+        try
+        {
+            // Issue 46598 - clean up previously created temp files from file uploads
+            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir().toPath());
+        }
+        catch (IOException e)
+        {
+            LOG.warn("Failed to clean up previously uploaded files from " + SpringActionController.getTempUploadDir(), e);
+        }
+    }
 
     private void registerHealthChecks()
     {
@@ -447,20 +525,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (users.isEmpty())
             return;
 
-        Collection<ConfigProperty> properties = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
-        String fromEmail = null;
-        String subject = null;
-        String body = null;
-        for (ConfigProperty prop : properties)
-        {
-            if (prop.getName().equalsIgnoreCase("siteAvailableEmailMessage"))
-                body = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailSubject"))
-                subject = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailFrom"))
-                fromEmail = StringUtils.trimToNull(prop.getValue());
+        Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedProperties();
+        String fromEmail = getValue(map, siteAvailableEmailFrom);
+        String subject = getValue(map, siteAvailableEmailSubject);
+        String body = getValue(map, siteAvailableEmailMessage);
 
-        }
         if (fromEmail == null || subject == null || body == null)
             return;
 
@@ -476,6 +545,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
         // for hosted sites.  Another option is to use the guest user here, but that's strange.
         svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
+    }
+
+    private @Nullable String getValue(Map<StashedStartupProperties, StartupPropertyEntry> map, StashedStartupProperties prop)
+    {
+        StartupPropertyEntry entry = map.get(prop);
+        return null != entry ? StringUtils.trimToNull(entry.getValue()) : null;
     }
 
     @NotNull
@@ -578,7 +653,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "();");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -587,15 +662,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new AlwaysAvailableWebPartFactory("Subfolders", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
             {
                 @Override
+                public WebPart createWebPart()
+                {
+                    // Issue 44913: Set the default properties for all new instances of the Subfolders webpart
+                    WebPart webPart = super.createWebPart();
+                    return setDefaultProperties(webPart);
+                }
+
+                @Override
                 public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
-                        webPart = new WebPart(webPart);
-                        webPart.getPropertyMap().put("title", "Subfolders");
-                        webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
-                        webPart.getPropertyMap().put("containerTypes", "folder");
+                        webPart = setDefaultProperties(new WebPart(webPart));
                     }
 
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -607,7 +687,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
+
                     return view;
+                }
+
+                private WebPart setDefaultProperties(WebPart webPart)
+                {
+                    webPart.setProperty("title", "Subfolders");
+                    webPart.setProperty("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
+                    webPart.setProperty("containerTypes", "folder");
+                    return webPart;
                 }
             },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
@@ -685,7 +774,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             scope.getSqlDialect().prepare(scope);
 
         // Now that we know the standard containers have been created, add a listener that warms the just-cleared caches with
-        // core.Containers meta data and a few common containers. This may prevent some deadlocks during upgrade, #33550.
+        // core.Containers metadata and a few common containers. This may prevent some deadlocks during upgrade, #33550.
         CacheManager.addListener(() -> {
             ContainerManager.getRoot();
             ContainerManager.getHomeContainer();
@@ -723,7 +812,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Users & guests can read from /home
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
-        home.setFolderType(collaborationType, (User)null);
+        home.setFolderType(collaborationType, null);
         addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
@@ -775,6 +864,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
@@ -799,6 +889,26 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Temp file cleanup";
+            }
+
+            @Override
+            public void shutdownPre()
+            {}
+
+            @Override
+            public void shutdownStarted()
+            {
+                deleteTempFiles();
+            }
+        });
+
+        SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {
@@ -833,7 +943,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     catch (IOException e)
                     {
-                        LogManager.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                        LOG.error("Exception exporting action stats", e);
                     }
 
                     logger.info(buf.toString());
@@ -857,14 +967,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        populateLookAndFeelWithStartupProps();
+        populateLookAndFeelResourcesWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
-        SecurityManager.populateGroupRolesWithStartupProps();
-        SecurityManager.populateUserRolesWithStartupProps();
-        SecurityManager.populateUserGroupsWithStartupProps();
-        // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
+        SecurityManager.populateStartupProperties();
+        // This method depends on resources (FolderType) from other modules, so invoke after startup
         ContextListener.addStartupListener(new StartupListener()
         {
             @Override
@@ -881,12 +989,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-        // populate script engine definitions values read from startup properties as appropriate for not bootstrap
+        // populate script engine definitions values read from startup properties
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();
 
         // populate folder types from startup properties as appropriate for not bootstrap
         FolderTypeManager.get().populateWithStartupProps();
+        LimitActiveUsersSettings.populateStartupProperties();
 
         AdminController.registerAdminConsoleLinks();
         AdminController.registerManagementTabs();
@@ -903,12 +1012,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != fsr)
         {
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
+            fsr.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
             fsr.addFactories(new DataStateWriter.Factory(), new DataStateImporter.Factory());
+            fsr.addFactories(new FileBrowserConfigWriter.Factory(), new FileBrowserConfigImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
@@ -945,10 +1056,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
-                "No Question Marks in URLs",
-                "Don't append '?' to URLs unless there are query parameters.",
-                false);
 
         if (null != PropertyService.get())
         {
@@ -972,10 +1079,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
             results.put("javaRuntime", javaInfo);
             results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
+            results.put("experimentalFeaturesEnabled", AdminConsole.getExperimentalFeatureFlags().stream()
+                .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
+                .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
+                .collect(Collectors.toList()));
+            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
+            results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+
+            // Report the total number of login entries in the audit log
+            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
+            TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
+            results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
+            results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
+            results.put("systemUserCount", UserManager.getSystemUserCount());
+            results.put("workbookCount", ContainerManager.getWorkbookCount());
+            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
+            Calendar cal = new GregorianCalendar();
+            cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
+            results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
+            results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             return results;
         });
 
-        ClientSideMetricManager.get().registerUsageMetrics(getName());
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
@@ -1013,6 +1139,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         SystemMaintenance.setTimer();
         ThumbnailServiceImpl.startThread();
+        _warningProvider.startSchemaCheck();
 
         // Start up the default Quartz scheduler, used in many places
         try
@@ -1029,6 +1156,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         TempTableTracker.init();
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put("productFeatures", AdminConsole.getProductFeatureSet());
+        return json;
     }
 
     @Override
@@ -1070,6 +1205,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             LoggerController.TestCase.class,
+            LoggingTestCase.class,
             LoginController.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
@@ -1097,6 +1233,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return Set.of(
             CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
             StatsServiceImpl.TestCase.class
@@ -1226,68 +1363,88 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     /**
-     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     * Handles startup props for LookAndFeelSettings resources
      */
-    private void populateLookAndFeelWithStartupProps()
+    private void populateLookAndFeelResourcesWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
-        boolean incrementRevision = false;
-
-        for (ConfigProperty prop : startupProps)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, ResourceType.class)
         {
-            SiteResourceHandler handler = getResourceHandler(prop.getName());
-            if (handler != null)
-                incrementRevision = setSiteResource(handler, prop, user);
-        }
+            @Override
+            public void handle(Map<ResourceType, StartupPropertyEntry> map)
+            {
+                boolean incrementRevision = false;
 
-        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
-        if (incrementRevision)
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                for (Map.Entry<ResourceType, StartupPropertyEntry> entry : map.entrySet())
+                {
+                    SiteResourceHandler handler = getResourceHandler(entry.getKey());
+                    if (handler != null)
+                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
+                }
+
+                // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+                if (incrementRevision)
+                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            }
+        });
     }
 
     /**
-     * This method will handle those startup props for settings to apply at the site level.
+     * This method handles the home project settings
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        Map<StashedStartupProperties, StartupPropertyEntry> props = AppProps.getInstance().getStashedProperties();
 
-        for (ConfigProperty prop : startupProps)
+        StartupPropertyEntry folderTypeEntry = props.get(homeProjectFolderType);
+        if (null != folderTypeEntry)
         {
-            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeEntry.getValue());
+            if (folderType != null)
+                // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+                ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
+            else
+                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+        }
+
+        StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
+        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        {
+            // reset the home project permissions to remove the default assignments given at server install
+            MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
+            SecurityPolicyManager.savePolicy(homePolicy);
+            // remove the guest role assignment from the support subfolder
+            Group guests = SecurityManager.getGroup(Group.groupGuests);
+            if (null != guests)
             {
-                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
-                if (folderType != null)
-                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
-                else
-                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
+                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                    supportPolicy.removeRoleAssignment(guests, assignedRole);
+                SecurityPolicyManager.savePolicy(supportPolicy);
             }
-            else if ("homeProjectResetPermissions".equalsIgnoreCase(prop.getName()) && Boolean.valueOf(prop.getValue()))
+        }
+
+        StartupPropertyEntry webparts = props.get(homeProjectWebparts);
+        if (null != webparts)
+        {
+            // Clear existing webparts added by core and wiki modules
+            Container homeContainer = ContainerManager.getHomeContainer();
+            Portal.saveParts(homeContainer, Collections.emptyList());
+
+            for (String webpartName : StringUtils.split(webparts.getValue(), ';'))
             {
-                // reset the home project permissions to remove the default assignments given at server install
-                MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
-                SecurityPolicyManager.savePolicy(homePolicy);
-                // remove the guest role assignment from the support subfolder
-                Group guests = SecurityManager.getGroup(Group.groupGuests);
-                if (null != guests)
-                {
-                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
-                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                        supportPolicy.removeRoleAssignment(guests, assignedRole);
-                    SecurityPolicyManager.savePolicy(supportPolicy);
-                }
+                WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
+                if (webPartFactory != null)
+                    addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
             }
         }
     }
 
-    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull ResourceType type)
     {
-        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
+        return LookAndFeelPropertiesManager.get().getResourceHandler(type);
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)

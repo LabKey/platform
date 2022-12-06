@@ -28,6 +28,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 
+import static org.labkey.api.settings.SiteSettingsProperties.*;
+import static org.labkey.api.settings.RandomStartupProperties.*;
+
 /**
  * A mutable version of {@link AppProps}.
  * User: jeckels
@@ -35,7 +38,7 @@ import java.util.Objects;
  */
 public class WriteableAppProps extends AppPropsImpl
 {
-    private Container _container;
+    private final Container _container;
 
     public WriteableAppProps(Container c)
     {
@@ -50,128 +53,128 @@ public class WriteableAppProps extends AppPropsImpl
         super.save();
         writeAuditLogEvent(_container, user);
 
-        if (!Objects.equals(this.getOldProperties().get(NAV_ACCESS_OPEN), this.getProperties().get(NAV_ACCESS_OPEN)))
+        if (!Objects.equals(getOldProperties().get(navAccessOpen.name()), getProperties().get(navAccessOpen.name())))
             NavTreeManager.uncacheAll();
     }
 
-    public void setAdminOnlyMessage(String adminOnlyMessage)
+    public void setAdminOnlyMessage(String message)
     {
-        storeStringValue(ADMIN_ONLY_MESSAGE, adminOnlyMessage);
+        storeStringValue(adminOnlyMessage, message);
     }
 
-    public void setRibbonMessageHtml(String messageHtml)
+    public void setRibbonMessage(String messageHtml)
     {
-        storeStringValue(RIBBON_MESSAGE, messageHtml);
+        storeStringValue(ribbonMessage, messageHtml);
     }
 
     public void setShowRibbonMessage(boolean show)
     {
-        storeBooleanValue(SHOW_RIBBON_MESSAGE, show);
+        storeBooleanValue(showRibbonMessage, show);
     }
 
-    public void setSSLPort(int sslPort)
+    public void setSSLPort(int port)
     {
-        storeIntValue(SSL_PORT, sslPort);
+        storeIntValue(sslPort, port);
     }
 
-    public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
+    public void setMemoryUsageDumpInterval(int interval)
     {
-        storeIntValue(MEMORY_USAGE_DUMP_INTERVAL, memoryUsageDumpInterval);
+        storeIntValue(memoryUsageDumpInterval, interval);
     }
 
-    public void setMaxBLOBSize(int maxBLOBSize)
+    public void setMaxBLOBSize(int maxSize)
     {
-        storeIntValue(MAX_BLOB_SIZE, maxBLOBSize);
+        storeIntValue(maxBLOBSize, maxSize);
     }
 
-    public void setSelfReportExceptions(boolean selfReportExceptions)
+    public void setSelfReportExceptions(boolean selfReport)
     {
-        storeBooleanValue(SELF_REPORT_EXCEPTIONS, selfReportExceptions);
+        storeBooleanValue(selfReportExceptions, selfReport);
     }
 
-    public void setExt3Required(boolean ext3Required)
+    public void setExt3Required(boolean required)
     {
-        storeBooleanValue(EXT3_REQUIRED, ext3Required);
+        storeBooleanValue(ext3Required, required);
     }
 
-    public void setExt3APIRequired(boolean ext3APIRequired)
+    public void setExt3APIRequired(boolean required)
     {
-        storeBooleanValue(EXT3API_REQUIRED, ext3APIRequired);
+        storeBooleanValue(ext3APIRequired, required);
     }
 
     public void setBLASTServerBaseURL(String blastServerBaseURL)
     {
-        storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);
+        storeStringValue(BLASTBaseURL, blastServerBaseURL);
     }
 
     public void setExceptionReportingLevel(ExceptionReportingLevel level)
     {
-        storeStringValue(EXCEPTION_REPORTING_LEVEL, level.toString());
+        storeStringValue(exceptionReportingLevel, level.toString());
     }
 
     public void setUsageReportingLevel(UsageReportingLevel level)
     {
-        storeStringValue(USAGE_REPORTING_LEVEL, level.toString());
+        storeStringValue(usageReportingLevel, level.toString());
     }
 
-    public void setBaseServerUrl(String baseServerUrl) throws URISyntaxException
+    public void setBaseServerUrl(String url) throws URISyntaxException
     {
         // Strip trailing slashes to avoid double slashes in generated links
-        if(baseServerUrl.endsWith("/"))
-            baseServerUrl = baseServerUrl.substring(0, baseServerUrl.length() - 1);
-        validateBaseServerUrl(baseServerUrl);
+        if(url.endsWith("/"))
+            url = url.substring(0, url.length() - 1);
+        validateBaseServerUrl(url);
 
-        storeStringValue(BASE_SERVER_URL_PROP, baseServerUrl);
+        storeStringValue(baseServerURL, url);
     }
 
     public void setPipelineToolsDir(String toolsDir)
     {
-        storeStringValue(PIPELINE_TOOLS_DIR_PROP, toolsDir);
+        storeStringValue(pipelineToolsDirectory, toolsDir);
     }
 
-    public void setSSLRequired(boolean sslRequired)
+    public void setSSLRequired(boolean required)
     {
-        storeBooleanValue(SSL_REQUIRED, sslRequired);
+        storeBooleanValue(sslRequired, required);
     }
 
-    public void setUserRequestedAdminOnlyMode(boolean adminOnlyMode)
+    public void setUserRequestedAdminOnlyMode(boolean mode)
     {
-        storeBooleanValue(USER_REQUESTED_ADMIN_ONLY_MODE, adminOnlyMode);
+        storeBooleanValue(adminOnlyMode, mode);
     }
 
-    public void setNavAccessOpen(boolean navAccessOpen)
+    public void setNavAccessOpen(boolean open)
     {
-        storeBooleanValue(NAV_ACCESS_OPEN, navAccessOpen);
+        storeBooleanValue(navAccessOpen, open);
     }
 
     public void setMailRecorderEnabled(boolean enabled)
     {
-        storeBooleanValue(MAIL_RECORDER_ENABLED, enabled);        
+        storeBooleanValue(mailRecorderEnabled, enabled);
     }
 
     public void setFileSystemRoot(String root)
     {
-        storeStringValue(WEB_ROOT, root);
+        storeStringValue(siteFileRoot, root);
     }
 
     public void setUserFilesRoot(String root)
     {
-        storeStringValue(USER_FILE_ROOT, root);
+        storeStringValue(userFileRoot, root);
     }
 
     public void setWebfilesEnabled(boolean b)
     {
-        storeBooleanValue(WEBFILES_ROOT_ENABLED, b);
+        storeBooleanValue(webfilesEnabled, b);
     }
 
     public void setFileUploadDisabled(boolean b)
     {
-        storeBooleanValue(FILE_UPLOAD_DISABLED, b);
+        storeBooleanValue(fileUploadDisabled, b);
     }
 
     public void setAdministratorContactEmail(String email)
     {
-        storeStringValue(ADMINISTRATOR_CONTACT_EMAIL, email);
+        storeStringValue(administratorContactEmail, email);
     }
 
     private void incrementLookAndFeelRevision()
@@ -188,27 +191,27 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setUseContainerRelativeURL(boolean b)
     {
-        storeBooleanValue(USE_CONTAINER_RELATIVE_URL, b);
+        storeBooleanValue(useContainerRelativeURL, b);
     }
 
     public void setAllowApiKeys(boolean b)
     {
-        storeBooleanValue(ALLOW_API_KEYS, b);
+        storeBooleanValue(allowApiKeys, b);
     }
 
     public void setApiKeyExpirationSeconds(int seconds)
     {
-        storeIntValue(API_KEY_EXPIRATION_SECONDS, seconds);
+        storeIntValue(apiKeyExpirationSeconds, seconds);
     }
 
     public void setAllowSessionKeys(boolean b)
     {
-        storeBooleanValue(ALLOW_SESSION_KEYS, b);
+        storeBooleanValue(allowSessionKeys, b);
     }
 
-    public void setXFrameOptions(String option)
+    public void setXFrameOption(String option)
     {
-        storeStringValue(X_FRAME_OPTIONS, option);
+        storeStringValue(XFrameOption, option);
     }
 
     public void setExternalRedirectHosts(@NotNull List<String> externalRedirectHosts)
@@ -221,6 +224,6 @@ public class WriteableAppProps extends AppPropsImpl
                 urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_DELIMITER;
             }
         }
-        storeStringValue(EXTERNAL_REDIRECT_HOSTS, urls);
+        storeStringValue(externalRedirectHostURLs, urls);
     }
 }

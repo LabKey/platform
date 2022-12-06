@@ -18,8 +18,8 @@ package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -54,6 +54,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
@@ -95,14 +96,8 @@ public class CustomViewUtil
             for (Map<String, Object> filterInfo : jsonFilters.toMapList())
             {
                 String fieldKey = (String)filterInfo.get("fieldKey");
-                String op = (String)filterInfo.get("op");
-                if (op == null)
-                    op = "";
-
-                String value = (String)filterInfo.get("value");
-                if (value == null)
-                    value = "";
-
+                String op = Objects.toString(filterInfo.get("op"), "");
+                String value = Objects.toString(filterInfo.get("value"), "");
                 url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
             }
         }
@@ -159,6 +154,7 @@ public class CustomViewUtil
             url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilter);
 
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
+        view.setIsHidden(jsonView.optBoolean("hidden", false));
     }
 
     public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)

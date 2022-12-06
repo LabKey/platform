@@ -49,9 +49,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.UnexpectedException;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
@@ -831,6 +829,12 @@ public class StatementDataIterator extends AbstractDataIterator
             public boolean allowAsynchronousExecute()
             {
                 return true;
+            }
+
+            @Override
+            public boolean supportsOffset()
+            {
+                return false;
             }
         }
 

@@ -16,10 +16,12 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -41,10 +43,12 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 {
-    protected String _lookupSchemaName;
+    protected SchemaKey _lookupSchemaKey;
     protected String _tableName;
     protected String _columnName;
     protected String _displayColumnName;
+    private boolean _showAsPublicDependency = false;
+
 
     // foreignKey lazily creates the target tableinfo, in order to do that it needs to know the container filter to use
     // Some tables may chose to ignore/modify this container filter, but this indicates what the parent table/query/schema
@@ -70,19 +74,26 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     
     protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, String tableName, String columnName)
     {
-        this(sourceSchema, cf, null, tableName, columnName);
+        this(sourceSchema, cf, (SchemaKey)null, tableName, columnName, null);
     }
 
+    @Deprecated
     protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName)
     {
-        this(sourceSchema, cf, lookupSchemaName, tableName, columnName, null);
+        this(sourceSchema, cf, null==lookupSchemaName?null:SchemaKey.fromString(lookupSchemaName), tableName, columnName, null);
     }
 
+    @Deprecated
     protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName, @Nullable String displayColumnName)
+    {
+        this(sourceSchema, cf, null==lookupSchemaName?null:SchemaKey.fromString(lookupSchemaName), tableName, columnName, displayColumnName);
+    }
+
+    protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf, @Nullable SchemaKey lookupSchemaKey, String tableName, @Nullable String columnName, @Nullable String displayColumnName)
     {
         _sourceSchema = sourceSchema;
         _containerFilter = cf;
-        _lookupSchemaName = lookupSchemaName;
+        _lookupSchemaKey = lookupSchemaKey;
         _tableName = tableName;
         _columnName = columnName;
         _displayColumnName = displayColumnName;
@@ -125,14 +136,13 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return cf;
     }
 
-    @Override
-    public String getLookupSchemaName()
+    public SchemaKey getLookupSchemaKey()
     {
-        if (_lookupSchemaName == null)
+        if (_lookupSchemaKey == null)
         {
             initTableAndColumnNames();
         }
-        return _lookupSchemaName;
+        return _lookupSchemaKey;
     }
 
     @Override
@@ -189,9 +199,11 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             TableInfo table = getLookupTableInfo();
             if (table != null)
             {
-                if (_lookupSchemaName == null)
+                if (_lookupSchemaKey == null)
                 {
-                    _lookupSchemaName = table.getPublicSchemaName();
+                    String publicSchemaName = table.getPublicSchemaName();
+                    if (null != publicSchemaName)
+                        _lookupSchemaKey = SchemaKey.fromString(publicSchemaName);
                 }
 
                 if (_tableName == null)
@@ -224,7 +236,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     }
 
     @Override
-    public NamedObjectList getSelectList(RenderContext ctx)
+    public @NotNull NamedObjectList getSelectList(RenderContext ctx)
     {
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
@@ -377,4 +389,14 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return !candidates.isEmpty();
     }
 
+    @Override
+    public boolean isShowAsPublicDependency()
+    {
+        return _showAsPublicDependency;
+    }
+
+    public void setShowAsPublicDependency(boolean b)
+    {
+        _showAsPublicDependency = b;
+    }
 }

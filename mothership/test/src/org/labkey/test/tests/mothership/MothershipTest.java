@@ -24,6 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
+import org.labkey.test.SortDirection;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
@@ -49,6 +50,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.labkey.test.pages.test.TestActions.ExceptionActions;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
@@ -58,6 +60,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private static final String ASSIGNEE = "assignee@mothership.test";
+    private static final String ASSIGNEE2 = "assignee2@mothership.test";
     private static final String NON_ASSIGNEE = "non_assignee@mothership.test";
     private static final String MOTHERSHIP_GROUP = "Mothership Test Group";
     private static final String ISSUES_PROJECT = "MothershipTest Issues";
@@ -65,14 +68,14 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     public static final String ISSUES_LIST = "mothershipissues";
 
     private static MothershipHelper _mothershipHelper; // Static to remember site settings between tests
-    private ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
+    private final ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
 
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _containerHelper.deleteProject(ISSUES_PROJECT, false);
         // Don't delete mothership project
-        _userHelper.deleteUsers(afterTest, ASSIGNEE, NON_ASSIGNEE);
+        _userHelper.deleteUsers(afterTest, ASSIGNEE, ASSIGNEE2, NON_ASSIGNEE);
         permissionsHelper.deleteGroup(MOTHERSHIP_GROUP, MOTHERSHIP_PROJECT, false);
     }
 
@@ -87,16 +90,19 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     private void doSetup()
     {
         _mothershipHelper = new MothershipHelper(this);
+        _mothershipHelper.enableDebugLoggers();
 
         _userHelper.createUser(ASSIGNEE);
+        _userHelper.createUser(ASSIGNEE2);
         _userHelper.createUser(NON_ASSIGNEE);
         permissionsHelper.createProjectGroup(MOTHERSHIP_GROUP, MOTHERSHIP_PROJECT);
         permissionsHelper.addMemberToRole(MOTHERSHIP_GROUP, "Editor", MemberType.group, MOTHERSHIP_PROJECT);
         permissionsHelper.addUserToProjGroup(ASSIGNEE, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
+        permissionsHelper.addUserToProjGroup(ASSIGNEE2, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
 
         EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.createIssueURL().set(WebTestHelper.getContextPath() + "/" +
+        configurePage.createIssueURL().set(WebTestHelper.getContextPath() +
                 WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
         configurePage.issuesContainer().set("/" + ISSUES_PROJECT);
         configurePage.save();
@@ -121,7 +127,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         _mothershipHelper.ensureSelfReportingEnabled();
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
-        goToMothership();
     }
 
     @Test
@@ -129,7 +134,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     {
         IssuesHelper issuesHelper = new IssuesHelper(this);
         Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
-        Integer stackTraceId = ensureUnassignedException();
+        int stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -158,16 +163,16 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testAssignException()
     {
-        final String assigneeDisplayName = _userHelper.getDisplayNameForEmail(ASSIGNEE);
-        Integer stackTraceId = ensureUnassignedException();
+        final String assigneeDisplayName = _userHelper.getDisplayNameForEmail(ASSIGNEE2);
+        int stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        exceptionSummary.uncheckAll();
+        exceptionSummary.uncheckAllOnPage();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.assignSelectedTo(assigneeDisplayName);
 
-        impersonate(ASSIGNEE);
+        impersonate(ASSIGNEE2);
         {
             showExceptionsPage = goToMothership().clickMyExceptions();
             exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -182,11 +187,11 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testIgnoreExceptionFromDataRegion()
     {
-        Integer stackTraceId = ensureUnassignedException();
+        int stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        exceptionSummary.uncheckAll();
+        exceptionSummary.uncheckAllOnPage();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.ignoreSelected();
 
@@ -197,11 +202,11 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testCreateIssueForAssignedException()
     {
-        Integer stackTraceId = ensureUnassignedException();
+        int stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        exceptionSummary.uncheckAll();
+        exceptionSummary.uncheckAllOnPage();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
 
@@ -215,6 +220,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     public void testCombiningIdenticalExceptions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -226,6 +232,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         actions.add(Pair.of(ExceptionActions.multiException, "NPE2"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -237,6 +244,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         actions.add(Pair.of(ExceptionActions.multiException, "ISE"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertNotEquals("Should not group different exception types", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -244,6 +252,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     public void testNotCombiningFromDifferentActions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
+        goToMothership(); // Make sure failure screenshot shows new exceptions
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -268,7 +277,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         _mothershipHelper.disableExceptionReporting();
         checkErrors();
         ExceptionActions.illegalState.beginAt(this);
-        assertEquals("Shouldn't generate an error code when exception reporting is disabled", null, getErrorCode());
+        assertNull("Shouldn't generate an error code when exception reporting is disabled", getErrorCode());
         resetErrors();
     }
 
@@ -277,7 +286,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         if (!isElementPresent(Locator.tagWithClass("div", "labkey-error-instruction")))
             fail("Expected to be on an error page");
         String error = Locators.labkeyErrorInstruction.findElement(getDriver()).getText();
-        Pattern errorCodePattern = Pattern.compile(".*Your unique reference code is: ([^\\s]+)");
+        Pattern errorCodePattern = Pattern.compile(".*Your unique reference code is: (\\S+)");
         Matcher matcher = errorCodePattern.matcher(error);
         if(matcher.find())
             return matcher.group(1);
@@ -287,7 +296,9 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
 
     private ShowExceptionsPage goToMothership()
     {
-        return ShowExceptionsPage.beginAt(this);
+        ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
+        showExceptionsPage.exceptionSummary().setSort("LastReport", SortDirection.DESC);
+        return showExceptionsPage;
     }
 
     protected int ensureUnassignedException()

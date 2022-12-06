@@ -80,6 +80,8 @@ public class MothershipReport implements Runnable
     private static boolean showSelfReportExceptions = false;
     private static int _droppedExceptionCount = 0;
 
+    public final static String JSON_METRICS_KEY = "jsonMetrics";
+
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()
     {
@@ -313,10 +315,10 @@ public class MothershipReport implements Runnable
                 connection.disconnect();
             }
         }
-        catch (Exception ignored)
+        catch (Throwable t)
         {
             // Don't bother the client if this report fails
-            LOG.debug("Failed to submit report to " + this._target + " at " + _url, ignored);
+            LOG.debug("Failed to submit report to " + this._target + " at " + _url, t);
         }
     }
 
@@ -405,13 +407,19 @@ public class MothershipReport implements Runnable
             addParam("databaseDriverName", scope.getDriverName());
             addParam("databaseDriverVersion", scope.getDriverVersion());
         }
-        addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
+        if (_target == Target.test)
+        {
+            addParam("serverSessionGUID", GUID.makeGUID()); // Random session GUID for each test report
+        }
+        else
+        {
+            addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
+        }
         addParam("serverGUID", AppProps.getInstance().getServerGUID());
 
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
-        addParam("usedInstaller", usedInstaller());
         addParam("distribution", getDistributionStamp());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
@@ -420,14 +428,6 @@ public class MothershipReport implements Runnable
     public String getContent()
     {
         return _content;
-    }
-
-    public static boolean usedInstaller()
-    {
-        ServletContext context = ModuleLoader.getServletContext();
-        String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
-
-        return Boolean.parseBoolean(usedInstaller);
     }
 
     private static String getDistributionStamp()
@@ -465,13 +465,12 @@ public class MothershipReport implements Runnable
             try
             {
                 serializedMetrics = mapper.writeValueAsString(metrics);
+                addParam(JSON_METRICS_KEY, serializedMetrics);
             }
             catch (JsonProcessingException e)
             {
-                // TODO: Where to report, what to do?
-                serializedMetrics = "Exception serializing json metrics. " + e.getMessage();
+                LOG.error("Failed to serialize JSON metrics", e);
             }
-            addParam("jsonMetrics", serializedMetrics);
         }
     }
 }

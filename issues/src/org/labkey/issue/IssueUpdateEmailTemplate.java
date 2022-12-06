@@ -25,7 +25,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
-import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -57,7 +57,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
     private final List<ReplacementParam<?>> _replacements = new ArrayList<>();
     private final List<ReplacementParam<?>> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
 
-    private Issue _newIssue;
+    private IssueObject _newIssue;
     private ActionURL _detailsURL;
     private String _change;
     private String _comment;
@@ -84,16 +84,16 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         replacements.add("recipients", String.class, "All of the recipients of the email notification", ContentType.Plain, c -> _recipients == null ? "user@domain.com" : _recipients);
         replacements.add(new StringReplacementParam("title", "The current title of the issue", c -> _newIssue.getTitle()));
         replacements.add(new StringReplacementParam("status", "The current status of the issue", c -> _newIssue.getStatus()));
-        replacements.add(new StringReplacementParam("type", "The current type of the issue", c -> _newIssue.getProperty(Issue.Prop.type)));
-        replacements.add(new StringReplacementParam("area", "The current area of the issue", c -> _newIssue.getProperty(Issue.Prop.area)));
+        replacements.add(new StringReplacementParam("type", "The current type of the issue", c -> _newIssue.getProperty(IssueObject.Prop.type)));
+        replacements.add(new StringReplacementParam("area", "The current area of the issue", c -> _newIssue.getProperty(IssueObject.Prop.area)));
         replacements.add("priority", String.class, "The current priority of the issue", ContentType.Plain, c -> {
             if (_newIssue == null)
             {
                 return null;
             }
-            return _newIssue.getProperty(Issue.Prop.priority);
+            return _newIssue.getProperty(IssueObject.Prop.priority);
         });
-        replacements.add(new StringReplacementParam("milestone", "The current milestone of the issue", c -> _newIssue.getProperty(Issue.Prop.milestone)));
+        replacements.add(new StringReplacementParam("milestone", "The current milestone of the issue", c -> _newIssue.getProperty(IssueObject.Prop.milestone)));
         replacements.add(new UserIdReplacementParam("openedBy", "The user that opened the issue", c -> _newIssue.getCreatedBy()));
         replacements.add("opened", Date.class, "The date that the issue was opened", ContentType.Plain, c -> _newIssue == null ? null : _newIssue.getCreated());
         replacements.add("resolved", Date.class, "The date that the issue was last resolved", ContentType.Plain, c -> _newIssue == null || _newIssue.getResolved() == null ? null : _newIssue.getResolved());
@@ -108,7 +108,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         replacements.add("modifiedFields", String.class, "Summary of all changed fields with before and after values", ContentType.Plain, c -> _fieldChanges);
     }
 
-    private static IssueManager.EntryTypeNames getEntryTypeName(Container c, Issue issue)
+    private static IssueManager.EntryTypeNames getEntryTypeName(Container c, IssueObject issue)
     {
         String issueDefName = IssueListDef.DEFAULT_ISSUE_LIST_NAME;
         if (issue != null)
@@ -169,7 +169,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         }
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients,
+    public void init(IssueObject newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients,
                      List<AttachmentFile> attachments, User creator, Map<String, Object> issueProperties)
     {
         _newIssue = newIssue;

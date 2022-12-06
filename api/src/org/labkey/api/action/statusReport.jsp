@@ -36,7 +36,7 @@
 
 <div id="statusDiv"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var div = document.getElementById("statusDiv");
     var offset = 0;
     var parameters = LABKEY.ActionURL.getParameters();

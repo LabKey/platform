@@ -441,7 +441,7 @@ public class LineagePerfTest extends Assert
             LOG.info("  creating sample");
             insertMoreTimer.start();
             String name = prefix + "-" + maxMaterialId + 1 + i;
-            Lsid lsid = st.generateSampleLSID().setObjectId(name).build();
+            Lsid lsid = st.generateNextDBSeqLSID().build();
             ExpMaterial sample = ExperimentService.get().createExpMaterial(_container, lsid);
             sample.setCpasType(st.getLSID());
             sample.save(_user);

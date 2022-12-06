@@ -42,11 +42,11 @@
 
 <table id="file-upload-tbl"></table>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.requiresCss("fileAddRemoveIcon.css");
 </script>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 <labkey:loadClientDependencies>
 
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;

@@ -21,15 +21,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
@@ -591,9 +590,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         String materialLsid;
         if (sampleType != null)
         {
-            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(sampleType.getMaterialLSIDPrefix() + "test");
-            lsid.setObjectId(materialName);
-            materialLsid = lsid.toString();
+            ExpMaterial other = sampleType.getSample(viewContext.getContainer(), materialName);
+            if (other != null)
+                throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
+
+            materialLsid = sampleType.generateNextDBSeqLSID().toString();
         }
         else
         {
@@ -601,6 +602,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             try
             {
                 materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, ExpMaterial.DEFAULT_CPAS_TYPE);
+
+                ExpMaterial other = ExperimentService.get().getExpMaterial(materialLsid);
+                if (other != null)
+                    throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
             }
             catch (XarFormatException e)
             {
@@ -608,10 +613,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 throw new RuntimeException(e);
             }
         }
-
-        ExpMaterial other = ExperimentService.get().getExpMaterial(materialLsid);
-        if (other != null)
-            throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
 
         material = ExperimentService.get().createExpMaterial(viewContext.getContainer(), materialLsid, materialName);
         if (sampleType != null)

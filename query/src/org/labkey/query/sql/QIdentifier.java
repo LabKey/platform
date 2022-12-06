@@ -17,8 +17,8 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 public class QIdentifier extends QFieldKey
@@ -28,7 +28,7 @@ public class QIdentifier extends QFieldKey
         if (n.getType() == SqlBaseParser.QUOTED_IDENTIFIER)
         {
             // check for "{$FIELDKEY$}" hack to enable mondrian to use lookup columns
-            String text = unquote(n.getText());
+            String text = LabKeySql.quoteIdentifier(n.getText());
             if (text.length() > 4 && text.startsWith("{$") && text.endsWith("$}"))
             {
                 text = text.substring(2,text.length()-2);
@@ -43,7 +43,8 @@ public class QIdentifier extends QFieldKey
                         prev = new QDot(id,prev);
                     fk = fk.getParent();
                 }
-                prev.setLineAndColumn(n);
+                if (null != prev)
+                    prev.setLineAndColumn(n);
                 return prev;
             }
         }
@@ -66,7 +67,7 @@ public class QIdentifier extends QFieldKey
             return;
         }
         setTokenType(SqlBaseParser.QUOTED_IDENTIFIER);
-        setTokenText(quote(str));
+        setTokenText(LabKeySql.quoteIdentifier(str));
     }
 
     @Override
@@ -79,23 +80,7 @@ public class QIdentifier extends QFieldKey
     {
         if (getTokenType() == SqlBaseParser.IDENT)
             return getTokenText();
-        return unquote(getTokenText());
-    }
-
-    private static String unquote(String str)
-    {
-        if (str.length() < 2)
-            throw new IllegalArgumentException();
-        if (!str.startsWith("\"") || !str.endsWith("\""))
-            throw new IllegalArgumentException("Expected " + str + " to be surrounded by double quotes");
-        str = str.substring(1, str.length() - 1);
-        str = StringUtils.replace(str, "\"\"", "\"");
-        return str;
-    }
-
-    private String quote(String str)
-    {
-        return "\"" + StringUtils.replace(str, "\"", "\"\"") + "\"";
+        return LabKeySql.unquoteIdentifier(getTokenText());
     }
 
 

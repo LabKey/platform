@@ -15,15 +15,16 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.LabKeyErrorWithLink;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
@@ -35,6 +36,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -42,9 +45,12 @@ import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
@@ -58,11 +64,17 @@ import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
+import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -75,6 +87,7 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -114,23 +127,25 @@ public class AuthenticationManager
 {
     public static final String ALL_DOMAINS = "*";
 
-    private static final Logger _log = LogManager.getLogger(AuthenticationManager.class);
+    private static final Logger _log = LogHelper.getLogger(AuthenticationManager.class, "Authentication warnings and configuration problems");
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
 
     public enum AuthLogoType
     {
-        HEADER("header", "auth_header_logo", "16"),
-        LOGIN_PAGE("login page", "auth_login_page_logo", "32");
+        HEADER("header", "auth_header_logo", "_small.png", "16"),
+        LOGIN_PAGE("login page", "auth_login_page_logo", "_big.png", "32");
 
         private final String _label;
         private final String _fileName;
+        private final String _placeholderSuffix;
         private final String _height;
 
-        AuthLogoType(String label, String fileName, String height)
+        AuthLogoType(String label, String fileName, String placeholderSuffix, String height)
         {
             _label = label;
             _fileName = fileName;
+            _placeholderSuffix = placeholderSuffix;
             _height = height;
         }
 
@@ -144,14 +159,14 @@ public class AuthenticationManager
             return _fileName;
         }
 
+        public String getPlaceholderFilename(SSOAuthenticationConfiguration<?> configuration)
+        {
+            return configuration.getAuthenticationProvider().getName().toLowerCase() + _placeholderSuffix;
+        }
+
         public String getHeight()
         {
             return _height;
-        }
-
-        public String getOldPrefix()
-        {
-            return _fileName + "_";
         }
 
         public static @NotNull AuthLogoType getForFilename(String fileName)
@@ -187,22 +202,20 @@ public class AuthenticationManager
     // values. Authentication configuration properties will overwrite an existing configuration if "Description" is provided
     // and matches an existing configuration description for the same provider; if "Description" is not provided or doesn't
     // match an existing configuration for that provider then a new configuration will be created. See #39474.
-    // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
         // Handle each provider's startup properties
         getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes, default domain)
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
-            .forEach(cp-> {
-                switch(cp.getName())
-                {
-                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
-                    case DEFAULT_DOMAIN -> setDefaultDomain(null, cp.getValue());
-                    default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
-                }
-            });
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(AUTHENTICATION_CATEGORY, AuthenticationSettings.class)
+        {
+            @Override
+            public void handle(Map<AuthenticationSettings, StartupPropertyEntry> properties)
+            {
+                properties.forEach(AuthenticationSettings::save);
+            }
+        });
     }
 
     public enum Priority { High, Low }
@@ -214,8 +227,8 @@ public class AuthenticationManager
 
         if (!activeDomains.isEmpty())
         {
-            // At the moment, only LDAP configurations can be associated with a domain, so we call out LDAP below
-            builder.append(" except those with email addresses that are configured for LDAP authentication (those ending in ");
+            // LDAP and SSO configurations can be associated with email domains
+            builder.append(" except those with email addresses that are associated with LDAP or SSO configurations (those ending in ");
             builder.append(
                 activeDomains.stream()
                     .map(d->"@" + d)
@@ -228,8 +241,14 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
-    // Ignores domain = "*"
+    @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
     public static boolean isLdapEmail(ValidEmail email)
+    {
+        return isLdapOrSsoEmail(email);
+    }
+
+    // Ignores domain == "*"
+    public static boolean isLdapOrSsoEmail(ValidEmail email)
     {
         String emailAddress = email.getEmailAddress();
         return AuthenticationConfigurationCache.getActiveDomains().stream()
@@ -312,6 +331,42 @@ public class AuthenticationManager
         }
     }
 
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+        _log.info("  Attempting to migrate encrypted properties in authentication configurations");
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
+        TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+        Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap();
+        Map<String, String> saveMap = new HashMap<>();
+
+        map.forEach((key, value) -> {
+            try
+            {
+                _log.info("    Migrating encrypted properties for configuration " + key);
+                String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
+                String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
+                saveMap.put("EncryptedProperties", newEncryptedValue);
+                assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
+                Table.update(null, tinfo, saveMap, key);
+            }
+            catch (DecryptionException e)
+            {
+                _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+            }
+            catch (Exception e)
+            {
+                _log.error("Exception while migrating configuration " + key, e);
+            }
+        });
+        _log.info("  Migration of encrypted properties in authentication configurations is complete");
+    };
+
+    // Register a handler so encrypted properties are migrated whenever the encryption key changes
+    public static void registerEncryptionMigrationHandler()
+    {
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
+    }
+
     public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, AuthLogoType.HEADER);
@@ -351,7 +406,7 @@ public class AuthenticationManager
 
         HtmlStringBuilder html = HtmlStringBuilder.of();
 
-        for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
+        for (SSOAuthenticationConfiguration<?> configuration : ssoConfigurations)
         {
             if (!configuration.isAutoRedirect())
             {
@@ -419,7 +474,7 @@ public class AuthenticationManager
                     return HttpView.redirect(result.getRedirectURL());
                 }
 
-                primaryResult.getStatus().addUserErrorMessage(errors, primaryResult);
+                primaryResult.getStatus().addUserErrorMessage(errors, primaryResult, null, null);
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -462,11 +517,10 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-
     public static void deleteConfiguration(User user, int rowId)
     {
         // Delete any logos attached to the configuration
-        AuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+        AuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
         AttachmentService.get().deleteAttachments(configuration);
 
         // Delete configuration
@@ -484,17 +538,17 @@ public class AuthenticationManager
         AuditLogService.get().addEvent(user, event);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
+    public static @Nullable SSOAuthenticationConfiguration<?> getActiveSSOConfiguration(@Nullable Integer key)
     {
         return null != key ? AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key) : null;
     }
 
-    public static @NotNull <AC extends AuthenticationConfiguration> Collection<AC> getActiveConfigurations(Class<AC> clazz)
+    public static @NotNull <AC extends AuthenticationConfiguration<?>> Collection<AC> getActiveConfigurations(Class<AC> clazz)
     {
         return AuthenticationConfigurationCache.getActive(clazz);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(int rowId)
+    public static @Nullable SSOAuthenticationConfiguration<?> getSSOConfiguration(int rowId)
     {
         return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, rowId);
     }
@@ -551,15 +605,47 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-    // leave public until upgrade from 19.3 is no longer allowed (and CoreUpgrade migration method is removed)
-    public static final String AUTHENTICATION_CATEGORY = "Authentication";
-    public static final String PROVIDERS_KEY = "Authentication";
+    // Used by start-up properties
+    private static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+
+    public enum AuthenticationSettings implements StartupProperty
+    {
+        SelfRegistration("Allow self sign up"),
+        SelfServiceEmailChanges("Allow users to edit their own email addresses"),
+        AutoCreateAccounts("Auto-create authenticated users"),
+        DefaultDomain("System default domain")
+        {
+            @Override
+            public void save(StartupPropertyEntry entry)
+            {
+                setDefaultDomain(null, entry.getValue());
+            }
+        };
+
+        private final String _description;
+
+        AuthenticationSettings(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void save(StartupPropertyEntry entry)
+        {
+            saveAuthSetting(null, name(), Boolean.parseBoolean(entry.getValue()));
+        }
+    }
 
     /**
      * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.
@@ -580,7 +666,7 @@ public class AuthenticationManager
         Success
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 throw new IllegalStateException("Shouldn't be adding an error message in success case");
             }
@@ -588,15 +674,42 @@ public class AuthenticationManager
         BadCredentials
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
-                errors.reject(ERROR_MSG, "The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+                errors.addError(new LabKeyError("The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off."));
+
+                // Provide additional guidance on failed login, pointing user toward the SSO configuration(s) claiming their email domain
+                if (null != fullEmailAddress && null != returnURL)
+                {
+                    String domain = fullEmailAddress.split("@")[1]; // Callers must ensure that fullEmailAddress includes @
+                    Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationConfigurationCache.getActiveConfigurationsForDomain(domain).stream()
+                        .filter(ac -> ac instanceof SSOAuthenticationConfiguration)
+                        .map(ac -> (SSOAuthenticationConfiguration)ac)
+                        .toList();
+
+                    if (!ssoConfigs.isEmpty())
+                    {
+                        String message = "Based on your email domain, you should sign in using " + ssoConfigs.stream()
+                            .map(AuthenticationConfiguration::getDescription)
+                            .collect(Collectors.joining(" or ")) + ": ";
+
+                        HtmlString logos = ssoConfigs.stream()
+                            .map(ac -> ac.getLinkFactory().getLink(returnURL, AuthLogoType.LOGIN_PAGE))
+                            .filter(Objects::nonNull) // Only those with a login page logo
+                            .collect(LabKeyCollectors.joining(HtmlString.unsafe("&nbsp;&nbsp;")));
+
+                         errors.addError(new LabKeyErrorWithHtml(
+                            message,
+                            logos
+                         ));
+                    }
+                }
             }
         },
         InactiveUser
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
@@ -604,7 +717,7 @@ public class AuthenticationManager
         LoginDisabled
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
                 errors.reject(ERROR_MSG, errorMessage);
@@ -613,7 +726,7 @@ public class AuthenticationManager
         LoginPaused
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
             }
@@ -621,7 +734,7 @@ public class AuthenticationManager
         UserCreationError
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
@@ -629,7 +742,7 @@ public class AuthenticationManager
         UserCreationNotAllowed
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
@@ -652,7 +765,7 @@ public class AuthenticationManager
         };
 
         // Add an appropriate error message to display to the user
-        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
         {
         }
 
@@ -749,7 +862,7 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication Messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -947,9 +1060,13 @@ public class AuthenticationManager
         }
         catch (SecurityManager.UserManagementException e)
         {
-            // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
-            ExceptionUtil.logExceptionToMothership(request, e);
+            // "User limit" exception is expected. Log other exceptions.
+            if (!e.getMessage().startsWith("User limit has been reached"))
+            {
+                // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
+                ExceptionUtil.logExceptionToMothership(request, e);
+            }
 
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
         }
@@ -967,12 +1084,12 @@ public class AuthenticationManager
 
 
     // limit one bad login per second averaged out over 60sec
-    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "login limiter");
-    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
-    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
-    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
+    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
+    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "User limiter");
+    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
 
     private static Integer _toKey(String s)
@@ -1092,19 +1209,13 @@ public class AuthenticationManager
     }
 
 
-    public static URLHelper logout(@NotNull User user, HttpServletRequest request, URLHelper returnURL)
+    public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnURL)
     {
         URLHelper ret = null;
         HttpSession session = request.getSession(false);
 
         if (null != session && !user.isGuest())
         {
-            // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
-
-            // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
-            NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
-
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
 
             Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
@@ -1445,9 +1556,9 @@ public class AuthenticationManager
 
     public static class LinkFactory
     {
-        private final SSOAuthenticationConfiguration _configuration;
+        private final SSOAuthenticationConfiguration<?> _configuration;
 
-        public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider> configuration)
+        public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider<?>> configuration)
         {
             _configuration = configuration;
         }

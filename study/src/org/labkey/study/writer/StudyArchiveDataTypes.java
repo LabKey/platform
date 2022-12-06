@@ -38,7 +38,6 @@ public class StudyArchiveDataTypes
     public static final String QC_STATE_SETTINGS = "QC State Settings";
     public static final String TOP_LEVEL_STUDY_PROPERTIES = "Top-level Study Properties";
     public static final String TREATMENT_DATA = "Treatment Data";
-    public static final String VIEW_CATEGORIES = "Categories";
     public static final String VISIT_MAP = "Visit Map";
 
     private StudyArchiveDataTypes() {}

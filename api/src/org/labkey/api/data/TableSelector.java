@@ -17,15 +17,17 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.logging.LogHelper;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -34,20 +36,21 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector> implements ResultsFactory
 {
     public static final Set<String> ALL_COLUMNS = Collections.emptySet();
 
-    private static final Logger LOG = LogManager.getLogger(TableSelector.class);
+    private static final Logger LOG = LogHelper.getLogger(TableSelector.class, "Runs DB queries against TableInfos");
 
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
@@ -57,11 +60,11 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     private boolean _forDisplay = false;
 
-    // Master constructor
+    // Primary constructor
     private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
     {
         super(table.getSchema().getScope());
-        _table = table;
+        _table = Objects.requireNonNull(table);
         _columns = columns;
         _filter = filter;
         _sort = sort;
@@ -128,7 +131,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         if (select == ALL_COLUMNS)
         {
-            selectColumns = table.getColumns();
+            selectColumns = table.getColumns().stream()
+                .filter(columnInfo -> !columnInfo.isUnselectable())
+                .collect(Collectors.toList());
         }
         else
         {
@@ -148,23 +153,25 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return selectColumns;
     }
 
-    private static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    private static Map<FieldKey, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
-        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
-        ColumnInfo existing;
+        Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
 
         for (ColumnInfo column : arrColumns)
         {
-            existing = columns.get(column.getAlias());
-            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getAlias(), column);
+            ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            // NOTE : temporarily disable assert for merge to develop
+            // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
+            // assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+            if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
+                throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
+        }
+
+        for (ColumnInfo column : arrColumns)
+        {
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
-            {
-                existing = columns.get(displayColumn.getAlias());
-                assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getAlias(), displayColumn);
-            }
+                columns.putIfAbsent(displayColumn.getFieldKey(), displayColumn);
         }
 
         return columns;
@@ -183,24 +190,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     /*
-        Try to determine if the collection will iterate in a predictable order. Currently, all of these are assumed
-        to be stable-ordered collections:
-
-        - Collections of size 0 or 1
-        - Non HashSets
-        - LinkedHashSet (which extends HashSet, so we need a separate check)
-
+        Try to determine if the collection will iterate in a predictable order. Recommendation is to pass in column
+        lists via a List (e.g., List.of() for a static column list) or LinkedHashSet (e.g., use PageFlowUtil.set() or
+        CsvSet). Collections.singleton() can also be used when selecting a single column.
     */
     private static boolean isStableOrdered(Collection<?> collection)
     {
-        return (collection.size() < 2 || !(collection instanceof HashSet) || collection instanceof LinkedHashSet);
+        return (!(collection instanceof Set set) || CollectionUtils.isStableOrderedSet(set));
     }
 
     @NotNull
     @Override
     protected <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
     {
-        // Could be get getArray(), getArrayList(), or getCollection()
+        // Could be getArray(), getArrayList(), or getCollection()
         ensureStableColumnOrder("This TableSelector method");
         return super.createPrimitiveArrayList(rs, getter);
     }
@@ -243,6 +246,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return super.resultSetStream();
     }
 
+    /**
+     * Returns an uncached ResultSet Stream that <b>must be closed</b>
+     */
     @Override
     public Stream<ResultSet> uncachedResultSetStream()
     {
@@ -397,8 +403,30 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         // TODO: Shouldn't actually need the sub-query in the TableSelector case... just use a "COUNT(*)" ExprColumn directly with the filter + table
         // For now, produce "SELECT 1 FROM ..." in the sub-select and ignore the sort
-        TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
-        return super.getRowCount(sqlFactory) - sqlFactory._scrollOffset;      // Corner case -- asking for rowCount with offset on a dialect that doesn't support offset
+
+        if (_maxRows == Table.NO_ROWS)
+            return 0;
+
+        // Remember the values that were set to restore them later
+        var offset = _offset;
+        var maxRows = _maxRows;
+
+        try
+        {
+            // Optimize by counting all rows and then subtracting any offsets
+            _offset = Table.NO_OFFSET;
+            _maxRows = Table.ALL_ROWS;
+            TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
+            long rowCount = super.getRowCount(sqlFactory) ;
+            long offsetCount = Math.max(0, rowCount - offset - sqlFactory._scrollOffset);
+
+            return maxRows == Table.ALL_ROWS ? offsetCount : Math.min(maxRows, offsetCount);
+        }
+        finally
+        {
+            _offset = offset;
+            _maxRows = maxRows;
+        }
     }
 
     @Override
@@ -431,7 +459,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 // Issue 17536: Issue a warning instead of blowing up if there is no result row containing the aggregate values.
                 if (!rs.next())
                 {
-                    LogManager.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
+                    LOG.warn("Expected a non-empty resultset from aggregate query.");
                 }
                 else
                 {
@@ -510,7 +538,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         {
             if (_forDisplay)
             {
-                Map<String, ColumnInfo> map = getDisplayColumnsList(_columns);
+                Map<FieldKey, ColumnInfo> map = getDisplayColumnsList(_columns);
 
                 // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
                 // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()

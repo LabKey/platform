@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -55,6 +55,7 @@ import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -92,6 +93,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
+import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
 
 /**
  * User: jeckels
@@ -208,9 +210,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
 
-        try
+        try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE))
         {
-            DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
             loader.setThrowOnErrors(settings.isThrowOnErrors());
             loader.setInferTypes(shouldInferTypes);
 
@@ -289,9 +290,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<ExpRun, List<ExpData>> grouping = new HashMap<>();
         for (ExpData d : data)
         {
-            String protocolLsid;
-            Container runContainer;
-
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
             if (sourceApplication != null)
             {
@@ -443,9 +441,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
+            final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
+            final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, protocol, provider, dataTable, dataDomain, rawData, settings, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, cf);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -703,11 +702,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, ExpProtocol protocol, AssayProvider provider, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container,
+                                               User user,
+                                               TableInfo dataTable,
+                                               Domain dataDomain,
+                                               List<Map<String, Object>> rawData,
+                                               DataLoaderSettings settings,
+                                               ParticipantVisitResolver resolver,
+                                               ContainerFilter containerFilter)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
-        final ProvenanceService pvs = ProvenanceService.get();
 
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
@@ -931,9 +936,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     valueMissing = true;
                 }
-                else if (o instanceof MvFieldWrapper)
+                else if (o instanceof MvFieldWrapper mvWrapper)
                 {
-                    MvFieldWrapper mvWrapper = (MvFieldWrapper)o;
                     if (mvWrapper.isEmpty())
                         valueMissing = true;
                     else
@@ -983,10 +987,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     TableInfo lookupTable = remappableLookup.get(pd);
                     try
                     {
-                        Object remapped = cache.remap(lookupTable, (String)o);
+                        Object remapped = cache.remap(lookupTable, (String)o, true);
                         if (remapped == null)
                         {
-                            errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                            if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
+                                errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
+                            else
+                                errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
                         }
                         else if (o != remapped)
                         {
@@ -1024,11 +1031,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
-                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, exp::getExpMaterial);
+                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
                     if (material != null)
                     {
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
+                    }
+                    else
+                    {
+                        errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
                     }
                 }
             }
@@ -1074,9 +1085,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (null != provenanceInputs)
             {
-                if (provenanceInputs instanceof JSONArray)
+                if (provenanceInputs instanceof JSONArray inputJSONArr)
                 {
-                    JSONArray inputJSONArr = (JSONArray) provenanceInputs;
                     Object[] inputArr = inputJSONArr.toArray();
                     for (Object lsid: inputArr)
                     {

@@ -77,7 +77,7 @@ public class GraphMoreGrid extends GridView
         getDataRegion().getDisplayColumn(0).setVisible(false);
 
         ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
-        getDataRegion().getDisplayColumn(1).setURL(resolve.addParameter("lsid", "${LSID}").toString());
+        getDataRegion().getDisplayColumn(1).setURL(resolve.addParameter("lsid", "${LSID}"));
         getDataRegion().getDisplayColumn(2).setVisible(false);
         getDataRegion().getDisplayColumn(3).setVisible(false);
 
@@ -89,7 +89,7 @@ public class GraphMoreGrid extends GridView
         graphDetail.addParameter("detail", true);
         graphDetail.addParameter("focusType", objectType);
         graphDetail.addParameter("focus", "${rowId}");
-        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString());
+        getDataRegion().getDisplayColumn(4).setURL(graphDetail);
 
         String param = url.getParameter("rowId~in");
         if (param == null)

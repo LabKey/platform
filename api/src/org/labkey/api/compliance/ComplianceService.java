@@ -17,25 +17,21 @@ package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.ColumnInfoFilter;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Created by davebradlee on 7/27/17.
@@ -63,9 +59,14 @@ public interface ComplianceService
 
     boolean isComplianceSupported();
     String getModuleName();
+
+    // Next three methods are signing-related, BUT the implementation is closely tied to the compliance controller
+    // and the functionality is part of our full compliance capabilities. (As opposed to ELN which just needs the
+    // signing service.) So they remain on ComplianceService.
     ActionURL urlFor(Container container, QueryAction action, ActionURL queryBasedUrl);
     boolean hasElecSignPermission(@NotNull Container container, @NotNull User user);
     boolean hasViewSignedSnapshotsPermission(@NotNull Container container, @NotNull User user);
+
     default @NotNull PHI getMaxAllowedPhi(@NotNull Container container, @NotNull User user)
     {
         return PHI.Restricted;
@@ -87,21 +88,17 @@ public interface ComplianceService
      */
     void setFolderSettings(@NotNull Container container, @NotNull User user, @NotNull ComplianceFolderSettings settings);
 
-    /**
-     * CRD operations for signed snapshots
-     */
-    Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException;
-    SignedSnapshot getSignedSnapshot(Container container, int snapshotId);
-    Collection<SignedSnapshot> getSignedSnapshots(Container container, String ownerEntityId);
-    Map<String, Object> deleteSignedSnapshot(Container container, User user, int snapshotId);
-
-    Pair<AttachmentParent, String> downloadSnapshot(Container container, User user, @NotNull SignedSnapshot snapshot);
-
     JSONObject getPageContextJson();
 
     ColumnInfoFilter filter(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
 
     ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
+
+    // Signing module manages the compliance schema, but TermsOfUseTableInfo is intertwined with the Compliance module
+    // code, so keep it in Compliance
+    TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter);
+
+    StringExpression getSnapshotDownloadUrlExpression(Container c);
 
     class DefaultComplianceService implements ComplianceService
     {
@@ -154,36 +151,6 @@ public interface ComplianceService
         }
 
         @Override
-        public Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException
-        {
-            return null;
-        }
-
-        @Override
-        public SignedSnapshot getSignedSnapshot(Container container, int snapshotId)
-        {
-            return null;
-        }
-
-        @Override
-        public Collection<SignedSnapshot> getSignedSnapshots(Container container, String ownerEntityId)
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public Map<String, Object> deleteSignedSnapshot(Container container, User user, int snapshotId)
-        {
-            return null;
-        }
-
-        @Override
-        public Pair<AttachmentParent, String> downloadSnapshot(Container container, User user, SignedSnapshot snapshot)
-        {
-            return null;
-        }
-
-        @Override
         public JSONObject getPageContextJson()
         {
             return null;
@@ -200,6 +167,18 @@ public interface ComplianceService
         public ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi)
         {
             return NOOP_COLUMN_INFO_TRANSFORMER;
+        }
+
+        @Override
+        public TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter)
+        {
+            return null;
+        }
+
+        @Override
+        public StringExpression getSnapshotDownloadUrlExpression(Container c)
+        {
+            return null;
         }
     }
 }

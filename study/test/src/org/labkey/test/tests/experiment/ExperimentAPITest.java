@@ -16,16 +16,14 @@
 package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
 import org.labkey.remoteapi.assay.GetAssayRunCommand;
@@ -65,8 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({Daily.class})
@@ -132,34 +130,37 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
         cmd.setTimeout(10000);
-        Connection connection = createDefaultConnection(false);
+        Connection connection = createDefaultConnection();
         SaveAssayBatchResponse response = cmd.execute(connection, getProjectName());
         int batchId = response.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Materials in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Materials in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
-        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
     }
 
-    private void createSampleSet(String sampleSetName)
+    private void createSampleSet(String sampleSetName) throws IOException, CommandException
     {
         log("Create sample type");
+        new SampleTypeDefinition(sampleSetName).setFields(
+                List.of(
+                    new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
+                    new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
+                    new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
+                    new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)))
+                .create(createDefaultConnection(), getProjectName());
+
         goToModule("Experiment");
-        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
-        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName)
-                        .setFields(List.of(
-                                new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
-                                new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
-                                new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
-                                new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean))),
-                TestFileUtils.getSampleData("sampleType.xlsx"));
+        new SampleTypeHelper(this)
+                .goToSampleType(sampleSetName)
+                .bulkImport(TestFileUtils.getSampleData("sampleType.xlsx"));
     }
 
-    @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
+    @Test @Ignore(/*TODO*/"Issue 35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
     public void testSaveBatchMaterials() throws Exception
     {
         Batch batch = new Batch();
@@ -185,16 +186,16 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
         cmd.setTimeout(10000);
-        Connection connection = createDefaultConnection(false);
+        Connection connection = createDefaultConnection();
         SaveAssayBatchResponse response = cmd.execute(connection, getProjectName());
         int batchId = response.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Materials in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Materials in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
-        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
     }
 
@@ -228,18 +229,18 @@ public class ExperimentAPITest extends BaseWebDriverTest
         batch.getRuns().add(run1);
         batch.getRuns().add(run2);
 
-        Connection connection = createDefaultConnection(false);
+        Connection connection = createDefaultConnection();
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
         cmd.setTimeout(10000);
         SaveAssayBatchResponse saveResponse = cmd.execute(connection, getProjectName());
         int batchId = saveResponse.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Datas in run: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Datas in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getDataInputs().size() + run.getDataOutputs().size()).sum());
-        assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+        assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject(),
                 responseBatch.getRuns().get(0).getDataOutputs().get(0).getId(), responseBatch.getRuns().get(1).getDataInputs().get(0).getId());
     }
 
@@ -262,7 +263,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         cmd.setTimeout(10000);
         try
         {
-            SaveAssayBatchResponse response = cmd.execute(createDefaultConnection(false), getProjectName());
+            SaveAssayBatchResponse response = cmd.execute(createDefaultConnection(), getProjectName());
             fail("Referencing file outside of pipeline root should not be permitted. Response: " + response.getText());
         }
         catch (CommandException expected)
@@ -275,13 +276,9 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @NotNull
     private Batch getBatch(Connection connection, int batchId) throws IOException, CommandException
     {
-        PostCommand getBatch = new PostCommand("assay", "getAssayBatch");
-        JSONObject json = new JSONObject();
-        json.put("protocolName", SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL);
-        json.put("batchId", batchId);
-        getBatch.setJsonObject(json);
-        CommandResponse getResponse = getBatch.execute(connection, getProjectName());
-        return new Batch(getResponse.getProperty("batch"));
+        LoadAssayBatchCommand getBatch = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batchId);
+        LoadAssayBatchResponse getResponse = getBatch.execute(connection, getProjectName());
+        return getResponse.getBatch();
     }
 
     private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
@@ -290,9 +287,9 @@ public class ExperimentAPITest extends BaseWebDriverTest
         domainCommand.getDomainDesign().setDescription(description);
         domainCommand.getDomainDesign().setFields(fields);
 
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
+        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(), getProjectName());
         GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
+        return getDomainCommand.execute(createDefaultConnection(), getProjectName());
     }
 
     @Test
@@ -328,10 +325,10 @@ public class ExperimentAPITest extends BaseWebDriverTest
         batch.setRuns(List.of(run));
 
         SaveAssayBatchCommand saveAssayBatchCommand = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
-        SaveAssayBatchResponse saveAssayBatchResponse = saveAssayBatchCommand.execute(createDefaultConnection(false), getProjectName());
+        SaveAssayBatchResponse saveAssayBatchResponse = saveAssayBatchCommand.execute(createDefaultConnection(), getProjectName());
 
         LoadAssayBatchCommand loadDomainCommand = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, saveAssayBatchResponse.getBatch().getId());
-        LoadAssayBatchResponse loadAssayBatchResponse = loadDomainCommand.execute(createDefaultConnection(false), getProjectName());
+        LoadAssayBatchResponse loadAssayBatchResponse = loadDomainCommand.execute(createDefaultConnection(), getProjectName());
         List<String> addedPropertyURIs = new ArrayList<>(loadAssayBatchResponse.getBatch().getProperties().keySet());
 
         //Verify property in added batch
@@ -358,7 +355,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String vocabDomainPropVal = "Value 1";
 
         ListDomainsCommand listDomainsCommand = new ListDomainsCommand(true, false, Set.of("UserAuditDomain"), "/Shared");
-        ListDomainsResponse listDomainsResponse = listDomainsCommand.execute(createDefaultConnection(false), "Shared");
+        ListDomainsResponse listDomainsResponse = listDomainsCommand.execute(createDefaultConnection(), "Shared");
 
         String userAuditDomainPropURI = listDomainsResponse.getDomains().get(0).getFields().get(0).getPropertyURI();
 
@@ -371,7 +368,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         runB.setProperties(Map.of(userAuditDomainPropURI, 2));
 
         SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(runA, runB));
-        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(false), getProjectName());
+        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(), getProjectName());
 
         String addedRunLsid = saveAssayRunsResponse.getRuns().get(0).getLsid();
 
@@ -380,7 +377,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         assertTrue("Non Vocabulary domain property found in new saved run.",  saveAssayRunsResponse.getRuns().get(1).getProperties().isEmpty());
 
         GetAssayRunCommand getAssayRunCommand = new GetAssayRunCommand(addedRunLsid);
-        GetAssayRunResponse getAssayRunResponse = getAssayRunCommand.execute(createDefaultConnection(false), getProjectName());
+        GetAssayRunResponse getAssayRunResponse = getAssayRunCommand.execute(createDefaultConnection(), getProjectName());
 
         assertEquals("Vocabulary domain property not found in new saved run.", getAssayRunResponse.getRun().getProperties().get(vocabDomainPropURI), vocabDomainPropVal);
 
@@ -427,13 +424,13 @@ public class ExperimentAPITest extends BaseWebDriverTest
         importRunCommand.setName("TestImportRun");
         importRunCommand.setBatchProperties(Map.of(vocabDomainPropURI, vocabDomainPropVal));
         importRunCommand.setProperties(Map.of("RunIntField", 10, vocabDomainPropURI, vocabDomainPropVal));
-        ImportRunResponse importRunResponse = importRunCommand.execute(createDefaultConnection(false), getProjectName());
+        ImportRunResponse importRunResponse = importRunCommand.execute(createDefaultConnection(), getProjectName());
 
         assertEquals("Import Run is not successful", assayId, importRunResponse.getAssayId());
 
         // 3. Verify these properties were added by LoadAssayBatch or LoadAssayRun
         LoadAssayBatchCommand loadAssayBatchCommand = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, importRunResponse.getBatchId());
-        LoadAssayBatchResponse loadAssayBatchResponse = loadAssayBatchCommand.execute(createDefaultConnection(false), getProjectName());
+        LoadAssayBatchResponse loadAssayBatchResponse = loadAssayBatchCommand.execute(createDefaultConnection(), getProjectName());
         assertTrue("Ad hoc property is not present in Batch.", loadAssayBatchResponse.getBatch().getProperties().containsKey(vocabDomainPropURI));
         assertTrue("Ad hoc property is not present in Run.", loadAssayBatchResponse.getBatch().getRuns().get(0).getProperties().containsKey(vocabDomainPropURI));
     }

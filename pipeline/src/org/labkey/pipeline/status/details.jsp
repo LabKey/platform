@@ -16,12 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineJob.TaskStatus" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.pipeline.status.LogFileParser" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page import="org.labkey.pipeline.status.StatusDetailsBean" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.Date" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -226,6 +227,15 @@
 <labkey:panel title="Log File" type="portal">
     <div id="log-controls">
         <%=link("Show full log file").id("show-full-log").attributes(Map.of("data-details", "false")).onClick("toggleShowFullLog();return false;")%>
+        <%
+            URLHelper url = status.getWebDavUrl();
+            if (url != null)
+            {
+        %>
+            <%=link("Show raw log file").id("show-raw-log").attributes(Map.of("data-details", "false")).href(url).target("_blank")%>
+        <%
+            }
+        %>
         <%=link("Copy to clipboard").id("copy-log-text").onClick("copyLogText(event);return false;")%>
     </div>
     <br>
@@ -323,13 +333,21 @@
 
     function copyLogText(e) {
         if (logDataEl) {
-            navigator.clipboard.writeText(logDataEl.innerText).then(function () {
-                let orig = e.target.innerHTML;
-                e.target.innerHTML = "Copied!";
-                setTimeout(function () {
-                    e.target.innerHTML = orig;
-                }, 2000);
-            });
+            navigator.clipboard.writeText(logDataEl.innerText).then(
+                    function () {
+                        let orig = e.target.innerHTML;
+                        e.target.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            e.target.innerHTML = orig;
+                        }, 2000);
+                    },
+                    function () {
+                        e.target.innerHTML = "Copy failed. Ensure the browser's security policy allows clipboard APIs and the page is using HTTPS.";
+                    }).catch(function(error) {
+                        console.log(error);
+                        e.target.innerText = "Copy failed: " + error;
+                    }
+            );
         }
     }
 

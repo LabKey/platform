@@ -19,6 +19,7 @@ package org.labkey.api.audit;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -64,21 +65,21 @@ public class DefaultAuditProvider implements AuditLogService, AuditLogService.Re
     }
 
     @Override
+    public <K extends AuditTypeEvent> @Nullable K getAuditEvent(User user, String eventType, int rowId, @Nullable ContainerFilter cf)
+    {
+        return null;
+    }
+
+    @Override
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         return Collections.emptyList();
     }
 
     @Override
-    public String getTableName()
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
     {
-        return "default";
-    }
-
-    @Override
-    public TableInfo getTable(ViewContext context, String name)
-    {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

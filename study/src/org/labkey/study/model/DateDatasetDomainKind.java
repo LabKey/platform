@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class DateDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
         fields.addAll(DatasetDefinition.DEFAULT_RELATIVE_DATE_FIELDS);

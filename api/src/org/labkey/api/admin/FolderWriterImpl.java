@@ -16,12 +16,12 @@
 
 package org.labkey.api.admin;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -34,7 +34,7 @@ import java.util.Set;
  */
 public class FolderWriterImpl extends BaseFolderWriter
 {
-    private static final Logger LOG = LogManager.getLogger(FolderWriterImpl.class);
+    public static final Logger LOG = LogHelper.getLogger(FolderWriterImpl.class, "Coordinates folder exports");
 
     private final Collection<FolderWriter> _writers;
 
@@ -60,6 +60,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         return new SubfolderWriter();
     }
 
+    @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         LOG.info("Exporting folder to " + vf.getLocation());
@@ -88,7 +89,8 @@ public class FolderWriterImpl extends BaseFolderWriter
             subfolderWriter.write(c, ctx, vf);
         }
 
-        writeFolderXml(c, ctx, vf);
+        if (ctx.isIncludeFolderXml())
+            writeFolderXml(c, ctx, vf);
 
         LOG.info("Done exporting folder to " + vf.getLocation());
     }
@@ -100,19 +102,18 @@ public class FolderWriterImpl extends BaseFolderWriter
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         if (ctx.isAddExportComment())
-            XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
+            XmlBeansUtil.addStandardExportComment(folderXml, c, ctx.getUser());
 
         folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
         folderXml.setLabel(c.getName());
 
         folderXml.setType(c.getContainerType().getName());
-        if (c.getTitle() != null)
-            folderXml.setTitle(c.getTitle());
+        folderXml.setTitle(c.getTitle());
         if (c.getDescription() != null)
             folderXml.setDescription(c.getDescription());
 
         // Ask LookAndFeelProperties for actual stored values (we don't want inherited values)
-        LookAndFeelProperties props = LookAndFeelProperties.getInstance(ctx.getContainer());
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
 
         String defaultDateFormat = props.getDefaultDateFormatStored();
         if (null != defaultDateFormat)

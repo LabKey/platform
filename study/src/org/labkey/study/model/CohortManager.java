@@ -23,6 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -330,7 +331,7 @@ public class CohortManager
                             .append(" NOT IN\n" + "  (SELECT Label FROM ").append(StudySchema.getInstance().getTableInfoCohort()).append(" WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
-                    Collection<String> labels = new SqlSelector(StudySchema.getInstance().getSchema(), sqlFragment).getCollection(String.class);
+                    Collection<String> labels = new SqlSelector(StudySchema.getInstance().getScope(), sqlFragment, QueryLogging.noValidationNeededQueryLogging()).getCollection(String.class);
                     Set<String> newCohortLabels = new HashSet<>(labels);
 
                     for (String cohortLabel : newCohortLabels)
@@ -428,7 +429,7 @@ public class CohortManager
         for (CohortImpl cohort : cohorts)
             cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
 
-        try (ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), cohortSql).getResultSet())
+        try (ResultSet rs = new SqlSelector(StudySchema.getInstance().getScope(), cohortSql, QueryLogging.noValidationNeededQueryLogging()).getResultSet())
         {
             while (rs.next())
             {

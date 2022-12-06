@@ -325,7 +325,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
             Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
             if (newDomain != null)
             {
-                Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
                 Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                 Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                 Map<DomainProperty, Object> defaultValues = new HashMap<>();

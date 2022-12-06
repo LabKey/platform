@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFPicture;
@@ -38,6 +37,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.util.Units;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
@@ -58,11 +58,11 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -92,7 +92,7 @@ import java.util.stream.Collectors;
 
 public class ExcelColumn extends RenderColumn
 {
-    private static Logger _log = LogManager.getLogger(ExcelColumn.class);
+    private static final Logger _log = LogHelper.getLogger(ExcelColumn.class, "Excel column rendering");
 
     private static final int TYPE_UNKNOWN = 0;
     private static final int TYPE_INT = 1;
@@ -892,31 +892,29 @@ public class ExcelColumn extends RenderColumn
 
             BindException errors = new NullSafeBindException(new Object(), "command");
             QueryView view = us.createView(qf, errors);
-            try (ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
+            ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
             {
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
+                excel.renderWorkbook(baos);
+                Sheet wb = WorkbookFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
+                DataFormatter formatter = new DataFormatter();
+                for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)
                 {
-                    excel.write(baos);
-                    Sheet wb = ExcelFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
-                    DataFormatter formatter = new DataFormatter();
-                    for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)
+                    Object[] expectedData = DATA[rowIdx];
+                    Row excelRow = wb.getRow(rowIdx + 1);
+                    for (int fieldIdx = 0; fieldIdx < FIELDS.length; fieldIdx++)
                     {
-                        Object[] expectedData = DATA[rowIdx];
-                        Row excelRow = wb.getRow(rowIdx + 1);
-                        for (int fieldIdx = 0; fieldIdx < FIELDS.length; fieldIdx++)
-                        {
-                            Object[] fieldDef = FIELDS[fieldIdx];
-                            ColumnInfo ci = ti.getColumn((String) fieldDef[0]);
+                        Object[] fieldDef = FIELDS[fieldIdx];
+                        ColumnInfo ci = ti.getColumn((String) fieldDef[0]);
 
-                            String expected = parseAndFormatExpected(expectedData[fieldIdx], ci);
-                            Cell cell = excelRow.getCell(fieldIdx);
-                            String actual = formatter.formatCellValue(cell);
-                            assertEquals("Incorrect Excel Value", expected, actual);
+                        String expected = parseAndFormatExpected(expectedData[fieldIdx], ci);
+                        Cell cell = excelRow.getCell(fieldIdx);
+                        String actual = formatter.formatCellValue(cell);
+                        assertEquals("Incorrect Excel Value", expected, actual);
 
-                            Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
-                            Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
-                            assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
-                        }
+                        Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
+                        Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
+                        assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
                     }
                 }
             }

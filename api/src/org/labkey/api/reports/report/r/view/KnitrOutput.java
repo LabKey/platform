@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.settings.AppProps;
@@ -59,7 +59,7 @@ public class KnitrOutput extends HtmlOutput
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         return new KnitrOutputView(this, getLabel());
     }

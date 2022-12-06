@@ -406,7 +406,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // Show hidden only in edit mode. Admins see all; authors & editors see only their own.
         if (!rec.data.visible) {
-            if (this.editMode && (createdByMe || LABKEY.user.isAdmin)) {
+            if (this.editMode && !rec.data.hideInManageViews && (createdByMe || LABKEY.user.isAdmin)) {
                 return true;
             }
             return false;
@@ -1143,15 +1143,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sizeItems = [];
 
         if (Ext4.isArray(data.types)) {
-            for (var i=0; i < data.types.length; i++) {
-                cbItems.push({
-                    boxLabel: data.types[i].name,
-                    name: data.types[i].name,
-                    checked: data.types[i].visible,
+            Ext4.each(data.types, function(type) {
+
+                var item = {
+                    boxLabel: type.name,
+                    name: type.name,
+                    checked: type.visible,
                     width: 150,
                     uncheckedValue : '0'
-                });
-            }
+                };
+
+                // include the description as a tooltip on the element box label
+                if (type.description.length > 0)
+                    item.afterBoxLabelTpl = '<a href="#" data-qtip="' + type.description + '"><span class="labkey-help-pop-up">?</span></a>';
+
+                cbItems.push(item);
+            }, this);
         }
 
         if (data.visibleColumns) {

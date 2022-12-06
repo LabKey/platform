@@ -158,7 +158,8 @@ public class AttachmentDataIterator extends WrapperDataIterator
             {
                 for (AttachmentFile attachmentFile : attachmentFiles)
                 {
-                    try { attachmentFile.closeInputStream(); } catch (IOException ignored) {}
+                    try { attachmentFile.closeInputStream(); }
+                    catch (IOException | IllegalStateException ignored) {}
                 }
             }
         }

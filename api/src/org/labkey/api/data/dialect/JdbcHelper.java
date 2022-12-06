@@ -20,5 +20,5 @@ import javax.servlet.ServletException;
 
 public interface JdbcHelper
 {
-    public String getDatabase(String url) throws ServletException;
+    String getDatabase(String url) throws ServletException;
 }

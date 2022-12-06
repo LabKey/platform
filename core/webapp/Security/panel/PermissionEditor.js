@@ -51,8 +51,8 @@ Ext4.define('Security.panel.PermissionEditor', {
                         id : this.treeConfig.project.id,
                         expanded   : true,
                         expandable : true,
-                        text       : Ext4.String.htmlEncode(this.treeConfig.project.name),
-                        href       : Ext4.String.htmlEncode(this.treeConfig.project.securityHref)
+                        text       : this.treeConfig.project.name,
+                        href       : this.treeConfig.project.securityHref
                     }
                 },
                 enableDrag : false,

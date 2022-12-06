@@ -24,6 +24,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
@@ -37,8 +38,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -47,9 +48,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.GeneralIssuesListDefProvider;
-import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueCommentType;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssuesListDefServiceImpl;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -64,6 +65,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.issues.IssuesSchema.ISSUE_DEF_SCHEMA_NAME;
 
 /**
  * User: migra
@@ -98,7 +101,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesListDefService.setInstance(new IssuesListDefServiceImpl());
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
 
-        NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
+        NotificationService.get().registerNotificationType(IssueObject.class.getName(), "Issues", "fa-bug");
         AttachmentService.get().registerAttachmentType(IssueCommentType.get());
     }
 
@@ -140,6 +143,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
+        ServiceRegistry.get().registerService(IssueService.class, new IssueServiceImpl());
 
         SearchService ss = SearchService.get();
 
@@ -199,7 +203,18 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
+        return Set.of(
+            IssuesSchema.getInstance().getSchemaName(),
+            ISSUE_DEF_SCHEMA_NAME
+        );
+    }
+
+    @Override
+    public @NotNull Collection<String> getProvisionedSchemaNames()
+    {
+        return Set.of(
+            ISSUE_DEF_SCHEMA_NAME
+        );
     }
 
     @Override

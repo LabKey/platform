@@ -28,7 +28,7 @@ import org.labkey.study.model.StudyImpl;
 * Time: 3:17:44 PM
 */
 
-// This task is used to import datasets directly via the pipeline ui .  DatasetBatch is the associated pipeline job.
+// This task is used to import datasets directly via the pipeline ui. DatasetBatch is the associated pipeline job.
 public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneDatasetTask.Factory>
 {
     private transient StudyImpl _study = null;

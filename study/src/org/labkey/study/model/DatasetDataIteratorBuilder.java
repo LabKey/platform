@@ -160,7 +160,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         DataIterator input = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
-        DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
+        DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, subjectCol, input, context, user);
 
         ValidationException matchError = new ValidationException();
         ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError, null);
@@ -486,12 +486,12 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         TimepointType timetype;
 
-        DatasetColumnsIterator(DatasetDefinition datasetDefinition, DataIterator data, DataIteratorContext context, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        DatasetColumnsIterator(DatasetDefinition datasetDefinition, ColumnInfo subjectCol, DataIterator data, DataIteratorContext context, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
             super(data, context);
-            _datasetDefinition = datasetDefinition;
+            this._datasetDefinition = datasetDefinition;
             this.user = user;
-            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user).getColumn("ParticipantID").getScale();
+            this._maxPTIDLength = subjectCol.getScale();
         }
 
         void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty, Integer indexContainer)

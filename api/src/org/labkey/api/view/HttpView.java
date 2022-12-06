@@ -26,12 +26,15 @@ import org.labkey.api.util.Debug;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -93,19 +96,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * to require any particular implementation of Model, I track request/response in the
      * _viewContexts stack.
      */
-    protected static class ViewStackEntry
-    {
-        ViewStackEntry(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)
-        {
-            this.mv = mv;
-            this.request = request;
-            this.response = response;
-        }
-
-        ModelAndView mv;
-        HttpServletRequest request;
-        HttpServletResponse response;
-    }
+    protected static record ViewStackEntry(ModelAndView mv, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig) {};
 
 
     /**
@@ -129,10 +120,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         {
             if (response.getContentType() != null && !response.getContentType().contains("charset"))
                 response.setContentType(response.getContentType()+"; charset=UTF-8");
-            HttpView.pushView(this, request, response);
-            initViewContext(getViewContext(), request, response);
-
-            renderInternal(model, request, response);
+            try (var closeable = HttpView.pushView(this, request, response, null))
+            {
+                initViewContext(getViewContext(), request, response);
+                renderInternal(model, request, response);
+            }
         }
         catch (Exception e)
         {
@@ -144,10 +136,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             if (!ExceptionUtil.isIgnorable(e))
                 LogManager.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
-        }
-        finally
-        {
-            HttpView.popView();
         }
     }
 
@@ -360,20 +348,72 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         return s.size() == 0 ? null : s.peek().response;
     }
 
-
-    public static void initForRequest(final ViewContext context, HttpServletRequest request, HttpServletResponse response)
+    @NotNull
+    public static PageConfig currentPageConfig()
     {
-        // placeholder view
-        pushView(new ServletView(null, context), request, response);
+        Stack<ViewStackEntry> s = _viewContexts.get();
+        var ret = s.size() == 0 ? null : s.peek().pageConfig;
+        if (null == ret)
+            throw UnexpectedException.wrap(new ServletException("Request is not configured for rendering"));
+        return ret;
     }
 
 
-    protected static void pushView(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)
+    // using real subclass to avoid the throws Exception
+    public static class InitAutoCloseable implements AutoCloseable
+    {
+        private final int _resetSize;
+
+        public InitAutoCloseable(int resetSize)
+        {
+            _resetSize = resetSize;
+        }
+
+        @Override
+        public void close()
+        {
+            HttpView.resetStackSize(_resetSize);
+        }
+    }
+
+
+    public static InitAutoCloseable initForRequest(final ViewContext context, HttpServletRequest request, HttpServletResponse response)
+    {
+        // placeholder view
+        var resetSize = _viewContexts.get().size();
+        pushView(new ServletView(null, context), request, response, new PageConfig(request));
+        return new InitAutoCloseable(resetSize);
+    }
+
+
+    public static class PushAutoCloseable implements AutoCloseable
+    {
+        private final ModelAndView _mv;
+
+        public PushAutoCloseable(ModelAndView mv)
+        {
+            _mv = mv;
+        }
+
+        @Override
+        public void close()
+        {
+            Stack<ViewStackEntry> s1 = _viewContexts.get();
+            assert _mv == s1.peek().mv;
+            popView();
+        }
+    }
+
+
+    protected static PushAutoCloseable pushView(ModelAndView mv, HttpServletRequest request, HttpServletResponse response, @Nullable PageConfig pageConfig)
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        ViewStackEntry vse = new ViewStackEntry(mv, request,response);
+        if (null == pageConfig && !s.isEmpty())
+            pageConfig = s.peek().pageConfig;
+        ViewStackEntry vse = new ViewStackEntry(mv, request,response, pageConfig);
         MemTracker.getInstance().put(vse);
         s.push(vse);
+        return new PushAutoCloseable(mv);
     }
 
 

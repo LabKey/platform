@@ -17,8 +17,8 @@ package org.labkey.api.action;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
@@ -58,7 +58,7 @@ import java.util.Set;
  */
 public class ApiQueryResponse implements ApiResponse
 {
-    private static final String URL_COL_PREFIX = "_labkeyurl_";
+    public static final String URL_COL_PREFIX = "_labkeyurl_";
     boolean _doItWithStyle = false;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;

@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.api;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.old.JSONException;
+import org.json.old.JSONObject;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;

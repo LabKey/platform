@@ -32,13 +32,13 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
@@ -61,7 +61,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.pipeline.StudyImportDatasetTask;
+import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -75,7 +75,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -140,6 +139,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             if (destStudy != null)
             {
+                User user = getUser();
                 Set<DatasetDefinition> datasets = new HashSet<>();
 
                 // get the list of datasets to export
@@ -205,11 +205,24 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     }
                 }
 
+                // Issue 44866: preserve order for the datasets based on display order, even if not all are selected
+                List<DatasetDefinition> orderedDatasets = datasets.stream().sorted(StudyManager.DATASET_ORDER_COMPARATOR).toList();
+
+                // Issue 44868: include custom default views for any datasets selected
+                for (DatasetDefinition dataset : datasets)
+                {
+                    List<CustomView> customViews = QueryService.get().getSharedCustomViews(user, sourceStudy.getContainer(), StudySchema.getInstance().getSchemaName(), dataset.getName(), false);
+                    for (CustomView customView : customViews)
+                    {
+                        if (customView.isShared() && customView.getName() == null)
+                            _form.addView(customView.getEntityId());
+                    }
+                }
+
                 // log selected settings to the pipeline job log file
                 _form.logSelections(getLogger());
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
-                User user = getUser();
                 if(_form.getFolderProps() != null)
                     _form.setFolderProps(_form.getFolderProps()[0].split(","));
                 if(_form.getStudyProps() != null)
@@ -222,6 +235,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (_form.getLists() != null)
                     folderExportContext.setListIds(_form.getLists());
 
+                if (_form.getQueries() != null)
+                    folderExportContext.setQueryKeys(_form.getQueries());
+
                 if (_form.getViews() != null)
                     folderExportContext.setViewIds(_form.getViews());
 
@@ -231,7 +247,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                         dataTypes, _form.getExportPhiLevel(),
                         new ParticipantMapper(sourceStudy, user, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
+                        _form.isMaskClinic(), orderedDatasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)
@@ -241,11 +257,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (!participantGroups.isEmpty())
                 {
                     studyExportContext.setParticipants(getGroupParticipants(_form, participantGroups, studyExportContext));
-                }
-                else if (null != _form.getVials())
-                {
-                    studyExportContext.setParticipants(getSpecimenParticipants(_form));
-                    studyExportContext.setVials(_form.getVials());
                 }
 
                 // This "study XML modifier" will replace exported source study properties with the values entered in the wizard
@@ -374,6 +385,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             dataTypes.add(FolderArchiveDataTypes.REPORTS_AND_CHARTS);
         }
 
+        if (form.getQueries() != null)
+        {
+            dataTypes.add(FolderArchiveDataTypes.QUERIES);
+        }
+
         if (form.getViews() != null)
         {
             dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
@@ -386,7 +402,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.isIncludeSpecimens())
         {
-            dataTypes.add(SpecimenArchiveDataTypes.SPECIMENS);
+            dataTypes.add(SpecimenMigrationService.SPECIMENS_ARCHIVE_TYPE);
         }
 
         return dataTypes;
@@ -410,8 +426,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
 
-            // missing values and qc states
-            new MissingValueImporterFactory().create().process(null, importContext, studyDir);
+            // old study-based qc states: should remove this at some point (moved to folder level in 19.2, so 24.11)
             new StudyQcStatesImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
@@ -491,10 +506,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             if (importContext != null)
             {
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
-                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(importContext, studyDir);
-                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(importContext);
+                VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(importContext, studyDir);
+                String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(importContext);
 
-                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy, true);
+                AbstractDatasetImportTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy, true);
             }
             importParticipantGroups(vf, errors, importContext);
         }
@@ -611,22 +626,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 return (List<String>)selector.getCollection(String.class);
         }
         return Collections.emptyList();
-    }
-
-    private List<String> getSpecimenParticipants(ChildStudyDefinition form)
-    {
-        Set<String> ptids = new HashSet<>();
-
-        for (Vial vial : form.getVials())
-        {
-            String ptid = vial.getPtid();
-
-            // PTID can be null
-            if (null != ptid)
-                ptids.add(vial.getPtid());
-        }
-
-        return new LinkedList<>(ptids);
     }
 
     /**

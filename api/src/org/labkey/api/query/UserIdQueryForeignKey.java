@@ -45,6 +45,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     {
         super(sourceSchema, null, "core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
         _includeAllUsers = includeAllUsers;
+        setShowAsPublicDependency(false);
     }
 
     public UserIdQueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, User user, Container container, boolean includeAllUsers)

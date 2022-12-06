@@ -17,8 +17,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -571,6 +571,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         finally
         {
+            if (loader != null)
+                loader.close();
             if (null != file)
                 file.closeInputStream();
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)

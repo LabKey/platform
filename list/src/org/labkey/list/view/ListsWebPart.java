@@ -21,7 +21,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -44,7 +43,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
     public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists", LOCATION_BODY, LOCATION_RIGHT)
     {
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public ListsWebPart getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             boolean narrow = webPart.getLocation().equals(LOCATION_RIGHT);
             return new ListsWebPart(narrow, portalCtx);
@@ -59,11 +58,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         _narrow = narrow;
 
         setTitle("Lists");
-
-        if (getModelBean().hasPermission(UpdatePermission.class))
-        {
-            setTitleHref(ListController.getBeginURL(getViewContext().getContainer()));
-        }
+        setTitleHref(ListController.getBeginURL(portalCtx.getContainer()));
 
         if (portalCtx.hasPermission(DesignListPermission.class))
         {
@@ -85,7 +80,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
 
     private void renderNarrowView(ViewContext model, PrintWriter out)
     {
-        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer(), model.getUser(), true);
+        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer(), model.getUser(), true, true, false);
         out.write("<table>");
         if (lists.isEmpty())
         {
@@ -104,6 +99,6 @@ public class ListsWebPart extends WebPartView<ViewContext>
         }
         out.write("</table>");
         if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            out.write(PageFlowUtil.textLink("manage lists", ListController.getBeginURL(model.getContainer())));
+            out.write(PageFlowUtil.link("manage lists").href(PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
     }
 }

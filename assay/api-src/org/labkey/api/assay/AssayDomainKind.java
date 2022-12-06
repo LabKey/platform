@@ -16,8 +16,9 @@
 
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -36,13 +37,18 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -238,5 +244,18 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
     {
         return AssayService.get().getTableInfoForDomainId(user, container, domain.getTypeId(), cf);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull UserSchema userSchema)
+    {
+        if (perm == ReadPermission.class)
+        {
+            Set<Role> roles = null;
+            if (userSchema instanceof UserSchema.HasContextualRoles)
+                roles = ((UserSchema.HasContextualRoles) userSchema).getContextualRoles();
+            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, roles);
+        }
+        return super.hasPermission(user, perm, userSchema);
     }
 }

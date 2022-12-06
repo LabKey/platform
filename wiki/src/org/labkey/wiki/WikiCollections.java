@@ -21,15 +21,21 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.WikiTree;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -50,7 +56,10 @@ public class WikiCollections
     private final Map<Integer, WikiTree> _treesByRowId;
     private final Map<String, WikiTree> _treesByName;
     private final Map<String, String> _nameTitleMap;
+    private final Map<String, String> _nameAliasTitleMap;
     private final List<String> _names;
+    private final Map<String, String> _namesByAlias;
+    private final MultiValuedMap<Integer, String> _aliasesByRowId;
 
     private final List<NavTree> _adminNavTree;
     private final List<NavTree> _nonAdminNavTree;
@@ -115,8 +124,23 @@ public class WikiCollections
 
         _adminNavTree = createNavTree(c, true);
         _nonAdminNavTree = createNavTree(c, false);
+
+        _aliasesByRowId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
+            .mapStream()
+            .map(map->new Alias((Integer)map.get("PageRowId"), (String)map.get("Alias")))
+            .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
+            .collect(LabKeyCollectors.toMultiValuedMap(record->record.pageRowId, record->record.alias));
+        _namesByAlias = _aliasesByRowId.entries().stream()
+            .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
+            .collect(LabKeyCollectors.toCaseInsensitiveMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
+        Map<String, String> nameAliasTitleMap = new HashMap<>(_nameTitleMap);
+        _aliasesByRowId.entries().stream()
+            .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
+            .forEach(e->nameAliasTitleMap.put(e.getValue(), _treesByRowId.get(e.getKey()).getTitle()));
+        _nameAliasTitleMap = Collections.unmodifiableMap(nameAliasTitleMap);
     }
 
+    public record Alias(int pageRowId, String alias) {}
 
     private void populateWikiTree(WikiTree parent, MultiValuedMap<Integer, Integer> childMap, Map<Integer, WikiTree> treesByRowId)
     {
@@ -134,7 +158,6 @@ public class WikiCollections
             }
         }
     }
-
 
     // Create name list in depth-first order
     private void populateNames(WikiTree root, List<String> names)
@@ -177,18 +200,10 @@ public class WikiCollections
         return elements;
     }
 
-
     int getPageCount()
     {
         return getNames().size();
     }
-
-
-    WikiTree getWikiTree()
-    {
-        return _root;
-    }
-
 
     @NotNull List<String> getNames()
     {
@@ -218,27 +233,15 @@ public class WikiCollections
         return _treesByRowId.get(rowId);
     }
 
-    // Returns null for non-existent wiki, empty collection for existing but no children
-    @Nullable Collection<WikiTree> getChildren(@Nullable String parentName)
-    {
-        WikiTree parent = getWikiTree(parentName);
-
-        if (null == parent)
-            return null;
-
-        return parent.getChildren();
-    }
-
-    // Returns null for non-existent wiki, empty collection for existing but no children
-    @Nullable Collection<WikiTree> getChildren(int rowId)
-    {
-        return _treesByRowId.get(rowId).getChildren();
-    }
-
     // TODO: Change to return the root WikiTree?
     Map<String, String> getNameTitleMap()
     {
         return _nameTitleMap;
+    }
+
+    public Map<String, String> getNameAndAliasTitleMap()
+    {
+        return _nameAliasTitleMap;
     }
 
     String getName(int rowId)
@@ -274,5 +277,17 @@ public class WikiCollections
         }
 
         return trees;
+    }
+
+    // Ordered by alias (case-insensitive)
+    Collection<String> getAliases(int rowId)
+    {
+        return _aliasesByRowId.get(rowId);
+    }
+
+    // Returns null for no match
+    @Nullable String getNameForAlias(@Nullable String alias)
+    {
+        return _namesByAlias.get(alias);
     }
 }

@@ -32,7 +32,7 @@ public class PropertyValidator implements ColumnValidator
     final String columnName;
     final ValidatorKind kind;
     final IPropertyValidator propertyValidator;
-    private ColumnRenderProperties _columnRenderProperties;
+    private final ColumnRenderProperties _columnRenderProperties;
     final List<ValidationError> errors = new ArrayList<>(1);
 
     public PropertyValidator(String columnName, ColumnRenderProperties crp, IPropertyValidator propertyValidator)

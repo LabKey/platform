@@ -17,6 +17,7 @@ package org.labkey.api.settings;
 
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.util.DateUtil.MonthDayOption;
+import org.labkey.api.util.SafeToRenderEnum;
 
 import java.util.Set;
 
@@ -25,7 +26,7 @@ import java.util.Set;
  * Date: 1/10/14
  * Time: 3:25 PM
  */
-public enum DateParsingMode
+public enum DateParsingMode implements SafeToRenderEnum
 {
     US("U.S. date parsing (MDY)", MonthDayOption.MONTH_DAY, "31/1/2004, 13/1/2004, 31/12/2004"),
     NON_US("Non-U.S. date parsing (DMY)", MonthDayOption.DAY_MONTH, "1/31/2004, 1/13/2004, 12/31/2004");

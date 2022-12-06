@@ -22,7 +22,7 @@ export const QuerySelectInput: FC<Props> = memo(props => {
 
     return (
         <QuerySelect
-            componentId={'query-select' + name}
+            key={'query-select' + name}
             inputClass={'col-sm-8 col-xs-12'}
             name={name}
             schemaQuery={SchemaQuery.create(schemaName, queryName)}

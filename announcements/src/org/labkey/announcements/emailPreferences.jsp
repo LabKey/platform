@@ -21,7 +21,7 @@
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function toggleOptions()
     {
         var checkBoxElem = document.getElementById("resetFolderDefault");

@@ -16,7 +16,6 @@
 
 package org.labkey.api.util.emailTemplate;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -25,6 +24,8 @@ import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ import java.util.Set;
  */
 public class EmailTemplateService
 {
-    private static final Logger _log = LogManager.getLogger(EmailTemplateService.class);
+    private static final Logger _log = LogHelper.getLogger(EmailTemplateService.class, "Email template registration and migration");
 
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String MESSAGE_SUBJECT_PART = "subject";
@@ -185,8 +186,9 @@ public class EmailTemplateService
 
     private Class<? extends EmailTemplate> getTemplateClass(String className)
     {
-        try {
-            Class c = Class.forName(className);
+        try
+        {
+            Class<?> c = Class.forName(className);
             if (EmailTemplate.class.isAssignableFrom(c))
             {
                 //noinspection unchecked
@@ -249,17 +251,18 @@ public class EmailTemplateService
     /**
      * Moves all properties associated with an email template to a new package+class. Useful when moving and/or renaming
      * an email template class. Expected to be called from upgrade code, hence no cache clearing.
-     * @param oldClassName Previous full package and class name
-     * @param templateClass New template class
+     * @param oldClassName Old full package and class name
+     * @param newClassName New full package and class name
      */
-    public void relocateEmailTemplateProperties(String oldClassName, Class<? extends EmailTemplate> templateClass)
+    public void relocateEmailTemplateProperties(String oldClassName, String newClassName)
     {
         TableInfo tinfo = PropertySchema.getInstance().getTableInfoProperties();
         SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).append(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
         sql.add(oldClassName);
-        sql.add(templateClass.getName());
+        sql.add(newClassName);
         sql.add(oldClassName + "%");
 
-        new SqlExecutor(tinfo.getSchema()).execute(sql);
+        int updated = new SqlExecutor(tinfo.getSchema()).execute(sql);
+        _log.info("Migrated " + StringUtilsLabKey.pluralize(updated, "template property", "template properties") + " from " + oldClassName + " to " + newClassName);
     }
 }

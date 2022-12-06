@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -391,9 +392,15 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         var info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
         if (getLookupQuery() != null || getConceptURI() != null)
         {
-            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getUser() == user;
-            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getContainer() == container;
-            info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), user, container, this));
+            UserSchema schema = baseTable.getUserSchema();
+            if (schema == null)
+                info.setFk(PdLookupForeignKey.create(null, user, container, this));
+            else
+            {
+                assert schema.getUser() == user;
+                assert schema.getContainer() == container;
+                info.setFk(PdLookupForeignKey.create(schema, this));
+            }
         }
         return info;
     }

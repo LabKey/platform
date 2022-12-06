@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -25,9 +26,12 @@ import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.template.PageConfig;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -40,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.Random;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -78,9 +83,8 @@ public class AuthFilter implements Filter
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
-            resp.setHeader("X-XSS-Protection", "1; mode=block");
+            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
+                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
             resp.setHeader("X-Content-Type-Options", "nosniff");
             resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
         }
@@ -105,7 +109,7 @@ public class AuthFilter implements Filter
             {
                 StringBuilder redirectURL = new StringBuilder();
                 redirectURL.append(req.getRequestURL()).append("/");
-                if (req.getQueryString() != null)
+                if (!StringUtils.isBlank(req.getQueryString()))
                 {
                     redirectURL.append("?").append(req.getQueryString());
                 }
@@ -125,7 +129,7 @@ public class AuthFilter implements Filter
             }
 
             StringBuffer originalURL = req.getRequestURL();
-            if (req.getQueryString() != null)
+            if (!StringUtils.isBlank(req.getQueryString()))
             {
                 originalURL.append("?");
                 originalURL.append(req.getQueryString());
@@ -197,7 +201,7 @@ public class AuthFilter implements Filter
                 user = User.guest;
         }
         else
-            UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
 
         req = AuthenticatedRequest.create(req, user);
 
@@ -212,9 +216,27 @@ public class AuthFilter implements Filter
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
 
+        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-unsafe-inline"))
+        {
+            String csp = StringUtils.trimToEmpty(((HttpServletResponse) response).getHeader("Content-Security-Policy"));
+            String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonceHeader(req) + "'";
+            if (!csp.contains(nonceDirectiveValue))
+            {
+                if (!csp.contains("script-src "))
+                {
+                    if (StringUtils.isNotBlank(csp))
+                        csp = StringUtils.appendIfMissing(csp, ";");
+                    csp += "script-src 'unsafe-eval' http: https:  " + nonceDirectiveValue + ";";
+                }
+                ((HttpServletResponse) response).setHeader("Content-Security-Policy", csp);
+            }
+        }
+
         try
         {
             SecurityLogger.pushSecurityContext("AuthFilter " + req.getRequestURI(), user);
+            addRandomHeader(req, resp);
+            HttpUtil.trackClientApiRequests(req);
             chain.doFilter(req, resp);
         }
         finally
@@ -233,6 +255,17 @@ public class AuthFilter implements Filter
             ((AuthenticatedRequest) req).close();
         }
     }
+
+    private void addRandomHeader(HttpServletRequest req, HttpServletResponse resp)
+    {
+        // make response size  a bit random (compressed or not)
+        StringBuilder sb = new StringBuilder(GUID.makeHash(req.getQueryString()));
+        Random r = new Random();
+        for (int i=r.nextInt(32) ; i>0 ; i--)
+            sb.append((char)('A' + r.nextInt(26)));
+        resp.addHeader("X-LK-NONCE", sb.toString());
+    }
+
 
 
     private boolean clearRequestAttributes(HttpServletRequest request)

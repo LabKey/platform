@@ -96,7 +96,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
         initTest.initializeFolder();
-        initTest.setPipelineRoot(StudyHelper.getPipelinePath());
+        initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
@@ -139,15 +139,15 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .setName(TEST_DATASET_NAME);
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
-        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt", FieldDefinition.ColumnType.Integer).setLabel("TestInt")
                 .setValidators(List.of(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
                         "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999"))).setRequired(false));
-        fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
+        fieldsEditor.addField(new FieldDefinition("TestString", FieldDefinition.ColumnType.String).setLabel("TestRequiredString")
                 .setRequired(true));
         // Format "TestDate" as "Date"
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
+        fieldsEditor.addField(new FieldDefinition("TestDate", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDate"));
         // "TestDateTime" format will default to date-time
-        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateAndTime));
+        fieldsEditor.addField(new FieldDefinition("TestDateTime", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDateTime"));
         editDatasetPage
             .clickSave()
             .clickViewData()
@@ -162,7 +162,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
     }
 
     @Test
@@ -520,7 +520,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToProjectHome();
         clickFolder(getFolderName());
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : newProps.keySet())
         {
@@ -529,19 +529,19 @@ public class StudySimpleExportTest extends StudyBaseTest
         }
         clickButton("Submit");
 
-        log("Study Properties: export study folder to the pipeline as indiviual files");
+        log("Study Properties: export study folder to the pipeline as individual files");
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Study Properties: verify xml file was created in export");
-        _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
+        _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Study Properties");
+        createSubfolderAndImportStudyFromPipeline("Study Properties Folder");
 
         log("Study Properties: verify imported settings");
-        clickFolder("Study Properties");
+        clickFolder("Study Properties Folder");
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : newProps.keySet())
         {
@@ -557,7 +557,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Study Properties: clean up study properties");
         clickFolder(getFolderName());
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : origProps.keySet())
         {
@@ -1003,7 +1003,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
-        setPipelineRoot(StudyHelper.getPipelinePath());
+        setPipelineRoot(StudyHelper.getStudySubfolderPath());
         importFolderFromPipeline("/export/folder.xml");
     }
 
@@ -1168,8 +1168,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         });
 
         goToManageStudy();
-        waitForText("Change Study Properties");
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForText("Study Properties");
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForText("Study Properties");
         waitForElement(Ext4Helper.Locators.ext4Button("Submit"));
 
@@ -1187,8 +1187,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(FOLDER_NAME);
 
         goToManageStudy();
-        waitForText("Change Study Properties");
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForText("Study Properties");
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForText("Study Properties");
         waitForElement(Ext4Helper.Locators.ext4Button("Submit"));
 

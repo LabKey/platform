@@ -28,7 +28,6 @@ import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -48,7 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
+import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 
 @RequiresPermission(InsertPermission.class)
 public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<AssayPublishConfirmAction.AssayPublishConfirmForm>
@@ -208,9 +207,9 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     }
 
     @Override
-    protected Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(AssayPublishConfirmForm form)
+    protected Map<LinkToStudyKeys, FieldKey> getAdditionalColumns(AssayPublishConfirmForm form)
     {
-        Map<ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
+        Map<LinkToStudyKeys, FieldKey> additionalCols = new HashMap<>();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         String valueSource = form.getDefaultValueSource();
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
@@ -218,20 +217,20 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
 
-        additionalCols.put(ExtraColFieldKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
-        additionalCols.put(ExtraColFieldKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
+        additionalCols.put(LinkToStudyKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
+        additionalCols.put(LinkToStudyKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
 
         // TODO : can we transition away from using the defaultValueSource and just query the tableMetadata
-        additionalCols.put(ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(tableMetadata));
-        additionalCols.put(ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT));
-        additionalCols.put(ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE));
+        additionalCols.put(LinkToStudyKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(tableMetadata));
+        additionalCols.put(LinkToStudyKeys.VisitId, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT));
+        additionalCols.put(LinkToStudyKeys.Date, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE));
 
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
-        additionalCols.put(ExtraColFieldKeys.SpecimenId, specimenIDFieldKey);
-        additionalCols.put(ExtraColFieldKeys.SpecimenMatch, new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME));
-        additionalCols.put(ExtraColFieldKeys.SpecimenPtid, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID"));
-        additionalCols.put(ExtraColFieldKeys.SpecimenVisit, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum"));
-        additionalCols.put(ExtraColFieldKeys.SpecimenDate, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp"));
+        additionalCols.put(LinkToStudyKeys.SpecimenId, specimenIDFieldKey);
+        additionalCols.put(LinkToStudyKeys.SpecimenMatch, new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME));
+        additionalCols.put(LinkToStudyKeys.SpecimenPtid, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID"));
+        additionalCols.put(LinkToStudyKeys.SpecimenVisit, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum"));
+        additionalCols.put(LinkToStudyKeys.SpecimenDate, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp"));
 
         UserSchema userSchema = getUserSchema(form);
         QueryView view = new QueryView(userSchema, getQuerySettings(form), null);
@@ -244,9 +243,9 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
                 .collect(Collectors.toList());
 
         if (sampleCols.size() == 1)
-            additionalCols.put(ExtraColFieldKeys.SampleId, sampleCols.get(0).getFieldKey());
+            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.get(0).getFieldKey());
 
-        if (!selectColumns.containsKey(additionalCols.get(ExtraColFieldKeys.Date)))
+        if (!selectColumns.containsKey(additionalCols.get(LinkToStudyKeys.Date)))
         {
             // issue 41982 : look for an alternate date column if the standard assay date field does not exist
             List<ColumnInfo> dateCols = selectColumns.values().stream()
@@ -255,13 +254,13 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
                     .collect(Collectors.toList());
 
             if (dateCols.size() == 1)
-                additionalCols.put(ExtraColFieldKeys.Date, dateCols.get(0).getFieldKey());
+                additionalCols.put(LinkToStudyKeys.Date, dateCols.get(0).getFieldKey());
         }
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.
         if (targetStudyDomainProperty != null && targetStudyDomainProperty.first == ExpProtocol.AssayDomainTypes.Result)
         {
-            additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.TargetStudy, tableMetadata.getTargetStudyFieldKey());
+            additionalCols.put(LinkToStudyKeys.TargetStudy, tableMetadata.getTargetStudyFieldKey());
         }
         return additionalCols;
     }

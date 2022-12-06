@@ -22,7 +22,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
@@ -68,6 +70,7 @@ public class WikiVersion
 
     /**
      * Copy constructor used when creating a new version of a wiki
+     *
      * @param copy The current latest version
      */
     public WikiVersion(WikiVersion copy)
@@ -125,19 +128,17 @@ public class WikiVersion
     // TODO: WikiVersion should know its wiki & container
     public HtmlString getHtml(Container c, Wiki wiki)
     {
-        return HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX)
-            .append(getHtmlForConvert(c, wiki))
-            .append(WikiRenderingService.WIKI_SUFFIX).getHtmlString();
+        return render(c, wiki).first;
     }
 
-    public HtmlString getHtmlForConvert(Container c, Wiki wiki)
+    public Pair<HtmlString, Set<ClientDependency>> render(Container c, Wiki wiki)
     {
-        return WikiContentCache.getHtml(c, wiki, this, _cache);
-    }
-
-    public Set<ClientDependency> getClientDependencies(Container c, Wiki wiki)
-    {
-        return WikiManager.get().formatWiki(c, wiki, this).getClientDependencies();
+        FormattedHtml rendered = WikiContentCache.getHtml(c, wiki, this, _cache);
+        return Pair.of(
+                HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX)
+                    .append(rendered.getHtml())
+                    .append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(),
+                rendered.getClientDependencies());
     }
 
     public String getTitle()

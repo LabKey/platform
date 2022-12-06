@@ -28,9 +28,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONWriter;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
+import org.json.old.JSONWriter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
@@ -475,7 +475,7 @@ public class DavController extends SpringActionController
                     {
                         try
                         {
-                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
+                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(getRequest()), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
                             return WebdavStatus.fromCode(status.code);
                         }
                         catch (Exception e)
@@ -3090,7 +3090,7 @@ public class DavController extends SpringActionController
             }
 
             // otherwise, save to temp directory, scan, return wrapper over saved file
-            File tmp = File.createTempFile(GUID.makeHash(), "");
+            File tmp = new File(getTempUploadDir(), GUID.makeGUID());
             fis.transferTo(tmp);
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);
@@ -3098,12 +3098,16 @@ public class DavController extends SpringActionController
             if (result.result == AntiVirusService.Result.OK)
             {
                 _fis = new FileStream.FileFileStream(tmp, true);
-                return;
             }
-            else if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
-                throw new ConfigurationException(result.message);
             else
-                throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
+            {
+                // Delete the temp file that failed the virus scan
+                tmp.delete();
+                if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
+                    throw new ConfigurationException(result.message);
+                else
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
+            }
         }
 
         FileStream getFileStream(String name) throws DavException, IOException
@@ -4766,7 +4770,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {
@@ -5046,19 +5050,6 @@ public class DavController extends SpringActionController
         if (!StringUtils.isEmpty(contentDisposition))
         {
             getResponse().setContentDisposition(contentDisposition);
-            try
-            {
-                // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
-                if (HttpUtil.isChrome(getRequest()))
-                {
-                    Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
-                    getResponse().setContentDisposition(contentDisposition + "; filename=" + requestPath.getName());
-                }
-            }
-            catch (URISyntaxException x)
-            {
-               // pass
-            }
         }
 
         // Find content type
@@ -5853,7 +5844,7 @@ public class DavController extends SpringActionController
             if (resourceRootPath != null)
                 page.root = resourceRootPath;
 
-            PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
+            PageConfig config = new PageConfig(getViewContext().getRequest(), resource.getPath() + "-- webdav");
 
             if ("html".equals(getViewContext().getRequest().getParameter("listing")))
             {

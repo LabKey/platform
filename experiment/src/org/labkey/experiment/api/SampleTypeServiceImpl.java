@@ -53,6 +53,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -79,6 +81,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -89,10 +92,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -147,9 +148,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
 
     // SampleType -> Container cache
-    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleTypeToContainer");
+    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -336,6 +337,30 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
+    {
+        OntologyObject obj = OntologyManager.getOntologyObject(objectId);
+        if (obj == null)
+            return null;
+
+        return getSampleType(obj.getObjectURI());
+    }
+
+    @Override
+    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer);
+        if (legacyObjectId != null)
+            return getSampleTypeByObjectId(definitionContainer, legacyObjectId);
+
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName);
+        if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
+            return sampleType;
+
+        return null;
+
+    }
+
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
@@ -477,6 +502,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
 
+    @Override
+    public Pair<String, String> getSampleTypeSamplePrefixLsids(Container container)
+    {
+        Pair<String, String> lsidDbSeq = ExperimentService.get().generateLSIDWithDBSeq(container, ExpSampleType.class);
+        String sampleTypeLsidStr = lsidDbSeq.first;
+        Lsid sampleTypeLsid = Lsid.parse(sampleTypeLsidStr);
+
+        String dbSeqStr = lsidDbSeq.second;
+        String samplePrefixLsid = new Lsid.LsidBuilder("Sample", "Folder-" + container.getRowId() + "." + dbSeqStr, "").toString();
+
+        return new Pair<>(sampleTypeLsid.toString(), samplePrefixLsid);
+    }
+
     /**
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
@@ -584,7 +622,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException
     {
-        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
+        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,nameExpression, null);
+    }
+
+    @NotNull
+    @Override
+    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
+            throws ExperimentException
+    {
+        return createSampleType(c,u,name,description,properties,indices,-1,-1,-1, -1, nameExpression, null);
     }
 
     @NotNull
@@ -674,10 +720,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (category != null && category.length() > categoryMax)
             throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
 
-        Lsid lsid = getSampleTypeLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
+        Pair<String, String> dbSeqLsids = getSampleTypeSamplePrefixLsids(c);
+        String lsid = dbSeqLsids.first;
+        String materialPrefixLsid = dbSeqLsids.second;
+        Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
         DomainKind kind = domain.getDomainKind();
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain);
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
@@ -738,10 +786,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
-        source.setLSID(lsid.toString());
+        source.setLSID(lsid);
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(materialPrefixLsid);
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         if (aliquotNameExpression != null)
@@ -909,7 +957,26 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
+        ValidationException errors;
+
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
+
+        String newName = StringUtils.trimToNull(update.getName());
+        String oldSampleTypeName = st.getName();
+        boolean hasNameChange = false;
+        if (newName != null && !oldSampleTypeName.equals(newName))
+        {
+            ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
+            if (duplicateType != null)
+            {
+                errors = new ValidationException();
+                errors.addError(new SimpleValidationError("A Sample Type with name '" + newName + "' already exists."));
+                return errors;
+            }
+
+            hasNameChange = true;
+            st.setName(newName);
+        }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
@@ -929,7 +996,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
-                    ValidationException errors = new ValidationException();
+                    errors = new ValidationException();
                     errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
@@ -952,17 +1019,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
-            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
+            String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
+            st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);
             st.setAutoLinkCategory(options.getAutoLinkCategory());
             if (options.getCategory() != null) // update sample type category is currently not supported
                 st.setCategory(options.getCategory());
         }
 
-        ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            if (hasNameChange)
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
             if (!errors.hasErrors())
             {
@@ -994,7 +1066,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public boolean parentAliasHasCorrectFormat(String parentAlias)
     {
         //check if it is of the expected format or targeting the to be created sample type
-        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
+        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;
@@ -1039,7 +1111,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return createAuditRecord(c, comment, null, row, null);
     }
 
-    // move to UploadSamplesHelper?
     private boolean isInputFieldKey(String fieldKey)
     {
         int slash = fieldKey.indexOf('/');

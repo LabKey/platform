@@ -16,11 +16,12 @@
 
 package org.labkey.api.reports;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
@@ -50,6 +51,10 @@ import java.util.List;
  */
 public interface ReportService
 {
+    // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
+    @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
+    Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
+
     String LINK_REPORT_TYPE = "ReportService.linkReport";
 
     static ReportService get()
@@ -181,7 +186,7 @@ public interface ReportService
      * parameters. Imported reports are always treated as new reports even if they were exported from
      * the same container.
      */
-    Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
+    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
 
     /**
      * Runs maintenance on the report service.

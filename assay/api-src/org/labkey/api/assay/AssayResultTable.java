@@ -62,7 +62,6 @@ import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -148,7 +147,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     col.setFieldKey(new FieldKey(null, domainProperty.getName()));
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
+                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, cf);
 
                     ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
                     if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
@@ -538,7 +537,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (perm.equals(ReadPermission.class))
-            return _userSchema.getContainer().hasPermission(user, perm);
+            return _userSchema.getContainer().hasPermission(user, perm, _userSchema.getContextualRoles());
         if (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm))
                 return _provider.isEditableResults(_protocol) && _userSchema.getContainer().hasPermission(user, perm);
         return false;

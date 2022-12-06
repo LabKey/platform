@@ -19,6 +19,7 @@ package org.labkey.mothership.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -154,7 +155,7 @@ public class MothershipSchema extends UserSchema
         FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         SQLFragment descriptionSQL = new SQLFragment("CASE WHEN " +
                 ExprColumn.STR_TABLE_ALIAS + ".VcsBranch IS NULL OR " + ExprColumn.STR_TABLE_ALIAS + ".BuildTime IS NULL THEN " +
@@ -186,15 +187,27 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable<MothershipSchema> createServerSessionTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
+        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf)
+        {
+            @Override
+            protected ColumnInfo resolveColumn(String name)
+            {
+                if ("activeUserCount".equalsIgnoreCase(name))
+                {
+                    return getColumn("recentUserCount");
+                }
+                return super.resolveColumn(name);
+            }
+        };
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
-        result.getMutableColumn("SoftwareReleaseId").setFk(new QueryForeignKey.Builder(this, cf).table(SOFTWARE_RELEASE_TABLE_NAME));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("SoftwareReleaseId").setFk(new QueryForeignKey.Builder(this, cf).table(SOFTWARE_RELEASE_TABLE_NAME));
+        result.getMutableColumnOrThrow("OriginalServerSessionId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_SESSION_TABLE_NAME));
 
-        result.getMutableColumn("ServerInstallationId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_INSTALLATION_TABLE_NAME));
-        result.getMutableColumn("ServerInstallationId").setLabel("Server");
+        result.getMutableColumnOrThrow("ServerInstallationId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_INSTALLATION_TABLE_NAME));
+        result.getMutableColumnOrThrow("ServerInstallationId").setLabel("Server");
 
         var earliestCol = result.getColumn("EarliestKnownTime");
         var latestCol = result.getColumn("LastKnownTime");
@@ -207,18 +220,19 @@ public class MothershipSchema extends UserSchema
         result.addColumn(exceptionCountCol);
 
         List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(FieldKey.fromString("VcsRevision"));
+        defaultCols.add(FieldKey.fromString("SoftwareReleaseId/Description"));
         defaultCols.add(FieldKey.fromString("Duration"));
         defaultCols.add(FieldKey.fromString("LastKnownTime"));
         defaultCols.add(FieldKey.fromString("DatabaseProductName"));
         defaultCols.add(FieldKey.fromString("RuntimeOS"));
         defaultCols.add(FieldKey.fromString("JavaVersion"));
         defaultCols.add(FieldKey.fromString("UserCount"));
-        defaultCols.add(FieldKey.fromString("ActiveUserCount"));
+        defaultCols.add(FieldKey.fromString("RecentUserCount"));
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
+        defaultCols.add(FieldKey.fromString("Distribution"));
         defaultCols.add(FieldKey.fromString("ServletContainer"));
-        defaultCols.add(FieldKey.fromString("BuildTime"));
+        defaultCols.add(FieldKey.fromString("ServerIP"));
         result.setDefaultVisibleColumns(defaultCols);
 
         ActionURL base = new ActionURL(MothershipController.ShowServerSessionDetailAction.class, getContainer());
@@ -236,9 +250,9 @@ public class MothershipSchema extends UserSchema
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
         url.addParameter("serverInstallationId","${ServerInstallationId}");
-        result.getMutableColumn("ServerHostName").setURL(StringExpressionFactory.createURL(url));
+        result.getMutableColumnOrThrow("ServerHostName").setURL(StringExpressionFactory.createURL(url));
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         result.setTitleColumn("ServerHostName");
 
@@ -254,7 +268,8 @@ public class MothershipSchema extends UserSchema
         lastPing.append(" WHERE ss.ServerInstallationId = ");
         lastPing.append(STR_TABLE_ALIAS);
         lastPing.append(".ServerInstallationId)");
-        result.addColumn(new ExprColumn(result, "LastPing", lastPing, JdbcType.TIMESTAMP));
+        var lastPingCol = new ExprColumn(result, "LastPing", lastPing, JdbcType.TIMESTAMP);
+        result.addColumn(lastPingCol);
 
         SQLFragment exceptionCount = new SQLFragment("(SELECT COUNT(*) FROM ");
         exceptionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -264,7 +279,7 @@ public class MothershipSchema extends UserSchema
         exceptionCount.append(STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, JdbcType.INTEGER);
-        exceptionCountCol.setFormat("#.#");
+        exceptionCountCol.setFormat("#,###");
         result.addColumn(exceptionCountCol);
 
         SqlDialect dialect = MothershipManager.get().getSchema().getSqlDialect();
@@ -277,7 +292,7 @@ public class MothershipSchema extends UserSchema
         daysActive.append(STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
         ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, JdbcType.INTEGER);
-        daysActiveColumn.setFormat("#.#");
+        daysActiveColumn.setFormat("#,###");
         result.addColumn(daysActiveColumn);
 
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(softwarereleaseid)) FROM ");
@@ -285,7 +300,9 @@ public class MothershipSchema extends UserSchema
         versionCount.append(" WHERE ss.ServerInstallationId = ");
         versionCount.append(STR_TABLE_ALIAS);
         versionCount.append(".ServerInstallationId)");
-        result.addColumn(new ExprColumn(result, "VersionCount", versionCount, JdbcType.INTEGER));
+        var versionCountCol = new ExprColumn(result, "VersionCount", versionCount, JdbcType.INTEGER);
+        versionCountCol.setFormat("#,###");
+        result.addColumn(versionCountCol);
 
         SQLFragment currentVersion = new SQLFragment("(SELECT MAX(ServerSessionID) FROM ");
         currentVersion.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -296,16 +313,35 @@ public class MothershipSchema extends UserSchema
         currentVersionColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSION_TABLE_NAME).build());
         result.addColumn(currentVersionColumn);
 
+        SQLFragment sessionCountSQL = new SQLFragment("(SELECT COUNT(*) FROM ");
+        sessionCountSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        sessionCountSQL.append(" WHERE ss.ServerInstallationId = ");
+        sessionCountSQL.append(STR_TABLE_ALIAS);
+        sessionCountSQL.append(".ServerInstallationId)");
+        ExprColumn sessionCountCol = new ExprColumn(result, "ServerSessionCount", sessionCountSQL, JdbcType.INTEGER);
+        sessionCountCol.setFormat("#,###");
+        result.addColumn(sessionCountCol);
+
+        SQLFragment clonedInstances = new SQLFragment("(SELECT (COUNT (*) - 1) FROM ");
+        clonedInstances.append(MothershipManager.get().getTableInfoServerInstallation(), "si");
+        clonedInstances.append(" WHERE si.ServerInstallationGUID = ");
+        clonedInstances.append(STR_TABLE_ALIAS);
+        clonedInstances.append(".ServerInstallationGUID)");
+        ExprColumn clonedInstancesCol = new ExprColumn(result, "ClonedInstances", clonedInstances, JdbcType.INTEGER);
+        clonedInstancesCol.setURL(DetailsURL.fromString("mothership-showInstallations.view?serverInstallations.ServerInstallationGUID~eq=${ServerInstallationGUID}"));
+        clonedInstancesCol.setDescription("The number of other instances reporting the same unique GUID, stored in the DB");
+        result.addColumn(clonedInstancesCol);
+
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromString("ServerHostName"));
-        defaultCols.add(FieldKey.fromString("ServerIP"));
         defaultCols.add(FieldKey.fromString("Note"));
-        defaultCols.add(FieldKey.fromString("DaysActive"));
-        defaultCols.add(FieldKey.fromString("LastPing"));
-        defaultCols.add(FieldKey.fromString("ExceptionCount"));
-        defaultCols.add(FieldKey.fromString("VersionCount"));
+        defaultCols.add(daysActiveColumn.getFieldKey());
+        defaultCols.add(lastPingCol.getFieldKey());
+        defaultCols.add(exceptionCountCol.getFieldKey());
+        defaultCols.add(versionCountCol.getFieldKey());
+        defaultCols.add(sessionCountCol.getFieldKey());
+        defaultCols.add(clonedInstancesCol.getFieldKey());
         defaultCols.add(FieldKey.fromString("MostRecentSession/SoftwareReleaseId"));
-        defaultCols.add(FieldKey.fromString("UsedInstaller"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;
@@ -318,25 +354,25 @@ public class MothershipSchema extends UserSchema
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getMutableColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
+        result.getMutableColumnOrThrow("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
-        result.getMutableColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
+        result.getMutableColumnOrThrow("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 
         result.setTitleColumn("ExceptionStackTraceId");
         DetailsURL url = new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId"));
         result.setDetailsURL(url);
 
-        result.getMutableColumn("ExceptionStackTraceId").setURL(url);
-        result.getMutableColumn("ExceptionStackTraceId").setLabel("Exception");
-        result.getMutableColumn("ExceptionStackTraceId").setFormat("'#'0");
-        result.getMutableColumn("ExceptionStackTraceId").setExcelFormatString("0");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setURL(url);
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setLabel("Exception");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setFormat("'#'0");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setExcelFormatString("0");
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this, cf));
-        result.getMutableColumn("AssignedTo").setFk(new UserIdQueryForeignKey(this, true));
-        result.getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this, cf));
+        result.getMutableColumnOrThrow("AssignedTo").setFk(new UserIdQueryForeignKey(this, true));
+        result.getMutableColumnOrThrow("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
@@ -369,13 +405,13 @@ public class MothershipSchema extends UserSchema
         FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this, cf);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getMutableColumn("URL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumnOrThrow("URL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result1 = new DataColumn(colInfo);
             result1.setURLExpression(StringExpressionFactory.create("${URL}", false));
             return result1;
         });
-        result.getMutableColumn("ReferrerURL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumnOrThrow("ReferrerURL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result12 = new DataColumn(colInfo);
             result12.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
@@ -390,20 +426,20 @@ public class MothershipSchema extends UserSchema
         result.addCondition(containerSQL);
 
         // Decorate the stack trace id column and make it a lookup
-        var stackTraceIdColumn = result.getMutableColumn("ExceptionStackTraceId");
+        var stackTraceIdColumn = result.getMutableColumnOrThrow("ExceptionStackTraceId");
         stackTraceIdColumn.setLabel("Exception");
         stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
         stackTraceIdColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(EXCEPTION_STACK_TRACE_TABLE_NAME).build());
 
-        result.getMutableColumn("PageflowName").setLabel("Controller");
-        result.getMutableColumn("PageflowAction").setLabel("Action");
+        result.getMutableColumnOrThrow("PageflowName").setLabel("Controller");
+        result.getMutableColumnOrThrow("PageflowAction").setLabel("Action");
 
-        result.getMutableColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
-        result.getMutableColumn("ServerSessionId").setLabel("Session");
-        result.getMutableColumn("ServerSessionId").setFormat("'#'0");
-        result.getMutableColumn("ServerSessionId").setExcelFormatString("0");
+        result.getMutableColumnOrThrow("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
+        result.getMutableColumnOrThrow("ServerSessionId").setLabel("Session");
+        result.getMutableColumnOrThrow("ServerSessionId").setFormat("'#'0");
+        result.getMutableColumnOrThrow("ServerSessionId").setExcelFormatString("0");
         ForeignKey fk = new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSION_TABLE_NAME).build();
-        result.getMutableColumn("ServerSessionId").setFk(fk);
+        result.getMutableColumnOrThrow("ServerSessionId").setFk(fk);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ServerSessionId"));

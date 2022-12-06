@@ -38,6 +38,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.ViewServlet;
@@ -79,16 +80,27 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     protected abstract ObjectType getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException;
 
+    protected Pair<ObjectType, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    {
+        return new Pair<>(getObject(index, sampleProperties, parentMaterials), null);
+    }
+
     protected abstract boolean isCopyable(DomainProperty pd);
 
     public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
-        return getSampleProperties(request, emptySet());
+        Map<Pair<ObjectType, String>, Map<DomainProperty, String>> map = getSampleProperties(request, emptySet());
+        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
+        for (Map.Entry<Pair<ObjectType, String>, Map<DomainProperty, String>> entry : map.entrySet())
+        {
+            result.put(entry.getKey().first, entry.getValue());
+        }
+        return result;
     }
 
-    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
+    public Map<Pair<ObjectType, String>, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
-        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
+        Map<Pair<ObjectType, String>, Map<DomainProperty, String>> result = new LinkedHashMap<>();
         List<String> names = getSampleNames();
         for (int i = 0; i < names.size(); i++)
         {
@@ -102,7 +114,7 @@ public abstract class SamplePropertyHelper<ObjectType>
                     value = "0";
                 sampleProperties.put(property, value);
             }
-            result.put(getObject(i, sampleProperties, parentMaterials), sampleProperties);
+            result.put(getObjectWithName(i, sampleProperties, parentMaterials), sampleProperties);
         }
         return result;
     }

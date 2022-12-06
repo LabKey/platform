@@ -94,7 +94,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         {
             var data = [{
                 header: 'Validate Queries',
-                description: 'By default, queries will be validated upon import of a study/folder archive and any failure '
+                description: 'By default, queries will be validated upon import of a folder archive and any failure '
                     + 'to validate will cause the import job to raise an error. To suppress this validation step, uncheck '
                     + 'the box below.',
                 name: 'validateQueries',
@@ -130,7 +130,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 data.splice(1, 0, {
                     header: 'Study Import Options',
                     description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
-                    + 'If, instead, you would like for the import of the study archive to fail when it encounters a visit that is not already defined in the study '
+                    + 'If, instead, you would like for the import of the folder archive to fail when it encounters a visit that is not already defined in the study '
                     + 'or as part of the incoming visit map, check the box below.',
                     name: 'failForUndefinedVisits',
                     initChecked: this.isFailForUndefinedVisits ? "checked": "",

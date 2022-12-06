@@ -121,11 +121,16 @@ public abstract class EmailPrefsSelector
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
         int emailPreference = up.getEmailOptionId();
 
-        DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+        DiscussionSrcTypeProvider typeProvider = null;
+
         Set<User> extraRecipients = new HashSet<>();
-        if (typeProvider != null)
+        if (ann != null)
         {
-            extraRecipients = typeProvider.getRecipients(_c, user, ann.getDiscussionSrcIdentifier());
+            typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+            if (typeProvider != null)
+            {
+                extraRecipients = typeProvider.getRecipients(_c, user, ann.getDiscussionSrcIdentifier());
+            }
         }
 
         if (EmailOption.MESSAGES_MINE.getValue() == emailPreference || EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue() == emailPreference)

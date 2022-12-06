@@ -30,7 +30,6 @@ import java.util.List;
 public class SiteValidationResultList
 {
     private final List<SiteValidationResult> results = new ArrayList<>();
-    private String eol = "<br/>";
 
     public SiteValidationResult addResult(SiteValidationResult.Level level, String message)
     {
@@ -103,22 +102,9 @@ public class SiteValidationResultList
         this.results.addAll(resultsToAdd.getResults());
     }
 
-    public void setEol(String eol)
+    public boolean hasErrors()
     {
-        this.eol = eol;
-    }
-
-    public String getResultsString()
-    {
-        if (results.isEmpty())
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-
-        for (SiteValidationResult result : results)
-            sb.append(result.getMessage()).append(eol);
-
-        return sb.toString();
+        return !results.isEmpty();
     }
 
     @Nullable

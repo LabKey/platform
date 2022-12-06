@@ -20,13 +20,13 @@ import org.labkey.api.data.Container;
 
 import java.text.DecimalFormat;
 
-import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_TIME_FORMAT;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_PARSING_PATTERN;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_TIME_PARSING_PATTERN;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.RESTRICTED_COLUMNS_ENABLED;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
+
+import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateFormatString;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateTimeFormatString;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultNumberFormatString;
+
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 
 /**
  * User: adam
@@ -72,7 +72,7 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         // Check for legal format
         FastDateFormat.getInstance(defaultDateFormat);
-        storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
+        storeStringValue(defaultDateFormatString, defaultDateFormat);
     }
 
     // Validate inside the set method, since this is called from multiple places
@@ -80,19 +80,19 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         // Check for legal format
         FastDateFormat.getInstance(defaultDateTimeFormat);
-        storeStringValue(DEFAULT_DATE_TIME_FORMAT, defaultDateTimeFormat);
+        storeStringValue(defaultDateTimeFormatString, defaultDateTimeFormat);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearDefaultDateFormat()
     {
-        remove(DEFAULT_DATE_FORMAT);
+        remove(defaultDateFormatString);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearDefaultDateTimeFormat()
     {
-        remove(DEFAULT_DATE_TIME_FORMAT);
+        remove(defaultDateTimeFormatString);
     }
 
     // Convenience method to support import: validate and save just this property
@@ -114,14 +114,14 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearDefaultNumberFormat()
     {
-        remove(DEFAULT_NUMBER_FORMAT);
+        remove(defaultNumberFormatString);
     }
 
     // Validate inside the set method, since this is called from multiple places
     public void setDefaultNumberFormat(String defaultNumberFormat) throws IllegalArgumentException
     {
         new DecimalFormat(defaultNumberFormat);
-        storeStringValue(DEFAULT_NUMBER_FORMAT, defaultNumberFormat);
+        storeStringValue(defaultNumberFormatString, defaultNumberFormat);
     }
 
     // Convenience method to support import: validate and save just this property
@@ -133,31 +133,31 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     }
 
     // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateParsingPattern(String extraDateParsingPattern) throws IllegalArgumentException
+    public void setExtraDateParsingPattern(String pattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(extraDateParsingPattern);
-        storeStringValue(EXTRA_DATE_PARSING_PATTERN, extraDateParsingPattern);
+        FastDateFormat.getInstance(pattern);
+        storeStringValue(extraDateParsingPattern, pattern);
     }
 
     // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern) throws IllegalArgumentException
+    public void setExtraDateTimeParsingPattern(String pattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(extraDateTimeParsingPattern);
-        storeStringValue(EXTRA_DATE_TIME_PARSING_PATTERN, extraDateTimeParsingPattern);
+        FastDateFormat.getInstance(pattern);
+        storeStringValue(extraDateTimeParsingPattern, pattern);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearExtraDateParsingPattern()
     {
-        remove(EXTRA_DATE_PARSING_PATTERN);
+        remove(extraDateParsingPattern);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearExtraDateTimeParsingPattern()
     {
-        remove(EXTRA_DATE_TIME_PARSING_PATTERN);
+        remove(extraDateTimeParsingPattern);
     }
 
     // Convenience method to support import: validate and save just this property
@@ -178,12 +178,12 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
 
     public void clearRestrictedColumnsEnabled()
     {
-        remove(RESTRICTED_COLUMNS_ENABLED);
+        remove(restrictedColumnsEnabled);
     }
 
-    public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled) throws IllegalArgumentException
+    public void setRestrictedColumnsEnabled(boolean enabled) throws IllegalArgumentException
     {
-        storeBooleanValue(RESTRICTED_COLUMNS_ENABLED, restrictedColumnsEnabled);
+        storeBooleanValue(restrictedColumnsEnabled, enabled);
     }
 
     public static void saveRestrictedColumnsEnabled(Container c, boolean restrictedColumnsEnabled) throws IllegalArgumentException

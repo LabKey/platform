@@ -48,6 +48,11 @@ public interface DataViewProvider
      */
     List<DataViewInfo> getViews(ViewContext context) throws Exception;
 
+    default List<DataViewInfo> getViews(ViewContext context, @Nullable String schemaName, @Nullable String queryName) throws Exception
+    {
+        return getViews(context);
+    }
+
     /**
      * Returns the interface used to edit/update properties of data view objects that this provider returns.
      *

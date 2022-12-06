@@ -2,8 +2,8 @@ package org.labkey.api.qc.export;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.QCStateManager;
@@ -14,7 +14,8 @@ import java.util.Map;
 
 public abstract class AbstractDataStateImporter
 {
-    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, DataStateImportExportHelper helper) throws ImportException
+    // TODO: Switch first parameter to FolderImportContext after we remove legacy StudyQcStatesImporter
+    public static void importQCStates(ImportExportContext<?> ctx, StudyqcDocument doc, DataStateImportExportHelper helper) throws ImportException
     {
         StudyqcDocument.Studyqc qcXml = doc.getStudyqc();
         StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
@@ -91,10 +92,11 @@ public abstract class AbstractDataStateImporter
 
         helper.setShowPrivateDataByDefault(ctx.getContainer(), ctx.getUser(), qcXml.getShowPrivateDataByDefault());
         helper.setBlankQCStatePublic(ctx.getContainer(), ctx.getUser(), qcXml.getBlankQCStatePublic());
+        helper.setRequireCommentOnQCStateChange(ctx.getContainer(), ctx.getUser(), qcXml.getRequireCommentOnQCStateChange());
     }
 
     @NotNull
-    private static Map<String, DataState> getExistingDataStates(ImportContext<?> ctx)
+    private static Map<String, DataState> getExistingDataStates(ImportExportContext<?> ctx)
     {
         Map<String, DataState> preexistingStates = new HashMap<>();
         for (DataState s : DataStateManager.getInstance().getStates(ctx.getContainer()))

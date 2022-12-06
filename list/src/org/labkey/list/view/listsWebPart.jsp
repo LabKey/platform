@@ -37,7 +37,7 @@
     assert null != me;
     Container c = getContainer();
     User user = getUser();
-    Map<String, ListDefinition> lists = ListService.get().getLists(c, getUser(), true);
+    Map<String, ListDefinition> lists = ListService.get().getLists(c, getUser(), true, true, false);
     NavTree links;
 %>
 <table id="lists">

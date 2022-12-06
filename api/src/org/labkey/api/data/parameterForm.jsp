@@ -29,7 +29,7 @@
 %>
 <%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
 <div id=<%=qh(bean.dataRegionDomId)%>></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function(){
 var regionDomId = <%=q(bean.dataRegionDomId)%>;
 var dataRegionName = <%=q(bean.dataRegionName)%>;

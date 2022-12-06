@@ -24,7 +24,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -43,8 +42,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -74,14 +75,22 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         switch (column)
         {
             case Folder:
+            {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ListDataClassAction.class, getContainer())));
                 return columnInfo;
+            }
 
             case Description:
-            case NameExpression:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
+
+            case NameExpression:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                columnInfo.setLabel("Naming Pattern");
+                return columnInfo;
+            }
 
             case Name:
             {
@@ -90,8 +99,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
                 // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
                 // a parameter for the table's detailsURL.  However, we can use it as the url for this column.
-                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
-                        Collections.singletonMap("name", "Name")));
+                DetailsURL nameURL = new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
+                        Collections.singletonMap("name", "Name"));
+                nameURL.setContainerContext(getContainer());
+                c.setURL(nameURL);
+
                 return c;
             }
 
@@ -178,7 +190,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
+        if (!isAllowedPermission(perm))
+            return false;
+        if (perm == ReadPermission.class)
+            return _userSchema.getContainer().hasPermission(user, DataClassReadPermission.class);
+        return _userSchema.getContainer().hasPermission(user, perm);
     }
 
 

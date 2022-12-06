@@ -44,10 +44,11 @@
     { %>
             <p class="labkey-message"><%=h(bean.getConfirmMessage()) %></p>
     <% }
-%>
 
+    var formId = "form_" + getRequestScopedUID();
+%>
 <labkey:errors />
-<labkey:form enctype="multipart/form-data" method="POST" action="">
+<labkey:form id="<%=formId%>" enctype="multipart/form-data" method="POST" action="">
     <table id="pipelineOverrideTable" <%=h(isCloudFileRoot ? "hidden" : "")%>>
         <tr><td></td></tr>
         <tr><td colspan="10">
@@ -65,9 +66,8 @@
                 <table>
                     <tr style="height: 1.75em">
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="<%= h(SetupForm.SITE_DEFAULT_TYPE) %>"<%=disabled(hasInheritedOverride)%>
-                            <%=checked(SetupForm.SITE_DEFAULT_TYPE.equals(bean.getPipelineRootOption()))%>
-                                   onclick="updatePipelineSelection();">
-<%                      if (hasInheritedOverride) { %>
+                            <%=checked(SetupForm.SITE_DEFAULT_TYPE.equals(bean.getPipelineRootOption()))%>><% addHandler("pipelineRootOption", "click", "updatePipelineSelection()");
+                             if (hasInheritedOverride) { %>
                             <span class="labkey-disabled">Use a default based on the file root</span><%=
                             helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
                                     "override has been set in a parent folder.")%><span class="labkey-disabled">: <%=h(projectDefaultRoot)%></span><%
@@ -79,7 +79,7 @@
                     <% if (hasInheritedOverride) { %>
                         <tr style="height: 1.75em">
                             <td>
-                                <input type="radio" name="pipelineRootOption" id="revertOverride" value="<%= h(SetupForm.REVERT_OVERRIDE) %>" onclick="updatePipelineSelection();">
+                                <input type="radio" name="pipelineRootOption" id="revertOverride" value="<%= h(SetupForm.REVERT_OVERRIDE) %>"><% addHandler("pipeOptionProjectSpecified", "click", "updatePipelineSelection();"); %>
                                 Remove this pipeline override and inherit settings from parent
                             </td>
                         </tr>
@@ -87,8 +87,7 @@
                     <tr style="height: 1.75em">
                         <td>
                             <input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="<%=h(SetupForm.PROJECT_SPECIFIED_TYPE)%>"
-                                        <%=checked(SetupForm.PROJECT_SPECIFIED_TYPE.equals(bean.getPipelineRootOption())) %>
-                                               onclick="updatePipelineSelection();">
+                                        <%=checked(SetupForm.PROJECT_SPECIFIED_TYPE.equals(bean.getPipelineRootOption())) %>><% addHandler("pipeOptionProjectSpecified", "click", "updatePipelineSelection();"); %>
                             <%=h(folderRadioBtnLabel)%>
                         </td>
                     </tr>
@@ -108,7 +107,9 @@
                                 </tr>
                                 <tr>
                                     <td class="labkey-form-label" valign="top">Supplemental directory</td>
-                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath"<%=checked(bean.getSupplementalPath() != null)%> onclick="document.querySelector('#supplementalPathDiv').style.display = (document.querySelector('#pipeOptionSupplementalPath').checked ? '' : 'none'); document.querySelector('#pipeProjectSupplementalPath').disabled = !document.querySelector('#pipeOptionSupplementalPath');">
+                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath"<%=checked(bean.getSupplementalPath() != null)%>>
+                                        <% addHandler("pipeOptionSupplementalPath", "click",
+                                            "document.querySelector('#supplementalPathDiv').style.display = (document.querySelector('#pipeOptionSupplementalPath').checked ? '' : 'none'); document.querySelector('#pipeProjectSupplementalPath').disabled = !document.querySelector('#pipeOptionSupplementalPath');"); %>
                                         Include an additional directory when looking for files. No files will be written to this directory.
                                         <div id="supplementalPathDiv" <% if (bean.getSupplementalPath() == null) { %>style="display:none"<% } %>>
                                             <input type="text" id="pipeProjectSupplementalPath" <% if (bean.getSupplementalPath() == null) { %>disabled<% } %> name="supplementalPath" size="50" value="<%=h(bean.getSupplementalPath())%>">
@@ -135,7 +136,7 @@
     The file root is set to cloud-based storage. Therefore the pipeline root is set to its default, which is the file root, and cannot be overridden. </div>
 <br>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function updatePipelineSelection()
     {

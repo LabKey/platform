@@ -1273,22 +1273,11 @@ if (!LABKEY.DataRegions) {
      * @ignore
      * @Deprecated
      */
-    LABKEY.DataRegion.prototype.getSearchString = function() {
-        if (!LABKEY.Utils.isString(this.savedSearchString)) {
-            this.savedSearchString = document.location.search.substring(1) /* strip the ? */ || "";
-        }
-        return this.savedSearchString;
-    };
-
-    /**
-     * @ignore
-     * @Deprecated
-     */
     LABKEY.DataRegion.prototype.setSearchString = function(regionName, search) {
         this.savedSearchString = search || "";
         // If the search string doesn't change and there is a hash on the url, the page won't reload.
         // Remove the hash by setting the full path plus search string.
-        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
+        window.location.assign(window.location.pathname + (this.savedSearchString.length > 0 ? "?" + this.savedSearchString : ""));
     };
 
     //
@@ -2817,6 +2806,7 @@ if (!LABKEY.DataRegions) {
         var viewConfig = $.extend({}, customView, {
             shared: false,
             inherit: false,
+            hidden: false,
             session: true
         });
 
@@ -3140,70 +3130,74 @@ if (!LABKEY.DataRegions) {
             var qmIdx = qString.indexOf('?');
             if (qmIdx > -1) {
                 qString = qString.substring(qmIdx + 1);
-            }
 
-            if (qString.length > 1) {
-                var pairs = qString.split('&'), p, key,
-                    LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
+                var poundIdx = qString.indexOf('#');
+                if (poundIdx > -1)
+                    qString = qString.substr(0, poundIdx);
 
-                var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
-                    return region.name + prefix;
-                });
+                if (qString.length > 1) {
+                    var pairs = qString.split('&'), p, key,
+                            LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
 
-                $.each(pairs, function(i, pair) {
-                    p = pair.split('=', 2);
-                    key = p[0] = decodeURIComponent(p[0]);
-                    lastIdx = key.indexOf(LAST);
+                    var exactMatches = EXACT_MATCH_PREFIXES.map(function (prefix) {
+                        return region.name + prefix;
+                    });
 
-                    if (lastIdx > -1 && lastIdx === (key.length - LAST.length)) {
-                        return;
-                    }
-                    else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
-                        // 26686: Black list known parameters, should be prefixed by region name
-                        return;
-                    }
+                    $.each(pairs, function (i, pair) {
+                        p = pair.split('=', 2);
+                        key = p[0] = decodeURIComponent(p[0]);
+                        lastIdx = key.indexOf(LAST);
 
-                    var stop = false;
-                    if (skip) {
-                        $.each(skipPrefixSet, function(j, skipPrefix) {
-                            if (LABKEY.Utils.isString(skipPrefix)) {
-
-                                // Special prefix that should remove all filters, but no other parameters
-                                if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
-                                    if (key.indexOf('~') > 0) {
-                                        stop = true;
-                                        return false;
-                                    }
-                                }
-                                else {
-                                    if (exactMatches.indexOf(skipPrefix) > -1) {
-                                        if (key === skipPrefix) {
-                                            stop = true;
-                                            return false;
-                                        }
-                                    }
-                                    else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
-                                        // only skip filters, parameters, and sorts
-                                        if (key === skipPrefix ||
-                                                key.indexOf('~') > 0 ||
-                                                key.indexOf(PARAM_PREFIX) > 0 ||
-                                                key === (skipPrefix + 'sort')) {
-                                            stop = true;
-                                            return false;
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    if (!stop) {
-                        if (p.length > 1) {
-                            p[1] = decodeURIComponent(p[1]);
+                        if (lastIdx > -1 && lastIdx === (key.length - LAST.length)) {
+                            return;
                         }
-                        params.push(p);
-                    }
-                });
+                        else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
+                            // 26686: Black list known parameters, should be prefixed by region name
+                            return;
+                        }
+
+                        var stop = false;
+                        if (skip) {
+                            $.each(skipPrefixSet, function (j, skipPrefix) {
+                                if (LABKEY.Utils.isString(skipPrefix)) {
+
+                                    // Special prefix that should remove all filters, but no other parameters
+                                    if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
+                                        if (key.indexOf('~') > 0) {
+                                            stop = true;
+                                            return false;
+                                        }
+                                    }
+                                    else {
+                                        if (exactMatches.indexOf(skipPrefix) > -1) {
+                                            if (key === skipPrefix) {
+                                                stop = true;
+                                                return false;
+                                            }
+                                        }
+                                        else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
+                                            // only skip filters, parameters, and sorts
+                                            if (key === skipPrefix ||
+                                                    key.indexOf('~') > 0 ||
+                                                    key.indexOf(PARAM_PREFIX) > 0 ||
+                                                    key === (skipPrefix + 'sort')) {
+                                                stop = true;
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        if (!stop) {
+                            if (p.length > 1) {
+                                p[1] = decodeURIComponent(p[1]);
+                            }
+                            params.push(p);
+                        }
+                    });
+                }
             }
         }
 
@@ -3333,6 +3327,66 @@ if (!LABKEY.DataRegions) {
         });
     };
 
+    var _saveSessionView = function(o, region, win) {
+        var timerId = setTimeout(function() {
+            timerId = 0;
+            Ext4.Msg.progress("Saving...", "Saving custom view...");
+        }, 500);
+
+        var jsonData = {
+            schemaName: region.schemaName,
+            "query.queryName": region.queryName,
+            "query.viewName": region.viewName,
+            newName: o.name,
+            inherit: o.inherit,
+            shared: o.shared,
+            hidden: o.hidden,
+            replace: o.replace,
+        };
+
+        if (o.inherit) {
+            jsonData.containerPath = o.containerPath;
+        }
+
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
+            method: 'POST',
+            jsonData: jsonData,
+            callback: function() {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+                win.close();
+            },
+            success: function() {
+                region.showSuccessMessage.call(region);
+                region.changeView.call(region, {type: 'view', viewName: o.name});
+            },
+            failure: function(resp) {
+                var json = resp.responseText ? Ext4.decode(resp.responseText) : resp;
+                if (json.exception && json.exception.indexOf('A saved view by the name') === 0) {
+
+                    Ext4.Msg.show({
+                        title : "Duplicate View Name",
+                        msg : json.exception + " Would you like to replace it?",
+                        cls : 'data-window',
+                        icon : Ext4.Msg.QUESTION,
+                        buttons : Ext4.Msg.YESNO,
+                        fn : function(btn) {
+                            if (btn === 'yes') {
+                                o.replace = true;
+                                _saveSessionView(o, region, win);
+                            }
+                        },
+                        scope : this
+                    });
+                }
+                else
+                    Ext4.Msg.alert('Error saving view', json.exception || json.statusText || Ext4.decode(json.responseText).exception);
+            },
+            scope: region
+        });
+    };
+
     var _saveSessionShowPrompt = function(region, queryDetails) {
         LABKEY.DataRegion.loadViewDesigner(function() {
             var config = Ext4.applyIf({
@@ -3341,42 +3395,7 @@ if (!LABKEY.DataRegions) {
                 canEditSharedViews: queryDetails.canEditSharedViews,
                 canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
                 success: function (win, o) {
-                    var timerId = setTimeout(function() {
-                        timerId = 0;
-                        Ext4.Msg.progress("Saving...", "Saving custom view...");
-                    }, 500);
-
-                    var jsonData = {
-                        schemaName: region.schemaName,
-                        "query.queryName": region.queryName,
-                        "query.viewName": region.viewName,
-                        newName: o.name,
-                        inherit: o.inherit,
-                        shared: o.shared
-                    };
-
-                    if (o.inherit) {
-                        jsonData.containerPath = o.containerPath;
-                    }
-
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
-                        method: 'POST',
-                        jsonData: jsonData,
-                        callback: function() {
-                            if (timerId > 0)
-                                clearTimeout(timerId);
-                            win.close();
-                        },
-                        success: function() {
-                            region.showSuccessMessage.call(region);
-                            region.changeView.call(region, {type: 'view', viewName: o.name});
-                        },
-                        failure: function(json) {
-                            Ext4.Msg.alert('Error saving view', json.exception || json.statusText || Ext4.decode(json.responseText).exception);
-                        },
-                        scope: region
-                    });
+                    _saveSessionView(o, region, win);
                 },
                 scope: region
             }, region.view);

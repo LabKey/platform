@@ -233,6 +233,8 @@ public class StudySnapshot
         private List<String> views = new ArrayList<>();
         /* Reports */
         private List<String> reports = new ArrayList<>();
+        /* Queries */
+        private List<String> queries = new ArrayList<>();
         /* Folder Objects */
         private List<String> folderObjects = new ArrayList<>();
 
@@ -262,6 +264,7 @@ public class StudySnapshot
             loadSpecimens(def, refresh);
             loadStudyObjects(def);
             loadLists(ctx, def);
+            loadQueries(ctx, def);
             loadViews(ctx, def);
             loadReports(ctx, def);
             loadFolderObjects(def);
@@ -324,7 +327,6 @@ public class StudySnapshot
 
         private void loadSpecimens(ChildStudyDefinition def, boolean refresh)
         {
-            specimenRequestId = def.getRequestId();
             includeSpecimens = def.isIncludeSpecimens();
             specimenRefresh = refresh;
         }
@@ -399,6 +401,14 @@ public class StudySnapshot
                         reports.add(report.getDescriptor().getReportName());
                 }
             }
+        }
+
+        private void loadQueries(StudyExportContext ctx, ChildStudyDefinition def)
+        {
+            if (def.isQueriesAll())
+                queries = null; // indicates all selected
+            else if (def.getQueries() != null && def.getQueries().length > 0)
+                queries = Arrays.asList(def.getQueries());
         }
 
         private void loadFolderObjects(ChildStudyDefinition def)
@@ -534,9 +544,16 @@ public class StudySnapshot
             return reports;
         }
 
+        public List<String> getQueries()
+        {
+            return queries;
+        }
+
+        /* We no longer read or write this property, but it might exist in old, serialized settings. */
+        @JsonIgnore
         public Integer getSpecimenRequestId()
         {
-            return specimenRequestId;
+            return -1;
         }
     }
 }

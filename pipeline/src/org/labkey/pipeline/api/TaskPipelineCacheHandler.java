@@ -22,7 +22,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.resource.Resource;
@@ -55,8 +54,8 @@ import java.util.stream.Stream;
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(TaskPipeline::getId, Function.identity())));
 
-        // javac gets confused by the generics with a "inferred type does not conform to lower bound(s)" so assign to
-        // Object and cast it
+        // javac gets confused by the generics with an "inferred type does not conform to lower bound(s)" error, so
+        // assign to Object and cast it
         //noinspection unchecked
         return (Map<TaskId, TaskPipeline<?>>) result;
     }

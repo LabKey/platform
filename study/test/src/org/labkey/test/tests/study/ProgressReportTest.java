@@ -33,6 +33,7 @@ import org.labkey.test.util.ExcelHelper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -164,37 +165,36 @@ public class ProgressReportTest extends ReportTest
 
     private void progressReportExportTest()
     {
-        try
+        log("create a progress report with tricky characters");
+        createProgressReport(REPORT_NAME_TRICKY_CHARS);
+        verifyProgressReport(true);
+
+        log("verify export is enabled only for individual progress reports");
+        _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "All");
+        assertElementPresent(Locators.disabledExportBtn);
+
+        _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Elispot");
+        assertElementPresent(Locators.enabledExportBtn);
+        _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "VSVG");
+        assertElementPresent(Locators.enabledExportBtn);
+        _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Luminex");
+        assertElementPresent(Locators.enabledExportBtn);
+
+        clickTab("Overview");
+        AssayScheduleWebpart assayScheduleWebpart = new AssayScheduleWebpart(getDriver());
+        assayScheduleWebpart.manage();
+        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this, true);
+        assaySchedulePage.setBaseProperties(null, null, null, null, "[none]", 1);
+        assaySchedulePage.save();
+        clickReportGridLink(REPORT_NAME_TRICKY_CHARS, true);
+        _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Luminex");
+
+        log("verifying the contents of the downloaded file");
+        File downloadXLS = doAndWaitForDownload(() -> clickButton("Export to Excel", 0));
+        try (Workbook workbook = ExcelHelper.create(downloadXLS))
         {
-            log("create a progress report with tricky characters");
-            createProgressReport(REPORT_NAME_TRICKY_CHARS);
-            verifyProgressReport(true);
-
-            log("verify export is enabled only for individual progress reports");
-            _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "All");
-            assertElementPresent(Locators.disabledExportBtn);
-
-            _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Elispot");
-            assertElementPresent(Locators.enabledExportBtn);
-            _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "VSVG");
-            assertElementPresent(Locators.enabledExportBtn);
-            _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Luminex");
-            assertElementPresent(Locators.enabledExportBtn);
-
-            clickTab("Overview");
-            AssayScheduleWebpart assayScheduleWebpart = new AssayScheduleWebpart(getDriver());
-            assayScheduleWebpart.manage();
-            ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this, true);
-            assaySchedulePage.setBaseProperties(null, null, null, null, "[none]", 1);
-            assaySchedulePage.save();
-            clickReportGridLink(REPORT_NAME_TRICKY_CHARS, true);
-            _ext4Helper.selectComboBoxItem("Assay Progress Reports:", "Luminex");
-
-            log("verifying the contents of the downloaded file");
-            File downloadXLS = doAndWaitForDownload(() -> clickButton("Export to Excel", 0));
-            Workbook workbook = ExcelHelper.create(downloadXLS);
             Sheet sheet = workbook.getSheetAt(0);
-            for (int row = 0 ; row < _expectedLuminexResults.length; row++)
+            for (int row = 0; row < _expectedLuminexResults.length; row++)
             {
                 List<String> expectedRow = _expectedLuminexResults[row];
                 List<String> rowData = ExcelHelper.getRowData(sheet, row);
@@ -202,7 +202,7 @@ public class ProgressReportTest extends ReportTest
                 Assert.assertArrayEquals("Luminex exported data did not match expected results", expectedRow.toArray(), rowData.toArray());
             }
         }
-        catch (Exception e)
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }

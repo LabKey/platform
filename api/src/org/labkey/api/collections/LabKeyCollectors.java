@@ -6,6 +6,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -23,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * Static methods that return custom {@link Collector}s that can be used to collect elements of a {@link Stream} into a
- * a variety of useful collections.
+ * variety of useful collections.
  */
 public class LabKeyCollectors
 {
@@ -31,7 +33,7 @@ public class LabKeyCollectors
      * Returns a {@link Collector} that builds a {@link LinkedHashMap}, for cases where caller wants a map that preserves {@link Stream} order.
      * https://stackoverflow.com/questions/29090277/how-do-i-keep-the-iteration-order-of-a-list-when-using-collections-tomap-on-a
      */
-    public static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(
+    public static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(
         Function<? super T, ? extends K> keyMapper,
         Function<? super T, ? extends U> valueMapper)
     {
@@ -46,13 +48,47 @@ public class LabKeyCollectors
     }
 
     /**
+     * Returns a {@link Collector} that builds a {@link CaseInsensitiveHashMap}
+     */
+    public static <T, U> Collector<T, ?, Map<String, U>> toCaseInsensitiveMap(
+        Function<? super T, String> keyMapper,
+        Function<? super T, ? extends U> valueMapper)
+    {
+        return toMap(
+            keyMapper,
+            valueMapper,
+            (u, v) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", u));
+            },
+            CaseInsensitiveHashMap::new
+        );
+    }
+
+    /**
+     * Returns a {@link Collector} that builds a {@link CaseInsensitiveLinkedHashMap}
+     */
+    public static <T, U> Collector<T, ?, Map<String, U>> toCaseInsensitiveLinkedMap(
+        Function<? super T, String> keyMapper,
+        Function<? super T, ? extends U> valueMapper)
+    {
+        return toMap(
+            keyMapper,
+            valueMapper,
+            (u, v) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", u));
+            },
+            CaseInsensitiveLinkedHashMap::new
+        );
+    }
+
+    /**
      * Returns a {@link Collector} that accumulates elements into a {@link MultiValuedMap} whose keys and values are the
      * result of applying the provided mapping functions to the input elements, an approach that mimics {@link Collectors#toMap(Function, Function)}.
      *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
-     * @param <V> the output type of the value mapping function
-     * @param keyMapper a mapping function to produce keys
+     * @param <T>         the type of the input elements
+     * @param <K>         the output type of the key mapping function
+     * @param <V>         the output type of the value mapping function
+     * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
@@ -68,12 +104,12 @@ public class LabKeyCollectors
      * result of applying the provided mapping functions to the input elements, an approach that mimics {@link Collectors#toMap(Function, Function)}.
      * The {@link MultiValuedMap} is created by a provided supplier function.
      *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
-     * @param <V> the output type of the value mapping function
-     * @param keyMapper a mapping function to produce keys
+     * @param <T>         the type of the input elements
+     * @param <K>         the output type of the key mapping function
+     * @param <V>         the output type of the value mapping function
+     * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
-     * @param supplier a function that returns a new, empty {@code MultiValuedMap} into which the results will be inserted
+     * @param supplier    a function that returns a new, empty {@code MultiValuedMap} into which the results will be inserted
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
      */
@@ -98,7 +134,11 @@ public class LabKeyCollectors
      */
     public static Collector<Object, JSONArray, JSONArray> toJSONArray()
     {
-        return JSONArray.collector();
+        return Collector.of(
+            JSONArray::new,
+            JSONArray::put,
+            JSONArray::putAll
+        );
     }
 
     /**
@@ -107,6 +147,22 @@ public class LabKeyCollectors
     public static Collector<String, ?, Set<String>> toCaseInsensitiveHashSet()
     {
         return Collectors.toCollection(CaseInsensitiveHashSet::new);
+    }
+
+    /**
+     * Returns a {@link Collector} that joins {@link HtmlString}s into a single {@link HtmlString} separated by delimiter
+     */
+    public static Collector<HtmlString, HtmlStringBuilder, HtmlString> joining(HtmlString delimiter) {
+        return Collector.of(
+            HtmlStringBuilder::of,
+            (builder, hs) -> {
+                if (!builder.isEmpty())
+                    builder.append(delimiter);
+                builder.append(hs);
+            },
+            (h1, h2) -> { h1.append(h2.getHtmlString()); return h1; },
+            HtmlStringBuilder::getHtmlString
+        );
     }
 
     public static class TestCase extends Assert

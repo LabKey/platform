@@ -144,10 +144,12 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
             {
                 try (Statement stmt = conn.createStatement())
                 {
-                    if (stmt.execute(sql))
-                        return -1;
-                    else
-                        return stmt.getUpdateCount();
+                    int result = stmt.execute(sql) ? -1 : stmt.getUpdateCount();
+
+                    // Issue 46004: Churn through results from all statements in case there are errors lurking
+                    //noinspection StatementWithEmptyBody
+                    while (stmt.getMoreResults() || stmt.getUpdateCount() != -1) {}
+                    return result;
                 }
             }
             else
@@ -156,10 +158,12 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
                      Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
                     Table.setParameters(stmt, parameters, jdbcParameters);
-                    if (stmt.execute())
-                        return -1;
-                    else
-                        return stmt.getUpdateCount();
+                    int result = stmt.execute() ? -1 : stmt.getUpdateCount();
+
+                    // Issue 46004: Churn through results from all statements in case there are errors lurking
+                    //noinspection StatementWithEmptyBody
+                    while (stmt.getMoreResults() || stmt.getUpdateCount() != -1) {}
+                    return result;
                 }
             }
         }

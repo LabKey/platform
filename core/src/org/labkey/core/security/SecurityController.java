@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -29,6 +29,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -66,9 +67,13 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
@@ -91,6 +96,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -156,7 +162,7 @@ public class SecurityController extends SpringActionController
         SecurityApiActions.DeleteUserAction.class,
         SecurityApiActions.AddGroupMemberAction.class,
         SecurityApiActions.RemoveGroupMemberAction.class,
-        SecurityApiActions.CreateNewUserAction.class,
+        SecurityApiActions.CreateNewUsersAction.class,
         SecurityApiActions.AddAssignmentAction.class,
         SecurityApiActions.RemoveAssignmentAction.class,
         SecurityApiActions.ClearAssignedRolesAction.class,
@@ -275,13 +281,13 @@ public class SecurityController extends SpringActionController
 
         @Override
         @Nullable
-        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
+        public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
         {
             long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
                     filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
             if (viewCount > 0)
             {
-                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
                 url.addReturnURL(returnURL);
                 return url;
             }
@@ -1053,31 +1059,28 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            try (ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
-                {
-                    @Override
-                    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
-                    {
-                        for (Pair<Integer, String> memberGroup : memberGroups)
-                        {
-                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                            row.put("displayName", memberGroup.getValue());
-                            row.put("userId", memberGroup.getKey());
-                            ctx.setRow(row);
-                            renderGridRow(sheet, ctx, visibleColumns);
-                        }
-                        super.renderGrid(ctx, sheet, visibleColumns);
-                    }
-                })
+            ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
             {
-                ew.setAutoSize(true);
-                ew.setSheetName(group + " Members");
-                ew.setFooter(group + " Members");
-                ew.write(response);
-            }
+                @Override
+                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
+                {
+                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    {
+                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                        row.put("displayName", memberGroup.getValue());
+                        row.put("userId", memberGroup.getKey());
+                        ctx.setRow(row);
+                        renderGridRow(sheet, ctx, visibleColumns);
+                    }
+                    super.renderGrid(ctx, sheet, visibleColumns);
+                }
+            };
+            ew.setAutoSize(true);
+            ew.setSheetName(group + " Members");
+            ew.setFooter(group + " Members");
+            ew.renderWorkbook(response);
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
@@ -1424,7 +1427,7 @@ public class SecurityController extends SpringActionController
                 if (user != null)
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
                 else
-                    form.addMessage(result);
+                    errors.addError(new LabKeyErrorWithHtml("", result));
             }
 
             return false;
@@ -1732,50 +1735,53 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getFailView(EmailForm form, BindException errors)
         {
-            String errorMessage = PageFlowUtil.filter(getErrorMessage(errors));
-
-            String page = String.format(
-                "<p>%1$s: Password %2$s.</p><p>%3$s</p>%4$s",
-                PageFlowUtil.filter(form.getEmail()),
-                _loginExists ? "reset" : "created",
-                errorMessage,
-                PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
-            );
+            HtmlStringBuilder builder = HtmlStringBuilder.of()
+                .append(HtmlString.unsafe("<p>"))
+                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
+                .append(HtmlString.unsafe("</p><p>"))
+                .append(getErrorMessage(errors))
+                .append(HtmlString.unsafe("</p>"))
+                .append(PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL())));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             setTitle("Password Reset Failed");
-            return new HtmlView(page);
+            return new HtmlView(builder);
         }
 
-        private String getErrorMessage(BindException errors)
+        private HtmlString getErrorMessage(BindException errors)
         {
-            StringBuilder sb = new StringBuilder();
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+
             for(ObjectError e : errors.getAllErrors())
             {
-                sb.append(e.getDefaultMessage()).append('\n');
+                if (e instanceof LabKeyError le)
+                    builder.append(le.renderToHTML(getViewContext()));
+                else
+                    builder.append(e.getDefaultMessage()).append('\n');
             }
 
-            return sb.toString();
+            return builder.getHtmlString();
         }
 
-        private String getMailHelpText(String emailAddress)
+        private HtmlString getMailHelpText(String emailAddress)
         {
             ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", emailAddress);
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<p>You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+            HtmlStringBuilder builder = HtmlStringBuilder.of()
+                .append(HtmlString.unsafe("<p>"))
+                .append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
             if (mailHref != null)
             {
-                sb.append(" Alternatively, you can copy the <a href=\"");
-                sb.append(mailHref);
-                sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
+                builder.append(" Alternatively, you can copy the ")
+                    .append(new Link.LinkBuilder("contents of the message").href(mailHref).target("_blank").clearClasses())
+                    .append(" into an email client and send it to the user manually.");
             }
-            sb.append("</p>");
-            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            sb.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"));
-            sb.append(".</p>");
+            builder.append(HtmlString.unsafe("</p>\n<p>"))
+                .append("For help on fixing your mail server settings, please consult the SMTP section of the ")
+                .append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"))
+                .append(HtmlString.unsafe(".</p>"));
 
-            return sb.toString();
+            return builder.getHtmlString();
         }
     }
 
@@ -2095,6 +2101,7 @@ public class SecurityController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+            setHelpTopic("externalTools");
             root.addChild("External Tool Access");
         }
     }
@@ -2207,6 +2214,10 @@ public class SecurityController extends SpringActionController
             RoleManager.testPermissionsInAdminRoles(true,
                 ReadPermission.class,
                 ReadSomePermission.class,
+                AssayReadPermission.class,
+                DataClassReadPermission.class,
+                MediaReadPermission.class,
+                NotebookReadPermission.class,
                 InsertPermission.class,
                 UpdatePermission.class,
                 DeletePermission.class,

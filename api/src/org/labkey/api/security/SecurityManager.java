@@ -17,8 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -78,7 +77,9 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -116,9 +117,9 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.websocket.server.HandshakeRequest;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -162,13 +163,16 @@ public class SecurityManager
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
     public static final String API_KEY = "apikey";
 
-    private static final String USER_ID_KEY = User.class.getName() + "$userId";
+    public static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
     public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
     public static final String AUTHENTICATION_ATTRIBUTES_KEY = User.class.getName() + "$AuthenticationAttributes";
+    public static final String SCOPE_USER_ROLES = "UserRoles";
+    public static final String SCOPE_GROUP_ROLES = "GroupRoles";
+    public static final String SCOPE_USER_GROUPS = "UserGroups";
 
     static
     {
@@ -451,6 +455,29 @@ public class SecurityManager
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
 
+    public static User getSessionUser(HttpServletRequest request)
+    {
+        User sessionUser = getSessionUser(request.getSession(false));
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            SecurityManager.logoutUser(request, sessionUser, null);
+            return null;
+        }
+        return sessionUser;
+    }
+
+    public static User getSessionUser(HandshakeRequest request)
+    {
+        HttpSession session = (HttpSession) request.getHttpSession();
+        User sessionUser = getSessionUser(session);
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            session.invalidate();
+            return null;
+        }
+        return sessionUser;
+    }
+
     public static User getSessionUser(HttpSession session)
     {
         User sessionUser = null;
@@ -483,7 +510,7 @@ public class SecurityManager
 
         User u = null;
         HttpSession session = request.getSession(false);
-        User sessionUser = getSessionUser(session);
+        User sessionUser = getSessionUser(request);
 
         if (null != sessionUser)
         {
@@ -875,9 +902,15 @@ public class SecurityManager
             return _email;
         }
 
+        @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
         public boolean isLdapEmail()
         {
-            return AuthenticationManager.isLdapEmail(_email);
+            return isLdapOrSsoEmail();
+        }
+
+        public boolean isLdapOrSsoEmail()
+        {
+            return AuthenticationManager.isLdapOrSsoEmail(_email);
         }
 
         public String getVerification()
@@ -966,13 +999,17 @@ public class SecurityManager
         return addUser(email, currentUser, true);
     }
 
-    /** @param currentUser the user who is adding the new user. Used to set createdBy on the new user record
+    /**
+     * @param currentUser the user who is adding the new user. Used to set createdBy on the new user record
      * @param createLogin false in the case of a new LDAP or SSO user authenticating for the first time, or true
      *                    in any other case (e.g., manually added LDAP user), so we need an additional check below
      *                    to avoid sending verification emails to an LDAP user.
      */
     public static @NotNull NewUserStatus addUser(ValidEmail email, @Nullable User currentUser, boolean createLogin) throws UserManagementException
     {
+        if (LimitActiveUsersService.get().isUserLimitReached())
+            throw new UserManagementException(email, "User limit has been reached so no more users can be added to this deployment.");
+
         NewUserStatus status = new NewUserStatus(email);
 
         if (UserManager.userExists(email))
@@ -983,7 +1020,7 @@ public class SecurityManager
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            if (createLogin && !status.isLdapEmail())
+            if (createLogin && !status.isLdapOrSsoEmail())
             {
                 String verification = SecurityManager.createLogin(email);
                 status.setVerification(verification);
@@ -2369,10 +2406,10 @@ public class SecurityManager
 
             User newUser = newUserStatus.getUser();
 
-            if (newUserStatus.isLdapEmail())
+            if (newUserStatus.isLdapOrSsoEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP or SSO.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP or SSO.");
             }
             else if (sendMail)
             {
@@ -2453,11 +2490,6 @@ public class SecurityManager
         }
     }
 
-    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters) throws Exception
-    {
-        addSelfRegisteredUser(context, email, extraParameters, null);
-    }
-
     public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters, @Nullable String registrationProviderName) throws Exception
     {
         User currentUser = context.getUser();
@@ -2491,13 +2523,13 @@ public class SecurityManager
             if (messageContentsURL != null)
             {
                 builder.append(" Alternatively, you can copy the ");
-                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank"));
+                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses());
                 builder.append(" into an email client and send it to the user manually.");
             }
 
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
-            builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
+            builder.append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
             builder.append(".").append(HtmlString.BR);
         }
         else
@@ -2771,10 +2803,10 @@ public class SecurityManager
 
     public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
     {
-        adminRotatePassword(email, errors, c, user, "");
+        adminRotatePassword(email, errors, c, user, HtmlString.EMPTY_STRING);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, String mailErrorText)
+    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, HtmlString mailErrorHtml)
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
@@ -2815,9 +2847,7 @@ public class SecurityManager
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
-                if (StringUtils.isNotBlank(mailErrorText))
-                    message += '\n' + mailErrorText;
-                errors.addError(new LabKeyError(new Exception(message, e)));
+                errors.addError(mailErrorHtml.length() != 0 ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
@@ -2835,125 +2865,207 @@ public class SecurityManager
         UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
     }
 
-    public static void populateUserGroupsWithStartupProps()
+    private static final class UserGroupsStartupProperty implements StartupProperty
     {
-        // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
-        Container rootContainer = ContainerManager.getRoot();
-        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS).forEach(prop -> {
-            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-            String[] groups = prop.getValue().split(",");
-            for (String groupName : groups)
-            {
-                groupName = StringUtils.trimToNull(groupName);
-                if (null != groupName)
+        @Override
+        public String getPropertyName()
+        {
+            return "<user email address>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Ensure user exists and assign to the specified security group(s)";
+        }
+    }
+
+    // assign users to groups using values read from startup configuration
+    // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
+    private static class UserGroupsStartupPropertyHandler extends LenientStartupPropertyHandler<UserGroupsStartupProperty>
+    {
+        public UserGroupsStartupPropertyHandler()
+        {
+            super(SCOPE_USER_GROUPS, new UserGroupsStartupProperty());
+        }
+
+        @Override
+        public void handle(Collection<StartupPropertyEntry> entries)
+        {
+            Container rootContainer = ContainerManager.getRoot();
+
+            entries.forEach(prop -> {
+                User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+                String[] groups = prop.getValue().split(",");
+                for (String groupName : groups)
                 {
-                    Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                    if (null == group)
+                    groupName = StringUtils.trimToNull(groupName);
+                    if (null != groupName)
                     {
-                        try
+                        Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                        if (null == group)
                         {
-                            group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
-                        }
-                    }
-                    try
-                    {
-                        String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                        if (null == canUserBeAddedToGroup)
-                        {
-                            SecurityManager.addMember(group, user);
-                        }
-                        else
-                        {
-                            // ok if the user is already a member of this group, but everything else throw an exception
-                            if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                            try
                             {
-                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
                             }
                         }
-                    }
-                    catch (InvalidGroupMembershipException e)
-                    {
-                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                        try
+                        {
+                            String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                            if (null == canUserBeAddedToGroup)
+                            {
+                                SecurityManager.addMember(group, user);
+                            }
+                            else
+                            {
+                                // ok if the user is already a member of this group, but everything else throw an exception
+                                if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                                {
+                                    throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                }
+                            }
+                        }
+                        catch (InvalidGroupMembershipException e)
+                        {
+                            throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
-
-    public static void populateGroupRolesWithStartupProps()
+    private static final class GroupRolesStartupProperty implements StartupProperty
     {
-        // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
-        Container rootContainer = ContainerManager.getRoot();
-        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES).forEach(prop -> {
-            Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
-            if (null == group)
-            {
-                try
-                {
-                    group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
-                }
-            }
-            String[] roles = prop.getValue().split(",");
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-            for (String roleName : roles)
-            {
-                roleName = StringUtils.trimToNull(roleName);
-                if (null != roleName)
-                {
-                    Role role = RoleManager.getRole(roleName);
-                    if (null == role)
-                    {
-                        // Issue 36611: The provisioner startup properties break deployment of older products
-                        _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
-                        continue;
-                    }
-                    policy.addRoleAssignment(group, role);
-                }
-            }
-            SecurityPolicyManager.savePolicy(policy);
-        });
+        @Override
+        public String getPropertyName()
+        {
+            return "<group name>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Ensure site group exists and assign the specified security role(s)";
+        }
     }
 
-    public static void populateUserRolesWithStartupProps()
+    // create groups with specified roles using values read from startup properties
+    // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+    public static class GroupRolesStartupPropertyHandler extends LenientStartupPropertyHandler<GroupRolesStartupProperty>
     {
-        // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
-        Container rootContainer = ContainerManager.getRoot();
-        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES).forEach(prop -> {
-            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-            String[] roles = prop.getValue().split(",");
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
-            for (String roleName : roles)
-            {
-                roleName = StringUtils.trimToNull(roleName);
-                if (null != roleName)
+        public GroupRolesStartupPropertyHandler()
+        {
+            super(SCOPE_GROUP_ROLES, new GroupRolesStartupProperty());
+        }
+
+        @Override
+        public void handle(Collection<StartupPropertyEntry> entries)
+        {
+            Container rootContainer = ContainerManager.getRoot();
+
+            entries.forEach(prop -> {
+                Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
+                if (null == group)
                 {
-                    Role role = RoleManager.getRole(roleName);
-                    if (null == role)
+                    try
                     {
-                        // Issue 36611: The provisioner startup properties break deployment of older products
-                        _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
-                        continue;
+                        group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
                     }
-                    policy.addRoleAssignment(user, role);
+                    catch (IllegalArgumentException e)
+                    {
+                        throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
+                    }
                 }
-            }
-            SecurityPolicyManager.savePolicy(policy);
-        });
+                String[] roles = prop.getValue().split(",");
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                for (String roleName : roles)
+                {
+                    roleName = StringUtils.trimToNull(roleName);
+                    if (null != roleName)
+                    {
+                        Role role = RoleManager.getRole(roleName);
+                        if (null == role)
+                        {
+                            // Issue 36611: The provisioner startup properties break deployment of older products
+                            _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                            continue;
+                        }
+                        policy.addRoleAssignment(group, role);
+                    }
+                }
+                SecurityPolicyManager.savePolicy(policy);
+            });
+        }
     }
 
-    private static User getExistingOrCreateUser (String email, Container rootContainer)
+    private static final class UserRolesStartupProperty implements StartupProperty
+    {
+        @Override
+        public String getPropertyName()
+        {
+            return "<user email address>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Ensure user exists and assign the specified security role(s)";
+        }
+    }
+
+    // creates users with specified roles using values read from startup properties
+    // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+    private static class UserRolesStartupPropertyHandler extends LenientStartupPropertyHandler<UserRolesStartupProperty>
+    {
+        public UserRolesStartupPropertyHandler()
+        {
+            super(SCOPE_USER_ROLES, new UserRolesStartupProperty());
+        }
+
+        @Override
+        public void handle(Collection<StartupPropertyEntry> entries)
+        {
+            Container rootContainer = ContainerManager.getRoot();
+
+            entries.forEach(prop -> {
+                User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+                String[] roles = prop.getValue().split(",");
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
+                for (String roleName : roles)
+                {
+                    roleName = StringUtils.trimToNull(roleName);
+                    if (null != roleName)
+                    {
+                        Role role = RoleManager.getRole(roleName);
+                        if (null == role)
+                        {
+                            // Issue 36611: The provisioner startup properties break deployment of older products
+                            _log.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                            continue;
+                        }
+                        policy.addRoleAssignment(user, role);
+                    }
+                }
+                SecurityPolicyManager.savePolicy(policy);
+            });
+        }
+    }
+
+    // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
+    public static void populateStartupProperties()
+    {
+        ModuleLoader.getInstance().handleStartupProperties(new GroupRolesStartupPropertyHandler());
+        ModuleLoader.getInstance().handleStartupProperties(new UserRolesStartupPropertyHandler());
+        ModuleLoader.getInstance().handleStartupProperties(new UserGroupsStartupPropertyHandler());
+    }
+
+    private static User getExistingOrCreateUser(String email, Container rootContainer)
     {
         try
         {
@@ -3047,11 +3159,11 @@ public class SecurityManager
             return Set.of();
 
         Container c = ContainerManager.getForId(policy.getContainerId());
-        if (null != c && (principal instanceof User && c.isForbiddenProject((User) principal)))
+        if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
         var granted = policy.getOwnPermissions(principal);
-        principal.getContextualRoles(policy).forEach(r -> granted.addAll(r.getPermissions()));
+        principal.getContextualRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
         if (null != contextualRoles)
             contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
         if (principal instanceof User)
@@ -3527,16 +3639,25 @@ public class SecurityManager
         @Test
         public void testStartupPropertiesForUserRoles() throws Exception
         {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
             // examine the original list of users to ensure the test user is not already created
             ValidEmail userEmail = new ValidEmail(TEST_USER_1_EMAIL);
             Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
             assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
 
-            // call the method that makes use of the test startup properties to add a new user with specified role
-            populateUserRolesWithStartupProps();
+            // Use test startup properties to add a new user with specified role
+            ModuleLoader.getInstance().handleStartupProperties(new UserRolesStartupPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
+                {
+                    return List.of(new StartupPropertyEntry(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", SCOPE_USER_ROLES));
+                }
+
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // check that the expected user has been added to the list of users
             Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
@@ -3559,15 +3680,24 @@ public class SecurityManager
         @Test
         public void testStartupPropertiesForGroupRoles()
         {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
             // examine the original list of groups to ensure the test group is not already created
             Container rootContainer = ContainerManager.getRoot();
             assertNull("The group defined in the startup properties was already on the server: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
 
-            // call the method that makes use of the test startup properties to add a new group with specified role
-            populateGroupRolesWithStartupProps();
+            // Use test startup properties to add a new group with specified role
+            ModuleLoader.getInstance().handleStartupProperties(new GroupRolesStartupPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
+                {
+                    return List.of(new StartupPropertyEntry(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", SCOPE_GROUP_ROLES));
+                }
+
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // check that the expected group has been added
             assertNotNull("The group defined in the startup properties was not added to the list of groups: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
@@ -3588,16 +3718,25 @@ public class SecurityManager
         @Test
         public void testStartupPropertiesForUserGroups() throws Exception
         {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
             // examine the original list of users to ensure the test user is not already created
             ValidEmail userEmail = new ValidEmail(TEST_USER_2_EMAIL);
             Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
             assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
 
-            // call the method that makes use of the test startup properties to add a new user with specified group assignment
-            populateUserGroupsWithStartupProps();
+            // Use test startup properties to add a user to the specified group
+            ModuleLoader.getInstance().handleStartupProperties(new UserGroupsStartupPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
+                {
+                    return List.of(new StartupPropertyEntry(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", SCOPE_USER_GROUPS));
+                }
+
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // check that the expected user has been added to the list of users
             Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
@@ -3611,27 +3750,6 @@ public class SecurityManager
 
             // delete the test user that was added
             UserManager.deleteUser(user.getUserId());
-        }
-
-        private void prepareTestStartupProperties()
-        {
-            // prepare a multimap of config properties to test with that has properties assigned for several scopes
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-            // prepare test UserRole properties
-            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
-
-            // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
-
-            // prepare test UserRole properties
-            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
-
-            // set these test startup properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
 
         @Test

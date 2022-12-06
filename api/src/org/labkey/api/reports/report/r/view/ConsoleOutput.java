@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.view.HttpView;
@@ -38,6 +38,13 @@ public class ConsoleOutput extends AbstractParamReplacement
         super(ID);
     }
 
+    /* create an output for a known file */
+    public ConsoleOutput(File output)
+    {
+        super(ID);
+        addFile(output);
+    }
+
     @Override
     protected File getSubstitution(File directory) throws Exception
     {
@@ -52,7 +59,7 @@ public class ConsoleOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         ROutputView view = new TextOutput.TextOutputView(this);
         view.setLabel("Console output");

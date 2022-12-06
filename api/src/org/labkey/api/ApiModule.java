@@ -57,6 +57,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -70,7 +71,7 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
@@ -84,7 +85,10 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppPropsTestCase;
+import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -98,7 +102,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
@@ -116,6 +121,9 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
+
+        PropertyManager.registerEncryptionMigrationHandler();
+        AuthenticationManager.registerEncryptionMigrationHandler();
     }
 
     @NotNull
@@ -131,6 +139,10 @@ public class ApiModule extends CodeOnlyModule
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
+        MailHelper.init();
+        // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
+        ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
+        ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 
     @Override
@@ -194,6 +206,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.BetweenClauseTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
+            SQLFragment.UnitTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
             NameGenerator.TestCase.class,
@@ -224,6 +237,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CachingTestCase.class,
@@ -264,7 +278,7 @@ public class ApiModule extends CodeOnlyModule
             RowTrackingResultSetWrapper.TestCase.class,
             SecurityManager.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
-            SQLFragment.TestCase.class,
+            SQLFragment.IntegrationTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
@@ -277,18 +291,9 @@ public class ApiModule extends CodeOnlyModule
             TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
-            WorkbookContainerType.TestCase.class
+            WorkbookContainerType.TestCase.class,
+            WriteableLookAndFeelProperties.TestCase.class
         );
-    }
-
-    @Override
-    public @NotNull Collection<String> getJarFilenames()
-    {
-        // Filter out "labkey-client-api-XX.X.jar" -- we don't need credits for our own jar. All of its dependencies will
-        // appear on the credits page, though.
-        return super.getJarFilenames().stream()
-            .filter(fn->!fn.startsWith("labkey-client-api-"))
-            .collect(Collectors.toList());
     }
 
     @Override
@@ -305,7 +310,7 @@ public class ApiModule extends CodeOnlyModule
             json.put("compliance", complianceSettings);
 
         LookAndFeelProperties properties = LookAndFeelProperties.getInstance(context.getContainer());
-        json.put(LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE, properties.getApplicationMenuDisplayMode());
+        json.put(applicationMenuDisplayMode.name(), properties.getApplicationMenuDisplayMode());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;

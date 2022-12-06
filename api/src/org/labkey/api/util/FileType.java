@@ -378,12 +378,6 @@ public class FileType implements Serializable
      * @return the index of the first suffix that matches. Useful when looking through a directory of files and
      * determining which is the preferred file for this FileType.
      */
-    @Deprecated //Prefer the Path version
-    public int getIndexMatch(File file)
-    {
-        return getIndexMatch(file.getName(), file.getPath());
-    }
-
     public int getIndexMatch(Path file)
     {
         return getIndexMatch(file.getFileName().toString(), file.toString());

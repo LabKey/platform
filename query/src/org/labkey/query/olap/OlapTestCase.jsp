@@ -1,4 +1,4 @@
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
@@ -15,12 +15,12 @@
 
 JSONObject executeJsonApi(ActionURL url, User user, String json) throws Exception
 {
-    Map<String,Object> headers = Map.of("Content-Type", (Object)"application/json");
+    Map<String,Object> headers = Map.of("Content-Type", "application/json");
     var req = ViewServlet.mockRequest("POST", url, user, headers, json);
     var res = ViewServlet.mockDispatch(req, null);
     // Oddly, BaseApiAction returns SC_BAD_REQUEST by default when an handled error is returned, even though the it is not a bad request.
     assertTrue(HttpServletResponse.SC_BAD_REQUEST == res.getStatus() || HttpServletResponse.SC_OK == res.getStatus());
-    assertEquals("application/json", res.getContentType());
+    assertEquals("application/json;charset=UTF-8", res.getContentType());
     return new JSONObject(res.getContentAsString());
 }
 

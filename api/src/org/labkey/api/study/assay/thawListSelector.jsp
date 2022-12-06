@@ -72,7 +72,7 @@
     </tr>
 </table>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var thawListQueryPickerPanel;
     Ext4.onReady(function(){
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});

@@ -23,8 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -55,6 +55,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -833,19 +834,29 @@ public class DataRegion extends DisplayElement
 
             if (countAggregate)
             {
-                List<Aggregate> newAggregates = new LinkedList<>(baseAggregates);
-
-                newAggregates.add(Aggregate.createCountStar());
-                _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-                List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
-
-                //Issue 14863: add null check
-                if (result != null && result.size() > 0)
+                if (baseAggregates.isEmpty() && _complete && results.getSize() >= 0)
                 {
-                    Aggregate.Result countStarResult = result.get(0);
-                    _totalRows = 0L;
-                    if (countStarResult.getValue() instanceof Number)
-                        _totalRows = ((Number) countStarResult.getValue()).longValue();
+                    // Issue 44749. Don't need to do a separate aggregate query as we already know how many rows
+                    // came back and that it was the complete results
+                    _totalRows = Long.valueOf(results.getSize());
+                    _aggregateResults = Collections.emptyMap();
+                }
+                else
+                {
+                    List<Aggregate> newAggregates = new LinkedList<>(baseAggregates);
+
+                    newAggregates.add(Aggregate.createCountStar());
+                    _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
+                    List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
+
+                    //Issue 14863: add null check
+                    if (result != null && result.size() > 0)
+                    {
+                        Aggregate.Result countStarResult = result.get(0);
+                        _totalRows = 0L;
+                        if (countStarResult.getValue() instanceof Number)
+                            _totalRows = ((Number) countStarResult.getValue()).longValue();
+                    }
                 }
             }
             else
@@ -943,11 +954,10 @@ public class DataRegion extends DisplayElement
         }
 
         StringWriter out = new StringWriter();
-        out.write("<script type=\"text/javascript\">\n");
+        out.write(HttpView.currentPageConfig().getScriptTagStart().toString());
         out.write("LABKEY.DataRegion.create(");
         out.write(dataRegionJSON.toString(2));
-        out.write(");\n");
-        out.write("</script>\n");
+        out.write(");\n</script>\n");
         writer.write(out.toString());
     }
 

@@ -20,8 +20,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.data.Container;
-import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -29,8 +27,8 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.pipeline.DatasetInferSchemaReader;
-import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -81,40 +79,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
                 if (null != manifestDatasetsXml)
                 {
-                    Container c = ctx.getContainer();
-
-                    // This is only for backwards compatibility; we now export default formats to folder.xml
-                    if (manifestDatasetsXml.isSetDefaultDateFormat())
-                    {
-                        try
-                        {
-                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultDateFormat());
-                            WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
-                        }
-                    }
-
-                    // This is only for backwards compatibility; we now export default formats to folder.xml
-                    if (manifestDatasetsXml.isSetDefaultNumberFormat())
-                    {
-                        try
-                        {
-                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultNumberFormat());
-                            WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
-                        }
-                    }
-
                     DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
-
                     extraProps = getDatasetImportProperties(manifestDatasetsXml);
-
                     orderedIds = new ArrayList<>(datasets.length);
 
                     for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
@@ -151,8 +117,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 // infer column metadata
                 List<String> readerErrors = new ArrayList<>();
 
-                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
-                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
+                VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(ctx, ctx.getRoot());
+                String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(ctx);
 
                 if (datasetsDirectory != null)
                 {
@@ -183,8 +149,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
      */
     private boolean hasDatasetDefinitionFile(StudyImportContext ctx) throws ImportException
     {
-        VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
-        String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
+        VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(ctx, ctx.getRoot());
+        String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(ctx);
 
         if (datasetsDirectory != null && datasetsFileName != null)
         {

@@ -143,6 +143,17 @@ public class DbScope
 
     private SqlDialect _dialect;
 
+    /** @return the size of the database in bytes, or -1 if we don't know how to get it */
+    public long getDatabaseSize()
+    {
+        SQLFragment sql = getSqlDialect().getDatabaseSizeSql(getDatabaseName());
+        if (sql != null)
+        {
+            return new SqlSelector(this, sql).getObject(Long.class);
+        }
+        return -1;
+    }
+
     public interface TransactionKind
     {
         /** A short description of what this transactions usage scenario is */
@@ -678,6 +689,18 @@ public class DbScope
      */
     public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
+        return _executeWithRetry(true, fn, extraLocks);
+    }
+
+
+    public <ReturnType> ReturnType executeWithRetryReadOnly(RetryFn<ReturnType> fn)
+    {
+        return _executeWithRetry(false, fn);
+    }
+
+
+    private  <ReturnType> ReturnType _executeWithRetry(boolean useTx, RetryFn<ReturnType> fn, Lock... extraLocks)
+    {
         // don't retry if we're already in a transaction, it won't help
         ReturnType ret = null;
         int tries = isTransactionActive() ? 1 : 3;
@@ -686,11 +709,22 @@ public class DbScope
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
-            try (Transaction transaction = ensureTransaction(extraLocks))
+            try
             {
-                ret = fn.exec(transaction);
-                transaction.commit();
-                break;
+                if (useTx)
+                {
+                    try (Transaction transaction = ensureTransaction(extraLocks))
+                    {
+                        ret = fn.exec(transaction);
+                        transaction.commit();
+                        break;
+                    }
+                }
+                else
+                {
+                    ret = fn.exec(null);
+                    break;
+                }
             }
             catch (DeadlockLoserDataAccessException dldae)
             {
@@ -1002,7 +1036,7 @@ public class DbScope
 
             if (_transaction.isEmpty())
             {
-                log.info("There are no threads holding connections for the data source '" + this + "'");
+                log.info("There are no threads holding transactions for the data source '" + this + "'");
             }
             else
             {
@@ -1045,7 +1079,7 @@ public class DbScope
         }
         catch (SQLException e)
         {
-            throw new ConfigurationException("Can't create a database connection to " + getDataSource().toString(), e);
+            throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
         if (!conn.getAutoCommit())
@@ -1547,8 +1581,7 @@ public class DbScope
             }
             catch (Exception e)
             {
-                LOG.error("ensureDataBase", e);
-                throw new ServletException("Internal error", e);
+                throw new ServletException("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed", e);
             }
             finally
             {
@@ -1573,7 +1606,8 @@ public class DbScope
         return getRawConnection(props.getUrl(), props);
     }
 
-    // Establish a direct connection to the specified URL using the data source's driver and credentials. This bypasses the connection pool.
+    // Attempt to establish a direct connection to the specified URL using the data source's driver and credentials.
+    // This bypasses the connection pool.
     private static Connection getRawConnection(String url, DataSourceProperties props) throws ServletException, SQLException
     {
         Driver driver;
@@ -1598,6 +1632,9 @@ public class DbScope
             throw new ServletException("Unable to retrieve data source properties", e);
         }
 
+        if (!driver.acceptsURL(url))
+            throw new ServletException("The specified driver (\"" + props.getDriverClassName() + "\") does not accept the specified URL (\"" + url + "\")");
+
         return driver.connect(url, info);
     }
 
@@ -1608,10 +1645,10 @@ public class DbScope
 
         LOG.info("Attempting to create database \"" + dbName + "\"");
 
-        String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
+        String defaultUrl = StringUtils.replace(url, dbName, dialect.getDefaultDatabaseName());
         String createSql = "(undefined)";
 
-        try (Connection conn = getRawConnection(masterUrl, props))
+        try (Connection conn = getRawConnection(defaultUrl, props))
         {
             // Get version-specific dialect; don't log version warnings.
             dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);

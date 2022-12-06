@@ -20,10 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -47,13 +48,16 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -61,14 +65,17 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 import org.labkey.list.controllers.ListController;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -79,9 +86,36 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _canAccessPhi;
 
-    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
+    // NK: Picklists are instances of Lists that are utilized to group Samples. As such, they are utilized
+    // in more specific ways than Lists in our system and necessitate a different collection of default
+    // columns. Having these columns declared here may not be ideal, however, until Picklists have their own
+    // standalone implementation this is the best place for broad support across folders, views, etc.
+    private static final String PICKLIST_SAMPLE_ID = "SampleID";
+    private static final List<FieldKey> defaultPicklistVisibleColumns = new ArrayList<>();
+
+    static
     {
-        super(StorageProvisioner.createTableInfo(domain), schema);  // domain passed separately to allow @NotNull verification
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Name"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "LabelColor"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet_Folder"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleState"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StoredAmount"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Units"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "freezeThawCount"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageStatus"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "checkedOutBy"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Created"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "CreatedBy"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageLocation"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageRow"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageCol"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "isAliquot"));
+    }
+
+    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain, @Nullable ContainerFilter cf)
+    {
+        super(StorageProvisioner.createTableInfo(domain), schema, cf);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -196,7 +230,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setFieldKey(new FieldKey(null,pd.getName()));
-                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"));
+                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter());
 
                         if (pd.isMvEnabled())
                         {
@@ -230,9 +264,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                         if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
-                            col.setURL(StringExpressionFactory.createURL(
-                                ListController.getDownloadURL(listDef, "${EntityId}", "${" + col.getName() + "}")
-                            ));
+                            configureAttachmentURL(col);
                         }
                     }
 
@@ -274,14 +306,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setGridURL(gridURL);
 
         if (null != colKey)
-            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getAlias())));
+            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), "pk", colKey.getFieldKey()));
 
         if (!listDef.getAllowUpload() || !_canAccessPhi)
             setImportURL(LINK_DISABLER);
         else
         {
-            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class, _userSchema.getContainer());
-            setImportURL(new DetailsURL(importURL));
+            setImportURL(new DetailsURL(listDef.urlImport(_userSchema.getContainer())));
         }
 
         if (!listDef.getAllowDelete() || !_canAccessPhi)
@@ -297,6 +328,44 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     }
 
     @Override
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
+    {
+        super.overlayMetadata(metadata, schema, errors);
+
+        // Reset URLs in case the XML metadata changed the view/download format option for the file
+        for (MutableColumnInfo col : getMutableColumns())
+        {
+            if (col.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                configureAttachmentURL(col);
+            }
+        }
+    }
+
+    private void configureAttachmentURL(MutableColumnInfo col)
+    {
+        ActionURL url = ListController.getDownloadURL(_list, "${EntityId}", "${" + col.getName() + "}");
+        if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
+        {
+            url.addParameter("inline", "false");
+            col.setURLTargetWindow(null);
+        }
+        else
+        {
+            col.setURLTargetWindow("_blank");
+        }
+        col.setURL(StringExpressionFactory.createURL(url));
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        if (_list != null && _list.isPicklist())
+            return defaultPicklistVisibleColumns;
+        return super.getDefaultVisibleColumns();
+    }
+
+    @Override
     public Domain getDomain()
     {
         if (null != _list)
@@ -307,7 +376,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public ContainerContext getContainerContext()
     {
-        return _list != null ? _userSchema.getContainer() : null;
+        if (_list == null)
+            return null;
+        return new ContainerContext.FieldKeyContext(new FieldKey(null, "Container"));
     }
 
     @Override
@@ -365,12 +436,16 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        // currently, picklists don't contain PHI and can always be deleted
+        if (_list.isPicklist() && (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm)))
+            return getContainer().hasPermission(user, ManagePicklistsPermission.class);
+
         boolean gate = true;
         if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm))
             gate = _canAccessPhi;
         else if (DeletePermission.class.equals(perm))
             gate = _canAccessPhi && _list.getAllowDelete();
-        return gate && _list.getContainer().hasPermission(user, perm);
+        return gate && getContainer().hasPermission(user, perm);
     }
 
     @Override
@@ -456,7 +531,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 .setKeyColumns(new CaseInsensitiveHashSet(getPkColumnNames()));
     }
 
-
     public class _DataIteratorBuilder implements DataIteratorBuilder
     {
         DataIteratorContext _context;
@@ -510,13 +584,11 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         }
     }
 
-
     @Override
     public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
     {
         return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
-
 
     @Override
     public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)

@@ -15,8 +15,7 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -33,12 +32,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.ImportTemplate;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -53,7 +48,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -66,8 +60,6 @@ import java.util.List;
 @RequiresPermission(AdminPermission.class)
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
-    private static final Logger LOG = LogManager.getLogger(CreateChildStudyAction.class);
-
     private Container _dstContainer;
     private StudyImpl _sourceStudy;
     private boolean _destFolderCreated;
@@ -88,25 +80,20 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         {
             // Need to set optional fields to null, or user-added metadata on those fields won't be copied over properly
             previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
-            StudyImpl newStudy = createNewStudy(form);
+            StudyImpl newStudy = createNewStudy(form, errors);
 
-            if (newStudy != null)
-            {
-                List<AttachmentFile> files = getAttachmentFileList();
-                newStudy.attachProtocolDocument(files, getUser());
+            List<AttachmentFile> files = getAttachmentFileList();
+            newStudy.attachProtocolDocument(files, getUser());
 
-                // run the remainder of the study creation as a pipeline job
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
-                PipelineService.get().queueJob(job);
+            // run the remainder of the study creation as a pipeline job
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
+            PipelineService.get().queueJob(job);
 
-                String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
+            String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
 
-                resp.put("redirect", redirect);
-                resp.put("success", true);
-            }
-            else
-                errors.reject(SpringActionController.ERROR_MSG, "Failed to create the destination study.");
+            resp.put("redirect", redirect);
+            resp.put("success", true);
         }
         finally
         {
@@ -150,60 +137,19 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         {
             StringBuilder sb = new StringBuilder();
             String delim = "";
-            for (Object error : errors.getAllErrors())
+            for (ObjectError error : errors.getAllErrors())
             {
                 sb.append(delim);
-                sb.append(((ObjectError)error).getDefaultMessage());
+                sb.append(error.getDefaultMessage());
 
                 delim = "\n";
             }
             throw new IllegalArgumentException(sb.toString());
         }
-
-        if (null != form.getRequestId() || null != form.getSpecimenIds())
-        {
-            form.setIncludeSpecimens(true);
-            SpecimenManagerNew sm = SpecimenManagerNew.get();
-
-            if (null != form.getRequestId())
-            {
-                SpecimenRequest request = SpecimenRequestManager.get().getRequest(sourceContainer, form.getRequestId());
-
-                if (null == request)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Unable to locate specimen request with id " + form.getRequestId());
-                }
-                else
-                {
-                    List<Vial> vials = request.getVials();
-
-                    if (0 == vials.size())
-                        errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
-                    else
-                        form.setVials(vials);
-                }
-            }
-            else
-            {
-                String[] specimenIds = form.getSpecimenIds();
-                List<Vial> list = new ArrayList<>(specimenIds.length);
-                User user = getUser();
-                for (String specimenId : specimenIds)
-                {
-                    Vial vial = sm.getVial(sourceContainer, user, specimenId);
-
-                    if (null == vial)
-                        LOG.error("Specimen ID " + specimenId + " not found!!");
-                    else
-                        list.add(vial);
-                }
-
-                form.setVials(list);
-            }
-        }
     }
 
-    private StudyImpl createNewStudy(ChildStudyDefinition form) throws ValidationException
+    @NotNull
+    private StudyImpl createNewStudy(ChildStudyDefinition form, BindException errors) throws ValidationException
     {
         // Minimum set of properties needed to create a study (due to NOT NULL constraints). All other study properties are
         // round-tripped from the source study by StudyXmlWriter and TopLevelStudyPropertiesImporter to ensure consistency
@@ -234,7 +180,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
         // Set a default folder type. Will be overridden if user has chosen to copy from source.
         FolderType folderType = FolderTypeManager.get().getFolderType(StudyFolderType.NAME);
-        _dstContainer.setFolderType(folderType, User.getSearchUser());
+        _dstContainer.setFolderType(folderType, User.getSearchUser(), errors);
 
         return study;
     }

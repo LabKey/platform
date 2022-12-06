@@ -96,7 +96,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     // DavController has a per request cache, but we want to aggressively cache static file resources
     // Do we really need the _allStaticFiles and CHILDREN_CACHE, it seems like we should be able to combine these
     StaticResource _root = null;
-    Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "webdav static files");
+    Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "WebDAV static files");
 
 
     @Override
@@ -394,7 +394,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         }
     }
 
-    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "StaticResourceCache");
+    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "Static resources");
 
     private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
     {
@@ -485,7 +485,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
                             children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
                     }
 
-                    CHILDREN_CACHE.put(getPath(), children);
+                    CHILDREN_CACHE.put(getPath(), Collections.unmodifiableMap(children));
                 }
                 return children;
             }

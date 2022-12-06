@@ -16,22 +16,32 @@
 
 package org.labkey.search;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement;
 import org.labkey.api.view.HttpView;
@@ -41,21 +51,23 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
-import org.labkey.search.model.DocumentConversionServiceImpl;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class SearchModule extends DefaultModule
 {
-    // package logger for use with logger-manage.view
-    static final Logger _logPackage = LogManager.getLogger(SearchModule.class.getPackage().getName());
+    private static final Logger LOG = LogHelper.getLogger(SearchModule.class, "Search module startup issues");
 
     @Override
     public String getName()
@@ -66,7 +78,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 22.000;
+        return 22.004;
     }
 
     @Override
@@ -116,18 +128,40 @@ public class SearchModule extends DefaultModule
             }
 
             @Override
-            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+            public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
             {
                 return null;
             }
         });
-        DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
     }
-
 
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        ModuleLoader.getInstance().handleStartupProperties(
+            new StandardStartupPropertyHandler<>("SearchSettings", SearchStartupProperties.class)
+            {
+                @Override
+                public void handle(Map<SearchStartupProperties, StartupPropertyEntry> properties)
+                {
+                    SearchService ss = SearchService.get();
+                    if (null == ss)
+                        LOG.error("Search service is not present");
+                    else
+                        properties.forEach((ssp, sp) -> {
+                            try
+                            {
+                                ssp.setProperty(ss, _searchStartupListener, sp.getValue());
+                            }
+                            catch (Exception e)
+                            {
+                                LOG.error("Exception while attempting to set startup property", e);
+                            }
+                        });
+                }
+            }
+        );
+
         final SearchService ss = SearchService.get();
 
         if (null != ss)
@@ -135,17 +169,30 @@ public class SearchModule extends DefaultModule
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             CacheManager.addListener(() -> {
-                LogManager.getLogger(SearchService.class).info("Purging SearchService queues");
+                SearchService._log.info("Purging SearchService queues");
                 ss.purgeQueues();
             });
         }
 
         AuditLogService.get().registerAuditType(new SearchAuditProvider());
 
-        // add a container listener so we'll know when containers are deleted
+        // add a container listener, so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
 
         FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), () ->
+        {
+            // Report the total number of search entries in the audit log
+            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
+            TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING);
+
+            long count = new TableSelector(auditTable).getRowCount();
+            return Collections.singletonMap("fullTextSearches", count);
+        });
+
+        ContextListener.addStartupListener(_searchStartupListener);
     }
 
 
@@ -161,6 +208,55 @@ public class SearchModule extends DefaultModule
         }
     }
 
+    private final SearchStartupListener _searchStartupListener = new SearchStartupListener();
+
+    public static class SearchStartupListener implements StartupListener
+    {
+        private volatile boolean _deleteIndex = false;
+        private volatile boolean _indexFull = false;
+
+        private final Queue<String> _deleteIndexReasons = new ConcurrentLinkedQueue<>();
+        private final Queue<String> _indexFullReasons = new ConcurrentLinkedQueue<>();
+
+        public void setDeleteIndex(String reason)
+        {
+            _deleteIndex = true;
+            _deleteIndexReasons.add(reason);
+        }
+
+        public void setIndexFull(String reason)
+        {
+            _indexFull = true;
+            _indexFullReasons.add(reason);
+        }
+
+        @Override
+        public String getName()
+        {
+            return "Search Service: delete index if requested";
+        }
+
+        @Override
+        public void moduleStartupComplete(ServletContext servletContext)
+        {
+            SearchService ss = SearchService.get();
+
+            if (null != ss)
+            {
+                if (_deleteIndex)
+                {
+                    LOG.info("Deleting full-text search index and clearing last indexed because: " + _deleteIndexReasons);
+                    ss.deleteIndex();
+                }
+                if (_indexFull)
+                {
+                    LOG.info("Initiating an aggressive full-text search reindex because: " + _indexFullReasons);
+                    ss.indexFull(true);
+                }
+            }
+        }
+    };
+
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
@@ -168,23 +264,8 @@ public class SearchModule extends DefaultModule
         // to rebuild the entire index, #35674 & #42617
         if (!moduleContext.isNewInstall() && moduleContext.needsUpgrade(getSchemaVersion()))
         {
-            ContextListener.addStartupListener(new StartupListener()
-            {
-                @Override
-                public String getName()
-                {
-                    return "Search Service: delete index";
-                }
-
-                @Override
-                public void moduleStartupComplete(ServletContext servletContext)
-                {
-                    SearchService ss = SearchService.get();
-
-                    if (null != ss)
-                        ss.deleteIndex();
-                }
-            });
+            _searchStartupListener.setDeleteIndex("Search schema upgrade");
+            _searchStartupListener.setIndexFull("Search schema upgrade");
         }
     }
 

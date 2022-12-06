@@ -132,7 +132,6 @@ public class Portal implements ModuleChangeListener
         ModuleResourceCaches.create("File-based webpart definitions", new SimpleWebPartFactoryCacheHandler(), ResourceRootProvider.getStandard(ModuleHtmlView.VIEWS_PATH));
 
     private static Map<String, WebPartFactory> _viewMap = null;
-    private static final List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
     private static final Map<String, List<NavTreeCustomizer>> _navTreeCustomizerMap = new CaseInsensitiveHashMap<>();
 
@@ -1874,16 +1873,6 @@ public class Portal implements ModuleChangeListener
         {
             WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
         }
-    }
-
-    public static void registerHomeProjectInitWebpart(WebPartFactory webPartFactory)
-    {
-        _homeWebParts.add(webPartFactory);
-    }
-
-    public static List<WebPartFactory> getHomeProjectInitWebparts()
-    {
-        return _homeWebParts;
     }
 
     public static class PortalPage implements Cloneable, Factory<PortalPage>

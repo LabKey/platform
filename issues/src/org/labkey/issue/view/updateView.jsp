@@ -34,7 +34,7 @@
 <%@ page import="org.labkey.issue.IssuesController.DetailsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.ListAction" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
@@ -98,7 +98,7 @@
 <%
     final JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     final IssuePage bean = me.getModelBean();
-    final Issue issue = bean.getIssue();
+    final IssueObject issue = bean.getIssue();
     final ViewContext context = getViewContext();
     final Container c = getContainer();
     final User user = getUser();
@@ -158,7 +158,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function filterRe(e, input, re){
         if (e.isSpecialKey())
             return true;
@@ -272,7 +272,7 @@
         %>
     </table>
     <div class="labkey-button-bar-separate">
-        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
+        <%= button("Save").submit(true).name(bean.getAction().name()).disableOnClick(true) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <table class="lk-fields-table" style="margin-top:10px;">
@@ -313,7 +313,7 @@
                         <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
                             }
                         %>
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             var duplicateInput = document.getElementsByName('duplicate')[0];
                             var duplicateOrig = duplicateInput.value;
                             var resolutionSelect = document.getElementsByName('resolution')[0];
@@ -351,7 +351,7 @@
                     <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
                         <%=bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), builder->builder.id("related"))%>
 
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                         </script><%
 
@@ -416,11 +416,11 @@
         <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
-    <% final Collection<Issue.Comment> comments = issue.getComments();
+    <% final Collection<IssueObject.CommentObject> comments = issue.getCommentObjects();
         if (comments.size() > 0) { boolean firstComment = true; %>
     <labkey:panel>
 <%
-    for (Issue.Comment comment : comments) {
+    for (IssueObject.CommentObject comment : comments) {
         if (firstComment) {
             firstComment = false;
         }
@@ -449,9 +449,7 @@
         <%= generateReturnUrlFormField(bean.getReturnURL()) %> <%
     }%>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
-    <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
-    <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
-    <input type="hidden" name="issueDefName" value="<%=h(StringUtils.trimToEmpty(issue.getIssueDefName()))%>">
+    <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
     <input type="hidden" name="dirty" value="false">
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>

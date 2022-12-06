@@ -55,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -499,12 +500,7 @@ public class XarExpander extends AbstractXarImporter
     private void addMaterialObject(String protocolLSID, int actionSequence, String materialLSID)
     {
         PredecessorStep step = new PredecessorStep(protocolLSID, actionSequence);
-        List<String> outputs = _materialOutputs.get(step);
-        if (outputs == null)
-        {
-            outputs = new ArrayList<>();
-            _materialOutputs.put(step, outputs);
-        }
+        List<String> outputs = _materialOutputs.computeIfAbsent(step, k -> new ArrayList<>());
         outputs.add(materialLSID);
     }
 
@@ -575,12 +571,7 @@ public class XarExpander extends AbstractXarImporter
     private void addDataObject(String protocolLSID, int actionSequence, String dataLSID)
     {
         PredecessorStep step = new PredecessorStep(protocolLSID, actionSequence);
-        List<String> outputs = _dataOutputs.get(step);
-        if (outputs == null)
-        {
-            outputs = new ArrayList<>();
-            _dataOutputs.put(step, outputs);
-        }
+        List<String> outputs = _dataOutputs.computeIfAbsent(step, k -> new ArrayList<>());
         outputs.add(dataLSID);
     }
 
@@ -608,19 +599,14 @@ public class XarExpander extends AbstractXarImporter
         {
             try
             {
-                File f = new File(new URI(inputDir)).getParentFile();
-
-                File xarDir = _xarSource.getRoot();
+                Path f = new File(new URI(inputDir)).getParentFile().toPath();
+                Path xarDir = _xarSource.getRootPath();
 
                 inputDir = FileUtil.relativizeUnix(xarDir, f, true);
 
                 context.addSubstitution("InputDir", inputDir);
             }
-            catch (IOException e)
-            {
-                throw new XarFormatException(e);
-            }
-            catch (URISyntaxException e)
+            catch (IOException | URISyntaxException e)
             {
                 throw new XarFormatException(e);
             }
@@ -648,7 +634,7 @@ public class XarExpander extends AbstractXarImporter
                             XarContext context,
                             ExperimentRunType xbRun) throws ExperimentException
     {
-        FileResolver resolver = new FileResolver(_xarSource.getRoot());
+        FileResolver resolver = new FileResolver(_xarSource.getRootPath().toFile());
         for (ExperimentLogEntryType step : steps)
         {
             if (null == step.getStepCompleted())

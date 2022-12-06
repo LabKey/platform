@@ -102,21 +102,12 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             {
                 if (COLUMN_NAME_LIST_DOMAIN_URI.equalsIgnoreCase(col.getName()))
                 {
-                    final ColumnInfo nameCol = getColumn(FieldKey.fromParts(COLUMN_NAME_LIST_NAME));
-                    final ColumnInfo containerCol = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
-
                     col.setLabel("List");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new DomainAuditProvider.DomainColumn(colInfo, containerCol, nameCol);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new DomainAuditProvider.DomainColumn(colInfo, COLUMN_NAME_CONTAINER, COLUMN_NAME_LIST_NAME));
                 }
             }
         };
+        appendValueMapColumns(table);
 
         // Render a details URL only for rows that have a listItemEntityId
         DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}", null, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
@@ -242,8 +233,8 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             // to be indexed
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING, 300)); // UNDONE: is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
-            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);
         }
 

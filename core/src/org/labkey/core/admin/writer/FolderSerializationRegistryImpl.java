@@ -59,10 +59,10 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     // than being able to read elements from folder.xml.
     //
     @Override
-    public Collection<FolderImporter<?>> getRegisteredFolderImporters()
+    public Collection<FolderImporter> getRegisteredFolderImporters()
     {
         // New up the importers every time since these classes can be stateful
-        Collection<FolderImporter<?>> importers = new LinkedList<>();
+        Collection<FolderImporter> importers = new LinkedList<>();
 
         for (FolderImporterFactory factory : getSortedFactories())
             importers.add(factory.create());

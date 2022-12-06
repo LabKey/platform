@@ -21,11 +21,14 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +50,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
@@ -537,7 +541,7 @@ abstract public class PipelineJob extends Job implements Serializable
         File newFile = new File(file.getPath() + ".new");
         File origFile = new File(file.getPath() + ".orig");
 
-        String serializedJob = PipelineJob.serializeJob(this, true);
+        String serializedJob = serializeJob(true);
 
         try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
@@ -703,7 +707,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (taskPipeline != null)
         {
             // Save the current job state marshalled to XML, in case of error.
-            String serializedJob = PipelineJob.serializeJob(this, true);
+            String serializedJob = serializeJob(true);
 
             // Note runStateMachine returns false, if the job cannot be run locally.
             // The job may still need to be put on a JMS queue for remote processing.
@@ -1063,9 +1067,13 @@ abstract public class PipelineJob extends Job implements Serializable
      * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
      * status at the end of their execution to either COMPLETE or ERROR
      */
-    @Override
+    @Override @Trace
     public void run()
     {
+        // Connect log messages with the active trace and span
+        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+
         try
         {
             // The act of queueing the job runs the state machine for the first time.
@@ -1101,6 +1109,9 @@ abstract public class PipelineJob extends Job implements Serializable
         finally
         {
             finallyCleanUpLocalDirectory();
+
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
     }
 
@@ -1597,12 +1608,12 @@ abstract public class PipelineJob extends Job implements Serializable
                     try
                     {
                         Files.createDirectories(parentFile);
+                        write(message, t, level);
                     }
                     catch (IOException dirE)
                     {
                         _log.error("Failed appending to file. Unable to create parent directories", e);
                     }
-                    write(message, t, level);
                 }
                 else
                     _log.error("Failed appending to file.", e);
@@ -1884,14 +1895,9 @@ abstract public class PipelineJob extends Job implements Serializable
         return status.getNotificationType();
     }
 
-    public static String serializeJob(PipelineJob job)
+    public String serializeJob(boolean ensureDeserialize)
     {
-        return serializeJob(job, true);
-    }
-
-    public static String serializeJob(PipelineJob job, boolean ensureDeserialize)
-    {
-        return PipelineJobService.get().getJobStore().serializeToJSON(job, ensureDeserialize);
+        return PipelineJobService.get().getJobStore().serializeToJSON(this, ensureDeserialize);
     }
 
     public static String getClassNameFromJson(String serialized)
@@ -1913,11 +1919,7 @@ abstract public class PipelineJob extends Job implements Serializable
         try
         {
             String className = PipelineJob.getClassNameFromJson(serialized);
-            Object job = PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, Class.forName(className));
-            if (job instanceof PipelineJob)
-                return (PipelineJob) job;
-
-            _log.error("Deserialized object not instance of PipelineJob: " + job.getClass().getName());
+            return PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, (Class<? extends PipelineJob>)Class.forName(className));
         }
         catch (ClassNotFoundException e)
         {
@@ -1928,7 +1930,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static ObjectMapper createObjectMapper()
     {
-        ObjectMapper mapper = new ObjectMapper()
+        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy()
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
@@ -1958,28 +1960,24 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public abstract static class TestSerialization extends org.junit.Assert
     {
-        public void testSerialize(Object job, @Nullable Logger log)
+        public void testSerialize(PipelineJob job, @Nullable Logger log)
         {
             PipelineStatusFile.JobStore jobStore = PipelineJobService.get().getJobStore();
             try
             {
                 if (null != log)
                     log.info("Hi Logger is here!");
-                String json = jobStore.serializeToJSON(job);
+                String json = jobStore.serializeToJSON(job, true);
                 if (null != log)
                     log.info(json);
-                Object job2 = jobStore.deserializeFromJSON(json, job.getClass());
+                PipelineJob job2 = jobStore.deserializeFromJSON(json, job.getClass());
                 if (null != log)
                     log.info(job2.toString());
 
-                if (job instanceof PipelineJob)
+                List<String> errors = job.compareJobs(job2);
+                if (!errors.isEmpty())
                 {
-                    assert (job2 instanceof PipelineJob);
-                    List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)job2);
-                    if (!errors.isEmpty())
-                    {
-                        fail("Pipeline objects don't match: " + StringUtils.join(errors, ","));
-                    }
+                    fail("Pipeline objects don't match: " + StringUtils.join(errors, ","));
                 }
             }
             catch (Exception e)

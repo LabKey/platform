@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.old.JSONArray" %>
+<%@ page import="org.json.old.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
@@ -280,7 +280,7 @@
             <small>
                 <a class="search-advanced-toggle">advanced options</a>
                 <% if (form.getIncludeHelpLink()) { %>
-                | <a target="_blank" href="<%=text(SearchUtils.getHelpTopic().getHelpTopicHref())%>">help</a>
+                | <a target="_blank" href="<%=text(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
                 <% } %>
             </small>
             <% } %>
@@ -598,7 +598,7 @@
     </div>
 </div>
 <% } %>
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%=getScriptNonce()%>">
     +function($){
         'use strict';
 

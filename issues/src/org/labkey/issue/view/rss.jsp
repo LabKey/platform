@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<IssuesController.RssBean> me = (JspView<IssuesController.RssBean>) HttpView.currentView();
@@ -40,18 +40,18 @@
     <link><%=h(app.getHomePageActionURL())%></link>
     <description><%=h(laf.getShortName())%>: Issues</description>
 <%
-for (Issue issue : bean.issues)
+for (IssueObject issue : bean.issues)
 { %>
     <item>
-        <title><%=issue.getIssueId()%>: <%=h(issue.getProperty(Issue.Prop.milestone)) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
+        <title><%=issue.getIssueId()%>: <%=h(issue.getProperty(IssueObject.Prop.milestone)) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
         <link><%=text(bean.filteredURLString)%><%=issue.getIssueId()%></link>
         <guid><%=text(bean.filteredURLString)%><%=issue.getIssueId()%></guid>
         <pubDate><%=unsafe(issue.getCreated().toString())%></pubDate>
         <description>
 openedby <%=h(issue.getCreatedByName(user))%>
-priority <%=h(issue.getProperty(Issue.Prop.priority))%>
-type <%=h(issue.getProperty(Issue.Prop.type))%>
-area <%=h(issue.getProperty(Issue.Prop.area))%>
+priority <%=h(issue.getProperty(IssueObject.Prop.priority))%>
+type <%=h(issue.getProperty(IssueObject.Prop.type))%>
+area <%=h(issue.getProperty(IssueObject.Prop.area))%>
         </description>
     </item>
 <% } %>

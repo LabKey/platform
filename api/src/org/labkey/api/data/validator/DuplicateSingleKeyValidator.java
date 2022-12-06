@@ -27,16 +27,16 @@ import java.util.Set;
  */
 public class DuplicateSingleKeyValidator extends AbstractColumnValidator
 {
-    private final boolean _caseInsensitive;
+    private final boolean _caseSensitive;
     private final JdbcType _jdbcType;
 
     private Set _keys = null;
 
-    public DuplicateSingleKeyValidator(String columnName, JdbcType jdbcType, boolean caseInsensitive)
+    public DuplicateSingleKeyValidator(String columnName, JdbcType jdbcType, boolean caseSensitive)
     {
         super(columnName);
         _jdbcType = jdbcType;
-        _caseInsensitive = caseInsensitive;
+        _caseSensitive = caseSensitive;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class DuplicateSingleKeyValidator extends AbstractColumnValidator
     {
         if (null == _keys)
         {
-            if (_caseInsensitive && _jdbcType.isText())
+            if (!_caseSensitive && _jdbcType.isText())
                 _keys = new CaseInsensitiveHashSet();
             else
                 _keys = new HashSet();

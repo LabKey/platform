@@ -44,7 +44,7 @@
     <strong>WARNING</strong>:
     These experimental features may change, break, or disappear at any time.
     We make absolutely no guarantees about what may happen if you turn on these experimental
-    features.  Enabling or disabling some features will require a restart of the server.
+    features. Enabling or disabling some features will require a restart of the server.
 </p>
 <div class="list-group">
 <% for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags()) { %>
@@ -60,7 +60,7 @@
 </div>
 <% } %>
 </div>
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%=getScriptNonce()%>">
     (function () {
         let inputList = document.querySelectorAll('div.list-group-item input');
         inputList.forEach(function (input) {

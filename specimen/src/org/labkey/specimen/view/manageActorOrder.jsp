@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor"%>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider"%>
-<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorOrderAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorOrderAction"%>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorsAction"%>
+<%@ page import="org.labkey.specimen.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList(listName)
 {
     var itemList = "";

@@ -15,7 +15,9 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -25,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +65,7 @@ public class AdminConsole
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<ExperimentalFeatureFlag> _experimentalFlags = new ConcurrentSkipListSet<>();
+    private static final Set<ProductGroup> _productGroups = new ConcurrentSkipListSet<>();
 
     static
     {
@@ -149,7 +153,7 @@ public class AdminConsole
         return Collections.unmodifiableSet(_experimentalFlags);
     }
 
-    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>
+    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>, StartupProperty
     {
         private final String _flag;
         private final String _title;
@@ -174,6 +178,7 @@ public class AdminConsole
             return _title;
         }
 
+        @Override
         public String getDescription()
         {
             return _description;
@@ -194,5 +199,89 @@ public class AdminConsole
         {
             return AppProps.getInstance().isExperimentalFeatureEnabled(getFlag());
         }
+
+        // StartupProperty implementation
+
+        @NotNull
+        @Override
+        public String getPropertyName()
+        {
+            return getFlag();
+        }
     }
+
+    public static void addProductGroup(ProductGroup group)
+    {
+        _productGroups.add(group);
+    }
+
+    public static Set<ProductGroup> getProductGroups()
+    {
+        return Collections.unmodifiableSet(_productGroups);
+    }
+
+    public static Set<String> getProductFeatureSet()
+    {
+        return getProductFeatureSet(null);
+    }
+
+    public static Set<String> getProductFeatureSet(@Nullable String groupKey)
+    {
+        Set<String> productFeatures = new HashSet<>();
+        AdminConsole.getProductGroups(groupKey).forEach(group -> {
+            group.getProducts().forEach(product -> {
+                if (product.isEnabled())
+                    productFeatures.addAll(product.getFeatureFlags());
+            });
+        });
+        return productFeatures;
+    }
+
+    public static Set<ProductGroup> getProductGroups(@Nullable String groupKey)
+    {
+        Set<ProductGroup> productGroups = new HashSet<>();
+        AdminConsole.getProductGroups().forEach(group -> {
+            if (StringUtils.isEmpty(groupKey) || groupKey.equals(group.getKey()))
+                productGroups.add(group);
+        });
+        return productGroups;
+    }
+
+    public static boolean isProductFeatureEnabled(ProductFeature feature)
+    {
+        return isProductFeatureEnabled(feature, null);
+    }
+
+    // TODO This is currently (22.12) not in use, but could become useful. We will leave it for the time being.
+    public static boolean isProductFeatureEnabled(ProductFeature feature, @Nullable String groupKey)
+    {
+        return getProductFeatureSet(groupKey).contains(feature.toString());
+    }
+
+    public static abstract class ProductGroup implements Comparable<ProductGroup>
+    {
+        public abstract String getName();
+
+        public abstract String getKey();
+
+        public abstract List<Product> getProducts();
+
+        @Override
+        public int compareTo(@NotNull ProductGroup o)
+        {
+            return getName().compareToIgnoreCase(o.getName());
+        }
+    }
+
+    public interface Product
+    {
+        String getName();
+
+        String getKey();
+
+        boolean isEnabled();
+
+        @NotNull List<String> getFeatureFlags();
+    }
+
 }

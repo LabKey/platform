@@ -46,6 +46,7 @@ public class UserIdForeignKey extends LookupForeignKey
     {
         super("UserId", "DisplayName");
         _userSchema = userSchema;
+        setShowAsPublicDependency(false);
     }
 
     @Override

@@ -29,6 +29,7 @@ public interface ExternalScriptEngineDefinition
         R,
         Perl,
         External,
+        Jupyter,
     }
 
     Integer getRowId();
@@ -53,6 +54,7 @@ public interface ExternalScriptEngineDefinition
     int getPort();
     String getUser();
     String getPassword();
+    String getFileExchange();
     PathMapper getPathMap();
 
     void setName(String name);
@@ -97,4 +99,6 @@ public interface ExternalScriptEngineDefinition
     void setUser(String user);
     void setPassword(String password);
     void setPathMapper(PathMapper pathMap);
+
+    String getRemoteUrl();
 }

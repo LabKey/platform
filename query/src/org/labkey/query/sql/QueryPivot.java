@@ -16,7 +16,6 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
@@ -28,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
@@ -374,7 +374,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         _from.declareFields();
     }
@@ -388,7 +388,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    TableInfo getTableInfo()
+    public TableInfo getTableInfo()
     {
         QueryTableInfo qti = new PivotTableInfo();
         if (!getParseErrors().isEmpty())
@@ -1163,7 +1163,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        public String getLookupSchemaName()
+        public SchemaKey getLookupSchemaKey()
         {
             return null;
         }

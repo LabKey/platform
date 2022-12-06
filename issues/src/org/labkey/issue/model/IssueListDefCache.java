@@ -18,7 +18,6 @@ package org.labkey.issue.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -37,14 +36,7 @@ import java.util.Map;
  */
 public class IssueListDefCache
 {
-    private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Issue List Definition Cache", new CacheLoader<Container, IssueDefCollections>()
-    {
-        @Override
-        public IssueDefCollections load(Container c, @Nullable Object argument)
-        {
-            return new IssueDefCollections(c);
-        }
-    });
+    private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (c, argument) -> new IssueDefCollections(c));
 
     private static class IssueDefCollections
     {
@@ -92,10 +84,7 @@ public class IssueListDefCache
 
         private @NotNull Collection<IssueListDef> getForDomainKind(String kindName)
         {
-            if (_domainKindMap.containsKey(kindName))
-                return _domainKindMap.get(kindName);
-            else
-                return Collections.emptyList();
+            return _domainKindMap.getOrDefault(kindName, Collections.emptyList());
         }
     }
 

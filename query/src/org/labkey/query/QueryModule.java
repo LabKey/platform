@@ -57,10 +57,12 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.python.IpynbReportDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -72,7 +74,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -108,16 +109,18 @@ import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
+import org.labkey.query.reports.ReportViewProvider;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportsWebPartFactory;
+import org.labkey.query.reports.ViewCategoryImporter;
+import org.labkey.query.reports.ViewCategoryWriter;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
-import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
@@ -187,12 +190,15 @@ public class QueryModule extends DefaultModule
         ReportService.get().addUIProvider(new ReportUIProvider());
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
+        ReportService.get().addGlobalItemFilterType(IpynbReport.TYPE);
 
+        ReportService.get().registerDescriptor(new IpynbReportDescriptor());
         ReportService.get().registerDescriptor(new ReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
         ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
+        ReportService.get().registerReport(new IpynbReport());
         ReportService.get().registerReport(new QueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
@@ -209,6 +215,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new URLExportScriptFactory());
         QueryView.register(new PythonExportScriptFactory());
         QueryView.register(new SasExportScriptFactory());
+
+        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
@@ -252,16 +260,8 @@ public class QueryModule extends DefaultModule
             folderRegistry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
             folderRegistry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
             folderRegistry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
+            folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
             folderRegistry.addFactories(new ExternalSchemaDefWriterFactory(), new ExternalSchemaDefImporterFactory());
-        }
-
-        // support importing Queries, Custom Views, and Reports from the study archive for backwards compatibility
-        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
-        if (null != studyRegistry)
-        {
-            studyRegistry.addImportFactory(new QueryImporter.Factory());
-            studyRegistry.addImportFactory(new CustomViewImporter.Factory());
-            studyRegistry.addImportFactory(new ReportImporter.Factory());
         }
 
         SearchService ss = SearchService.get();
@@ -339,7 +339,6 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            Query.QueryTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
@@ -355,6 +354,7 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/MultiValueTest.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
         return ret;
     }
 
@@ -392,9 +392,13 @@ public class QueryModule extends DefaultModule
     @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
-        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        JSONObject json = super.getPageContextJson(context);
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
+        Container container = context.getContainer();
+        boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
+        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
+        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
 
         return json;
     }

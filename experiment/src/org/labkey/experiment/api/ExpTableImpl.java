@@ -16,12 +16,18 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -43,6 +49,7 @@ import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -158,7 +165,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return new FieldKey(null, ExpMaterialTable.Column.Folder.toString());
     }
 
-    protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
+    protected MutableColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
         Set<String> set = new LinkedHashSet(result.getImportAliasSet());
@@ -284,11 +291,12 @@ abstract public class ExpTableImpl<C extends Enum>
 
     /**
      * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
-     * @param domain the domain from which to add all of the properties
+     * @param domain the domain from which to add all the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
+     * @param containerFilter Container filter to be applied to property fields
      */
     @Override
-    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName, @Nullable ContainerFilter containerFilter)
     {
         MutableColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
@@ -302,7 +310,7 @@ abstract public class ExpTableImpl<C extends Enum>
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
+            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false, containerFilter);
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);
@@ -316,6 +324,11 @@ abstract public class ExpTableImpl<C extends Enum>
         return colProperty;
     }
 
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain)
+    {
+        return new PropertyForeignKey(_userSchema, getContainerFilter(), domain);
+    }
+
     /**
      * Create a hidden column as a fake lookup to include all columns in the domain.
      * @param domain The domain to add columns from
@@ -325,7 +338,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
     {
         var colProperty = wrapColumn(lookupColName, getLSIDColumn());
-        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
+        colProperty.setFk(getDomainColumnForeignKey(domain));
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
         colProperty.setIsUnselectable(true);
@@ -415,4 +428,65 @@ abstract public class ExpTableImpl<C extends Enum>
         }
     }
 
+    protected void addExpObjectMethod()
+    {
+        ColumnInfo expObject = getExpObjectColumn();
+        final String expObjectColumnName = null == expObject ? null : expObject.getName();
+        addMethod("expObject", new ExpObjectTableMethodInfo(expObjectColumnName), Set.of());
+    }
+
+    private class ExpObjectTableMethodInfo extends AbstractTableMethodInfo
+    {
+        private final String _expObjectColumnName;
+
+        public ExpObjectTableMethodInfo(String expObjectColumnName)
+        {
+            super(JdbcType.INTEGER);
+            _expObjectColumnName = expObjectColumnName;
+        }
+
+        @Override
+        public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
+        {
+            return new SQLFragment(tableAlias + "." + StringUtils.defaultString(_expObjectColumnName, "_exptable_object_"));
+        }
+
+        @Override
+        public MutableColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        {
+            var objectColumn = getExpObjectColumn();
+            if (null == _expObjectColumnName)
+                return new NullColumnInfo(parentTable, "_exptable_object_", JdbcType.INTEGER);
+            var ret = super.createColumnInfo(parentTable, arguments, "_exptable_object_");
+            ((MutableColumnInfo)ret).setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+            ((MutableColumnInfo)ret).setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+            {
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    return 0;
+                }
+
+                @Override
+                public Object getDisplayValue(RenderContext ctx)
+                {
+                    var v = super.getValue(ctx);
+                    return null == v ? v : "lineage object";
+                }
+
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilterable()
+                {
+                    return false;
+                }
+            });
+            return ret;
+        }
+    }
 }

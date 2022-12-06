@@ -313,6 +313,11 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isRootDbSequence();
 
+    @Nullable default Integer getDbSequenceBatchSize()
+    {
+        return null;
+    }
+
     default Container getDbSequenceContainer(Container container)
     {
         return isRootDbSequence() ? ContainerManager.getRoot() : container;

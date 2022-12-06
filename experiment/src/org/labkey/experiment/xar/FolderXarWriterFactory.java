@@ -18,9 +18,9 @@ package org.labkey.experiment.xar;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.XarExportContext;
@@ -32,7 +32,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.OutputStream;
 import java.util.List;
@@ -56,7 +55,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         return new FolderXarWriter();
     }
 
-    public class FolderXarWriter extends BaseFolderWriter
+    public static class FolderXarWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -80,31 +79,32 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return false;
         }
 
-        private List<ExpRun> getRuns(@Nullable ImportContext<FolderDocument.Folder> ctx, Container c)
+        private List<ExpRun> getRuns(@Nullable FolderExportContext ctx, Container c)
         {
             XarExportContext xarCtx = null;
             if (ctx != null)
                 xarCtx = ctx.getContext(XarExportContext.class);
 
-            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
+            // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
             final XarExportContext fxarCtx = xarCtx;
             List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
                     .filter(
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
+                                && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
+                                && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
                             && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
                     )
                     .collect(Collectors.toList());
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpRun> reorderedRuns = allRuns.stream()
-                    .filter((run -> !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) &&
-                            !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .filter((run -> !ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .collect(Collectors.toList());
             List<ExpRun> smJobRuns = allRuns.stream()
-                    .filter((run -> run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) ||
-                            run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .filter((run -> ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .collect(Collectors.toList());
             reorderedRuns.addAll(smJobRuns);
             return reorderedRuns;
@@ -113,25 +113,25 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
         private List<Integer> getProtocols(Container c)
         {
-            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
+            // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             List<ExpProtocol> protocols = ExperimentService.get().getExpProtocols(c)
                     .stream()
                     .filter(protocol ->
                             !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME) &&
-                                    !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME))
+                                    !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME)
+                            && !"recipe".equalsIgnoreCase(protocol.getImplementationName())
+                            && !"recipe".equalsIgnoreCase(protocol.getLSIDNamespacePrefix())
+                    )
                     .collect(Collectors.toList());
             // the sm template tasks can make reference to assay designs, so we will put all the SM Job and Task Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpProtocol> reorderedProtocols = protocols.stream()
-                    .filter((protocol ->
-                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) &&
-                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    .filter((protocol -> !ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID()))
                     )
                     .collect(Collectors.toList());
             protocols.stream()
-                    .filter(protocol ->
-                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) ||
-                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    .filter(protocol -> ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID()))
                     .forEach(reorderedProtocols::add);
             return reorderedProtocols.stream()
                     .map(ExpObject::getRowId)
@@ -139,14 +139,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             XarExportSelection selection = new XarExportSelection();
             ExperimentService expService = ExperimentService.get();
 
-
             // Get all the experiments in the container.
-            List<? extends ExpExperiment> experiments = expService.getExperiments(ctx.getContainer(), ctx.getUser(), false, false);
+            List<? extends ExpExperiment> experiments = expService.getExperiments(c, ctx.getUser(), false, false);
 
             // Add experiments.
             for(ExpExperiment exp: experiments)
@@ -154,9 +153,9 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                 selection.addExperimentIds(exp.getRowId());
             }
 
-            selection.addProtocolIds(getProtocols(ctx.getContainer()));
+            selection.addProtocolIds(getProtocols(c));
 
-            selection.addRuns(getRuns(ctx, ctx.getContainer()));
+            selection.addRuns(getRuns(ctx, c));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);

@@ -130,7 +130,11 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
 
     protected void updateQueryLogging() throws SQLException
     {
-        if (!_queryLogging.isEmpty())
+        // For now, only check for expected data logging columns if auditing is turned on; clients get confused when
+        // this message is thrown with compliance logging turned off. See #44752.
+        // In the future, consider always performing this check under an assert or dev-mode switch to point out cases we
+        // need to improve.
+        if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
         {
             List<ColumnInfo> missingColumns = new ArrayList<>();
             for (ColumnInfo dataLoggingColumn : _queryLogging.getDataLoggingColumns())

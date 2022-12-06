@@ -18,7 +18,6 @@ package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,28 +25,11 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.DatabaseMetaDataWrapper;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScanner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
@@ -55,7 +37,11 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -91,7 +77,7 @@ import java.util.stream.Collectors;
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
-    private static final Logger LOG = LogManager.getLogger(BaseMicrosoftSqlServerDialect.class);
+    private static final Logger LOG = LogHelper.getLogger(BaseMicrosoftSqlServerDialect.class, "SQL Server-specific SQL generation");
 
     // SQLServer limits maximum index key size of 900 bytes
     private static final int MAX_INDEX_SIZE = 900;
@@ -99,6 +85,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private volatile boolean _groupConcatInstalled = false;
     private volatile String _versionYear = null;
     private volatile Edition _edition = null;
+
+    private HtmlString _adminWarning = null;
 
     @SuppressWarnings("unused")
     enum Edition
@@ -138,12 +126,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
-    private final TableResolver _tableResolver;
-
-    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -160,10 +142,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, " +
             "print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, " +
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
+            "semantickeyphrasetable, semanticsimilaritydetailstable, semanticsimilaritytable, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
-            "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext"
+            "top, tran, transaction, trigger, truncate, try_convert, tsequal, union, unique, unpivot, update, updatetext, " +
+            "use, user, values, varying, view, waitfor, when, where, while, with, within, writetext"
         ));
+    }
+
+    static
+    {
+        // The Microsoft JDBC driver does a lackluster job of translating errors to the appropriate SQLState. Do our
+        // own translation for the ones we care about. See issue 37040
+        CustomSQLExceptionTranslatorRegistry.getInstance().registerTranslator("Microsoft SQL Server", (task, sql, ex) -> {
+            if (ex.getErrorCode() == 8134)
+            {
+                return new DataIntegrityViolationException(ex.getMessage(), ex);
+            }
+            return null;
+        });
     }
 
     @Override
@@ -224,6 +220,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
         {
             // This is because the jtds driver has a bug where it returns these from the db as strings
+            // TODO: Is this true for the SQL Server JDBC driver?
             return "DATETIME";
         }
         else
@@ -473,10 +470,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
-            int offset = 6;
+            int index = 6;
             if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
-                offset = 15;
-            frag.insert(offset, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
+                index = 15;
+            frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
         }
         return frag;
     }
@@ -489,27 +486,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS || offset == 0)
+        // If there's no offset or requesting no rows then we can use a simple TOP approach for maxRows, which doesn't
+        // require an ORDER BY and allows 0 rows (unlike OFFSET + FETCH)
+        if (offset == 0 || maxRows == Table.NO_ROWS)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append(select);
-            sql.append("\n").append(from);
-            if (filter != null) sql.append("\n").append(filter);
-            if (groupBy != null) sql.append("\n").append(groupBy);
-            if (order != null) sql.append("\n").append(order);
+            SQLFragment sql = LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
 
             return limitRows(sql, maxRows);
         }
         else
         {
-            if (order == null || order.trim().length() == 0)
-                throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
+            if (StringUtils.isBlank(order))
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use maxRows and offset");
 
             return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
     }
 
-    // Called only if rowCount and offset are both > 0... and order is non-blank
+    // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
     abstract protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset);
 
     @Override
@@ -630,6 +624,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private static final Pattern SELECT = Pattern.compile("\\bSELECT\\b", Pattern.CASE_INSENSITIVE);
 
+    @Override
+    public boolean supportsGroupConcatSubSelect()
+    {
+        return false;
+    }
+
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
@@ -637,10 +637,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
         if (SELECT.matcher(sql.getSQL()).find())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT IS NOT VALID IN A SUB-SELECT'");
 
         if (!supportsGroupConcat())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT FUNCTION IS NOT INSTALLED'");
 
         SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
 
@@ -762,7 +762,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState());
+        return ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
@@ -976,7 +976,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         return "master";
     }
@@ -985,61 +985,49 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
-        return new JtdsJdbcHelper();
+        return new SqlServerJdbcHelper();
     }
 
 
     /*
-        jTDS example connection URLs we need to parse:
+        SQL Server example connection URLs we need to parse:
 
-        jdbc:jtds:sqlserver://host:1433/database
-        jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
-        jdbc:jtds:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://;databaseName=foo
+        jdbc:sqlserver://;database=foo
+        jdbc:sqlserver://host;databaseName=foo
+        jdbc:sqlserver://host;database=foo
+        jdbc:sqlserver://host:1433;databaseName=foo
+        jdbc:sqlserver://host:1433;database=foo
+        jdbc:sqlserver://host:1433;databaseName=foo;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;database=foo;SelectMethod=cursor
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
+        jdbc:sqlserver://host:1433;SelectMethod=cursor;database=database
+
+        Note: SQL Server JDBC driver accepts connection URLs that lack a "databaseName" parameter (in which case the
+        server uses the "default" database). But LabKey requires this parameter, especially when creating a new database.
+        Although not documented, the driver will accept "database" as a synonym for "databaseName", so we allow it.
     */
 
-    private static final String JTDS_PREFIX = "jdbc:jtds:sqlserver://";
-
-    private static class JtdsJdbcHelper implements JdbcHelper
+    private static class SqlServerJdbcHelper implements JdbcHelper
     {
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (url.startsWith(JTDS_PREFIX))
-            {
-                int dbEnd = url.indexOf(';');
-                if (-1 == dbEnd)
-                    dbEnd = url.length();
-                int dbDelimiter = url.indexOf('/', JTDS_PREFIX.length());
-
-                // Didn't find /database after the prefix, so look for databaseName property. See #43751.
-                if (-1 == dbDelimiter)
-                {
-                    dbDelimiter = url.indexOf(";databaseName=");
-                    if (-1 == dbDelimiter)
-                        throw new ServletException("Invalid jTDS connection url - no database is specified: " + url);
-                    dbDelimiter = url.indexOf("=", dbDelimiter);
-                    dbEnd = url.indexOf(";", dbDelimiter);
-                    if (-1 == dbEnd)
-                        dbEnd = url.length();
-                }
-
-                return url.substring(dbDelimiter + 1, dbEnd);
-            }
-            else if (url.startsWith("jdbc:sqlserver"))
+            if (url.startsWith("jdbc:sqlserver://"))
             {
                 int dbDelimiter = url.indexOf(";database=");
                 if (-1 == dbDelimiter)
                     dbDelimiter = url.indexOf(";databaseName=");
                 if (-1 == dbDelimiter)
-                    throw new ServletException("Invalid sql server connection url: " + url);
-                dbDelimiter = url.indexOf("=",dbDelimiter)+1;
-                int dbEnd = url.indexOf(";",dbDelimiter);
+                    throw new ServletException("Invalid sql server connection url; \"databaseName\" property is required: " + url);
+                dbDelimiter = url.indexOf("=", dbDelimiter)+1;
+                int dbEnd = url.indexOf(";", dbDelimiter);
                 if (-1 == dbEnd)
                     dbEnd = url.length();
                 return url.substring(dbDelimiter, dbEnd);
             }
             else
-                throw new ServletException("Unsupported connection url: " + url);
+                throw new ServletException("Unsupported connection url; must begin with \"jdbc:sqlserver://\": " + url);
         }
     }
 
@@ -1079,54 +1067,31 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
-            case CreateTable:
-                sql.addAll(getCreateTableStatements(change));
-                break;
-            case DropTable:
-                sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
-                break;
-            case AddColumns:
-                sql.addAll(getAddColumnsStatements(change));
-                break;
-            case DropColumns:
-                sql.add(getDropColumnsStatement(change));
-                break;
-            case RenameColumns:
-                sql.addAll(getRenameColumnsStatements(change));
-                break;
-            case DropIndicesByName:
-                sql.addAll(getDropIndexByNameStatements(change));
-                break;
-            case DropIndices:
-                sql.addAll(getDropIndexStatements(change));
-                break;
-            case AddIndices:
-                sql.addAll(getCreateIndexStatements(change));
-                break;
-            case ResizeColumns:
-                sql.addAll(getResizeColumnStatement(change));
-                break;
-            case DropConstraints:
-                sql.addAll(getDropConstraintsStatement(change));
-                break;
-            case AddConstraints:
-                sql.addAll(getAddConstraintsStatement(change));
-                break;
+            case CreateTable -> sql.addAll(getCreateTableStatements(change));
+            case DropTable -> sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
+            case AddColumns -> sql.addAll(getAddColumnsStatements(change));
+            case DropColumns -> sql.add(getDropColumnsStatement(change));
+            case RenameColumns -> sql.addAll(getRenameColumnsStatements(change));
+            case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
+            case DropIndices -> sql.addAll(getDropIndexStatements(change));
+            case AddIndices -> sql.addAll(getCreateIndexStatements(change));
+            case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
+            case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
+            case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
+            default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
         }
 
         return sql;
     }
 
     /**
-     * Generate the Alter Table statement to change the size of a column
+     * Generate the Alter Table statement to change the size and/or data type of a column
      *
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
      *       will throw an Argument exception if attempting to change Key column
-     * @param change
-     * @return
      */
-    private List<String> getResizeColumnStatement(TableChange change)
+    private List<String> getChangeColumnTypeStatement(TableChange change)
     {
         change.updateResizeIndices();
         List<String> statements = new ArrayList<>(getDropIndexStatements(change));
@@ -1135,22 +1100,30 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
 
         //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
-        for (Map.Entry<String, Integer> entry : change.getColumnResizes().entrySet())
+        for (PropertyStorageSpec column : change.getColumns())
         {
-            final String name = entry.getKey();
-            PropertyStorageSpec column = change.getColumns().stream().filter(col -> name.equals(col.getName())).findFirst().orElseThrow(IllegalStateException::new);
-
-            //T-SQL will throw an error for nvarchar sizes >4000
-            //Use the common default max size to make type change to nvarchar(max)/text consistent
-            String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    "max" :
-                    column.getSize().toString();
-
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
-            String statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
-                    column.getName(),
-                    getSqlTypeName(column.getJdbcType()),
-                    size);
+            String statement;
+
+            if (column.getJdbcType().isText())
+            {
+                //T-SQL will throw an error for nvarchar sizes >4000
+                //Use the common default max size to make type change to nvarchar(max)/text consistent
+                String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                        "max" :
+                        column.getSize().toString();
+
+                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
+                        makeLegalIdentifier(column.getName()),
+                        getSqlTypeName(column.getJdbcType()),
+                        size);
+            }
+            else
+            {
+                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
+                        makeLegalIdentifier(column.getName()),
+                        getSqlTypeName(column.getJdbcType()));
+            }
 
             //T-SQL will drop any existing null constraints
             statement += column.isNullable() ? "NULL;" : "NOT NULL;";
@@ -1670,7 +1643,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             }
         }
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add("(15,4)");
+            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
 
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
@@ -1701,13 +1674,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         GroupConcatInstallationManager.get().ensureInstalled(context);
     }
 
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if ("2008R2".equals(_versionYear))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
+        else if (showAllWarnings)
+            warnings.add(HtmlString.of(MicrosoftSqlServerDialectFactory.getStandardWarningMessage("no longer supports", _versionYear)));
     }
 
     @Override
@@ -1934,12 +1914,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 Map<ParamTraits, Integer> traitMap = new HashMap<>();
                 if (rs.getInt("COLUMN_TYPE") == DatabaseMetaData.procedureColumnReturn)
                 {
-                    // jtds reports a column name of "return_code" from the getProcedureColumns call,
-                    // but in the return from the execution, it's called "return_status".
-                    // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
                 }
                 else
                 {
@@ -1955,11 +1932,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
+            sb.append("{");
             sb.append("? = ");
             paramCount--;
         }
@@ -1970,6 +1948,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
+        if (hasReturn || assignResult)
+        {
+            sb.append("}");
+        }
 
         return sb.toString();
     }
@@ -1977,17 +1959,22 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
+        int index = 1;
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
-            String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
             int datatype = paramInfo.getParamTraits().get(ParamTraits.datatype);
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
-                stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+            {
+                stmt.setObject(index, paramInfo.getParamValue(), datatype);
+            }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
-                stmt.registerOutParameter(paramName, datatype);
+            {
+                stmt.registerOutParameter(index, datatype);
+            }
+            index++;
         }
     }
 
@@ -2018,11 +2005,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return name;
     }
 
+    private static final TableResolver TABLE_RESOLVER = new SynonymTableResolver();
 
     @Override
     public TableResolver getTableResolver()
     {
-        return _tableResolver;
+        return TABLE_RESOLVER;
     }
 
     @Override

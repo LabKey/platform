@@ -62,21 +62,7 @@ public class UpdateSpecimenCommentsBean extends SpecimensViewBean
         _currentFlagState = mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
         _mixedComments = mixedComments;
         _mixedFlagState = mixedFlagState;
-        _participantVisitMap = generateParticipantVisitMap(vials, getStudyRedirectIfNull(context.getContainer()));
-    }
-
-    @Migrate // Use SpecimenController2.getStudyRedirectIfNull()
-    @NotNull
-    private static Study getStudyRedirectIfNull(Container c)
-    {
-        Study study = StudyService.get().getStudy(c);
-        if (null == study)
-        {
-            // redirect to the study home page, where admins will see a 'create study' button,
-            // and non-admins will simply see a message that no study exists.
-            throw new RedirectException(PageFlowUtil.urlProvider(StudyUrls.class).getBeginURL(c));
-        }
-        return study;
+        _participantVisitMap = generateParticipantVisitMap(vials, SpecimenController.getStudyRedirectIfNull(context.getContainer()));
     }
 
     protected Map<String, Map<String, Long>> generateParticipantVisitMap(List<Vial> vials, Study study)

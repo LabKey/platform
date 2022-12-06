@@ -2,9 +2,9 @@ package org.labkey.experiment.samples;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_XML_NAME;
 
 public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImporter
 {
@@ -38,9 +39,8 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
         return getDataType().toLowerCase();
     }
 
-
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
 
@@ -58,7 +58,7 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
 
             for (String file: xarDir.list())
             {
-                if (file.equalsIgnoreCase(XAR_TYPES_NAME))
+                if (file.equalsIgnoreCase(XAR_TYPES_NAME) || file.equalsIgnoreCase(XAR_TYPES_XML_NAME))
                 {
                     if (typesXarFile == null)
                         typesXarFile = xarDirPath.resolve(file);

@@ -5,8 +5,8 @@
            elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:annotation>
 		<xs:documentation xml:lang="en">
-            Describes a file-based study. This is the top-level file in a study archive. It defines the top-level study
-            settings and points to the other files in the archive.
+            Describes a file-based study. This is the top-level file in the /study subfolder of a folder archive. It
+            defines the top-level study settings and points to the other files in the archive.
         </xs:documentation>
 	</xs:annotation>
 
@@ -234,11 +234,6 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
-				<xs:element name="reports" minOccurs="0" type="exportDirType" />
-				<xs:element name="queries" minOccurs="0" type="exportDirType" />
-				<xs:element name="views" minOccurs="0" type="exportDirType" />
-                <xs:element name="lists" minOccurs="0" type="exportDirType" />
-				<xs:element name="missingValueIndicators" type="missingValueIndicatorsType" minOccurs="0" />
                 <xs:element name="comments" minOccurs="0">
                     <xs:complexType>
                         <xs:attribute name="participantCommentDatasetId" type="xs:int">

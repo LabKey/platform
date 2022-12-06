@@ -1,8 +1,3 @@
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%--
 /*
  * Copyright (c) 2015-2019 LabKey Corporation
@@ -20,8 +15,12 @@
  * limitations under the License.
  */
 --%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
     ActionURL endpoint = new ActionURL(VisualizationController.GetDataAction.class,context.getContainer());
     if (context.getActionURL().getAction().startsWith("cds"))
         endpoint = new ActionURL(VisualizationController.cdsGetDataAction.class,context.getContainer());
@@ -30,7 +29,7 @@
 
 </textarea>
 <button onclick="getData()">get data</button>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 if (Ext4||Ext)
 {
     var resizer = new (Ext4||Ext).Resizable("json", {

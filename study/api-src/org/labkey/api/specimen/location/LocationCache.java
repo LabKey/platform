@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class LocationCache
 {
-    private static final Cache<Container, LocationCollections> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Location Cache", (c, argument) -> new LocationCollections(c));
+    private static final Cache<Container, LocationCollections> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Study locations", (c, argument) -> new LocationCollections(c));
 
     private static class LocationCollections
     {

@@ -68,11 +68,11 @@ public class TableXmlUtils
 
         try
         {
-            TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
+            TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), bFull);
             TablesDocument tablesDocFromXml = DbScope.getSchemaXml(schema);
 
             if (null != tablesDocFromXml)
-                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, resultList, errorOnXmlMiss);
+                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, resultList, errorOnXmlMiss, schema);
         }
         catch (Exception e)
         {
@@ -87,10 +87,10 @@ public class TableXmlUtils
                                               TablesDocument xmlTablesDoc,
                                               boolean bFull,
                                               boolean bCaseSensitive,
-                                              TablesDocument mergedTablesDoc,
-                                              SiteValidationResultList rlOut, boolean errorOnXmlMiss)
+                                              SiteValidationResultList rlOut,
+                                              boolean errorOnXmlMiss,
+                                              DbSchema schema)
     {
-        boolean merge = (null != mergedTablesDoc);
         boolean bCopyTargetNode;
         TableType[] dbTables;
         TableType[] xmlTables;
@@ -149,80 +149,42 @@ public class TableXmlUtils
                         rlOut.addBlank();
                         rlOut.addError("ERROR: TableName \"").append(xmlTableName).append("\" type \"").append(xmlTableType).append("\" found in XML but not in database.");
                     }
-                    else
-                    {
-                        if (merge)
-                        {
-                            //copy XML-only node to end of table array
-                            int size = mergedTablesDoc.getTables().getTableArray().length;
-                            mergedTablesDoc.getTables().addNewTable();
-                            mt = (TableType) xmlTable.copy();
-                            mergedTablesDoc.getTables().setTableArray(size, mt);
-                        }
-                    }
                     continue;
                 }
 
                 idt = mDbTableOrdinals.get(xmlTableName.toLowerCase());
 
-                if (merge)
-                {
-                    mt = mergedTablesDoc.getTables().addNewTable();
-                    mt.addNewColumns();
-                }
-
                 TableType tt = dbTables[idt];
-                compareStringProperty(tt.getTableName(), xmlTable.getTableName(), "TableName", rlOut, bCaseSensitive, true);
-                if (merge)
-                    mt.setTableName(xmlTable.getTableName());
+                compareStringProperty(tt.getTableName(), xmlTable.getTableName(), "TableName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName(), true);
 
                 // Special value "UNKNOWN" means the type is different on different databases, e.g., some of the tables/views/synonyms in the test schema
                 if (!"UNKNOWN".equals(xmlTable.getTableDbType()))
-                    compareStringProperty(tt.getTableDbType(), xmlTable.getTableDbType(), "TableDbType", rlOut, true, true);
-
-                if (merge)
-                    mt.setTableDbType(xmlTable.getTableDbType());
+                    compareStringProperty(tt.getTableDbType(), xmlTable.getTableDbType(), "TableDbType", rlOut, true, schema.getName() + "." + tt.getTableName(), true);
 
                 if (bFull)
                 {
-                    bCopyTargetNode = compareStringProperty(tt.getTableTitle(), xmlTable.getTableTitle(), "TableTitle", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setTableTitle(xmlTable.getTableTitle());
+                    compareStringProperty(tt.getTableTitle(), xmlTable.getTableTitle(), "TableTitle", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getTableGroup(), xmlTable.getTableGroup(), "TableGroup", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setTableGroup(xmlTable.getTableGroup());
+                    compareStringProperty(tt.getTableGroup(), xmlTable.getTableGroup(), "TableGroup", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getDbTableName(), xmlTable.getDbTableName(), "DbTableName", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setDbTableName(xmlTable.getDbTableName());
+                    compareStringProperty(tt.getDbTableName(), xmlTable.getDbTableName(), "DbTableName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getPkColumnName(), xmlTable.getPkColumnName(), "PkColumnName", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setPkColumnName(xmlTable.getPkColumnName());
+                    compareStringProperty(tt.getPkColumnName(), xmlTable.getPkColumnName(), "PkColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getVersionColumnName(), xmlTable.getVersionColumnName(), "VersionColumnName", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setVersionColumnName(xmlTable.getVersionColumnName());
+                    compareStringProperty(tt.getVersionColumnName(), xmlTable.getVersionColumnName(), "VersionColumnName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getTableUrl().getStringValue(), xmlTable.getTableUrl().getStringValue(), "TableUrl", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setTableUrl(xmlTable.getTableUrl());
+                    String ttUrl = null == tt.getTableUrl() ? null : tt.getTableUrl().getStringValue();
+                    String xmlUrl = null == xmlTable.getTableUrl() ? null : xmlTable.getTableUrl().getStringValue();
+                    compareStringProperty(ttUrl, xmlUrl, "TableUrl", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getNextStep(), xmlTable.getNextStep(), "NextStep", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setNextStep(xmlTable.getNextStep());
+                    compareStringProperty(tt.getNextStep(), xmlTable.getNextStep(), "NextStep", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getTitleColumn(), xmlTable.getTitleColumn(), "TitleColumn", rlOut, bCaseSensitive);
-                    if (merge && bCopyTargetNode)
-                        mt.setTitleColumn(xmlTable.getTitleColumn());
+                    compareStringProperty(tt.getTitleColumn(), xmlTable.getTitleColumn(), "TitleColumn", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName());
 
 
-                    bCopyTargetNode = compareBoolProperty((tt.isSetManageTableAllowed() ? tt.getManageTableAllowed() : null),
+                    compareBoolProperty((tt.isSetManageTableAllowed() ? tt.getManageTableAllowed() : null),
                             (xmlTable.isSetManageTableAllowed() ? xmlTable.getManageTableAllowed() : null),
-                            "ManageTableAllowed", rlOut);
-                    if (merge && bCopyTargetNode)
-                        mt.setManageTableAllowed(xmlTable.getManageTableAllowed());
+                            "ManageTableAllowed", rlOut, schema.getName() + "." + tt.getTableName());
                 }
 
                 dbCols = tt.getColumns().getColumnArray();
@@ -275,169 +237,108 @@ public class TableXmlUtils
                     idc = mDbColOrdinals.get(xmlColName.toLowerCase());
                     ColumnType columnType = dbCols[idc];
 
-                    compareStringProperty(columnType.getColumnName(), xmlCol.getColumnName(), "ColumnName", rlOut, bCaseSensitive, true);
+                    String problematicItem = schema.getName() + "." + tt.getTableName() + "." + columnType.getColumnName();
 
-                    if (merge)
-                    {
-                        mc = mt.getColumns().addNewColumn();
-                        mc.setColumnName(xmlCol.getColumnName());
-                    }
+                    compareStringProperty(columnType.getColumnName(), xmlCol.getColumnName(), "ColumnName", rlOut, bCaseSensitive, problematicItem, true);
 
                     if (bFull)
                     {
                         SiteValidationResultList rlTmp = new SiteValidationResultList();
 
-                        bCopyTargetNode = compareStringProperty(columnType.getDatatype(), xmlCol.getDatatype(), "Datatype", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setDatatype(xmlCol.getDatatype());
+                        compareDatatypeProperty(columnType.getDatatype(), xmlCol.getDatatype(), "Datatype", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getColumnTitle(), xmlCol.getColumnTitle(), "ColumnTitle", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setColumnTitle(xmlCol.getColumnTitle());
+                        compareStringProperty(columnType.getColumnTitle(), xmlCol.getColumnTitle(), "ColumnTitle", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getDefaultValue(), xmlCol.getDefaultValue(), "DefaultValue", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setDefaultValue(xmlCol.getDefaultValue());
+                        compareStringProperty(columnType.getDefaultValue(), xmlCol.getDefaultValue(), "DefaultValue", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getAutoFillValue(), xmlCol.getAutoFillValue(), "AutoFillValue", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setAutoFillValue(xmlCol.getAutoFillValue());
+                        compareStringProperty(columnType.getAutoFillValue(), xmlCol.getAutoFillValue(), "AutoFillValue", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getInputType(), xmlCol.getInputType(), "InputType", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setInputType(xmlCol.getInputType());
+                        compareStringProperty(columnType.getInputType(), xmlCol.getInputType(), "InputType", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getOnChange(), xmlCol.getOnChange(), "OnChange", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setOnChange(xmlCol.getOnChange());
+                        compareStringProperty(columnType.getOnChange(), xmlCol.getOnChange(), "OnChange", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getDescription(), xmlCol.getDescription(), "ColumnText", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setDescription(xmlCol.getDescription());
+                        compareStringProperty(columnType.getDescription(), xmlCol.getDescription(), "ColumnText", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getOptionlistQuery(), xmlCol.getOptionlistQuery(), "OptionlistQuery", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setOptionlistQuery(xmlCol.getOptionlistQuery());
+                        compareStringProperty(columnType.getOptionlistQuery(), xmlCol.getOptionlistQuery(), "OptionlistQuery", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getUrl().getStringValue(), xmlCol.getUrl().getStringValue(), "Url", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setUrl(xmlCol.getUrl());
+                        String ctUrl = null == columnType.getUrl() ? null : columnType.getUrl().getStringValue();
+                        String xmlUrl = null == xmlCol.getUrl() ? null : xmlCol.getUrl().getStringValue();
+                        compareStringProperty(ctUrl, xmlUrl, "Url", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getFormatString(), xmlCol.getFormatString(), "FormatString", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setFormatString(xmlCol.getFormatString());
+                        compareStringProperty(columnType.getFormatString(), xmlCol.getFormatString(), "FormatString", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getTextAlign(), xmlCol.getTextAlign(), "TextAlign", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setTextAlign(xmlCol.getTextAlign());
+                        compareStringProperty(columnType.getTextAlign(), xmlCol.getTextAlign(), "TextAlign", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getPropertyURI(), xmlCol.getPropertyURI(), "PropertyURI", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setPropertyURI(xmlCol.getPropertyURI());
+                        compareStringProperty(columnType.getPropertyURI(), xmlCol.getPropertyURI(), "PropertyURI", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareStringProperty(columnType.getDisplayWidth(), xmlCol.getDisplayWidth(), "DisplayWidth", rlTmp, bCaseSensitive);
-                        if (merge && bCopyTargetNode)
-                            mc.setDisplayWidth(xmlCol.getDisplayWidth());
+                        compareStringProperty(columnType.getDisplayWidth(), xmlCol.getDisplayWidth(), "DisplayWidth", rlTmp, bCaseSensitive, problematicItem);
 
                         bCopyTargetNode = compareIntegerProperty(
                                 (columnType.isSetScale() ? columnType.getScale() : null),
                                 (xmlCol.isSetScale() ? xmlCol.getScale() : null),
-                                "Scale", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setScale(xmlCol.getScale());
+                                "Scale", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareIntegerProperty(
                                 (columnType.isSetPrecision() ? columnType.getPrecision() : null),
                                 (xmlCol.isSetPrecision() ? xmlCol.getPrecision() : null),
-                                "Precision", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setPrecision(xmlCol.getPrecision());
+                                "Precision", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareIntegerProperty(
                                 (columnType.isSetInputLength() ? columnType.getInputLength() : null),
                                 (xmlCol.isSetInputLength() ? xmlCol.getInputLength() : null),
-                                "InputLength", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setInputLength(xmlCol.getInputLength());
+                                "InputLength", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareIntegerProperty(
                                 (columnType.isSetInputRows() ? columnType.getInputRows() : null),
                                 (xmlCol.isSetInputRows() ? xmlCol.getInputRows() : null),
-                                "InputRows", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setInputRows(xmlCol.getInputRows());
+                                "InputRows", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetNullable() ? columnType.getNullable() : null),
                                 (xmlCol.isSetNullable() ? xmlCol.getNullable() : null),
-                                "Nullable", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setNullable(xmlCol.getNullable());
+                                "Nullable", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetIsAutoInc() ? columnType.getIsAutoInc() : null),
                                 (xmlCol.isSetIsAutoInc() ? xmlCol.getIsAutoInc() : null),
-                                "IsAutoInc", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setIsAutoInc(xmlCol.getIsAutoInc());
+                                "IsAutoInc", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetIsDisplayColumn() ? columnType.getIsDisplayColumn() : null),
                                 (xmlCol.isSetIsDisplayColumn() ? xmlCol.getIsDisplayColumn() : null),
-                                "IsDisplayColumn", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setIsDisplayColumn(xmlCol.getIsDisplayColumn());
+                                "IsDisplayColumn", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetIsReadOnly() ? columnType.getIsReadOnly() : null),
                                 (xmlCol.isSetIsReadOnly() ? xmlCol.getIsReadOnly() : null),
-                                "IsReadOnly", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setIsReadOnly(xmlCol.getIsReadOnly());
+                                "IsReadOnly", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetIsUserEditable() ? columnType.getIsUserEditable() : null),
                                 (xmlCol.isSetIsUserEditable() ? xmlCol.getIsUserEditable() : null),
-                                "IsUserEditable", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setIsUserEditable(xmlCol.getIsUserEditable());
+                                "IsUserEditable", rlTmp, problematicItem);
 
                         bCopyTargetNode = compareBoolProperty(
                                 (columnType.isSetIsKeyField() ? columnType.getIsKeyField() : null),
                                 (xmlCol.isSetIsKeyField() ? xmlCol.getIsKeyField() : null),
-                                "IsKeyField", rlTmp);
-                        if (merge && bCopyTargetNode)
-                            mc.setIsKeyField(xmlCol.getIsKeyField());
+                                "IsKeyField", rlTmp, problematicItem);
 
                         // check and merge FK property
-                        ColumnType.Fk fk;
-                        boolean declFk = false;
-                        if ((null != columnType.getFk()))
-                            declFk = true;
+                        boolean declFk = null != columnType.getFk();
 
                         if (null != xmlCol.getFk())
                         {
                             compareStringProperty((declFk ? columnType.getFk().getFkColumnName() : null)
                                     , xmlCol.getFk().getFkColumnName()
-                                    , "FkColumnName", rlTmp, bCaseSensitive);
+                                    , "FkColumnName", rlTmp, bCaseSensitive, problematicItem);
 
                             compareStringProperty((declFk ? columnType.getFk().getFkTable() : null)
                                     , xmlCol.getFk().getFkTable()
-                                    , "FkTable", rlTmp, bCaseSensitive);
+                                    , "FkTable", rlTmp, bCaseSensitive, problematicItem);
 
                             bCopyTargetNode = compareStringProperty((declFk ? columnType.getFk().getFkDbSchema() : null)
                                     , xmlCol.getFk().getFkDbSchema()
-                                    , "FkDbSchema", rlTmp, bCaseSensitive);
-
-                            // if FK is declared in xml use it as a whole node, don't mix and match.
-                            if (merge)
-                            {
-                                fk = mc.addNewFk();
-                                fk.setFkColumnName(xmlCol.getFk().getFkColumnName());
-                                fk.setFkTable(xmlCol.getFk().getFkTable());
-                                if (bCopyTargetNode)
-                                    fk.setFkDbSchema(xmlCol.getFk().getFkDbSchema());
-                            }
+                                    , "FkDbSchema", rlTmp, bCaseSensitive, problematicItem);
                         }
 
                         // check and merge Ontology (assumed not from metadata)
@@ -447,21 +348,10 @@ public class TableXmlUtils
                             continue;
                         }
 
-/* TODO
-                        if (merge && (null != xmlCol.getOntology()))
-                        {
-                            OntologyType o = mc.addNewOntology();
-                            o.setStringValue(xmlCol.getOntology().getStringValue());
-                            o.setRefId(xmlCol.getOntology().getRefId());
-                            if (null != xmlCol.getOntology().getSource())
-                                o.setSource(xmlCol.getOntology().getSource());
-                        }
-*/
-
                         if (!rlTmp.getResults().isEmpty())
                         {
                             rlOut.addBlank();
-                            rlOut.addInfo("Table ").append(tt.getTableName()).append(" column ").append(columnType.getColumnName()).append(" errors and warnings");
+                            rlOut.addInfo(tt.getTableName() + "." + columnType.getColumnName());
                             rlOut.addAll(rlTmp);
                         }
                     }
@@ -471,18 +361,13 @@ public class TableXmlUtils
                 // now check any extra columns in the db
                 for (String dbCol : mDbColOrdinals.keySet())
                 {
-                    idc = mDbColOrdinals.get(dbCol);
+                    mDbColOrdinals.get(dbCol);
                     SiteValidationResult result;
                     if (errorOnXmlMiss)
                         result = rlOut.addError("ERROR: ");
-                    else result = rlOut.addWarn("WARNING: ");
+                    else
+                        result = rlOut.addWarn("WARNING: ");
                     result.append("Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.");
-
-                    if (merge)
-                    {
-                        mc = mt.getColumns().addNewColumn();
-                        mc.setColumnName(tt.getColumns().getColumnArray(idc).getColumnName());
-                    }
                 }
 
                 mDbTableOrdinals.remove(xmlTableName.toLowerCase());
@@ -499,19 +384,6 @@ public class TableXmlUtils
                     result = rlOut.addError("ERROR: ");
                 else result = rlOut.addWarn("WARNING: ");
                 result.append("Table \"").append(dbTab).append("\" missing from XML.");
-                if (merge)
-                {
-                    //copy db node to end of table array
-                    mt = mergedTablesDoc.getTables().addNewTable();
-                    mt.setTableName(tt.getTableName());
-                    mt.setTableDbType(tt.getTableDbType());
-                    mt.addNewColumns();
-                    for (int i=0;i<tt.getColumns().getColumnArray().length; i++)
-                    {
-                        mc=mt.getColumns().addNewColumn();
-                        mc.setColumnName(tt.getColumns().getColumnArray(i).getColumnName());
-                    }
-                }
             }
 
         }
@@ -522,12 +394,28 @@ public class TableXmlUtils
         }
     }
 
-    private static boolean compareStringProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, boolean bCaseSensitive)
+    private static boolean compareDatatypeProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, String problematicItem)
     {
-        return compareStringProperty(refProp, targetProp, propName, rlOut, bCaseSensitive, false);
+        if (null == targetProp)
+            return true;
+        targetProp = targetProp.toLowerCase();
+        if (null != refProp)
+        {
+            refProp = refProp.toLowerCase();
+            if (targetProp.equals(refProp))
+                return true;
+            if ("int".equals(targetProp) && "int4".equals(refProp))
+                return true;
+        }
+        return compareStringProperty(refProp, targetProp, propName, rlOut, false, problematicItem);
     }
 
-    private static boolean compareStringProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, boolean bCaseSensitive, boolean reqd)
+    private static boolean compareStringProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, boolean bCaseSensitive, String problematicItem)
+    {
+        return compareStringProperty(refProp, targetProp, propName, rlOut, bCaseSensitive, problematicItem, false);
+    }
+
+    private static boolean compareStringProperty(String refProp, String targetProp, String propName, SiteValidationResultList rlOut, boolean bCaseSensitive, String problematicItem, boolean reqd)
     {
         boolean bMatch;
         if (null == refProp)
@@ -537,7 +425,7 @@ public class TableXmlUtils
         if (null == targetProp)
         {
             if (reqd)
-                rlOut.addError("ERROR: property ").append(propName).append(" value ").append(refProp).append("not found in XML:");
+                rlOut.addError("ERROR: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" not found in XML.");
             return false;
         }
 
@@ -553,17 +441,17 @@ public class TableXmlUtils
 
         if (!bMatch)
         {
-            mismatchWarn.append("property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used");
+            mismatchWarn.append("property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" doesn't match XML value '").append(targetProp).append("'.");
             // mismatch who wins?  assume xmlDoc wins
             return true;
         }
         else if (!reqd)
-            mismatchWarn.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in XML:");
+            mismatchWarn.append("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
 
         return false;
     }
 
-    private static boolean compareIntegerProperty(Integer refProp, Integer targetProp, String propName, SiteValidationResultList rlOut)
+    private static boolean compareIntegerProperty(Integer refProp, Integer targetProp, String propName, SiteValidationResultList rlOut, String problematicItem)
     {
         if (null == refProp)
         {
@@ -574,14 +462,14 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in  XML:");
+            rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
             return false;
         }
-        rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used");
+        rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" doesn't match XML value '").append(targetProp).append("'.");
         return true;
     }
 
-    private static boolean compareBoolProperty(Boolean refProp, Boolean targetProp, String propName, SiteValidationResultList rlOut)
+    private static boolean compareBoolProperty(Boolean refProp, Boolean targetProp, String propName, SiteValidationResultList rlOut, String problematicItem)
     {
         if (null == refProp)
         {
@@ -592,10 +480,10 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in XML.");
+            rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' for ").append(problematicItem).append(" is unnecessary in XML.");
             return false;
         }
-        rlOut.addWarn("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append("  ; XML value used");
+        rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' doesn't match XML value '").append(targetProp).append("' for ").append(problematicItem).append(".");
         return true;
     }
 }

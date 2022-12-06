@@ -19,7 +19,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,6 +62,7 @@ import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProvider;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProviderBase;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.json.old.JSONObject;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -517,7 +518,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Map<Path, Long>>()
+    static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino scripts", new ModuleResourceCacheHandler<>()
     {
         @Override
         public Map<Path, Long> load(Stream<? extends Resource> resources, Module module)
@@ -533,9 +534,8 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     {
         boolean isStale = true;
 
-        if (validator instanceof RhinoScriptRef)
+        if (validator instanceof RhinoScriptRef ref)
         {
-            RhinoScriptRef ref = (RhinoScriptRef)validator;
             Long currentLastModified = TOP_LEVEL_SCRIPT_CACHE.getResourceMap(ref.getModule()).get(ref.getPath());
 
             isStale = (null == currentLastModified || currentLastModified.longValue() != ref.getLastModified());
@@ -908,7 +908,7 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(HashSet.class.getName());
         allowedClasses.add(Integer.class.getName());
         allowedClasses.add(JavaScriptException.class.getName());
-        allowedClasses.add(org.json.JSONObject.class.getName());
+        allowedClasses.add(JSONObject.class.getName());
         allowedClasses.add(LinkedHashMap.class.getName());
         allowedClasses.add(LinkedHashSet.class.getName());
         allowedClasses.add(LinkedList.class.getName());

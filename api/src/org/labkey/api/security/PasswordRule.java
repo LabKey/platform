@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.HttpView;
 
 import java.util.Collection;
@@ -38,16 +40,16 @@ public enum PasswordRule
 
         @NotNull
         @Override
-        public String getFullRuleHTML()
+        public HtmlString getFullRuleHTML()
         {
-            return "Passwords must be six non-whitespace characters or more and must not match your email address.";
+            return HtmlString.of("Passwords must be six non-whitespace characters or more and must not match your email address.");
         }
 
         @NotNull
         @Override
-        public String getSummaryRuleHTML()
+        public HtmlString getSummaryRuleHTML()
         {
-            return "Your password must be at least six characters and cannot contain spaces or match your email address.";
+            return HtmlString.of("Your password must be at least six characters and cannot contain spaces or match your email address.");
         }
         
         @Override
@@ -91,20 +93,23 @@ public enum PasswordRule
 
         @NotNull
         @Override
-        public String getFullRuleHTML()
+        public HtmlString getFullRuleHTML()
         {
-            return "Passwords follow these rules:<ul>\n" +
-                    "<li>Must be eight characters or more.</li>\n" +
-                    "<li>Must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @).</li>\n" +
-                    "<li>Must not contain a sequence of three or more characters from your email address, display name, first name, or last name.</li>\n" +
-                    "<li>Must not match any of your 10 previously used passwords.</li>\n</ul>\n";
+            return DOM.createHtml(DOM.createHtmlFragment(
+                    "Passwords follow these rules:",
+                    DOM.UL(
+                            DOM.LI("Must be eight characters or more."),
+                            DOM.LI("Must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @)."),
+                            DOM.LI("Must not contain a sequence of three or more characters from your email address, display name, first name, or last name."),
+                            DOM.LI("Must not match any of your 10 previously used passwords.")
+                    )));
         }
 
         @NotNull
         @Override
-        public String getSummaryRuleHTML()
+        public HtmlString getSummaryRuleHTML()
         {
-            return "Your password must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address.";
+            return HtmlString.of("Your password must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address.");
         }
 
         @Override
@@ -220,9 +225,9 @@ public enum PasswordRule
 
     abstract boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
 
-    public abstract @NotNull String getFullRuleHTML();
+    public abstract @NotNull HtmlString getFullRuleHTML();
 
-    public abstract @NotNull String getSummaryRuleHTML();
+    public abstract @NotNull HtmlString getSummaryRuleHTML();
 
     // 100 most-used passwords on RockYou
     private static final String weakPasswords = "123456\n"+

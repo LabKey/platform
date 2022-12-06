@@ -33,6 +33,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Name,
         Description,
         LSID,
+        MaterialSourceId,
         RootMaterialLSID,
         AliquotedFromLSID,
         IsAliquot,
@@ -58,7 +59,8 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         RecomputeRollup,
         AliquotCount,
         AliquotVolume,
-        AliquotUnit
+        AliquotUnit,
+        QueryableInputs,
     }
 
     void populate(@Nullable ExpSampleType st, boolean filterSampleType);

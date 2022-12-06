@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -28,6 +29,7 @@ import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -59,25 +61,31 @@ class LineageForeignKey extends AbstractForeignKey
     private final boolean _parents;
 
     /* generate a ForeignKey that returns a wrapper over objectid with a LineageDisplayColumn */
-    public static LineageForeignKey createWithDisplayColumn(UserSchema schema, ExpTableImpl seedTable, boolean parents)
+    public static LineageForeignKey createWithDisplayColumn(UserSchema schema, @NotNull ExpTableImpl seedTable, boolean parents, @Nullable ContainerFilter cf)
     {
-        return new LineageForeignKey(schema, seedTable, null, parents, true);
+        return new LineageForeignKey(schema, seedTable, null, parents, true, cf);
     }
 
     /* generate a real MultiValued ForeignKey, use for one row at a time */
-    public static LineageForeignKey createWithMultiValuedColumn(UserSchema schema, SQLFragment seedSql, boolean parents)
+    public static LineageForeignKey createWithMultiValuedColumn(UserSchema schema, @NotNull SQLFragment seedSql, boolean parents, @Nullable ContainerFilter cf)
     {
-        return new LineageForeignKey(schema, null, seedSql, parents, false);
+        return new LineageForeignKey(schema, null, seedSql, parents, false, cf);
     }
 
-    protected LineageForeignKey(UserSchema schema, ExpTableImpl seedTable, SQLFragment seedSql, boolean parents, boolean useLineageDisplayColumn)
+    protected LineageForeignKey(UserSchema schema,
+                                @Nullable ExpTableImpl seedTable,
+                                @Nullable SQLFragment seedSql,
+                                boolean parents,
+                                boolean useLineageDisplayColumn,
+                                @Nullable ContainerFilter cf)
     {
-        super(schema, null);
+        super(schema, cf);
         _seedTable = seedTable;
         _seedSql = seedSql;
         _userSchema = schema;
         _parents = parents;
         this._useLineageDisplayColumn = useLineageDisplayColumn;
+        setShowAsPublicDependency(false);
     }
 
     @Override
@@ -92,7 +100,7 @@ class LineageForeignKey extends AbstractForeignKey
         Path cacheKey = new Path(this.getClass().getName(), (_useLineageDisplayColumn ? "LDC": "MVFK"), (_parents ? "Inputs" : "Outputs"));
         return _userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
         {
-            var ret = new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _userSchema, cacheKey).init();
+            var ret = new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _userSchema, cacheKey, getLookupContainerFilter()).init();
             ret.setLocked(true);
             return ret;
         });
@@ -100,7 +108,7 @@ class LineageForeignKey extends AbstractForeignKey
 
     enum LevelColumnType
     {
-        Data("Data", "Data")
+        Data("Data", ExpLineageOptions.LineageExpType.Data)
         {
             @Override
             List<? extends ExpObject> getItems(UserSchema s)
@@ -108,7 +116,7 @@ class LineageForeignKey extends AbstractForeignKey
                 return ExperimentService.get().getDataClasses(s.getContainer(), s.getUser(), true);
             }
         },
-        Material("Materials", "Material")
+        Material("Materials", ExpLineageOptions.LineageExpType.Material)
         {
             @Override
             List<? extends ExpObject> getItems(UserSchema s)
@@ -116,7 +124,7 @@ class LineageForeignKey extends AbstractForeignKey
                 return SampleTypeService.get().getSampleTypes(s.getContainer(), s.getUser(), true);
             }
         },
-        ExperimentRun("Runs", "ExperimentRun")
+        ExperimentRun("Runs", ExpLineageOptions.LineageExpType.ExperimentRun)
         {
             @Override
             List<? extends ExpObject> getItems(UserSchema s)
@@ -126,9 +134,9 @@ class LineageForeignKey extends AbstractForeignKey
         };
 
         final String columnName;
-        final String expType;
+        final ExpLineageOptions.LineageExpType expType;
 
-        LevelColumnType(String name, String expType)
+        LevelColumnType(String name, ExpLineageOptions.LineageExpType expType)
         {
             this.columnName = name;
             this.expType = expType;
@@ -178,73 +186,71 @@ class LineageForeignKey extends AbstractForeignKey
         return _createLookupColumn(parent, getLookupTableInfo(), displayField, true);
     }
 
-    public void applyDisplayColumn(BaseColumnInfo column, Integer depth, String expType, String cpasType, @Nullable String lookupColumnName)
+    public void applyDisplayColumn(BaseColumnInfo column, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, @Nullable String lookupColumnName)
     {
         // the users's FieldKey may not match the canonical FieldKey (say due to column renaming in queries)
         // this is the 'canonical' field key that the LineageDisplayColumn will use
         FieldKey lineageDisplayColumnFieldKey = FieldKey.fromParts(_parents?"Inputs":"Outputs");
-        switch (StringUtils.trimToEmpty(expType))
+        if (expType != null)
         {
-            case "Material":
+            switch (expType)
             {
-                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Materials");
-                if (depth != null  && depth != 0)
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
-                else
-                {
-                    var type = "All";
-                    if (null != cpasType)
+                case Material -> {
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Materials");
+                    if (depth != null && depth != 0)
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                    else
                     {
-                        var ss = SampleTypeService.get().getSampleType(cpasType);
-                        if (null != ss)
-                            type = ss.getName();
+                        var type = "All";
+                        if (null != cpasType)
+                        {
+                            var ss = SampleTypeService.get().getSampleType(cpasType);
+                            if (null != ss)
+                                type = ss.getName();
+                        }
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                     }
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                 }
-                break;
-            }
-            case "Data":
-            {
-                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Data");
-                if (depth != null  && depth != 0)
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
-                else
-                {
-                    var type = "All";
-                    if (null != cpasType)
+                case Data -> {
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Data");
+                    if (depth != null && depth != 0)
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                    else
                     {
-                        var dc = ExperimentServiceImpl.get().getDataClass(cpasType);
-                        if (null != dc)
-                            type = dc.getName();
+                        var type = "All";
+                        if (null != cpasType)
+                        {
+                            var dc = ExperimentServiceImpl.get().getDataClass(cpasType);
+                            if (null != dc)
+                                type = dc.getName();
+                        }
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                     }
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                 }
-                break;
-            }
-            case "ExperimentRun":
-            {
-                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Runs");
-                if (depth != null  && depth != 0)
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
-                else
-                {
-                    var type = "All";
-                    if (null != cpasType)
+                case ExperimentRun -> {
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Runs");
+                    if (depth != null && depth != 0)
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                    else
                     {
-                        var protocol = ExperimentService.get().getExpProtocol(cpasType);
-                        if (protocol != null)
-                            type = protocol.getName();
+                        var type = "All";
+                        if (null != cpasType)
+                        {
+                            var protocol = ExperimentService.get().getExpProtocol(cpasType);
+                            if (protocol != null)
+                                type = protocol.getName();
+                        }
+                        lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                     }
-                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
                 }
-                break;
-            }
-            default:
-            {
-                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "All");
-                break;
+                default -> {
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "All");
+                }
             }
         }
+        else
+            lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "All");
+
         if (null != lookupColumnName)
             lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, lookupColumnName);
 
@@ -254,7 +260,7 @@ class LineageForeignKey extends AbstractForeignKey
         if (_useLineageDisplayColumn)
         {
             final FieldKey ldcfk = lineageDisplayColumnFieldKey;
-            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, ldcfk));
+            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, ldcfk, getLookupContainerFilter()));
         }
     }
 
@@ -263,9 +269,9 @@ class LineageForeignKey extends AbstractForeignKey
     {
         final private Path cacheKeyPrefix;
 
-        LineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKeyPrefix)
+        LineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKeyPrefix, ContainerFilter cf)
         {
-            super(schema.getDbSchema(), name, schema);
+            super(schema.getDbSchema(), name, schema, cf);
             this.cacheKeyPrefix = cacheKeyPrefix;
         }
 
@@ -282,7 +288,7 @@ class LineageForeignKey extends AbstractForeignKey
         {
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(level.columnName), sql, JdbcType.VARCHAR);
-            col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix));
+            col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix, getContainerFilter()));
             col.setUserEditable(false);
             col.setReadOnly(true);
             col.setIsUnselectable(true);
@@ -290,12 +296,12 @@ class LineageForeignKey extends AbstractForeignKey
             addColumn(col);
         }
 
-        void addLineageColumn(String name, Integer depth, String expType, String cpasType, String runProtocolLsid, String lookupColumnName)
+        void addLineageColumn(String name, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, String runProtocolLsid, String lookupColumnName)
         {
 //            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
-            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
+            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid, getContainerFilter()));
             applyDisplayColumn(col, depth, expType, cpasType, lookupColumnName);
             addColumn(col);
         }
@@ -305,12 +311,17 @@ class LineageForeignKey extends AbstractForeignKey
     private class _MultiValuedForeignKey extends MultiValuedForeignKey
     {
         final Integer depth;
-        final String expType;
+        final ExpLineageOptions.LineageExpType expType;
         final String cpasType;
 
-        public _MultiValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType, String runProtocolLsid)
+        public _MultiValuedForeignKey(Path cacheKeyPrefix,
+                                      Integer depth,
+                                      ExpLineageOptions.LineageExpType expType,
+                                      String cpasType,
+                                      String runProtocolLsid,
+                                      @Nullable ContainerFilter cf)
         {
-            super(new LookupForeignKey("self", "Name")
+            super(new LookupForeignKey(cf, "self", "Name")
             {
                 TableInfo _table = null;
 
@@ -319,9 +330,9 @@ class LineageForeignKey extends AbstractForeignKey
                 {
                     if (null == _table)
                     {
-                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
-                            _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
-                            {
+                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), expType != null ? expType.name(): "-", defaultString(cpasType,"-"));
+                        _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
+                        {
                             SQLFragment objectids;
                             if (null != _seedSql)
                             {
@@ -331,10 +342,10 @@ class LineageForeignKey extends AbstractForeignKey
                             {
                                 objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
                             }
-                            var ret = new LineageTableInfo("Foo", _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid);
+                            var ret = new LineageTableInfo("LineageTableInfo (" + (_parents ? "parents)" : "children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid, getLookupContainerFilter());
                             ret.setLocked(true);
                             return ret;
-                            });
+                        });
                     }
                     return _table;
                 }
@@ -400,7 +411,14 @@ class LineageForeignKey extends AbstractForeignKey
                     // NOTE: We used to cache the lookup fk sql as a materialized query for performance
                     return super.getLookupSql(lookupTable, alias);
                 }
+
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
             };
+
         }
     }
 
@@ -412,9 +430,9 @@ class LineageForeignKey extends AbstractForeignKey
         private final Path _cacheKeyPrefix;
         private TableInfo _table;
 
-        ByTypeLineageForeignKey( @NotNull UserSchema s, @NotNull LevelColumnType level, Path cacheKeyPrefix)
+        ByTypeLineageForeignKey(@NotNull UserSchema s, @NotNull LevelColumnType level, Path cacheKeyPrefix, @Nullable ContainerFilter cf)
         {
-            super(s, null);
+            super(s, cf);
             _schema = s;
             _level = level;
             _cacheKeyPrefix = cacheKeyPrefix;
@@ -440,7 +458,7 @@ class LineageForeignKey extends AbstractForeignKey
                 Path cacheKey = _cacheKeyPrefix.append(getClass().getSimpleName(), _level.name());
                 _table = _schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                 {
-                    var ret = new ByTypeLineageForeignKeyLookupTable("Foo", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema)).init();
+                    var ret = new ByTypeLineageForeignKeyLookupTable("ByTypeLineageForeignKeyLookupTable (" + _level.expType + ")", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema), getLookupContainerFilter()).init();
                     ret.setLocked(true);
                     return ret;
                 });
@@ -452,12 +470,17 @@ class LineageForeignKey extends AbstractForeignKey
 
     private class ByTypeLineageForeignKeyLookupTable extends LineageForeignKeyLookupTable
     {
-        private final @NotNull String _expType;
+        private final @NotNull ExpLineageOptions.LineageExpType _expType;
         private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKey, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKeyLookupTable(String name,
+                                           UserSchema schema,
+                                           Path cacheKey,
+                                           @NotNull ExpLineageOptions.LineageExpType expType,
+                                           @NotNull Supplier<List<? extends ExpObject>> items,
+                                           @Nullable ContainerFilter cf)
         {
-            super(name, schema, cacheKey);
+            super(name, schema, cacheKey, cf);
             _expType = expType;
             _items = items;
         }
@@ -489,7 +512,7 @@ class LineageForeignKey extends AbstractForeignKey
     public class _AliasedParentColumn extends AliasedColumn
     {
         // lookupColumnName is for explictly selected lookup to column in target table (vs internal virtual column)
-        public _AliasedParentColumn(ColumnInfo parent, FieldKey key, Integer depth, String expType, String cpasType, @Nullable String lookupColumnName)
+        public _AliasedParentColumn(ColumnInfo parent, FieldKey key, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, @Nullable String lookupColumnName)
         {
             super(parent.getParentTable(), key, parent, false);
             applyDisplayColumn(this, depth, expType, cpasType, lookupColumnName);

@@ -107,6 +107,7 @@ public class RoleManager
         registerAdminRole(new ProjectAdminRole());
         registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
+        registerRole(new EditorWithoutDeleteRole());
         registerRole(new AuthorRole());
         registerRole(new ReaderRole());
         registerRole(new RestrictedReaderRole());
@@ -121,6 +122,7 @@ public class RoleManager
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new PlatformDeveloperRole(), false);
+        registerRole(new ProjectCreatorRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)

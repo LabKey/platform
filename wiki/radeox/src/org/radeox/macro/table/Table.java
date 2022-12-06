@@ -25,7 +25,7 @@
 
 package org.radeox.macro.table;
 
-import org.radeox.macro.Repository;
+import org.radeox.macro.PluginRepository;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -50,7 +50,7 @@ public class Table {
   private List currentRow;
   private List functionOccurences;
 
-  private Repository functions;
+  private PluginRepository functions;
 
   public Table() {
     rows = new ArrayList(10);

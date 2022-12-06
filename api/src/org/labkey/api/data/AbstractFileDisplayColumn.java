@@ -35,14 +35,12 @@ import java.io.Writer;
  */
 public abstract class AbstractFileDisplayColumn extends DataColumn
 {
-    MimeMap _map;
     protected String _thumbnailWidth;
     protected String _popupWidth;
 
     public AbstractFileDisplayColumn(ColumnInfo col)
     {
         super(col);
-        _map = new MimeMap();
     }
 
     @Override
@@ -85,7 +83,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             {
                 if (null != url)
                 {
-                    out.write("<a title=\"Download attached file\" href=\"");
+                    out.write("<a title=\"Download attached file\"");
+                    if (getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename))
+                    {
+                        out.write(" target=\"");
+                        out.write(PageFlowUtil.filter(getLinkTarget()));
+                        out.write("\"");
+                    }
+                    out.write(" href=\"");
                     out.write(PageFlowUtil.filter(url));
                     out.write("\">");
                 }
@@ -107,7 +112,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             }
             else
             {
-                if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)) )
+                if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
                 {
                     if (renderHelper.renderPopupImage())
                         out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
@@ -206,7 +211,15 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         // render the click script when a user clicks on the grid cell
         public String createClickScript()
         {
-            return _url == null ? null : "window.location = '" + _url + "'";
+            if (_url == null)
+            {
+                return null;
+            }
+            if (getLinkTarget() != null)
+            {
+                return "window.open(" + PageFlowUtil.jsString(_url) + "," + PageFlowUtil.jsString(getLinkTarget()) + ", 'noopener,noreferrer')";
+            }
+            return "window.location = " + PageFlowUtil.jsString(_url);
         }
     }
 

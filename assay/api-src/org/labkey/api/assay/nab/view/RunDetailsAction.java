@@ -18,10 +18,13 @@ package org.labkey.api.assay.nab.view;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.nab.RenderAssayBean;
+import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -35,10 +38,9 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
@@ -117,17 +119,38 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, run, assay.getSampleResults(), elevatedUser);
             if (headerView.isShowGraphLayoutOptions())
                 assay.updateRenderAssayBean(form);
-            HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
-            if (!isPrint())
-                view = new VBox(headerView, view);
 
-            return view;
+            if (isRunValid(form.getAssay()))
+            {
+                HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
+                if (!isPrint())
+                    view = new VBox(headerView, view);
+                return view;
+            }
+            else
+                return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>The run has errors which prevent it from being displayed.</span>"));
         }
         catch (ExperimentException e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             return new SimpleErrorView(errors);
         }
+    }
+
+    // quick pass to see if the run can be rendered
+    private boolean isRunValid(DilutionAssayRun run)
+    {
+        for (DilutionAssayRun.SampleResult sampleResult : run.getSampleResults())
+        {
+            if (sampleResult != null)
+            {
+                if (sampleResult.getDilutionSummary() == null)
+                    return false;
+            }
+            else
+                return false;
+        }
+        return true;
     }
 
     protected DilutionAssayRun getNabAssayRun(ExpRun run, StatsService.CurveFitType fit, User user) throws ExperimentException

@@ -27,6 +27,11 @@ public class JavaScriptReportDescriptor extends ScriptReportDescriptor
 
     public JavaScriptReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
+    }
+
+    public JavaScriptReportDescriptor(String type)
+    {
+        super(type);
     }
 }

@@ -40,7 +40,7 @@ to the selected folder:</div>
 <%= button(buttonCaption).href("#").onClick("onMoveWorkbooks();") %></div>
 <div id="mwb-status"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var _containerTree;
     var _workbookIds = <%=bean.getIDInitializer()%>;

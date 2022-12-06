@@ -1,1 +1,0 @@
-ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments TYPE TEXT;

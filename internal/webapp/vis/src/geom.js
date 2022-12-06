@@ -151,6 +151,8 @@ LABKEY.vis.Geom.XY.prototype.getParentY = function(row){
  *      config.position is "jitter" and the x or y scale is discrete it will be moved just before or after the position
  *      on the grid by a random amount. "sequential" orders the x-axis points deterministically based on their ordering
  *      in the incoming data. Useful if there is overlapping data. Defaults to undefined.
+ * @param {String} [config.groupBy] (Optional) Data field being used to split into series, for use with "sequential"
+ *      positioning. Defaults to undefined.
  */
 LABKEY.vis.Geom.Point = function(config){
     this.type = "Point";
@@ -163,6 +165,7 @@ LABKEY.vis.Geom.Point = function(config){
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
     this.position = ('position' in config && config.position != null && config.position != undefined) ? config.position : null;
+    this.groupBy = ('groupBy' in config && config.groupBy != null && config.groupBy != undefined) ? config.groupBy : null;
 
     return this;
 };
@@ -263,6 +266,11 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
     this.sizeScale = scales.size;
 
+    this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
+    this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+    this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
+
     this._dataspaceBoxPlot ? renderer.renderDataspaceBoxPlotPathGeom(data, this) : renderer.renderPathGeom(data, this);
 
     return true;
@@ -319,7 +327,6 @@ LABKEY.vis.Geom.ControlRange.prototype.render = function(renderer, grid, scales,
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
  * @param {Boolean} [config.dashed] (Optional) Whether or not to use dashed lines for top and bottom bars. Defaults to false.
- * @param {String} [config.altColor] (Optional) String used to determine the color of the vertical bar. Defaults to config.color.
  */
 LABKEY.vis.Geom.ErrorBar = function(config){
     this.type = "ErrorBar";
@@ -330,7 +337,6 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
-    this.altColor = ('altColor' in config && config.altColor != null && config.altColor != undefined) ? config.altColor : null;
     this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
 
     return this;

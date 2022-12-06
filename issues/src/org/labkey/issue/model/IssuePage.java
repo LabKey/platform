@@ -40,6 +40,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -59,10 +60,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.Issue.Comment;
+import org.labkey.issue.model.IssueObject.CommentObject;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -91,8 +91,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 {
     private final Container _c;
     private final User _user;
-    private Issue _issue;
-    private Issue _prevIssue;
+    private IssueObject _issue;
+    private IssueObject _prevIssue;
     private Set<String> _issueIds = Collections.emptySet();
     private CustomColumnConfiguration _ccc;
     private Set<String> _visible = Collections.emptySet();
@@ -100,7 +100,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private String _callbackURL;
     private ActionURL _returnURL;
     private BindException _errors;
-    private Class<? extends Controller> _action;
+    private Issue.action _action;
     private String _body;
     private boolean _hasUpdatePermissions;
     private boolean _hasAdminPermissions;
@@ -127,22 +127,22 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _user = user;
     }
 
-    public Issue getIssue()
+    public IssueObject getIssue()
     {
         return _issue;
     }
 
-    public void setIssue(Issue issue)
+    public void setIssue(IssueObject issue)
     {
         _issue = issue;
     }
 
-    public Issue getPrevIssue()
+    public IssueObject getPrevIssue()
     {
         return _prevIssue;
     }
 
-    public void setPrevIssue(Issue prevIssue)
+    public void setPrevIssue(IssueObject prevIssue)
     {
         _prevIssue = prevIssue;
     }
@@ -227,12 +227,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _errors = errors;
     }
 
-    public Class<? extends Controller> getAction()
+    public Issue.action getAction()
     {
         return _action;
     }
 
-    public void setAction(Class<? extends Controller> action)
+    public void setAction(Issue.action action)
     {
         _action = action;
     }
@@ -337,7 +337,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             IssueListDef issueListDef = getIssueListDef();
             Domain domain = issueListDef.getDomain(context.getUser());
 
-            ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+            ObjectFactory factory = ObjectFactory.Registry.getFactory(IssueObject.class);
             factory.toMap(_issue, row);
 
             // apply any default values
@@ -633,7 +633,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return DateUtil.formatDateTime(_c, d);
     }
 
-    public HtmlString renderAttachments(ViewContext context, Comment comment)
+    public HtmlString renderAttachments(ViewContext context, CommentObject comment)
     {
         List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(new CommentAttachmentParent(comment)));
 
@@ -645,7 +645,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
             for (Attachment a : attachments)
             {
-                Issue issue = comment.getIssue();
+                IssueObject issue = comment.getIssue();
                 ActionURL download = IssuesController.getDownloadURL(issue, comment, a);
                 builder.startTag("tr").startTag("td");
 
@@ -665,7 +665,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderIssueIdLink(Integer id)
     {
-        Issue issue = IssueManager.getIssue(null, _user, id);
+        IssueObject issue = IssueManager.getIssue(null, _user, id);
         Container c = issue != null ? issue.lookupContainer() : null;
         if (c != null && c.hasPermission(_user, ReadPermission.class))
         {

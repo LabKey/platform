@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,10 +29,10 @@ import java.util.List;
  * User: cnathe
  * Date: Apr 16, 2012
  */
-public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
+public class FolderImporterImpl implements FolderImporter
 {
-    private Collection<FolderImporter<?>> _importers;
-    private PipelineJob _job;
+    private final Collection<FolderImporter> _importers;
+    private final PipelineJob _job;
 
     public FolderImporterImpl()
     {
@@ -49,7 +48,6 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         }
 
         _importers = registry.getRegisteredFolderImporters();
-
         _job = job;
     }
 
@@ -66,7 +64,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     }
 
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile vf) throws Exception
     {
         for (FolderImporter importer : _importers)
             if (ctx.isDataTypeSelected(importer.getDataType()))
@@ -75,7 +73,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 
     @NotNull
     @Override
-    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile vf) throws Exception
     {
         List<PipelineJobWarning> warnings = new ArrayList<>();
         for (FolderImporter importer : _importers)

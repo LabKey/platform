@@ -103,11 +103,6 @@ public class CSRFUtil
         if (provided.equals(expected))
             return;
 
-        // try JESSIONID also for backward compatibility
-        String session = PageFlowUtil.getCookieValue(request.getCookies(), SESSION_COOKIE_NAME,null);
-        if (provided.equals(session))
-            return;
-
         throw new CSRFException(request);
     }
 

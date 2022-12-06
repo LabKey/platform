@@ -30,6 +30,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -97,6 +98,10 @@ public interface SampleTypeService
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException, SQLException;
 
+    @NotNull
+    ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
+            throws ExperimentException, SQLException;
+
     /**
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
@@ -135,6 +140,9 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
+    /** Get the sample type with name at a specific time */
+    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectDate);
+
     /**
      * Return the sample type for this LSID, optionally pass Container hint for performance
      */
@@ -158,6 +166,8 @@ public interface SampleTypeService
     ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
 
     Lsid getSampleTypeLsid(String name, Container container);
+
+    Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);
 
     /**
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.

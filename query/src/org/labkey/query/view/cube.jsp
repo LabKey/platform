@@ -78,7 +78,7 @@
     if (null == cube)
         return;
 %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var cube = null;
     function Level_onClick(name)

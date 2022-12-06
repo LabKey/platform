@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONArray"%>
+<%@ page import="org.json.old.JSONArray"%>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -64,7 +64,7 @@
 %>
 <%=formatMissedErrors("form")%>
 <div id="createFormDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init();
 
     Ext4.onReady(function(){
@@ -94,8 +94,8 @@
                     //force custom to appear at end
                     return b.label == 'Custom' ? -1
                         : a.label == 'Custom' ? 1
-                        : (a.label > b.label) ? 1
-                        : (a.label < b.label) ? -1
+                        : (a.label.toLowerCase() > b.label.toLowerCase()) ? 1
+                        : (a.label.toLowerCase() < b.label.toLowerCase()) ? -1
                         : 0
                 });
                 
@@ -490,7 +490,10 @@
                             store: Ext4.create('Ext.data.ArrayStore', {
                                 fields: ['id', 'path'],
                                 data: templateFolders
-                            })
+                            }),
+                            tpl : new Ext4.XTemplate(
+                                '<tpl for="."><div class="x4-boundlist-item">{path:htmlEncode}</div></tpl>'
+                            ),
                         },{
                             html: 'Folder objects to copy:',
                             cls: 'labkey-wizard-header'

@@ -19,12 +19,14 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
@@ -99,7 +101,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _stackTrace = stackTrace;
     }
 
-    public @Nullable Boolean isRequestThread()
+    public @NotNull Boolean isRequestThread()
     {
         return null != _requestThread ? _requestThread : ViewServlet.isRequestThread();
     }
@@ -1244,7 +1246,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
             ResultSet rs = ((PreparedStatement)_stmt).executeQuery();
             assert MemTracker.getInstance().put(rs);
-            return rs;
+            return wrap(rs);
         }
         catch (SQLException sqlx)
         {
@@ -1279,14 +1281,13 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
-    private boolean _set(int i, @Nullable Object o)
+    private void _set(int i, @Nullable Object o)
     {
         if (null == _parameters)
             _parameters = new OneBasedList<>(10);
         while (_parameters.size() < i)
             _parameters.add(null);
         _parameters.set(i, o);
-        return true;
     }
 
     @Override
@@ -1832,7 +1833,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             ResultSet rs = _stmt.executeQuery(sql);
             assert MemTracker.getInstance().put(rs);
-            return rs;
+            return wrap(rs);
         }
         catch (SQLException sqlx)
         {
@@ -2069,7 +2070,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             ResultSet rs = _stmt.getResultSet();
             assert MemTracker.getInstance().put(rs);
-            return rs;
+            return wrap(rs);
         }
         catch (SQLException e)
         {
@@ -2268,7 +2269,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             ResultSet rs = _stmt.getGeneratedKeys();
             assert MemTracker.getInstance().put(rs);
-            return rs;
+            return wrap(rs);
         }
         catch (SQLException e)
         {
@@ -2821,7 +2822,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
     
 
-    private static Package _java_lang = java.lang.String.class.getPackage();
+    private static final Package _java_lang = java.lang.String.class.getPackage();
 
     private void _logStatement(String sql, @Nullable SQLException x, int rowsAffected, QueryLogging queryLogging)
     {
@@ -2871,6 +2872,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             _conn.logAndCheckException(x);
         }
 
+        //noinspection ConstantConditions
         if (!_log.isEnabled(Level.DEBUG) && !isAssertEnabled)
             return;
 
@@ -2884,7 +2886,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             logEntry.append(" time ").append(DateUtil.formatDuration(elapsed));
 
         if (-1 != rowsAffected)
-            logEntry.append("\n    " + rowsAffected + " rows affected");
+            logEntry.append("\n    ").append(rowsAffected).append(" rows affected");
 
         logEntry.append("\n    ");
         logEntry.append(sql.trim().replace("\n", "\n    "));
@@ -2895,7 +2897,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             {
                 try
                 {
-                    Object o = i <= _parameters.size() ? _parameters.get(i) : null;
+                    Object o = _parameters.get(i);
                     String value;
                     if (o == null)
                         value = "NULL";
@@ -2909,7 +2911,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                         value = value.substring(0, 100) + ". . .";
                     logEntry.append("\n    --[").append(i).append("] ");
                     logEntry.append(value);
-                    Class c = null==o ? null : o.getClass();
+                    Class<?> c = null==o ? null : o.getClass();
                     if (null != c && c != String.class && c != Integer.class)
                         logEntry.append(" :").append(c.getPackage() == _java_lang ? c.getSimpleName() : c.getName());
                 }
@@ -2931,17 +2933,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         final String logString = logEntry.toString();
         _log.log(Level.DEBUG, logString);
 
-// modified on trunk, just commenting out for now
-//        MemTracker.getInstance().put(new MemTrackable(){
-//            @Override
-//            public String toMemTrackerString()
-//            {
-//                return logString;
-//            }
-//        });
-
         // check for deadlock or transaction related error
-        if (x != null && SqlDialect.isTransactionException(x))
+        if (SqlDialect.isTransactionException(x))
         {
             DebugInfoDumper.dumpThreads(_log);
         }
@@ -2991,5 +2984,27 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public String getDebugSql()
     {
         return _debugSql;
+    }
+
+
+    ResultSet wrap(ResultSet rs)
+    {
+        return new ResultSetWrapper(rs)
+        {
+            @Override
+            public boolean next() throws SQLException
+            {
+                try
+                {
+                    return super.next();
+                }
+                catch (SQLException x)
+                {
+                    if (SqlDialect.isTransactionException(x))
+                        _logStatement(_debugSql, x, -1, getQueryLogging());
+                    throw x;
+                }
+            }
+        };
     }
 }

@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -44,7 +44,7 @@ public class HrefOutput extends ImageOutput
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         return null;
     }

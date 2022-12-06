@@ -15,11 +15,11 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.CheckboxField;
@@ -44,12 +44,14 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -60,7 +62,6 @@ import org.labkey.pipeline.xml.TaskRefType;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private static final String MOVE_DIRECTORY_HREF = BASE_HREF + "subdirectory";
     private static final String COPY_HELP_TEXT = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
     private static final String COPY_HREF = BASE_HREF + "copyto";
-    private static final List<Field> _defaultFields = List.of(
+    private static final List<Field<?>> _defaultFields = List.of(
             new TextField("location", "Location to Watch", "./", false, null, LOCATION_HELP_TEXT, LOCATION_HREF),
             new CheckboxField("recursive", "Include Child Folders", false, false),
             new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, FILE_PATTERN_HELP_TEXT, FILE_PATTERN_HREF),
@@ -117,7 +118,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, MOVE_DIRECTORY_HELP_TEXT, MOVE_DIRECTORY_HREF),
             new TextField("copy", "Copy File To", null, false, null, COPY_HELP_TEXT, COPY_HREF)
     );
-    private List<Field> _customFields;
+    private List<Field<?>> _customFields;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -130,7 +131,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     }
 
     @Override
-    public TaskPipeline cloneAndConfigure(FileAnalysisTaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
+    public TaskPipeline<FileAnalysisTaskPipelineSettings> cloneAndConfigure(FileAnalysisTaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
     {
         FileAnalysisTaskPipelineImpl pipeline = (FileAnalysisTaskPipelineImpl)
                 super.cloneAndConfigure(settings, taskProgression);
@@ -274,7 +275,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     @Override
     @NotNull
-    public URLHelper getAnalyzeURL(Container c, String path)
+    public URLHelper getAnalyzeURL(Container c, String path, @Nullable ReturnURLString parsedReturnUrl)
     {
         if (_analyzeURL != null)
         {
@@ -293,14 +294,18 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 {
                     result.addParameter("taskId", getId().toString());
                 }
+                if (parsedReturnUrl != null)
+                {
+                    result.addParameter(ActionURL.Param.returnUrl.name(), parsedReturnUrl.toString());
+                }
                 return result;
             }
             catch (URISyntaxException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
-        return AnalysisController.urlAnalyze(c, getId(), path);
+        return AnalysisController.urlAnalyze(c, getId(), path, parsedReturnUrl);
     }
 
     @Override
@@ -346,12 +351,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _initialFileTypesRequired;
     }
 
-    public List<Field> getCustomFields()
+    public List<Field<?>> getCustomFields()
     {
         return _customFields;
     }
 
-    public void setCustomFields(List<Field> customFields)
+    public void setCustomFields(List<Field<?>> customFields)
     {
         _customFields = customFields;
     }
@@ -383,12 +388,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
         catch (XmlValidationException e)
         {
-            LogManager.getLogger(PipelineJobServiceImpl.class).error(e);
+            PipelineJobServiceImpl.LOG.error(e);
             return null;
         }
         catch (XmlException |IOException e)
         {
-            LogManager.getLogger(PipelineJobServiceImpl.class).error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
+            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
             return null;
         }
 
@@ -418,13 +423,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         for (int taskIndex = 0; taskIndex < xtasks.length; taskIndex++)
         {
             XmlObject xobj = xtasks[taskIndex];
-            if (xobj instanceof TaskRefType)
+            if (xobj instanceof TaskRefType xtaskref)
             {
-                TaskRefType xtaskref = (TaskRefType)xobj;
                 try
                 {
                     TaskId taskId = TaskId.valueOf(xtaskref.getRef());
-                    TaskFactory factory = PipelineJobService.get().getTaskFactory(taskId);
+                    TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
                     if (factory == null)
                         throw new IllegalArgumentException("Task factory ref not found: " + xtaskref.getRef());
 
@@ -459,19 +463,18 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 }
 
             }
-            else if (xobj instanceof TaskType)
+            else if (xobj instanceof TaskType xtask)
             {
                 // Create a new local task definition
-                TaskType xtask = (TaskType)xobj;
 
-                String name = xtask.schemaType().getName().getLocalPart() + "-" + String.valueOf(taskIndex);
+                String name = xtask.schemaType().getName().getLocalPart() + "-" + taskIndex;
                 if (xtask.isSetName())
                     name = xtask.getName();
 
                 TaskId localTaskId = createLocalTaskId(pipelineTaskId, name);
 
                 Path tasksDir = pipelineConfig.getPath().getParent();
-                TaskFactory factory = PipelineJobServiceImpl.get().createTaskFactory(localTaskId, xtask, tasksDir);
+                TaskFactory<?> factory = PipelineJobServiceImpl.get().createTaskFactory(localTaskId, xtask, tasksDir);
                 if (factory == null)
                     throw new IllegalArgumentException("Task factory not found: " + localTaskId);
 
@@ -484,11 +487,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (progression.isEmpty())
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 
-        TaskFactory initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.get(0));
+        TaskFactory<?> initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.get(0));
         if (initialTaskFactory == null)
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 
-        pipeline.setTaskProgression(progression.toArray(new TaskId[progression.size()]));
+        pipeline.setTaskProgression(progression.toArray(new TaskId[0]));
 
         // Initial file types
         pipeline._initialFileTypesFromTask = true;
@@ -524,55 +527,48 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (xpipeline.isSetCustomFields())
         {
             XmlObject[] xCustomFields = xpipeline.getCustomFields().selectPath("./*");
-            List<Field> customFields = new ArrayList<>();
+            List<Field<?>> customFields = new ArrayList<>();
 
-            for (int customFieldIndex = 0; customFieldIndex < xCustomFields.length; customFieldIndex++)
+            for (XmlObject xCustomField : xCustomFields)
             {
-                XmlObject xCustomField = xCustomFields[customFieldIndex];
-                if (xCustomField instanceof org.labkey.pipeline.xml.TextField)
+                if (xCustomField instanceof org.labkey.pipeline.xml.TextField xField)
                 {
-                    org.labkey.pipeline.xml.TextField xField = (org.labkey.pipeline.xml.TextField)xCustomField;
                     TextField field = new TextField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
-                else if (xCustomField instanceof org.labkey.pipeline.xml.TextAreaField)
+                else if (xCustomField instanceof org.labkey.pipeline.xml.TextAreaField xField)
                 {
-                    org.labkey.pipeline.xml.TextAreaField xField = (org.labkey.pipeline.xml.TextAreaField)xCustomField;
                     TextareaField field = new TextareaField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
-                else if (xCustomField instanceof org.labkey.pipeline.xml.NumberField)
+                else if (xCustomField instanceof org.labkey.pipeline.xml.NumberField xField)
                 {
-                    org.labkey.pipeline.xml.NumberField xField = (org.labkey.pipeline.xml.NumberField)xCustomField;
                     NumberField field = new NumberField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
-                else if (xCustomField instanceof org.labkey.pipeline.xml.CheckboxField)
+                else if (xCustomField instanceof org.labkey.pipeline.xml.CheckboxField xField)
                 {
-                    org.labkey.pipeline.xml.CheckboxField xField = (org.labkey.pipeline.xml.CheckboxField)xCustomField;
                     CheckboxField field = new CheckboxField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
-                else if (xCustomField instanceof org.labkey.pipeline.xml.RadioField)
+                else if (xCustomField instanceof org.labkey.pipeline.xml.RadioField xField)
                 {
-                    org.labkey.pipeline.xml.RadioField xField = (org.labkey.pipeline.xml.RadioField)xCustomField;
                     List<Option<String>> options = new ArrayList<>();
                     for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
                     {
-                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                        options.add(new Option<>(option.getValue(), option.getLabel()));
                     }
-                    RadioField<String> field = new RadioField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    RadioField<String> field = new RadioField<>(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
-                else if (xCustomField instanceof org.labkey.pipeline.xml.SelectField)
+                else if (xCustomField instanceof org.labkey.pipeline.xml.SelectField xField)
                 {
-                    org.labkey.pipeline.xml.SelectField xField = (org.labkey.pipeline.xml.SelectField)xCustomField;
                     List<Option<String>> options = new ArrayList<>();
                     for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
                     {
-                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                        options.add(new Option<>(option.getValue(), option.getLabel()));
                     }
-                    SelectField field = new SelectField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    SelectField<?> field = new SelectField<>(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
                     customFields.add(field);
                 }
             }
@@ -592,7 +588,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     @Override
     public FormSchema getFormSchema()
     {
-        List<Field> fields = new ArrayList<>(_defaultFields);
+        List<Field<?>> fields = new ArrayList<>(_defaultFields);
 
         if (!isMoveAvailable())
         {

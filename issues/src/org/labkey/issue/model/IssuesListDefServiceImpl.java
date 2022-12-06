@@ -76,7 +76,9 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (defaultUser != null)
             assignedToUser = defaultUser.getUserId();
 
-        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser);
+        String relatedFolderName = IssueManager.getDefaultRelatedFolder(container, defName);
+
+        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser, relatedFolderName);
     }
 
     @Override
@@ -139,6 +141,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         }
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
+        IssueManager.setPropDefaultRelatedFolder(container, name, properties.getRelatedFolderName());
     }
 
     @Override
@@ -277,7 +280,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (def == null)
             throw new IllegalArgumentException("Could not find the IssueListDef with the following name: " + issueDefName);
 
-        Issue issue = new Issue();
+        IssueObject issue = new IssueObject();
         issue.open(container, user);
         issue.setIssueDefName(def.getName());
         issue.setAssignedTo(user.getUserId());
@@ -287,7 +290,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (body != null)
             issue.addComment(user, body);
 
-        ObjectFactory<Issue> factory = ObjectFactory.Registry.getFactory(Issue.class);
+        ObjectFactory<IssueObject> factory = ObjectFactory.Registry.getFactory(IssueObject.class);
         factory.toMap(issue, issue.getProperties());
 
         IssueManager.saveIssue(user, container, issue);

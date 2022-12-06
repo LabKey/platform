@@ -16,7 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.logging.log4j.Level;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 
 /**
  * Indicates a non-fatal error parsing query metadata.

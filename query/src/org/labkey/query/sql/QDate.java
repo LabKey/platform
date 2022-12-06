@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 
 
@@ -28,7 +29,7 @@ import org.labkey.api.util.DateUtil;
  */
 public class QDate extends QExpr implements IConstant
 {
-    java.sql.Date _value = null;
+    final private java.sql.Date _value;
 
     public QDate(CommonTree n, java.sql.Date value)
     {
@@ -64,7 +65,7 @@ public class QDate extends QExpr implements IConstant
     @Override
     public String getValueString()
     {
-        return"{d " + QString.quote(getTokenText()) + "}";
+        return"{d " + LabKeySql.quoteString(getTokenText()) + "}";
     }
 
     @Override

@@ -15,15 +15,15 @@
  */
 package org.labkey.core.admin.usageMetrics;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.MinorConfigurationException;
-import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,14 +37,20 @@ import java.util.stream.Collectors;
  */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
-    private static final Logger LOG = LogManager.getLogger(UsageMetricsServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(UsageMetricsServiceImpl.class, "Usage metrics errors");
 
     private final Map<String, Set<UsageMetricsProvider>> moduleUsageReports = new ConcurrentHashMap<>();
 
     @Override
     public void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics)
     {
-        moduleUsageReports.computeIfAbsent(moduleName, k -> new ConcurrentHashSet<>()).add(metrics);
+        // Check that module exists and use canonical name for consistency
+        if (null == moduleName)
+            throw new IllegalArgumentException("Module name is null");
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+        if (null == module)
+            throw new IllegalArgumentException("Unknown module: " + moduleName);
+        moduleUsageReports.computeIfAbsent(module.getName(), k -> new ConcurrentHashSet<>()).add(metrics);
     }
 
     @Override
@@ -61,9 +67,9 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
                 {
                     Map<String, Object> providerMetrics = provider.getUsageMetrics();
                     Set<String> duplicateKeys = providerMetrics.keySet()
-                            .stream()
-                            .filter(moduleMetrics::containsKey)
-                            .collect(Collectors.toSet());
+                        .stream()
+                        .filter(moduleMetrics::containsKey)
+                        .collect(Collectors.toSet());
                     if (duplicateKeys.isEmpty())
                         moduleMetrics.putAll(providerMetrics);
                     else

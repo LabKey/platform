@@ -17,17 +17,17 @@
 %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
-<%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteActorAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorOrderAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageActorsAction" %>
+<%@ page import="org.labkey.specimen.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

@@ -46,7 +46,7 @@
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL)%>;
     <%
     if (bean.getSelectedRequest() != null)

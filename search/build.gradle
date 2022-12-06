@@ -5,8 +5,8 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="9.0.0"
-ext.mime4jVersion="0.8.4"
+ext.luceneVersion="9.4.2"
+ext.mime4jVersion="0.8.7"
 
 dependencies {
     BuildUtils.addExternalDependency(
@@ -97,7 +97,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.pdfbox:jempbox:1.8.16",
+            "org.apache.pdfbox:jempbox:1.8.17",
             "jempbox",
             "Apache",
             "https://pdfbox.apache.org/2.0/dependencies.html",
@@ -110,7 +110,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.drewnoakes:metadata-extractor:2.16.0",
+            "com.drewnoakes:metadata-extractor:2.18.0",
             "Metadata Extractor",
             "drewnoakes",
             "https://github.com/drewnoakes/metadata-extractor",
@@ -149,7 +149,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.codelibs:jhighlight:1.0.3",
+            "org.codelibs:jhighlight:1.1.0",
             "JHighlight",
             "codelibs",
             "https://github.com/codelibs/jhighlight",
@@ -208,6 +208,32 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Extract text and produce thumbnails from PDFs"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.pdfbox:pdfbox-tools:${pdfboxVersion}",
+            "PDFBox Tools",
+            "PDFBox",
+            "https://pdfbox.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "PDFBox dependency"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.googlecode.plist:dd-plist:1.26",
+            "DD Plist",
+            "com.dd.plist",
+            "https://github.com/3breadt/dd-plist",
+            ExternalDependency.MIT_LICENSE_NAME,
+            ExternalDependency.MIT_LICENSE_URL,
+            "Needed to parse \"pages\" files for full-text search"
         )
     )
 }

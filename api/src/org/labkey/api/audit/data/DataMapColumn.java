@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -91,5 +93,14 @@ public class DataMapColumn extends DataColumn
             return result;
         }
         return Collections.emptyList();
+    }
+
+    public static class Factory implements DisplayColumnFactory
+    {
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            return new DataMapColumn(colInfo);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
@@ -70,7 +70,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> reservedProperties = new HashSet<>();
         reservedProperties.add("RowId");

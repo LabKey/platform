@@ -21,14 +21,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
+import org.json.old.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
@@ -606,6 +605,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
+    static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+    static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
+    static final SchemaKey SCHEMA_EXP_MATERIALS = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name());
+
     /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleTypeName> or exp.materials.<SampleTypeName> and is an int or string. */
     @Nullable
     public static ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
@@ -615,7 +618,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return null;
 
         // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
-        if (!(SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()) || "exp.materials".equalsIgnoreCase(lookup.getSchemaName())))
+        if (!(SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SCHEMA_EXP_MATERIALS.equals(lookup.getSchemaKey())))
             return null;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
@@ -633,7 +636,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (lookup == null)
             return false;
 
-        if (!(ExpSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+        if (!(SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
             return false;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
@@ -1209,8 +1212,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 boolean skipError = false;
                 if (lookup != null)
                 {
-                    Container container = lookup.getContainer() != null ? lookup.getContainer() : context.getContainer();
-                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), context.getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, value);
+                    Object remappedValue = OntologyManager.getRemappedValueForLookup(context.getUser(), context.getContainer(), cache, lookup, value);
                     if (remappedValue != null)
                         skipError = true;
                 }

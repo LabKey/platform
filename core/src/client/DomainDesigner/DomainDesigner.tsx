@@ -187,7 +187,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         const suggestion = (
             <p>
                 See the following documentation page for further details: <br/>
-                <a href={rollupURI} target={'_blank'}> {"Specimen properties and rollup rules"}</a>
+                <a href={rollupURI} target='_blank' rel='noopener noreferrer'> {"Specimen properties and rollup rules"}</a>
             </p>
         );
 

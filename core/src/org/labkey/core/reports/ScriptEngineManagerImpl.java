@@ -16,14 +16,14 @@
 package org.labkey.core.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
@@ -37,7 +37,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.docker.DockerService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
@@ -45,16 +47,23 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.RDockerScriptEngineFactory;
-import org.labkey.api.reports.RScriptEngineFactory;
-import org.labkey.api.reports.RemoteRNotEnabledException;
-import org.labkey.api.reports.RserveScriptEngineFactory;
+import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
+import org.labkey.api.reports.report.r.RScriptEngineFactory;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -64,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,16 +90,15 @@ import static java.util.Collections.unmodifiableList;
 public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
-
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
-
     private static final String ALL_ENGINES = "ALL";
+    private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
 
     // cache engine definitions by:
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
-    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "script engine defs", (key, argument) -> {
-        if (key == ALL_ENGINES)
+    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
+        if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
             return unmodifiableList(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getArrayList(ExternalScriptEngineDefinitionImpl.class));
@@ -103,22 +112,60 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                    .append(" WHERE RowId IN (SELECT EngineId FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?)")
-                    .add(containerId)
-                    .add(context);
+                .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
+                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .add(containerId)
+                .add(context);
 
             return unmodifiableList(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
         }
     });
 
-    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    private static final String PASSWORD_FIELD = "password";
+
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+        LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
+        TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
+        Algorithm encryptAes = ExternalScriptEngineDefinitionImpl.AES.get();
+        new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
+            JSONObject json = new JSONObject(configuration);
+            String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
+            if (null != oldEncryptedPassword)
+            {
+                LOG.info("    Migrating script engine configuration " + rowId);
+                try
+                {
+                    String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
+                    String newEncryptedPassword = Base64.encodeBase64String(encryptAes.encrypt(decryptedPassword));
+                    json.replace(PASSWORD_FIELD, newEncryptedPassword);
+                    assert decryptedPassword.equals(encryptAes.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
+                    Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+                }
+                catch (DecryptionException e)
+                {
+                    LOG.info("    Failed to decrypt password for configuration " + rowId + ". This configuration will be skipped.");
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Exception while attempting to migrate configuration " + rowId, e);
+                }
+            }
+        });
+        LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
+    };
+
+    public static void registerEncryptionMigrationHandler()
     {
-        return c.getId() + ":" + context.toString();
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
     }
 
+    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    {
+        return c.getId() + ":" + context;
+    }
 
     enum Props
     {
@@ -244,12 +291,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                         return new RserveScriptEngineFactory(def).getScriptEngine();
                     else
                     {
-                        LOG.error(String.format("Remote R engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
-                        throw new RemoteRNotEnabledException(def);
+                        RemoteRNotEnabledException ex = new RemoteRNotEnabledException(def);
+                        LOG.error(ex.getMessage());
+                        throw ex;
                     }
                 }
                 else
                     return new RScriptEngineFactory(def).getScriptEngine();
+            }
+            else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
+            {
+                LOG.error(String.format("Jupyter Report engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+                throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
@@ -444,13 +497,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
-
                 // delete any folder scoped mappings
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EngineId"), def.getRowId());
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), filter);
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngines(), def.getRowId());
 
+                // delete the docker image config for docker engine types
+                if (def.getDockerImageRowId() != null && DockerService.get() != null)
+                {
+                    DockerService.get().deleteDockerImage(user, def.getDockerImageRowId());
+                }
+
+                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
                 tx.commit();
             }
         }
@@ -484,7 +542,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
         }
 
-        // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
+        // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
         CacheManager.clearAllKnownCaches();
 
         return def;
@@ -512,7 +570,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static ExternalScriptEngineDefinition createDefinition(Map<String, String> props, boolean isFromStartupProps)
     {
         String key = null;
-        // if this definition is being built from startup props then dont look for a key because the key wont be defined in the startup properties
+        // if this definition is being built from startup props then don't look for a key because the key won't be defined in the startup properties
         // leave the key null and it will get created and populate when the definition is saved.
         if (!isFromStartupProps)
             key = props.get(Props.key.name());
@@ -579,57 +637,127 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         map.save();
     }
 
-    public void populateScriptEngineDefinitionsWithStartupProps()
+    private static class ScriptEngineStartupProperty implements StartupProperty
     {
-        populateScriptEngineDefinitionsWithStartupProps(null);
+        @Override
+        public String getPropertyName()
+        {
+            return "<unique name>.<property name>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Script engine definition properties. Prefix properties for each definition with a unique name.";
+        }
+    }
+
+    // populates script engine definition with values from startup configuration
+    // expects startup properties formatted like:
+    //        ScriptEngineDefinition.{unique name}.external;bootstrap=True
+    //        ScriptEngineDefinition.{unique name}.name;bootstrap=R Scripting Engine
+    //        ScriptEngineDefinition.{unique name}.extensions;bootstrap=R,r
+    //        ScriptEngineDefinition.{unique name}.languageName;bootstrap=R
+    //        ScriptEngineDefinition.{unique name}.exePath;bootstrap=/usr/bin/R
+    //
+    private static class ScriptEngineStartupPropertyHandler extends LenientStartupPropertyHandler<StartupProperty>
+    {
+        public ScriptEngineStartupPropertyHandler()
+        {
+            super(SCOPE_SCRIPT_ENGINE_DEFINITION, new ScriptEngineStartupProperty());
+        }
+
+        @Override
+        public void handle(Collection<StartupPropertyEntry> entries)
+        {
+            Map<String, Map<String, String>> enginePropertyMap = new HashMap<>();
+
+            for (StartupPropertyEntry prop: entries)
+            {
+                String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
+                if (scriptEngineNameAndParamSplit.length == 2)
+                {
+                    String engineName = scriptEngineNameAndParamSplit[0];
+                    String engineParam = scriptEngineNameAndParamSplit[1];
+                    String paramValue = prop.getValue();
+                    Map<String, String> propertyMap = enginePropertyMap.containsKey(engineName) ? enginePropertyMap.get(engineName) : new HashMap<>();
+                    propertyMap.put(engineParam, paramValue);
+                    enginePropertyMap.put(engineName, propertyMap);
+                }
+                else
+                {
+                    throw new ConfigurationException("Startup properties for creating script engine definition not formatted correctly: " + prop.getName());
+                }
+            }
+
+            // for each engine create a definition from the map of properties and save it
+            for (Map.Entry<String, Map <String, String>> entry : enginePropertyMap.entrySet())
+            {
+                // Set a default value for external to true since script engines defined in startup props will likely be external
+                entry.getValue().putIfAbsent("external", "True");
+                ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
+                // Only attempt to create the script engine if no script engine with this key has been created before.
+                // This means that the property modifier 'startup' will be applied only once for script engine definitions.
+                // It will create a script engine definition, but does not modify an existing script engine definition.
+                LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
+                if (mgr.getEngineDefinition(def.getName(), def.getType()) == null)
+                    mgr.saveDefinition(User.getSearchUser(), def);
+            }
+        }
     }
 
     // ScriptEngineManagerImpl.TestCase tests bootstrap property setting, so we need a way to force this into new install mode
-    public void populateScriptEngineDefinitionsWithStartupProps(Boolean startupModeForTest)
+    public void populateScriptEngineDefinitionsWithStartupProps()
     {
-        // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like:
-        //        ScriptEngineDefinition.{name}.external;bootstrap=True
-        //        ScriptEngineDefinition.{name}.name;bootstrap=R Scripting Engine
-        //        ScriptEngineDefinition.{name}.extensions;bootstrap=R,r
-        //        ScriptEngineDefinition.{name}.languageName;bootstrap=R
-        //        ScriptEngineDefinition.{name}.exePath;bootstrap=/usr/bin/R
-        //
-
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-        Map<String, Map<String, String>> enginePropertyMap = new HashMap<>();
-
-        for (ConfigProperty prop: startupProps)
-        {
-            String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
-            if (scriptEngineNameAndParamSplit.length == 2)
-            {
-                String engineName = scriptEngineNameAndParamSplit[0];
-                String engineParam = scriptEngineNameAndParamSplit[1];
-                String paramValue = prop.getValue();
-                Map<String, String> propertyMap = enginePropertyMap.containsKey(engineName) ? enginePropertyMap.get(engineName) : new HashMap<>();
-                propertyMap.put(engineParam, paramValue);
-                enginePropertyMap.put(engineName, propertyMap);
-            }
-            else
-            {
-                throw new ConfigurationException("Startup properties for creating script engine definition not formatted correctly: " + prop.getName());
-            }
-        }
-
-        // for each engine create a definition from the map of properties and save it
-        for (Map.Entry<String, Map <String, String>> entry : enginePropertyMap.entrySet())
-        {
-            // Set a default value for external to true since script engines defined in startup props will likely be external
-            entry.getValue().putIfAbsent("external", "True");
-            ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
-            // Only attempt to create the script engine if no script engine with this key has been created before.
-            // This means that the property modifier 'startup' will be applied only once for script engine definitions.
-            // It will create a script engine definition, but does not modify an existing script engine definition.
-            if (getEngineDefinition(def.getName(), def.getType()) == null)
-                saveDefinition(User.getSearchUser(), def);
-        }
+        ModuleLoader.getInstance().handleStartupProperties(new ScriptEngineStartupPropertyHandler());
     }
+
+
+    @Override
+    public Map<String,Object> getScriptEngineMetrics()
+    {
+        Map<String,Object> views = new LinkedHashMap<>();
+
+        for (ScriptEngineFactory factory : getEngineFactories())
+        {
+            Map<String, Object> record = new HashMap<>();
+
+            record.put("factoryClass", factory.getClass().getName());
+            record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+            record.put("external", factory instanceof ExternalScriptEngineFactory);
+            record.put("enabled", isFactoryEnabled(factory));
+
+            if (factory instanceof ExternalScriptEngineFactory externalFactory)
+            {
+                ExternalScriptEngineDefinition def = externalFactory.getDefinition();
+                record.put("type", String.valueOf(def.getType()));
+                record.put("remote", def.isRemote());
+                record.put("sandboxed", def.isSandboxed());
+            }
+
+            try
+            {
+                ScriptEngine engine = factory.getScriptEngine();
+                if (null != engine)
+                    record.put("engineClass", engine.getClass().getName());
+            }
+            catch (Exception x)
+            {
+                // pass
+            }
+
+            // add using a class as the key, uniquify if necessary.
+            String key = (String)record.get("factoryClass");
+            if (null != views.putIfAbsent(key, record))
+            {
+                int i=1;
+                while (null != views.putIfAbsent(key + "$" + i, record))
+                    i++;
+            }
+        }
+        return views;
+    }
+
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
@@ -644,16 +772,29 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
 
-            // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
             // examine the original list of Script Engine Definitions to ensure the test script engine is not already setup
             List<ExternalScriptEngineDefinition> defList = svc.getEngineDefinitions();
             assertFalse("The script engine defined in the startup properties was already setup on this server: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
 
-            // call the method that makes use of the test startup properties to add a new Script Engine Definition to the server
-            if (svc instanceof ScriptEngineManagerImpl)
-                ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps(true);
+            ModuleLoader.getInstance().handleStartupProperties(new ScriptEngineStartupPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
+                {
+                    return List.of(
+                        new StartupPropertyEntry("Rtest.external", "True", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION),
+                        new StartupPropertyEntry("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION),
+                        new StartupPropertyEntry("Rtest.extensions", "Rtest,rtest", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION),
+                        new StartupPropertyEntry("Rtest.languageName", "Rtest", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION),
+                        new StartupPropertyEntry("Rtest.exePath", ".", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION)
+                    );
+                }
+
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // now check that the expected changes occurred to the Scripting Engine Definitions on the server
             defList = svc.getEngineDefinitions();
@@ -661,27 +802,6 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             // restore the Script Engine Definitions to how they were originally
             svc.deleteDefinition(User.getSearchUser(), defList.stream().filter((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME)).findAny().get());
-        }
-
-        private void prepareTestStartupProperties()
-        {
-            // prepare a multimap of config properties to test with that has properties assigned for the ScriptEngineDefinition
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-            // prepare test Script Engine Definition properties - requires multiple lines in the property file for each script engine being setup
-            ConfigProperty scriptEngineDefinition1 = new ConfigProperty("Rtest.external", "True", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition1);
-            ConfigProperty scriptEngineDefinition2 = new ConfigProperty("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition2);
-            ConfigProperty scriptEngineDefinition3 = new ConfigProperty("Rtest.extensions", "Rtest,rtest", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition3);
-            ConfigProperty scriptEngineDefinition4 = new ConfigProperty("Rtest.languageName", "Rtest", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition4);
-            ConfigProperty scriptEngineDefinition5 = new ConfigProperty("Rtest.exePath", ".", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition5);
-
-            // set these test startup test properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
     }
 }

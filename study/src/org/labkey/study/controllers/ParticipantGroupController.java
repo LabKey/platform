@@ -18,15 +18,15 @@ package org.labkey.study.controllers;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -837,9 +837,9 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class GroupsForm implements CustomApiForm
+    public static class GroupsForm implements NewCustomApiForm
     {
-        private List<Group> _groups = new ArrayList<>();
+        private final List<Group> _groups = new ArrayList<>();
 
         public List<Group> getGroups()
         {
@@ -847,17 +847,15 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(org.json.JSONObject json)
         {
-            Object groups = props.get("groups");
-
-            if (groups instanceof JSONArray)
+            if (json.has("groups"))
             {
-                JSONArray groupArr = (JSONArray)groups;
+                org.json.JSONArray groupArr = json.getJSONArray("groups");
 
                 for (int i=0; i < groupArr.length(); i++)
                 {
-                    JSONObject group = groupArr.getJSONObject(i);
+                    org.json.JSONObject group = groupArr.getJSONObject(i);
 
                     GroupType type = GroupType.valueOf(group.getString("type"));
 
@@ -1083,7 +1081,8 @@ public class ParticipantGroupController extends BaseStudyController
                         oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
 
                     group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
-                    category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+                    // make a copy since we might mutate it below
+                    category = new ParticipantCategoryImpl(ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId()));
 
                     // if the category shared bit has changed, resave the category
                     if (form.getCategoryOwnerId() != category.getOwnerId())

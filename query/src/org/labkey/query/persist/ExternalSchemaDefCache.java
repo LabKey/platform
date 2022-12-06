@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  */
 public class ExternalSchemaDefCache
 {
-    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/Linked Schema Definition Cache", (c, argument) -> new ExternalSchemaCollections(c));
+    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/linked schema definitions", (c, argument) -> new ExternalSchemaCollections(c));
 
     @Nullable
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)

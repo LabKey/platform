@@ -97,6 +97,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.Collections" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -256,7 +257,6 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     List<Map<String, Object>> rows = new ArrayList<>();
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
     row.put("aa", 30);
-    row.put("container", sub);
     row.put("bb", "bye");
     rows.add(row);
 
@@ -268,7 +268,7 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     }
 
     assertEquals(1, ret.size());
-    assertEquals(sub.getId(), ret.get(0).get("container"));
+    assertEquals(sub.getId(), ret.get(0).get("folder"));
 
     ExpData data = ExperimentService.get().getExpData(dataClass, expectedSubName);
     assertNotNull(data);
@@ -343,7 +343,7 @@ private void testBulkImport(ExpDataClassImpl dataClass, TableInfo table, User us
     assertEquals(2, count);
     assertEquals(2, dataClass.getDatas().size());
 
-    int rowId = new TableSelector(table, Set.of("rowId"), new SimpleFilter("aa", 50).addCondition("bb", "zz"), null).getObject(Integer.class);
+    int rowId = new TableSelector(table, Collections.singleton("rowId"), new SimpleFilter("aa", 50).addCondition("bb", "zz"), null).getObject(Integer.class);
 
     verifyAliases(table, rowId, Set.of("a", "b", "c"));
 }

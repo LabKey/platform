@@ -24,6 +24,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
+import org.json.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
@@ -55,12 +57,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable
+public class URLHelper implements Cloneable, Serializable, JSONString
 {
     private static final Logger LOG = LogManager.getLogger(URLHelper.class);
 
@@ -233,20 +234,11 @@ public class URLHelper implements Cloneable, Serializable
     protected void appendParamsAndFragment(StringBuilder uriString, boolean allowSubstSyntax)
     {
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
-            uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
-            uriString.append(getQueryString(allowSubstSyntax));
+            uriString.append('?').append(getQueryString(allowSubstSyntax));
         if (null != _fragment && _fragment.length() > 0)
             uriString.append("#").append(_fragment);
     }
-
-    // when true, don't include '?' unless there are query parameters
-    private boolean isExperimentalNoQuestionMark()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL);
-    }
-
 
     /** Applies HTML encoding to local URI string */
     public String getEncodedLocalURIString()
@@ -742,6 +734,11 @@ public class URLHelper implements Cloneable, Serializable
         return getLocalURIString(true);
     }
 
+    @Override
+    public String toJSONString()
+    {
+        return JSONObject.quote(toString());
+    }
 
     @Override
     public URLHelper clone()
@@ -753,7 +750,7 @@ public class URLHelper implements Cloneable, Serializable
             n._readOnly = false;
             n._parameters = _parameters == null ? null : new ArrayList<>(_parameters.size());
             if (null != _parameters)
-                n._parameters.addAll(_parameters.stream().map(Pair::copy).collect(Collectors.toList()));
+                n._parameters.addAll(_parameters.stream().map(Pair::copy).toList());
             return n;
         }
         catch (Exception x)
@@ -1004,18 +1001,45 @@ public class URLHelper implements Cloneable, Serializable
         }
 
         @Test
+        public void testQuotes() throws URISyntaxException
+        {
+            // Test that single and double quotes are encoded in URLs.  Helps ensure that they are safe in various contexts even if not re-encoded.
+            String s;
+            s = new URLHelper("http://server/single'quote/?q'uery=p'aram").toString();
+            assertFalse(s.contains("'"));
+            try
+            {
+                s = new URLHelper("http://server/double\"quote/?q\"uery=p\"aram").toString();
+                fail("Expected throw URISyntaxException");
+            }
+            catch (URISyntaxException x)
+            {
+                /* expected */
+            }
+            s = new URLHelper("http://server/doublequote/?q\"uery=p\"aram").toString();
+            assertFalse(s.contains("\""));
+            try
+            {
+                s = new URLHelper("http://server/back\\slash/?q\\uery=p\\aram").toString();
+                fail("Expected throw URISyntaxException");
+            }
+            catch (URISyntaxException x)
+            {
+                /* expected */
+            }
+            s = new URLHelper("http://server/backslash/?q\\uery=p\\aram").toString();
+            assertFalse(s.contains("\\"));
+        }
+
+        @Test
         public void testParseWithHash() throws URISyntaxException
         {
             URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
                     ":1&activeReport:virusTesting");
 
-            String url = "/ehr-animalHistory.view";
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
-                url += "?";
-            url += "#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+            String url = "/ehr-animalHistory.view#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
 
             assertEquals(url, h.toString());
         }
     }
-
 }

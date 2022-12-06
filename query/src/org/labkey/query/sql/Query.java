@@ -17,50 +17,21 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.CachedResultSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryNotFoundException;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
@@ -68,50 +39,29 @@ import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.DataLoaderService;
-import org.labkey.api.reader.JSONDataLoader;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.controllers.QueryController;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 
-import java.io.InputStream;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.LabkeySQL;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QueryName;
@@ -149,7 +99,7 @@ public class Query
     boolean _strictColumnList = false;
     String _debugName = null;
 	String _querySource;
-    ArrayList<QParameter> _parameters;
+    ArrayList<QParameter> _parameters = new ArrayList<>();
     private final Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     // for displaying dependency graph in UI
@@ -157,10 +107,9 @@ public class Query
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
-    final private Map<String, QueryRelation> _withTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
+    final private Map<String, QueryRelation> _cteTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
     private boolean _hasRecursiveWith = false;
     private Map<String, TableType> _metadataTableMap = null;
-    private QueryRelation _withFirstTerm = null;
     private boolean _parsingWith = false;
     private boolean _allowDuplicateColumns = true;
 
@@ -311,6 +260,10 @@ public class Query
             if (_parseErrors.isEmpty() && null != _queryRoot)
                 _queryRoot.declareFields();
 		}
+        catch (QueryParseException qpe)
+        {
+            _parseErrors.add(qpe);
+        }
         catch (UnauthorizedException ex)
         {
             throw ex;
@@ -328,12 +281,12 @@ public class Query
 
     public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause, boolean skipSuggestedColumns)
     {
-        QueryWith queryWith = null;
-        if (root instanceof QWithQuery)
+        CommonTableExpressions queryCTEs = null;
+        if (root instanceof QWithQuery qwith)
         {
             // With statement precedes query
-            queryWith = new QueryWith(query, ((QWithQuery)root).getWith());
-            root = ((QWithQuery) root).getExpr();
+            queryCTEs = new CommonTableExpressions(query, qwith.getWith());
+            root = qwith.getExpr();
         }
 
         QueryRelation relation = null;
@@ -341,24 +294,29 @@ public class Query
         {
             relation = new QueryUnion(query, (QUnion) root);
         }
-        else if (root instanceof QQuery)
+        else if (root instanceof QQuery qquery)
         {
-
-            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause);
-            select.setSkipSuggestedColumns(skipSuggestedColumns);
-
-            QPivot qPivot = root.getChildOfType(QPivot.class);
+            QPivot qPivot = qquery.getChildOfType(QPivot.class);
 
             if (null == qPivot)
             {
+                QuerySelect select = new QuerySelect(query, qquery, inFromClause);
+                select.setSkipSuggestedColumns(skipSuggestedColumns);
+
                 relation = new QueryLookupWrapper(query, select, null);
             }
             else
             {
-                QueryPivot pivot = new QueryPivot(query, select, (QQuery) root);
+                var orderby = qquery.removeOrderBy();
+                var limit = qquery.removeLimit();
+
+                QuerySelect select = new QuerySelect(query, qquery, inFromClause);
+                select.setSkipSuggestedColumns(skipSuggestedColumns);
+
+                QueryPivot pivot = new QueryPivot(query, select, qquery);
 
                 // Grammar was relaxed to allow HAVING without GROUP BY for #36276; need to enforce here that PIVOT requires GROUP BY
-                if (null == ((QQuery) root).getGroupBy())
+                if (null == qquery.getGroupBy())
                 {
                     query.getParseErrors().add(new QueryParseException("PIVOT queries must include a GROUP BY clause", null, qPivot.getLine(), qPivot.getColumn()));
                     return select;
@@ -367,20 +325,20 @@ public class Query
                 pivot.setAlias("_pivot");
                 QueryLookupWrapper wrapper = new QueryLookupWrapper(query, pivot, null);
 
-                if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
+                if (null == limit && null == orderby)
                 {
                     relation = wrapper;
                 }
                 else
                 {
-                    relation = new QuerySelect(wrapper, ((QQuery) root).getOrderBy(), ((QQuery) root).getLimit());
+                    relation = new QuerySelect(wrapper, orderby, limit);
                 }
             }
         }
         
-        if (null != relation && null != queryWith)
+        if (null != relation && null != queryCTEs)
         {
-            relation.setQueryWith(queryWith);
+            relation.setCommonTableExpressions(queryCTEs);
         }
         return relation;
     }
@@ -663,15 +621,6 @@ public class Query
         return _involvedTableColumns;
     }
 
-    public QueryRelation getWithFirstTerm()
-    {
-        return _withFirstTerm;
-    }
-
-    public void setWithFirstTerm(QueryRelation withFirstTerm)
-    {
-        _withFirstTerm = withFirstTerm;
-    }
 
     public boolean isParsingWith()
     {
@@ -712,9 +661,17 @@ public class Query
 	}
 
 
+    // Query._depth handles most recursion, but there can be unexpected recursion caused by LinkedSchema for instance, or
+    // other paths that cause a query to be compiled during resolveTable().  The thread local value makes sure this case
+    // is handled as well.
+    static private final ThreadLocal<AtomicInteger> resolveDepth = ThreadLocal.withInitial(() -> new AtomicInteger(0));
+
+    static final int MAX_TABLES_IN_QUERY = 200;
+    static final int MAX_RESOLVE_DEPTH = 20;
 
     int _countResolvedTables = 0;
     int _depth = 1;
+
 
     private int getTotalCountResolved()
     {
@@ -734,6 +691,12 @@ public class Query
 
         try
         {
+            if (resolveDepth.get().incrementAndGet() > MAX_RESOLVE_DEPTH)
+            {
+                parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
+                return null;
+            }
+
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT, cfType);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
@@ -746,6 +709,10 @@ public class Query
         {
             _parseErrors.add(qnfe);
             return null;
+        }
+        finally
+        {
+            resolveDepth.get().decrementAndGet();
         }
 
         QueryDefinition def = queryDefOUT[0];
@@ -826,7 +793,7 @@ public class Query
         boolean trackDependency = true;
 
         ++_countResolvedTables;
-        if (getTotalCountResolved() > 200 || _depth > 20)
+        if (getTotalCountResolved() > MAX_TABLES_IN_QUERY || _depth > MAX_RESOLVE_DEPTH)
         {
             // recursive query?
             parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
@@ -1044,20 +1011,20 @@ public class Query
         }
     }
 
-    public void putWithTable(String legalName, QueryRelation relation)
+    public void putCteTable(String legalName, QueryRelation relation)
     {
-        _withTables.put(legalName, relation);
+        _cteTables.put(legalName, relation);
     }
 
     @Nullable
-    public QueryRelation lookupWithTable(String legalName)
+    public QueryRelation lookupCteTable(String legalName)
     {
-        return _withTables.get(legalName);
+        return _cteTables.get(legalName);
     }
 
     public void removeWithTable(String legalName)
     {
-        _withTables.remove(legalName);
+        _cteTables.remove(legalName);
     }
 
     public void setMetadataTableMap(Map<String, TableType> metadataTableMap)
@@ -1079,1362 +1046,5 @@ public class Query
     public TableType lookupMetadataTable(String tableName)
     {
         return null != _metadataTableMap ? _metadataTableMap.get(tableName) : null;
-    }
-
-
-    //
-	// TESTING
-	//
-    private static class TestDataLoader extends DataLoader
-    {
-        private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid"};
-        private static final JdbcType[] TYPES = new JdbcType[] {JdbcType.DOUBLE, JdbcType.INTEGER, JdbcType.INTEGER, JdbcType.VARCHAR, JdbcType.VARCHAR, JdbcType.TIMESTAMP, JdbcType.VARCHAR, JdbcType.GUID};
-        private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-        private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-
-        private final String[][] data;
-        private final RowMapFactory<Object> _rowMapFactory;
-
-		// UNDONE: need some NULLS in here
-        @SuppressWarnings({"UnusedAssignment"})
-        TestDataLoader(String propertyPrefix, int len)
-        {
-            data = new String[len+1][];
-            data[0] = COLUMNS;
-            var m = new HashMap<String,Integer>();
-            for (int i=0 ; i<COLUMNS.length ; i++)
-                m.put(COLUMNS[i],i);
-            _rowMapFactory = new RowMapFactory<>(new ArrayListMap.FindMap<>(m));
-
-            for (int i=1 ; i<=len ; i++)
-            {
-                String[] row = data[i] = new String[COLUMNS.length];
-                int c = 0;
-                row[c++] = "" + Math.exp(i);
-                row[c++] = "" + (i%7);
-                row[c++] = "" + (i%12);
-                row[c++] = days[i%7];
-                row[c++] = months[i%12];
-                row[c++] = DateUtil.toISO(DateUtil.parseISODateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
-                row[c++] = DateUtil.formatDuration(((long)i)*1000);
-                row[c++] = GUID.makeGUID();
-            }
-            _columns = new ColumnDescriptor[COLUMNS.length];
-            for (int i=0 ; i<_columns.length ; i++)
-                _columns[i] = new ColumnDescriptor(COLUMNS[i], TYPES[i].getJavaClass());
-            setScrollable(true);
-        }
-
-        @Override
-        public String[][] getFirstNLines(int n)
-        {
-            return data;
-        }
-
-        private int i=1;
-
-        @Override
-        protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
-        {
-            return new _Iterator();
-        }
-
-        class _Iterator implements CloseableIterator<Map<String, Object>>
-        {
-            @Override
-            public boolean hasNext()
-            {
-                return i < data.length;
-            }
-
-            @Override
-            public Map<String, Object> next()
-            {
-                // Leave this in place: javac complains without this cast. IntelliJ disagrees.
-                //noinspection RedundantCast
-                return _rowMapFactory.getRowMap((Object[])data[i++]);
-            }
-
-            @Override
-            public void remove()
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void close()
-            {
-            }
-        }
-
-        @Override
-        public void close()
-        {
-        }
-    }
-
-
-    private static class SqlTest
-    {
-        public final String _sql;
-
-		public String _name = null;
-		public String _metadata = null;
-        public int _countColumns = -1;
-        public int _countRows = -1;
-
-        SqlTest(String sql)
-        {
-            _sql = sql;
-        }
-
-        SqlTest(String sql, int cols, int rows)
-        {
-            this(sql);
-            _countColumns = cols;
-            _countRows = rows;
-        }
-
-
-		SqlTest(String name, String sql, String metadata, int cols, int rows)
-		{
-            this(sql);
-			_name = name;
-			_metadata = metadata;
-			_countColumns = cols;
-			_countRows = rows;
-		}
-
-        void validate(QueryTestCase test, @Nullable Container container)
-        {
-            if (null == container)
-                container = JunitUtil.getTestContainer();
-
-            try (CachedResultSet rs = test.resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
-            {
-                ResultSetMetaData md = rs.getMetaData();
-                if (_countColumns >= 0)
-                    QueryTestCase.assertEquals("Wrong number of columns. " + _sql, _countColumns, md.getColumnCount());
-                if (_countRows >= 0)
-                    QueryTestCase.assertEquals("Wrong number of rows. " + _sql, _countRows, rs.getSize());
-
-                validateResults(rs);
-
-                if (_name != null)
-                {
-                    User user = TestContext.get().getUser();
-                    QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", _name);
-                    if (null != existing)
-                        existing.delete(TestContext.get().getUser());
-                    QueryDefinition q = QueryService.get().createQueryDef(user, container, SchemaKey.fromString("lists"), _name);
-                    q.setSql(_sql);
-                    if (null != _metadata)
-                        q.setMetadataXml(_metadata);
-                    q.setCanInherit(true);
-                    q.save(TestContext.get().getUser(), container);
-                }
-            }
-            catch (Exception x)
-            {
-                QueryTestCase.fail(x.toString() + "\n" + _sql);
-            }
-        }
-
-        protected void validateResults(CachedResultSet rs) throws Exception
-        {
-        }
-    }
-
-
-    private static class MethodSqlTest extends SqlTest
-    {
-        private final JdbcType _type;
-        private final Object _value;
-        private final Callable<Object> _call;
-
-        MethodSqlTest(String sql, JdbcType type, Object value)
-        {
-            super(sql, 1, 1);
-            _type = type;
-            _value = value;
-            _call = null;
-        }
-
-        MethodSqlTest(String sql, JdbcType type, Callable<Object> call)
-        {
-            super(sql, 1, 1);
-            _type = type;
-            _value = null;
-            _call = call;
-        }
-
-        @Override
-        protected void validateResults(CachedResultSet rs) throws Exception
-        {
-            QueryTestCase.assertTrue("Expected one row: " + _sql, rs.next());
-            Object o = rs.getObject(1);
-            QueryTestCase.assertFalse("Expected one row: " + _sql, rs.next());
-            Object value = null == _call ? _value : _call.call();
-            assertSqlEquals(value, o);
-        }
-
-        private void assertSqlEquals(Object a, Object b)
-        {
-            if (null == a)
-                QueryTestCase.assertNull("Expected NULL value: + sql", b);
-            if (null == b)
-                QueryTestCase.fail("Did not expect null value: " + _sql);
-//            QueryTestCase.assertEquals(sql, _type.getJavaClass(), b.getClass());
-            if (a instanceof Number && b instanceof Number)
-            {
-                if (((Number)a).doubleValue() == ((Number)b).doubleValue())
-                    return;
-            }
-            if (a instanceof Character)
-                a = a.toString();
-            if (b instanceof Character)
-                b = b.toString();
-            if (_type == JdbcType.BOOLEAN)
-            {
-                a = a.equals(1) ? true : a.equals(0) ? false : a;
-                b = b.equals(1) ? true : b.equals(0) ? false : b;
-            }
-            if (a.equals(b))
-                return;
-            QueryTestCase.assertEquals("expected:<" + a + "> but was:<" + b + "> " + _sql, a, b);
-        }
-    }
-
-
-    static class FailTest extends SqlTest
-    {
-        private final boolean _onlyQueryParseExceptions;
-
-        public FailTest(String sql, boolean onlyQueryParseExceptions)
-        {
-            super(sql);
-            this._onlyQueryParseExceptions = onlyQueryParseExceptions;
-        }
-
-        FailTest(String sql)
-        {
-            this(sql, true);
-        }
-
-        @Override
-        void validate(QueryTestCase test, @Nullable Container container)
-        {
-            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(test.lists, _sql))
-            {
-                QueryTestCase.fail("should fail: " + _sql);
-            }
-            catch (QueryParseException x)
-            {
-                // should fail with SQLException not runtime exception
-            }
-            catch (Exception x)
-            {
-                if (!(x instanceof QueryException) || _onlyQueryParseExceptions)
-                {
-                    throw new AssertionError("unexpected exception: " + x.getMessage(), x);
-                }
-            }
-        }
-    }
-
-    private static class InvolvedColumnsTest extends SqlTest
-    {
-        private final List<String> _expectedInvolvedColumns;
-
-        private InvolvedColumnsTest(String sql, List<String> expectedInvolvedColumns)
-        {
-            super(sql);
-            _expectedInvolvedColumns = expectedInvolvedColumns;
-        }
-
-        @Override
-        public void validate(QueryTestCase test, @Nullable Container container)
-        {
-            if (null == container)
-                container = JunitUtil.getTestContainer();
-
-            try
-            {
-                test.validateInvolvedColumns(_sql, container == JunitUtil.getTestContainer() ? null : container, _expectedInvolvedColumns);
-            }
-            catch (Exception x)
-            {
-                QueryTestCase.fail(x.toString() + "\n" + _sql);
-            }
-        }
-    }
-
-    private static final int Rcolumns = TestDataLoader.COLUMNS.length + 9; // rowid, entityid, created, createdby, modified, modifiedby, lastindexed, container, diimporthash
-	private static final int Rsize = 84;
-	private static final int Ssize = 84;
-
-    static SqlTest[] tests = new SqlTest[]
-    {
-        new SqlTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S", 1, 7),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S", 1, Rsize*2),
-        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S", 2, 14),
-        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R", 2, 26),
-        new SqlTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)", 2, 26),
-        new SqlTest("(SELECT x, y FROM (SELECT 'S' as x, S.seven as y FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve as y FROM R) UNION (SELECT 'R' as x, R.seven as y FROM R))", 2, 26),
-
-        // mixed UNION, UNION ALL
-        new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R", 1, 7 + Rsize),
-        new SqlTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
-        new SqlTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5", 1, 6),
-
-        new SqlTest("SELECT d, seven, twelve, (twelve/2) AS half FROM R", 4, Rsize), // Calculated column
-        new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
-        new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM lists.R", 8, Rsize),
-        new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),
-        new SqlTest("SELECT Folder.qtest.lists.S.d, seven, Folder.qtest.lists.S.twelve, day, Folder.qtest.lists.S.month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),  // Folder+schema-qualified column names
-        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
-        new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
-        new SqlTest("SELECT * FROM R", Rcolumns, Rsize),
-        new SqlTest("SELECT R.d, seven, R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),
-        new SqlTest("SELECT lists.R.d, seven, lists.R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),  // Schema-qualified column names
-        new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
-        new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
-        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
-        new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
-		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
-		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
-        new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
-        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
-		new SqlTest("SELECT R.rowid, R.twelve FROM R WHERE R.seven in (SELECT S.seven FROM Folder.qtest.lists.S S WHERE S.seven in (1, 4))", 2, Rsize*2/7),
-
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S inner join R T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R AS S left join R T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S left outer join R AS T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S right join R T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S right outer join R T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S full join R T on S.rowid=T.rowid"),
-		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S full outer join R T on S.rowid=T.rowid"),
-        new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S cross join R T WHERE S.rowid=T.rowid"),
-        new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S, R T WHERE S.rowid=T.rowid"),
-        new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S LEFT JOIN (R T INNER JOIN R AS U ON T.rowid=U.rowid) ON S.rowid=t.rowid"),
-        new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S, R AS T INNER JOIN R U ON T.rowid=U.rowid WHERE S.rowid=T.rowid"),
-
-        new SqlTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S", 1, 7),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S", 1, Rsize*2),
-        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S", 2, 14),
-        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R", 2, 26),
-		new SqlTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)", 2, 26),
-		// mixed UNION, UNION ALL
-        new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R", 1, 7 + Rsize),
-        new SqlTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
-        new SqlTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5", 1, 6),
-		// LIMIT
-		new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5),
-
-        // quoted identifiers
-        new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
-
-        // PIVOT
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven", 9, 12),
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0 AS ZERO, 1 ONE, 2 AS TWO, 3 THREE, 4 FOUR, 5 FIVE, 6 SIX, NULL AS UNKNOWN)", 10, 12),
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4", 9, 4),
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
-        new SqlTest("SELECT seven, month, count(*) C\n" +
-                "FROM R\n" +
-                "GROUP BY seven, month\n" +
-                "PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"),
-        // Regression tests for Issue 27910: pivot query summary columns not aggregated correctly
-        new SqlTest("SELECT day, month, count(*) as total, " +
-                "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
-                "SUM(CASE WHEN month = 'May' THEN 1 ELSE 0 END) AS M " +
-                "FROM lists.R GROUP BY month, day " +
-                "PIVOT A, M BY month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", 28, 7),
-        // Verify pivot on sub-select
-        new SqlTest("SELECT A, B, count(*) As C " +
-            "FROM (SELECT seven as A, twelve/1 AS B FROM lists.R) " +
-            "GROUP BY A, B " +
-            "PIVOT C BY B", 14, 7),
-
-        // saved queries
-        new SqlTest("Rquery",
-                "SELECT R.rowid, R.rowid*2 as rowid2, R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R",
-                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                "<table tableName=\"Rquery\" tableDbType=\"NOT_IN_DB\">\n" +
-                "<columns>\n" +
-                " <column columnName=\"rowid\">\n" +
-                "  <fk>\n" +
-                "  <fkTable>Squery</fkTable>\n" +
-                "  <fkColumnName>rowid</fkColumnName>\n" +
-                "  </fk>\n" +
-                " </column>\n" +
-                " <column columnName=\"rowid2\">\n" +
-                "  <fk>\n" +
-                "  <fkTable>Squery</fkTable>\n" +
-                "  <fkColumnName>rowid</fkColumnName>\n" +
-                "  </fk>\n" +
-                " </column>\n" +
-                "</columns>\n" +
-                "</table>\n" +
-                "</tables>",
-                10, Rsize),
-        new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize),
-
-        new SqlTest("Squery",
-                "SELECT S.rowid, S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
-                null,
-                9, Rsize),
-        new SqlTest("SELECT S.rowid, S.d FROM Squery S", 2, Rsize),
-
-        new SqlTest("SELECT Rquery.rowid, Rquery.rowid.duration FROM Rquery", 2, Rsize),
-        new SqlTest("SELECT Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 2, Rsize),
-        new SqlTest("SELECT Rquery.rowid, Rquery.rowid.date, Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 4, Rsize),
-
-        // NOTE: DISTINCT means lookups can not be pushed down
-        new SqlTest("Rdistinct", "SELECT DISTINCT R.twelve FROM R",
-                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                "<table tableName=\"Rdistinct\" tableDbType=\"NOT_IN_DB\">\n" +
-                "<columns>\n" +
-                " <column columnName=\"twelve\">\n" +
-                "  <fk>\n" +
-                "  <fkTable>Squery</fkTable>\n" +
-                "  <fkColumnName>rowid</fkColumnName>\n" +
-                "  </fk>\n" +
-                " </column>\n" +
-                "</columns>\n" +
-                "</table>\n" +
-                "</tables>",
-                1, 12),
-        new SqlTest("SELECT Rdistinct.twelve, Rdistinct.twelve.duration from Rdistinct", 2, 12),
-
-        // Test DATE vs. TIMESTAMP and display formats
-        new SqlTest("DateFormatTest",
-                "SELECT R.date, CAST(R.date AS DATE) AS D1, CAST(R.date AS TIMESTAMP) AS D2, CAST(R.date AS TIMESTAMP) AS T1, CAST(R.date AS DATE) AS T2 FROM R",
-                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                "  <table tableName=\"DateFormatTest\" tableDbType=\"NOT_IN_DB\">\n" +
-                "    <columns>\n" +
-                "      <column columnName=\"D2\">\n" +
-                "        <formatString>Date</formatString>\n" +
-                "      </column>\n" +
-                "      <column columnName=\"T2\">\n" +
-                "        <formatString>DateTime</formatString>\n" +
-                "      </column>\n" +
-                "    </columns>\n" +
-                "  </table>\n" +
-                "</tables>",
-                5, Rsize) {
-            @Override
-            void validate(QueryTestCase test, @Nullable Container container)
-            {
-                super.validate(test, container);
-
-                QueryDefinition queryDef = QueryService.get().getQueryDef(TestContext.get().getUser(), JunitUtil.getTestContainer(), "lists", "DateFormatTest");
-                List<QueryException> errors = new LinkedList<>();
-                TableInfo table = queryDef.getTable(errors, true);
-
-                QueryTestCase.assertNotNull(table);
-
-                if (!errors.isEmpty())
-                    throw new RuntimeException(errors.get(0));
-
-                try (Results results = new TableSelector(table).getResults())
-                {
-                    verifyType(results.getColumn(1), JdbcType.TIMESTAMP, null);
-                    verifyType(results.getColumn(2), JdbcType.DATE, null);
-                    verifyType(results.getColumn(3), JdbcType.TIMESTAMP, "Date");
-                    verifyType(results.getColumn(4), JdbcType.TIMESTAMP, null);
-                    verifyType(results.getColumn(5), JdbcType.DATE, "DateTime");
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            }
-
-            private void verifyType(ColumnInfo column, JdbcType expectedType, @Nullable String expectedFormat)
-            {
-                QueryTestCase.assertEquals("Type discrepancy for " + column.getName(), column.getJdbcType(), expectedType);
-                QueryTestCase.assertEquals("Format discrepancy for " + column.getName(), column.getFormat(), expectedFormat);
-            }
-        },
-
-        // GROUPING
-        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven", 2, 7),
-        new SqlTest("SELECT COUNT(R.rowid) as _count FROM R", 1, 1),
-        new SqlTest("SELECT seven, GROUP_CONCAT(twelve) as twelve FROM R GROUP BY seven", 2, 7),
-        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven HAVING SUM(R.twelve) > 5", 2, 7),
-
-        // Naked HAVING is allowed
-        new SqlTest("SELECT MIN(R.seven), MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5", 2, 1),
-
-        // METHODS
-        new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d, 1) AS _rnd, ROUND(3.1415, 2) AS _pi, CONVERT(R.d, SQL_VARCHAR) AS _str FROM R", 4, Rsize),
-        new MethodSqlTest("SELECT ABS(-1) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-            // TODO: acos
-            // TODO: asin
-            // TODO: atan
-            // TODO: atan2
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('02 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2004' AS TIMESTAMP), CAST('02 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('03 Jan 2004' AS TIMESTAMP), SQL_TSI_YEAR) AS INTEGER)", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('01 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 12),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('02 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 13),
-        new MethodSqlTest("SELECT CAST('1' AS SQL_INTEGER) ", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST('1' AS INTEGER) ", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),
-        new MethodSqlTest("SELECT CAST(1 AS VARCHAR) ", JdbcType.VARCHAR, '1'),
-        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
-        new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
-        new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
-        new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
-        new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
-            // TODO: cos
-            // TODO: cot
-            // TODO: curdate
-        new MethodSqlTest("SELECT DAYOFMONTH(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
-        new MethodSqlTest("SELECT DAYOFWEEK(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 6),
-        new MethodSqlTest("SELECT DAYOFYEAR(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 33),
-            // TODO: degrees
-            // TODO: exp
-            // TODO: floor
-        new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getName()),
-        new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getPath()),
-        new MethodSqlTest("SELECT GREATEST(0, 2, 1)", JdbcType.INTEGER, 2),
-            // TODO: hour
-        new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
-        new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT ISEQUAL(1, 1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT ISEQUAL(1, 2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false),
-            // javaConstant() always return VARCHAR currently, would like to fix
-        new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
-        new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit test
-        new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
-        new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
-        new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
-        new MethodSqlTest("SELECT lower('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
-            // TODO: ltrim
-            // TODO: minute
-            // TODO: mod
-            // TODO: month
-            // TODO: monthname
-            // TODO: now
-        new MethodSqlTest("SELECT ROUND(PI()) FROM R WHERE rowid=1", JdbcType.DOUBLE, 3.0),
-            // TODO: power
-            // TODO: quarter
-            // TODO: radians
-            // TODO: rand
-            // TODO: repeat
-            // TODO: round
-        new MethodSqlTest("SELECT RTRIM('FRED ')", JdbcType.VARCHAR, "FRED"),
-            // TODO: second
-            // TODO: sign
-            // TODO: sin
-            // TODO: sqrt
-        new MethodSqlTest("SELECT STARTSWITH('FRED ', 'FR')", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT STARTSWITH('FRED ', 'Z')", JdbcType.BOOLEAN, false),
-        new MethodSqlTest("SELECT SUBSTRING('FRED ', 2, 3)", JdbcType.VARCHAR, "RED"),
-        new MethodSqlTest("SELECT SUBSTRING('FRED ', 2, 2)", JdbcType.VARCHAR, "RE"),
-        new MethodSqlTest("SELECT SUBSTRING('FRED',3)", JdbcType.VARCHAR, "ED"),
-            // TODO: tan
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_SECOND, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 00:00:03"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_MINUTE, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 00:03"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_HOUR, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 03:00"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_DAY, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-04"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_WEEK, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-22"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_MONTH, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-04-01"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_QUARTER, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-10-01"))),
-        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_YEAR, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2006-01-01"))),
-
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, CAST('01 Jan 2004 5:00' AS TIMESTAMP), CAST('01 Jan 2004 6:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 3600),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2003' AS TIMESTAMP), CAST('01 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 525600),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 527040), // leap year
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_HOUR, CAST('01 Jan 2003' AS TIMESTAMP), CAST('01 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 8760),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_HOUR, CAST('01 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 8784), // leap year
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
-        // NOTE: SQL_TSI_WEEK, SQL_TSI_MONTH, SQL_TSI_QUARTER, and SQL_TSI_YEAR are NYI in PostsgreSQL TIMESTAMPDIFF
-
-        new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
-        new MethodSqlTest("SELECT UPPER('fred')", JdbcType.VARCHAR, "FRED"),
-        new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, () -> TestContext.get().getUser().getUserId()),
-        new MethodSqlTest("SELECT username()", JdbcType.INTEGER, () -> TestContext.get().getUser().getDisplayName(TestContext.get().getUser())),
-            // TODO: week
-            // TODO: year
-
-        new SqlTest("SELECT stddev(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT stddev_pop(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT variance(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT var_pop(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT median(seven), day FROM R GROUP BY day", 2, 7),
-
-        // Median on SQL server is tricky, so some  more tests...
-        new SqlTest("SELECT avg(seven), median(seven), day FROM R GROUP BY day", 3, 7),   // with mixed aggregates
-        new SqlTest("SELECT 1+median(seven), day FROM R GROUP BY day", 2, 7),             // not top-level expression
-        new SqlTest("SELECT 1+median(seven), avg(seven), day FROM R GROUP BY day", 3, 7),             // not top-level expression
-        new SqlTest("SELECT 1+median(seven)+avg(seven), avg(seven), day FROM R GROUP BY day", 3, 7),             // not top-level expression
-        new SqlTest("SELECT median(d), median(seven), day FROM R GROUP BY day", 3, 7),
-        new SqlTest("SELECT median(d), median(seven), day, length(day) FROM R GROUP BY day", 4, 7),
-        new SqlTest("SELECT CASE day WHEN 'Monday' THEN median(d) ELSE median(seven) END, day, length(day) FROM R GROUP BY day", 3, 7),
-
-        // LIMIT
-        new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5),
-
-        // misc regression related
-            //17852
-        new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
-        new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
-        new SqlTest("SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
-        new SqlTest("PARAMETERS(Y INTEGER DEFAULT 5) SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
-
-        // Issue 18257: postgres error executing query selecting empty string value
-        new SqlTest("SELECT '' AS EmptyString"),
-
-        // WITH
-        new SqlTest("WITH peeps AS (SELECT * FROM R) SELECT * FROM peeps", -1, 84),
-        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps", -1, 84),
-        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)), peeps2 AS (SELECT * FROM peeps) SELECT * FROM peeps2", -1, 84),
-        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
-        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM (SELECT * FROM peeps) q WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
-        new SqlTest("WITH \"P 1\" AS (SELECT * FROM R), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
-        new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
-        new SqlTest("WITH peeps1 AS (SELECT * FROM Folder.qtest.lists.S)," +
-                "peeps AS (\n" +
-                "   SELECT * FROM peeps1\n" +
-                "   UNION ALL\n" +
-                "   SELECT * FROM peeps WHERE (1=0)\n" +
-                ")\n" +
-                "SELECT date, month, MAX(seven) AS MaxDay \n" +
-                "  FROM peeps\n" +
-                "  GROUP BY date, month \n" +
-                "  PIVOT MaxDay BY month", -1, 84),
-        new SqlTest("PARAMETERS(Z INTEGER DEFAULT 2, A INTEGER DEFAULT 2, B INTEGER DEFAULT 2) WITH peeps AS (SELECT * FROM R WHERE (Z=2)) SELECT * FROM peeps WHERE (A=B)", -1, 84),
-        new SqlTest("WITH folderTree AS (SELECT \n" +
-                "                              cast('' as varchar) as ParentName, \n" +
-                "                              cast('root' as varchar) as name, \n" +
-                "                              c.entityId, \n" +
-                "                              c.path, \n" +
-                "                              0 as level \n" +
-                "                            FROM core.Containers c \n" +
-                "                            --where name is null \n" +
-                "                            UNION ALL \n" +
-                "                            SELECT \n" +
-                "                              cast(p.Name as varchar) as ParentName, \n" +
-                "                              cast(c.Name as varchar) as name, \n" +
-                "                              c.entityId, \n" +
-                "                              c.path, \n" +
-                "                              level + 1 \n" +
-                "                            FROM core.Containers c \n" +
-                "                              INNER JOIN folderTree p ON c.parent = p.entityId \n" +
-                "  ) \n" +
-                "  SELECT * \n" +
-                "  FROM folderTree", -1, -1),
-        new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
-                "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
-                "FROM UserCTE AS U1, UserCTE AS U2 \n" +
-                "WHERE U1.UserId = U2.UserId", 2, 1),
-
-        // 40830, this query caused a problem because it has no simple field references (only an expression) and so
-        // getSuggestedColumns() is not called on the inner SELECT and therefore resolveFields() was not called before getKeyColumns()
-        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M"),
-
-        // Allowed, but wrong syntax, trailing comma in select list and terminal semicolon
-        new SqlTest("SELECT 1 AS ONE", 1, 1),
-        new SqlTest("SELECT 1 AS ONE,", 1, 1),
-        new SqlTest("SELECT 1 AS ONE;", 1, 1),
-        new SqlTest("SELECT 1 AS ONE,;", 1, 1),
-
-        // We allow duplicate column names, #42081
-        new SqlTest("SELECT * FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
-        new SqlTest("SELECT r1.*, r2.* FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
-        new SqlTest("SELECT r1.guid, r1.month, r1.d, r1.seven, r1.date, r2.guid, r2.month, r2.d, r2.seven, r2.date  FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
-        new SqlTest("SELECT d, seven, d, seven FROM R"),
-        new SqlTest("SELECT * FROM R A inner join R B ON 1=1"),
-        new SqlTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),
-
-        // VALUES tests
-        new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x", 2, 2),
-        new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x WHERE x.column1 = 'two'", 2, 1),
-        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT * FROM v", 2, 2),
-        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1),
-
-        // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1)
-    };
-
-
-	static SqlTest[] postgres = new SqlTest[]
-	{
-		// ORDER BY tests
-		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
-        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
-        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize),
-
-        // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
-    };
-
-
-    static SqlTest[] postgresOnlyFunctions = new SqlTest[]
-    {
-        new SqlTest("SELECT stddev_samp(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT var_samp(d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT bool_and((d < 0)), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT bool_or((d < 0)), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT every((d > 0)), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT bit_or(seven), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT bit_and(seven), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT mode(seven), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT covar_pop(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT covar_samp(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_avgx(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_avgy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_count(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_intercept(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_r2(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT 'similar' WHERE similar_to('abc','abc')", 1, 1),
-        new SqlTest("SELECT 'similar' WHERE similar_to('abc','a')", 1, 0),
-        new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
-        new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
-        new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
-        new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
-        new SqlTest("SELECT json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a')", 1, 1),
-        // Postgres 9.6 doesn't support direct JSONB and JSON to INTEGER casting, so use VARCHAR for our simple purposes
-        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
-        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
-        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
-        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
-    };
-
-
-	static SqlTest[] negative = new SqlTest[]
-	{
-        new FailTest("SELECT lists.R.d, lists.R.seven FROM R"),  // Schema-qualified column names work only if FROM specifies schema
-		new FailTest("SELECT S.d, S.seven FROM S"),
-		new FailTest("SELECT S.d, S.seven FROM Folder.S"),
-		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
-		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-        new FailTest("SELECT SUM(*) FROM R"),
-        new FailTest("SELECT d FROM R A inner join R B on 1=1"),            // ambiguous
-        new FailTest("SELECT R.d, seven FROM lists.R A"),                    // R is hidden
-        new FailTest("SELECT A.d, B.d FROM lists.R A INNER JOIN lists.R B"),     // ON expected
-        new FailTest("SELECT A.d, B.d FROM lists.R A CROSS JOIN lists.R B ON A.d = B.d"),     // ON unexpected
-        new FailTest("SELECT A.d FROM lists.R A WHERE A.StartsWith('x')"),     // bad method 17128
-        new FailTest("SELECT A.d FROM lists.R A WHERE Z.StartsWith('x')"),     // bad method
-        new FailTest("SELECT A.d FROM lists.R A WHERE A.d.StartsWith('x')"),     // bad method
-        new FailTest("WITH peeps AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),   // Duplicate CTE names
-        new FailTest("WITH peeps AS (SELECT * FROM R), peeps1 AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),  // CTE can't reference itself in first clause of UNION
-        new FailTest("WITH peeps AS (SELECT * FROM peeps1), peeps1 AS (SELECT * FROM R) SELECT * FROM peeps"),    // Forward reference
-        new FailTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0) UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),  // Can't have 2 recursive references
-        new FailTest("WITH peeps AS (SELECT * FROM R), peeps2 AS (SELECT seven FROM peeps UNION ALL SELECT date FROM peeps) SELECT * FROM peeps2"),   // Column type mismatch
-        new FailTest("WITH peeps2 AS (SELECT seven FROM R UNION SELECT seven FROM S WHERE S.seven IN (SELECT seven FROM peeps2) ) SELECT * FROM peeps2"),
-
-        // UNDONE: should work since R.seven and seven are the same
-        new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
-
-        new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name"), // Missing from-clause entry
-
-        // trailing semicolon in subselect
-        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X"),
-
-        // Regression test for Issue 40618: Generate better error message when PIVOT column list can't be computed due to bad sql
-        new FailTest("SELECT A, B, count(*) As C " +
-            "FROM (SELECT seven as A, twelve/0 AS B FROM lists.R) " +
-            "GROUP BY A, B " +
-            "PIVOT C BY B", false),
-
-        // VALUES tests
-        new FailTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2))"), // require alias
-        new FailTest("SELECT column1, column2 FROM (VALUES (a,b),(1,2)) as x"), // can't use identifiers
-    };
-
-    private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
-    {
-        new InvolvedColumnsTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S",
-                                Arrays.asList("R/seven", "S/seven")),
-        new InvolvedColumnsTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S",
-                                Arrays.asList("R/seven", "S/seven")),
-        new InvolvedColumnsTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S",
-                Arrays.asList("R/seven", "S/seven")),
-        new InvolvedColumnsTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R",
-                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
-        new InvolvedColumnsTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)",
-                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
-        new InvolvedColumnsTest("(SELECT x, y FROM (SELECT 'S' as x, S.seven as y FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve as y FROM R) UNION (SELECT 'R' as x, R.seven as y FROM R))",
-                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
-
-        new InvolvedColumnsTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5",
-                                Arrays.asList("R/seven", "R/twelve")),
-
-        new InvolvedColumnsTest("SELECT R.seven FROM R ORDER BY twelve",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4",
-                                Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT MAX(R.seven) FROM R GROUP BY twelve",
-                                   Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT MAX(seven) As MaxSeven, twelve FROM R GROUP BY twelve PIVOT MaxSeven BY twelve",
-                                   Arrays.asList("R/seven", "R/twelve")),
-    };
-
-    @TestWhen(TestWhen.When.BVT)
-    public static class QueryTestCase extends Assert
-    {
-        private final String hash = GUID.makeHash();
-
-        private QuerySchema lists;
-
-        @Before
-        public void setUp()
-        {
-            // if this fails, it probably means a previous test cleared them, which is unexpected
-            assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
-            assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
-            Assume.assumeTrue(getClass().getSimpleName() + " requires list module", ListService.get() != null);
-        }
-
-
-        Container getSubfolder()
-		{
-            return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
-		}
-
-
-        private void addProperties(ListDefinition l)
-        {
-            Domain d = requireNonNull(l.getDomain());
-            for (int i=0 ; i<TestDataLoader.COLUMNS.length ; i++)
-            {
-                DomainProperty p = d.addProperty();
-                p.setPropertyURI(d.getName() + hash + "#" + TestDataLoader.COLUMNS[i]);
-                p.setName(TestDataLoader.COLUMNS[i]);
-                p.setRangeURI(getPropertyType(TestDataLoader.TYPES[i]).getTypeUri());
-                if ("createdby".equals(TestDataLoader.COLUMNS[i]))
-                {
-                    p.setLookup(new Lookup(l.getContainer(), "core", "SiteUsers"));
-                }
-            }
-        }
-
-        private PropertyType getPropertyType(JdbcType jdbc)
-        {
-            switch (jdbc)
-            {
-                case VARCHAR : return PropertyType.STRING;
-                case TIMESTAMP : return PropertyType.DATE_TIME;
-                case INTEGER : return PropertyType.INTEGER;
-                case DOUBLE : return PropertyType.DOUBLE;
-                case GUID : return PropertyType.STRING;
-                default: fail();
-            }
-            return PropertyType.STRING;
-        }
-
-
-        protected void _setUp() throws Exception
-        {
-            User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-			Container qtest = getSubfolder();
-            ListService listService = ListService.get();
-            UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
-            assertNotNull(lists);
-
-            ListDefinition R = listService.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
-            R.setKeyName("rowid");
-            addProperties(R);
-            R.save(user);
-            TableInfo rTableInfo = lists.getTable("R", null);
-            assertNotNull(rTableInfo);
-            DataIteratorContext context = new DataIteratorContext();
-            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
-            if (context.getErrors().hasErrors())
-                fail(context.getErrors().getRowErrors().get(0).toString());
-
-            ListDefinition S = listService.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
-            S.setKeyName("rowid");
-            addProperties(S);
-            S.save(user);
-            TableInfo sTableInfo = DefaultSchema.get(user, qtest).getSchema("lists").getTable("S", null);
-            assertNotNull(sTableInfo);
-            context = new DataIteratorContext();
-            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
-            if (context.getErrors().hasErrors())
-                fail(context.getErrors().getRowErrors().get(0).toString());
-
-//            if (0==1)
-//            {
-//                try
-//                {
-//                    ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
-//                    RHOME.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
-//                    RHOME.setKeyName("rowid");
-//                    addProperties(RHOME);
-//                    RHOME.save(user);
-//                    RHOME.insertListItems(user, new TestDataLoader(RHOME.getName() + hash, Rsize), null, null);
-//                } catch (Exception x){};
-//            }
-        }
-
-
-		@After
-        public void tearDown()
-        {
-//            _tearDown();
-        }
-
-
-        protected void _tearDown() throws Exception
-        {
-            User user = TestContext.get().getUser();
-
-            for (SqlTest test : tests)
-            {
-                if (test._name != null)
-                {
-                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test._name);
-                    if (null != q)
-                        q.delete(user);
-                }
-            }
-
-			ListService s = ListService.get();
-
-			Container c = JunitUtil.getTestContainer();
-			{
-				Map<String, ListDefinition> m = s.getLists(c);
-				if (m.containsKey("R"))
-					m.get("R").delete(user);
-				if (m.containsKey("S"))
-					m.get("S").delete(user);
-			}
-
-			Container qtest = getSubfolder();
-			{
-				Map<String, ListDefinition> m = s.getLists(qtest);
-				if (m.containsKey("S"))
-					m.get("S").delete(user);
-			}
-        }
-
-
-        @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-        CachedResultSet resultset(String sql, @Nullable Container container)
-        {
-            QuerySchema schema = lists;
-            if (null != container)
-                schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
-            requireNonNull(schema);
-
-			try
-			{
-				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, null, true, true);
-				assertNotNull(sql, rs);
-				return rs;
-			}
-			catch (QueryParseException x)
-			{
-				fail(x.getMessage() + "\n" + sql);
-				return null;
-			}
-        }
-
-
-        @Test
-        public void testSQL() throws Exception
-        {
-            // note getPrimarySchema() will return NULL if there are no lists yet
-            User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-
-            lists = DefaultSchema.get(user, c).getSchema("lists");
-            if (1==1 || null == lists)
-            {
-                _tearDown();
-                _setUp();
-                lists = DefaultSchema.get(user, c).getSchema("lists");
-            }
-
-            assertNotNull(lists);
-            TableInfo Rinfo = lists.getTable("R");
-            assertNotNull(Rinfo);
-			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema("lists").getTable("S");
-            assertNotNull(Sinfo);
-
-            // custom tests
-            SqlDialect dialect = lists.getDbSchema().getSqlDialect();
-            String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
-
-            try (CachedResultSet rs = resultset(sql, null))
-            {
-                ResultSetMetaData md = rs.getMetaData();
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("seven", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("twelve", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("day", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("month", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("date", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("created", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("createdby", dialect)));
-                assertEquals(sql, 9, md.getColumnCount());
-                assertEquals(sql, Rsize, rs.getSize());
-                rs.next();
-
-                for (int col = 1; col <= md.getColumnCount(); col++)
-                    assertNotNull(sql, rs.getObject(col));
-            }
-
-            // simple tests
-            for (SqlTest test : tests)
-            {
-                test.validate(this, null);
-            }
-
-			if (dialect.isPostgreSQL() /* dialect.allowSortOnSubqueryWithoutLimit() is the preferred check, but SQL Server still has problems with these queries */)
-			{
-				for (SqlTest test : postgres)
-                {
-					test.validate(this, null);
-                }
-			}
-
-			if (dialect.isPostgreSQL())
-			{
-				for (SqlTest test : postgresOnlyFunctions)
-                {
-					test.validate(this, null);
-                }
-			}
-
-			for (SqlTest test : negative)
-			{
-				test.validate(this, null);
-			}
-
-            for (SqlTest test : tests)
-            {
-                if (test._name != null)
-                {
-                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test._name);
-                    assertNotNull(q);
-//                    q.delete(user);
-                }
-            }
-
-            for (InvolvedColumnsTest test : involvedColumnsTests)
-            {
-                test.validate(this, null);
-            }
-
-            testDuplicateColumns(user, c);
-        }
-
-        // Duplicate column names are supported. Introduced as an option for #35424; made the default behavior for #42081.
-        private void testDuplicateColumns(User user, Container c) throws SQLException
-        {
-            String sql = "SELECT d, seven, d, seven FROM R";
-            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
-            query.setSql(sql);
-            ArrayList<QueryException> qerrors = new ArrayList<>();
-            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
-
-            if (null == t)
-            {
-                Assert.fail("Table not found");
-            }
-            else if (!qerrors.isEmpty())
-            {
-                throw qerrors.get(0);
-            }
-            else
-            {
-                try (Results rs = QueryService.get().select(t, t.getColumns(), null, null))
-                {
-                    assertNotNull(sql, rs);
-                    QueryTestCase.assertEquals(sql, Rsize, rs.getSize());
-                    ResultSetMetaData md = rs.getMetaData();
-                    QueryTestCase.assertEquals(sql, 4, md.getColumnCount());
-                    QueryTestCase.assertEquals(sql, 4, rs.getFieldMap().size());
-                    QueryTestCase.assertEquals(sql, "d", rs.getColumn(1).getName());
-                    QueryTestCase.assertEquals(sql, "seven", rs.getColumn(2).getName());
-                    QueryTestCase.assertEquals(sql, "d_1", rs.getColumn(3).getName());
-                    QueryTestCase.assertEquals(sql, "seven_1", rs.getColumn(4).getName());
-                }
-            }
-        }
-
-        @Test
-        public void testContainerFilter() throws Exception
-        {
-            User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-            Container sub = getSubfolder();
-
-            lists = DefaultSchema.get(user, c).getSchema("lists");
-            if (1==1 || null == lists)
-            {
-                _tearDown();
-                _setUp();
-                lists = DefaultSchema.get(user, c).getSchema("lists");
-            }
-
-            {
-            QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", "QThisContainer");
-            if (null != q)
-                q.delete(user);
-            }
-
-            try
-            {
-                //
-                // test default container filter with inherited query
-                //
-                SqlTest createQ = new SqlTest("QThisContainer", "SELECT Name, ID FROM core.Containers", null, 2, 1);
-                createQ.validate(this, c);
-                SqlTest selectQ = new SqlTest("SELECT * FROM QThisContainer");
-                selectQ.validate(this, c);
-                selectQ.validate(this, sub);
-
-                try (ResultSet rs = resultset(selectQ._sql, c))
-                {
-                    boolean hasNext = rs.next();
-                    assert hasNext;
-                    assertEquals(rs.getInt(2), c.getRowId());
-                }
-
-                try (ResultSet rs = resultset(selectQ._sql, sub))
-                {
-                    boolean hasNext = rs.next();
-                    assert hasNext;
-                    assertEquals(rs.getInt(2), sub.getRowId());
-                }
-
-                //
-                // can you think of more good tests
-                //
-            }
-            finally
-            {
-                QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", "QThisContainer");
-                if (null != q)
-                    q.delete(user);
-            }
-
-            GUID testGUID = new GUID("01234567-ABCD-ABCD-ABCD-012345679ABC");
-            ContainerFilter custom = new ContainerFilter(null, null)
-            {
-                @Override
-                public String getCacheKey()
-                {
-                    return " ~~CONTAINERFILTER~~ ";
-                }
-
-                @Override
-                public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, boolean allowNulls)
-                {
-                    return new SQLFragment(" ~~CONTAINERFILTER~~ ");
-                }
-
-                @NotNull
-                @Override
-                public Collection<GUID> getIds()
-                {
-                    return Collections.singletonList(testGUID);
-                }
-
-                @NotNull
-                @Override
-                public Type getType()
-                {
-                    return Type.AllFolders;
-                }
-            };
-
-            // TWO regression tests here
-            //    lookup (QueryLookupWrapper) TODO need to find a DelegatingContainerFilter usage (Folder is a bad case)
-            //    exists (subquery)
-            //
-
-            // Query.setContainerFilter()
-            QueryDefinition q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
-            q.setContainerFilter(custom);
-            q.setSql("SELECT DISTINCT label, container.name\n" +
-                    "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
-            ArrayList<QueryException> errors = new ArrayList<>();
-            TableInfo t = q.getTable(errors, false);
-            assertTrue(errors.isEmpty());
-            SQLFragment sqlf = t.getFromSQL("$");
-            assertNotNull(sqlf);
-            String debugSql = sqlf.toDebugString();
-            assertFalse(debugSql.contains(testGUID.toString()));
-            assertTrue(debugSql.contains("CONTAINERFILTER"));
-            assertFalse(debugSql.contains(c.getId()));
-            assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
-
-            // TableInfo.setContainerFilter()
-            q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
-            q.setSql("SELECT DISTINCT label, container.name\n" +
-                    "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
-            errors = new ArrayList<>();
-            q.setContainerFilter(custom);
-            t = q.getTable(errors, false);
-            assertTrue(errors.isEmpty());
-            sqlf = t.getFromSQL("$");
-            assertNotNull(sqlf);
-            debugSql = sqlf.toDebugString();
-            assertFalse(debugSql.contains(testGUID.toString()));
-            assertFalse(debugSql.contains(c.getId()));
-            assertTrue(debugSql.contains("CONTAINERFILTER"));
-            assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
-        }
-
-        @Test
-        public void testJSONDataLoader() throws Exception
-        {
-            // note getPrimarySchema() will return NULL if there are no lists yet
-            User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-
-            lists = DefaultSchema.get(user, c).getSchema("lists");
-            if (1==1 || null == lists)
-            {
-                _tearDown();
-                _setUp();
-                lists = DefaultSchema.get(user, c).getSchema("lists");
-            }
-
-            assertNotNull(lists);
-            assertNotNull(lists);
-            TableInfo Rinfo = lists.getTable("R");
-            assertNotNull(Rinfo);
-
-            // mock request to selectRows
-            ActionURL url = new ActionURL(QueryController.SelectRowsAction.class, c);
-            url.addParameter(QueryParam.schemaName, "lists");
-            url.addParameter(QueryParam.queryName, "R");
-
-            MockHttpServletResponse resp = ViewServlet.GET(url, user, null);
-            String content = resp.getContentAsString();
-
-            // parse the response using JSONDataLoader and count the results
-            InputStream stream = IOUtils.toInputStream(content);
-            DataLoader loader = DataLoaderService.get().createLoader("selectRows.json", ApiJsonWriter.CONTENT_TYPE_JSON, stream, false, null, JSONDataLoader.FILE_TYPE);
-            int count = 0;
-            for (Map<String, Object> row : loader)
-            {
-                Assert.assertTrue(row.containsKey("rowid"));
-                Assert.assertTrue("Expected rowid to be an Integer instance", row.get("rowid") instanceof Integer);
-
-                Assert.assertTrue(row.containsKey(TestDataLoader.COLUMNS[0]));
-//                Assert.assertTrue(
-//                        "Expected '" + TestDataLoader.COLUMNS[0] + "' to be a '" + TestDataLoader.CLASSES[0] + "' instance, " + TestDataLoader.COLUMNS[0].getClass(),
-//                        TestDataLoader.CLASSES[0] == row.get(TestDataLoader.COLUMNS[0]).getClass());
-
-                count++;
-            }
-            Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
-        }
-
-
-        static SqlTest[] containerTests = new SqlTest[]
-        {
-            new SqlTest("SELECT name FROM core.containers", 1, 1),
-            new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),
-            new SqlTest("SELECT name FROM core.containers[ContainerFilter='CurrentAndFirstChildren']", 1, 2),
-
-            // test caching of resolved tables, these two references to core.containers should not be shared
-            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1),
-            new SqlTest("SELECT A.name FROM core.containers A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 1),
-            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='AllInProject'] A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 2),
-            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers[ContainerFilter='AllInProject'] B on A.entityId = B.entityId", 1, 2)
-        };
-
-
-        @Test
-        public void testContainerAnnotation() throws Exception
-        {
-            // note getPrimarySchema() will return NULL if there are no lists yet
-            User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-
-            if (1==1 || null == lists)
-            {
-                _tearDown();
-                _setUp();
-                lists = DefaultSchema.get(user, c).getSchema("lists");
-            }
-
-            for (SqlTest test : containerTests)
-            {
-                test.validate(this, null);
-            }
-        }
-
-
-        private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns)
-        {
-            QuerySchema schema = lists;
-            if (null != container)
-                schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
-            assert null != schema;
-
-            try
-            {
-                mockSelect(schema, sql, null, true, expectedInvolvedColumns);
-            }
-            catch (QueryParseException x)
-            {
-                fail(x, sql);
-            }
-        }
-
-        private void fail(QueryParseException qpe, String sql)
-        {
-            Exception ex = qpe;
-            if (ex.getCause() instanceof Exception)
-                ex = (Exception)ex.getCause();
-            fail(ex.getMessage() + "\n" + sql);
-        }
-
-        private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
-                                  boolean strictColumnList, List<String> expectedColumns)
-        {
-            Query q = new Query(schema);
-            q.setStrictColumnList(strictColumnList);
-            q.setTableMap(tableMap);
-            q.parse(sql);
-
-            if (q.getParseErrors().size() > 0)
-                throw q.getParseErrors().get(0);
-
-            Map<String, QueryTable.TableColumn> involvedColumnMap = new CaseInsensitiveHashMap<>();
-            for (QueryTable.TableColumn column : q.getInvolvedTableColumns())
-                involvedColumnMap.put(column.getTable().getTableInfo().getName() + "/" + column.getFieldKey().toString(), column);
-
-            for (String expectedColumn : expectedColumns)
-            {
-                if (!involvedColumnMap.containsKey(expectedColumn))
-                    fail("Involved column '" + expectedColumn + "' not found for sql:\n" + sql);
-            }
-        }
     }
 }

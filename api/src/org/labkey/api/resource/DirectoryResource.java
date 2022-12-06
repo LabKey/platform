@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class DirectoryResource extends AbstractResourceCollection implements SupportsFileSystemWatcher
 {
-    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "DirectoryResource Cache", null);
+    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "Directory resources", null);
 
     private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;

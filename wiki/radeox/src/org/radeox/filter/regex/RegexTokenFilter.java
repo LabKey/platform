@@ -97,7 +97,6 @@ public abstract class RegexTokenFilter extends RegexFilter {
         log.warn("<span class=\"error\">Exception</span>: " + this, e);
       } catch (Error err) {
         log.warn("<span class=\"error\">Error</span>: " + this + ": " + err);
-        err.printStackTrace();
       }
       input = result;
     }

@@ -32,6 +32,10 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.AssayController;
 
@@ -71,9 +75,6 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
         addWrapColumn("Folder", _rootTable.getColumn("Container"));
 
-        var lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
-        lsidColumn.setHidden(true);
-
         // Generate a CASE statement that matches an LSID to an AssayProvider so we can create a lookup to the AssayProviderTable.
         // The column value is null if no AssayProvider is matched.
         SQLFragment typeFrag = new SQLFragment();
@@ -96,6 +97,10 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addColumn(typeColumn);
 
         addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);
+
+        // put the hidden column at the end so it will render at the end by default.
+        var lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
+        lsidColumn.setHidden(true);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Name"));
@@ -125,4 +130,12 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         super.setContainerFilter(filter);
     }
 
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm == ReadPermission.class)
+            return super.hasPermission(user, AssayReadPermission.class);
+
+        return super.hasPermission(user, perm);
+    }
 }

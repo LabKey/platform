@@ -18,14 +18,18 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -41,6 +45,7 @@ import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -50,6 +55,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class DomainPropertyImpl implements DomainProperty
@@ -65,7 +71,6 @@ public class DomainPropertyImpl implements DomainProperty
     private List<PropertyValidatorImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
-
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
@@ -549,6 +554,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getDefaultValueType();
     }
 
+    @Override
     public void setDefaultValueType(String defaultValueTypeName)
     {
         if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
@@ -585,7 +591,7 @@ public class DomainPropertyImpl implements DomainProperty
         // current will return null if the schema or query is null so check
         // for this case in the passed in lookup
         if (current == null)
-            if (lookup.getQueryName() == null || lookup.getSchemaName() == null)
+            if (lookup.getQueryName() == null || lookup.getSchemaKey() == null)
                 return;
 
         if (current != null && current.equals(lookup))
@@ -607,7 +613,7 @@ public class DomainPropertyImpl implements DomainProperty
             edit().setLookupContainer(lookup.getContainer().getId());
         }
         edit().setLookupQuery(lookup.getQueryName());
-        edit().setLookupSchema(lookup.getSchemaName());
+        edit().setLookupSchema(Objects.toString(lookup.getSchemaKey(),null));
     }
 
     @Override
@@ -718,6 +724,20 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
+    // Scenario to swap property descriptors on study upload to or from a system property, instead of updating the
+    // current property descriptor. Avoids overwriting a system property.
+    public boolean isSystemPropertySwap()
+    {
+        if (_pd.getPropertyId() == 0 && _pd.getPropertyURI() != null && _pdOld != null && _pdOld.getPropertyURI() != null
+                && !_pd.getPropertyURI().equals(_pdOld.getPropertyURI()))
+        {
+            return SystemProperty.getProperties().stream().anyMatch(sp ->
+                    sp.getPropertyURI().equals(_pd.getPropertyURI()) || sp.getPropertyURI().equals(_pdOld.getPropertyURI()));
+        }
+
+        return false;
+    }
+
     public boolean isDirty()
     {
         if (_pdOld != null) return true;
@@ -735,7 +755,7 @@ public class DomainPropertyImpl implements DomainProperty
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(getContainer(), getPropertyId());
         DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
 
-        DomainKind kind = getDomain().getDomainKind();
+        DomainKind<?> kind = getDomain().getDomainKind();
         if (null != kind)
             kind.deletePropertyDescriptor(getDomain(), user, _pd);
         OntologyManager.removePropertyDescriptorFromDomain(this);
@@ -743,7 +763,12 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
-        if (isNew())
+        if (isSystemPropertySwap())
+        {
+            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
+            OntologyManager.removePropertyDescriptorFromDomain(new DomainPropertyImpl((DomainImpl) getDomain(), _pdOld));
+        }
+        else if (isNew())
         {
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         }
@@ -751,10 +776,28 @@ public class DomainPropertyImpl implements DomainProperty
         {
             PropertyType oldType = _pdOld.getPropertyType();
             PropertyType newType = _pd.getPropertyType();
-            if (oldType.getStorageType() != newType.getStorageType())
+            boolean changedType = false;
+            if (oldType.getJdbcType() != newType.getJdbcType())
             {
-                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
+                if (newType.getJdbcType().isText() ||
+                        (oldType.getJdbcType().isInteger() && newType.getJdbcType().isNumeric()))
+                {
+                    changedType = true;
+                    if (newType.getJdbcType().isText())
+                    {
+                        // Remove any previously set formatting string as it won't apply to a text field
+                        _pd.setFormat(null);
+                    }
+                }
+                else
+                {
+                    throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
+                }
             }
+
+            // Issue 44711: Prevent attachment and file field types from being converted to a different type
+            if (PropertyType.FILE_LINK.getInputType().equalsIgnoreCase(oldType.getInputType()) && oldType != newType)
+                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.name() + " to " + newType.name() + ".");
 
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
@@ -776,11 +819,53 @@ public class DomainPropertyImpl implements DomainProperty
                 if (propRenamed)
                     StorageProvisionerImpl.get().renameProperty(this.getDomain(), this, _pdOld, mvDropped);
 
-                if (propResized)
+                if (changedType)
+                {
+                    StorageProvisionerImpl.get().changePropertyType(this.getDomain(), this);
+                    if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
+                    {
+                        updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
+                                _pd.getStorageColumnName(), _pdOld.getFormat(), null);
+                    }
+                }
+                else if (propResized)
                     StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
 
                 if (mvAdded)
                     StorageProvisionerImpl.get().addMvIndicator(this);
+            }
+            else if (changedType)
+            {
+                if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isText())
+                {
+                    new SqlExecutor(OntologyManager.getExpSchema()).execute(
+                            new SQLFragment("UPDATE ").
+                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
+                                    add(_pdOld.getPropertyId()));
+                }
+                else if (!oldType.getJdbcType().isText() && newType.getJdbcType().isText())
+                {
+                    new SqlExecutor(OntologyManager.getExpSchema()).execute(
+                            new SQLFragment("UPDATE ").
+                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
+                                    add(_pdOld.getPropertyId()));
+                }
+                else //noinspection StatementWithEmptyBody
+                    if (oldType.getJdbcType().isInteger() && newType.getJdbcType().isReal())
+                {
+                    // Since exp.ObjectProperty stores these types in the same column, there's nothing for us to do
+                }
+                else
+                {
+                    throw new ChangePropertyDescriptorException("Cannot convert from " + oldType.getJdbcType() + " to " + newType.getJdbcType() + " for non-provisioned table");
+                }
+            }
+
+            if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
+            {
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -801,6 +886,33 @@ public class DomainPropertyImpl implements DomainProperty
         }
 
         DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
+    }
+
+    /**
+     * Format values in columns that were just converted from booleans to strings with the DB's default type conversion.
+     * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
+     * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
+     */
+    private void updateBooleanValue(String schemaTable, String column, String formatString, @Nullable SQLFragment whereClause)
+    {
+        column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);
+        BooleanFormat f = BooleanFormat.getInstance(formatString);
+        String trueValue = StringUtils.trimToNull(f.format(true));
+        String falseValue = StringUtils.trimToNull(f.format(false));
+        String nullValue = StringUtils.trimToNull(f.format(null));
+        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
+                append(column).append(" = CASE WHEN ").
+                append(column).append(" IN ('1', 'true') THEN ? WHEN ").
+                append(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+        sql.add(trueValue);
+        sql.add(falseValue);
+        sql.add(nullValue);
+        if (whereClause != null)
+        {
+            sql.append(" WHERE ");
+            sql.append(whereClause);
+        }
+        new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
     }
 
     @Override
@@ -889,6 +1001,7 @@ public class DomainPropertyImpl implements DomainProperty
         setConceptSubtree(propSrc.getConceptSubtree());
         setConceptImportColumn(propSrc.getConceptImportColumn());
         setConceptLabelColumn(propSrc.getConceptLabelColumn());
+        setDerivationDataScope(propSrc.getDerivationDataScope());
 
         // check to see if we're moving a lookup column to another container:
         Lookup lookup = propSrc.getLookup();
@@ -1086,7 +1199,7 @@ public class DomainPropertyImpl implements DomainProperty
                     assertTrue(StringUtils.equals(l.getContainer().getId(), _pd.getLookupContainer()));
 
                 assertTrue(StringUtils.equals(l.getQueryName(), _pd.getLookupQuery()));
-                assertTrue(StringUtils.equals(l.getSchemaName(),_pd.getLookupSchema()));
+                assertTrue(StringUtils.equals(l.getSchemaKey().toString(), _pd.getLookupSchema()));
             }
         }
 

@@ -178,13 +178,14 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     protected Function<String, Long> getMaxCounterWithPrefixFunction(TableInfo tableInfo)
     {
         String dataTypeLsid = getLSID();
-        Container container = getContainer();
         return (namePrefix) ->
         {
             long max = 0;
 
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(FieldKey.fromParts("cpastype"), dataTypeLsid);
+            // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
+            // This allows for us to process max counter from all matching results within the provided type.
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(FieldKey.fromParts("CpasType"), dataTypeLsid);
             filter.addCondition(FieldKey.fromParts("Name"), namePrefix, STARTS_WITH);
 
             TableSelector selector = new TableSelector(tableInfo, Collections.singleton("Name"), filter, null);

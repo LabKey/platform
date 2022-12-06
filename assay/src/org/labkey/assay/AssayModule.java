@@ -89,7 +89,7 @@ import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPL
 
 public class AssayModule extends SpringModule
 {
-    private static final String NAME = "Assay";
+    public static final String NAME = "Assay";
 
     @Override
     public String getName()
@@ -182,9 +182,6 @@ public class AssayModule extends SpringModule
             ss.addResourceResolver(AssayManager.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
         }
-
-        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
-                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());

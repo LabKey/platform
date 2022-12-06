@@ -16,7 +16,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -36,7 +35,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -47,6 +45,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
+import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -72,6 +71,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private boolean _userDefinedQuery;
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
+
     private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
 
     @Override
@@ -299,6 +299,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetDefaultScale();
             }
 
+            if (!StringUtils.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
+            {
+                xmlColumn.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(metadataColumnJSON.getDerivationDataScope()));
+            }
+            else if (xmlColumn.isSetDerivationDataScope())
+            {
+                xmlColumn.unsetDerivationDataScope();
+            }
+
             /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
             if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
             {
@@ -383,7 +392,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
                 // Check if it's the same FK, based on schema, query, and container
                 if (lookup == null ||
-                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaName()) ||
+                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaKey()) ||
                         !metadataColumnJSON.getLookupQuery().equals(lookup.first.getQueryName()) ||
                         !Objects.equals(metadataColumnJSON.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
                 {
@@ -431,7 +440,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             // Set the conditional formats
             if (shouldStoreValue(metadataColumnJSON.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
             {
-                ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
+                ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn, xmlTable.getTableName());
             }
 
             // Set conceptURI
@@ -470,6 +479,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetPrincipalConceptCode();
             }
 
+            if (metadataColumnJSON.isScannable() != rawColumnInfo.isScannable())
+            {
+                xmlColumn.setScannable(metadataColumnJSON.isScannable());
+            }
+
             if (xmlColumn.getWrappedColumnName() == null)
             {
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
@@ -480,11 +494,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
                 }
-            }
-
-            if (metadataColumnJSON.isScannable() != rawColumnInfo.isScannable())
-            {
-                xmlColumn.setScannable(metadataColumnJSON.isScannable());
             }
         }
 
@@ -618,7 +627,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         metadataColumnJSON.setLookupCustom(true);
                     else
                     {
-                        metadataColumnJSON.setLookupSchema(lookup.first.getSchemaName());
+                        metadataColumnJSON.setLookupSchema(Objects.toString(lookup.first.getSchemaKey(),null));
                         metadataColumnJSON.setLookupQuery(lookup.first.getQueryName());
                         if (lookup.first.getContainer() != null)
                             metadataColumnJSON.setLookupContainer(lookup.first.getContainer().getPath());

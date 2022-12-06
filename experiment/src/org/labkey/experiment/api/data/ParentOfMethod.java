@@ -4,6 +4,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
+import org.labkey.api.sql.LabKeySql;
 
 public class ParentOfMethod extends AbstractMethodInfo
 {
@@ -22,7 +23,8 @@ public class ParentOfMethod extends AbstractMethodInfo
         int depth = 0;
         if (arguments.length > 2)
             depth = Integer.parseInt(arguments[2].getRawSQL());
-        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createParentOfOptions(depth));
+
+        return LineageHelper.createInSQL(fieldKeyFrag, LabKeySql.unquoteString(lsidFrag.getRawSQL()), LineageHelper.createParentOfOptions(depth));
     }
 
 }

@@ -2,7 +2,10 @@ package org.labkey.api.exp;
 
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 
@@ -10,12 +13,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -30,9 +33,9 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
     private final Path _logFile;
     private String _xml;
 
-    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, PipelineJob job)
+    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, @Nullable PipelineJob job, User user, Container container, @Nullable Map<String, String> substitutions)
     {
-        super(job.getDescription(), job.getContainer(), job.getUser(), job);
+        super(job == null ? null : job.getDescription(), container, user, job, substitutions);
         _xarInputStream = xarInputStream;
         _xmlFile = xarFile;
         _logFile = logFile;
@@ -79,13 +82,6 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
         else
             throw new RuntimeException("XML source not found.");
     }
-
-    @Override
-    public File getLogFile()
-    {
-        return _logFile.toFile();
-    }
-
 
     @Override
     public Path getLogFilePath()

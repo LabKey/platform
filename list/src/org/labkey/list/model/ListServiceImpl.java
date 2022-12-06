@@ -17,11 +17,13 @@
 package org.labkey.list.model;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.TemplateInfo;
@@ -29,6 +31,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -38,7 +41,6 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.controllers.ListController;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -53,25 +55,32 @@ public class ListServiceImpl implements ListService
     @Override
     public Map<String, ListDefinition> getLists(Container container)
     {
-        return getLists(container, null, false);
+        return getLists(container, null);
     }
 
     @Override
-    public Map<String, ListDefinition> getLists(Container container, boolean includePicklists)
+    public Map<String, ListDefinition> getLists(Container container, @Nullable User user)
     {
-        return getLists(container, null, false, includePicklists);
+        return getLists(container, user, false);
     }
 
     @Override
     public Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility)
     {
-        return getLists(container, user, checkVisibility, true);
+        return getLists(container, user, checkVisibility, true, false);
     }
 
-    private Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
+    @Override
+    public Map<String, ListDefinition> getLists(
+        Container container,
+        @Nullable User user,
+        boolean checkVisibility,
+        boolean includePicklists,
+        boolean includeProjectAndShared
+    )
     {
         Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
-        for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists))
+        for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists, includeProjectAndShared))
         {
             ListDefinition list = new ListDefinitionImpl(def);
             ret.put(list.getName(), list);
@@ -83,6 +92,13 @@ public class ListServiceImpl implements ListService
     public boolean hasLists(Container container)
     {
         Collection<ListDef> lists = ListManager.get().getLists(container);
+        return !lists.isEmpty();
+    }
+
+    @Override
+    public boolean hasLists(Container container, boolean includeProjectAndShared)
+    {
+        Collection<ListDef> lists = ListManager.get().getLists(container, includeProjectAndShared);
         return !lists.isEmpty();
     }
 
@@ -99,6 +115,7 @@ public class ListServiceImpl implements ListService
     }
 
     @Override
+    @Nullable
     public ListDefinition getList(Container container, int listId)
     {
         ListDef def = ListManager.get().getList(container, listId);
@@ -109,9 +126,16 @@ public class ListServiceImpl implements ListService
     @Nullable
     public ListDefinition getList(Container container, String name)
     {
+        return getList(container, name, false);
+    }
+
+    @Override
+    @Nullable
+    public ListDefinition getList(Container container, String name, boolean includeProjectAndShared)
+    {
         if (name != null)
         {
-            for (ListDef def : ListManager.get().getLists(container))
+            for (ListDef def : ListManager.get().getLists(container, includeProjectAndShared))
             {
                 // DB stores actual name, but can be referenced with different case (#24476)
                 if (name.equalsIgnoreCase(def.getName()))
@@ -166,5 +190,21 @@ public class ListServiceImpl implements ListService
     public UserSchema getUserSchema(User user, Container container)
     {
         return new ListQuerySchema(user, container);
+    }
+
+    @Override
+    @Nullable
+    public ContainerFilter getPicklistContainerFilter(Container container, User user, @NotNull ListDefinition list)
+    {
+        if (container == null || !container.isProductProjectsEnabled())
+            return null;
+
+        if (user == null || !list.isPicklist() || container.isRoot())
+            return null;
+
+        if (container.isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
+
+        return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
     }
 }

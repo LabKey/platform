@@ -27,4 +27,5 @@ public interface FolderJobSupport
     FolderImportContext getImportContext();
     VirtualFile getRoot();
     String getOriginalFilename();
+    String getFolderArchiveSourceName();
 }

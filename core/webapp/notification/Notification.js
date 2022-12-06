@@ -215,11 +215,13 @@
                         params: {rowIds: rowIds},
                         success: LABKEY.Utils.getCallbackWrapper(function (response)
                         {
-                            if (response.success && response.numUpdated == rowIds.length)
+                            if (response.success && response.numUpdated === rowIds.length)
                             {
                                 for(var i = 0; i < rowIds.length; i++)
                                 {
-                                    LABKEY.notifications[rowIds[i]].ReadOn = new Date();
+                                    if (LABKEY.notifications[rowIds[i]]) {
+                                        LABKEY.notifications[rowIds[i]].ReadOn = new Date();
+                                    }
                                 }
                                 updateUnreadCount();
 

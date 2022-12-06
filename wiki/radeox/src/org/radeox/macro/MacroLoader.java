@@ -47,7 +47,7 @@ public class MacroLoader extends PluginLoader {
    *
    * @param macro Macro to add
    */
-  public void add(Repository repository, Object plugin) {
+  public void add(PluginRepository repository, Object plugin) {
     if (plugin instanceof Macro) {
       repository.put(((Macro) plugin).getName(), plugin);
     } else {

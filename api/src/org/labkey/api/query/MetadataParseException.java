@@ -16,7 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.xmlbeans.XmlError;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.util.XmlBeansUtil;
 
 import static java.lang.Math.max;

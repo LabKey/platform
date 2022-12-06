@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickLabelMax,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
@@ -31,6 +31,15 @@ LABKEY.vis.internal.Axis = function() {
             data = scale.ticks(ticks);
         } else {
             data = scale.domain();
+        }
+
+        if (tickMax && data.length > tickMax) {
+            var nthDataArr = [];
+            var nth = Math.max(Math.floor( data.length / tickMax), 1);
+            for (var i = 0; i < data.length; i=i+nth) {
+                nthDataArr.push(data[i]);
+            }
+            data = nthDataArr;
         }
 
         // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
@@ -496,6 +505,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickDigits = function(h) {tickDigits = h; return axis;};
     axis.tickValues = function(h) {tickValues = h; return axis;};
+    axis.tickMax = function(h) {tickMax = h; return axis;};
     axis.tickLabelMax = function(h) {tickLabelMax = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
@@ -833,6 +843,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales[name].tickDigits) {
                 indAxis.tickDigits(plot.scales[name].tickDigits);
+            }
+
+            if (plot.scales[name].tickMax) {
+                indAxis.tickMax(plot.scales[name].tickMax);
             }
 
             if (plot.scales[name].tickLabelMax) {
@@ -1907,6 +1921,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         y = Math.floor(parseInt(sibling.getAttribute('y'))) - 3.5;
                     return 'translate(' + glyphX + ',' + y + ')';
                 });
+
+        if (plot.originalAes && plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
+            selection.on('mouseover', function (data) {
+                plot.originalAes.legend.mouseOverFn.call(d3.event, data, this);
+            });
+
+            if (plot.originalAes.legend.mouseOutFn) {
+                selection.on('mouseout', function(data) {
+                    plot.originalAes.legend.mouseOutFn.call(d3.event, data, this);
+                });
+            }
+        }
     };
 
     var setLegendData = function(legendData) {
@@ -1961,21 +1987,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     jitterIndex[x] = true;
                 } else if (geom.position === position.sequential) {
 
-                    if (!jitterIndex[x]) {
+                    // We calculate based on both the x-axis position and (optionally) within the series as configured via groupBy
+                    const xGrouped = x + (geom.groupBy ? ('-' + row[geom.groupBy]) : '');
+
+                    if (!jitterIndex[xGrouped]) {
                         // Count how many points we have to distribute across the grouping, and reset the current
                         // indices for the groupings
                         jitters = {};
                         for (var i = 0; i < data.length; i++) {
-                            var x2 = geom.xAes.getValue(data[i]);
-                            var count = jitterIndex[x2] || 0;
-                            jitterIndex[x2] = count + 1;
+                            const x2 = geom.xAes.getValue(data[i]);
+                            const x2Grouped = x2 + (geom.groupBy ? ('-' + data[i][geom.groupBy]) : '');
+                            const count = jitterIndex[x2Grouped] || 0;
+                            jitterIndex[x2Grouped] = count + 1;
                         }
                     }
 
                     // Calculate the offset for the current point within the full count for the grouping
-                    var index = jitters[x] || 0;
-                    value = value - (xBinWidth / 2) + (xBinWidth / jitterIndex[x]) * (index + 0.5);
-                    jitters[x] = index + 1;
+                    var index = jitters[xGrouped] || 0;
+                    value = value - (xBinWidth / 2) + (xBinWidth / jitterIndex[xGrouped]) * (index + 0.5);
+                    jitters[xGrouped] = index + 1;
                 }
                 return value;
             };
@@ -2136,10 +2166,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data) {
-        var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
+        var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
-        altColorAcc = geom.altColor ? geom.altColor : colorAcc;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
         topFn = function(d) {
             var x, y, value, error;
@@ -2189,11 +2218,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
         newBars.append('path').attr('class','error-bar-bottom');
-        newBars.append('path').attr('class','error-bar-vert');
 
         selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
         selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-vert').attr('d', verticalFn).attr('stroke', altColorAcc).attr('stroke-width', sizeAcc);
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));
@@ -2462,10 +2489,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('stroke-opacity', geom.opacity)
                 .attr('fill', 'none');
 
+        if (geom.hoverTextAes) {
+            pathSel.append('title').text(geom.hoverTextAes.getValue);
+        }
+
         if (geom.dashed) {
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
             layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
         }
+
+        bindMouseEvents(pathSel, geom, layer);
     };
 
     var renderDataspaceBoxPlotPaths = function(layer, data, geom) {

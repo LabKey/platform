@@ -1,11 +1,11 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -53,13 +53,9 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.AmbiguousLocationException;
-import org.labkey.api.specimen.RequestEventType;
-import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -67,28 +63,16 @@ import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenComment;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.api.specimen.notifications.DefaultRequestNotification;
-import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
-import org.labkey.api.specimen.view.NotificationBean;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MapArrayExcelWriter;
@@ -134,19 +118,35 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.specimen.AmbiguousLocationException;
+import org.labkey.specimen.RequestEventType;
+import org.labkey.specimen.RequestedSpecimens;
 import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.SpecimenRequestManager;
+import org.labkey.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.specimen.model.SpecimenRequestActor;
+import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.specimen.notifications.DefaultRequestNotification;
+import org.labkey.specimen.notifications.NotificationRecipientSet;
 import org.labkey.specimen.pipeline.SpecimenArchive;
 import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.labkey.specimen.query.SpecimenEventQueryView;
 import org.labkey.specimen.query.SpecimenRequestQueryView;
+import org.labkey.specimen.requirements.SpecimenRequest;
+import org.labkey.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.specimen.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.specimen.security.permissions.ManageNotificationsPermission;
 import org.labkey.specimen.security.permissions.ManageRequestRequirementsPermission;
 import org.labkey.specimen.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.specimen.view.NotificationBean;
+import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
 import org.labkey.specimen.view.SpecimenWebPart;
 import org.springframework.validation.BindException;
@@ -1128,10 +1128,10 @@ public class SpecimenController extends SpringActionController
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            for (ExcelColumn col : xlWriter.getColumns())
-                col.setCaption(importer.label(col.getName()));
-
-            xlWriter.write(getViewContext().getResponse());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(getViewContext().getResponse());
 
             return null;
         }
@@ -1194,7 +1194,7 @@ public class SpecimenController extends SpringActionController
         }
     }
 
-    public static class SpecimenEventAttachmentForm
+    public static class SpecimenEventAttachmentForm implements BaseDownloadAction.InlineDownloader
     {
         private int _eventId;
         private String _name;
@@ -5043,10 +5043,8 @@ public class SpecimenController extends SpringActionController
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    try (ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
-                    {
-                        writer.write(getViewContext().getResponse());
-                    }
+                    ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type);
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;
@@ -5196,10 +5194,10 @@ public class SpecimenController extends SpringActionController
 
                     if (form.isSendXls())
                     {
-                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
                         {
-                            xlsWriter.write(ostream);
-                            ostream.flush();
+                            ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
+                            xlsWriter.renderWorkbook(ostream);
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }
                     }

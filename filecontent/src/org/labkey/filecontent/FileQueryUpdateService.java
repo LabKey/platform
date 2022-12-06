@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -76,6 +77,7 @@ import java.util.Set;
 
 import static org.labkey.api.files.FileContentService.PIPELINE_LINK;
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
+import static org.labkey.api.webdav.FileSystemResource.DISPLAY_VALUE_SUFFIX;
 
 /**
  * User: klum
@@ -85,6 +87,7 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
     private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
+
     private Container _container;
     private Set<FieldKey> _columns;
     private Domain _domain;
@@ -109,6 +112,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
         Map<String, Object> rowMap = new HashMap<>();
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+
+        // Since we are fetching the "urlValue" of field properties we need to
+        // include any columns needed by the URL renderers to resolve.
+        for (ColumnInfo col : cols.values())
+            col.getRenderer().addQueryFieldKeys(queryColumns);
+        cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+
         try (Results results = new TableSelector(getQueryTable(), cols.values(), filter, null).getResults())
         {
             if (results.next())
@@ -130,8 +140,8 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                             {
                                 String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
 
-                                if (!rowMap.containsKey(prop.getName() + "_displayValue"))
-                                    rowMap.put(prop.getName() + "_displayValue", fmt);
+                                if (!rowMap.containsKey(prop.getName() + DISPLAY_VALUE_SUFFIX))
+                                    rowMap.put(prop.getName() + DISPLAY_VALUE_SUFFIX, fmt);
 
                                 if (o instanceof Date)
                                     rowMap.put(prop.getName(), fmt);
@@ -139,7 +149,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                                     rowMap.put(prop.getName(), o);
 
                                 if (urlValue != null)
-                                    rowMap.put(FileSystemResource.URL_COL_PREFIX + prop.getName(), urlValue);
+                                    rowMap.put(ApiQueryResponse.URL_COL_PREFIX + prop.getName(), urlValue);
                             }
                             catch (Exception e)
                             {
@@ -544,11 +554,6 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
                 if (rootDavUrl == null)
                     continue;
-
-                // Hack for issue 43374 - encode special characters in container paths. Need to push this encoding
-                // into FilesWebPart._getRootPath(), but other codepaths are doing their own compensation so it's a more
-                // involved change
-                rootDavUrl = rootDavUrl.replace("%", "%25").replace("+", "%2B");
 
                 if (rootDavUrl.endsWith("/"))
                     rootDavUrl = rootDavUrl.substring(0, rootDavUrl.length() - 1);

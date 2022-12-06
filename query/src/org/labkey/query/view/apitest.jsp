@@ -110,7 +110,7 @@
     </tr>
 </table>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var startTime;
     var responseJSON;
 

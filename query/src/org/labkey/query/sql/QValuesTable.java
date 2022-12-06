@@ -152,11 +152,11 @@ public class QValuesTable extends QTable
 
 
         @Override
-        protected void declareFields()
+        public void declareFields()
         {
         }
 
-        TableInfo getTableInfo()
+        public TableInfo getTableInfo()
         {
             throw new UnsupportedOperationException();
         }

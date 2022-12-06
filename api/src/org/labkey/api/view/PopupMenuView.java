@@ -171,9 +171,11 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("<li class=\"divider\"></li>");
     }
 
+
     // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
     protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
     {
+        var config = HttpView.currentPageConfig();
         // if the item is "selected" and doesn't have have an image cls to use, provide our default
         String itemImageCls = item.getImageCls();
         if (item.isSelected() && null == itemImageCls)
@@ -187,11 +189,10 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
-        out.write("<a");
+        String id = config.makeId("popupMenuView");
+        out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");
-        if (null != item.getScript())
-            out.write(" onclick=\"" + PageFlowUtil.filter(item.getScript()) + "\"");
         if (null != item.getHref() && !item.isPost())
             out.write(" href=\"" + PageFlowUtil.filter(item.getHref()) + "\"");
         else
@@ -209,6 +210,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write("<i class=\"" + itemImageCls + "\"></i>");
         out.write(PageFlowUtil.filter(item.getText()));
         out.write("</a>");
+        HttpView.currentPageConfig().addHandler(id, "click", item.getScript());
     }
 
     public static String getMenuFilterItemCls(NavTree tree)

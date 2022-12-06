@@ -101,13 +101,12 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             Date startDate = cal.getTime();
-            report.addParam("activeUserCount", UserManager.getRecentUserCount(startDate));
+            report.addParam("recentUserCount", UserManager.getRecentUserCount(startDate));
             // Other counts within the last 30 days
             metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
             metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
             metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
-            Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
-            metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
+            metrics.put("recentAvgSessionDuration", UserManager.getAverageSessionDuration());
             metrics.put("mostRecentLogin", DateUtil.formatDateISO8601(UserManager.getMostRecentLogin()));
 
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
@@ -120,7 +119,6 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
 
-            putModuleControllerHits(modulesMap);
             putModulesMetrics(modulesMap);
             putModulesBuildInfo(modulesMap);
 
@@ -153,14 +151,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     public void scheduleUpgradeCheck()
     {
         cancelUpgradeCheck();
-        if (!ModuleLoader.getInstance().isDeferUsageReport())
+        TimerTask task = createTimerTask();
+        if (task != null)
         {
-            TimerTask task = createTimerTask();
-            if (task != null)
-            {
-                _timer = new Timer("UpgradeCheck", true);
-                _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
-            }
+            _timer = new Timer("UpgradeCheck", true);
+            _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
         }
     }
 
@@ -174,6 +169,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         return _upgradeMessage;
     }
 
+    @Nullable
     public static MothershipReport generateReport(UsageReportingLevel level, MothershipReport.Target target)
     {
         if (level.doGeneration())
@@ -269,27 +265,6 @@ public enum UsageReportingLevel implements SafeToRenderEnum
 
             // Add to the module's info to be included in the submission
             moduleStats.put("buildInfo", moduleBuildInfo);
-        }
-    }
-
-    protected void putModuleControllerHits(Map<String, Map<String, Object>> allModulesStats)
-    {
-        try
-        {
-            ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
-                Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-                Map<String, Long> controllerStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                moduleStats.put("controllerHits", controllerStats);
-                controllersMap.forEach((controller, actionStatsMap) -> controllerStats.put(controller,
-                        actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum()));
-            });
-        }
-        catch (InstantiationException | IllegalAccessException e)
-        {
-            // Unlikely to hit this, but just in case, still give module list
-            ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
-            // And put the error in the errors section of the metrics
-            allModulesStats.computeIfAbsent(UsageMetricsService.ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put("controllerCounts", e.getMessage());
         }
     }
 

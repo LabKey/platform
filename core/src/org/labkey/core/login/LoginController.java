@@ -19,12 +19,10 @@ package org.labkey.core.login;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -90,7 +88,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.core.CoreUpgradeCode;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -282,11 +279,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private static LoginUrlsImpl getUrls()
-    {
-        return new LoginUrlsImpl();
-    }
-
     private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request)
     {
         if (request != null)
@@ -322,7 +314,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     // Explicit test for valid email
-                    new ValidEmail(form.getEmail());
+                    ValidEmail email = new ValidEmail(form.getEmail());
 
                     if (status.requiresRedirect())
                     {
@@ -330,7 +322,8 @@ public class LoginController extends SpringActionController
                     }
                     else
                     {
-                        status.addUserErrorMessage(errors, result);
+                        // Pass in normalized email address, but only if user provided a full email address
+                        status.addUserErrorMessage(errors, result, form.getEmail().contains("@") ? email.getEmailAddress() : null, form.getReturnURLHelper());
                     }
                 }
             }
@@ -716,8 +709,8 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             PasswordRule passwordRule = DbLoginManager.getPasswordRule();
 
-            response.put("full", passwordRule.getFullRuleHTML());
-            response.put("summary", passwordRule.getSummaryRuleHTML());
+            response.put("full", passwordRule.getFullRuleHTML().toString());
+            response.put("summary", passwordRule.getSummaryRuleHTML().toString());
             return response;
         }
     }
@@ -1135,9 +1128,8 @@ public class LoginController extends SpringActionController
 
     public boolean isAdminOnlyMode()
     {
-        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && !UserManager.hasNoUsers());
+        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && UserManager.hasUsers());
     }
-
 
     @Nullable
     private String getEmailFromCookie(HttpServletRequest request)
@@ -1257,7 +1249,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @Nullable
     private Project getTermsOfUseProject(AgreeToTermsForm form)
     {
@@ -1267,13 +1258,11 @@ public class LoginController extends SpringActionController
             return PageFlowUtil.getTermsOfUseProject(getContainer(), form.getReturnUrl());
     }
 
-
     private boolean isTermsOfUseApproved(AgreeToTermsForm form)
     {
         Project termsProject = getTermsOfUseProject(form);
         return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
     }
-
 
     private static abstract class AbstractLoginForm extends ReturnUrlForm
     {
@@ -1303,7 +1292,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     public static class AgreeToTermsForm extends AbstractLoginForm
     {
         private boolean approvedTermsOfUse;
@@ -1324,7 +1312,6 @@ public class LoginController extends SpringActionController
             this.approvedTermsOfUse = approvedTermsOfUse;
         }
     }
-
 
     public static class LoginForm extends AgreeToTermsForm
     {
@@ -1375,7 +1362,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -1415,7 +1401,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -1444,13 +1429,35 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    @IgnoresForbiddenProjectCheck
+    public static class StopImpersonatingApiAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public void validateForm(Object o, Errors errors)
+        {
+            if (!getUser().isImpersonated())
+                errors.reject(ERROR_MSG, "Error: You are not impersonating!");
+        }
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
+    public static class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
         public Object execute(ReturnUrlForm form, BindException errors)
@@ -1462,7 +1469,6 @@ public class LoginController extends SpringActionController
             return response;
         }
     }
-
 
     public static class SsoRedirectForm extends AbstractLoginForm
     {
@@ -1492,7 +1498,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
@@ -1517,7 +1522,7 @@ public class LoginController extends SpringActionController
             final URLHelper url;
             int rowId = form.getConfiguration();
 
-            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
+            SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
 
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
@@ -1532,7 +1537,6 @@ public class LoginController extends SpringActionController
         {
         }
     }
-
 
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
@@ -1780,7 +1784,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     private static boolean attemptVerification(SetPasswordForm form, ValidEmail email, Errors errors)
     {
         String verification = form.getVerification();
@@ -1791,7 +1794,6 @@ public class LoginController extends SpringActionController
 
         return isVerified && !errors.hasErrors();
     }
-
 
     public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
     {
@@ -1811,7 +1813,7 @@ public class LoginController extends SpringActionController
         {
             if (!SecurityManager.loginExists(email))
             {
-                if (AuthenticationManager.isLdapEmail(email))
+                if (AuthenticationManager.isLdapOrSsoEmail(email))
                     errors.reject("setPassword", "Your account will authenticate using LDAP and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
@@ -1825,7 +1827,6 @@ public class LoginController extends SpringActionController
                 errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
     }
-
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -1986,7 +1987,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @AllowedDuringUpgrade
     // @CSRF don't need CSRF for actions that require a password
@@ -2112,7 +2112,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     public static class SetPasswordForm extends AbstractLoginForm
     {
         private String _verification;
@@ -2176,7 +2175,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public class ResetPasswordAction extends FormViewAction<LoginForm>
@@ -2239,7 +2237,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @SuppressWarnings("unused")
     @RequiresLogin
     public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
@@ -2271,7 +2268,6 @@ public class LoginController extends SpringActionController
         {
         }
     }
-
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
@@ -2327,7 +2323,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
@@ -2345,7 +2340,6 @@ public class LoginController extends SpringActionController
             return AppProps.getInstance().getHomePageActionURL();
         }
     }
-
 
     public static class TokenAuthenticationForm extends ReturnUrlForm
     {
@@ -2367,7 +2361,6 @@ public class LoginController extends SpringActionController
             return getReturnURLHelper();
         }
     }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
@@ -2630,7 +2623,9 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
+    @IgnoresTermsOfUse
     @IgnoresForbiddenProjectCheck
+    @AllowedDuringUpgrade
     public class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override
@@ -2722,39 +2717,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class MigrateAuthenticationConfigurationsAction extends ConfirmAction
-    {
-        @Override
-        public ModelAndView getConfirmView(Object o, BindException errors)
-        {
-            if (getPageConfig().getTitle() == null)
-                setTitle("Migrate Authentication Configurations");
-
-            return new HtmlView(HtmlString.of("Are you sure you want to re-run the authentication configuration migration? This may cause duplicate configurations (which can be deleted)."));
-        }
-
-        @Override
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            new CoreUpgradeCode().migrateAuthenticationConfigurations(getUser());
-
-            return true;
-        }
-
-        @Override
-        public @NotNull URLHelper getSuccessURL(Object o)
-        {
-            return urlProvider(LoginUrls.class).getConfigureURL();
-        }
-    }
-
-
     /**
      * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
      * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
@@ -2787,7 +2749,6 @@ public class LoginController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new DeleteConfigurationAction(),
-                controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
                 controller.new SetAuthenticationParameterAction()

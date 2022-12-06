@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -47,11 +49,17 @@ public class CompressedXarSource extends AbstractFileXarSource
      * @param job
      * @param targetContainer -- This is the container where the experiment and runs will get imported.
      *                           This may not be the same as the the Container returned by job.getContainer().
+     * @param substitutions Additional context substitutions
      */
+    public CompressedXarSource(Path xarFile, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
+    {
+        super(job.getDescription(), targetContainer, job.getUser(), job, substitutions);
+        _xarFile = xarFile;
+    }
+
     public CompressedXarSource(Path xarFile, PipelineJob job, Container targetContainer)
     {
-        super(job.getDescription(), targetContainer, job.getUser(), job);
-        _xarFile = xarFile;
+        this(xarFile, job, targetContainer, null);
     }
 
     @Override
@@ -93,12 +101,6 @@ public class CompressedXarSource extends AbstractFileXarSource
         {
             _xmlFile = xarFiles.get(0);
         }
-    }
-
-    @Override
-    public File getLogFile()
-    {
-        return getLogFilePath().toFile();
     }
 
     @Override

@@ -327,6 +327,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                         title   : 'Create New User',
                         msg     : 'User was not found. Would you like to create the user for \'' + this.htmlEncode(email) + '\'?',
                         buttons : Ext4.MessageBox.YESNO,
+                        width: 450,
                         fn : function(btn, text){
                             if(btn == 'yes'){
                                 this.cache.createNewUser(email, true, function(user)

@@ -61,7 +61,7 @@ This webpart displays data from a single list.<br><br>
 If you want to let users change the list that's displayed or customize the view themselves then use the query webpart.<br><br>
 
 <div id="SQVPicker"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
         var title = Ext4.create('Ext.form.field.Text', {

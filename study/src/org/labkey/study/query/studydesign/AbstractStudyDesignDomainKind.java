@@ -174,7 +174,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> names = new HashSet<>();
 

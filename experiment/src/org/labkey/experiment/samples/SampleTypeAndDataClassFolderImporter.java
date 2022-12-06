@@ -1,12 +1,11 @@
 package org.labkey.experiment.samples;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -14,6 +13,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -36,6 +35,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
 
 import java.io.IOException;
@@ -43,19 +43,33 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_XML_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_XML_NAME;
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
+    // registry data classes have to be imported in a particular order because they reference each other
+    private static final List<String> REGISTRY_CLASS_ORDER = List.of(
+            "ProtSequence",
+            "NucSequence",
+            "Molecule",
+            "Vector",
+            "Construct",
+            "CellLine",
+            "ExpressionSystem",
+            "Compound"
+    );
+
     protected SampleTypeAndDataClassFolderImporter()
     {
     }
@@ -73,7 +87,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
     }
 
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
 
@@ -93,14 +107,14 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
             for (String file: xarDir.list())
             {
-                if (file.equalsIgnoreCase(XAR_TYPES_NAME))
+                if (file.equalsIgnoreCase(XAR_TYPES_NAME) || file.equalsIgnoreCase(XAR_TYPES_XML_NAME))
                 {
                     if (typesXarFile == null)
                         typesXarFile = xarDirPath.resolve(file);
                     else
                         log.error("More than one types XAR file found in the sample type directory: ", file);
                 }
-                else if (file.equalsIgnoreCase(XAR_RUNS_NAME))
+                else if (file.equalsIgnoreCase(XAR_RUNS_NAME) || file.equalsIgnoreCase(XAR_RUNS_XML_NAME))
                 {
                     if (runsXarFile == null)
                         runsXarFile = xarDirPath.resolve(file);
@@ -137,16 +151,22 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
-                    // process any sample type data files and data class files
+                    // Import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class.
+                    // Registry files need to imported in a particular order because some files rely on data from other files.
+                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
+                            dataClassDataFiles, xarDir, true, false);
+
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
                             sampleTypeDataFiles, xarDir, true, false);
-                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir, true, false);
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
                     {
-                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job);
+                        XarSource runsXarSource;
+                        if (runsXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
+                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer());
+                        else
+                            runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
                         try
                         {
                             runsXarSource.init();
@@ -157,7 +177,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                             throw(e);
                         }
                         log.info("Importing the runs XAR file: " + runsXarFile.getFileName().toString());
-                        XarReader runsReader = new XarReader(runsXarSource, job);
+                        XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
                     }
@@ -171,7 +191,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         }
     }
 
-    protected XarReader getXarReader(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
+    protected XarReader getXarReader(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
         Logger log = ctx.getLogger();
@@ -187,7 +207,12 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             job = getDummyPipelineJob(ctx);
         }
 
-        XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
+        XarSource typesXarSource;
+
+        if (typesXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
+            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer());
+        else
+            typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
         try
         {
             typesXarSource.init();
@@ -197,10 +222,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             log.error("Failed to initialize types XAR source", e);
             throw(e);
         }
-        return new XarReader(typesXarSource, job);
+        return new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job);
     }
 
-    protected PipelineJob getDummyPipelineJob(ImportContext ctx)
+    protected PipelineJob getDummyPipelineJob(FolderImportContext ctx)
     {
         return new PipelineJob()
         {
@@ -236,7 +261,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    protected void importTsvData(FolderImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
@@ -300,7 +325,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         log.error("Failed to find table '" + schemaName + "." + tableName + "' to import data file: " + dataFileName);
                     }
                 }
-                else if (fileRequired)
+                else if (fileRequired && !EXCLUDED_TYPES.contains(tableName))
                 {
                     log.error("Unable to import TSV data for table " + tableName + ". File not found.");
                 }
@@ -310,12 +335,6 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         {
             log.error("Could not find " + schemaName + " schema.");
         }
-    }
-
-    @Override
-    public @NotNull Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
-    {
-        return Collections.emptyList();
     }
 
     public static class Factory implements FolderImporterFactory

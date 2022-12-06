@@ -15,8 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
@@ -194,6 +194,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         _rowId = copy._rowId;
         _ownerId = copy._ownerId;
         _label = copy._label;
+        _groups = copy._groups;
     }
 
     @Override

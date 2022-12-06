@@ -23,13 +23,10 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.DefaultDataTransformer;
-import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.AbstractTaskFactory;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -56,9 +53,7 @@ import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -497,6 +492,16 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
+    private String[] getOriginalFiles(String key)
+    {
+        TaskPath tp = _factory.getInputPaths().get(key);
+
+        ArrayList<String> paths = new ArrayList<>();
+        for (File file : _wd.getWorkFiles(WorkDirectory.Function.input, tp))
+            paths.add(file.getAbsolutePath());
+        return paths.toArray(new String[0]);
+    }
+
     private void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
         List<File> filesInput = _wd.getWorkFiles(WorkDirectory.Function.input, tp);
@@ -540,6 +545,12 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             {
                 // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
                 // NOTE: The script parser matches ${input1.txt} to the first input file which isn't the same as ${input1[1].txt} which may be the 2nd file in the set of files represented by "input1.txt"
+            }
+
+            String[] originalFiles = getOriginalFiles(key);
+            if (originalFiles.length == 1)
+            {
+                replacements.put(DefaultDataTransformer.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles[0].replaceAll("\\\\", "/")));
             }
         }
 

@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.apache.logging.log4j.LogManager;
@@ -8,19 +9,21 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AuthenticationConfigurationCache
@@ -58,6 +61,7 @@ public class AuthenticationConfigurationCache
             }
         };
 
+        private final MultiValuedMap<String, AuthenticationConfiguration<?>> _activeDomainMap;
         private final Collection<String> _activeDomains;
 
         private AuthenticationConfigurationCollections()
@@ -82,11 +86,15 @@ public class AuthenticationConfigurationCache
                 .filter(c->!acceptOnlyFicamProviders || c.getAuthenticationProvider().isFicamApproved())
                 .forEach(this::addConfiguration);
 
-            _activeDomains = getActive(PrimaryAuthenticationConfiguration.class).stream()
-                .map(AuthenticationConfiguration::getDomain)
-                .filter(Objects::nonNull)
-                .filter(domain->!AuthenticationManager.ALL_DOMAINS.equals(domain))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+            // MultiValuedMap of domains to AuthenticationConfigurations that claim them
+            _activeDomainMap = getActive(PrimaryAuthenticationConfiguration.class).stream()
+                .filter(config -> null != config.getDomain())
+                .filter(config -> !AuthenticationManager.ALL_DOMAINS.equals(config.getDomain()))
+                .collect(LabKeyCollectors.toMultiValuedMap(AuthenticationConfiguration::getDomain, config -> config));
+
+            List<String> activeDomains = new ArrayList<>(_activeDomainMap.keySet());
+            Collections.sort(activeDomains);
+            _activeDomains = Collections.unmodifiableCollection(activeDomains);
         }
 
         // Little helper method simplifies the stream handling above
@@ -136,6 +144,11 @@ public class AuthenticationConfigurationCache
             Collection<T> configurations = (Collection<T>) _activeMap.get(clazz);
 
             return null != configurations ? configurations : Collections.emptyList();
+        }
+
+        private @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+        {
+            return new ArrayList<>(_activeDomainMap.get(domain));
         }
 
         private @NotNull Collection<String> getActiveDomains()
@@ -202,7 +215,15 @@ public class AuthenticationConfigurationCache
     }
 
     /**
-     * Return a collection of all email domains associated with authentication configurations, not including "*" or null
+     * Return a collection of authentication configurations that claim the specified domain
+     */
+    public static @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+    {
+        return CACHE.get(CACHE_KEY).getActiveConfigurationsForDomain(domain);
+    }
+
+    /**
+     * Return a collection of all email domains (not including "*" or null) associated with active authentication configurations
      */
     public static @NotNull Collection<String> getActiveDomains()
     {

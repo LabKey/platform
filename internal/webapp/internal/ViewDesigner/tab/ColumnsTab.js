@@ -119,8 +119,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             var fieldMeta = me.fieldMetaStore.getById(values.fieldKey);
                             if (fieldMeta) {
                                 var caption = fieldMeta.get('caption');
-                                if (caption && caption != '&nbsp;') {
-                                    return caption; // caption is already htmlEncoded
+                                if (caption) {
+                                    return Ext4.htmlEncode(caption);
                                 }
                                 return Ext4.htmlEncode(fieldMeta.get('name'));
                             }

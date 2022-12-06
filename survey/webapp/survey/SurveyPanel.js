@@ -18,6 +18,7 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             border      : false,
             bodyStyle   : 'background-color: transparent;',
             autoHeight  : true,
+            autoScroll  : true,
             items       : []
         });
 

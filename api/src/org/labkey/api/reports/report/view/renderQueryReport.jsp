@@ -74,7 +74,7 @@
     else
     {
 %>
-    <script>
+    <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
         Ext.onReady(function() {
             var qwp = new LABKEY.QueryWebPart({

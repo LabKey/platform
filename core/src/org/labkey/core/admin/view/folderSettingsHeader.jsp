@@ -26,6 +26,6 @@
     }
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init();
 </script>

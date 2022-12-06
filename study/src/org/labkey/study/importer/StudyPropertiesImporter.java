@@ -57,7 +57,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     /**
      * Imports additional study related properties into the properties sub folder
      */
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile root) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

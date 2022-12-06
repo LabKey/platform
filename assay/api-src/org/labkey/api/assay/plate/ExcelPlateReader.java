@@ -46,11 +46,9 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     @Override
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
-        try
+        DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
+        try (DataLoader loader = factory.createLoader(dataFile, false))
         {
-            DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
-            DataLoader loader = factory.createLoader(dataFile, false);
-
             return PlateUtils.parseGrid(dataFile, loader.load(), template.getRows(), template.getColumns(), this);
         }
         catch (IOException ioe)
@@ -62,11 +60,9 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     @Override
     public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
-        try
+        DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
+        try (DataLoader loader = factory.createLoader(dataFile, false))
         {
-            DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
-            DataLoader loader = factory.createLoader(dataFile, false);
-
             return PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns(), this);
         }
         catch (IOException ioe)

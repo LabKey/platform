@@ -175,6 +175,9 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         return getCollection(clazz).stream();  // TODO: Use uncachedStream below?
     }
 
+    /**
+     * Returns an uncached Object Stream that <b>must be closed</b>
+     */
     @Override
     public <T> Stream<T> uncachedStream(Class<T> clazz)
     {
@@ -238,6 +241,9 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         return mapStream(true);
     }
 
+    /**
+     * Returns an uncached Map Stream that <b>must be closed</b>
+     */
     @Override
     public Stream<Map<String, Object>> uncachedMapStream()
     {
@@ -255,6 +261,9 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         return resultSetStream(true);
     }
 
+    /**
+     * Returns an uncached ResultSet Stream that <b>must be closed</b>
+     */
     @Override
     public Stream<ResultSet> uncachedResultSetStream()
     {

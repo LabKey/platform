@@ -330,7 +330,19 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * Return the method of a given name.  Methods are accessible via the QueryModule's query
      * language.  Most tables do not have methods. 
      */
-    MethodInfo getMethod(String name);
+    default MethodInfo getMethod(String name)
+    {
+        return null;
+    }
+
+    /**
+     * return the fieldkeys of the columns that methods in on this table depend on.
+     * We could do this per method, but in practice it's a short list.
+     */
+    default Set<FieldKey> getMethodRequiredFieldKeys()
+    {
+        return Set.of();
+    }
 
     /**
      * Returns a string that will appear on the default import page and as the top line
@@ -739,5 +751,10 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         assert null != getUserSchema(); // this is only for tables in UserSchema
         if (null != getUserSchema() && !hasPermission(getUserSchema().getUser(), ReadPermission.class))
             throw new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
+    }
+
+    default List<Sort.SortField> getSortFields()
+    {
+        return List.of();
     }
 }

@@ -21,6 +21,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -40,9 +41,10 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyPHIExportTest extends StudyExportTest
 {
-    private String idPreface = "P!@#$%^&*(";
-    private int idLength = 7;
-    private Map<String,String> _originalFirstMouseStats;
+    private final String idPreface = "P!@#$%^&*(";
+    private final int idLength = 7;
+
+    private Map<String, String> _originalFirstMouseStats;
 
     @Override
     protected void doCreateSteps()
@@ -52,7 +54,7 @@ public class StudyPHIExportTest extends StudyExportTest
         _originalFirstMouseStats = getFirstMouseStats();
         setParticipantIdPreface(idPreface, idLength);
 
-        exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, false, null);
+        exportStudy(true, FieldDefinition.PhiSelectType.NotPHI, true, true, false, null);
     }
 
     protected void setParticipantIdPreface(String idPreface, int idLength)
@@ -129,7 +131,7 @@ public class StudyPHIExportTest extends StudyExportTest
         waitForElement(fileRow);
         click(fileRow);
 
-        _fileBrowserHelper.selectImportDataAction("Import Study");
+        _fileBrowserHelper.selectImportDataAction("Import Folder");
         clickButton("Start Import"); // Validate queries page
     }
 
@@ -170,7 +172,7 @@ public class StudyPHIExportTest extends StudyExportTest
         {
             startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
             waitForPipelineJobsToComplete(4, "Specimen import", false);
-            exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
+            exportStudy(true, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
 
             clickFolder(getFolderName());
             deleteStudy();
@@ -324,31 +326,31 @@ public class StudyPHIExportTest extends StudyExportTest
         goToManageStudy();
         clickAndWait(Locator.linkContainingText("Manage Alternate"));
         clickButton("Import");
-        waitForElement(Locator.xpath("//textarea[@id='tsv3']"));
+        ImportDataPage importDataPage = new ImportDataPage(getDriver());
         assertTextPresent("Export Participant Transforms");
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), BAD_ALTERNATEID_MAPPING);
-        clickButton("Submit", "Two participants may not share the same Alternate ID.");
+        importDataPage.setText(BAD_ALTERNATEID_MAPPING);
+        importDataPage.submitExpectingErrorContaining("Two participants may not share the same Alternate ID.");
 
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), ALTERNATEID_MAPPING);
-        clickButton("Submit");
+        importDataPage.setText(ALTERNATEID_MAPPING);
+        importDataPage.submit();
 
         // Test that ids actually got changed
         clickButton("Import");
-        waitForElement(Locator.xpath("//textarea[@id='tsv3']"));
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), BAD_ALTERNATEID_MAPPING_2);
-        clickButton("Submit", "Two participants may not share the same Alternate ID.");
+        importDataPage = new ImportDataPage(getDriver());
+        importDataPage.setText(BAD_ALTERNATEID_MAPPING_2);
+        importDataPage.submitExpectingErrorContaining("Two participants may not share the same Alternate ID.");
 
         // Test input lacking all columns
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), BAD_ALTERNATEID_MAPPING_3);
-        clickButton("Submit", "Either AlternateId or DateOffset must be specified.");
+        importDataPage.setText(BAD_ALTERNATEID_MAPPING_3);
+        importDataPage.submitExpectingErrorContaining("Either AlternateId or DateOffset must be specified.");
 
         // Test input without header row
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), BAD_ALTERNATEID_MAPPING_4);
-        clickButton("Submit", "The header row must contain ParticipantId and either AlternateId, DateOffset or both.");
+        importDataPage.setText(BAD_ALTERNATEID_MAPPING_4);
+        importDataPage.submitExpectingErrorContaining("The header row must contain ParticipantId and either AlternateId, DateOffset or both.");
 
         // Good input with different column order
-        setFormElement(Locator.xpath("//textarea[@id='tsv3']"), ALTERNATEID_MAPPING_2);
-        clickButton("Submit");
+        importDataPage.setText(ALTERNATEID_MAPPING_2);
+        importDataPage.submit();
 
         assertTextPresent("Manage Alternate", "Aliases");
         clickButton("Done");

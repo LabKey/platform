@@ -45,7 +45,8 @@ interface IAppState {
     showResetConfirmationModal: boolean,
     showViewDataConfirmationModal: boolean,
     navigateAfterSave: boolean,
-    userDefinedQuery: boolean
+    userDefinedQuery: boolean,
+    error: string,
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -56,27 +57,26 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         super(props);
 
         const { schemaName, queryName, returnUrl } = ActionURL.getParameters();
+        const _queryName = queryName ?? ActionURL.getParameter('query.queryName');
 
-        let messages = List<IBannerMessage>();
-        if ((!schemaName || !queryName)) {
-            let msg =  'Missing required parameter: schemaName and queryName.';
-            let msgType = 'danger';
-            let bannerMsg ={message : msg, messageType : msgType};
-            messages = messages.push(bannerMsg);
+        let error;
+        if (!schemaName || !_queryName) {
+            error = 'Missing required parameter: schemaName and queryName.';
         }
 
         this.state = {
             schemaName,
-            queryName,
+            queryName: _queryName,
             returnUrl,
-            messages,
-            showAlias : false,
+            messages: List<IBannerMessage>(),
+            showAlias: false,
             showSave: true,
             showEditSourceConfirmationModal: false,
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
             navigateAfterSave: false,
-            userDefinedQuery: false
+            userDefinedQuery: false,
+            error,
         };
     }
 
@@ -311,12 +311,24 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, showAlias, messages, showEditSourceConfirmationModal, showResetConfirmationModal, showViewDataConfirmationModal } = this.state;
+        const {
+            domain,
+            showAlias,
+            messages,
+            showEditSourceConfirmationModal,
+            showResetConfirmationModal,
+            showViewDataConfirmationModal,
+            error,
+        } = this.state;
         const isLoading = domain === undefined;
 
-        if (isLoading) {
-            return <LoadingSpinner/>
+        if (error) {
+            return <Alert>{error}</Alert>;
         }
+        if (isLoading) {
+            return <LoadingSpinner />;
+        }
+
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 {domain &&

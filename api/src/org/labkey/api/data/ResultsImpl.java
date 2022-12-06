@@ -28,6 +28,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -124,13 +125,14 @@ public class ResultsImpl implements Results, DataIterator
         _columnInfoList = new ArrayList<>(fieldMap.size()+1);
         _columnInfoList.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
 
+        FieldKey fk = null;
         try
         {
             if (null != rs)
             {
                 for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
                 {
-                    FieldKey fk = e.getKey();
+                    fk = e.getKey();
                     ColumnInfo col = e.getValue();
                     int find = rs.findColumn(col.getAlias());
                     _fieldIndexMap.put(fk, find);
@@ -142,10 +144,31 @@ public class ResultsImpl implements Results, DataIterator
         }
         catch (SQLException x)
         {
-            throw new IllegalArgumentException("Column not found in resultset");
+            throw new IllegalArgumentException("Column not found in resultset: " + fk.toDisplayString());
         }
     }
 
+    @Override
+    public @NotNull Connection getConnection()
+    {
+        Connection result = null;
+        try
+        {
+            if (_rs instanceof TableResultSet trs)
+            {
+                result = trs.getConnection();
+            }
+            if (result == null)
+            {
+                result = _rs.getStatement().getConnection();
+            }
+            return result;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     @Deprecated
     public ResultsImpl(RenderContext ctx)

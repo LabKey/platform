@@ -308,12 +308,14 @@ public class DataIteratorUtil
     {
         BatchValidationException errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
-        DataLoader loader = DataLoaderService.get().createLoader(from, null, true, c, TabLoader.TSV_FILE_TYPE);
-        loader.setInferTypes(false);
-        int count = copy(context, loader, to, c, user);
-        if (errors.hasErrors())
-            throw errors;
-        return count;
+        try (DataLoader loader = DataLoaderService.get().createLoader(from, null, true, c, TabLoader.TSV_FILE_TYPE))
+        {
+            loader.setInferTypes(false);
+            int count = copy(context, loader, to, c, user);
+            if (errors.hasErrors())
+                throw errors;
+            return count;
+        }
     }
 
 

@@ -34,7 +34,7 @@
     String pivotDesignerId = "pivotDesigner" + uid;
     String cellsetId = "cellset" + uid;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var cube;
 var starttime;
 

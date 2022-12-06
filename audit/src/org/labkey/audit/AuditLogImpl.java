@@ -26,6 +26,7 @@ import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -199,19 +200,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public String getTableName()
-    {
-        return AuditQuerySchema.AUDIT_TABLE_NAME;
-    }
-
-    @Override
-    public TableInfo getTable(ViewContext context, String name)
-    {
-        UserSchema schema = createSchema(context.getUser(), context.getContainer());
-        return schema.getTable(name);
-    }
-
-    @Override
     public UserSchema createSchema(User user, Container container)
     {
         return new AuditQuerySchema(user, container);
@@ -224,10 +212,23 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return LogManager.get().getAuditEvent(user, eventType, rowId);
     }
 
+    @Nullable
+    @Override
+    public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId, @Nullable ContainerFilter cf)
+    {
+        return LogManager.get().getAuditEvent(user, eventType, rowId, cf);
+    }
+
     @Override
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         return LogManager.get().getAuditEvents(container, user, eventType, filter, sort);
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
+    {
+        return LogManager.get().getAuditEvents(container, user, eventType, filter, sort, cf);
     }
 
     @Override

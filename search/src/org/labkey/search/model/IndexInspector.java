@@ -79,7 +79,7 @@ public class IndexInspector
 
     private static Path getIndexDirectory()
     {
-        return SearchPropertyManager.getIndexDirectory().toPath();
+        return LuceneSearchServiceImpl.getIndexDirectory().toPath();
     }
 
     private static class TSVIndexWriter extends TSVWriter

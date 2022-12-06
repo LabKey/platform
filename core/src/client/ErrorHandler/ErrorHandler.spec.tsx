@@ -14,7 +14,7 @@ describe('ErrorHandler', () => {
             message: 'This is a not found exception',
         };
         const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
-        expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
+        expect(wrapper.find('.labkey-error-heading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });

@@ -72,6 +72,12 @@ public class StudyDomainKind extends BaseStudyDomainKind
     }
 
     @Override
+    public String getTypeLabel(Domain domain)
+    {
+        return "Custom Study Properties";
+    }
+
+    @Override
     public boolean allowTextChoiceProperties()
     {
         return false;

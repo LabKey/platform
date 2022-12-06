@@ -28,7 +28,7 @@
     JspView<MoveRunsBean> me = (JspView<MoveRunsBean>) HttpView.currentView();
     MoveRunsBean bean = me.getModelBean();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function moveTo(targetContainerId)
     {
         document.forms["moveForm"].targetContainerId.value = targetContainerId;

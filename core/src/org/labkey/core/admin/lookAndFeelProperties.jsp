@@ -29,12 +29,13 @@
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -79,28 +80,27 @@
     // If this is a folder then skip everything except default date & number formats
     if (!folder)
     {
-        String shortNameHelp = "The header short name supports string substitution of specific server properties. For example, " +
-            "the value:<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>will currently result in this header text:<br><br><code>&nbsp;&nbsp;LabKey " + AdminBean.releaseVersion + "</code><br><br>" +
-            "The supported properties and their current values are listed in the table below.<br><br>" +
-            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
-            "<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>" +
-
-            AdminBean.getPropertyMap().entrySet().stream()
-                .map(e -> "<tr valign=top class=\"labkey-row\"><td>" + h(e.getKey()) + "</td><td>" + h(e.getValue()) + "</td></tr>\n")
-                .collect(Collectors.joining()) +
-
-            "</table>";
+        HtmlString shortNameHelp = HtmlStringBuilder.of("The header short name supports string substitution of specific server properties. For example, the value:")
+            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>"))
+            .append("will currently result in this header text:")
+            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;"))
+            .append("LabKey " + AdminBean.releaseVersion)
+            .append(HtmlString.unsafe("</code><br><br>"))
+            .append("The supported properties and their current values are listed in the table below.")
+            .append(HtmlString.unsafe("<br><br>"))
+            .append(AdminBean.getPropertyGridHtml(AdminBean.getPropertyMap()))
+            .getHtmlString();
 %>
 <tr>
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">System description (used in emails)</td>
-    <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
+    <td><input type="text" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, true, 350)%></td>
-    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
+    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, 350)%></td>
+    <td><input type="text" name="<%=systemShortName%>" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Theme</td>
@@ -124,8 +124,8 @@
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
-        <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
-        <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
+        <label><input type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
     </td>
 </tr>
     <% if (hasPremiumModule)
@@ -140,8 +140,8 @@
 
     </td>
     <td>
-        <label><input onclick="document.getElementById('app-menu-warning').style.display='none'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
-        <label><input onclick="document.getElementById('app-menu-warning').style.display='block'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
+        <label><input onclick="document.getElementById('app-menu-warning').style.display='none'" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input onclick="document.getElementById('app-menu-warning').style.display='block'" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
             <%=h(FolderDisplayMode.ADMIN.getDisplayString())%> <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
         </label><br>
     </td>
@@ -151,7 +151,7 @@
     %>
 <tr>
     <td class="labkey-form-label">Show LabKey Help menu item</td>
-    <td><input type="checkbox" name="enableHelpMenu" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
+    <td><input type="checkbox" name="<%=helpMenuEnabled%>" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
 </tr>
 <%
     String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
@@ -159,19 +159,22 @@
 %>
 <tr>
     <td class="labkey-form-label">Enable Object-Level Discussions<%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
-    <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
+    <td><input type="checkbox" name="<%=discussionEnabled%>" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
-    <td><input type="text" name="logoHref" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
+    <td><input type="text" name="<%=logoHref%>" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
-    <td><input type="text" name="reportAProblemPath" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
+    <td><input type="text" name="<%=reportAProblemPath%>" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
-    <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
+    <td style="vertical-align: top;"><input type="text" name="<%=supportEmail%>" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
 </tr>
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
@@ -180,11 +183,11 @@
     <td class="labkey-form-label">
         System email address (<i>from</i> address for system notification emails)<%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
-    <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
+    <td><input type="text" name="<%=systemEmailAddress%>" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
-    <td><input type="text" name="companyName" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
+    <td><input type="text" name="<%=companyName%>" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -243,15 +246,15 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
-    <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
+    <td><input type="text" name="<%=defaultDateFormat%>" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for date-times<%=helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
-    <td><input type="text" name="defaultDateTimeFormat" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
+    <td><input type="text" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
-    <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
+    <td><input type="text" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -264,7 +267,7 @@
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
     if (c.isRoot())
     {
-        DateParsingMode dateParsingMode = laf.getDateParsingMode();
+        DateParsingMode mode = laf.getDateParsingMode();
         String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
                 "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
                 "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
@@ -273,19 +276,19 @@
 <tr>
     <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
     <td>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
+        <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.US%>"<%=checked(mode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
+        <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.NON_US%>"<%=checked(mode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
     </td>
 </tr><%
     }
 %>
 <tr>
     <td class="labkey-form-label">Additional parsing pattern for dates<%=helpPopup("Extra date parsing pattern", dateParsingHelp, true, 300)%></td>
-    <td><input type="text" name="extraDateParsingPattern" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
+    <td><input type="text" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
-    <td><input type="text" name="extraDateTimeParsingPattern" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
+    <td><input type="text" name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -296,7 +299,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
-    <td><input type="checkbox" name="restrictedColumnsEnabled" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
+    <td><input type="checkbox" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -313,7 +316,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Alternative login page<%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
-    <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
+    <td><input type="text" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -333,7 +336,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Alternative site welcome page<%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
-    <td><input type="text" name="customWelcome" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
+    <td><input type="text" name="<%=customWelcome%>" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -365,7 +368,7 @@
 </tr>
 </table>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var _form = new LABKEY.Form({ formElement: 'form-preferences'});
 
     function confirmReset()

@@ -21,35 +21,42 @@ LABKEY.Utils = new function(impl, $) {
 
     // Insert a hidden html FORM into to page, put the form values into it, and submit it - the server's response will
     // make the browser pop up a dialog
-    var formSubmit = function(url, formData)
+    var formSubmit = function(url, formData, formProps)
     {
         if (!formData)
             formData = {};
         if (!formData['X-LABKEY-CSRF'])
             formData['X-LABKEY-CSRF'] = LABKEY.CSRF;
 
-        var formId = LABKEY.Utils.generateUUID();
+        const formId = LABKEY.Utils.generateUUID();
+        const formElement = document.createElement('form');
+        formElement.action = url;
+        formElement.id = formId;
+        formElement.method = 'POST';
 
-        var html = [];
-        html.push('<f');   // avoid form tag, it causes skipfish false positive
-        html.push('orm method="POST" id="' + formId + '"action="' + url + '">');
-        for (var name in formData)
-        {
-            if (!formData.hasOwnProperty(name))
-                continue;
-
-            var value = formData[name];
-            if (value === undefined)
-                continue;
-
-            html.push( '<input type="hidden"' +
-                    ' name="' + LABKEY.Utils.encodeHtml(name) + '"' +
-                    ' value="' + LABKEY.Utils.encodeHtml(value) + '" />');
+        if (formProps) {
+            Object.keys(formProps).forEach(function(prop) {
+                formElement[prop] = formProps[prop];
+            });
         }
-        html.push("</form>");
 
-        $('body').append(html.join(''));
-        $('form#' + formId).submit();
+        Object.keys(formData).forEach(function(name) {
+            const value = formData[name];
+
+            if (value === undefined) {
+                return;
+            }
+
+            const inputElement = document.createElement('input');
+            inputElement.type = 'hidden';
+            inputElement.name = name;
+            inputElement.value = value;
+
+            formElement.appendChild(inputElement);
+        });
+
+        document.body.appendChild(formElement);
+        formElement.submit();
     };
 
     var displayModalAlert = function(title, msg) {
@@ -136,6 +143,15 @@ LABKEY.Utils = new function(impl, $) {
         }
 
         return nextRow;
+    };
+
+    var isValidQuerySelector = function(selector) {
+        try {
+            document.createDocumentFragment().querySelector(selector);
+        } catch(ignore) {
+            return false;
+        }
+        return true;
     };
 
     /**
@@ -260,9 +276,10 @@ LABKEY.Utils = new function(impl, $) {
      * @name postToAction
      * @param {String} href containing action and parameters to be POSTed.
      * @param {Object} formData values to include on the hidden form
+     * @param {Object} formProps properties to put on the hidden form
      */
-    impl.postToAction = function (href, formData) {
-        formSubmit(href, formData);
+    impl.postToAction = function (href, formData, formProps) {
+        formSubmit(href, formData, formProps);
     };
 
     /**
@@ -274,10 +291,11 @@ LABKEY.Utils = new function(impl, $) {
      * @param {String} message confirmation message to display.
      * @param {String} href containing action and parameters to be POSTed.
      * @param {Object} formData values to include on the hidden form
+     * @param {Object} formProps properties to put on the hidden form
      */
-    impl.confirmAndPost = function (message, href, formData) {
+    impl.confirmAndPost = function (message, href, formData, formProps) {
         if (confirm(message))
-            formSubmit(href, formData);
+            formSubmit(href, formData, formProps);
 
         return false;
     };
@@ -835,6 +853,80 @@ LABKEY.Utils = new function(impl, $) {
         else
             link.childNodes[i].src = link.childNodes[i].src.replace("minus.gif", "plus.gif");
         return false;
+    };
+
+    impl.attachListener = function(id, eventName, handler, immediate)
+    {
+        if (!id || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            const el = document.getElementById(id);
+            if (el)
+                el.addEventListener(eventName, handler);
+        };
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    };
+
+    // attach handlers to element events e.g. onclick=fn() etc.
+    impl.attachEventHandler = function(el_, eventName, handler, immediate)
+    {
+        const el = el_;
+        if (!el || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            if (typeof el !== "string")
+            {
+                el['on' + eventName] = handler;
+            }
+            else
+            {
+                try
+                {
+                    // Issue 46371: LKS grid column header locking clones the header row which results in multiple
+                    //      DOM elements with the same id attr, but only the first was getting the event handler attached
+                    const list = document.querySelectorAll('#' + el);
+                    for (let i in list)
+                        list[i]['on' + eventName] = handler;
+                }
+                catch (ignore)
+                {
+                    const elById = document.getElementById(el);
+                    if (elById)
+                        elById['on' + eventName] = handler;
+                }
+            }
+        };
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    };
+
+    impl.attachEventHandlerForQuerySelector = function(selector, eventName, handler, immediate)
+    {
+        if (!selector || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            const list = document.querySelectorAll(selector);
+            for (let i in list)
+                list[i]['on' + eventName] = handler;
+        };
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    };
+
+    /**
+     * Given a radio button, determine which one in the group is selected and return its value
+     * @param radioButton one of the radio buttons in the group
+     */
+    impl.getRadioFieldValue = function(radioButton) {
+        if (radioButton.form && radioButton.name) {
+            const radioElements = radioButton.form.elements[radioButton.name];
+            for (let i = 0; i < radioElements.length; i++) {
+                if (radioElements[i].checked) {
+                    return radioElements[i].value;
+                }
+            }
+        }
     };
 
     return impl;

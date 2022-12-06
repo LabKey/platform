@@ -1,11 +1,10 @@
 package org.labkey.api.qc.export;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
 import java.util.ArrayList;
@@ -47,7 +46,7 @@ public interface DataStateImportExportHelper
      */
     int getPriority();
 
-    void write(Container container, ImportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml);
+    void write(Container container, FolderExportContext ctx, StudyqcDocument.Studyqc qcXml);
 
     boolean isDataStateInUse(Container container, DataState state);
 
@@ -62,4 +61,5 @@ public interface DataStateImportExportHelper
     void setDefaultDirectEntryQCState(Container container, User user, Integer stateId);
     void setShowPrivateDataByDefault(Container container, User user, boolean showPrivate);
     void setBlankQCStatePublic(Container container, User user, boolean isPublic);
+    void setRequireCommentOnQCStateChange(Container container, User user, boolean requireCommentOnQCStateChange);
 }

@@ -16,7 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -151,7 +151,7 @@ public class TestDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         throw new UnsupportedOperationException();
     }

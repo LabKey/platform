@@ -25,9 +25,11 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSetti
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -61,7 +63,25 @@ public class DbLoginManager
 
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
-    public enum Key { Strength, Expiration }
+    public enum Key implements StartupProperty
+    {
+        Strength()
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Password strength. Valid values: " + Arrays.toString(PasswordRule.values());
+            }
+        },
+        Expiration()
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Password expiration. Valid values: " + Arrays.toString(PasswordExpiration.values());
+            }
+        }
+    }
 
     public static void saveProperties(User user, SaveDbLoginPropertiesForm form)
     {

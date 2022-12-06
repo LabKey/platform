@@ -16,34 +16,18 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.sql.LabKeySql;
 
 
 public class QString extends QExpr implements IConstant
 {
-    static public String unquote(String str)
-    {
-        if (str.length() < 2)
-            throw new IllegalArgumentException();
-        if (!str.startsWith("'") || !str.endsWith("'"))
-            throw new IllegalArgumentException();
-        str = str.substring(1, str.length() - 1);
-        str = StringUtils.replace(str, "''", "'");
-        return str;
-    }
-
     @NotNull
     @Override
     public JdbcType getJdbcType()
     {
         return JdbcType.VARCHAR;
-    }
-
-    static public String quote(String str)
-    {
-        return "'" + StringUtils.replace(str, "'", "''") + "'";
     }
 
     public QString()
@@ -54,13 +38,13 @@ public class QString extends QExpr implements IConstant
     public QString(String value)
     {
 		this();
-        setTokenText(quote(value));
+        setTokenText(LabKeySql.quoteString(value));
     }
 
     @Override
     public String getValue()
     {
-        return unquote(getTokenText());
+        return LabKeySql.unquoteString(getTokenText());
     }
 
     @Override

@@ -30,7 +30,7 @@
     ActionURL plateUrl = urlProvider(AssayUrls.class).getPlateMetadataTemplateURL(getContainer(), provider);
 %>
 
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.Utils.onReady(function () {
     var plateTemplateEl;
     var nl = document.getElementsByName('plateTemplate');

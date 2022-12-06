@@ -16,7 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Path;
 
@@ -111,8 +111,8 @@ public class DavException extends Exception
             o.put("resourceName", p.getName());
         }
         // check for interesting annotations
-        Map<Enum,String> map = ExceptionUtil.getExceptionDecorations(this);
-        for (Map.Entry<Enum,String> e : map.entrySet())
+        Map<Enum<?>, String> map = ExceptionUtil.getExceptionDecorations(this);
+        for (Map.Entry<Enum<?>, String> e : map.entrySet())
         {
             if (e.getKey() == ExceptionUtil.ExceptionInfo.ResolveURL ||
                     e.getKey() == ExceptionUtil.ExceptionInfo.ResolveText ||

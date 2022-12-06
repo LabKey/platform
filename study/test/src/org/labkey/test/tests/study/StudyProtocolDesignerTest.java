@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
-    // Cohorts: defined in study archive
+    // Cohorts: defined in folder archive
     private static final String[] COHORTS = {"Positive", "Negative"};
 
     private static final File FOLDER_ARCHIVE = TestFileUtils.getSampleData("FolderExport/ProtocolLookup.folder.zip");

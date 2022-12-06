@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -81,7 +82,15 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null
      */
-    MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName);
+    default MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    {
+        return addColumns(domain, legacyName, null);
+    }
+
+    MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName,@Nullable ContainerFilter cf);
+
+
+    void setTitle(String title);
 
     void setDescription(String description);
 
@@ -109,5 +118,12 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     default void setFilterPatterns(String columnName, String... patterns)
     {
         // by default we do nothing
+    }
+
+
+    /** returns a column that wraps objectid, this is only required to support the expObject() table method */
+    default ColumnInfo getExpObjectColumn()
+    {
+        return null;
     }
 }

@@ -19,15 +19,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -154,7 +153,6 @@ public class JsonWriter
         props.put("isSelectable", selectable);  //avoid double-negative boolean name
         props.put("selectable", selectable);    //avoid double-negative boolean name
 
-
         // These fields are new and don't need to have the "is" prefix for backwards compatibility
         props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());
         props.put("shownInUpdateView", cinfo != null && cinfo.isShownInUpdateView());
@@ -163,12 +161,12 @@ public class JsonWriter
         props.put("measure", cinfo != null && cinfo.isMeasure());
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
-        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHIType.NotPHI.name());
+        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHI.NotPHI.name());
         props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
         props.put("filterable", dc.isFilterable());
-        props.put("scannable", cinfo != null && !cinfo.isScannable());
+        props.put("scannable", cinfo != null && cinfo.isScannable());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
@@ -277,12 +275,12 @@ public class JsonWriter
         }
         else
         {
-            props.put("shortCaption", dc.getCaption());
+            props.put("shortCaption", dc.getCaption(null, false));
         }
 
-        props.put("caption", dc.getCaption());
+        props.put("caption", dc.getCaption(null, false));
         if (includeDomainFormat)
-            props.put("label", dc.getCaption());
+            props.put("label", dc.getCaption(null, false));
 
         if (includeLookup && cinfo != null)
         {
@@ -468,8 +466,9 @@ public class JsonWriter
             extGridColumn.put("align", dc.getTextAlign());
         if (dc.getDescription() != null)
             extGridColumn.put("tooltip", dc.getDescription());
-        if (dc.getCaption() != null)
-            extGridColumn.put("header", dc.getCaption());
+        String caption = dc.getCaption(null, false);
+        if (caption != null)
+            extGridColumn.put("header", caption);
         if (dc.getWidth() != null)
         {
             try

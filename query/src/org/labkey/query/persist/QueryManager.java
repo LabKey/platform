@@ -23,13 +23,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.json.old.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -37,6 +38,7 @@ import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -57,7 +59,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
@@ -703,6 +704,9 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
+        if (table.isPublic() && table.getPublicSchemaName() != null && !schemaPath.toString().equalsIgnoreCase(table.getPublicSchemaName()))
+            warnings.add(new QueryParseWarning("(metadata) TableInfo.getPublicSchemaName() does not match: set to '" + table.getPublicSchemaName() + "', expected '" + schemaPath + "'", null, 0,0));
+
         try
         {
             //validate foreign keys and other metadata warnings
@@ -988,8 +992,33 @@ public class QueryManager
                 Map<String, Object> statsMap = bag.uniqueSet().stream()
                         .collect(Collectors.toMap(Function.identity(), bag::getCount));
 
-                return Collections.singletonMap("externalDatasources", statsMap);
+                return Map.of("externalDatasources", statsMap,
+                        "customViewCounts",
+                        Map.of(
+                                "DataClasses", getCustomViewCounts("exp.data"),
+                                "SampleTypes", getCustomViewCounts("samples"),
+                                "Assays", getCustomViewCounts("assay"),
+                                "Inventory", getCustomViewCounts("inventory")
+                        )
+                );
             });
         }
+    }
+
+    private static Map<String, Object> getCustomViewCounts(String schema)
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        String schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
+        String schemaClause = schema.equalsIgnoreCase("assay") ? "C." + schemaField + " LIKE 'assay.%'" : "C." + schemaField + " = '" + schema + "'";
+        return Map.of(
+                "defaultOverrides", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                "inheritable", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags = 1").getObject(Long.class), // inheritable, not hidden, not snapshot
+                "namedViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                "shared", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
+        );
     }
 }

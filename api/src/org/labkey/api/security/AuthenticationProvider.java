@@ -19,36 +19,26 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.settings.ConfigProperty;
-import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -113,111 +103,80 @@ public interface AuthenticationProvider
     }
 
     /**
-     * Override to retrieve and save startup properties intended for this provider. Invoked after new install only.
+     * Override to retrieve and save startup properties intended for this provider. Invoked after every server startup.
      */
     default void handleStartupProperties()
     {
     }
 
-    // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
+    // Retrieves all the startup properties in the specified categories, populates them into a form, and saves the form
+    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
     {
-        Map<String, String> map = getPropertyMap(categories);
+        assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("Description") || c.name().equals("Enabled")).count() == 2 :
+            type.getName() + " does not define required Description and Enabled constants!";
 
-        if (!map.isEmpty())
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
         {
-            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
-            FORM form = factory.fromMap(map);
-
-            // If description is provided in the startup properties file and an existing configuration for this provider
-            // matches that description then update the existing configuration. If not, create a new configuration. #39474
-            if (form.getDescription() != null)
+            @Override
+            public void handle(Map<T, StartupPropertyEntry> properties)
             {
-                AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
-                    .filter(ac -> ac.getDescription().equals(form.getDescription()))
-                    .map(AuthenticationConfiguration::getRowId)
-                    .findFirst()
-                    .ifPresent(form::setRowId);
+                if (!properties.isEmpty())
+                {
+                    Map<String, String> map = properties.entrySet().stream()
+                        .collect(Collectors.toMap(e-> e.getKey().getPropertyName(), e->e.getValue().getValue()));
+
+                    ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
+                    FORM form = factory.fromMap(map);
+
+                    // If description is provided in the startup properties file and an existing configuration for this provider
+                    // matches that description then update the existing configuration. If not, create a new configuration. #39474
+                    if (form.getDescription() != null)
+                    {
+                        AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                            .filter(ac -> ac.getDescription().equals(form.getDescription()))
+                            .map(AuthenticationConfiguration::getRowId)
+                            .findFirst()
+                            .ifPresent(form::setRowId);
+                    }
+                    else
+                    {
+                        form.setDescription(form.getProvider() + " Configuration");
+                    }
+
+                    AuthenticationConfiguration<?> configuration = SaveConfigurationAction.saveForm(form, null);
+                    configuration.handleStartupProperties(map);
+                }
             }
-            else
-            {
-                form.setDescription(form.getProvider() + " Configuration");
-            }
-
-            SaveConfigurationAction.saveForm(form, null);
-        }
-    }
-
-    // Helper that retrieves all the configuration properties in the specified category and saves them into a property map with the same name
-    default void saveStartupProperties(String category)
-    {
-        Map<String, String> map = getPropertyMap(Collections.singleton(category));
-
-        if (!map.isEmpty())
-        {
-            PropertyMap propertyMap = PropertyManager.getWritableProperties(category, true);
-            propertyMap.clear();
-            propertyMap.putAll(map);
-            propertyMap.save();
-        }
-    }
-
-    private Map<String, String> getPropertyMap(Collection<String> categories)
-    {
-        return categories.stream()
-            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
-            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+        });
     }
 
     interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
     interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
-
-        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
-
-        @Override
-        default void migrateOldConfiguration(boolean active, User user)
-        {
-            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
-        }
     }
 
-    interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface SSOAuthenticationProvider<SSO extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<SSO>, AuthenticationConfigurationFactory<SSO>
     {
-        @Nullable SsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
-
         @Override
-        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
         {
-            AttachmentService svc = AttachmentService.get();
-            AttachmentParent oldParent = AuthenticationLogoAttachmentParent.get();
+            // SSO authentication provider StartupProperty enums must define AutoRedirect, HeaderLogo, and LoginPageLogo constants
+            assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("AutoRedirect") || c.name().equals("HeaderLogo") || c.name().equals("LoginPageLogo")).count() == 3 :
+                type.getName() + " does not define required AutoRedirect, HeaderLogo, and LoginPageLogo constants!";
 
-            List<Attachment> logos = Arrays.stream(AuthLogoType.values())
-                .map(alt->svc.getAttachment(oldParent, alt.getOldPrefix() + getName()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            PrimaryAuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
+        }
 
-            SsoSaveConfigurationForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
-            SaveConfigurationAction.saveOldProperties(form, user);
-
-            if (null != form && !logos.isEmpty())
-            {
-                SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
-
-                List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
-                svc.addAttachments(configuration, attachmentFiles, user);
-                for (AuthLogoType alt : AuthLogoType.values())
-                    svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
-
-                AttachmentCache.clearAuthLogoCache();
-                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            }
+        static String getStartupLogoDescription(String type, String name)
+        {
+            return "File name of the image to use as the " + type + " logo for this " + name + " configuration. " +
+                "Valid values: [a relative path to an image file in the \"startup\" folder, PLACEHOLDER to save a " +
+                "placeholder image for this logo, <BLANK> to clear any previously set image]";
         }
     }
 
@@ -244,13 +203,6 @@ public interface AuthenticationProvider
 
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
-
-        default void migrateOldConfiguration(boolean active, User user)
-        {
-            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
-        }
-
         /**
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
          * temporarily not require secondary authentication if this has been misconfigured or a 3rd

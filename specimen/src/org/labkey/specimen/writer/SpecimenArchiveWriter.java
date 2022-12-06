@@ -30,8 +30,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
-import org.labkey.specimen.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.writer.VirtualFile;
@@ -39,6 +37,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.specimen.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
