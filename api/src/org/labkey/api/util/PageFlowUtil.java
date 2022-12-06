@@ -2255,10 +2255,37 @@ public class PageFlowUtil
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     @SuppressWarnings("UnusedDeclaration")
-    public static JSONObject jsInitObject()
+    public static JSONObject jsInitObject(@Nullable String containerId)
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
-        ViewContext context = HttpView.currentView().getViewContext();
+        ContainerUser context = HttpView.currentView().getViewContext();
+        if (containerId != null)
+        {
+            final Container target = ContainerManager.getForId(containerId);
+            if (target == null)
+            {
+                _log.error("Unknown container: " + containerId);
+            }
+            else
+            {
+                final User u = context.getUser();
+                context = new ContainerUser()
+                {
+                    @Override
+                    public User getUser()
+                    {
+                        return u;
+                    }
+
+                    @Override
+                    public Container getContainer()
+                    {
+                        return target;
+                    }
+                };
+            }
+        }
+
         return jsInitObject(context, null, new LinkedHashSet<>(), false);
     }
 

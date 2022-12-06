@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,16 +54,17 @@ import org.mozilla.javascript.LazilyLoadedCtor;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.WrapFactory;
 import org.mozilla.javascript.commonjs.module.ModuleScript;
+import org.mozilla.javascript.commonjs.module.ModuleScriptProvider;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProvider;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProviderBase;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
-import org.json.old.JSONObject;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -388,6 +390,13 @@ class ScriptReferenceImpl implements ScriptReference
             ScriptContext ctxt = getContext();
             if (map != null)
             {
+                // NOTE: this is one option to serialize the target container into the scripts.
+                // NOTE: we cannot simply add a top-level property since all other scripts loaded via require() need access to this
+                if (map.containsKey("EffectiveContainerId"))
+                {
+                    ctxt.setAttribute("EffectiveContainerId", map.get("EffectiveContainerId"), ScriptContext.ENGINE_SCOPE);
+                }
+
                 Scriptable scope = _engine.getRuntimeScope(ctxt);
                 Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
                 for (Map.Entry<String, ?> entry : map.entrySet())
@@ -762,6 +771,15 @@ class RhinoEngine extends RhinoScriptEngine
     }
     */
 
+    private static class LiteralJSModuleScript extends ModuleScript
+    {
+        private static final String BASE_URI = "module://scripts/";
+        public LiteralJSModuleScript(Context ctx, String name, final String sourceJS) throws URISyntaxException
+        {
+            super(ctx.compileString(sourceJS, name, 1, null), new URI(BASE_URI + name), new URI(BASE_URI));
+        }
+    }
+
     @Override
     protected Scriptable getRuntimeScope(ScriptContext ctxt)
     {
@@ -779,7 +797,39 @@ class RhinoEngine extends RhinoScriptEngine
         Context cx = enterContext();
         try
         {
-            Require require = new Require(cx, getTopLevel(), _moduleScriptProvider, null, null, true);
+            Script preExec = null;
+
+            // NOTE: relying on this property being serialized as a string is not ideal.
+            // Also note, if we go this route then the string EffectiveContainerId should be made into a static variable
+            final Object effectiveContainerId = ctxt.getAttribute("EffectiveContainerId", ScriptContext.ENGINE_SCOPE);
+
+            Map<String, ModuleScript> extraModules = null;
+            if (effectiveContainerId != null)
+            {
+                // This is one option. This code is executed prior to loading any module via require() and defines this top-level variable:
+                preExec = new Script() {
+                    @Override
+                    public Object exec(Context cx, Scriptable scope)
+                    {
+                        ScriptableObject.putProperty(scope, "EffectiveContainerId", effectiveContainerId);
+                        return null;
+                    }
+                };
+
+                // This is a second option. This code is executed prior to loading any module via require(). Other JS scripts can call require('effectiveContainer') to load this.
+                // This option is more complex, but might be useful if we want to return a more complex object. This could wrap the entire call to PageFlowUtil.jsInitObject(), for example.
+                try
+                {
+                    extraModules = Map.of("effectiveContainer", new LiteralJSModuleScript(cx, "effectiveContainer.js", "exports.effectiveContainerId = '" + effectiveContainerId + "'"));
+                }
+                catch (URISyntaxException e)
+                {
+                    //TODO: best way to handle??
+                    throw new UnexpectedException(e);
+                }
+            }
+
+            Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), preExec, null, true);
             require.install(scriptable);
         }
         finally
@@ -852,6 +902,27 @@ class RhinoEngine extends RhinoScriptEngine
         if (SandboxContextFactory.SANDBOX != ContextFactory.getGlobal())
             throw new IllegalStateException();
         return super.compile(script);
+    }
+
+    private static class WrappingModuleScriptProvider implements ModuleScriptProvider
+    {
+        private final SoftCachingModuleScriptProvider _provider;
+        private final Map<String, ModuleScript> _extraModules = new HashMap<>();
+
+        public WrappingModuleScriptProvider(SoftCachingModuleScriptProvider provider, @Nullable Map<String, ModuleScript> extraModules)
+        {
+            _provider = provider;
+            if (extraModules != null)
+            {
+                _extraModules.putAll(extraModules);
+            }
+        }
+
+        @Override
+        public ModuleScript getModuleScript(Context cx, String moduleId, URI moduleUri, Scriptable paths) throws Exception
+        {
+            return(_extraModules.containsKey(moduleId) ? _extraModules.get(moduleId) : _provider.getModuleScript(cx, moduleId, moduleUri, paths));
+        }
     }
 }
 

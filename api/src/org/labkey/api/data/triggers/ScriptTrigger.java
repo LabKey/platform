@@ -22,6 +22,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
@@ -252,6 +253,13 @@ import java.util.function.Supplier;
                     bindings.put("extraContext", extraContext);
                     bindings.put("schemaName", _table.getPublicSchemaName());
                     bindings.put("tableName", _table.getPublicName());
+
+                    UserSchema us = _table.getUserSchema();
+                    if (us != null)
+                    {
+                        bindings.put("EffectiveUser", us.getUser());
+                        bindings.put("EffectiveContainerId", us.getContainer().getId());
+                    }
 
                     _script.eval(bindings);
                 }
