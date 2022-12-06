@@ -19,14 +19,12 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -122,25 +120,15 @@ public class TriggerDataBuilderHelper
                 return pre;
             pre = LoggingDataIterator.wrap(pre);
 
-            boolean includeAllColumns = !(context.getInsertOption().mergeRows && (_target instanceof ExpMaterialTable || _target instanceof ExpDataClassDataTable));
+            Set<String> mergeKeys = null;
+            if (_target instanceof ExpTable)
+                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys();
+
+            boolean includeAllColumns = !context.getInsertOption().mergeRows || mergeKeys == null;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
             if (!includeAllColumns)
-            {
-                Set<String> mergeKeys = new HashSet<>();
-                if (_target instanceof ExpMaterialTable)
-                {
-                    mergeKeys.add("materialSourceId");
-                    mergeKeys.add("name");
-                }
-                else
-                {
-                    mergeKeys.add("classid");
-                    mergeKeys.add("name");
-                }
-
                 coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);
-            }
 
             return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
         }

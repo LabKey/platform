@@ -120,6 +120,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
 
+    public static final Set<String> MATERIAL_ALT_KEYS;
+    static {
+        MATERIAL_ALT_KEYS = new HashSet<>(Arrays.asList(Column.MaterialSourceId.name(), Column.Name.name()));
+    }
+
     public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
@@ -1052,6 +1057,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         return m;
+    }
+
+    @Override
+    public Set<String> getAltMergeKeys()
+    {
+        return MATERIAL_ALT_KEYS;
     }
 
     @Override

@@ -103,6 +103,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -125,6 +126,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 {
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
+
+    public static final Set<String> DATA_CLASS_ALT_KEYS;
+    static {
+        DATA_CLASS_ALT_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+    }
 
     private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
 
@@ -759,6 +765,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return m;
         }
         return null;
+    }
+
+    @Override
+    public Set<String> getAltMergeKeys()
+    {
+        return DATA_CLASS_ALT_KEYS;
     }
 
     @Override
