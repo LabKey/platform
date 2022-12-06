@@ -604,24 +604,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         // for a list of recognized site setting properties see the "Available Site Settings" action
 
         ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler());
-
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, RandomStartupProperties.class)
-        {
-            @Override
-            public void handle(Map<RandomStartupProperties, StartupPropertyEntry> properties)
-            {
-                if (!properties.isEmpty())
-                {
-                    WriteableAppProps writeable = AppProps.getWriteableInstance();
-                    properties.forEach((rsp, cp) -> {
-                        LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
-                        rsp.setValue(writeable, cp.getValue());
-                    });
-                    writeable.save(null);
-                }
-            }
-        });
-
+        ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler());
         ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
         {
             @Override

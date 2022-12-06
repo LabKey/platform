@@ -44,7 +44,6 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
             writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
         }
     },
-    // TODO: Remove SiteRootStartupProperties.siteRootFile in favor of this property
     siteFileRoot("Site-level file root")
     {
         @Override
