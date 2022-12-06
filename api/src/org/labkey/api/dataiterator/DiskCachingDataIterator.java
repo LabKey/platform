@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 
@@ -105,7 +106,7 @@ public class DiskCachingDataIterator extends CachingDataIterator
         {
             try
             {
-                _tempFile = File.createTempFile("buffer", "dat");
+                _tempFile = FileUtil.createTempFile("buffer", "dat");
                 _tempFile.deleteOnExit();
                 _randomAccessFile = new RandomAccessFile(_tempFile, "rw");
                 _buffer = _randomAccessFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 128 * 1024);

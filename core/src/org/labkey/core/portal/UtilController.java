@@ -81,7 +81,7 @@ public class UtilController extends SpringActionController
             File svgFile = null;
             try
             {
-                svgFile = File.createTempFile("groups", ".svg", dir);
+                svgFile = FileUtil.createTempFile("groups", ".svg", dir);
                 svgFile.deleteOnExit();
                 DotRunner runner = new DotRunner(dir, dot);
                 runner.addSvgOutput(svgFile);

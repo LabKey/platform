@@ -87,6 +87,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -1233,7 +1234,7 @@ public class PropertyController extends SpringActionController
                 // File.createTempFile() requires that the prefix be at least three characters long
                 prefix = "prefix-" + prefix;  
             }
-            File tempFile = File.createTempFile(prefix, suffix);
+            File tempFile = FileUtil.createTempFile(prefix, suffix);
             tempFile.deleteOnExit();
             return tempFile;
         }
@@ -1339,7 +1340,7 @@ public class PropertyController extends SpringActionController
             String suffix = filename.substring(dotIndex).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
 
-            File tempFile = File.createTempFile(prefix, suffix);
+            File tempFile = FileUtil.createTempFile(prefix, suffix);
             tempFile.deleteOnExit();
 
             try

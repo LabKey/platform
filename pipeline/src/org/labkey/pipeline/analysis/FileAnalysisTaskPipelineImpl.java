@@ -384,7 +384,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         {
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             doc = PipelineDocument.Factory.parse(pipelineConfig.getInputStream(), options);
-            XmlBeansUtil.validateXmlDocument(doc, "Task pipeline config '" + pipelineConfig.getPath() + "'");
+            XmlBeansUtil.validateXmlDocument(doc, "Task pipeline config '" + pipelineConfig + "'");
         }
         catch (XmlValidationException e)
         {
@@ -393,7 +393,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
         catch (XmlException |IOException e)
         {
-            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
+            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '" + pipelineConfig + "':\n", e);
             return null;
         }
 
