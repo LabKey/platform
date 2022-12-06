@@ -36,6 +36,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
 import org.json.old.JSONException;
 import org.json.old.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -58,6 +62,8 @@ import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ProvenanceRecordingParams;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -71,12 +77,17 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -87,6 +98,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -117,6 +129,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
@@ -166,8 +179,10 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -4079,6 +4094,7 @@ public class QueryController extends SpringActionController
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
+        public static final String PROP_CONTAINER_PATH = "containerPath";
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
@@ -4100,10 +4116,39 @@ public class QueryController extends SpringActionController
             return _json;
         }
 
+        protected Container getContainerForCommand(JSONObject json)
+        {
+            Container container;
+            String containerPath = StringUtils.trimToNull(json.optString(PROP_CONTAINER_PATH));
+            if (containerPath == null)
+            {
+                container = getContainer();
+            }
+            else
+            {
+                container = ContainerManager.getForPath(containerPath);
+                if (container == null)
+                {
+                    throw new IllegalArgumentException("Unknown container: " + containerPath);
+                }
+            }
+
+            // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more downstream
+            if (!container.hasPermission(getUser(), ReadPermission.class) &&
+                    !container.hasPermission(getUser(), DeletePermission.class) &&
+                    !container.hasPermission(getUser(), InsertPermission.class) &&
+                    !container.hasPermission(getUser(), UpdatePermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
+            return container;
+        }
+
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
-            Container container = getContainer();
+            Container container = getContainerForCommand(json);
             User user = getUser();
 
             if (json == null)
@@ -4205,12 +4250,12 @@ public class QueryController extends SpringActionController
             {
                 if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 {
-                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), commandType.getAuditAction());
+                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
                     AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
                 }
 
                 List<Map<String, Object>> responseRows =
-                        commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
+                        commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
                     auditEvent.setRowCount(responseRows.size());
 
@@ -4461,7 +4506,8 @@ public class QueryController extends SpringActionController
                     JSONObject commandJSON = commands.getJSONObject(i);
                     String schemaName = commandJSON.getString(PROP_SCHEMA_NAME);
                     String queryName = commandJSON.getString(PROP_QUERY_NAME);
-                    TableInfo tableInfo = getTableInfo(getContainer(), getUser(), schemaName, queryName);
+                    Container container = getContainerForCommand(commandJSON);
+                    TableInfo tableInfo = getTableInfo(container, getUser(), schemaName, queryName);
                     if (scope == null)
                     {
                         scope = tableInfo.getSchema().getScope();
@@ -7601,6 +7647,167 @@ public class QueryController extends SpringActionController
                 controller.new NewQueryAction(),
                 new SaveSourceQueryAction()
             );
+        }
+    }
+
+    public static class SaveRowsTestCase extends Assert
+    {
+        private static final String PROJECT_NAME1 = "SaveRowsTestProject1";
+        private static final String PROJECT_NAME2 = "SaveRowsTestProject2";
+
+        private static final String USER_EMAIL = "saveRows@action.test";
+
+        private static final String LIST1 = "List1";
+        private static final String LIST2 = "List2";
+
+        @Before
+        public void doSetup() throws Exception
+        {
+            doCleanup();
+
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1);
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2);
+
+            //disable search so we dont get conflicts when deleting folder quickly
+            ContainerManager.updateSearchable(project1, false, TestContext.get().getUser());
+            ContainerManager.updateSearchable(project2, false, TestContext.get().getUser());
+
+            ListDefinition ld1 = ListService.get().createList(project1, LIST1, ListDefinition.KeyType.Varchar);
+            ld1.getDomain().addProperty(new PropertyStorageSpec("TextField", JdbcType.VARCHAR));
+            ld1.setKeyName("TextField");
+            ld1.save(TestContext.get().getUser());
+
+            ListDefinition ld2 = ListService.get().createList(project2, LIST2, ListDefinition.KeyType.Varchar);
+            ld2.getDomain().addProperty(new PropertyStorageSpec("TextField", JdbcType.VARCHAR));
+            ld2.setKeyName("TextField");
+            ld2.save(TestContext.get().getUser());
+        }
+
+        @After
+        public void doCleanup() throws Exception
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME1);
+            if (project != null)
+            {
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+            }
+
+            Container project2 = ContainerManager.getForPath(PROJECT_NAME2);
+            if (project2 != null)
+            {
+                ContainerManager.deleteAll(project2, TestContext.get().getUser());
+            }
+
+            User u = UserManager.getUser(new ValidEmail(USER_EMAIL));
+            if (u != null)
+            {
+                UserManager.deleteUser(u.getUserId());
+            }
+        }
+
+        private JSONObject getCommand(String val1, String val2)
+        {
+            JSONObject command1 = new JSONObject();
+            command1.put("containerPath", ContainerManager.getForPath(PROJECT_NAME1).getPath());
+            command1.put("command", "insert");
+            command1.put("schemaName", "lists");
+            command1.put("queryName", LIST1);
+            command1.put("rows", getTestRows(val1));
+
+            JSONObject command2 = new JSONObject();
+            command2.put("containerPath", ContainerManager.getForPath(PROJECT_NAME2).getPath());
+            command2.put("command", "insert");
+            command2.put("schemaName", "lists");
+            command2.put("queryName", LIST2);
+            command2.put("rows", getTestRows(val2));
+
+            JSONObject json = new JSONObject();
+            json.put("commands", Arrays.asList(command1, command2));
+
+            return json;
+        }
+
+        private MockHttpServletResponse makeRequest(JSONObject json, User user) throws Exception
+        {
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Type", "application/json");
+
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), DetailsURL.fromString("/query/saveRows.view").copy(ContainerManager.getForPath(PROJECT_NAME1)).getActionURL(), user, headers, json.toString());
+            return ViewServlet.mockDispatch(request, null);
+        }
+
+        @Test
+        public void testCrossFolderSaveRows() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.hasSiteAdminPermission());
+
+            JSONObject json = getCommand(PROJECT_NAME1, PROJECT_NAME2);
+            MockHttpServletResponse response = makeRequest(json, TestContext.get().getUser());
+            if (response.getStatus() != HttpServletResponse.SC_OK)
+            {
+                JSONObject responseJson = new JSONObject(response.getContentAsString());
+                throw new RuntimeException("Problem saving rows across folders: " + responseJson.getString("exception"));
+            }
+
+            Container project1 = ContainerManager.getForPath(PROJECT_NAME1);
+            Container project2 = ContainerManager.getForPath(PROJECT_NAME2);
+
+            TableInfo list1 = ListService.get().getList(project1, LIST1).getTable(TestContext.get().getUser());
+            TableInfo list2 = ListService.get().getList(project2, LIST2).getTable(TestContext.get().getUser());
+
+            assertEquals("Incorrect row count, list1", 1L, new TableSelector(list1).getRowCount());
+            assertEquals("Incorrect row count, list2", 1L, new TableSelector(list2).getRowCount());
+
+            assertEquals("Incorrect value", PROJECT_NAME1, new TableSelector(list1, PageFlowUtil.set("TextField")).getObject(PROJECT_NAME1, String.class));
+            assertEquals("Incorrect value", PROJECT_NAME2, new TableSelector(list2, PageFlowUtil.set("TextField")).getObject(PROJECT_NAME2, String.class));
+
+            list1.getUpdateService().truncateRows(TestContext.get().getUser(), project1, null, null);
+            list2.getUpdateService().truncateRows(TestContext.get().getUser(), project2, null, null);
+        }
+
+        @Test
+        public void testWithoutPermissions() throws Exception
+        {
+            // Now test failure without appropriate permissions:
+            User withoutPermissions = SecurityManager.addUser(new ValidEmail(USER_EMAIL), TestContext.get().getUser()).getUser();
+
+            User user = TestContext.get().getUser();
+            assertTrue(user.hasSiteAdminPermission());
+
+            Container project1 = ContainerManager.getForPath(PROJECT_NAME1);
+            Container project2 = ContainerManager.getForPath(PROJECT_NAME2);
+
+            MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(project1));
+            securityPolicy.addRoleAssignment(withoutPermissions, EditorRole.class);
+            SecurityPolicyManager.savePolicy(securityPolicy);
+
+            assertTrue("Should have insert permission", project1.hasPermission(withoutPermissions, InsertPermission.class));
+            assertFalse("Should not have insert permission", project2.hasPermission(withoutPermissions, InsertPermission.class));
+
+            // repeat insert:
+            JSONObject json = getCommand("ShouldFail1", "ShouldFail2");
+            MockHttpServletResponse response = makeRequest(json, withoutPermissions);
+            if (response.getStatus() != HttpServletResponse.SC_FORBIDDEN)
+            {
+                JSONObject responseJson = new JSONObject(response.getContentAsString());
+                throw new RuntimeException("Problem saving rows across folders: " + responseJson.getString("exception"));
+            }
+
+            TableInfo list1 = ListService.get().getList(project1, LIST1).getTable(TestContext.get().getUser());
+            TableInfo list2 = ListService.get().getList(project2, LIST2).getTable(TestContext.get().getUser());
+
+            // The insert should have failed
+            assertEquals("Incorrect row count, list1", 0L, new TableSelector(list1).getRowCount());
+            assertEquals("Incorrect row count, list2", 0L, new TableSelector(list2).getRowCount());
+        }
+
+        private JSONArray getTestRows(String val)
+        {
+            JSONArray rows = new JSONArray();
+            rows.put(Map.of("TextField", val));
+
+            return rows;
         }
     }
 }

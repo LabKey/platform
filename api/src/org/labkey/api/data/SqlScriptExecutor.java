@@ -303,7 +303,7 @@ public class SqlScriptExecutor
                 try (InputStream is = r.getInputStream())
                 {
                     if (null == is)
-                        throw new IllegalStateException("Could not open resource: " + r.getPath());
+                        throw new IllegalStateException("Could not open resource: " + r);
                     InputStream buffStream = new BufferedInputStream(is, 64 * 1024);
 
                     // DataLoader.get().createLoader() doesn't work, because the loader factories are not registered yet
@@ -321,7 +321,7 @@ public class SqlScriptExecutor
                         ((TabLoader)loader).setUnescapeBackslashes(false);
                     }
                     else
-                        throw new IllegalStateException("Unrecognized data file format for file: " + r.getPath());
+                        throw new IllegalStateException("Unrecognized data file format for file: " + r);
 
                     loader.setThrowOnErrors(true);
                     loader.setPreserveEmptyString(_preserveEmptyString);

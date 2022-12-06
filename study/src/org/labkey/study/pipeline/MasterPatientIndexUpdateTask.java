@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.study.MasterPatientIndexService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -38,7 +39,7 @@ public class MasterPatientIndexUpdateTask extends PipelineJob
         super(PIPELINE_PROVIDER, info, root);
 
         _svc = service;
-        File logFile = File.createTempFile("patientIndexUpdateJob", ".log", root.getRootPath());
+        File logFile = FileUtil.createTempFile("patientIndexUpdateJob", ".log", root.getRootPath());
         setLogFile(logFile);
     }
 

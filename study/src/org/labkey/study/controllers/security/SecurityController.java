@@ -302,7 +302,7 @@ public class SecurityController extends SpringActionController
                     else
                     {
                         InputStream is = file.getInputStream();
-                        File tmpFile = File.createTempFile("studyPolicy", ".xml");
+                        File tmpFile = FileUtil.createTempFile("studyPolicy", ".xml");
                         tmpFile.deleteOnExit();
                         FileUtil.copyData(is, tmpFile);
                         exporter.loadFromXmlFile(study, getUser(), tmpFile, messages);
