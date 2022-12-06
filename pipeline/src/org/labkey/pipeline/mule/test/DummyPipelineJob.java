@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -74,7 +75,7 @@ public class DummyPipelineJob extends PipelineJob
         _worker = worker;
         try
         {
-            setLogFile(File.createTempFile("DummyPipelineJob", ".tmp"));
+            setLogFile(FileUtil.createTempFile("DummyPipelineJob", ".tmp"));
         }
         catch (IOException e)
         {

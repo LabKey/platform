@@ -23,6 +23,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.olap.rolap.RolapReader;
 import org.olap4j.OlapConnection;
@@ -254,7 +255,7 @@ public abstract class OlapSchemaDescriptor
         {
             if (null == tmpFile)
             {
-                tmpFile = File.createTempFile("olap", getName());
+                tmpFile = FileUtil.createTempFile("olap", getName());
                 tmpFile.deleteOnExit();
                 try (
                     FileOutputStream out = new FileOutputStream(tmpFile);

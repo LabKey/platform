@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -57,7 +58,7 @@ public class FastaDataLoader extends DataLoader
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            File f = File.createTempFile("import", ".fasta");
+            File f = FileUtil.createTempFile("import", ".fasta");
             f.deleteOnExit();
             IOUtils.copy(is, new FileOutputStream(f));
 
