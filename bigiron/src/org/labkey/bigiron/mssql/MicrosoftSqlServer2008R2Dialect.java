@@ -62,6 +62,12 @@ public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDiale
     }
 
     @Override
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT SUM(size) FROM sys.master_files WHERE database_id = DB_ID(?)", databaseName);
+    }
+
+    @Override
     public String getVarianceFunction()
     {
         return "var";

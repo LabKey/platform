@@ -14,15 +14,6 @@ import java.util.Arrays;
 // Site settings constants are defined here in the same order as on the site settings page
 public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
 {
-    defaultDomain("Default email domain for authentication purposes. DO NOT USE... use Authentication.DefaultDomain instead.")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            AuthenticationManager.setDefaultDomain(UserManager.getGuestUser(), value);
-            LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
-        }
-    },
     administratorContactEmail("Primary site administrator")
     {
         @Override

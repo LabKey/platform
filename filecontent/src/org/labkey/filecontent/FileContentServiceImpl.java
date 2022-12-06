@@ -69,8 +69,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.StandardStartupPropertyHandler;
-import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
@@ -108,6 +107,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.settings.AppProps.SCOPE_SITE_SETTINGS;
+
 /**
  * User: klum
  * Date: Dec 9, 2009
@@ -116,7 +117,6 @@ public class FileContentServiceImpl implements FileContentService
 {
     private static final Logger _log = LogManager.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
-    private static final String SCOPE_SITE_ROOT_SETTINGS = "SiteRootSettings";
     private static final FileContentServiceImpl INSTANCE = new FileContentServiceImpl();
 
     private final ContainerListener _containerListener = new FileContentServiceContainerListener();
@@ -125,12 +125,6 @@ public class FileContentServiceImpl implements FileContentService
     private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
 
     private volatile boolean _fileRootSetViaStartupProperty = false;
-
-    enum Props
-    {
-        root,
-        rootDisabled,
-    }
 
     enum FileAction
     {
@@ -1222,42 +1216,6 @@ public class FileContentServiceImpl implements FileContentService
         return frag;
     }
 
-    // TODO: Delete this in favor of SiteSettings.siteFileRoot
-    @Deprecated
-    public enum SiteRootStartupProperties implements StartupProperty
-    {
-        siteRootFile
-        {
-            @Override
-            public String getDescription()
-            {
-                return "Site-level file root. DO NOT USE... use SiteSettings.siteFileRoot instead.";
-            }
-        }
-    }
-
-    // TODO: Delete this in favor of SiteSettingsProperties.webRoot
-    public static class SiteRootStartupPropertyHandler extends StandardStartupPropertyHandler<SiteRootStartupProperties>
-    {
-        public SiteRootStartupPropertyHandler()
-        {
-            super(SCOPE_SITE_ROOT_SETTINGS, SiteRootStartupProperties.class);
-        }
-
-        @Override
-        public void handle(Map<SiteRootStartupProperties, StartupPropertyEntry> map)
-        {
-            StartupPropertyEntry entry = map.get(SiteRootStartupProperties.siteRootFile);
-            if (null != entry)
-            {
-                _log.warn("Support for SiteRootSettings.siteRootFile will be removed soon; use SiteSettings.siteFileRoot instead.");
-                File fileRoot = new File(entry.getValue());
-                FileContentService.get().setSiteDefaultRoot(fileRoot, null);
-                FileContentService.get().setFileRootSetViaStartupProperty(true);
-            }
-        }
-    }
-
     public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty)
     {
         _fileRootSetViaStartupProperty = fileRootSetViaStartupProperty;
@@ -1267,14 +1225,6 @@ public class FileContentServiceImpl implements FileContentService
     public boolean isFileRootSetViaStartupProperty()
     {
         return _fileRootSetViaStartupProperty;
-    }
-
-    public static void populateSiteRootFileWithStartupProps()
-    {
-        // populate the site root file settings with values read from startup properties
-        // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
-        // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        ModuleLoader.getInstance().handleStartupProperties(new SiteRootStartupPropertyHandler());
     }
 
     public ContainerListener getContainerListener()
@@ -1824,7 +1774,7 @@ public class FileContentServiceImpl implements FileContentService
          * Test that the Site Settings can be configured from startup properties
          */
         @Test
-        public void testStartupPropertiesForSiteRootSettings() throws Exception
+        public void testStartupPropertiesForSiteRootSettings() throws IOException
         {
             // save the original Site Root File settings so that we can restore them when this test is done
             File originalSiteRootFile = FileContentService.get().getSiteDefaultRoot();
@@ -1834,11 +1784,11 @@ public class FileContentServiceImpl implements FileContentService
             File testSiteRootFile = new File(originalSiteRootFilePath, "testSiteRootFile");
             testSiteRootFile.createNewFile();
 
-            ModuleLoader.getInstance().handleStartupProperties(new SiteRootStartupPropertyHandler(){
+            ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler(){
                 @Override
                 public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
-                    return List.of(new StartupPropertyEntry("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", SCOPE_SITE_ROOT_SETTINGS));
+                    return List.of(new StartupPropertyEntry("siteFileRoot", testSiteRootFile.getAbsolutePath(), "startup", SCOPE_SITE_SETTINGS));
                 }
 
                 @Override

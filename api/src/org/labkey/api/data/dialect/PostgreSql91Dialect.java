@@ -137,6 +137,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
+    @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt, sql);
