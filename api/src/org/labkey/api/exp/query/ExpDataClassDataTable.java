@@ -30,6 +30,7 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         Name,
         Description,
         DataClass,
+        ClassId,
         Created,
         CreatedBy,
         Modified,
