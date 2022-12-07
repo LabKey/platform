@@ -1418,10 +1418,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             Group guests = SecurityManager.getGroup(Group.groupGuests);
             if (null != guests)
             {
-                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
-                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                    supportPolicy.removeRoleAssignment(guests, assignedRole);
-                SecurityPolicyManager.savePolicy(supportPolicy);
+                Container supportFolder = ContainerManager.getDefaultSupportContainer();
+                if (supportFolder != null)
+                {
+                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(supportFolder.getPolicy());
+                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                        supportPolicy.removeRoleAssignment(guests, assignedRole);
+                    SecurityPolicyManager.savePolicy(supportPolicy);
+                }
             }
         }
 
