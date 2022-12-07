@@ -19,6 +19,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -42,7 +43,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
 
         try
         {
-            File logFile = File.createTempFile("validateDomains", ".log", root.ensureSystemDirectory());
+            File logFile = FileUtil.createTempFile("validateDomains", ".log", root.ensureSystemDirectory());
             setLogFile(logFile);
         }
         catch (IOException e)

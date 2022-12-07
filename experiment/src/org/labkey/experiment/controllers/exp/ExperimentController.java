@@ -2319,7 +2319,7 @@ public class ExperimentController extends SpringActionController
             File tempFile = null;
             try
             {
-                tempFile = File.createTempFile("parse", formFile.getOriginalFilename());
+                tempFile = FileUtil.createTempFile("parse", formFile.getOriginalFilename());
                 FileUtil.copyData(formFile.getInputStream(), tempFile);
                 streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
             }

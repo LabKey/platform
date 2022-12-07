@@ -172,7 +172,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             {
                 try
                 {
-                    _logFileDir = File.createTempFile("xarupload", "");
+                    _logFileDir = FileUtil.createTempFile("xarupload", "");
                 }
                 catch (IOException e)
                 {

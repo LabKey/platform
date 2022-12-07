@@ -35,6 +35,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -199,7 +200,7 @@ public class ExternalReport extends AbstractReport
         File dataFile = null;
         try
         {
-            dataFile = File.createTempFile(getFilePrefix(), DATA_FILE_SUFFIX, getReportDir(viewContext));
+            dataFile = FileUtil.createTempFile(getFilePrefix(), DATA_FILE_SUFFIX, getReportDir(viewContext));
             String dataFileName = dataFile.getName();
 
             ResultsFactory factory;

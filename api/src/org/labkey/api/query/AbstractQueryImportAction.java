@@ -53,6 +53,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -470,7 +471,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     hasPostData = true;
                     originalName = multipartfile.getOriginalFilename();
                     // can't read the multipart file twice so create temp file (12800)
-                    dataFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
+                    dataFile = FileUtil.createTempFile("~upload", multipartfile.getOriginalFilename());
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                     if (null != root && (Boolean.parseBoolean(saveToPipeline) || _useAsync))
                     {

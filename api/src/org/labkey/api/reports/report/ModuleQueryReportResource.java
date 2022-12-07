@@ -71,7 +71,7 @@ public class ModuleQueryReportResource extends ModuleReportResource
         }
         catch(IOException | XmlException e)
         {
-            LogManager.getLogger(ModuleQueryReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
+            LogManager.getLogger(ModuleQueryReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile, e);
         }
 
         return d;

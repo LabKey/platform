@@ -20,6 +20,7 @@ import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -50,9 +51,9 @@ public class HtmlOutput extends AbstractParamReplacement
     {
         File file;
         if (directory != null)
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
+            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
         else
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result.html");
+            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.html");
 
         addFile(file);
         return file;

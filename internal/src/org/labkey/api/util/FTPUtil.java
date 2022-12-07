@@ -80,7 +80,7 @@ public class FTPUtil
         {
             ftp = getConnectedClient(user, password, url, directory);
             ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-            File outputFile = File.createTempFile(filename, null);
+            File outputFile = FileUtil.createTempFile(filename, null);
             fos = new FileOutputStream(outputFile);
             ftp.retrieveFile(filename, fos);
             return outputFile;
