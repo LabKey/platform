@@ -81,7 +81,7 @@ public class ExperimentRunGraph
     {
         if (baseDirectory == null)
         {
-            File tempFile = File.createTempFile("Exp", ".dir");
+            File tempFile = FileUtil.createTempFile("Exp", ".dir");
             tempFile.delete();
             File tempDir = new File(tempFile.getParentFile(), "ExperimentRunGraphs");
             if (tempDir.exists())

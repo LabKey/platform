@@ -1173,7 +1173,7 @@ quickScan:
         return new File(resolveFile(parent), file.getName());
     }
 
-    public static Path createTempDirectory(String prefix) throws IOException
+    public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
         return Files.createTempDirectory(prefix);
     }
@@ -1187,7 +1187,7 @@ quickScan:
         {
             try
             {
-                File temp = File.createTempFile("deleteme", null);
+                File temp = createTempFile("deleteme", null);
                 _tempDir = temp.getParentFile();
                 temp.delete();
             }
@@ -1200,18 +1200,24 @@ quickScan:
         return _tempDir;
     }
 
+    // Use this instead of File.createTempFile() (see Issue #46794)
+    public static File createTempFile(@Nullable String prefix, @Nullable String suffix, File directory) throws IOException
+    {
+        return Files.createTempFile(directory.toPath(), prefix, suffix).toFile();
+    }
 
-    public static File createTempFile(String prefix, String suffix) throws IOException
+    // Use this instead of File.createTempFile() (see Issue #46794)
+    public static File createTempFile(@Nullable String prefix, @Nullable String suffix) throws IOException
     {
         return createTempFile(prefix, suffix, false);
     }
 
-    public static File createTempFile(String prefix, String suffix, boolean threadLocal) throws IOException
+    public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
-        var ret = File.createTempFile(prefix, suffix);
+        var path = Files.createTempFile(prefix, suffix);
         if (threadLocal)
-            tempPaths.get().add(ret.toPath());
-        return ret;
+            tempPaths.get().add(path);
+        return path.toFile();
     }
 
     public static void deleteTempFile(File f)

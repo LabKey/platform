@@ -90,7 +90,7 @@ public class ModuleHtmlViewDefinition
         }
         catch (IOException e)
         {
-            throw new MinorConfigurationException("Error trying to read HTML content from " + r.getPath(), e);
+            throw new MinorConfigurationException("Error trying to read HTML content from " + r, e);
         }
 
         Resource parent = r.parent();
@@ -118,11 +118,11 @@ public class ModuleHtmlViewDefinition
                 {
                     try
                     {
-                        XmlBeansUtil.validateXmlDocument(viewDoc, r.getPath().toString());
+                        XmlBeansUtil.validateXmlDocument(viewDoc, r.toString());
                     }
                     catch (XmlValidationException e)
                     {
-                        _log.error("View XML file failed validation: " + r.getPath() + ". " + e.getDetails());
+                        _log.error("View XML file failed validation", e);
                     }
                 }
                 _viewDef = viewDoc.getView();
@@ -137,9 +137,9 @@ public class ModuleHtmlViewDefinition
             }
             catch(Exception e)
             {
-                _log.error("Error trying to read and parse the metadata XML content from " + r.getPath(), e);
+                _log.error("Error trying to read and parse the metadata XML content from " + r, e);
                 _html = HtmlString.unsafe("<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
-                         + PageFlowUtil.filter(r.getPath()) + ": "
+                         + PageFlowUtil.filter(r.toString()) + ": "
                          + e.getMessage() + "</p>");
             }
         }

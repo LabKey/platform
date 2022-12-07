@@ -725,6 +725,8 @@ LABKEY.Query = new function()
         * @param {Object} config An object which contains the following configuration properties.
         * @param {Array} config.commands An array of all of the update/insert/delete operations to be performed.
         * Each command has the following structure:
+         @param {String} config.commands[].containerPath Optional. The container path in which the schema and query name are defined for this command.
+         If not supplied, the top-level containerPath property will be used. Supplying containerPath per-command allows commands to operate against different containers.
         * @param {String} config.commands[].schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.

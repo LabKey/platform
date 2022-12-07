@@ -149,6 +149,7 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -3862,48 +3863,54 @@ public class AdminController extends SpringActionController
             {
                 ActionURL currentUrl = getViewContext().cloneActionURL();
                 String fixRequested = currentUrl.getParameter("_fix");
-                StringBuilder contentBuilder = new StringBuilder();
+                HtmlStringBuilder contentBuilder = HtmlStringBuilder.of(HtmlString.unsafe("<table class=\"DataRegion\"><tr><td>"));
 
                 if (null != fixRequested)
                 {
-                    String sqlcheck = null;
+                    HtmlString sqlCheck = HtmlString.EMPTY_STRING;
                     if (fixRequested.equalsIgnoreCase("container"))
-                        sqlcheck = DbSchema.checkAllContainerCols(getUser(), true);
-                    if (fixRequested.equalsIgnoreCase("descriptor"))
-                        sqlcheck = OntologyManager.doProjectColumnCheck(true);
-                    contentBuilder.append(PageFlowUtil.filter(sqlcheck));
+                        sqlCheck = DbSchema.checkAllContainerCols(getUser(), true);
+                    else if (fixRequested.equalsIgnoreCase("descriptor"))
+                        sqlCheck = OntologyManager.doProjectColumnCheck(true);
+                    contentBuilder.append(sqlCheck);
                 }
                 else
                 {
                     LOG.info("Starting database check"); // Debugging test timeout
                     LOG.info("Checking container column references"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Checking Container Column References...");
-                    String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
+                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                        .append("Checking Container Column References...");
+                    HtmlString strTemp = DbSchema.checkAllContainerCols(getUser(), false);
                     if (strTemp.length() > 0)
                     {
-                        contentBuilder.append(PageFlowUtil.filter(strTemp));
+                        contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "container");
-                        contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                        contentBuilder.append(PageFlowUtil.filter(currentUrl.getEncodedLocalURIString()));
-                        contentBuilder.append("\" >here</a> to attempt recovery .");
+                        contentBuilder.append(HtmlString.unsafe("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;"))
+                            .append(" click ")
+                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(" to attempt recovery.");
                     }
 
                     LOG.info("Checking PropertyDescriptor and DomainDescriptor consistency"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
+                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                        .append("Checking PropertyDescriptor and DomainDescriptor consistency...");
                     strTemp = OntologyManager.doProjectColumnCheck(false);
                     if (strTemp.length() > 0)
                     {
-                        contentBuilder.append(PageFlowUtil.filter(strTemp));
+                        contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "descriptor");
-                        contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                        contentBuilder.append(PageFlowUtil.filter(currentUrl));
-                        contentBuilder.append("\" >here</a> to attempt recovery .");
+                        contentBuilder.append(HtmlString.unsafe("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;"))
+                            .append(" click ")
+                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(" to attempt recovery.");
                     }
 
                     LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML.<br><br>");
+                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                        .append("Checking Schema consistency with tableXML.")
+                        .append(HtmlString.unsafe("<br><br>"));
                     Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
                     for (DbSchema schema : schemas)
@@ -3912,42 +3919,56 @@ public class AdminController extends SpringActionController
                         List<SiteValidationResult> results = schemaResult.getResults(null);
                         if (results.isEmpty())
                         {
-                            contentBuilder.append("<b>").append(PageFlowUtil.filter(schema.getDisplayName())).append(": OK</b><br>");
+                            contentBuilder.append(HtmlString.unsafe("<b>"))
+                                .append(schema.getDisplayName())
+                                .append(": OK")
+                                .append(HtmlString.unsafe("</b><br>"));
                         }
                         else
                         {
-                            contentBuilder.append("<b>").append(PageFlowUtil.filter(schema.getDisplayName())).append("</b><br>");
-                            contentBuilder.append("<ul style=\"list-style: none;\">");
+                            contentBuilder.append(HtmlString.unsafe("<b>"))
+                                .append(schema.getDisplayName())
+                                .append(HtmlString.unsafe("</b><br<ul style=\"list-style: none;\">"));
                             for (var r : results)
                             {
-                                String item = isBlank(r.getMessage()) ? "&nbsp" : PageFlowUtil.filter(r.getMessage());
-                                contentBuilder.append("<li>").append(item).append("</li>\n");
+                                HtmlString item = isBlank(r.getMessage()) ? NBSP : HtmlString.of(r.getMessage());
+                                contentBuilder.append(HtmlString.unsafe("<li>"))
+                                    .append(item)
+                                    .append(HtmlString.unsafe("</li>\n"));
                             }
-                            contentBuilder.append("</ul>");
+                            contentBuilder.append(HtmlString.unsafe("</ul>"));
                         }
                     }
 
                     LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
+                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                        .append("Checking Consistency of Provisioned Storage...\n");
                     StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
                     contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
                     for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
                     {
                         for (String error : dr.getErrors())
                         {
-                            contentBuilder.append("<div class=\"warning\">").append(PageFlowUtil.filter(error)).append("</div>");
+                            contentBuilder.append(HtmlString.unsafe("<div class=\"warning\">"))
+                                .append(error)
+                                .append(HtmlString.unsafe("</div>"));
                         }
                     }
                     for (String error : pr.getGlobalErrors())
                     {
-                        contentBuilder.append("<div class=\"warning\">").append(PageFlowUtil.filter(error)).append("</div>");
+                        contentBuilder.append(HtmlString.unsafe("<div class=\"warning\">"))
+                            .append(error)
+                            .append(HtmlString.unsafe("</div>"));
                     }
 
                     LOG.info("Database check complete"); // Debugging test timeout
-                    contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
+                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                        .append("Database Consistency checker complete");
                 }
 
-                return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder + "</td></tr></table>");
+                contentBuilder.append(HtmlString.unsafe("</td></tr></table>"));
+
+                return new HtmlView(contentBuilder);
             }
         }
 
