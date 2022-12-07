@@ -15,7 +15,7 @@
     "@labkey/components": "2.267.1-fb-initPremiumPackage.0"
   },
   "devDependencies": {
-    "@labkey/build": "6.4.0",
+    "@labkey/build": "6.4.0-fb-initPremiumPackage.0",
     "@types/jest": "29.2.0",
     "@types/react": "16.14.34",
     "@types/react-dom": "16.9.17"
