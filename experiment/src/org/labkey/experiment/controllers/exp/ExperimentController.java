@@ -3492,6 +3492,16 @@ public class ExperimentController extends SpringActionController
         {
             _useSnapshotSelection = useSnapshotSelection;
         }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null) return _rowIds;
+            if (_useSnapshotSelection)
+                return DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+            else
+                return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        }
     }
 
     public static class DataViewSelectionForm extends ViewForm
