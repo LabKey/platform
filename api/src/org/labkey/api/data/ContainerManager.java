@@ -244,125 +244,105 @@ public class ContainerManager
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
     {
-        try (DbScope.Transaction tx = ensureTransaction())
+        String type = (String) properties.get("type");
+        ContainerType cType = ContainerTypeRegistry.get().getType(type);
+        if (cType == null)
+            throw new IllegalArgumentException("Unknown container type: " + type);
+
+        // TODO: move this to ContainerType?
+        long sortOrder;
+        if (cType instanceof WorkbookContainerType)
         {
-            String type = (String) properties.get("type");
-            ContainerType cType = ContainerTypeRegistry.get().getType(type);
-            if (cType == null)
-                throw new IllegalArgumentException("Unknown container type: " + type);
+            sortOrder = DbSequenceManager.get(parent, WORKBOOK_DBSEQUENCE_NAME).next();
 
-            // TODO: move this to ContainerType?
-            long sortOrder;
-            if (cType instanceof WorkbookContainerType)
-            {
-                sortOrder = DbSequenceManager.get(parent, WORKBOOK_DBSEQUENCE_NAME).next();
-
-                // Default workbook names are simply "<sortorder>"
-                if (name == null)
-                    name = String.valueOf(sortOrder);
-            }
-            else
-            {
-                sortOrder = getNewChildSortOrder(parent);
-            }
-
-            if (!parent.canHaveChildren())
-                throw new IllegalArgumentException("Parent of a container must not be a " + parent.getContainerType().getName());
-
-            StringBuilder error = new StringBuilder();
-            if (!Container.isLegalName(name, parent.isRoot(), error))
-                throw new IllegalArgumentException(error.toString());
-
-            if (!Container.isLegalTitle(title, error))
-                throw new IllegalArgumentException(error.toString());
-
-            Path path = makePath(parent, name);
-            SQLException sqlx = null;
-            Map<String, Object> insertMap = null;
-
-            try
-            {
-                HashMap<String, Object> m = new HashMap<>();
-                m.put("Parent", parent.getId());
-                m.put("Name", name);
-                m.put("Title", title);
-                m.put("SortOrder", sortOrder);
-                if (null != description)
-                    m.put("Description", description);
-                m.put("Type", type);
-                insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
-            }
-            catch (RuntimeSQLException x)
-            {
-                if (!x.isConstraintException())
-                    throw x;
-                sqlx = x.getSQLException();
-            }
-
-            _clearChildrenFromCache(parent);
-
-            Container c = insertMap == null ? null : getForId((String) insertMap.get("EntityId"));
-
-            if (null == c)
-            {
-                if (null != sqlx)
-                    throw new RuntimeSQLException(sqlx);
-                else
-                    throw new RuntimeException("Container for path '" + path + "' was not created properly.");
-            }
-
-            // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
-            if (c.isContainerFor(ContainerType.DataType.permissions))
-                SecurityManager.setAdminOnlyPermissions(c);
-
-            _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
-
-            // Initialize the list of active modules in the Container
-            c.getActiveModules(true, true, user);
-
-            if (c.isProject())
-            {
-                SecurityManager.createNewProjectGroups(c);
-            }
-            else
-            {
-                // If current user does NOT have admin permission on this container or the project has been
-                // explicitly set to have new subfolders inherit permissions, then inherit permissions
-                // (otherwise they would not be able to see the folder)
-                if (user != null)
-                {
-                    boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
-                    if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                        SecurityManager.setInheritPermissions(c);
-                }
-            }
-
-            // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
-            // since mutating cached objects is frowned upon, just uncache parent
-            // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
-            _removeFromCache(parent);
-
-            fireCreateContainer(c, user);
-
-            // Issue 46788: Transact container creation and clean up cache in the event of a failure
-            tx.addCommitTask(() -> {
-                // Be sure that we've waited until any threads that might be populating the cache have finished
-                // before we guarantee that we've removed this defunct container
-                DATABASE_QUERY_LOCK.lock();
-                try
-                {
-                    _removeFromCache(c);
-                    _removeFromCache(parent);
-                }
-                finally
-                {
-                    DATABASE_QUERY_LOCK.unlock();
-                }
-            }, DbScope.CommitTaskOption.POSTROLLBACK);
-
-            tx.commit();
-            return c;
+            // Default workbook names are simply "<sortorder>"
+            if (name == null)
+                name = String.valueOf(sortOrder);
         }
+        else
+        {
+            sortOrder = getNewChildSortOrder(parent);
+        }
+
+        if (!parent.canHaveChildren())
+            throw new IllegalArgumentException("Parent of a container must not be a " + parent.getContainerType().getName());
+
+        StringBuilder error = new StringBuilder();
+        if (!Container.isLegalName(name, parent.isRoot(), error))
+            throw new IllegalArgumentException(error.toString());
+
+        if (!Container.isLegalTitle(title, error))
+            throw new IllegalArgumentException(error.toString());
+
+        Path path = makePath(parent, name);
+        SQLException sqlx = null;
+        Map<String, Object> insertMap = null;
+
+        try
+        {
+            HashMap<String, Object> m = new HashMap<>();
+            m.put("Parent", parent.getId());
+            m.put("Name", name);
+            m.put("Title", title);
+            m.put("SortOrder", sortOrder);
+            if (null != description)
+                m.put("Description", description);
+            m.put("Type", type);
+            insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
+        }
+        catch (RuntimeSQLException x)
+        {
+            if (!x.isConstraintException())
+                throw x;
+            sqlx = x.getSQLException();
+        }
+
+        _clearChildrenFromCache(parent);
+
+        Container c = insertMap == null ? null : getForId((String) insertMap.get("EntityId"));
+
+        if (null == c)
+        {
+            if (null != sqlx)
+                throw new RuntimeSQLException(sqlx);
+            else
+                throw new RuntimeException("Container for path '" + path + "' was not created properly.");
+        }
+
+        // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
+        if (c.isContainerFor(ContainerType.DataType.permissions))
+            SecurityManager.setAdminOnlyPermissions(c);
+
+        _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
+
+        // Initialize the list of active modules in the Container
+        c.getActiveModules(true, true, user);
+
+        if (c.isProject())
+        {
+            SecurityManager.createNewProjectGroups(c);
+        }
+        else
+        {
+            // If current user does NOT have admin permission on this container or the project has been
+            // explicitly set to have new subfolders inherit permissions, then inherit permissions
+            // (otherwise they would not be able to see the folder)
+            if (user != null)
+            {
+                boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
+                if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+                    SecurityManager.setInheritPermissions(c);
+            }
+        }
+
+        // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
+        // since mutating cached objects is frowned upon, just uncache parent
+        // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
+        _removeFromCache(parent);
+
+        fireCreateContainer(c, user);
+
+        return c;
     }
 
     public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx, Consumer<Container> afterCreateHandler) throws Exception

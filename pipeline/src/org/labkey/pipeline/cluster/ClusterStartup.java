@@ -170,7 +170,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         @Before
         public void setup() throws IOException
         {
-            _tempDir = File.createTempFile("testJobDir", "dir").getAbsoluteFile();
+            _tempDir = FileUtil.createTempFile("testJobDir", "dir").getAbsoluteFile();
             if (!_tempDir.delete())
             {
                 throw new RuntimeException("Failed to delete file " + _tempDir);

@@ -318,7 +318,7 @@ public class RReportJob extends PipelineJob implements Serializable
                             // report.log == getLogFile(), copy it and update the path (this is the RReportJob case)
                             if (LOG_FILE_NAME.equalsIgnoreCase(getJob().getLogFile().getName()))
                             {
-                                newFile = File.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
+                                newFile = FileUtil.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
                                 getJob().setLogFile(newFile);
                                 FileUtils.copyFile(file, newFile);
                             }

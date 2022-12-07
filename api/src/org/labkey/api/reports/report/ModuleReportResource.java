@@ -60,7 +60,7 @@ public class ModuleReportResource
         }
         catch(IOException e)
         {
-            LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report script from source file " + _sourceFile.getPath(), e);
+            LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report script from source file " + _sourceFile, e);
         }
     }
 
@@ -85,17 +85,17 @@ public class ModuleReportResource
                     }
                     catch (ParseException e)
                     {
-                        LogManager.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate \"" + createdDateStr + "\" from file " + _sourceFile.getPath(), e);
+                        LogManager.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate \"" + createdDateStr + "\" from file " + _sourceFile, e);
                     }
                 }
             }
             catch(IOException e)
             {
-                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report metadata from file " + _metaDataFile.getPath(), e);
+                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report metadata from file " + _metaDataFile, e);
             }
             catch(XmlException e)
             {
-                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
+                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile, e);
             }
         }
         return d;
