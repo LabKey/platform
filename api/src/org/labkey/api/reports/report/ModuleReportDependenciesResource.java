@@ -68,7 +68,7 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
             catch(XmlException e)
             {
                 LogManager.getLogger(ModuleReportDependenciesResource.class).warn("Unable to load report metadata from file "
-                        + _metaDataFile.getPath(), e);
+                        + _metaDataFile, e);
             }
         }
 

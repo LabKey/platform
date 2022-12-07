@@ -340,6 +340,7 @@ public class QueryModule extends DefaultModule
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
             QueryController.TestCase.class,
+            QueryController.SaveRowsTestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,

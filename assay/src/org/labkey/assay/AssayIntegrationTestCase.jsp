@@ -215,7 +215,7 @@
         final var materialName = material.getName();
 
         // create a file in the pipeline root to import
-        var file = File.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
         Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", Charsets.UTF_8);
 
         // import the file
@@ -316,7 +316,7 @@
         final var materialName = material.getName();
 
         // create a file in the pipeline root to import
-        var file = File.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
         Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", Charsets.UTF_8);
 
         var firstData = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());

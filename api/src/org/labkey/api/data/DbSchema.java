@@ -33,6 +33,8 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -766,7 +768,7 @@ public class DbSchema
         return row;
     }
 
-    public static String checkAllContainerCols(User user, boolean bfix)
+    public static HtmlString checkAllContainerCols(User user, boolean bfix)
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
         Integer lastRowId = 0;
@@ -794,7 +796,7 @@ public class DbSchema
             
             """;
 
-        final StringBuilder sbOut = new StringBuilder();
+        final HtmlStringBuilder sbOut = HtmlStringBuilder.of();
 
         SQLFragment sbCheck = new SQLFragment();
 
@@ -832,43 +834,50 @@ public class DbSchema
 
                     //remove the ACLs that were there
                     SecurityPolicyManager.removeAll(recovered);
-                    sbOut.append("<br> Recovered objects from table ");
-                    sbOut.append(rs.getString(1));
-                    sbOut.append(" to project ");
-                    sbOut.append(recovered.getName());
+                    sbOut.append(HtmlString.BR)
+                        .append(" Recovered objects from table ")
+                        .append(rs.getString(1))
+                        .append(" to project ")
+                        .append(recovered.getName());
                 }
                 catch (Exception se)
                 {
-                    sbOut.append("<br> Failed attempt to recover some objects from table ");
-                    sbOut.append(rs.getString(1));
-                    sbOut.append(" due to error ").append(se.getMessage());
-                    sbOut.append(". Retrying recovery may work.  ");
+                    sbOut.append(HtmlString.BR)
+                        .append(" Failed attempt to recover some objects from table ")
+                        .append(rs.getString(1))
+                        .append(" due to error ")
+                        .append(se.getMessage())
+                        .append(". Retrying recovery may work.  ");
                 }
             });
 
             recovered.setActiveModules(modulesOfOrphans, user);
 
-            return sbOut.toString();
+            return sbOut.getHtmlString();
         }
         else
         {
             new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
                 + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(rs -> {
-                    sbOut.append("<br/>&nbsp;&nbsp;&nbsp;ERROR:  ");
-                    sbOut.append(rs.getString(1));
-                    sbOut.append(" &nbsp;&nbsp;&nbsp;&nbsp; ");
-                    sbOut.append(rs.getString(2));
-                    sbOut.append("." ).append(rs.getString(3));
-                    sbOut.append(" = ");
-                    sbOut.append(rs.getString(4));
-                    sbOut.append("&nbsp;&nbsp;&nbsp;Module:  ");
-                    sbOut.append(rs.getString(5));
-                    sbOut.append("&nbsp;&nbsp;&nbsp;Container:  ");
-                    sbOut.append(rs.getString(6));
-                    sbOut.append("\n");
+                    sbOut.append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                        .append("ERROR:  ")
+                        .append(rs.getString(1))
+                        .append(HtmlString.unsafe(" &nbsp;&nbsp;&nbsp;&nbsp; "))
+                        .append(rs.getString(2))
+                        .append("." )
+                        .append(rs.getString(3))
+                        .append(" = ")
+                        .append(rs.getString(4))
+                        .append(HtmlString.unsafe("&nbsp;&nbsp;&nbsp;"))
+                        .append("Module:  ")
+                        .append(rs.getString(5))
+                        .append(HtmlString.unsafe("&nbsp;&nbsp;&nbsp;"))
+                        .append("Container:  ")
+                        .append(rs.getString(6))
+                        .append("\n");
                 });
 
-            return sbOut.toString();
+            return sbOut.getHtmlString();
         }
     }
 }
