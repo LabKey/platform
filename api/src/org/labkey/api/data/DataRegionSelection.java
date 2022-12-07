@@ -212,17 +212,17 @@ public class DataRegionSelection
         return asInts(getSelected(context, key, clearSession));
     }
 
-    public static @NotNull Set<String> getSnapshotSelected(ViewContext context, @Nullable String key)
+    public static @NotNull ArrayList<String> getSnapshotSelected(ViewContext context, @Nullable String key)
     {
-        return getSet(context, key, false, true);
+        return new ArrayList<>(getSet(context, key, false, true));
     }
 
-    public static @NotNull Set<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
+    public static @NotNull ArrayList<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
     {
-        return asInts(getSnapshotSelected(context, key));
+        return new ArrayList<>(asInts(getSnapshotSelected(context, key)));
     }
 
-    private static @NotNull Set<Integer> asInts(Set<String> ids)
+    private static @NotNull Set<Integer> asInts(Collection<String> ids)
     {
         Set<Integer> result = new LinkedHashSet<>();
         for (String s : ids)
