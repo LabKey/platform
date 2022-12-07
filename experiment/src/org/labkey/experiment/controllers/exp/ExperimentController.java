@@ -3498,7 +3498,7 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds != null) return _rowIds;
             if (_useSnapshotSelection)
-                return DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
             else
                 return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
@@ -3604,7 +3604,7 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds != null) return _rowIds;
             if (_useSnapshotSelection)
-                return DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
             else
                 return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
@@ -7596,7 +7596,7 @@ public class ExperimentController extends SpringActionController
                 return _rowIds;
             Set<Integer> selectedIds;
             if (_useSnapshotSelection)
-                selectedIds = DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey());
+                selectedIds = new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
             else
                 selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
             if (_picklistName != null)
