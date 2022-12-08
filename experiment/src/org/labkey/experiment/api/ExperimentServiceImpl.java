@@ -2270,7 +2270,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return runsToInvestigate;
     }
 
-    // Get lisd of ExpRun LSIDs for the start Data or Material
+    // Get list of ExpRun LSIDs for the start Data or Material
     @Override
     public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
@@ -2283,7 +2283,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get up and down maps of ExpRun LSID to Role
-    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
+    private Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Map<String, String> runsUp = new HashMap<>();
         Map<String, String> runsDown = new HashMap<>();
@@ -2356,10 +2356,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // CONSIDER: add objectId to Identifiable?
             int objectId = -1;
-            if (seed instanceof ExpObject)
-                objectId = ((ExpObject)seed).getObjectId();
-            else if (seed instanceof IdentifiableBase)
-                objectId = ((IdentifiableBase)seed).getObjectId();
+            if (seed instanceof ExpObject expObjectSeed)
+                objectId = expObjectSeed.getObjectId();
+            else if (seed instanceof IdentifiableBase identifiableSeed)
+                objectId = identifiableSeed.getObjectId();
 
             if (objectId == -1)
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
@@ -2561,7 +2561,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (select.startsWith("("))
                 select = select.substring(1).trim();
             if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
+            {
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
+                if (options.getSourceKeySQL() != null)
+                    select = select.replace("$SOURCEKEY$", "'" + options.getSourceKeySQL().getParams().get(0) + "'");
+            }
             map.put(name, select);
         }
 
