@@ -1327,6 +1327,7 @@ public class NameGenerator
         private int _rowNumber = 0;
         private final Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
         private final Map<String, ArrayList<Object>> _ancestorCache;
+        private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
         private State(boolean incrementSampleCounts)
         {
@@ -1340,12 +1341,30 @@ public class NameGenerator
             _user = User.getSearchUser();
             _lookupCache = new HashMap<>();
             _ancestorCache = new HashMap<>();
+            _prefixCounterSequences = new HashMap<>();
         }
 
         @Override
         public void close()
         {
             _rowNumber = -1;
+
+            for (Map.Entry<String, Map<String, DbSequence>> prefixCounterSequence : _prefixCounterSequences.entrySet())
+            {
+                String counterSeqPrefix = prefixCounterSequence.getKey();
+                Map<String, DbSequence> counterSequences = prefixCounterSequence.getValue();
+                for (Map.Entry<String, DbSequence> counterSequence: counterSequences.entrySet())
+                {
+                    DbSequence seq = counterSequence.getValue();
+                    if (seq instanceof DbSequence.Preallocate)
+                    {
+                        ((DbSequence.Preallocate) seq).shutdownPre();
+                        ((DbSequence.Preallocate) seq).shutdownStarted();
+                        ((DbSequence.Preallocate) seq).done();
+                        DbSequenceManager.invalidatePreallocatingSequence(_container, counterSeqPrefix + counterSequence.getKey(), 0);
+                    }
+                }
+            }
         }
 
         private String nextName(Map<String, Object> rowMap,
@@ -1432,7 +1451,11 @@ public class NameGenerator
             // allow using alternative expression for evaluation.
             // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
             FieldKeyStringExpression expression = altExpression != null ? altExpression : _parsedNameExpression;
-            String name = expression.eval(ctx);
+            String name = null;
+            if (expression instanceof NameGenerationExpression)
+                name = ((NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
+            else
+                name = expression.eval(ctx);
             if (name == null || name.length() == 0)
                 throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
@@ -2030,6 +2053,57 @@ public class NameGenerator
             if (start < _source.length())
                 _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start)));
         }
+
+        /**
+         *
+         * @param context The map of values to evaluate from
+         * @param prefixCounterSequences if prefixCounterSequences is null, dont' use cache. Otherwise, put counter DBSequence in cache for reuse
+         * @return
+         */
+        public String eval(Map context, @Nullable Map<String, Map<String, DbSequence>> prefixCounterSequences)
+        {
+            ArrayList<StringExpressionFactory.StringPart> parts = getParsedExpression();
+            if (parts.size() == 1)
+            {
+                try
+                {
+                    if (parts.get(0) instanceof CounterExpressionPart)
+                    {
+                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new HashMap<>());
+                        return nullFilter(((CounterExpressionPart) parts.get(0)).getValue(context, counterSequences));
+                    }
+                    return nullFilter(parts.get(0).getValue(context));
+                }
+                catch (StopIteratingException e)
+                {
+                    return null;
+                }
+            }
+
+            try
+            {
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < parts.size(); i++)
+                {
+                    StringExpressionFactory.StringPart part = parts.get(i);
+                    String value;
+                    if (part instanceof CounterExpressionPart)
+                    {
+                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new HashMap<>());
+                        value = nullFilter(((CounterExpressionPart) part).getValue(context, counterSequences));
+                    }
+                    else
+                        value = nullFilter(part.getValue(context));
+                    builder.append(value);
+                }
+                return builder.toString();
+            }
+            catch (StopIteratingException e)
+            {
+                return null;
+            }
+        }
+
     }
 
     public static class CounterExpressionPart extends StringExpressionFactory.StringPart
@@ -2046,8 +2120,6 @@ public class NameGenerator
         private SubstitutionFormat _counterFormat;
 
         private final Container _container;
-
-        private final Map<String, DbSequence> _counterSequences = new HashMap<>();
 
         private final String _counterSeqPrefix;
 
@@ -2082,6 +2154,11 @@ public class NameGenerator
         @Override
         public String getValue(Map map)
         {
+            return this.getValue(map, null);
+        }
+
+        public String getValue(Map map, @Nullable Map<String, DbSequence> counterSequences)
+        {
             String prefix = _parsedNameExpression.eval(map);
 
             long count;
@@ -2094,23 +2171,33 @@ public class NameGenerator
                 if (StringUtils.isEmpty(prefix))
                     return null;
 
-                if (!_counterSequences.containsKey(prefix))
+                DbSequence counterSeq = null;
+                if (counterSequences == null || !counterSequences.containsKey(prefix))
                 {
                     long existingCount = -1;
 
                     if (_getNonConflictCountFn != null)
                         existingCount = _getNonConflictCountFn.apply(prefix);
+                    if (counterSequences == null) // no cache
+                        counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix);
+                    else
+                    {
+                        // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+                        // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
+                    }
 
-                    DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
-                    long currentSeqMax = newSequence.current();
+                    long currentSeqMax = counterSeq.current();
 
-                    if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
-                        newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+                    if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
+                        counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
 
-                    _counterSequences.put(prefix, newSequence);
+                    counterSequences.put(prefix, counterSeq);
                 }
+                else
+                    counterSeq = counterSequences.get(prefix);
 
-                count = _counterSequences.get(prefix).next();
+                count = counterSeq.next();
             }
 
 
