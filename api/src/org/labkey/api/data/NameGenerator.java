@@ -2192,7 +2192,8 @@ public class NameGenerator
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
 
-                    counterSequences.put(prefix, counterSeq);
+                    if (counterSequences != null)
+                        counterSequences.put(prefix, counterSeq);
                 }
                 else
                     counterSeq = counterSequences.get(prefix);
