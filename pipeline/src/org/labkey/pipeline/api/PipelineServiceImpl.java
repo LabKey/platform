@@ -979,6 +979,7 @@ public class PipelineServiceImpl implements PipelineService
             variableMap.put("pipelineDescription", pipelineDescription);
         }
 
+        protocol.setFromWatcher(true);
         AbstractFileAnalysisJob job = protocol.createPipelineJob(context, root, filesInputList, fileParameters, variableMap);
         PipelineService.get().queueJob(job);
         return job.getJobGUID();
