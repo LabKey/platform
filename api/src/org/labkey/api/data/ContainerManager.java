@@ -2361,6 +2361,7 @@ public class ContainerManager
 
     public static Container createDefaultSupportContainer()
     {
+        LOG.info("Creating default support container: " + DEFAULT_SUPPORT_PROJECT_PATH);
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
         return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
@@ -2374,6 +2375,7 @@ public class ContainerManager
         Container support = getDefaultSupportContainer();
         if (support != null)
         {
+            LOG.info("Removing default support container: " + DEFAULT_SUPPORT_PROJECT_PATH);
             ContainerManager.delete(support, user);
         }
     }
