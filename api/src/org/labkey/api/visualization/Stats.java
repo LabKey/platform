@@ -190,7 +190,7 @@ public class Stats
             Double[] vals = getValuesFromRange(values, start, end);
             double sd = getStdDev(vals, false);
             double mean = getMean(vals);
-            trailingCVs[i] = sd/mean;
+            trailingCVs[i] = sd/mean * 100;
             start++;
             end++;
         }
