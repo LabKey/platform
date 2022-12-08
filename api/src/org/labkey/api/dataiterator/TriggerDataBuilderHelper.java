@@ -19,12 +19,14 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -117,9 +119,18 @@ public class TriggerDataBuilderHelper
             if (!_target.hasTriggers(_c))
                 return pre;
             pre = LoggingDataIterator.wrap(pre);
-            DataIterator coerce = new CoerceDataIterator(pre, context, _target);
+
+            Set<String> mergeKeys = null;
+            if (_target instanceof ExpTable)
+                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys();
+
+            boolean includeAllColumns = !context.getInsertOption().mergeRows || mergeKeys == null;
+            DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
-            return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
+            if (!includeAllColumns)
+                coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);
+
+            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
         }
     }
 

@@ -103,6 +103,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -125,6 +126,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 {
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
+
+    public static final Set<String> DATA_CLASS_ALT_KEYS;
+    static {
+        DATA_CLASS_ALT_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+    }
 
     private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
 
@@ -247,7 +253,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 c.setUserEditable(false);
                 return c;
             }
-
+            case ClassId:
             case DataClass:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn("classId"));
@@ -357,6 +363,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
         addColumn(Column.Flag);
+        addColumn(Column.ClassId);
         addColumn(Column.DataClass);
         addColumn(Column.Description);
         addColumn(Column.Alias);
@@ -768,6 +775,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
+    public Set<String> getAltMergeKeys()
+    {
+        return DATA_CLASS_ALT_KEYS;
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
@@ -941,12 +954,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
-            if (null==rowid && null==lsid)
-            {
-                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid'", keys);
-            }
+            String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
+            Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
 
-            Map<String,Object> row = _select(container, rowid, lsid);
+            if (null==rowid && null==lsid && ((null == name || null == classId)))
+                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name' and 'classid'", keys);
+
+            Map<String,Object> row = _select(container, rowid, lsid, name, classId);
 
             //PostgreSQL includes a column named _row for the row index, but since this is selecting by
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -967,9 +981,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId) throws ConversionException
         {
-            if (null == rowid && null == lsid)
+            if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
             TableInfo d = getDbTable();
@@ -983,8 +997,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append(" WHERE d.Container=?").add(container.getEntityId());
             if (null != rowid)
                 sql.append(" AND d.rowid=?").add(rowid);
-            else
+            else if (null != lsid)
                 sql.append(" AND d.lsid=?").add(lsid);
+            else
+                sql.append(" AND d.classid=? AND d.name=?").add(classId).add(name);
 
             return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
