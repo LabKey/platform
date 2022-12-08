@@ -78,6 +78,11 @@ public class DbSequence
         return _c.toString() + ": " + _rowId;
     }
 
+    public void done()
+    {
+        // do nothing
+    }
+
 
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
@@ -105,6 +110,8 @@ public class DbSequence
         // move to DbSequenceManager?
         public void done()
         {
+            shutdownPre();
+            shutdownStarted();
             ContextListener.removeShutdownListener(this);
         }
 

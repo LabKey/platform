@@ -1356,13 +1356,9 @@ public class NameGenerator
                 for (Map.Entry<String, DbSequence> counterSequence: counterSequences.entrySet())
                 {
                     DbSequence seq = counterSequence.getValue();
+                    seq.done();
                     if (seq instanceof DbSequence.Preallocate)
-                    {
-                        ((DbSequence.Preallocate) seq).shutdownPre();
-                        ((DbSequence.Preallocate) seq).shutdownStarted();
-                        ((DbSequence.Preallocate) seq).done();
                         DbSequenceManager.invalidatePreallocatingSequence(_container, counterSeqPrefix + counterSequence.getKey(), 0);
-                    }
                 }
             }
         }
