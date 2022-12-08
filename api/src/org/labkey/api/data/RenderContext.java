@@ -481,11 +481,9 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
         {
             buildSelectedFilter(filter, tinfo, _showRows == ShowRows.UNSELECTED);
-            // Issue 46465: If you've selected items then filtered the grid, we want to respect the filter
-            filter.addUrlFilters(url, name, displayColumns, user, container);
         }
-        else
-            filter.addUrlFilters(url, name, displayColumns, user, container);
+        // Issue 46465: If you've selected items then filtered the grid, we want to respect the filter
+        filter.addUrlFilters(url, name, displayColumns, user, container);
 
         return filter;
     }
