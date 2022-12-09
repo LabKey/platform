@@ -81,12 +81,6 @@ public class DbSequence
         // pass
     }
 
-    public void done()
-    {
-        // do nothing
-    }
-
-
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
      *      potentially each would not have to be thread safe, but I think this would tend to generate lots of missing values
