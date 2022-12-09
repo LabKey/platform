@@ -7,14 +7,12 @@
 var console = require("console");
 
 // Option 1: This is a custom JS module defined in RhinoService
-var effectiveContainer = require("effectiveContainer").effectiveContainerId
-console.log('effective container: ' + effectiveContainer)
+var serverContext = require("serverContext")
+console.log('container via serverContext: ' + serverContext.container.id)
 
-// Option 2: This is poked in using require/preScript
-console.log('containerid: ' + EffectiveContainerId)
-const containerId = EffectiveContainerId || null;
+// Option 2: This is poked in using require/preScript. This is not needed if we go with the option above.
+console.log('containerid from preScript: ' + EffectiveContainerId)
 
-var props = org.labkey.api.util.PageFlowUtil.jsInitObject(containerId || null);
-for (var key in props)
-    exports[key] = props[key];
+for (var key in serverContext)
+    exports[key] = serverContext[key];
 

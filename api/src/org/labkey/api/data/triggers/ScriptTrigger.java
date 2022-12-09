@@ -22,7 +22,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
@@ -30,7 +29,9 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -48,6 +49,9 @@ import java.util.function.Supplier;
  */
 /* package */ class ScriptTrigger implements Trigger
 {
+    // TODO: this string is also set in RhinoService, which is in internal. Can I share this somehow??
+    public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
+
     @NotNull protected final Container _container;
     @NotNull protected final TableInfo _table;
     @NotNull protected final ScriptReference _script;
@@ -254,13 +258,23 @@ import java.util.function.Supplier;
                     bindings.put("schemaName", _table.getPublicSchemaName());
                     bindings.put("tableName", _table.getPublicName());
 
-                    UserSchema us = _table.getUserSchema();
-                    if (us != null)
+                    // TODO: this is just for debugging/testing. Should be removed.
+                    Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
+                    if (existingValue != null)
                     {
-                        bindings.put("EffectiveUser", us.getUser());
-                        bindings.put("EffectiveContainerId", us.getContainer().getId());
+                        if (!(existingValue instanceof ContainerUser cu))
+                        {
+                            throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that wasnt a ContainerUser object");
+                        }
+
+                        if (!cu.getContainer().equals(c) || !cu.getUser().equals(user))
+                        {
+                            throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that didnt match table. Cached: " + cu.getContainer() + " / " + cu.getUser() + ", table: " + c +  " / " + user);
+                        }
                     }
 
+                    // Note: this is being added to the script-level context object, not bindings on purpose so that it is included in the calls to engine.getRuntimeScope()
+                    _script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, ContainerUser.create(c, user), ScriptContext.ENGINE_SCOPE);
                     _script.eval(bindings);
                 }
 

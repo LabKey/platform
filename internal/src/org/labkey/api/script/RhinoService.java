@@ -41,8 +41,10 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.writer.ContainerUser;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -109,6 +111,11 @@ import static org.labkey.api.script.RhinoService.LOG;
 public final class RhinoService
 {
     public static final Logger LOG = LogManager.getLogger(ScriptService.Console.class);
+
+    // TODO: internal cant depend on api. figure out how to not duplicate
+    public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
+
+
     static final RhinoFactory RHINO_FACTORY = new RhinoFactory();
 
     public static void register()
@@ -390,17 +397,13 @@ class ScriptReferenceImpl implements ScriptReference
             ScriptContext ctxt = getContext();
             if (map != null)
             {
-                // NOTE: this is one option to serialize the target container into the scripts.
-                // NOTE: we cannot simply add a top-level property since all other scripts loaded via require() need access to this
-                if (map.containsKey("EffectiveContainerId"))
-                {
-                    ctxt.setAttribute("EffectiveContainerId", map.get("EffectiveContainerId"), ScriptContext.ENGINE_SCOPE);
-                }
-
                 Scriptable scope = _engine.getRuntimeScope(ctxt);
                 Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
                 for (Map.Entry<String, ?> entry : map.entrySet())
+                {
                     bindings.put(entry.getKey(), Context.javaToJS(entry.getValue(), scope));
+                }
+
                 ctxt.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
             }
             ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, _path.toString());
@@ -771,12 +774,32 @@ class RhinoEngine extends RhinoScriptEngine
     }
     */
 
-    private static class LiteralJSModuleScript extends ModuleScript
+    private static class ServerContextModuleScript extends ModuleScript
     {
         private static final String BASE_URI = "module://scripts/";
-        public LiteralJSModuleScript(Context ctx, String name, final String sourceJS) throws URISyntaxException
+        private static final String NAME = "serverContext";
+        public ServerContextModuleScript(Context ctx, ContainerUser containerUser) throws URISyntaxException
         {
-            super(ctx.compileString(sourceJS, name, 1, null), new URI(BASE_URI + name), new URI(BASE_URI));
+            super(getScript(ctx, containerUser), new URI(BASE_URI + NAME + ".js"), new URI(BASE_URI));
+        }
+
+        public static ServerContextModuleScript create(Context ctx, ContainerUser containerUser)
+        {
+            try
+            {
+                return new ServerContextModuleScript(ctx, containerUser);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalStateException("A URI exception should never occur since this defines the URI");
+            }
+        }
+
+        private static Script getScript(Context ctx, ContainerUser containerUser)
+        {
+            JSONObject json = PageFlowUtil.jsInitObject(containerUser, null, new LinkedHashSet<>(), false);
+            // TODO: is there a more elegant way to serialize this?
+            return ctx.compileString("module.exports = " + json.toString(), NAME + ".js", 1, null);
         }
     }
 
@@ -799,34 +822,30 @@ class RhinoEngine extends RhinoScriptEngine
         {
             Script preExec = null;
 
-            // NOTE: relying on this property being serialized as a string is not ideal.
-            // Also note, if we go this route then the string EffectiveContainerId should be made into a static variable
-            final Object effectiveContainerId = ctxt.getAttribute("EffectiveContainerId", ScriptContext.ENGINE_SCOPE);
+            final Object effectiveContainerUser = ctxt.getAttribute(RhinoService.SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
 
             Map<String, ModuleScript> extraModules = null;
-            if (effectiveContainerId != null)
+            if (effectiveContainerUser != null)
             {
+                if (!(effectiveContainerUser instanceof ContainerUser))
+                {
+                    throw new IllegalStateException("Expected property " + RhinoService.SCRIPT_CONTAINERUSER_KEY + " to be a ContainerUser object");
+                }
+
                 // This is one option. This code is executed prior to loading any module via require() and defines this top-level variable:
+                // TODO: this can probably be removed in favor of ServerContextModuleScript
                 preExec = new Script() {
                     @Override
                     public Object exec(Context cx, Scriptable scope)
                     {
-                        ScriptableObject.putProperty(scope, "EffectiveContainerId", effectiveContainerId);
+                        ScriptableObject.putProperty(scope, "EffectiveContainerId", ((ContainerUser)effectiveContainerUser).getContainer().getId());
                         return null;
                     }
                 };
 
-                // This is a second option. This code is executed prior to loading any module via require(). Other JS scripts can call require('effectiveContainer') to load this.
-                // This option is more complex, but might be useful if we want to return a more complex object. This could wrap the entire call to PageFlowUtil.jsInitObject(), for example.
-                try
-                {
-                    extraModules = Map.of("effectiveContainer", new LiteralJSModuleScript(cx, "effectiveContainer.js", "exports.effectiveContainerId = '" + effectiveContainerId + "'"));
-                }
-                catch (URISyntaxException e)
-                {
-                    //TODO: best way to handle??
-                    throw new UnexpectedException(e);
-                }
+                // This is a second option. This code is executed prior to loading any module via require(). Other JS scripts can call require('serverContext') to load this.
+                // This option is more complex, but it wraps the entire call to PageFlowUtil.jsInitObject() which is a little cleaner
+                extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, ((ContainerUser)effectiveContainerUser)));
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), preExec, null, true);
