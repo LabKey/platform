@@ -151,9 +151,10 @@ public class DbSequence
             _lastReservedValue = null;
         }
 
+        @Override
         public synchronized void sync()
         {
-            if (null != _lastReservedValue && _currentValue != _lastReservedValue)
+            if (null != _lastReservedValue && !_lastReservedValue.equals(_currentValue))
             {
                 DbSequenceManager.setSequenceValue(this, _currentValue);
                 _lastReservedValue = _currentValue;

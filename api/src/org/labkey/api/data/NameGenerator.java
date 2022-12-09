@@ -1349,16 +1349,12 @@ public class NameGenerator
         {
             _rowNumber = -1;
 
-            for (Map.Entry<String, Map<String, DbSequence>> prefixCounterSequence : _prefixCounterSequences.entrySet())
+            for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
-                String counterSeqPrefix = prefixCounterSequence.getKey();
-                Map<String, DbSequence> counterSequences = prefixCounterSequence.getValue();
-                for (Map.Entry<String, DbSequence> counterSequence: counterSequences.entrySet())
+                for (DbSequence seq: counterSequences.values())
                 {
-                    DbSequence seq = counterSequence.getValue();
-                    seq.done();
-                    if (seq instanceof DbSequence.Preallocate)
-                        DbSequenceManager.invalidatePreallocatingSequence(_container, counterSeqPrefix + counterSequence.getKey(), 0);
+                    if (seq != null)
+                        seq.sync();
                 }
             }
         }
