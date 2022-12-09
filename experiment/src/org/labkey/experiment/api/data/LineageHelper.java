@@ -6,6 +6,7 @@ import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LineageHelper
@@ -32,11 +33,12 @@ public class LineageHelper
             return null;
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        List<String> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
-        if (runsToInvestigate.isEmpty())
-            return null;
 
-        return svc.generateExperimentTreeSQLLsidSeeds(runsToInvestigate, options);
+        List<String> lsidsToInvestigate = new ArrayList<>();
+        lsidsToInvestigate.add(start.getLSID());
+        lsidsToInvestigate.addAll(svc.collectRunsToInvestigate(start, options));
+
+        return svc.generateExperimentTreeSQLLsidSeeds(lsidsToInvestigate, options);
     }
 
     static ExpLineageOptions createChildOfOptions(int depth)

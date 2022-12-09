@@ -68,6 +68,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -343,9 +344,9 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // Import data and derive from "100"
         List<Map<String, Object>> rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of(
-                "name", "bob",
-                "age", "10",
-                "MaterialInputs/MySamples", numericSampleName
+            "name", "bob",
+            "age", "10",
+            "MaterialInputs/MySamples", numericSampleName
         ));
 
         final UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
@@ -376,8 +377,8 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // This will merge with the previous run
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of(
-                "rowId", bob.getRowId(),
-                "MaterialInputs/MySamples", "S-2, " + numericSampleName
+            "rowId", bob.getRowId(),
+            "MaterialInputs/MySamples", "S-2, " + numericSampleName
         ));
 
         List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
@@ -400,8 +401,8 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // with only S-2
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of(
-                "rowId", bob.getRowId(),
-                "MaterialInputs/MySamples", "S-2"
+            "rowId", bob.getRowId(),
+            "MaterialInputs/MySamples", "S-2"
         ));
 
         updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
@@ -432,7 +433,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 -1, -1, -1, -1, null, null);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("MySamples", null);
+        TableInfo table = schema.getTable("MySamples");
         QueryUpdateService svc = table.getUpdateService();
 
         // insert a sample and a derived sample
@@ -498,6 +499,8 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     @Test
     public void testObjectInputOutput() throws Exception
     {
+        var expSvc = ExperimentService.get();
+
         // create some exp.object rows for use as input and outputs
         var a1 = createExpObject("A1");
         var a2 = createExpObject("A2");
@@ -505,17 +508,19 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         var b2 = createExpObject("B2");
 
         // create empty run
-        ExpRun run = ExperimentService.get().createExperimentRun(c, "testing");
+        ExpRun run = expSvc.createExperimentRun(c, "testing");
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+        assertNotNull(pipeRoot);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
-        ExpProtocol protocol = ExperimentService.get().ensureSampleDerivationProtocol(user);
+        ExpProtocol protocol = expSvc.ensureSampleDerivationProtocol(user);
         run.setProtocol(protocol);
 
         // add A objects as inputs, B objects as outputs
         ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
-        run = ExperimentServiceImpl.get().saveSimpleExperimentRun(run, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), info, null, false);
+        run = expSvc.saveSimpleExperimentRun(run, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), info, null, false);
         Integer runObjectId = run.getObjectId();
+        assertNotNull(runObjectId);
 
         // HACK: Until we have the ability to add provenance information to the run, just insert directly into exp.edge
         TableInfo edgeTable = ExperimentServiceImpl.get().getTinfoEdge();
@@ -530,7 +535,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b2.objectId));
 
         // query the lineage
-        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(a1.identifiable), new ExpLineageOptions());
+        ExpLineage lineage = expSvc.getLineage(c, user, a1.identifiable, new ExpLineageOptions());
 
         assertTrue(lineage.getRuns().contains(run));
         assertEquals(Set.of(a1.identifiable), lineage.getSeeds());
@@ -565,7 +570,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     public void testAddEdges()
     {
         // Arrange
-        var expSvc = ExperimentServiceImpl.get();
+        var expSvc = ExperimentService.get();
         var sourceKey = "testAddEdges";
         var aa = createExpObject("addAA");
         var bb = createExpObject("addBB");
@@ -602,7 +607,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     public void testRemoveEdges()
     {
         // Arrange
-        var expSvc = ExperimentServiceImpl.get();
+        var expSvc = ExperimentService.get();
         var sourceKey = "testRemoveEdges";
         var aa = createExpObject("removeAA");
         var bb = createExpObject("removeBB");
@@ -637,6 +642,78 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         var edges = expSvc.getEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId));
         assertEquals("Unexpected edges still persisted", 0, edges.size());
+    }
+
+    @Test
+    public void testFilterLineageBySourceKey()
+    {
+        var expSvc = ExperimentService.get();
+        var sourceKey = "snow☃man";
+        var aa = createExpObject("filteredAA");
+        var bb = createExpObject("filteredBB");
+        var cc = createExpObject("filteredCC");
+        var dd = createExpObject("filteredDD");
+        var ee = createExpObject("filteredEE");
+
+        expSvc.addEdges(List.of(
+            new ExpLineageEdge(aa.objectId, bb.objectId, null, aa.objectId, sourceKey),
+            new ExpLineageEdge(bb.objectId, cc.objectId, null, bb.objectId, "SELECT(*"),
+            new ExpLineageEdge(cc.objectId, dd.objectId, null, cc.objectId, sourceKey),
+            new ExpLineageEdge(dd.objectId, ee.objectId, null, dd.objectId, sourceKey)
+        ));
+
+        // Base case
+        {
+            var lineageOptions = new ExpLineageOptions(false, true, 10);
+            var lineage = expSvc.getLineage(c, user, aa.identifiable, lineageOptions);
+            assertEquals("Unexpected number of child objects", 4, lineage.getObjects().size());
+        }
+
+        // Filter children by sourceKey expecting only connected edges with that sourceKey
+        {
+            var lineageOptions = new ExpLineageOptions(false, true, 10);
+            lineageOptions.setSourceKey(sourceKey);
+            var lineage = expSvc.getLineage(c, user, aa.identifiable, lineageOptions);
+            var objectNames = getLineageObjectNames(lineage);
+            assertEquals("Unexpected number of child objects filtered", 1, objectNames.size());
+            assertEquals("Unexpected child object", List.of("filteredBB"), objectNames);
+        }
+
+        // Filter parent by sourceKey expecting only connected edges with that sourceKey
+        {
+            var lineageOptions = new ExpLineageOptions(true, false, 10);
+            lineageOptions.setSourceKey(sourceKey);
+            var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
+            var objectNames = getLineageObjectNames(lineage);
+            assertEquals("Unexpected number of parent objects filtered", 2, objectNames.size());
+            assertEquals("Unexpected parent objects filtered", List.of("filteredCC", "filteredDD"), objectNames);
+        }
+
+        // Attempt SQL injection #1
+        {
+            var lineageOptions = new ExpLineageOptions(true, false, 10);
+            lineageOptions.setSourceKey("SELECT(*");
+            var lineage = expSvc.getLineage(c, user, cc.identifiable, lineageOptions);
+            var objectNames = getLineageObjectNames(lineage);
+            assertEquals("Unexpected number of objects from SQL injection #1", 1, objectNames.size());
+            assertEquals("Unexpected object from SQL injection #1", List.of("filteredBB"), objectNames);
+        }
+
+        // Attempt SQL injection #2
+        {
+            var lineageOptions = new ExpLineageOptions(true, false, 10);
+            lineageOptions.setSourceKey(sourceKey + " OR _Edges.sourcekey = \"SELECT(*\"");
+            var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
+            assertEquals("Unexpected number of objects from SQL injection #2", 0, lineage.getObjects().size());
+        }
+    }
+
+    private List<String> getLineageObjectNames(ExpLineage lineage)
+    {
+        return lineage.getObjects().stream()
+                .map(Identifiable::getName)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     private _ExpObject createExpObject(String objectName)
