@@ -44,6 +44,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -822,6 +823,8 @@ class RhinoEngine extends RhinoScriptEngine
         {
             Script preExec = null;
 
+            // NOTE: I dont love that this property is passed in such an indirect way, but I couldn't find a very clean way to do it otherwise.
+            // An issue is that while the primary ScriptTrigger is container-aware, all subsequent script creation (like through require()) bypasses this.
             final Object effectiveContainerUser = ctxt.getAttribute(RhinoService.SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
 
             Map<String, ModuleScript> extraModules = null;
@@ -846,6 +849,15 @@ class RhinoEngine extends RhinoScriptEngine
                 // This is a second option. This code is executed prior to loading any module via require(). Other JS scripts can call require('serverContext') to load this.
                 // This option is more complex, but it wraps the entire call to PageFlowUtil.jsInitObject() which is a little cleaner
                 extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, ((ContainerUser)effectiveContainerUser)));
+            }
+            else
+            {
+                // NOTE: RhinoService$TestCase is failing since is calls ScriptService.compile() directly
+                // I'm not sure if the container-less scenario is actually encountered in real usage;
+                // however, I am adding this as a fallback so this scenario works.
+                // The logging is to let TeamCity report other code that does this
+                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container", new Exception());
+                extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, HttpView.currentView().getViewContext()));
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), preExec, null, true);
