@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.268.1-variousAssayBugs.0"
+    "@labkey/components": "2.268.1-variousAssayBugs.1"
   },
   "devDependencies": {
     "@labkey/build": "6.5.0",
