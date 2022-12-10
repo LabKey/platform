@@ -266,6 +266,23 @@ public class ExpLineage
         return materials;
     }
 
+    public Set<ExpData> findNearestChildDatas(Identifiable seed)
+    {
+        return findNearestChildren(ExpData.class, seed);
+    }
+
+    public Set<ExpMaterial> findNearestChildMaterials(Identifiable seed)
+    {
+        return findNearestChildren(ExpMaterial.class, seed);
+    }
+
+    public <T extends ExpRunItem> Set<T> findNearestChildren(Class<T> parentClazz, Identifiable seed)
+    {
+        Map<String, Identifiable> nodes = processNodes();
+        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
+        return findNearest(false, parentClazz, null, seed, nodes, edges, false);
+    }
+
     /**
      * Find all parent ExpData that are parents of the seed, stopping at the first parent generation (no grandparents.)
      */
@@ -286,7 +303,7 @@ public class ExpLineage
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParents(null, null, seed, nodes, edges, true);
+        return findNearest(true, null, null, seed, nodes, edges, true);
     }
 
     public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed)
@@ -296,7 +313,7 @@ public class ExpLineage
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParents(parentClazz, null, seed, nodes, edges, false);
+        return findNearest(true, parentClazz, null, seed, nodes, edges, false);
     }
 
     /**
@@ -309,24 +326,25 @@ public class ExpLineage
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParents(null, cpasType, seed, nodes, edges, false);
+        return findNearest(true, null, cpasType, seed, nodes, edges, false);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearestParents(
-        @Nullable Class<T> parentClazz,
+    private <T extends ExpRunItem> Set<T> findNearest(
+        boolean findParents,
+        @Nullable Class<T> clazz,
         @Nullable String cpasType,
         Identifiable seed,
-        Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges,
+        Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> allEdges,
         boolean findBothMaterialAndData
     )
     {
-        if (edges.size() == 0)
+        if (allEdges.size() == 0)
             return Collections.emptySet();
 
-        assert cpasType != null || parentClazz == ExpMaterial.class || parentClazz == ExpData.class || findBothMaterialAndData;
+        assert cpasType != null || clazz == ExpMaterial.class || clazz == ExpData.class || findBothMaterialAndData;
 
-        // walk from start through edges looking for all sample children, stopping at first ones found
-        Set<T> parents = new HashSet<>();
+        // walk from start through edges looking for all nearest nodes, stopping at first ones found
+        Set<T> nearest = new HashSet<>();
         Queue<Identifiable> stack = new LinkedList<>();
         Set<Identifiable> seen = new HashSet<>();
         stack.add(seed);
@@ -335,43 +353,50 @@ public class ExpLineage
         {
             Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
+            Set<ExpLineage.Edge> edges;
 
-            // Gather sample parents
-            Set<ExpLineage.Edge> parentEdges = edges.containsKey(lsid) ? edges.get(lsid).first : Collections.emptySet();
-            for (ExpLineage.Edge edge : parentEdges)
+            if (!allEdges.containsKey(lsid))
+                continue;
+
+            if (findParents)
+                edges = allEdges.get(lsid).first;
+            else
+                edges = allEdges.get(lsid).second;
+
+            for (ExpLineage.Edge edge : edges)
             {
-                String parentLsid = edge.parent;
-                Identifiable parent = nodes.get(parentLsid);
-                if (parent instanceof ExpRun)
+                String targetLsid = findParents ? edge.parent : edge.child;
+                Identifiable target = nodes.get(targetLsid);
+                if (target instanceof ExpRun)
                 {
-                    if (!seen.contains(parent))
+                    if (!seen.contains(target))
                     {
-                        stack.add(parent);
-                        seen.add(parent);
+                        stack.add(target);
+                        seen.add(target);
                     }
                 }
-                else if (cpasType != null && parent instanceof ExpRunItem && cpasType.equals(((ExpRunItem)parent).getCpasType()))
+                else if (cpasType != null && target instanceof ExpRunItem && cpasType.equals(((ExpRunItem)target).getCpasType()))
                 {
-                    parents.add((T) parent);
+                    nearest.add((T) target);
                 }
-                else if ((parentClazz == ExpMaterial.class && parent instanceof ExpMaterial) ||
-                         (parentClazz == ExpData.class && parent instanceof ExpData) ||
-                        (findBothMaterialAndData && (parent instanceof ExpMaterial || parent instanceof ExpData)))
+                else if ((clazz == ExpMaterial.class && target instanceof ExpMaterial) ||
+                         (clazz == ExpData.class && target instanceof ExpData) ||
+                        (findBothMaterialAndData && (target instanceof ExpMaterial || target instanceof ExpData)))
                 {
-                    parents.add((T) parent);
+                    nearest.add((T) target);
                 }
                 else // ExpMaterial or generic Identifiable
                 {
-                    if (!seen.contains(parent))
+                    if (!seen.contains(target))
                     {
-                        stack.add(parent);
-                        seen.add(parent);
+                        stack.add(target);
+                        seen.add(target);
                     }
                 }
             }
         }
 
-        return parents;
+        return nearest;
     }
 
     public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
