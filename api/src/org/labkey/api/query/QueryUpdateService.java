@@ -47,21 +47,26 @@ public interface QueryUpdateService extends HasPermission
     enum InsertOption
     {
         // interactive/api
-        INSERT(false, false, false, false, false),
-        UPSERT(false, true, false, false, false),  // like merge, but with reselectids
+        INSERT(false, false, false, false, false, false),
+        UPSERT(false, true, false, false, false, false),  // like merge, but with reselectids
 
         // bulk
-        IMPORT(true, false, true, false, false),
+        IMPORT(true, false, true, false, false, false),
         /**
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, true, false, false),
+        MERGE(true, true, true, false, false, false),
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, true, true, false),
-        IMPORT_IDENTITY(true, false, true, false, true);
+        REPLACE(true, true, true, true, false, false),
+        IMPORT_IDENTITY(true, false, true, false, true, false),
+
+        /**
+         * Will only update existing rows
+         */
+        UPDATE(true, false, true, false, false, true);
 
         final public boolean batch;
         final public boolean mergeRows;
@@ -69,8 +74,9 @@ public interface QueryUpdateService extends HasPermission
         final public boolean reselectIds;
         final public boolean replace;
         final public boolean identity_insert;
+        final public boolean updateOnly;
 
-        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert)
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, boolean updateOnly)
         {
             this.batch = batch;
             mergeRows = merge;
@@ -80,6 +86,7 @@ public interface QueryUpdateService extends HasPermission
             this.replace = replace;
             assert !identity_insert || (batch && !merge);   // identity_insert is only supported for bulk_insert
             this.identity_insert = identity_insert;
+            this.updateOnly = updateOnly;
         }
     }
 

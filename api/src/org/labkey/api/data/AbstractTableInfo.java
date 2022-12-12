@@ -158,6 +158,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
+    private boolean _supportMerge;
+
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     @NotNull
@@ -1929,6 +1931,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean hasDeleteURLOverride()
     {
         return _hasDeleteURLOverride;
+    }
+
+    public void setSupportMerge(boolean supportMerge)
+    {
+        _supportMerge = supportMerge;
+    }
+
+    @Override
+    public boolean supportMerge()
+    {
+        return _supportMerge;
     }
 
     public static class TestCase extends Assert{
