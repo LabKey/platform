@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -937,8 +938,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter by startup properties if they were specified
         LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
-        LinkedList<String> excludeList = ModuleLoaderStartupProperties.exclude.getList();
+        Set<String> excludeList = Collections.newSetFromMap(new CaseInsensitiveHashMap<>());
+        excludeList.addAll(ModuleLoaderStartupProperties.exclude.getList());
 
+        List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
         {
@@ -946,11 +949,29 @@ public class ModuleLoader implements Filter, MemTrackerListener
             includedModules = new CaseInsensitiveTreeMap<>();
             while (!includeList.isEmpty())
             {
-                Module m = moduleNameToModule.get(includeList.removeFirst());
-                // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies) */
-                if (null == includedModules.put(m.getName(), m))
-                    includeList.addAll(m.getModuleDependenciesAsSet());
+                String moduleName = includeList.removeFirst();
+                if (!excludeList.contains(moduleName)) // Don't look up excluded modules or include their dependencies
+                {
+                    Module m = moduleNameToModule.get(moduleName);
+                    if (m == null)
+                    {
+                        missingModules.add(moduleName);
+                    }
+                    else
+                    {
+                        // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies) */
+                        if (null == includedModules.put(m.getName(), m))
+                            includeList.addAll(m.getModuleDependenciesAsSet());
+                    }
+                }
             }
+        }
+
+        if (!missingModules.isEmpty())
+        {
+            _log.log(AppProps.getInstance().isDevMode() ? Level.WARN : Level.ERROR,
+                    "Error in startup property 'ModuleLoader.include'. Unable to find requested module(s): " +
+                            String.join(", ", missingModules));
         }
 
         for (String e : excludeList)
