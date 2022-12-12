@@ -97,7 +97,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Name"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "LabelColor"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet_Folder"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Folder"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleState"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StoredAmount"));

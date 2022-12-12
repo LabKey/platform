@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SQLFragment;
@@ -35,17 +36,19 @@ public class LineageClause extends CompareType.CompareClause
 {
     private String _lsid;
     private int _depth;
+    private String _sourceKey;
 
     public LineageClause(@NotNull FieldKey fieldKey, Object value)
     {
         super(fieldKey, CompareType.MEMBER_OF, value);
     }
 
-    public LineageClause(@NotNull FieldKey fieldKey, Object value, String lsid, int depth)
+    public LineageClause(@NotNull FieldKey fieldKey, Object value, String lsid, int depth, @Nullable String sourceKey)
     {
         this(fieldKey, value);
         _lsid = lsid;
         _depth = depth;
+        _sourceKey = sourceKey;
     }
 
     protected ExpRunItem getStart()
@@ -68,7 +71,15 @@ public class LineageClause extends CompareType.CompareClause
 
     protected ExpLineageOptions createOptions()
     {
-        return _depth < 0 ? LineageHelper.createParentOfOptions(_depth) : LineageHelper.createChildOfOptions(_depth);
+        ExpLineageOptions options;
+        if (_depth < 0)
+            options = LineageHelper.createParentOfOptions(_depth);
+        else
+            options = LineageHelper.createChildOfOptions(_depth);
+
+        if (_sourceKey != null)
+            options.setSourceKey(_sourceKey);
+        return options;
     }
 
     protected String getLsidColumn()
@@ -113,5 +124,4 @@ public class LineageClause extends CompareType.CompareClause
         else
             sb.append("Is ").append(filterTextType()).append(" '").append(start.getName()).append("'");
     }
-
 }

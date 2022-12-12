@@ -89,7 +89,7 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         }
         catch (IOException | XmlException e)
         {
-            Exception wrap = new Exception("Exception while attempting to load " + resource.getPath(), e);
+            Exception wrap = new Exception("Exception while attempting to load " + resource, e);
             ExceptionUtil.logExceptionToMothership(null, wrap);
         }
 

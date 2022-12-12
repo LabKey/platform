@@ -112,7 +112,7 @@ public class ModuleQueryMetadataDef
         }
         catch (IOException | TransformerException | ParserConfigurationException | SAXException e)
         {
-            LOG.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
+            LOG.warn("Unable to load meta-data from module query file " + resource, e);
         }
     }
 

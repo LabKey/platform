@@ -55,6 +55,8 @@ import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
@@ -3643,23 +3645,23 @@ public class OntologyManager
         return getExpSchema().getTable("ObjectPropertiesView");
     }
 
-    public static String doProjectColumnCheck(boolean bFix)
+    public static HtmlString doProjectColumnCheck(boolean bFix)
     {
-        StringBuilder msgBuffer = new StringBuilder();
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
         String descriptorTable = getTinfoPropertyDescriptor().toString();
         String uriColumn = "PropertyURI";
         String idColumn = "PropertyID";
-        doProjectColumnCheck(descriptorTable, uriColumn, idColumn, msgBuffer, bFix);
+        doProjectColumnCheck(descriptorTable, uriColumn, idColumn, builder, bFix);
 
         descriptorTable = getTinfoDomainDescriptor().toString();
         uriColumn = "DomainURI";
         idColumn = "DomainID";
-        doProjectColumnCheck(descriptorTable, uriColumn, idColumn, msgBuffer, bFix);
+        doProjectColumnCheck(descriptorTable, uriColumn, idColumn, builder, bFix);
 
-        return msgBuffer.toString();
+        return builder.getHtmlString();
     }
 
-    private static void doProjectColumnCheck(final String descriptorTable, final String uriColumn, final String idColumn, final StringBuilder msgBuilder, final boolean bFix)
+    private static void doProjectColumnCheck(final String descriptorTable, final String uriColumn, final String idColumn, final HtmlStringBuilder msgBuilder, final boolean bFix)
     {
         // get all unique combos of Container, project
 
@@ -3678,14 +3680,16 @@ public class OntologyManager
                 {
                     fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
                     msgBuilder
-                        .append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
+                        .append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                        .append("Fixed inconsistent project ids found for ")
                         .append(descriptorTable).append(" in folder ")
                         .append(ContainerManager.getForId(containerId).getPath());
 
                 }
                 else
                     msgBuilder
-                        .append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
+                        .append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                        .append("ERROR: Inconsistent project ids found for ")
                         .append(descriptorTable).append(" in folder ").append(container.getPath());
             }
         });
