@@ -242,11 +242,13 @@ public class QueryPivot extends QueryRelation
 
         _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
         SQLFragment sqlPivotValues = null;
+        boolean hasPhiColumns = false;
 
         if (null != _inQuery)
         {
             // explicit subquery case
             sqlPivotValues = _inQuery.getSql();
+            hasPhiColumns = _inQuery._query.getInvolvedTableColumns().stream().anyMatch(tc -> tc._col.getPHI()!=PHI.NotPHI);
         }
         else
         {
@@ -285,6 +287,7 @@ public class QueryPivot extends QueryRelation
                 sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
                 sqlPivotValues.append("\nFROM ").append(fromSql);
                 sqlPivotValues.append("\nORDER BY 1 ASC");
+                hasPhiColumns = _from._query.getInvolvedTableColumns().stream().anyMatch(tc -> tc._col.getPHI()!=PHI.NotPHI);
             }
         }
         if (null == sqlPivotValues)
@@ -303,7 +306,14 @@ public class QueryPivot extends QueryRelation
             for (Object p : sqlPivotValues.getParams())
                 if (p instanceof QueryService.ParameterDecl)
                     throw new QueryService.NamedParameterNotProvided(((QueryService.ParameterDecl) p).getName());
-            try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
+
+            SqlSelector ss;
+            if (!hasPhiColumns)
+                ss = new SqlSelector(getSchema().getDbSchema().getScope(), sqlPivotValues, QueryLogging.noValidationNeededQueryLogging());
+            else
+                ss = new SqlSelector(getSchema().getDbSchema().getScope(), sqlPivotValues);
+
+            try (ResultSet rs = ss.getResultSet())
             {
                 JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
                 int columnCount = rs.getMetaData().getColumnCount();
