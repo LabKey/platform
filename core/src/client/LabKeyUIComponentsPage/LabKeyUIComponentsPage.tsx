@@ -19,13 +19,11 @@ import {
     LoadingSpinner,
     ManageDropdownButton,
     Progress,
-    SCHEMAS,
     Tip,
     ToggleButtons,
     WizardNavButtons,
     Breadcrumb,
     BreadcrumbCreate,
-    HeatMap,
     initQueryGridState,
     PageDetailHeader,
     SchemaListing,
@@ -68,7 +66,6 @@ const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
     {value: 'GridPanel'},
-    {value: 'HeatMap'},
     {value: 'LabelHelpTip'},
     {value: 'Lineage'},
     {value: 'LoadingModal'},
@@ -310,27 +307,6 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'GridPanel' &&
                     <GridPanelPage/>
-                }
-                {selected === 'HeatMap' &&
-                    this.renderPanel('HeatMap',
-                        <>
-                            <Alert bsStyle={'info'}>Note: this currently pulls data from the exp.SampleSetHeatMap query.</Alert>
-                            <HeatMap
-                                schemaQuery={SCHEMAS.EXP_TABLES.SAMPLE_SET_HEAT_MAP}
-                                nounSingular={'sample'}
-                                nounPlural={'samples'}
-                                yAxis={'protocolName'}
-                                xAxis={'monthName'}
-                                measure={'monthTotal'}
-                                yInRangeTotal={'InRangeTotal'}
-                                yTotalLabel={'12 month total samples'}
-                                getCellUrl={() => AppURL.create()}
-                                getHeaderUrl={() => AppURL.create()}
-                                getTotalUrl={() => AppURL.create()}
-                                headerClickUrl={AppURL.create()}
-                            />
-                        </>
-                    )
                 }
                 {selected === 'LabelHelpTip' &&
                     this.renderPanel('LabelHelpTip',

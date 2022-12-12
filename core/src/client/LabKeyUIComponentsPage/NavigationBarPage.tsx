@@ -38,7 +38,7 @@ export class  NavigationBarPage extends React.Component<any, State> {
             iconURL: imageURL('_images', "workflow.svg"),
             maxColumns: 1,
             maxItemsPerColumn: 3,
-            seeAllURL: AppURL.create('workflow').addParam('viewAs', 'heatmap')
+            seeAllURL: AppURL.create('workflow').addParam('viewAs', 'grid')
         });
         const userMenuConfig = new MenuSectionConfig({
             iconCls: "fas fa-user-circle "
