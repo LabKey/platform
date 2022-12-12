@@ -307,6 +307,8 @@ public class QueryPivot extends QueryRelation
                 if (p instanceof QueryService.ParameterDecl)
                     throw new QueryService.NamedParameterNotProvided(((QueryService.ParameterDecl) p).getName());
 
+            // TODO handle the case where hasPhiColumns==true
+            // see https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=38886
             SqlSelector ss;
             if (!hasPhiColumns)
                 ss = new SqlSelector(getSchema().getDbSchema().getScope(), sqlPivotValues, QueryLogging.noValidationNeededQueryLogging());
