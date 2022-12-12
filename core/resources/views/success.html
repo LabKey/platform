@@ -16,6 +16,12 @@
     }
 
     document.getElementById('success-header').innerHTML = header;
+
+    // if logged out of a product and container is not the project, redirect back to app instead of project-start
+    if (product && LABKEY.container.parentPath !== '/') {
+        startHref = LABKEY.ActionURL.buildURL(product.replaceAll(' ', '').toLowerCase(), 'app');
+    }
+
     document.getElementById('success-content').innerHTML = content
         + (LABKEY.user.isGuest ? '<a class="labkey-button primary" href="' + startHref + '">Return to Application</a>' : '');
 </script>
