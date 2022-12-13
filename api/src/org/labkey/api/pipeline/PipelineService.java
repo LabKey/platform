@@ -161,6 +161,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     @NotNull
     String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewBackgroundInfo context) throws IOException, PipelineValidationException;
 
+    @NotNull
+    String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewBackgroundInfo context, boolean timestampLog) throws IOException, PipelineValidationException;
+
+
     /** Configurations for the pipeline job webpart ButtonBar */
     enum PipelineButtonOption { Minimal, Assay, Standard }
 
