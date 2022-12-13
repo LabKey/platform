@@ -104,7 +104,12 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         return Ext4.create('Ext.data.Store', {
             model: 'LABKEY.Security.ImpersonationUsers',
             // Hard-code the sort for now. TODO: provide an option in the UI to switch sort between email & display name
+            // Put all inactive users at the bottom of the list, Issue 46449
             sorters: [
+                {
+                    property : 'active',
+                    direction: 'DESC'
+                },
                 {
                     property : 'email',
                     direction: 'ASC'
