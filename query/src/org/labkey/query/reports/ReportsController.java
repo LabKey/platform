@@ -3054,6 +3054,8 @@ public class ReportsController extends SpringActionController
                 {
                     if (!form.isManageView() || !info.isReadOnly())
                         views.add(info);
+                    else
+                        System.out.println(info.toString() + " " + info.getName() + " " + info.getId());
                 }
             }
 
