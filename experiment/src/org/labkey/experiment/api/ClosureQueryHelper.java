@@ -214,8 +214,7 @@ public class ClosureQueryHelper
         ret.setLabel(target.getName());
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
         var builder = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
-        if (sourceType != targetType)
-            builder.schema(targetType.schemaKey);
+        builder.schema(targetType.schemaKey);
         var qfk = new QueryForeignKey(builder) {
             @Override
             public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
