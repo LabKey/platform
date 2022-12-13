@@ -416,7 +416,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         if (dataContainer != null && dataContainer.hasProductProjects())
         {
-            // get samples table using CF relative to sampleTypeContainer
+            // get samples table using CF relative to sampleTypeContainer since sampleTypeContainer is used to get UserSchema
             if (sampleTypeContainer.isProject())
                 cf = new ContainerFilter.CurrentAndSubfoldersPlusShared(sampleTypeContainer, user);
             else if (!sampleTypeContainer.isProject() && sampleTypeContainer.getProject() != null)
