@@ -199,9 +199,9 @@ public class StandardDialectStringHandler implements DialectStringHandler
         {
             return "NULL";
         }
-        else if (value instanceof String)
+        else if (value instanceof String strValue)
         {
-            return quoteStringLiteral((String)value);
+            return stringValue(strValue);
         }
         else if (value instanceof Date)
         {
@@ -230,6 +230,12 @@ public class StandardDialectStringHandler implements DialectStringHandler
     private String booleanValue(Boolean value)
     {
         return CoreSchema.getInstance().getSqlDialect().getBooleanLiteral(value);
+    }
+
+
+    protected String stringValue(String value)
+    {
+        return quoteStringLiteral(value);
     }
 
 
