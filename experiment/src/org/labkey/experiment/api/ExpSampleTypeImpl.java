@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
@@ -408,9 +409,22 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
 
         Container sampleTypeContainer = getContainer();
-        TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName());
-
         Container nameGenContainer = dataContainer != null ? dataContainer : sampleTypeContainer;
+
+        User user = User.getSearchUser();
+        ContainerFilter cf = null;
+
+        if (dataContainer != null && dataContainer.hasProductProjects())
+        {
+            // get samples table using CF relative to sampleTypeContainer
+            if (sampleTypeContainer.isProject())
+                cf = new ContainerFilter.CurrentAndSubfoldersPlusShared(sampleTypeContainer, user);
+            else if (!sampleTypeContainer.isProject() && sampleTypeContainer.getProject() != null)
+                cf = new ContainerFilter.CurrentPlusProjectAndShared(sampleTypeContainer, user);
+        }
+
+        TableInfo parentTable = QueryService.get().getUserSchema(user, sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
+
         return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
     }
 
@@ -545,7 +559,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                     map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
                 return map;
             };
-            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn)); // how to get here?
         }
         catch (NameGenerator.NameGenerationException e)
         {
