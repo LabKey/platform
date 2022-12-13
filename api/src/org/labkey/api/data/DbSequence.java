@@ -15,9 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ShutdownListener;
 
 /**
  * User: adam
@@ -78,6 +76,10 @@ public class DbSequence
         return _c.toString() + ": " + _rowId;
     }
 
+    public void sync()
+    {
+        // pass
+    }
 
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
@@ -86,7 +88,7 @@ public class DbSequence
      *      just have to be thread safe is all, but how do we enforce the "exactly one per" rule?
      * NOTE: going with B
      */
-    protected static class Preallocate extends DbSequence implements ShutdownListener
+    protected static class Preallocate extends DbSequence
     {
         private final int _batchSize;
         private Long _currentValue = null;
@@ -99,14 +101,8 @@ public class DbSequence
         {
             super(c, name, rowId);
             _batchSize = batchSize;
-            ContextListener.addShutdownListener(this);
         }
 
-        // move to DbSequenceManager?
-        public void done()
-        {
-            ContextListener.removeShutdownListener(this);
-        }
 
         @Override
         public synchronized long current()
@@ -150,17 +146,13 @@ public class DbSequence
         }
 
         @Override
-        public synchronized void shutdownPre()
+        public synchronized void sync()
         {
-        }
-
-        @Override
-        public synchronized void shutdownStarted()
-        {
-            if (null != _currentValue)
+            if (null != _lastReservedValue && !_lastReservedValue.equals(_currentValue))
+            {
                 DbSequenceManager.setSequenceValue(this, _currentValue);
-            _currentValue = null;
-            _lastReservedValue = null;
+                _lastReservedValue = _currentValue;
+            }
         }
     }
 }
