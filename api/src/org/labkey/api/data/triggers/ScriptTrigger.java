@@ -47,9 +47,8 @@ import java.util.function.Supplier;
  * User: kevink
  * Date: 12/21/15
  */
-/* package */ class ScriptTrigger implements Trigger
+public class ScriptTrigger implements Trigger
 {
-    // TODO: this string is also set in RhinoService, which is in internal. Can I share this somehow??
     public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
 
     @NotNull protected final Container _container;
@@ -258,7 +257,6 @@ import java.util.function.Supplier;
                     bindings.put("schemaName", _table.getPublicSchemaName());
                     bindings.put("tableName", _table.getPublicName());
 
-                    // TODO: this is just for debugging/testing. Should be removed.
                     Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
                     if (existingValue != null)
                     {

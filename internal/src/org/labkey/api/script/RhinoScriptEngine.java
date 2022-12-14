@@ -291,9 +291,9 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                 thiz = cx.toObject(thiz, topLevel);
             }
 
-            Scriptable engineScope = getRuntimeScope(context);
+            // TODO: review this
             Scriptable localScope = (thiz != null)? (Scriptable) thiz :
-                                                    engineScope;
+                    getRuntimeScope(context);
             Object obj = ScriptableObject.getProperty(localScope, name);
             if (! (obj instanceof Function)) {
                 throw new NoSuchMethodException("no such method: " + name);
@@ -302,7 +302,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
             Function func = (Function) obj;
             Scriptable scope = func.getParentScope();
             if (scope == null) {
-                scope = engineScope;
+                scope = getRuntimeScope(context);
             }
             Object result = func.call(cx, scope, localScope,
                                       wrapArguments(args));
@@ -408,8 +408,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                 filename = "<Unknown Source>";
             }
 
-            Scriptable scope = getRuntimeScope(context);
-            Script scr = cx.compileReader(scope, preProcessScriptSource(script), filename, 1, null);
+            Script scr = cx.compileReader(preProcessScriptSource(script), filename, 1, null);
             ret = new RhinoCompiledScript(this, scr);
         } catch (Exception e) {
             _log.debug(e);

@@ -107,15 +107,12 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.triggers.ScriptTrigger.SCRIPT_CONTAINERUSER_KEY;
 import static org.labkey.api.script.RhinoService.LOG;
 
 public final class RhinoService
 {
     public static final Logger LOG = LogManager.getLogger(ScriptService.Console.class);
-
-    // TODO: internal cant depend on api. figure out how to not duplicate
-    public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
-
 
     static final RhinoFactory RHINO_FACTORY = new RhinoFactory();
 
@@ -206,7 +203,12 @@ public final class RhinoService
         {
             Path js = Path.parse(ScriptService.SCRIPTS_DIR + "/validationTest/" + scriptName + ".js");
             ScriptReference script = ScriptService.get().compile(_module, js);
+            script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, HttpView.currentContext(), ScriptContext.ENGINE_SCOPE);
             script.invokeFn("doTest");
+
+            // Now check the caches:
+            script = ScriptService.get().compile(_module, js);
+            Assert.assertNull("Cached script should not store container", script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY));
         }
 
         @Test
@@ -234,8 +236,8 @@ public final class RhinoService
 
             if (null != simpleTest)
             {
-                assertEquals("Scripts from the simpletest module", 14, ScriptReferenceImpl.SCRIPT_CACHE.getResourceMap(simpleTest).size());
-                assertEquals("Top-level script timestamps from the simpletest module", 14, LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Scripts from the simpletest module", 15, ScriptReferenceImpl.SCRIPT_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Top-level script timestamps from the simpletest module", 15, LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.getResourceMap(simpleTest).size());
             }
         }
     }
@@ -799,7 +801,7 @@ class RhinoEngine extends RhinoScriptEngine
         private static Script getScript(Context ctx, ContainerUser containerUser)
         {
             JSONObject json = PageFlowUtil.jsInitObject(containerUser, null, new LinkedHashSet<>(), false);
-            // TODO: is there a more elegant way to serialize this?
+
             return ctx.compileString("module.exports = " + json.toString(), NAME + ".js", 1, null);
         }
     }
@@ -821,33 +823,18 @@ class RhinoEngine extends RhinoScriptEngine
         Context cx = enterContext();
         try
         {
-            Script preExec = null;
-
-            // NOTE: I dont love that this property is passed in such an indirect way, but I couldn't find a very clean way to do it otherwise.
-            // An issue is that while the primary ScriptTrigger is container-aware, all subsequent script creation (like through require()) bypasses this.
-            final Object effectiveContainerUser = ctxt.getAttribute(RhinoService.SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
+            // See: https://github.com/LabKey/platform/pull/3902
+            final Object effectiveContainerUser = ctxt.getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
 
             Map<String, ModuleScript> extraModules = null;
             if (effectiveContainerUser != null)
             {
                 if (!(effectiveContainerUser instanceof ContainerUser))
                 {
-                    throw new IllegalStateException("Expected property " + RhinoService.SCRIPT_CONTAINERUSER_KEY + " to be a ContainerUser object");
+                    throw new IllegalStateException("Expected property " + SCRIPT_CONTAINERUSER_KEY + " to be a ContainerUser object");
                 }
 
-                // This is one option. This code is executed prior to loading any module via require() and defines this top-level variable:
-                // TODO: this can probably be removed in favor of ServerContextModuleScript
-                preExec = new Script() {
-                    @Override
-                    public Object exec(Context cx, Scriptable scope)
-                    {
-                        ScriptableObject.putProperty(scope, "EffectiveContainerId", ((ContainerUser)effectiveContainerUser).getContainer().getId());
-                        return null;
-                    }
-                };
-
-                // This is a second option. This code is executed prior to loading any module via require(). Other JS scripts can call require('serverContext') to load this.
-                // This option is more complex, but it wraps the entire call to PageFlowUtil.jsInitObject() which is a little cleaner
+                // Other JS scripts can call require('serverContext') to load this.
                 extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, ((ContainerUser)effectiveContainerUser)));
             }
             else
@@ -856,11 +843,11 @@ class RhinoEngine extends RhinoScriptEngine
                 // I'm not sure if the container-less scenario is actually encountered in real usage;
                 // however, I am adding this as a fallback so this scenario works.
                 // The logging is to let TeamCity report other code that does this
-                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container", new Exception());
+                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container", new Exception("Current container: " + HttpView.currentView().getViewContext().getContainer().getPath()));
                 extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, HttpView.currentView().getViewContext()));
             }
 
-            Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), preExec, null, true);
+            Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
             require.install(scriptable);
         }
         finally
