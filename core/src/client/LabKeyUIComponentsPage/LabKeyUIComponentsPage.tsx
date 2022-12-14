@@ -37,6 +37,8 @@ import {
     ServerContext,
     ServerContextProvider,
     withAppUser,
+    NotificationsContextProvider,
+    GlobalStateContextProvider,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -174,6 +176,8 @@ export class App extends React.Component<any, State> {
         return (
             <ServerContextProvider initialContext={serverContext}>
                 <AppContextProvider>
+                <GlobalStateContextProvider>
+                <NotificationsContextProvider>
                 <p>
                     This page is setup to show examples of shared React components from
                     the <a href="https://github.com/LabKey/labkey-ui-components" target="_blank" rel="noopener noreferrer">labkey-ui-components</a> repository.
@@ -454,6 +458,8 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
+                </NotificationsContextProvider>
+                </GlobalStateContextProvider>
                 </AppContextProvider>
             </ServerContextProvider>
         )
