@@ -87,7 +87,7 @@
       INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.fromObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
       AND _Graph.depth >= <%= (-1 * Math.abs(depth)) + 1 %>
-    <% if (bean.getSourceKeySQL() != null) { %>
+    <% if (bean.getSourceKey() != null) { %>
       AND _Edges.sourcekey = $SOURCEKEY$
     <% } %>
   ),
@@ -182,7 +182,7 @@ if (bean.isOnlySelectObjectId()) {
       INNER JOIN $SELF$ _Graph ON _Edges.fromObjectId = _Graph.toObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.toObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
       AND _Graph.depth <= <%= depth - 1 %>
-    <% if (bean.getSourceKeySQL() != null) { %>
+    <% if (bean.getSourceKey() != null) { %>
       AND _Edges.sourcekey = $SOURCEKEY$
     <% } %>
   ),
