@@ -152,7 +152,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        String logFile = protocol.isFromWatcher() ? FileUtil.makeFileNameWithTimestamp(_baseName) : _baseName;
+        String logFile = protocol.timestampLog() ? FileUtil.makeFileNameWithTimestamp(_baseName) : _baseName;
         setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", logFile);
     }
 
