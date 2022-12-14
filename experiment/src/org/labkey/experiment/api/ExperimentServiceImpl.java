@@ -2564,8 +2564,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
             {
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
-                if (options.getSourceKeySQL() != null)
-                    select = select.replace("$SOURCEKEY$", dialect.getStringHandler().substituteParameters(options.getSourceKeySQL()));
+                if (options.getSourceKey() != null)
+                    select = select.replace("$SOURCEKEY$", dialect.getStringHandler().quoteStringLiteral(options.getSourceKey()));
             }
             map.put(name, select);
         }

@@ -21,12 +21,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
 
 import java.sql.Array;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -201,7 +199,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
         }
         else if (value instanceof String strValue)
         {
-            return stringValue(strValue);
+            return quoteStringLiteral(strValue);
         }
         else if (value instanceof Date)
         {
@@ -230,12 +228,6 @@ public class StandardDialectStringHandler implements DialectStringHandler
     private String booleanValue(Boolean value)
     {
         return CoreSchema.getInstance().getSqlDialect().getBooleanLiteral(value);
-    }
-
-
-    protected String stringValue(String value)
-    {
-        return quoteStringLiteral(value);
     }
 
 
