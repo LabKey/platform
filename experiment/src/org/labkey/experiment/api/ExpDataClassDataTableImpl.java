@@ -721,7 +721,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getUniqueIndices());
         indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
-        return Collections.unmodifiableMap(indices);
+
+        // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
+        // RemapCache is used to findExpData using name/rowId remap.
+        // The addition of "ClassId" column to the TableInfo is causing violation of RemapCache's requirement of "unique index over a single column that isn't the primary key".
+        // Because this is a joined table between exp.data and the dataclass provisioned table, it's safe to ignore "ClassId" as part of the unique key.
+        Map<String, Pair<IndexType, List<ColumnInfo>>> filteredIndices = new HashMap<>();
+        for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> index : indices.entrySet())
+        {
+            IndexType type = index.getValue().getKey();
+            List<ColumnInfo> columns = index.getValue().getValue();
+
+            List<ColumnInfo> filteredColumns = new ArrayList<>();
+            if (type == IndexType.Unique && columns.size() > 1)
+            {
+                for (ColumnInfo columnInfo : columns)
+                {
+                    if (Column.ClassId.name().equalsIgnoreCase(columnInfo.getName()))
+                        continue;
+
+                    filteredColumns.add(columnInfo);
+                }
+            }
+
+            filteredIndices.put(index.getKey(), new Pair<>(type, filteredColumns.isEmpty() ? columns : filteredColumns));
+        }
+        return Collections.unmodifiableMap(filteredIndices);
     }
 
     @NotNull
