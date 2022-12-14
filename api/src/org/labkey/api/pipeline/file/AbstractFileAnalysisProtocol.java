@@ -65,6 +65,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     protected String xml;
 
     protected String email;
+    protected boolean timestampLog;
 
     public AbstractFileAnalysisProtocol(String name, String description, String xml)
     {
@@ -288,4 +289,13 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return createPipelineJob(info, root, filesInput.stream().map(Path::toFile).collect(Collectors.toList()), fileParameters.toFile(), variableMap);
     }
 
+    public boolean timestampLog()
+    {
+        return timestampLog;
+    }
+
+    public void setTimestampLog(boolean timestampLog)
+    {
+        this.timestampLog = timestampLog;
+    }
 }
