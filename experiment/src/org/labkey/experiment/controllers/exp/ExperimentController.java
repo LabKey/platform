@@ -3468,7 +3468,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    public static class DataOperationConfirmationForm extends DataViewSelectionForm
+    public static class DataOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private ExpDataImpl.DataOperations _dataOperation;
 
@@ -3480,6 +3480,32 @@ public class ExperimentController extends SpringActionController
         public void setDataOperation(ExpDataImpl.DataOperations dataOperation)
         {
             _dataOperation = dataOperation;
+        }
+
+    }
+
+    public static class DataViewSnapshotSelectionForm extends DataViewSelectionForm
+    {
+        private boolean _useSnapshotSelection;
+
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
+        }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null) return _rowIds;
+            if (_useSnapshotSelection)
+                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
+            else
+                return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 
@@ -3517,7 +3543,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
+    public static class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
     {
         @Override
         public void validateForm(MaterialOperationConfirmationForm form, Errors errors)
@@ -3553,7 +3579,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class MaterialOperationConfirmationForm extends DataViewSelectionForm
+    public static class MaterialOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
 
@@ -7511,7 +7537,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class CrossFolderSelectionForm extends DataViewSelectionForm
+    public static class CrossFolderSelectionForm extends DataViewSnapshotSelectionForm
     {
         private String _dataType;
         private String _picklistName;
@@ -7541,7 +7567,11 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds != null)
                 return _rowIds;
-            Set<Integer> selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+            Set<Integer> selectedIds;
+            if (isUseSnapshotSelection())
+                selectedIds = new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
+            else
+                selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
             if (_picklistName != null)
             {
                 User user = getViewContext().getUser();
