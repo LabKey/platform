@@ -64,7 +64,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
+                        '<div class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '</tpl>',
                 '</tpl>')
         });
@@ -104,7 +104,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         return Ext4.create('Ext.data.Store', {
             model: 'LABKEY.Security.ImpersonationUsers',
             // Hard-code the sort for now. TODO: provide an option in the UI to switch sort between email & display name
-            // Put all inactive users at the bottom of the list, Issue 46449
+            // Push all inactive users to the bottom of the list, Issue 46449
             sorters: [
                 {
                     property : 'active',
