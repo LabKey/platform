@@ -26,9 +26,11 @@ import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.TestContext;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -68,6 +70,36 @@ public class DbSequenceManager
 
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
     static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
+
+    static final ShutdownListener shutdownListener = new ShutdownListener()
+    {
+        @Override
+        public String getName()
+        {
+            return "DbSequenceManager";
+        }
+
+        @Override
+        public void shutdownPre()
+        {
+            // pass
+        }
+
+        @Override
+        public void shutdownStarted()
+        {
+            synchronized (_sequences)
+            {
+                for (var seq : _sequences.values())
+                    seq.sync();
+            }
+        }
+    };
+
+    static
+    {
+        ContextListener.addShutdownListener(shutdownListener);
+    }
 
     public static DbSequence getPreallocatingSequence(Container c, String name)
     {
@@ -547,9 +579,12 @@ public class DbSequenceManager
         @Test
         public void testShutdown()
         {
+            Container c = JunitUtil.getTestContainer();
+
             long first = _sequenceBulk.next();
-            _sequenceBulk.shutdownPre();
-            _sequenceBulk.shutdownStarted();
+            shutdownListener.shutdownStarted();
+            assertNotNull(_sequences.remove(c.getId() + "/" + NAME_BULK + "/" + 0));
+            _sequenceBulk = (DbSequence.Preallocate)DbSequenceManager.getPreallocatingSequence(c, NAME_BULK);
             long after = _sequenceBulk.next();
             assertEquals(first+1, after);
         }
