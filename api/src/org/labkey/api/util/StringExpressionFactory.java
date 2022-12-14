@@ -1018,9 +1018,11 @@ public class StringExpressionFactory
 
             if (!map.containsKey(lookupKey))
             {
+                // check the encoded (PageFlowUtil.encode) key
                 lookupKey = _key.getParent() == null ? _key.getName() : _key.encode();
-                if (map.containsKey(lookupKey))
-                    LOG.debug("No string substitution found for FieldKey '" + _key.encode() + "', but found String '" + lookupKey + "'.");
+                // next, check key.toString(), which calls QueryKey.encodePart
+                if (!map.containsKey(lookupKey))
+                    lookupKey = _key.toString();
             }
 
             String result = applyFormats(map.get(lookupKey));

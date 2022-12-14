@@ -152,7 +152,7 @@ public class FolderImportContext extends AbstractFolderContext
     {
         if (_xarJobId == null)
         {
-            DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(getContainer(), FOLDER_IMPORT_DB_SEQUENCE_PREFIX, 0, 1);
+            DbSequence newSequence = DbSequenceManager.get(getContainer(), FOLDER_IMPORT_DB_SEQUENCE_PREFIX);
             _xarJobId = "Xar-" + newSequence.next();
         }
 
