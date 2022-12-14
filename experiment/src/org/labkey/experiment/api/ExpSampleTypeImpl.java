@@ -396,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, Container dataContainer)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer)
     {
         Map<String, String> importAliasMap = null;
         try
@@ -415,15 +415,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         ContainerFilter cf = null;
 
         if (dataContainer != null && dataContainer.hasProductProjects())
-        {
-            // get samples table using CF relative to sampleTypeContainer since sampleTypeContainer is used to get UserSchema
-            if (sampleTypeContainer.isProject())
-                cf = new ContainerFilter.CurrentAndSubfoldersPlusShared(sampleTypeContainer, user);
-            else if (!sampleTypeContainer.isProject() && sampleTypeContainer.getProject() != null)
-                cf = new ContainerFilter.CurrentPlusProjectAndShared(sampleTypeContainer, user);
-        }
+            cf = new ContainerFilter.CurrentPlusProjectAndShared(dataContainer, user); // use lookup CF
 
-        TableInfo parentTable = QueryService.get().getUserSchema(user, sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
+        TableInfo parentTable = QueryService.get().getUserSchema(user, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
 
         return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
     }
