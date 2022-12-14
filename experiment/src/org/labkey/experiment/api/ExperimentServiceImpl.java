@@ -2546,6 +2546,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         Map<String,String> map = new HashMap<>();
+        SqlDialect dialect = getExpSchema().getSqlDialect();
 
         String[] strs = StringUtils.splitByWholeSeparator(sourceSQL,"/* CTE */");
         for (int i=1 ; i<strs.length ; i++)
@@ -2563,15 +2564,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
             {
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
-                if (options.getSourceKeySQL() != null)
-                    select = select.replace("$SOURCEKEY$", "'" + options.getSourceKeySQL().getParams().get(0) + "'");
+                if (options.getSourceKey() != null)
+                    select = select.replace("$SOURCEKEY$", dialect.getStringHandler().quoteStringLiteral(options.getSourceKey()));
             }
             map.put(name, select);
         }
 
         String edgesToken = null;
 
-        boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
+        boolean recursive = dialect.isPostgreSQL();
 
         String parentsToken = null;
         if (options.isParents())

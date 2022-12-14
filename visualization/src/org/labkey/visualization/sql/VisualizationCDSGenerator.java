@@ -30,7 +30,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -449,6 +448,9 @@ public class VisualizationCDSGenerator
             fullSQL.append(defaultString(sequenceColumnAlias, "CAST(NULL AS NUMERIC(15,4))")).append(" AS \"").append(selectAliasPrefix).append(sequenceNumColumnName).append("\"").append(", ");
 
             // dataset (or axis) name column
+            // CONSIDER: This should be aliased rather than the string quoted name. Example:
+            // Instead of: 'x' AS "http://cpas.labkey.com/Study#Dataset"
+            // Should be: vis_junit_flow_x AS "http://cpas.labkey.com/Study#Dataset"
             fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"").append(selectAliasPrefix).append(datasetTableColumnName).append("\"");
 
             for (Map.Entry<String,JdbcType> entry : unionAliasList.entrySet())
@@ -503,13 +505,9 @@ public class VisualizationCDSGenerator
         return colAlias;
     }
 
-    DialectStringHandler sh = null;
-
     private String string_quote(String s)
     {
-        if (null == sh)
-            sh = getPrimarySchema().getDbSchema().getSqlDialect().getStringHandler();
-        return sh.quoteStringLiteral(s);
+        return "'" + StringUtils.replace(s, "'", "''") + "'";
     }
 
 
