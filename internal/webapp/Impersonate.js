@@ -44,6 +44,8 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             margin: '0 0 15 0'
         });
 
+        Ext4.QuickTips.init();
+
         this.userCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
             name: 'impersonate',
@@ -64,6 +66,9 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
+                        '<div ',
+                        '<tpl>data-qtip="Inactive users can\'t be impersonated"</tpl>',
+                        'style="height: auto;" class="thumb-wrap thumb-wrap-side">',
                         '<div class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '</tpl>',
                 '</tpl>')
