@@ -42,6 +42,7 @@ public class SelfSignedHttpClientFactory
     {
         return HttpClientBuilder.create()
             .setConnectionManager(_connectionManager)
+            .setConnectionManagerShared(true)
             .build();
     }
 }
