@@ -59,7 +59,6 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -142,6 +141,7 @@ import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -7206,7 +7206,6 @@ public class ExperimentController extends SpringActionController
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
             List<String> orderedIdCols = new ArrayList<>(Arrays.asList("Id AS ProvidedID", "RowId", "Ordinal"));
             List<String> sampleColumns = new ArrayList<>();
-            DialectStringHandler stringHandler = ExperimentService.get().getSchema().getSqlDialect().getStringHandler();
             if (!isFMEnabled)
             {
                 sampleColumns.addAll(Arrays.asList(
@@ -7252,7 +7251,7 @@ public class ExperimentController extends SpringActionController
                 {
                     sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
                     sampleIdValuesSql.append(", ");
-                    sampleIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
                     sampleIdValuesSql.append(")");
                     sampleIdComma = "\n,";
                 }
@@ -7260,7 +7259,7 @@ public class ExperimentController extends SpringActionController
                 {
                     uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
                     uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(UNIQUE_ID_PREFIX.length())));
+                    uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
                     uniqueIdValuesSql.append(")");
                     uniqueIdComma = "\n,";
                 }
