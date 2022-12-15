@@ -5,6 +5,15 @@
   font-weight: bold;
 }
 
+// revert panel styling changes in ui-components/panel.scss
+.panel-heading {
+  font-size: 16px !important;
+  background-color: #f5f5f5 !important;
+  border-bottom: 1px solid #ddd !important;
+  margin: 0 !important;
+  padding: 10px 15px !important;
+}
+
 .parent-panel {
   min-width: 1200px;
   padding-bottom: 40px;

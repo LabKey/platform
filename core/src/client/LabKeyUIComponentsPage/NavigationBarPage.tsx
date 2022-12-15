@@ -25,20 +25,20 @@ export class  NavigationBarPage extends React.Component<any, State> {
             iconURL: imageURL('_images', "assay.svg"),
             maxColumns: 2,
             maxItemsPerColumn: 12,
-            seeAllURL: AppURL.create('assays').addParam('viewAs', 'grid')
+            seeAllURL: AppURL.create('assays'),
         });
         const samplesMenuConfig = new MenuSectionConfig({
             emptyText: 'No sample types defined',
             iconURL: imageURL('_images', "samples.svg"),
             maxColumns: 1,
             maxItemsPerColumn: 12,
-            seeAllURL: AppURL.create('samples').addParam('viewAs', 'grid')
+            seeAllURL: AppURL.create('samples'),
         });
         const workflowMenuConfig = new MenuSectionConfig({
             iconURL: imageURL('_images', "workflow.svg"),
             maxColumns: 1,
             maxItemsPerColumn: 3,
-            seeAllURL: AppURL.create('workflow').addParam('viewAs', 'heatmap')
+            seeAllURL: AppURL.create('workflow'),
         });
         const userMenuConfig = new MenuSectionConfig({
             iconCls: "fas fa-user-circle "
@@ -46,7 +46,11 @@ export class  NavigationBarPage extends React.Component<any, State> {
 
         this.state = {
             brandIcon: 'http://labkey.wpengine.com/wp-content/uploads/2015/12/cropped-LK-icon.png',
-            model: new ProductMenuModel({productId: PRODUCT_KEY}),
+            model: new ProductMenuModel({
+                productId: PRODUCT_KEY,
+                currentProductId: PRODUCT_KEY,
+                userMenuProductId: PRODUCT_KEY,
+            }),
             menuSectionConfigs: fromJS([
                 {samples: samplesMenuConfig},
                 {assays: assaysMenuConfig},
@@ -78,7 +82,7 @@ export class  NavigationBarPage extends React.Component<any, State> {
 
         return (
             <NavigationBar
-                brand={<img src={brandIcon}  height="38px" width="38px"/>}
+                brand={<img src={brandIcon} height="38px" width="38px"/>}
                 menuSectionConfigs={menuSectionConfigs}
                 model={model}
                 showSearchBox={true}

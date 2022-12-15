@@ -21,7 +21,6 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.UnionContainerFilter;
@@ -63,12 +62,8 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         detailsURL.setContainerContext(_userSchema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
-        var nameCol = addWrapColumn(_rootTable.getColumn("Name"));
-        nameCol.setURL(detailsURL);
-
-        var desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
-        addColumn(desc);
-
+        addWrapColumn(_rootTable.getColumn("Name")).setURL(detailsURL);
+        addWrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("CreatedBy"));
         addWrapColumn(_rootTable.getColumn("Modified"));
@@ -95,6 +90,11 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         typeColumn.setFk(QueryForeignKey.from(getUserSchema(),null).to(AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(TypeDisplayColumn::new);
         addColumn(typeColumn);
+
+        var runCountFragment = new SQLFragment("(SELECT COUNT(*) FROM ")
+                .append(ExperimentService.get().getTinfoExperimentRun(), "r")
+                .append(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID)");
+        addColumn(new ExprColumn(this, "RunCount", runCountFragment, JdbcType.INTEGER)).setHidden(true);
 
         addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);
 
