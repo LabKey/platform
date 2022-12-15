@@ -6349,7 +6349,7 @@ public class QueryController extends SpringActionController
             boolean canEdit = qdef.canEdit(getUser());
             qinfo.put("canEdit", canEdit);
             qinfo.put("canEditSharedViews", getContainer().hasPermission(getUser(), EditSharedViewPermission.class));
-            // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+            // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between capability and the permission check?
             qinfo.put("isMetadataOverrideable", qdef.isMetadataEditable() && qdef.canEditMetadata(getUser()));
 
             if (isUserDefined)
