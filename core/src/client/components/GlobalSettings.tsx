@@ -79,7 +79,7 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
     return (
         <div className="panel panel-default">
             <div className="panel-heading">
-                <span className="bold-text">Global Settings</span>
+                Global Settings
             </div>
 
             <div className="panel-body">

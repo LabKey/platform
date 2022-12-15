@@ -59,7 +59,6 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -142,6 +141,7 @@ import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -3468,7 +3468,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    public static class DataOperationConfirmationForm extends DataViewSelectionForm
+    public static class DataOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private ExpDataImpl.DataOperations _dataOperation;
 
@@ -3480,6 +3480,32 @@ public class ExperimentController extends SpringActionController
         public void setDataOperation(ExpDataImpl.DataOperations dataOperation)
         {
             _dataOperation = dataOperation;
+        }
+
+    }
+
+    public static class DataViewSnapshotSelectionForm extends DataViewSelectionForm
+    {
+        private boolean _useSnapshotSelection;
+
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
+        }
+
+        @Override
+        public Set<Integer> getIds(boolean clear)
+        {
+            if (_rowIds != null) return _rowIds;
+            if (_useSnapshotSelection)
+                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
+            else
+                return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 
@@ -3517,7 +3543,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
+    public static class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
     {
         @Override
         public void validateForm(MaterialOperationConfirmationForm form, Errors errors)
@@ -3553,7 +3579,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class MaterialOperationConfirmationForm extends DataViewSelectionForm
+    public static class MaterialOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
 
@@ -7180,7 +7206,6 @@ public class ExperimentController extends SpringActionController
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
             List<String> orderedIdCols = new ArrayList<>(Arrays.asList("Id AS ProvidedID", "RowId", "Ordinal"));
             List<String> sampleColumns = new ArrayList<>();
-            DialectStringHandler stringHandler = ExperimentService.get().getSchema().getSqlDialect().getStringHandler();
             if (!isFMEnabled)
             {
                 sampleColumns.addAll(Arrays.asList(
@@ -7226,7 +7251,7 @@ public class ExperimentController extends SpringActionController
                 {
                     sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
                     sampleIdValuesSql.append(", ");
-                    sampleIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
                     sampleIdValuesSql.append(")");
                     sampleIdComma = "\n,";
                 }
@@ -7234,7 +7259,7 @@ public class ExperimentController extends SpringActionController
                 {
                     uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
                     uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(UNIQUE_ID_PREFIX.length())));
+                    uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
                     uniqueIdValuesSql.append(")");
                     uniqueIdComma = "\n,";
                 }
@@ -7511,7 +7536,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class CrossFolderSelectionForm extends DataViewSelectionForm
+    public static class CrossFolderSelectionForm extends DataViewSnapshotSelectionForm
     {
         private String _dataType;
         private String _picklistName;
@@ -7541,7 +7566,11 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds != null)
                 return _rowIds;
-            Set<Integer> selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+            Set<Integer> selectedIds;
+            if (isUseSnapshotSelection())
+                selectedIds = new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
+            else
+                selectedIds = DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
             if (_picklistName != null)
             {
                 User user = getViewContext().getUser();

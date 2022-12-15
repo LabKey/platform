@@ -2216,7 +2216,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .map(entry -> entry.getScope() + "." + entry.getName() + ": " + entry.getValue()).toList();
 
             if (!unknown.isEmpty())
-                throw new IllegalArgumentException("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
+                _log.info("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();

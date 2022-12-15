@@ -278,7 +278,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
         return (
             <Panel>
                 <Panel.Heading>
-                    <span className="bold-text"> Configurations </span>
+                    Configurations
                 </Panel.Heading>
                 <Panel.Body>
                     <a className="configurations__help-link" href={helpLink}>
