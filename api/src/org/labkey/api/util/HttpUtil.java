@@ -34,6 +34,7 @@ import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.BadRequestException;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
@@ -53,7 +54,7 @@ import java.util.ArrayList;
  */
 public class HttpUtil
 {
-    private static final Logger LOG = LogManager.getLogger(HttpUtil.class);
+    private static final Logger LOG = LogHelper.getLogger(HttpUtil.class, "Simple HTTP operations");
 
     public enum Method
     {
@@ -85,7 +86,7 @@ public class HttpUtil
      * @param uri resource
      * @return A String for the content and the final URI.
      */
-    public static Pair<String, URI> get(URI uri) throws IOException, URISyntaxException, ParseException
+    public static Pair<String, URI> getText(URI uri) throws IOException, URISyntaxException, ParseException
     {
         try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath());
              CloseableHttpClient client = HttpClientBuilder.create().build())
@@ -124,7 +125,7 @@ public class HttpUtil
      */
     public static Pair<Document, URI> getXHTML(URI uri) throws IOException, URISyntaxException, ParseException
     {
-        Pair<String, URI> pair = get(uri);
+        Pair<String, URI> pair = getText(uri);
         String content = pair.first;
         URI finalURI = pair.second;
 
