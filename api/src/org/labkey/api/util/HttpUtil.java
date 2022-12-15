@@ -15,18 +15,17 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.ContentEncodingHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.logging.log4j.LogManager;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+import org.apache.hc.core5.http.protocol.BasicHttpContext;
+import org.apache.hc.core5.http.protocol.HttpCoreContext;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,13 +43,9 @@ import org.w3c.dom.NodeList;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * User: kevink
@@ -59,8 +54,6 @@ import java.util.regex.Pattern;
 public class HttpUtil
 {
     private static final Logger LOG = LogManager.getLogger(HttpUtil.class);
-
-    private static final Pattern _metaRefreshRegex = Pattern.compile("<meta http-equiv=['\"]refresh['\"] content=['\"].*URL=(.*)['\"]>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public enum Method
     {
@@ -88,64 +81,37 @@ public class HttpUtil
     }
 
     /**
-     * Get an InputStream from the endpoint following any HTTP redirects.
+     * Get content of an endpoint following any HTTP redirects.
      * @param uri resource
-     * @return An InputStream for the content and the final URI.
+     * @return A String for the content and the final URI.
      */
-    public static Pair<InputStream, URI> get(URI uri) throws IOException
+    public static Pair<String, URI> get(URI uri) throws IOException, URISyntaxException, ParseException
     {
-        try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath()))
+        try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath());
+             CloseableHttpClient client = HttpClientBuilder.create().build())
         {
-            HttpClient client = new ContentEncodingHttpClient();
             HttpGet get = new HttpGet(uri);
             BasicHttpContext context = new BasicHttpContext();
-            HttpResponse resp = client.execute(get, context);
 
-            // UNDONE: check status code
-            //resp.getStatusLine().getStatusCode()
+            return client.execute(get, context, response -> {
+                BasicClassicHttpRequest req = (BasicClassicHttpRequest) context.getAttribute(HttpCoreContext.HTTP_REQUEST);
+                final URI finalURI;
 
-            HttpHost target = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-            HttpUriRequest req = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
+                try
+                {
+                    finalURI = req.getUri();
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new HttpException("Bad URI", e);
+                }
 
-            URI finalURI = URI.create(target.toURI() + req.getURI());
-            LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
+                LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
+                HttpEntity entity = response.getEntity();
+                String content = EntityUtils.toString(entity);
 
-            HttpEntity entity = resp.getEntity();
-            InputStream is = entity.getContent();
-
-            return Pair.of(is, finalURI);
-        }
-    }
-
-    /**
-     * Get HTML content from the endpoint following HTTP redirects, including meta redirects in the html.
-     * CONSIDER: Tidying HTML content.
-     *
-     * @param uri resource
-     * @return The content and the final URI.
-     */
-    public static Pair<String, URI> getHTML(URI uri) throws IOException
-    {
-        Pair<InputStream, URI> pair = get(uri);
-        InputStreamReader reader = new InputStreamReader(pair.first);
-        URI finalURI = pair.getValue();
-
-        StringWriter writer = new StringWriter(5000);
-        IOUtils.copy(reader, writer);
-        String content = writer.toString();
-
-        // find meta redirects
-        Matcher metaMatcher = _metaRefreshRegex.matcher(content);
-        if (metaMatcher.find())
-        {
-            String refresh = metaMatcher.group(1);
-            URI redirectURI = finalURI.resolve(refresh);
-            LOG.info("following meta refresh: " + redirectURI);
-            return getHTML(redirectURI);
-        }
-        else
-        {
-            return Pair.of(content, finalURI);
+                return Pair.of(content, finalURI);
+            });
         }
     }
 
@@ -156,15 +122,11 @@ public class HttpUtil
      * @param uri resource
      * @return The document and the final URI.
      */
-    public static Pair<Document, URI> getXHTML(URI uri) throws IOException
+    public static Pair<Document, URI> getXHTML(URI uri) throws IOException, URISyntaxException, ParseException
     {
-        Pair<InputStream, URI> pair = get(uri);
-        InputStreamReader reader = new InputStreamReader(pair.first);
-        URI finalURI = pair.getValue();
-
-        StringWriter writer = new StringWriter(5000);
-        IOUtils.copy(reader, writer);
-        String content = writer.toString();
+        Pair<String, URI> pair = get(uri);
+        String content = pair.first;
+        URI finalURI = pair.second;
 
         ArrayList<String> errors = new ArrayList<>();
         Document document = TidyUtil.convertHtmlToDocument(content, true, errors);
