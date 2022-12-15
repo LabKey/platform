@@ -16,7 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -174,7 +175,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             {
                 if (FileUtil.deleteDir(analysisDir))
                 {
-                    LogManager.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
+                    getLogger().info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
 
                     // Delete any ExpData remains
                     for (ExpData data : children)
@@ -189,7 +190,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                     {
                         if (FileUtil.deleteDir(parent))
                         {
-                            LogManager.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' parent analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), parent));
+                            getLogger().info(String.format("Job '%s' parent analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), parent));
                             parent = parent.getParentFile();
                             contents = parent.list();
                         }
@@ -197,9 +198,14 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                 }
                 else
                 {
-                    LogManager.getLogger(FileAnalysisPipelineProvider.class).warn(String.format("Failed to move job '%s' analysis directory to .deleted: %s", sf.getDescription(), analysisDir));
+                    getLogger().warn(String.format("Failed to move job '%s' analysis directory to .deleted: %s", sf.getDescription(), analysisDir));
                 }
             }
         }
+    }
+
+    private Logger getLogger()
+    {
+        return LogHelper.getLogger(FileAnalysisPipelineProvider.class, "File analysis pipeline logger");
     }
 }
