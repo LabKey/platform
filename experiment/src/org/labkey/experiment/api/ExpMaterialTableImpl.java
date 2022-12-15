@@ -128,6 +128,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        setSupportMerge(true);
     }
 
     public Set<String> getUniqueIdFields()
