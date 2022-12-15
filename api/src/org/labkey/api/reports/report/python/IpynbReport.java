@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
@@ -388,7 +389,7 @@ public class IpynbReport extends DockerScriptReport
                 final PipedOutputStream pipeOutput = new PipedOutputStream();
                 pipeOutput.connect(in);
 
-                final InputStreamEntity entity = new InputStreamEntity(in, null);
+                final InputStreamEntity entity = new InputStreamEntity(in, ContentType.create("application/x-tar"));
                 putRequest.setEntity(entity);
 
                 final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
