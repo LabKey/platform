@@ -6,11 +6,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
     bsClass="panel"
     componentClass="div"
   >
-    <span
-      className="bold-text"
-    >
-       Configurations 
-    </span>
+    Configurations
   </PanelHeading>
   <PanelBody
     bsClass="panel"
@@ -728,11 +724,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
   <div
     className="panel-heading"
   >
-    <span
-      className="bold-text"
-    >
-       Configurations 
-    </span>
+    Configurations
   </div>
   <div
     className="panel-body"
