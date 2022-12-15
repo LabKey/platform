@@ -702,7 +702,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // Attempt SQL injection #2
         {
             var lineageOptions = new ExpLineageOptions(true, false, 10);
-            lineageOptions.setSourceKey(sourceKey + " OR _Edges.sourcekey = \"SELECT(*\"");
+            lineageOptions.setSourceKey(sourceKey + " OR _Edges.sourcekey = 'SELECT(*'");
             var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
             assertEquals("Unexpected number of objects from SQL injection #2", 0, lineage.getObjects().size());
         }

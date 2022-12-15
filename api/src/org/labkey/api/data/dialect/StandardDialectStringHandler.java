@@ -21,12 +21,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
 
 import java.sql.Array;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -199,9 +197,9 @@ public class StandardDialectStringHandler implements DialectStringHandler
         {
             return "NULL";
         }
-        else if (value instanceof String)
+        else if (value instanceof String strValue)
         {
-            return quoteStringLiteral((String)value);
+            return quoteStringLiteral(strValue);
         }
         else if (value instanceof Date)
         {
