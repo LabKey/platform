@@ -22,6 +22,6 @@ public class MicrosoftSqlServer2019Dialect extends MicrosoftSqlServer2017Dialect
     @Override
     protected DialectStringHandler createStringHandler()
     {
-        return new MicrosoftSqlServerStringHandler();
+        return new MicrosoftSqlServerStringHandler(this);
     }
 }
