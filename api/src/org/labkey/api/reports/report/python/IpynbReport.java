@@ -7,12 +7,13 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.NotNull;
@@ -390,7 +391,7 @@ public class IpynbReport extends DockerScriptReport
                 final PipedOutputStream pipeOutput = new PipedOutputStream();
                 pipeOutput.connect(in);
 
-                final InputStreamEntity entity = new InputStreamEntity(in);
+                final InputStreamEntity entity = new InputStreamEntity(in, ContentType.create("application/x-tar"));
                 putRequest.setEntity(entity);
 
                 final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
@@ -436,8 +437,8 @@ public class IpynbReport extends DockerScriptReport
                     // delete script to avoid returning unprocessed ipynb in case of error
                     FileUtils.delete(ipynb);
 
-                    if (200 != response.getStatusLine().getStatusCode())
-                        return response.getStatusLine().getStatusCode();
+                    if (200 != response.getCode())
+                        return response.getCode();
                     extractTar(response.getEntity().getContent(), working);
                     return 0;
                 }
@@ -469,7 +470,7 @@ public class IpynbReport extends DockerScriptReport
             HttpGet getRequest = new HttpGet(new URLHelper(service.toString()).setPath("/ping").getURIString());
             try (CloseableHttpResponse response = client.execute(getRequest))
             {
-                return new PingResult(response.getStatusLine().getStatusCode(),"");
+                return new PingResult(response.getCode(),"");
             }
             catch (Exception x)
             {
