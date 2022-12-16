@@ -423,7 +423,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                         for (File src : param.getFiles())
                         {
                             File dst = new File(cacheDir, src.getName());
-                            if (src.exists() && dst.createNewFile())
+                            if (src.exists() && FileUtil.createTempFile(dst))
                             {
                                 FileUtil.copyFile(src, dst);
 

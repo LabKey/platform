@@ -257,16 +257,17 @@ public class RserveScriptEngine extends RScriptEngine
         File wd = getWorkingDir(getContext());
         try
         {
-            String[] names = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
-            for (var name : names)
+            String[] paths = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
+            for (var remotePath : paths)
             {
-                if ("input_data.tsv".equalsIgnoreCase(name))
+                if ("input_data.tsv".equalsIgnoreCase(remotePath))
                     continue;
-                if ("script.R".equalsIgnoreCase(name))
+                if ("script.R".equalsIgnoreCase(remotePath))
                     continue;
-                new File(wd,name).getParentFile().mkdirs();
-                try (InputStream is = rconn.openFile(name);
-                     FileOutputStream fos = new FileOutputStream(new File(wd,name)))
+                File file = new File(wd,remotePath);
+                FileUtil.createTempFile(file);
+                try (InputStream is = rconn.openFile(remotePath);
+                     FileOutputStream fos = new FileOutputStream(file))
                 {
                     IOUtil.copyCompletely(is, fos);
                 }

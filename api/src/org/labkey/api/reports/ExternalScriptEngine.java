@@ -444,6 +444,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                 }
 
+                FileUtil.createTempFile(scriptFile);
                 try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile))))
                 {
                     pw.write(script);

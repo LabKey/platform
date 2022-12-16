@@ -850,7 +850,7 @@ public class PipelineServiceImpl implements PipelineService
 
     @Override
     @NotNull
-    public String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext context) throws IOException, PipelineValidationException
+    public String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, @NotNull ViewContext context) throws IOException, PipelineValidationException
     {
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         return startFileAnalysis(form, variableMap, info);
@@ -859,6 +859,13 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     @NotNull
     public String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewBackgroundInfo context) throws IOException, PipelineValidationException
+    {
+        return startFileAnalysis(form, variableMap, context, false);
+    }
+
+    @Override
+    @NotNull
+    public String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewBackgroundInfo context, boolean timestampLog) throws IOException, PipelineValidationException
     {
         if (form.getProtocolName() == null)
         {
@@ -979,6 +986,7 @@ public class PipelineServiceImpl implements PipelineService
             variableMap.put("pipelineDescription", pipelineDescription);
         }
 
+        protocol.setTimestampLog(timestampLog);
         AbstractFileAnalysisJob job = protocol.createPipelineJob(context, root, filesInputList, fileParameters, variableMap);
         PipelineService.get().queueJob(job);
         return job.getJobGUID();

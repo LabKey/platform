@@ -33,7 +33,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
 
     LinkedList<String> getList()
     {
-        return _list;
+        return new LinkedList<>(_list);
     }
 
     static void populate()
@@ -45,7 +45,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
                 map.forEach((sp, cp)-> Arrays.stream(StringUtils.split(cp.getValue(), ","))
                     .map(StringUtils::trimToNull)
                     .filter(Objects::nonNull)
-                    .forEach(sp.getList()::add));
+                    .forEach(sp._list::add));
             }
         });
     }
