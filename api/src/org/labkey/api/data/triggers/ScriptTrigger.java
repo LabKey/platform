@@ -237,54 +237,35 @@ public class ScriptTrigger implements Trigger
     {
         try
         {
-            ViewContext.StackResetter viewContextResetter = null;
-            if (!HttpView.hasCurrentView())
+            if (!_script.evaluated())
             {
-                // Push a view context if we don't already have one available. It will be pulled if labkey.js
-                // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
-                // server/modules/core/resources/scripts/labkey/init.js
-                //noinspection deprecation
-                viewContextResetter = ViewContext.pushMockViewContext(user, c, new ActionURL("dummy", "dummy", c));
-            }
-            try
-            {
-                if (!_script.evaluated())
+                Map<String, Object> bindings = new HashMap<>();
+                if (extraContext == null)
+                    extraContext = new HashMap<>();
+                bindings.put("extraContext", extraContext);
+                bindings.put("schemaName", _table.getPublicSchemaName());
+                bindings.put("tableName", _table.getPublicName());
+
+                Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
+                if (existingValue != null)
                 {
-                    Map<String, Object> bindings = new HashMap<>();
-                    if (extraContext == null)
-                        extraContext = new HashMap<>();
-                    bindings.put("extraContext", extraContext);
-                    bindings.put("schemaName", _table.getPublicSchemaName());
-                    bindings.put("tableName", _table.getPublicName());
-
-                    Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
-                    if (existingValue != null)
+                    if (!(existingValue instanceof ContainerUser cu))
                     {
-                        if (!(existingValue instanceof ContainerUser cu))
-                        {
-                            throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that wasnt a ContainerUser object");
-                        }
-
-                        if (!cu.getContainer().equals(c) || !cu.getUser().equals(user))
-                        {
-                            throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that didnt match table. Cached: " + cu.getContainer() + " / " + cu.getUser() + ", table: " + c +  " / " + user);
-                        }
+                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that wasnt a ContainerUser object");
                     }
 
-                    // Note: this is being added to the script-level context object, not bindings on purpose so that it is included in the calls to engine.getRuntimeScope()
-                    _script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, ContainerUser.create(c, user), ScriptContext.ENGINE_SCOPE);
-                    _script.eval(bindings);
+                    if (!cu.getContainer().equals(c) || !cu.getUser().equals(user))
+                    {
+                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that didnt match table. Cached: " + cu.getContainer() + " / " + cu.getUser() + ", table: " + c +  " / " + user);
+                    }
                 }
 
-                return fn.apply(_script);
+                // Note: this is being added to the script-level context object, not bindings on purpose so that it is included in the calls to engine.getRuntimeScope()
+                _script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, ContainerUser.create(c, user), ScriptContext.ENGINE_SCOPE);
+                _script.eval(bindings);
             }
-            finally
-            {
-                if (viewContextResetter != null)
-                {
-                    viewContextResetter.close();
-                }
-            }
+
+            return fn.apply(_script);
         }
         catch (NoSuchMethodException | ScriptException e)
         {

@@ -839,12 +839,7 @@ class RhinoEngine extends RhinoScriptEngine
             }
             else
             {
-                // NOTE: RhinoService$TestCase is failing since is calls ScriptService.compile() directly
-                // I'm not sure if the container-less scenario is actually encountered in real usage;
-                // however, I am adding this as a fallback so this scenario works.
-                // The logging is to let TeamCity report other code that does this
-                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container", new Exception("Current container: " + HttpView.currentView().getViewContext().getContainer().getPath()));
-                extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, HttpView.currentView().getViewContext()));
+                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container. This might be perfectly fine.", new Exception());
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
