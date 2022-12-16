@@ -193,6 +193,7 @@ public class IpynbReport extends DockerScriptReport
         var descriptor = getDescriptor();
         String script = descriptor.getProperty(ScriptReportDescriptor.Prop.script);
         File scriptFile = new File(workingDirectory, FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
+        FileUtil.createTempFile(scriptFile);
         IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
@@ -304,6 +305,7 @@ public class IpynbReport extends DockerScriptReport
                 }
                 else
                 {
+                    FileUtil.createTempFile(path);
                     try (FileOutputStream os = new FileOutputStream(path))
                     {
                         IOUtils.copy(tar, os);
