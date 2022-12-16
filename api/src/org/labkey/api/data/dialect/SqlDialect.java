@@ -431,7 +431,7 @@ public abstract class SqlDialect
     // Called once when new scope is being prepared
     protected DialectStringHandler createStringHandler()
     {
-        return new StandardDialectStringHandler();
+        return new StandardDialectStringHandler(this);
     }
 
     public DialectStringHandler getStringHandler()
@@ -1119,7 +1119,8 @@ public abstract class SqlDialect
     {
     }
 
-    // Substitute the parameter values into the SQL statement.
+    // Substitute parameter values into the SQL statement. Use for logging and debugging. Returned string is not
+    // guaranteed to be valid or safe SQL!
     public String substituteParameters(SQLFragment frag)
     {
         return _stringHandler.substituteParameters(frag);

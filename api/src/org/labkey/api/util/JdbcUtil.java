@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -38,11 +39,11 @@ public final class JdbcUtil
     }
 
 
-    // Not recommended -- without a dialect, we use SQL standard parsing of identifiers and string literals...
-    // which might not be correct for the incoming SQL.
+    // Not recommended -- this uses the LabKey scope to dictate parsing of identifiers and string literals... which
+    // might not be correct for the incoming SQL.
     public static String format(SQLFragment fragment)
     {
-        return format(fragment, new StandardDialectStringHandler());
+        return format(fragment, DbScope.getLabKeyScope().getSqlDialect().getStringHandler());
     }
 
 

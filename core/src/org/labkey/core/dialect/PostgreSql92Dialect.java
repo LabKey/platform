@@ -73,7 +73,7 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
         if (getStandardConformingStrings())
             return super.createStringHandler();
         else
-            return new PostgreSqlNonConformingStringHandler();
+            return new PostgreSqlNonConformingStringHandler(this);
     }
 
     @Override
