@@ -35,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -267,7 +266,7 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     // It is a little confusing that getString() does not return the same charsequence that this object purports to
-    // represent.  However, this is a good "display value" for this object.
+    // represent. However, this is a good "display value" for this object.
     // see getSqlCharSequence()
     @NotNull
     public String toString()
@@ -731,6 +730,11 @@ public class SQLFragment implements Appendable, CharSequence
         return sqlf;
     }
 
+    // On SQL Server, filters out the N' string constant prefix from the expected debug SQL. Otherwise, no-ops.
+    static String filterDebugString(String debugString)
+    {
+        return DbScope.getLabKeyScope().getSqlDialect().isSqlServer() ? debugString.replace("N'", "'") : debugString;
+    }
 
     public static class UnitTestCase extends Assert
     {
@@ -748,7 +752,7 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM CTE WHERE y=?", b.getSQL());
             assertEquals( "WITH\n/*CTE*/\n" +
                     "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", b.toDebugString());
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", filterDebugString(b.toDebugString()));
             List<Object> params = b.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));
@@ -761,7 +765,7 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM CTE WHERE y=?", c.getSQL());
             assertEquals( "WITH\n/*CTE*/\n" +
                     "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", c.toDebugString());
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", filterDebugString(c.toDebugString()));
             params = c.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));
@@ -823,21 +827,21 @@ public class SQLFragment implements Appendable, CharSequence
             // one-level cte using cteToken (CTE fragment 'a' does not contain a CTE)
             {
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
-                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", a.toDebugString());
+                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
                 String cteToken = b.addCommonTableExpression(new Object(), "CTE", a);
                 b.append("SELECT * FROM ").append(cteToken).append(" WHERE p=?").add("parameterTWO");
                 assertEquals("WITH\n/*CTE*/\n" +
                                 "\tCTE AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)\n" +
                                 "SELECT * FROM CTE WHERE p='parameterTWO'",
-                        b.toDebugString());
+                        filterDebugString(b.toDebugString()));
                 assertEquals("parameterONE", b.getParams().get(0));
             }
 
             // two-level cte using cteTokens (CTE fragment 'b' contains a CTE of fragment a)
             {
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
-                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", a.toDebugString());
+                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
                 String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
@@ -850,7 +854,7 @@ public class SQLFragment implements Appendable, CharSequence
                                 ",/*CTE*/\n" +
                                 "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterTWO')\n" +
                                 "SELECT * FROM _B_ WHERE i=3",
-                        c.toDebugString());
+                        filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(3, params.size());
                 assertEquals("parameterONE", params.get(0));
@@ -877,7 +881,7 @@ public class SQLFragment implements Appendable, CharSequence
                                 ",/*CTE*/\n" +
                                 "\t_A2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)\n" +
                                 "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
-                        c.toDebugString());
+                        filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
                 assertEquals("parameterAone", params.get(0));
@@ -905,7 +909,7 @@ public class SQLFragment implements Appendable, CharSequence
                                 ",/*CTE*/\n" +
                                 "\t_A2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
                                 "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
-                        c.toDebugString());
+                        filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
                 assertEquals("parameterAone", params.get(0));
