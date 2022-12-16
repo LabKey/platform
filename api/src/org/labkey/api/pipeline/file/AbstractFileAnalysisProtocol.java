@@ -65,7 +65,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     protected String xml;
 
     protected String email;
-    protected boolean fromWatcher;
+    protected boolean timestampLog;
 
     public AbstractFileAnalysisProtocol(String name, String description, String xml)
     {
@@ -289,13 +289,13 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return createPipelineJob(info, root, filesInput.stream().map(Path::toFile).collect(Collectors.toList()), fileParameters.toFile(), variableMap);
     }
 
-    public boolean isFromWatcher()
+    public boolean timestampLog()
     {
-        return fromWatcher;
+        return timestampLog;
     }
 
-    public void setFromWatcher(boolean fromWatcher)
+    public void setTimestampLog(boolean timestampLog)
     {
-        this.fromWatcher = fromWatcher;
+        this.timestampLog = timestampLog;
     }
 }
