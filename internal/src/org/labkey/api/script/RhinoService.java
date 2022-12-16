@@ -837,10 +837,6 @@ class RhinoEngine extends RhinoScriptEngine
                 // Other JS scripts can call require('serverContext') to load this.
                 extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, ((ContainerUser)effectiveContainerUser)));
             }
-            else
-            {
-                LOG.error("Code is calling RhinoService.getRuntimeScope() without having set container. This might be perfectly fine.", new Exception());
-            }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
             require.install(scriptable);
