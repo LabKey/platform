@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -233,14 +234,12 @@ public class QueryPivot extends QueryRelation
             parseError("Could not find pivot column in group by list, expression must match exactly: " + _pivotColumn.getAlias(), null);
     }
 
-
-
-    Map<String,IConstant> getPivotValues() throws SQLException
+    Map<String, IConstant> getPivotValues() throws SQLException
     {
         if (null != _pivotValues)
             return _pivotValues;
 
-        _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
+        _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         SQLFragment sqlPivotValues = null;
         boolean hasPhiColumns = false;
 
@@ -406,21 +405,23 @@ public class QueryPivot extends QueryRelation
         if (!getParseErrors().isEmpty())
             return null;
 
-        try
-        {
-            getPivotValues();
-        }
-        catch (QueryService.NamedParameterNotProvided x)
-        {
-            parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-            parseError(x.getMessage(), null);
-            return null;
-        }
-        catch (SQLException|DataAccessException x)
-        {
-            parseError("Could not compute pivot column list", null);
-            return null;
-        }
+        // TODO: Move this exception handling to PivotTableInfo.getAllColumns()
+//        try
+//        {
+//            getPivotValues();
+//        }
+//        catch (QueryService.NamedParameterNotProvided x)
+//        {
+//            parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
+//            parseError(x.getMessage(), null);
+//            return null;
+//        }
+//        catch (SQLException | DataAccessException x)
+//        {
+//            parseError("Could not compute pivot column list", null);
+//            return null;
+//        }
+
         return qti;
     }
 
@@ -526,7 +527,7 @@ public class QueryPivot extends QueryRelation
                 assert(!getParseErrors().isEmpty());
                 if (getParseErrors().isEmpty())
                     getParseErrors().add(new QueryException(getSqlDialect().sanitizeException(x), x));
-                pivotValues = Collections.EMPTY_MAP;
+                pivotValues = Collections.emptyMap();
             }
 
             _columns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>(_select.size()*2));
@@ -866,15 +867,78 @@ public class QueryPivot extends QueryRelation
         PivotTableInfo()
         {
             super(QueryPivot.this, "_pivot");
+        }
 
-            for (RelationColumn col : getAllColumns().values())
+        private boolean _initialColumnsAreAdded = false;
+
+        private void ensureInitialColumnsAreAdded()
+        {
+            if (!_initialColumnsAreAdded)
             {
-                var columnInfo = new RelationColumnInfo(this, col);
-                addColumn(columnInfo);
+                _initialColumnsAreAdded = true;
+
+                for (RelationColumn col : getAllColumns().values())
+                {
+                    var columnInfo = new RelationColumnInfo(this, col);
+                    addColumn(columnInfo);
+                }
             }
         }
 
-        SQLFragment _sqlPivot = null;
+        // Override all methods that directly interact with AbstractTableInfo._columnMap to add calls to ensureInitialColumnsAreAdded()
+
+        @Override
+        public List<ColumnInfo> getColumns(String colNames)
+        {
+            ensureInitialColumnsAreAdded();
+            return super.getColumns(colNames);
+        }
+
+        @Override
+        public Set<String> getColumnNameSet()
+        {
+            ensureInitialColumnsAreAdded();
+            return super.getColumnNameSet();
+        }
+
+        @Override
+        public @Nullable ColumnInfo getColumn(@NotNull String name, boolean resolveIfNeeded)
+        {
+            ensureInitialColumnsAreAdded();
+            return super.getColumn(name, resolveIfNeeded);
+        }
+
+        @Override
+        public @NotNull List<MutableColumnInfo> getMutableColumns()
+        {
+            ensureInitialColumnsAreAdded();
+            return super.getMutableColumns();
+        }
+
+        @Override
+        public boolean removeColumn(ColumnInfo column)
+        {
+            ensureInitialColumnsAreAdded();
+            return super.removeColumn(column);
+        }
+
+        @Override
+        public MutableColumnInfo addColumn(MutableColumnInfo column)
+        {
+            ensureInitialColumnsAreAdded();
+            return super.addColumn(column);
+        }
+
+        @Override
+        public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
+        {
+            ensureInitialColumnsAreAdded();
+            return super.replaceColumn(updated, existing);
+        }
+
+        // End of ensureInitialColumnsAreAdded() overrides
+
+        private SQLFragment _sqlPivot = null;
 
         @NotNull
         @Override
