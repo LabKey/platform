@@ -19,7 +19,6 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
@@ -36,13 +35,6 @@ import java.util.List;
 */
 public class StandardDialectStringHandler implements DialectStringHandler
 {
-    private final SqlDialect _dialect;
-
-    public StandardDialectStringHandler(SqlDialect dialect)
-    {
-        _dialect = dialect;
-    }
-
     @Override
     public String quoteStringLiteral(String str)
     {
@@ -223,12 +215,11 @@ public class StandardDialectStringHandler implements DialectStringHandler
         }
     }
 
-
-    private String booleanValue(Boolean value)
+    @Override
+    public String booleanValue(Boolean value)
     {
-        return _dialect.getBooleanLiteral(value);
+        return Boolean.toString(value); // Most dialects support true/false
     }
-
 
     // ParameterSubstitutionTest tests the full substitution process; this tests edge conditions in the parser.
     public static class TestCase extends Assert
@@ -236,7 +227,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
         @Test
         public void testSqlParserMethods()
         {
-            StandardDialectStringHandler handler = new StandardDialectStringHandler(DbScope.getLabKeyScope().getSqlDialect());
+            StandardDialectStringHandler handler = new StandardDialectStringHandler();
             assertEquals(14, handler.findEndOfStringLiteral("'foo bar blick", 1));      // Non-terminated should be end of string
             assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick'", 1));     // Terminated at end of string should be end of string
             assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick''", 1));    // Terminated should be at character after ending quote

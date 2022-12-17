@@ -931,12 +931,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String getBooleanLiteral(boolean b)
-    {
-        return b ? "1" : "0";
-    }
-
-    @Override
     public String getBinaryDataType()
     {
         return "IMAGE";
@@ -2421,6 +2415,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected DialectStringHandler createStringHandler()
     {
-        return new MicrosoftSqlServerStringHandler(this);
+        return new MicrosoftSqlServerStringHandler();
     }
 }

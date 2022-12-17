@@ -431,7 +431,7 @@ public abstract class SqlDialect
     // Called once when new scope is being prepared
     protected DialectStringHandler createStringHandler()
     {
-        return new StandardDialectStringHandler(this);
+        return new StandardDialectStringHandler();
     }
 
     public DialectStringHandler getStringHandler()
@@ -455,7 +455,7 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Human readable product version number. Pass through by default; dialects should override this if they can provide
+    // Human-readable product version number. Pass through by default; dialects should override this if they can provide
     // more useful product version information than what's returned from DatabaseMetaData.getDatabaseProductVersion().
     public @Nullable String getProductVersion(String dbmdProductVersion)
     {
@@ -1040,7 +1040,10 @@ public abstract class SqlDialect
         return "CAST(0 AS " + getBooleanDataType() + ")";
     }
 
-    public abstract String getBooleanLiteral(boolean b);
+    public final String getBooleanLiteral(boolean b)
+    {
+        return getStringHandler().booleanValue(b);
+    }
 
     public abstract String getBinaryDataType();
 

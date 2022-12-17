@@ -104,7 +104,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
             _dialect = mockery.mock(SqlDialect.class);
             mockery.checking(new Expectations() {{
                 allowing(_dialect).getStringHandler();
-                will(returnValue(new StandardDialectStringHandler(_dialect)));
+                will(returnValue(new StandardDialectStringHandler()));
             }});
         }
 
