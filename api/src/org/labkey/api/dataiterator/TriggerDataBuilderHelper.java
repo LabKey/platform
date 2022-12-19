@@ -127,7 +127,7 @@ public class TriggerDataBuilderHelper
             boolean includeAllColumns = !context.getInsertOption().mergeRows || mergeKeys == null;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
-            if (!includeAllColumns)
+            if (!includeAllColumns && _target.supportMerge())
                 coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);
 
             return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
