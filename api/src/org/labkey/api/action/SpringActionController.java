@@ -407,10 +407,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             setActionForThread(controller);
 
-            if (!(controller instanceof PermissionCheckable))
+            if (!(controller instanceof PermissionCheckable checkable))
                 throw new IllegalStateException("All actions must implement PermissionCheckable. " + controller.getClass().getName() + " should extend PermissionCheckableAction or one of its subclasses.");
-
-            PermissionCheckable checkable = (PermissionCheckable)controller;
 
             ApiResponseWriter.Format responseFormat = ApiResponseWriter.Format.getFormatByName(request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME), null);
             if (responseFormat == null)
@@ -426,7 +424,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             if (null != redirectURL)
             {
-                _log.debug("URL " + url.toString() + " was redirected to " + redirectURL + " instead");
+                _log.debug("URL " + url + " was redirected to " + redirectURL + " instead");
                 response.sendRedirect(redirectURL.toString());
                 return null;
             }
@@ -437,9 +435,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Container c = context.getContainer();
             if (null == c)
             {
+                String containerPath = url.getExtraPath();
 
-                String containerPath = context.getActionURL().getExtraPath();
-                if (containerPath != null && containerPath.contains("/"))
+                if (!url.isProject())
                 {
                     throw new NotFoundException("No such folder or workbook: " + containerPath);
                 }
