@@ -207,7 +207,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException //TODO add method to check existence based on keys
     {
         aliasColumns(_columnMapping, keys);
         Map<String,Object> row = _select(container, getKeys(keys, container));

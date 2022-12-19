@@ -19,88 +19,22 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 // throws error if key values found in related folders
-public class CrossFolderRecordDataIterator extends WrapperDataIterator
+public class CrossFolderRecordDataIterator extends RecordValidationDataIterator
 {
-    private final DataIteratorContext _context;
-    final QueryUpdateService qus;
-    final User user;
-    final Container c;
 
-    final CachingDataIterator _unwrapped;
-    final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
-    final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
-
-    final Map<String,Object> _extraKeyValueMap;
-
-    int lastPrefetchRowNumber = -1;
-
-    protected CrossFolderRecordDataIterator(DataIterator in, DataIteratorContext context, TableInfo target, @Nullable Set<String> keys, @Nullable Map<String,Object> extraKeyValueMap)
+    protected CrossFolderRecordDataIterator(DataIterator in, DataIteratorContext context, TableInfo target, @Nullable Set<String> keys, @Nullable Map<String, Object> extraKeyValueMap, int batchSize)
     {
-        super(in);
-        _context = context;
-        qus = target.getUpdateService();
-        user = target.getUserSchema().getUser();
-        c = target.getUserSchema().getContainer();
-        _extraKeyValueMap = extraKeyValueMap;
-
-        _unwrapped = (CachingDataIterator)in;
-
-        var map = DataIteratorUtil.createColumnNameMap(in);
-        Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
-        for (String name : keyNames)
-        {
-            Integer index = map.get(name);
-            ColumnInfo col = target.getColumn(name);
-            if (null == index || null == col)
-            {
-                pkSuppliers.clear();
-                pkColumns.clear();
-                throw new IllegalStateException("Key column not found: " + name);
-            }
-            pkSuppliers.add(in.getSupplier(index));
-            pkColumns.add(col);
-        }
+        super(in, context, target, keys, extraKeyValueMap, batchSize);
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public void validate(Map<Integer, Map<String, Object>> keysMap)
     {
-        _unwrapped.mark();  // unwrapped _delegate
-        boolean ret = super.next();
-        if (ret && !pkColumns.isEmpty())
-            prefetchExisting();
-        return ret;
-    }
-
-    protected void prefetchExisting() throws BatchValidationException
-    {
-        Integer rowNumber = (Integer)_delegate.get(0);
-        if (rowNumber <= lastPrefetchRowNumber)
-            return;
-
-        int rowsToFetch = 200;
-        Map<Integer, Map<String,Object>> keysMap = new LinkedHashMap<>();
-        do
-        {
-            lastPrefetchRowNumber = (Integer) _delegate.get(0);
-            Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
-            for (int p=0 ; p<pkColumns.size() ; p++)
-                keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
-            if (_extraKeyValueMap != null)
-                keyMap.putAll(_extraKeyValueMap);
-            keysMap.put(lastPrefetchRowNumber, keyMap);
-        }
-        while (--rowsToFetch > 0 && _delegate.next());
-
         if (qus.hasExistingRowsInOtherContainers(c, keysMap))
             _context.getErrors().addRowError(new ValidationException("Cannot update data that don't belong to the current container."));
-
-        // backup to where we started so caller can iterate through them one at a time
-        _unwrapped.reset(); // unwrapped _delegate
-        _delegate.next();
     }
 
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Map<String,Object> extraKeyValueMap)
+    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Map<String,Object> extraKeyValueMap, int batchSize)
     {
         return context ->
         {
@@ -110,9 +44,9 @@ public class CrossFolderRecordDataIterator extends WrapperDataIterator
 
             QueryUpdateService.InsertOption option = context.getInsertOption();
             Container container = target.getUserSchema() == null ? null : target.getUserSchema().getContainer();
-            if (option.mergeRows && container != null && container.isProductProjectsEnabled())
+            if ((option.mergeRows || option.updateOnly)&& container != null && container.isProductProjectsEnabled())
             {
-                return new CrossFolderRecordDataIterator(new CachingDataIterator(di), context, target, keys, extraKeyValueMap);
+                return new CrossFolderRecordDataIterator(new CachingDataIterator(di), context, target, keys, extraKeyValueMap, batchSize);
             }
             return di;
         };

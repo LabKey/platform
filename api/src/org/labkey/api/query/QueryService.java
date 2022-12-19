@@ -440,6 +440,15 @@ public interface QueryService
         {
             return _verbPastTense;
         }
+
+        public static AuditAction getImportAuditAction(QueryUpdateService.InsertOption insertOption)
+        {
+            if (insertOption == QueryUpdateService.InsertOption.UPDATE)
+                return UPDATE;
+            if (insertOption == QueryUpdateService.InsertOption.MERGE)
+                return MERGE;
+            return INSERT;
+        }
     }
 
     /**

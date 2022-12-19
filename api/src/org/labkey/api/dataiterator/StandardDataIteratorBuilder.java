@@ -237,7 +237,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         //
         // check for unbound columns that are required
         //
-        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation))
+        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation) && !context.getInsertOption().updateOnly)
         {
             for (TranslateHelper pair : unusedCols.values())
             {

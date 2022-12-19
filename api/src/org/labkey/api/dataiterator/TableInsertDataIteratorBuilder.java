@@ -80,7 +80,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
-        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
+        DataIterator di = TableInsertUpdateDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
                 dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns);
         if (null == di)
         {

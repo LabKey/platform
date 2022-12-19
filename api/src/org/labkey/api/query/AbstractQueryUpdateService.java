@@ -60,6 +60,7 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.NoNewRecordValidationDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TriggerDataBuilderHelper;
@@ -153,6 +154,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
+        return getRows(user, container, keys, false);
+    }
+
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent)
+            throws SQLException, QueryUpdateServiceException, InvalidKeyException
+    {
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
@@ -162,6 +169,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = getRow(user, container, rowKeys);
             if (row != null)
                 result.add(row);
+            else if (failOnAbsent)
+                throw new QueryUpdateServiceException("Row not found for key (" + StringUtils.join(rowKeys.values(), ", ") + ")");
         }
         return result;
     }
@@ -187,6 +196,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
     {
         return false;
+    }
+
+    @Override
+    public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
+    {
+        getRows(user, container, keys, true);
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
@@ -247,9 +262,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
+        if (context.getInsertOption().updateOnly)
+        {
+            dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
+        }
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.getImportAuditAction(context.getInsertOption()), user, container);
         return dib;
     }
 
@@ -338,7 +357,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         else
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count, auditType);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.getImportAuditAction(context.getInsertOption()), count, auditType);
             return count;
         }
     }

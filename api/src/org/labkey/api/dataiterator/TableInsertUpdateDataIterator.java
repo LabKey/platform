@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
+public class TableInsertUpdateDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
     private final TableInfo _table;
     private final Container _container;
@@ -119,7 +119,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             keyColumns.addAll(context.getAlternateKeys());
         }
-        TableInsertDataIterator ti = new TableInsertDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate);
+        TableInsertUpdateDataIterator ti = new TableInsertUpdateDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate);
         DataIterator ret = ti;
 
 
@@ -141,8 +141,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
 
-    protected TableInsertDataIterator(DataIterator data, TableInfo table, @Nullable Container container, DataIteratorContext context,
-                                      @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+    protected TableInsertUpdateDataIterator(DataIterator data, TableInfo table, @Nullable Container container, DataIteratorContext context,
+                                            @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(table.getSqlDialect(), data, context);
         setDebugName(table.getName());
@@ -237,7 +237,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             ParameterMapStatement stmt;
-            if (_insertOption.mergeRows)
+            if (_insertOption.updateOnly)
+            {
+                stmt = getUpdateStatement(constants);
+            }
+            else if (_insertOption.mergeRows)
             {
                 stmt = getMergeStatement(constants);
             }
@@ -299,6 +303,23 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                     .updateBuiltinColumns(false)
                     .selectIds(_selectIds)
                     .constants(constants);
+        stmt = util.createStatement(_conn, _container, null);
+        return stmt;
+    }
+
+    protected ParameterMapStatement getUpdateStatement(Map<String, Object> constants) throws SQLException
+    {
+        ParameterMapStatement stmt;
+        setAutoIncrement(INSERT.OFF);
+
+        StatementUtils util = new StatementUtils(StatementUtils.Operation.update, _table)
+                .keys(_keyColumns)
+                .skip(_skipColumnNames)
+                .allowSetAutoIncrement(false)
+                .noupdate(_dontUpdate)
+                .updateBuiltinColumns(false)
+                .selectIds(_selectIds)
+                .constants(constants);
         stmt = util.createStatement(_conn, _container, null);
         return stmt;
     }

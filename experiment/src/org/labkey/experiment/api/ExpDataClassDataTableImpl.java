@@ -858,9 +858,30 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.setDebugName("step0");
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
+
+            // Ensure we have a dataClass column and it is of the right value
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
+            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
+            step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
+
+            // Ensure we have a cpasType column and it is of the right value
+            ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
+            step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
+
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+                return LoggingDataIterator.wrap(step0.getDataIterator(context));
+
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
+
+            // Ensure we have a name column -- makes the NameExpressionDataIterator easier
+            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
+            {
+                ColumnInfo nameCol = expData.getColumn("name");
+                step0.addColumn(nameCol, (Supplier<String>)() -> null);
+            }
+
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // TODO: validate dataFileUrl column, it will be saved later
@@ -872,22 +893,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
-
-            // Ensure we have a dataClass column and it is of the right value
-            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
-            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
-            step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
-
-            // Ensure we have a cpasType column and it is of the right value
-            ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
-            step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
-
-            // Ensure we have a name column -- makes the NameExpressionDataIterator easier
-            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
-            {
-                ColumnInfo nameCol = expData.getColumn("name");
-                step0.addColumn(nameCol, (Supplier<String>)() -> null);
-            }
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
@@ -1270,5 +1275,39 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
+
+        @Override
+        public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
+        {
+            Integer dataClassId = null;
+            Set<String> dataNames = new HashSet<>();
+            for (Map<String, Object> keyMap : keys)
+            {
+                Object oName = keyMap.get("Name");
+
+                if (oName != null)
+                    dataNames.add((String) oName);
+
+                if (dataClassId == null)
+                {
+                    Object oClassId = keyMap.get("ClassId");
+                    if (oClassId != null)
+                        dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
+                }
+            }
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
+            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
+            filter.addCondition(FieldKey.fromParts("Container"), container);
+
+            List<String> foundNames = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("name"), filter, null).getArrayList(String.class);
+            if (dataNames.size() > foundNames.size())
+            {
+                foundNames.forEach(dataNames::remove);
+                String absentName = (new ArrayList<>(dataNames)).get(0);
+                throw new QueryUpdateServiceException("Row not found for " + absentName);
+            }
+        }
+
     }
 }

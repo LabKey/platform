@@ -384,6 +384,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             return new CacheClearingQueryUpdateService(new UsersTableQueryUpdateService(this, table, helper))
             {
                 @Override
+                public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
+                {
+
+                }
+
+                @Override
                 protected void clearCache()
                 {
                     UserManager.clearUserList();

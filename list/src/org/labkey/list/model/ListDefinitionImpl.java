@@ -616,11 +616,11 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey)
     {
-        return insertListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, false);
+        return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, QueryUpdateService.InsertOption.INSERT);
     }
 
     @Override
-    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, boolean useMerge)
+    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, QueryUpdateService.InsertOption insertOption)
     {
         ListQuerySchema schema = new ListQuerySchema(user, container);
         TableInfo table = schema.getTable(_def.getName());
@@ -628,7 +628,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
             if (null != lqus)
-                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, useMerge);
+                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, insertOption);
         }
         return 0;
     }

@@ -372,6 +372,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
+        rowCopy.remove(AliquotedFromLSID.name());
+        rowCopy.remove(RootMaterialLSID.name());
+        rowCopy.remove("AliquotedFrom");
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
@@ -379,9 +382,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
         DataState newStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
         boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
-
-        rowCopy.remove(AliquotedFromLSID.name());
-        rowCopy.remove(RootMaterialLSID.name());
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
@@ -456,6 +456,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         ret.put("lsid", lsid);
+        ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
         return ret;
     }
 
@@ -654,7 +655,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws QueryUpdateServiceException
     {
-        return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
+        return getRows(user, container, keys, false, false /*skip addInputs for insertRows*/);
     }
 
     @Override
@@ -678,6 +679,35 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
 
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
+    }
+
+    @Override
+    public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
+    {
+        Integer sampleTypeId = null;
+        Set<String> sampleNames = new HashSet<>();
+        for (Map<String, Object> keyMap : keys)
+        {
+            String name = getMaterialName(keyMap);
+
+            if (name != null)
+                sampleNames.add(name);
+
+            if (sampleTypeId == null)
+                sampleTypeId = getMaterialSourceId(keyMap);
+        }
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+        filter.addCondition(FieldKey.fromParts("Name"), sampleNames, CompareType.IN);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+
+        List<String> foundNames = new TableSelector(ExperimentService.get().getTinfoMaterial(), Collections.singleton("name"), filter, null).getArrayList(String.class);
+        if (sampleNames.size() > foundNames.size())
+        {
+            foundNames.forEach(sampleNames::remove);
+            String absentName = (new ArrayList<>(sampleNames)).get(0);
+            throw new QueryUpdateServiceException("Row not found for " + absentName);
+        }
     }
 
     @Override
@@ -798,7 +828,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return sampleRows;
     }
 
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent, boolean addInputs)
             throws QueryUpdateServiceException
     {
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
@@ -807,8 +837,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs);
             if (materialMap != null)
                 result.add(materialMap);
+            else if (failOnAbsent)
+                throw new QueryUpdateServiceException("TODO");
         }
         return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent)
+            throws QueryUpdateServiceException
+    {
+        return getRows(user, container, keys, failOnAbsent, false);
     }
 
     @Override
@@ -968,6 +1007,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
+
+            if (context.getInsertOption() == InsertOption.UPDATE)
+            {
+                SimpleTranslator addAliquotedFrom = new _SamplesUpdateAliquotedFromDataIterator(c, context, sampleType);
+                addAliquotedFrom.selectAll();
+                return LoggingDataIterator.wrap(addAliquotedFrom);
+            }
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
@@ -1261,7 +1307,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
-                    if ("AliquotedFrom".equalsIgnoreCase(from.getName()))
+                    if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
                     {
                         derivationDataColInd = i;
                         break;
@@ -1323,6 +1369,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
+        private String getAliquotedFromColName()
+        {
+            // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
+            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : "AliquotedFrom";
+        }
+
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
         {
             var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
@@ -1341,5 +1393,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             addColumn(col, c);
         }
+    }
+
+    static class _SamplesUpdateAliquotedFromDataIterator extends SimpleTranslator
+    {
+        _SamplesUpdateAliquotedFromDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
+        {
+            super(di, context);
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(di);
+            addSampleUpdateAliquotedFromColumn("aliquotedfromlsid", columnNameMap.get("aliquotedfromlsid"), findExistingRecordIndex());
+            addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+            addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+
+        }
+
     }
 }
