@@ -189,6 +189,7 @@ public abstract class ScriptReport extends AbstractReport
                 try (TSVGridWriter tsv = new TSVGridWriter(srf, dataColumns))
                 {
                     tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
+                    FileUtil.createTempFile(resultFile);
                     tsv.write(resultFile);
                 }
             }

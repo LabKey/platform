@@ -573,8 +573,12 @@ public class ActionURL extends URLHelper implements Cloneable
     {
         return null == _action;
     }
-    
 
+    public boolean isProject()
+    {
+        return _path.size() == 1;
+    }
+    
     @Override
     public String getPath()
     {

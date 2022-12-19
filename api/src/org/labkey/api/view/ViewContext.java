@@ -69,7 +69,8 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private ActionURL _url;                     // path and parameters on the URL (does not include posted values)
     private String _scopePrefix = "";
     private Container _c = null;
-    private Set<Role> _contextualRoles = new HashSet<>();
+
+    private final Set<Role> _contextualRoles = new HashSet<>();
 
     transient protected HashMap<String, Object> _map = new HashMap<>();
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object

@@ -72,29 +72,39 @@ public class ParameterSubstitutionTest extends Assert
         String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
         testParameterSubstitution(dialect, new SQLFragment(longBothSql), longBothSql);
 
-        testParameterSubstitution(dialect, new SQLFragment("? ? ?", 937, "this", 1.234), "937 'this' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -? - ? ?", 937, 123, "this"), "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 'this'");
+        testParameterSubstitution(dialect, new SQLFragment("? ? ?", 937, "this", 1.234), "937 'this' 1.234", "937 N'this' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234", "TEST 937 TEST N'this' TEST 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234", "'????' 937 '???''????' N'this' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
+            "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234",
+            "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" N'this' N'that' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -? - ? ?", 937, 123, "this"),
+            "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 'this'",
+            "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 N'this'");
         testParameterSubstitution(dialect, new SQLFragment("/* ?? ?? ?, ? */ ? ?", 937, 123), "/* ?? ?? ?, ? */ 937 123");
         testParameterSubstitution(dialect,
-                new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
-                                "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234");
+            new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
+                "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234",
+                "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" N'this' N'that' 1.234");
 
-        // String literal escaping rules vary by dialect and database settings.  Make sure this dialect's quoting and
+        // String literal escaping rules vary by dialect and database settings. Make sure this dialect's quoting and
         // parameter substitution are consistent.
         String lit1 = dialect.getStringHandler().quoteStringLiteral("th?is'th?at");
         String lit2 = dialect.getStringHandler().quoteStringLiteral("th?is\\'th?at");
         String lit3 = dialect.getStringHandler().quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
         String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
 
-        testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "456 'this' 7.8748");
+        testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "456 'this' 7.8748", prefix + "456 N'this' 7.8748");
     }
 
     private void testParameterSubstitution(SqlDialect dialect, SQLFragment fragment, String expected)
     {
+        testParameterSubstitution(dialect, fragment, expected, expected);
+    }
+
+    private void testParameterSubstitution(SqlDialect dialect, SQLFragment fragment, String expected, String sqlServerExpected)
+    {
         String sub = dialect.substituteParameters(fragment);
-        assertEquals("Failed substitution", expected, sub);
+        assertEquals("Failed substitution", dialect.isSqlServer() ? sqlServerExpected : expected, sub);
     }
 }
