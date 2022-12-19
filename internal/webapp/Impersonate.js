@@ -44,6 +44,8 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             margin: '0 0 15 0'
         });
 
+        Ext4.QuickTips.init();
+
         this.userCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
             name: 'impersonate',
@@ -64,7 +66,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
+                        '<div data-qtip="Inactive users can\'t be impersonated" class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '</tpl>',
                 '</tpl>')
         });
@@ -104,7 +106,12 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         return Ext4.create('Ext.data.Store', {
             model: 'LABKEY.Security.ImpersonationUsers',
             // Hard-code the sort for now. TODO: provide an option in the UI to switch sort between email & display name
+            // Push all inactive users to the bottom of the list, Issue 46449
             sorters: [
+                {
+                    property : 'active',
+                    direction: 'DESC'
+                },
                 {
                     property : 'email',
                     direction: 'ASC'

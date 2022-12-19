@@ -1020,9 +1020,6 @@ public class ReportsController extends SpringActionController
                 return new HtmlView(SPAN(cl("labkey-error"), e.getMessage(), ". Unable to create report."));
             }
 
-            VBox vbox = new VBox();
-            vbox.addView(reportView);
-
             if (!isPrint() && !(reportView instanceof HttpRedirectView) && DiscussionService.get() != null)
             {
                 DiscussionService service = DiscussionService.get();
@@ -1030,10 +1027,11 @@ public class ReportsController extends SpringActionController
                 DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
                 if (discussion != null)
                 {
-                    vbox.addView(discussion);
+                    reportView = new VBox(reportView, discussion);
                 }
             }
-            return vbox;
+
+            return reportView;
         }
 
         @Override
