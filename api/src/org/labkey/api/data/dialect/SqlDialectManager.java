@@ -71,7 +71,7 @@ public class SqlDialectManager
     }
 
 
-    public static Collection<? extends Class> getAllJUnitTests()
+    public static Collection<? extends Class<?>> getAllJUnitTests()
     {
         return FACTORIES.stream()
             .flatMap(sqlDialectFactory -> sqlDialectFactory.getJUnitTests().stream())
