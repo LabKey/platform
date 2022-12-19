@@ -1848,11 +1848,11 @@ boxPlot.render();
             valProp = config.properties["valueMR"];
             valRightProp = config.properties["valueRightMR"]
         }
-        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
             valProp = config.properties["TrailingMean"];
             valRightProp = config.properties["TrailingMeanRight"]
         }
-        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
+        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
             valProp = config.properties["TrailingCV"];
             valRightProp = config.properties["TrailingCVRight"]
         }
@@ -2338,7 +2338,7 @@ boxPlot.render();
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.TrailingMean, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.TrailingMeanRight, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.TrailingMean)));
@@ -2347,7 +2347,7 @@ boxPlot.render();
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.TrailingCV, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.TrailingCVRight, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.TrailingCV)));
@@ -2463,8 +2463,8 @@ boxPlot.render();
             }
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingMean) {
                 if (hasYRightMetric) {
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingMean, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightTrailingMean, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingMean)));
@@ -2473,7 +2473,7 @@ boxPlot.render();
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.TrailingCV) {
                 if (hasYRightMetric) {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingCV, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightTrailingCV, 1)));
                 }
                 else {
                     config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.TrailingCV)));
