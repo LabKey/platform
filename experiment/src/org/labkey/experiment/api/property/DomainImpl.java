@@ -1202,6 +1202,7 @@ public class DomainImpl implements Domain
     {
         PropertyDescriptor pd = new PropertyDescriptor();
         pd.setContainer(getContainer());
+        pd.setDatabaseDefaultValue(spec.getDefaultValue());
         pd.setName(spec.getName());
         pd.setJdbcType(spec.getJdbcType(), spec.getSize());
         pd.setNullable(spec.isNullable());

@@ -170,10 +170,13 @@ public class PropertyStorageSpec
         setMvEnabled(propertyDescriptor.isMvEnabled());
         setDescription(propertyDescriptor.getDescription());
         setImportAliases(propertyDescriptor.getImportAliases());
+
+        if (null != propertyDescriptor.getDatabaseDefaultValue())
+            setDefaultValue(propertyDescriptor.getDatabaseDefaultValue());
     }
 
     /**
-     * bare mininum storage specification
+     * bare minimum storage specification
      */
     public PropertyStorageSpec(String name, JdbcType jdbcType)
     {
