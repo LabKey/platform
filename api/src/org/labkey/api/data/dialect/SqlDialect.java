@@ -98,8 +98,8 @@ public abstract class SqlDialect
         initializeJdbcTableTypeMap(_tableTypeMap);
         Set<String> types = _tableTypeMap.keySet();
         _tableTypes = types.toArray(new String[0]);
-
         _reservedWordSet = getReservedWords();
+        _stringHandler = createStringHandler();
 
         MemTracker.getInstance().put(this);
     }
@@ -417,16 +417,9 @@ public abstract class SqlDialect
     // during bootstrap or upgrade.
     public void prepare(DbScope scope)
     {
-        initialize();
     }
 
     public abstract void prepareConnection(Connection conn) throws SQLException;
-
-    // Post construction initialization that doesn't require a scope
-    void initialize()
-    {
-        _stringHandler = createStringHandler();
-    }
 
     // Called once when new scope is being prepared
     protected DialectStringHandler createStringHandler()
@@ -733,7 +726,7 @@ public abstract class SqlDialect
         return "";
     }
 
-    private Set<String> systemTableSet = Sets.newCaseInsensitiveHashSet(new CsvSet(getSystemTableNames()));
+    private final Set<String> systemTableSet = Sets.newCaseInsensitiveHashSet(new CsvSet(getSystemTableNames()));
 
     public boolean isSystemTable(String tableName)
     {

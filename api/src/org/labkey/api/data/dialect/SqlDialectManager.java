@@ -21,9 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /*
 * User: adam
@@ -75,31 +73,16 @@ public class SqlDialectManager
 
     public static Collection<? extends Class> getAllJUnitTests()
     {
-        Set<Class> classes = new HashSet<>();
-
-        for (SqlDialectFactory factory : FACTORIES)
-            classes.addAll(factory.getJUnitTests());
-
-        return classes;
+        return FACTORIES.stream()
+            .flatMap(sqlDialectFactory -> sqlDialectFactory.getJUnitTests().stream())
+            .toList();
     }
-
 
     // Returns instances of all dialect implementations for testing purposes
     public static Collection<? extends SqlDialect> getAllDialectsToTest()
     {
-        Set<SqlDialect> dialects = new HashSet<>();
-
-        for (SqlDialectFactory factory : FACTORIES)
-        {
-            for (SqlDialect dialect : factory.getDialectsToTest())
-            {
-                // Must initialize all dialects before using; most convenient to do it here instead of forcing each
-                // dialect to do this
-                dialect.initialize();
-                dialects.add(dialect);
-            }
-        }
-
-        return dialects;
+        return FACTORIES.stream()
+            .flatMap(sqlDialectFactory -> sqlDialectFactory.getDialectsToTest().stream())
+            .toList();
     }
 }

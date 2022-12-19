@@ -129,7 +129,6 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
