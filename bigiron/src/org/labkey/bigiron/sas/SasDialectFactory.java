@@ -65,7 +65,7 @@ public class SasDialectFactory implements SqlDialectFactory
     }
 
     @Override
-    public Collection<? extends Class> getJUnitTests()
+    public Collection<? extends Class<?>> getJUnitTests()
     {
         return Collections.emptyList();
     }

@@ -118,7 +118,7 @@ public class OracleDialectFactory implements SqlDialectFactory
     }
 
     @Override
-    public Collection<? extends Class> getJUnitTests()
+    public Collection<? extends Class<?>> getJUnitTests()
     {
         return Arrays.asList(JdbcHelperTestCase.class, DialectRetrievalTestCase.class);
     }

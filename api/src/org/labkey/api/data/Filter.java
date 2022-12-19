@@ -37,7 +37,7 @@ public interface Filter
 
     /**
      * @return the SQL fragment with the parameter values substituted in. Suitable for using as a key in a cache,
-     * or pasting into an external SQL tool.
+     * logging, debugging, or pasting into an external SQL tool. Not guaranteed to be valid or safe SQL!
      */
     String toSQLString(SqlDialect dialect);
 

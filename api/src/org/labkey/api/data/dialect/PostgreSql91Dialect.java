@@ -558,12 +558,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String getBooleanLiteral(boolean b)
-    {
-        return Boolean.toString(b);
-    }
-
-    @Override
     public String getBinaryDataType()
     {
         return "BYTEA";

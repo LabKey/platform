@@ -27,6 +27,13 @@ import org.labkey.api.data.SQLFragment;
 // Methods for escaping and parsing SQL identifiers and string literals, based on a particular database's rules.
 public interface DialectStringHandler
 {
-    public String quoteStringLiteral(String str);
-    public String substituteParameters(SQLFragment frag);
+    String quoteStringLiteral(String str);
+
+    String booleanValue(Boolean value);
+
+    /**
+     * @return the SQL fragment with parameter values substituted in. Suitable for use as a key in a cache, logging,
+     * debugging, or pasting into an external SQL tool. Not guaranteed to be valid or safe SQL!
+     */
+    String substituteParameters(SQLFragment frag);
 }
