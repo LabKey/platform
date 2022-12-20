@@ -188,7 +188,7 @@ public class QueryPivot extends QueryRelation
 
                 // TODO check duplicate values as well as duplicate names
                 if (pivotValues.containsKey(name))
-                    parseError("Duplicate pivot column name: " + name + ".\nColumn names are case-insensitve, you may need to use lower() or upper() in your query to work around this.", node);
+                    parseError("Duplicate pivot column name: " + name + ".\nColumn names are case-insensitive, you may need to use lower() or upper() in your query to work around this.", node);
                 else
                     pivotValues.put(name, constant);
             }
@@ -234,7 +234,7 @@ public class QueryPivot extends QueryRelation
             parseError("Could not find pivot column in group by list, expression must match exactly: " + _pivotColumn.getAlias(), null);
     }
 
-    Map<String, IConstant> getPivotValues() throws SQLException
+    Map<String, IConstant> getPivotValues()
     {
         if (null != _pivotValues)
             return _pivotValues;
@@ -344,6 +344,10 @@ public class QueryPivot extends QueryRelation
         {
             parseError("Pivot query unauthorized.", null);
         }
+        catch (SQLException | DataAccessException x)
+        {
+            parseError("Could not compute pivot column list", null);
+        }
 
         return _pivotValues;
     }
@@ -404,23 +408,6 @@ public class QueryPivot extends QueryRelation
         QueryTableInfo qti = new PivotTableInfo();
         if (!getParseErrors().isEmpty())
             return null;
-
-        // TODO: Move this exception handling to PivotTableInfo.getAllColumns()
-//        try
-//        {
-//            getPivotValues();
-//        }
-//        catch (QueryService.NamedParameterNotProvided x)
-//        {
-//            parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-//            parseError(x.getMessage(), null);
-//            return null;
-//        }
-//        catch (SQLException | DataAccessException x)
-//        {
-//            parseError("Could not compute pivot column list", null);
-//            return null;
-//        }
 
         return qti;
     }
@@ -513,22 +500,11 @@ public class QueryPivot extends QueryRelation
     {
         if (null == _columns)
         {
-            Map<String, IConstant> pivotValues;
-            try
-            {
-                // UNDONE: _from.getSql() has side-effect that seems to be important for declareFields()
-                _from.markAllSelected(this);
-                _from.getSql();
+            // UNDONE: _from.getSql() has side-effect that seems to be important for declareFields()
+            _from.markAllSelected(this);
+            _from.getSql();
 
-                pivotValues = getPivotValues();
-            }
-            catch (SQLException x)
-            {
-                assert(!getParseErrors().isEmpty());
-                if (getParseErrors().isEmpty())
-                    getParseErrors().add(new QueryException(getSqlDialect().sanitizeException(x), x));
-                pivotValues = Collections.emptyMap();
-            }
+            Map<String, IConstant> pivotValues = getPivotValues();
 
             _columns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>(_select.size()*2));
             List<Map.Entry<String,RelationColumn>> aggs = new ArrayList<>(_aggregates.size());
@@ -602,21 +578,16 @@ public class QueryPivot extends QueryRelation
         if (!_aggregates.containsKey(agg.getFieldKey().getName()))
             return null;
 
-        Map<String, IConstant> pivotValues;
-        try
-        {
-            pivotValues = getPivotValues();
-        }
-        catch (SQLException x)
-        {
-            return null;
-        }
+        Map<String, IConstant> pivotValues = getPivotValues();
 
         if (null == pivotValues)
         {
             assert(!getParseErrors().isEmpty());
             return null;
         }
+
+        if (!getParseErrors().isEmpty())
+            return null;
 
         final IConstant c = pivotValues.get(name);
         final String alias = makePivotColumnAlias(agg.getAlias(), name);
@@ -785,24 +756,15 @@ public class QueryPivot extends QueryRelation
             }
 
             // getSql() does not return
-            Map<String,IConstant> pivotValues;
-            try
+            Map<String, IConstant> pivotValues = getPivotValues();
+
+            if (!getParseErrors().isEmpty())
             {
-                pivotValues = getPivotValues();
+                QueryException qe = getParseErrors().get(0);
+                _query.decorateException(qe);
+                throw qe;
             }
-            catch (QueryService.NamedParameterNotProvided x)
-            {
-                QueryParseException qpe = new QueryParseException("When used with parameterized query, PIVOT requires an explicit values list", null);
-                _query.decorateException(qpe);
-                throw qpe;
-            }
-            catch (SQLException x)
-            {
-                QueryParseException qpe = new QueryParseException("Could not compute pivot column list", null);
-                _query.decorateException(qpe);
-                throw qpe;
-            }
-            
+
             // add aggregate expressions
             for (Map.Entry<String,IConstant> pivotValue : pivotValues.entrySet())
             {
@@ -1050,15 +1012,10 @@ public class QueryPivot extends QueryRelation
         {
             if (_members == null)
             {
-                Map<String, IConstant> pivotValues;
-                try
+                Map<String, IConstant> pivotValues = getPivotValues();
+                if (!getParseErrors().isEmpty())
                 {
-                    pivotValues = getPivotValues();
-                }
-                catch (SQLException x)
-                {
-                    // UNDONE: need better error handling -- see other usages of getPivotValues()
-                    throw new RuntimeSQLException(x);
+                    throw getParseErrors().get(0);
                 }
 
                 _members = new ArrayList<>(pivotValues.size());
@@ -1190,20 +1147,20 @@ public class QueryPivot extends QueryRelation
                     return null;
                 }
             };
-            Map<String, IConstant> pivotValues;
-            try
-            {
-                pivotValues = getPivotValues();
-            }
-            catch (SQLException x)
-            {
-                return null;
-            }
+
+            Map<String, IConstant> pivotValues = getPivotValues();
+
             if (null == pivotValues)
             {
                 assert(!getParseErrors().isEmpty());
                 return null;
             }
+
+            if (!getParseErrors().isEmpty())
+            {
+                throw getParseErrors().get(0);
+            }
+
             for (String displayField : pivotValues.keySet())
             {
                 var c = new RelationColumnInfo(t, _agg);
