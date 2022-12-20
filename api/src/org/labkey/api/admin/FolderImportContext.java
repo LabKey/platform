@@ -56,6 +56,8 @@ public class FolderImportContext extends AbstractFolderContext
 
     private static final String FOLDER_IMPORT_DB_SEQUENCE_PREFIX = "FolderImportJobCounter-";
 
+    private boolean _expDataNoMerge; // don't use merge for SampleTypeAndDataClassFolderImporter
+
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})
     public FolderImportContext()
@@ -181,4 +183,15 @@ public class FolderImportContext extends AbstractFolderContext
             folderType = FolderTypeManager.get().getFolderType(xmlFolderType.getName());
         return folderType == null ? null : folderType.getImportAuditBehavior();
     }
+
+    public boolean isExpDataNoMerge()
+    {
+        return _expDataNoMerge;
+    }
+
+    public void setExpDataNoMerge(boolean expDataNoMerge)
+    {
+        _expDataNoMerge = expDataNoMerge;
+    }
+
 }

@@ -289,7 +289,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                 if (qus != null)
                                 {
                                     DataIteratorContext context = new DataIteratorContext(errors);
-                                    context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+                                    context.setInsertOption(ctx.isExpDataNoMerge() ? QueryUpdateService.InsertOption.IMPORT : QueryUpdateService.InsertOption.MERGE);
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
                                     Map<Enum, Object> options = new HashMap<>();

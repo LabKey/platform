@@ -45,6 +45,8 @@ public class ImportOptions
     private Path _analysisDir;
     private String _folderArchiveSourceName = null;
 
+    private boolean _expDataNoMerge; // don't use merge for SampleTypeAndDataClassFolderImporter
+
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
         _containerId = containerId;
@@ -170,4 +172,15 @@ public class ImportOptions
     {
         _folderArchiveSourceName = folderArchiveSourceName;
     }
+
+    public boolean isExpDataNoMerge()
+    {
+        return _expDataNoMerge;
+    }
+
+    public void setExpDataNoMerge(boolean expDataNoMerge)
+    {
+        _expDataNoMerge = expDataNoMerge;
+    }
+
 }
