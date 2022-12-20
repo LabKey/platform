@@ -25,7 +25,6 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -56,7 +55,9 @@ public class FolderImportContext extends AbstractFolderContext
 
     private static final String FOLDER_IMPORT_DB_SEQUENCE_PREFIX = "FolderImportJobCounter-";
 
-    private boolean _expDataNoMerge; // don't use merge for SampleTypeAndDataClassFolderImporter
+    private boolean _isNewFolderImport; // if we know the target folder is empty, can skip certain merge logic
+
+    public static final String IS_NEW_FOLDER_IMPORT_KEY = "isNewFolderImport";
 
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -184,14 +185,14 @@ public class FolderImportContext extends AbstractFolderContext
         return folderType == null ? null : folderType.getImportAuditBehavior();
     }
 
-    public boolean isExpDataNoMerge()
+    public boolean isNewFolderImport()
     {
-        return _expDataNoMerge;
+        return _isNewFolderImport;
     }
 
-    public void setExpDataNoMerge(boolean expDataNoMerge)
+    public void setNewFolderImport(boolean newFolderImport)
     {
-        _expDataNoMerge = expDataNoMerge;
+        _isNewFolderImport = newFolderImport;
     }
 
 }

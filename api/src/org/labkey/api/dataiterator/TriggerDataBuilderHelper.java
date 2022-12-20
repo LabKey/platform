@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
+
 /**
  * User: matthewb
  * Date: 2011-09-07
@@ -124,12 +126,18 @@ public class TriggerDataBuilderHelper
             if (_target instanceof ExpTable)
                 mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys();
 
-            boolean includeAllColumns = !context.getInsertOption().mergeRows || mergeKeys == null;
+            boolean isNewFolderImport = false;
+            if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)
+            {
+                isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
+            }
+
+            boolean includeAllColumns = (!context.getInsertOption().mergeRows || mergeKeys == null) || isNewFolderImport;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
 
             if (includeAllColumns)
-                LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
+                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
             else if (!_target.supportMerge())
                 return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
 

@@ -45,7 +45,7 @@ public class ImportOptions
     private Path _analysisDir;
     private String _folderArchiveSourceName = null;
 
-    private boolean _expDataNoMerge; // don't use merge for SampleTypeAndDataClassFolderImporter
+    private boolean _isNewFolderImport; // if we know the target folder is empty, can skip certain merge logic
 
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
@@ -173,14 +173,14 @@ public class ImportOptions
         _folderArchiveSourceName = folderArchiveSourceName;
     }
 
-    public boolean isExpDataNoMerge()
+    public boolean isNewFolderImport()
     {
-        return _expDataNoMerge;
+        return _isNewFolderImport;
     }
 
-    public void setExpDataNoMerge(boolean expDataNoMerge)
+    public void setNewFolderImport(boolean newFolderImport)
     {
-        _expDataNoMerge = expDataNoMerge;
+        _isNewFolderImport = newFolderImport;
     }
 
 }

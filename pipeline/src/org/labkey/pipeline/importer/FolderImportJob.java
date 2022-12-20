@@ -82,7 +82,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
         _ctx.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
         _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
         _ctx.setActivity(options.getActivity());
-        _ctx.setExpDataNoMerge(options.isExpDataNoMerge());
+        _ctx.setNewFolderImport(options.isNewFolderImport());
 
         LOG.info("Pipeline job initialized for importing folder archive to folder " + c.getPath());
     }
