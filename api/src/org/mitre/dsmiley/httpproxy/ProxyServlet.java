@@ -1,6 +1,6 @@
 package org.mitre.dsmiley.httpproxy;
 
-/**
+/*
  * Copyright MITRE
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,29 +17,23 @@ package org.mitre.dsmiley.httpproxy;
  */
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.AbortableHttpRequest;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.client.utils.URIUtils;
-import org.apache.http.cookie.SM;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.message.BasicHttpRequest;
-import org.apache.http.message.HeaderGroup;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.cookie.StandardCookieSpec;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.utils.URIUtils;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.InputStreamEntity;
+import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.http.message.HeaderGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -51,7 +45,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.net.HttpCookie;
 import java.net.URI;
@@ -85,7 +78,8 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  */
 public class ProxyServlet extends HttpServlet
 {
-    static final Map<String,String> preferredHeaderNames;
+    private static final Map<String,String> preferredHeaderNames;
+
     static
     {
         var map = new CaseInsensitiveHashMap<String>();
@@ -116,7 +110,7 @@ public class ProxyServlet extends HttpServlet
 
 
 
-  /* INIT PARAMETER NAME CONSTANTS */
+    /* INIT PARAMETER NAME CONSTANTS */
 
     /** A boolean parameter name to enable logging of input and target URLs to the servlet log. */
     public static final String P_LOG = "log";
@@ -137,7 +131,7 @@ public class ProxyServlet extends HttpServlet
     protected static final String ATTR_TARGET_HOST =
             ProxyServlet.class.getSimpleName() + ".targetHost";
 
-  /* MISC */
+    /* MISC */
 
     protected boolean doLog = false;
     protected boolean doForwardIP = true;
@@ -152,11 +146,11 @@ public class ProxyServlet extends HttpServlet
     protected URI targetUriObj;//new URI(targetUri)
     protected HttpHost targetHost;//URIUtils.extractHost(targetUriObj);
 
-    private HttpClient proxyClient;
+    private CloseableHttpClient proxyClient;
 
-    private StringBuilder appendPath(StringBuilder sb, CharSequence path)
+    private void appendPath(StringBuilder sb, CharSequence path)
     {
-        return appendPath(sb, path, false);
+        appendPath(sb, path, false);
     }
 
     private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash)
@@ -214,11 +208,7 @@ public class ProxyServlet extends HttpServlet
 
         initTarget();//sets target*
 
-        HttpParams hcParams = new BasicHttpParams();
-        hcParams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.IGNORE_COOKIES);
-        hcParams.setBooleanParameter(ClientPNames.HANDLE_REDIRECTS, false); // See #70
-        readConfigParam(hcParams, ClientPNames.HANDLE_REDIRECTS, Boolean.class);
-        proxyClient = createHttpClient(hcParams);
+        proxyClient = createHttpClient();
     }
 
     protected void initTarget() throws ServletException
@@ -263,93 +253,51 @@ public class ProxyServlet extends HttpServlet
     }
 
 
-    /** Called from {@link #init(javax.servlet.ServletConfig)}. HttpClient offers many opportunities
-     * for customization. By default,
-     * <a href="http://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/org/apache/http/impl/client/SystemDefaultHttpClient.html">
-     *   SystemDefaultHttpClient</a> is used if available, otherwise it falls
-     * back to:
-     * <pre>new DefaultHttpClient(new ThreadSafeClientConnManager(),hcParams)</pre>
-     * SystemDefaultHttpClient uses PoolingClientConnectionManager. In any case, it should be thread-safe. */
-    @SuppressWarnings({"unchecked", "deprecation"})
-    protected HttpClient createHttpClient(HttpParams hcParams)
-    {
-        try
-        {
-            //as of HttpComponents v4.2, this class is better since it uses System
-            // Properties:
-            Class clientClazz = Class.forName("org.apache.http.impl.client.SystemDefaultHttpClient");
-            Constructor constructor = clientClazz.getConstructor(HttpParams.class);
-            return (HttpClient) constructor.newInstance(hcParams);
-        }
-        catch (ClassNotFoundException e)
-        {
-            //no problem; use v4.1 below
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        //Fallback on using older client:
-        return new DefaultHttpClient(new ThreadSafeClientConnManager(), hcParams);
-    }
-
-    /** The http client used.
-     * @see #createHttpClient(HttpParams) */
-    protected HttpClient getProxyClient()
-    {
-        return proxyClient;
-    }
-
-    /** Reads a servlet config parameter by the name {@code hcParamName} of type {@code type}, and
-     * set it in {@code hcParams}.
+    /**
+     * Called from {@link #init(javax.servlet.ServletConfig)}. HttpClientBuilder offers many opportunities for
+     * customization. Currently configures (thread-safe) PoolingClientConnectionManager, system properties, ignore
+     * redirects (unless overridden in servlet config), and ignore cookies.
+     * the passed in RequestConfig.
      */
-    protected void readConfigParam(HttpParams hcParams, String hcParamName, Class type)
+    protected CloseableHttpClient createHttpClient()
     {
-        String val_str = getConfigParam(hcParamName);
-        if (val_str == null)
-            return;
-        Object val_obj;
-        if (type == String.class)
-        {
-            val_obj = val_str;
-        }
-        else
-        {
-            try
-            {
-                //noinspection unchecked
-                val_obj = type.getMethod("valueOf", String.class).invoke(type, val_str);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        hcParams.setParameter(hcParamName, val_obj);
+        RequestConfig config = RequestConfig.custom()
+            .setRedirectsEnabled(readBooleanConfigParam("http.protocol.handle-redirects", false))
+            .setCookieSpec(StandardCookieSpec.IGNORE)
+            .build();
+
+        return HttpClientBuilder.create()
+            .useSystemProperties()
+            .setDefaultRequestConfig(config)
+            .build();
+    }
+
+    /**
+     * Reads a boolean servlet config parameter by the name {@code paramName}
+     * @return Boolean value if parameter exists, otherwise defaultValue
+     */
+    protected boolean readBooleanConfigParam(String paramName, boolean defaultValue)
+    {
+        String val_str = getConfigParam(paramName);
+        return val_str == null ? defaultValue : Boolean.valueOf(val_str);
     }
 
     @Override
     public void destroy()
     {
-        //As of HttpComponents v4.3, clients implement closeable
-        if (proxyClient instanceof Closeable)
-        {//TODO AutoCloseable in Java 1.6
+        //TODO AutoCloseable?
+        if (proxyClient != null)
+        {
             try
             {
-                ((Closeable) proxyClient).close();
+                proxyClient.close();
             }
             catch (IOException e)
             {
                 log("While destroying servlet, shutting down HttpClient: " + e, e);
             }
         }
-        else
-        {
-            //Older releases require we do this:
-            if (proxyClient != null)
-                proxyClient.getConnectionManager().shutdown();
-        }
+
         super.destroy();
     }
 
@@ -368,10 +316,10 @@ public class ProxyServlet extends HttpServlet
         }
 
         // Make the Request
-        //note: we won't transfer the protocol version because I'm not sure it would truly be compatible
+        //note: we won't transfer the protocol version because I'm not sure that it would truly be compatible
         String method = servletRequest.getMethod();
         String proxyRequestUri = rewriteUrlFromRequest(servletRequest);
-        HttpRequest proxyRequest;
+        ClassicHttpRequest proxyRequest;
         //spec: RFC 2616, sec 4.3: either of these two headers signal that there is a message body.
         if (servletRequest.getHeader(HttpHeaders.CONTENT_LENGTH) != null ||
                 servletRequest.getHeader(HttpHeaders.TRANSFER_ENCODING) != null)
@@ -380,30 +328,29 @@ public class ProxyServlet extends HttpServlet
         }
         else
         {
-            proxyRequest = new BasicHttpRequest(method, proxyRequestUri);
+            proxyRequest = new BasicClassicHttpRequest(method, proxyRequestUri);
         }
 
         copyRequestHeaders(servletRequest, proxyRequest);
 
         setXForwardedForHeader(servletRequest, proxyRequest);
 
-        HttpResponse proxyResponse = null;
+        CloseableHttpResponse proxyResponse = null;
         try
         {
             // Execute the request
             if (doLog)
             {
-                log("proxy " + method + " uri: " + servletRequest.getRequestURI() + " -- " + proxyRequest.getRequestLine().getUri());
+                log("proxy " + method + " uri: " + servletRequest.getRequestURI() + " -- " + proxyRequest.getUri());
             }
             proxyResponse = proxyClient.execute(getTargetHost(servletRequest), proxyRequest);
 
             // Process the response:
 
-            // Pass the response code. This method with the "reason phrase" is deprecated but it's the
-            //   only way to pass the reason along too.
-            int statusCode = proxyResponse.getStatusLine().getStatusCode();
+            // Pass the response code and reason phrase
+            int statusCode = proxyResponse.getCode();
             //noinspection deprecation
-            servletResponse.setStatus(statusCode, proxyResponse.getStatusLine().getReasonPhrase());
+            servletResponse.setStatus(statusCode, proxyResponse.getReasonPhrase());
 
             // Copying response headers to make sure SESSIONID or other Cookie which comes from the remote
             // server will be saved in client when the proxied url was redirected to another one.
@@ -422,47 +369,36 @@ public class ProxyServlet extends HttpServlet
                 // Send the content to the client
                 copyResponseEntity(proxyResponse, servletResponse, proxyRequest, servletRequest);
             }
-
         }
         catch (Exception e)
         {
-            //abort request, according to best practice with HttpClient
+            // Note: We used to "abort" the request, but that doesn't seem possible anymore
 
-            if (proxyRequest instanceof AbortableHttpRequest)
-            {
-                AbortableHttpRequest abortableHttpRequest = (AbortableHttpRequest) proxyRequest;
-                abortableHttpRequest.abort();
-            }
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
-            if (e instanceof ServletException)
-                throw (ServletException) e;
-            //noinspection ConstantConditions
             if (e instanceof IOException)
                 throw (IOException) e;
             throw new RuntimeException(e);
-
         }
         finally
         {
             // make sure the entire entity was consumed, so the connection is released
             if (proxyResponse != null)
-                consumeQuietly(proxyResponse.getEntity());
+                EntityUtils.consume(proxyResponse.getEntity());
             //Note: Don't need to close servlet outputStream:
             // http://stackoverflow.com/questions/1159168/should-one-call-close-on-httpservletresponse-getoutputstream-getwriter
         }
     }
 
-    private HttpRequest newProxyRequestWithEntity(String method, String proxyRequestUri,
+    private ClassicHttpRequest newProxyRequestWithEntity(String method, String proxyRequestUri,
                                                   HttpServletRequest servletRequest)
             throws IOException
     {
-        HttpEntityEnclosingRequest eProxyRequest =
-                new BasicHttpEntityEnclosingRequest(method, proxyRequestUri);
+        BasicClassicHttpRequest eProxyRequest = new BasicClassicHttpRequest(method, proxyRequestUri);
         // Add the input entity (streamed)
         //  note: we don't bother ensuring we close the servletInputStream since the container handles it
         eProxyRequest.setEntity(
-                new InputStreamEntity(servletRequest.getInputStream(), servletRequest.getContentLength()));
+                new InputStreamEntity(servletRequest.getInputStream(), servletRequest.getContentLength(), null));
         return eProxyRequest;
     }
 
@@ -478,24 +414,10 @@ public class ProxyServlet extends HttpServlet
         }
     }
 
-    /** HttpClient v4.1 doesn't have the
-     * {@link org.apache.http.util.EntityUtils#consumeQuietly(org.apache.http.HttpEntity)} method. */
-    protected void consumeQuietly(HttpEntity entity)
-    {
-        try
-        {
-            EntityUtils.consume(entity);
-        }
-        catch (IOException e)
-        {//ignore
-            log(e.getMessage(), e);
-        }
-    }
-
     /** These are the "hop-by-hop" headers that should not be copied.
      * http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
      * I use an HttpClient HeaderGroup class instead of Set<String> because this
-     * approach does case insensitive lookup faster.
+     * approach does case-insensitive lookup faster.
      */
     protected static final HeaderGroup hopByHopHeaders;
 
@@ -514,7 +436,7 @@ public class ProxyServlet extends HttpServlet
     /** Copy request headers from the servlet client to the proxy request. */
     protected void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest)
     {
-        // Get an Enumeration of all of the header names sent by the client
+        // Get an Enumeration of all the header names sent by the client
         Enumeration enumerationOfHeaderNames = servletRequest.getHeaderNames();
         while (enumerationOfHeaderNames.hasMoreElements())
         {
@@ -552,7 +474,7 @@ public class ProxyServlet extends HttpServlet
                 if (host.getPort() != -1)
                     headerValue += ":" + host.getPort();
             }
-            else if (headerName.equalsIgnoreCase(org.apache.http.cookie.SM.COOKIE))
+            else if (headerName.equalsIgnoreCase(SM.COOKIE))
             {
                 headerValue = getRealCookie(headerValue);
             }
@@ -577,10 +499,10 @@ public class ProxyServlet extends HttpServlet
     }
 
     /** Copy proxied response headers back to the servlet client. */
-    protected void copyResponseHeaders(HttpResponse proxyResponse, HttpServletRequest servletRequest,
+    protected void copyResponseHeaders(CloseableHttpResponse proxyResponse, HttpServletRequest servletRequest,
                                        HttpServletResponse servletResponse)
     {
-        for (Header header : proxyResponse.getAllHeaders())
+        for (Header header : proxyResponse.getHeaders())
         {
             copyResponseHeader(servletRequest, servletResponse, header);
         }
@@ -596,8 +518,8 @@ public class ProxyServlet extends HttpServlet
         if (hopByHopHeaders.containsHeader(headerName))
             return;
         String headerValue = header.getValue();
-        if (headerName.equalsIgnoreCase(org.apache.http.cookie.SM.SET_COOKIE) ||
-                headerName.equalsIgnoreCase(org.apache.http.cookie.SM.SET_COOKIE2))
+        if (headerName.equalsIgnoreCase(SM.SET_COOKIE) ||
+                headerName.equalsIgnoreCase(SM.SET_COOKIE2))
         {
             copyProxyCookie(servletRequest, servletResponse, headerValue);
         }
@@ -679,7 +601,7 @@ public class ProxyServlet extends HttpServlet
     }
 
     /** Copy response body data (the entity) from the proxy to the servlet client. */
-    protected void copyResponseEntity(HttpResponse proxyResponse, HttpServletResponse servletResponse,
+    protected void copyResponseEntity(CloseableHttpResponse proxyResponse, HttpServletResponse servletResponse,
                                       HttpRequest proxyRequest, HttpServletRequest servletRequest)
             throws IOException
     {
