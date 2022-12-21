@@ -2253,15 +2253,6 @@ public class PageFlowUtil
     private static final int SERVER_HASH = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
     private static final String SERVER_HASH_STRING = Integer.toString(SERVER_HASH);
 
-    // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
-    @SuppressWarnings("UnusedDeclaration")
-    public static JSONObject jsInitObject()
-    {
-        // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
-        ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, null, new LinkedHashSet<>(), false);
-    }
-
     public static JSONObject jsInitObject(ContainerUser context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         AppProps appProps = AppProps.getInstance();

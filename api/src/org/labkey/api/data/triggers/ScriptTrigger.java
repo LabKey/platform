@@ -29,7 +29,9 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -45,8 +47,10 @@ import java.util.function.Supplier;
  * User: kevink
  * Date: 12/21/15
  */
-/* package */ class ScriptTrigger implements Trigger
+public class ScriptTrigger implements Trigger
 {
+    public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
+
     @NotNull protected final Container _container;
     @NotNull protected final TableInfo _table;
     @NotNull protected final ScriptReference _script;
@@ -233,38 +237,35 @@ import java.util.function.Supplier;
     {
         try
         {
-            ViewContext.StackResetter viewContextResetter = null;
-            if (!HttpView.hasCurrentView())
+            if (!_script.evaluated())
             {
-                // Push a view context if we don't already have one available. It will be pulled if labkey.js
-                // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
-                // server/modules/core/resources/scripts/labkey/init.js
-                //noinspection deprecation
-                viewContextResetter = ViewContext.pushMockViewContext(user, c, new ActionURL("dummy", "dummy", c));
-            }
-            try
-            {
-                if (!_script.evaluated())
-                {
-                    Map<String, Object> bindings = new HashMap<>();
-                    if (extraContext == null)
-                        extraContext = new HashMap<>();
-                    bindings.put("extraContext", extraContext);
-                    bindings.put("schemaName", _table.getPublicSchemaName());
-                    bindings.put("tableName", _table.getPublicName());
+                Map<String, Object> bindings = new HashMap<>();
+                if (extraContext == null)
+                    extraContext = new HashMap<>();
+                bindings.put("extraContext", extraContext);
+                bindings.put("schemaName", _table.getPublicSchemaName());
+                bindings.put("tableName", _table.getPublicName());
 
-                    _script.eval(bindings);
+                Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
+                if (existingValue != null)
+                {
+                    if (!(existingValue instanceof ContainerUser cu))
+                    {
+                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that wasnt a ContainerUser object");
+                    }
+
+                    if (!cu.getContainer().equals(c) || !cu.getUser().equals(user))
+                    {
+                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that didnt match table. Cached: " + cu.getContainer() + " / " + cu.getUser() + ", table: " + c +  " / " + user);
+                    }
                 }
 
-                return fn.apply(_script);
+                // Note: this is being added to the script-level context object, not bindings on purpose so that it is included in the calls to engine.getRuntimeScope()
+                _script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, ContainerUser.create(c, user), ScriptContext.ENGINE_SCOPE);
+                _script.eval(bindings);
             }
-            finally
-            {
-                if (viewContextResetter != null)
-                {
-                    viewContextResetter.close();
-                }
-            }
+
+            return fn.apply(_script);
         }
         catch (NoSuchMethodException | ScriptException e)
         {
