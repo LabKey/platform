@@ -291,7 +291,6 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                 thiz = cx.toObject(thiz, topLevel);
             }
 
-            // TODO: review this
             Scriptable localScope = (thiz != null)? (Scriptable) thiz :
                     getRuntimeScope(context);
             Object obj = ScriptableObject.getProperty(localScope, name);
