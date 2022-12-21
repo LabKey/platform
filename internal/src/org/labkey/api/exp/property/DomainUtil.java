@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -92,6 +93,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
  */
 public class DomainUtil
 {
+    private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     private DomainUtil()
     {
     }
@@ -587,6 +589,7 @@ public class DomainUtil
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
     {
+        LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());

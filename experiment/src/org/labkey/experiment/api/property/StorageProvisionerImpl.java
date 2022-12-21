@@ -357,7 +357,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 change.addColumn(makeMvColumn(prop));
             }
         }
-
+        log.info("addingProperties to " + domain.getName());
         change.execute();
     }
 
