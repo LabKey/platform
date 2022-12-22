@@ -23,21 +23,15 @@ export class  NavigationBarPage extends React.Component<any, State> {
         const assaysMenuConfig = new MenuSectionConfig({
             emptyText: 'No assays defined',
             iconURL: imageURL('_images', "assay.svg"),
-            maxColumns: 2,
-            maxItemsPerColumn: 12,
             seeAllURL: AppURL.create('assays'),
         });
         const samplesMenuConfig = new MenuSectionConfig({
             emptyText: 'No sample types defined',
             iconURL: imageURL('_images', "samples.svg"),
-            maxColumns: 1,
-            maxItemsPerColumn: 12,
             seeAllURL: AppURL.create('samples'),
         });
         const workflowMenuConfig = new MenuSectionConfig({
             iconURL: imageURL('_images', "workflow.svg"),
-            maxColumns: 1,
-            maxItemsPerColumn: 3,
             seeAllURL: AppURL.create('workflow'),
         });
         const userMenuConfig = new MenuSectionConfig({

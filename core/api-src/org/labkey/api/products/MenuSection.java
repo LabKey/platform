@@ -36,7 +36,6 @@ public abstract class MenuSection
 {
     protected ViewContext _context;
     protected String _label;
-    protected Integer _itemLimit;
     /**
      * A unique key identifying this MenuSection.
      * This is used by the client to match client configuration to the configuration supplied from LKS.
@@ -47,13 +46,12 @@ public abstract class MenuSection
     /** Used by the client to determine the first part of an app-relative URL. Defaults to the same as "key". */
     private String _sectionKey;
 
-    public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit, @Nullable String productId)
+    public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable String productId)
     {
         _context = context;
         _label = label;
         _key = key;
         _sectionKey = key;
-        _itemLimit = itemLimit;
         _productId = productId;
     }
 
@@ -105,16 +103,6 @@ public abstract class MenuSection
         return _context.getUser();
     }
 
-    public Integer getItemLimit()
-    {
-        return _itemLimit;
-    }
-
-    public void setItemLimit(Integer itemLimit)
-    {
-        _itemLimit = itemLimit;
-    }
-
     public String getProductId()
     {
         return _productId;
@@ -145,10 +133,7 @@ public abstract class MenuSection
     public List<MenuItem> getItems()
     {
         ensureAllItems().sort(Comparator.comparing(MenuItem::getOrderNum).thenComparing(MenuItem::getLabel, String.CASE_INSENSITIVE_ORDER));
-        if (_itemLimit != null && _itemLimit < _allItems.size())
-            return _allItems.subList(0, _itemLimit);
-        else
-            return _allItems;
+        return _allItems;
     }
 
     protected TableInfo getTableInfo(UserSchema schema, String queryName)
