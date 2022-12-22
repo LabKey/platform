@@ -17,7 +17,6 @@ package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -831,74 +830,15 @@ public class QueryPivot extends QueryRelation
             super(QueryPivot.this, "_pivot");
         }
 
-        private boolean _initialColumnsAreAdded = false;
-
-        private void ensureInitialColumnsAreAdded()
+        @Override
+        protected void initializeColumns()
         {
-            if (!_initialColumnsAreAdded)
+            for (RelationColumn col : getAllColumns().values())
             {
-                _initialColumnsAreAdded = true;
-
-                for (RelationColumn col : getAllColumns().values())
-                {
-                    var columnInfo = new RelationColumnInfo(this, col);
-                    addColumn(columnInfo);
-                }
+                var columnInfo = new RelationColumnInfo(this, col);
+                addColumn(columnInfo);
             }
         }
-
-        // Override all methods that directly interact with AbstractTableInfo._columnMap to add calls to ensureInitialColumnsAreAdded()
-
-        @Override
-        public List<ColumnInfo> getColumns(String colNames)
-        {
-            ensureInitialColumnsAreAdded();
-            return super.getColumns(colNames);
-        }
-
-        @Override
-        public Set<String> getColumnNameSet()
-        {
-            ensureInitialColumnsAreAdded();
-            return super.getColumnNameSet();
-        }
-
-        @Override
-        public @Nullable ColumnInfo getColumn(@NotNull String name, boolean resolveIfNeeded)
-        {
-            ensureInitialColumnsAreAdded();
-            return super.getColumn(name, resolveIfNeeded);
-        }
-
-        @Override
-        public @NotNull List<MutableColumnInfo> getMutableColumns()
-        {
-            ensureInitialColumnsAreAdded();
-            return super.getMutableColumns();
-        }
-
-        @Override
-        public boolean removeColumn(ColumnInfo column)
-        {
-            ensureInitialColumnsAreAdded();
-            return super.removeColumn(column);
-        }
-
-        @Override
-        public MutableColumnInfo addColumn(MutableColumnInfo column)
-        {
-            ensureInitialColumnsAreAdded();
-            return super.addColumn(column);
-        }
-
-        @Override
-        public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
-        {
-            ensureInitialColumnsAreAdded();
-            return super.replaceColumn(updated, existing);
-        }
-
-        // End of ensureInitialColumnsAreAdded() overrides
 
         private SQLFragment _sqlPivot = null;
 
