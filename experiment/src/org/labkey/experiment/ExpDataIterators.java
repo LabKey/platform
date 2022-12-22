@@ -2042,7 +2042,11 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1b, _expTable, isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString()), true);
+            Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
+            if (context.getInsertOption().updateOnly)
+                existingRecordKey = Set.of(ExpDataTable.Column.Name.toString());
+
+            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1b, _expTable, existingRecordKey, true);
 
             // TODO, can the aliquotedfrom column be added here?
 

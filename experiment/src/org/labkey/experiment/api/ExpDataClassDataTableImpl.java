@@ -871,7 +871,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
 
             if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+            {
+                step0.selectAll();
                 return LoggingDataIterator.wrap(step0.getDataIterator(context));
+            }
 
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
@@ -989,8 +992,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
 
-            if (null==rowid && null==lsid && ((null == name || null == classId)))
-                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name' and 'classid'", keys);
+            if (classId == null)
+                classId = _dataClass.getRowId();
+
+            if (null==rowid && null==lsid && null == name)
+                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
             Map<String,Object> row = _select(container, rowid, lsid, name, classId);
 

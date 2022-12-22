@@ -123,7 +123,7 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
     public Map<String, Object> getExistingRecord()
     {
         var ret = _delegate.getExistingRecord();
-        assert supportsGetExistingRecord() == (null != ret);
+//        assert supportsGetExistingRecord() == (null != ret);
         return ret;
     }
 

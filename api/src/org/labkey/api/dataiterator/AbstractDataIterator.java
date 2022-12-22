@@ -161,7 +161,7 @@ public abstract class AbstractDataIterator implements DataIterator
     {
         if (null == indexOfExistingRecord)
             indexOfExistingRecord = findExistingRecordIndex();
-        assert( supportsGetExistingRecord() ? indexOfExistingRecord>=1 : indexOfExistingRecord<0);
+//        assert( supportsGetExistingRecord() ? indexOfExistingRecord>=1 : indexOfExistingRecord<0);
         return 0<indexOfExistingRecord ? (Map<String, Object>)get(indexOfExistingRecord) : null;
     }
 
