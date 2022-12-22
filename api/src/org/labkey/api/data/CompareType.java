@@ -940,15 +940,9 @@ public abstract class CompareType
         return QueryService.get().getCompareTypes();
     }
 
-    protected static Set<String> parseParams(Object value_, String separator)
+    protected static void parseParams(String value, String separator, Collection<String> collection)
     {
-        if (value_ == null)
-            return Collections.emptySet();
-        String value = value_.toString();
-        if (StringUtils.isBlank(value))
-            return Collections.emptySet();
         // check for JSON marker
-        Set<String> values = new LinkedHashSet<>();
         if (value.startsWith(JSON_MARKER_START) && value.endsWith(JSON_MARKER_END))
         {
             value = value.substring(JSON_MARKER_START.length(), value.length()-JSON_MARKER_END.length());
@@ -960,7 +954,7 @@ public abstract class CompareType
                     JSONArray array = new JSONArray(value);
                     for (int i = 0; i < array.length(); i++)
                     {
-                        values.add(Objects.toString(array.get(i), null));
+                        collection.add(Objects.toString(array.get(i), null));
                     }
                 }
                 catch (JSONException ex)
@@ -977,8 +971,34 @@ public abstract class CompareType
         else
         {
             String[] st = value.split("\\s*" + separator + "\\s*", -1);
-            Collections.addAll(values, st);
+            Collections.addAll(collection, st);
         }
+    }
+
+    protected static Set<String> parseParams(Object value_, String separator)
+    {
+        if (value_ == null)
+            return Collections.emptySet();
+        String value = value_.toString();
+        if (StringUtils.isBlank(value))
+            return Collections.emptySet();
+        // check for JSON marker
+        Set<String> values = new LinkedHashSet<>();
+        parseParams(value, separator, values);
+        return values;
+    }
+
+    // If you don't want to squash duplicate parameter values use this method instead of parseParams
+    protected static List<String> parseParamsAsList(Object value_, String separator)
+    {
+        if (value_ == null)
+            return Collections.emptyList();
+        String value = value_.toString();
+        if (StringUtils.isBlank(value))
+            return Collections.emptyList();
+
+        List<String> values = new ArrayList<>();
+        parseParams(value, separator, values);
         return values;
     }
 
