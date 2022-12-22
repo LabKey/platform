@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -686,4 +687,15 @@ public class RserveScriptEngine extends RScriptEngine
         //
         return true;
     }
- }
+
+    @Override
+    public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
+    {
+        if (context.equals(LabKeyScriptEngineManager.EngineContext.pipeline))
+        {
+            ModusOperandi mo = getModusOperandi(getEngineDefinition());
+            return !mo.requiresCopyFiles();
+        }
+        return true;
+    }
+}

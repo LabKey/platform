@@ -92,7 +92,7 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
 
         List<String> warnings = new LinkedList<>();
 
-        // Split statements by semi-colon and CRLF
+        // Split statements by semicolon and CRLF
         for (String statement : noComments.split(";[\\n\\r]+"))
         {
             if (StringUtils.startsWithIgnoreCase(statement.trim(), "SET "))

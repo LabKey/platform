@@ -1651,7 +1651,7 @@ public class SimpleFilter implements Filter
     {
         protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
         {
-            assertEquals("Generated SQL did not match", expectedSQL, clause.toSQLFragment(Collections.emptyMap(), dialect).toDebugString());
+            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(Collections.emptyMap(), dialect).toDebugString()));
             StringBuilder sb = new StringBuilder();
             clause.appendFilterText(sb, new ColumnNameFormatter());
             assertEquals("Description did not match", description, sb.toString());

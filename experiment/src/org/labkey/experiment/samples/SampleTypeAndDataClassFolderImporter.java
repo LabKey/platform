@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
@@ -307,7 +308,15 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
                                     context.setConfigParameters(options);
 
-                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                                    Map<String, Object> extraContext = null;
+                                    if (ctx.isNewFolderImport())
+                                    {
+                                        extraContext = new HashMap<>();
+                                        extraContext.put(IS_NEW_FOLDER_IMPORT_KEY, true);
+                                    }
+
+                                    new HashMap<>();
+                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, extraContext);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
                                     if (context.getErrors().hasErrors())
                                     {

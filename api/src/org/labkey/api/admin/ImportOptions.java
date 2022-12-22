@@ -45,6 +45,8 @@ public class ImportOptions
     private Path _analysisDir;
     private String _folderArchiveSourceName = null;
 
+    private boolean _isNewFolderImport; // if we know the target folder is empty, can skip certain merge logic
+
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
         _containerId = containerId;
@@ -170,4 +172,15 @@ public class ImportOptions
     {
         _folderArchiveSourceName = folderArchiveSourceName;
     }
+
+    public boolean isNewFolderImport()
+    {
+        return _isNewFolderImport;
+    }
+
+    public void setNewFolderImport(boolean newFolderImport)
+    {
+        _isNewFolderImport = newFolderImport;
+    }
+
 }

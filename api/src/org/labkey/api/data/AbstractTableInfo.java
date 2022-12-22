@@ -681,7 +681,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /**
-     * This method can be used to to replace the implementation of a column during construction.
+     * This method can be used to replace the implementation of a column during construction.
      * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
      * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
      * should hold onto columnInfo references by FieldKey, and not by reference.

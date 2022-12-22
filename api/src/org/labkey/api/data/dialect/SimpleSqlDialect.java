@@ -136,12 +136,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getBooleanLiteral(boolean b)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String getSqlTypeName(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())

@@ -39,13 +39,8 @@ public interface SqlDialectFactory
 
     // These tests must be safe to invoke when LabKey Server can't connect to any data sources matching the dialect and
     // even when the JDBC driver isn't present.
-    Collection<? extends Class> getJUnitTests();
+    Collection<? extends Class<?>> getJUnitTests();
 
     // Caller must invoke initialize() on the dialects.
     Collection<? extends SqlDialect> getDialectsToTest();
-
-    // Do not call; this is a complete no-op! Left in place to keep Synonym module building for now. TODO: Remove
-    default void setTableResolver(TableResolver tableResolver)
-    {
-    }
 }
