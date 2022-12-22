@@ -937,8 +937,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter by startup properties if they were specified
         LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
-        LinkedList<String> excludeList = ModuleLoaderStartupProperties.exclude.getList();
+        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(ModuleLoaderStartupProperties.exclude.getList());
 
+        List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
         {
@@ -946,14 +947,31 @@ public class ModuleLoader implements Filter, MemTrackerListener
             includedModules = new CaseInsensitiveTreeMap<>();
             while (!includeList.isEmpty())
             {
-                Module m = moduleNameToModule.get(includeList.removeFirst());
-                // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies) */
-                if (null == includedModules.put(m.getName(), m))
-                    includeList.addAll(m.getModuleDependenciesAsSet());
+                String moduleName = includeList.removeFirst();
+                if (!excludeSet.contains(moduleName)) // Don't look up excluded modules or include their dependencies
+                {
+                    Module m = moduleNameToModule.get(moduleName);
+                    if (m == null)
+                    {
+                        missingModules.add(moduleName);
+                    }
+                    else
+                    {
+                        // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies)
+                        if (null == includedModules.put(m.getName(), m))
+                            includeList.addAll(m.getModuleDependenciesAsSet());
+                    }
+                }
             }
         }
 
-        for (String e : excludeList)
+        if (!missingModules.isEmpty())
+        {
+            _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): " +
+                    String.join(", ", missingModules));
+        }
+
+        for (String e : excludeSet)
             includedModules.remove(e);
 
         return new ArrayList<>(includedModules.values());
@@ -2195,7 +2213,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .map(entry -> entry.getScope() + "." + entry.getName() + ": " + entry.getValue()).toList();
 
             if (!unknown.isEmpty())
-                throw new IllegalArgumentException("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
+                _log.info("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();

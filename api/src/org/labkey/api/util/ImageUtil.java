@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.hc.core5.http.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,6 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.resource.ImageResource;
-import org.xhtmlrenderer.resource.XMLResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
 import org.xhtmlrenderer.swing.NaiveUserAgent;
 import org.xhtmlrenderer.util.XRLog;
@@ -38,7 +38,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -176,7 +175,7 @@ public class ImageUtil
         return image;
     }
 
-    public static Thumbnail webThumbnail(URL url) throws IOException
+    public static Thumbnail webThumbnail(URL url) throws IOException, URISyntaxException, ParseException
     {
         return renderThumbnail(webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT), ImageType.Large);
     }
@@ -194,82 +193,7 @@ public class ImageUtil
     private static final int WEB_IMAGE_WIDTH = 1024;
     private static final int WEB_IMAGE_HEIGHT = 768;
 
-    public static BufferedImage webImage(URL url) throws IOException
-    {
-        return webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT);
-    }
-
-    private static BufferedImage _webImage(URL url, int width, int height) throws IOException
-    {
-        URI uri;
-        try
-        {
-            uri = url.toURI();
-        }
-        catch (URISyntaxException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        Pair<String, URI> content = HttpUtil.getHTML(uri);
-        List<String> errors = new ArrayList<>();
-        String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
-        if (!errors.isEmpty())
-            throw new RuntimeException(errors.get(0));
-
-        return _webImage(xhtml, content.second, width, height);
-    }
-
-    private static BufferedImage _webImage(String xhtml, URI baseURI, int width, int height)
-    {
-        String uri = FileUtil.uriToString(baseURI);
-        Java2DRenderer renderer = new Java2DRenderer(uri, width, height);
-        renderer.getSharedContext().setUserAgentCallback(new TidyUserAgent(xhtml, uri));
-        renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
-        return renderer.getImage();
-    }
-
-    // Tidying the HTML content as a string doesn't work very well -- the Xerces parser will balk.
-    // I'd like to just subclass XMLResource and hand back a Tidy DOM Document, but the XMLResource
-    // constructors are private.
-    private static class TidyUserAgent extends NaiveUserAgent
-    {
-        String _xhtml;
-        String _baseURI;
-
-        private TidyUserAgent(String xhtml, String baseURI)
-        {
-            _xhtml = xhtml;
-            _baseURI = baseURI;
-        }
-
-        @Override
-        public XMLResource getXMLResource(String uri)
-        {
-            if (uri.equals(_baseURI))
-                return XMLResource.load(new StringReader(_xhtml));
-
-            final Pair<String, URI> content;
-
-            try
-            {
-                content = HttpUtil.getHTML(new URI(uri));
-            }
-            catch (IOException | URISyntaxException e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            ArrayList<String> errors = new ArrayList<>();
-            String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
-            if (!errors.isEmpty())
-                throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));
-
-            return XMLResource.load(new StringReader(xhtml));
-        }
-    }
-
-    public static BufferedImage webImage(final URL url, int width, int height) throws IOException
+    public static BufferedImage webImage(final URL url, int width, int height) throws IOException, URISyntaxException, ParseException
     {
         URI uri;
         try
@@ -381,16 +305,5 @@ public class ImageUtil
 
             return super.getImageResource(uri);
         }
-    }
-
-
-    public static void main(String[] args) throws Exception
-    {
-        // enable logging
-        System.setProperty("xr.util-logging.loggingEnabled", "true");
-
-        URL url = new URL(args[0]);
-        BufferedImage img = webImage(url);
-        ImageIO.write(img, "png", new File("out.png"));
     }
 }

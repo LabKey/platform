@@ -10,4 +10,10 @@ public class MicrosoftSqlServerStringHandler extends StandardDialectStringHandle
         // Prefix string literals with N to force Unicode
         return "N" + super.quoteStringLiteral(value);
     }
+
+    @Override
+    public String booleanValue(Boolean value)
+    {
+        return value ? "1" : "0";
+    }
 }

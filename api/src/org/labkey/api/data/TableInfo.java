@@ -757,4 +757,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         return List.of();
     }
+
+    default boolean supportMerge()
+    {
+        return false;
+    }
 }

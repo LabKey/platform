@@ -1778,8 +1778,7 @@ public class ExpDataIterators
                     extraKeyValueMap = new CaseInsensitiveHashMap<>();
                     extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
 
-                    keyColumns.add("materialSourceId");
-                    keyColumns.add("name");
+                    keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys());
                     propertyKeyColumns.add("name");
                 }
 
@@ -1792,8 +1791,7 @@ public class ExpDataIterators
                 extraKeyValueMap = new CaseInsensitiveHashMap<>();
                 extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
 
-                keyColumns.add("classid");
-                keyColumns.add("name");
+                keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
             }
 
             // Check if record exist in related folder as cross folder merge is not supported

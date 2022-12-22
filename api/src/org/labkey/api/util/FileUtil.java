@@ -53,11 +53,15 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -66,6 +70,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1219,6 +1224,24 @@ quickScan:
             tempPaths.get().add(path);
         return path.toFile();
     }
+
+
+    private static final boolean isPosix =
+            FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+    final static private FileAttribute<?>[] tempFileAttributes = new FileAttribute[] { PosixFilePermissions.asFileAttribute(Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)) };
+
+    public static boolean createTempFile(File file) throws IOException
+    {
+        if (file.exists())
+            return false;
+        file.getParentFile().mkdirs();
+        if (isPosix)
+            Files.createFile(file.toPath(), tempFileAttributes);
+        else
+            Files.createFile(file.toPath());
+        return true;
+    }
+
 
     public static void deleteTempFile(File f)
     {

@@ -28,6 +28,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -927,12 +928,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public String getBooleanDataType()
     {
         return "BIT";
-    }
-
-    @Override
-    public String getBooleanLiteral(boolean b)
-    {
-        return b ? "1" : "0";
     }
 
     @Override
@@ -2415,5 +2410,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
 
         return rds;
+    }
+
+    @Override
+    protected DialectStringHandler createStringHandler()
+    {
+        return new MicrosoftSqlServerStringHandler();
     }
 }

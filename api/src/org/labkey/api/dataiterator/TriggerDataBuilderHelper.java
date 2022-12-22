@@ -19,12 +19,16 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+
+import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 
 /**
  * User: matthewb
@@ -117,9 +121,28 @@ public class TriggerDataBuilderHelper
             if (!_target.hasTriggers(_c))
                 return pre;
             pre = LoggingDataIterator.wrap(pre);
-            DataIterator coerce = new CoerceDataIterator(pre, context, _target);
+
+            Set<String> mergeKeys = null;
+            if (_target instanceof ExpTable)
+                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys();
+
+            boolean isNewFolderImport = false;
+            if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)
+            {
+                isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
+            }
+
+            boolean includeAllColumns = (!context.getInsertOption().mergeRows || mergeKeys == null) || isNewFolderImport;
+            DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
-            return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
+
+            if (includeAllColumns)
+                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
+            else if (!_target.supportMerge())
+                return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
+
+            coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);
+            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
         }
     }
 

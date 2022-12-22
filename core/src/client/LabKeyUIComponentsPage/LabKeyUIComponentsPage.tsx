@@ -19,13 +19,11 @@ import {
     LoadingSpinner,
     ManageDropdownButton,
     Progress,
-    SCHEMAS,
     Tip,
     ToggleButtons,
     WizardNavButtons,
     Breadcrumb,
     BreadcrumbCreate,
-    HeatMap,
     initQueryGridState,
     PageDetailHeader,
     SchemaListing,
@@ -39,6 +37,8 @@ import {
     ServerContext,
     ServerContextProvider,
     withAppUser,
+    NotificationsContextProvider,
+    GlobalStateContextProvider,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -68,7 +68,6 @@ const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
     {value: 'GridPanel'},
-    {value: 'HeatMap'},
     {value: 'LabelHelpTip'},
     {value: 'Lineage'},
     {value: 'LoadingModal'},
@@ -177,6 +176,8 @@ export class App extends React.Component<any, State> {
         return (
             <ServerContextProvider initialContext={serverContext}>
                 <AppContextProvider>
+                <GlobalStateContextProvider>
+                <NotificationsContextProvider>
                 <p>
                     This page is setup to show examples of shared React components from
                     the <a href="https://github.com/LabKey/labkey-ui-components" target="_blank" rel="noopener noreferrer">labkey-ui-components</a> repository.
@@ -310,27 +311,6 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'GridPanel' &&
                     <GridPanelPage/>
-                }
-                {selected === 'HeatMap' &&
-                    this.renderPanel('HeatMap',
-                        <>
-                            <Alert bsStyle={'info'}>Note: this currently pulls data from the exp.SampleSetHeatMap query.</Alert>
-                            <HeatMap
-                                schemaQuery={SCHEMAS.EXP_TABLES.SAMPLE_SET_HEAT_MAP}
-                                nounSingular={'sample'}
-                                nounPlural={'samples'}
-                                yAxis={'protocolName'}
-                                xAxis={'monthName'}
-                                measure={'monthTotal'}
-                                yInRangeTotal={'InRangeTotal'}
-                                yTotalLabel={'12 month total samples'}
-                                getCellUrl={() => AppURL.create()}
-                                getHeaderUrl={() => AppURL.create()}
-                                getTotalUrl={() => AppURL.create()}
-                                headerClickUrl={AppURL.create()}
-                            />
-                        </>
-                    )
                 }
                 {selected === 'LabelHelpTip' &&
                     this.renderPanel('LabelHelpTip',
@@ -478,6 +458,8 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
+                </NotificationsContextProvider>
+                </GlobalStateContextProvider>
                 </AppContextProvider>
             </ServerContextProvider>
         )

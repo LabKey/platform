@@ -72,6 +72,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -134,6 +135,8 @@ import java.util.Set;
 
 public class QueryModule extends DefaultModule
 {
+    public static final String ALLOW_IMPORT_WITH_UPDATE = "allowImportUsingUpdateOnly";
+
     public QueryModule()
     {
         QueryService.setInstance(new QueryServiceImpl());
@@ -226,6 +229,9 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
+        AdminConsole.addExperimentalFeatureFlag(ALLOW_IMPORT_WITH_UPDATE, "Allow importing data using updating only option",
+                "In addition to 'import' or 'merge', allow 'update' option to import and update existing data only.", false);
+
     }
 
 
@@ -400,6 +406,7 @@ public class QueryModule extends DefaultModule
         boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
         json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
         json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
+        json.put(ALLOW_IMPORT_WITH_UPDATE, ExperimentalFeatureService.get().isFeatureEnabled(ALLOW_IMPORT_WITH_UPDATE));
 
         return json;
     }

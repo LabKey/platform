@@ -22,6 +22,7 @@ import org.apache.xmlbeans.impl.common.IOUtil;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.rosuda.REngine.REXP;
@@ -39,10 +40,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.labkey.api.reports.report.r.RReport.getLocalPath;
@@ -220,25 +222,27 @@ public class RserveScriptEngine extends RScriptEngine
     }
 
 
-    protected void copyWorkingDirectoryToRemote(RConnection rconn) throws IOException
+    protected void copyWorkingDirectoryToRemote(RConnection rconn) throws IOException, RserveException
     {
         if (!mo.requiresCopyFiles())
             return;
 
         LOG.debug("Copy files in working directory to remote server");
-        File wd = getWorkingDir(getContext());
-        File[] files = Objects.requireNonNullElse(wd.listFiles(), new File[0]);
-        for (var file : files)
+        final Path localWorkingDirectoryPath = getWorkingDir(getContext()).toPath();
+        List<Pair<File,File>> listing = Files.find(localWorkingDirectoryPath, Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()).map(
+                path -> new Pair<>(path.toFile(), localWorkingDirectoryPath.relativize(path).toFile())).toList();
+        var dirs = new HashSet<String>();
+        for (var pair : listing)
         {
-            if (file.isDirectory())
-                throw new IllegalStateException("unexpected directory found in report working directory: " + file.getPath());
-            if (file.isFile())
+            File file = pair.first;
+            File relative = pair.second;
+            String parent = relative.getParent();
+            if (null != parent && dirs.add(parent))
+                rconn.eval("dir.create(" + toR(parent) + ", recursive=TRUE)");
+            try (OutputStream os = rconn.createFile(relative.toString());
+                 FileInputStream fis = new FileInputStream(file))
             {
-                try (OutputStream os = rconn.createFile(file.getName());
-                     FileInputStream fis = new FileInputStream(file))
-                {
-                    IOUtil.copyCompletely(fis, os);
-                }
+                IOUtil.copyCompletely(fis, os);
             }
         }
     }
@@ -253,16 +257,17 @@ public class RserveScriptEngine extends RScriptEngine
         File wd = getWorkingDir(getContext());
         try
         {
-            String[] names = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
-            for (var name : names)
+            String[] paths = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
+            for (var remotePath : paths)
             {
-                if ("input_data.tsv".equalsIgnoreCase(name))
+                if ("input_data.tsv".equalsIgnoreCase(remotePath))
                     continue;
-                if ("script.R".equalsIgnoreCase(name))
+                if ("script.R".equalsIgnoreCase(remotePath))
                     continue;
-                new File(wd,name).getParentFile().mkdirs();
-                try (InputStream is = rconn.openFile(name);
-                     FileOutputStream fos = new FileOutputStream(new File(wd,name)))
+                File file = new File(wd,remotePath);
+                FileUtil.createTempFile(file);
+                try (InputStream is = rconn.openFile(remotePath);
+                     FileOutputStream fos = new FileOutputStream(file))
                 {
                     IOUtil.copyCompletely(is, fos);
                 }

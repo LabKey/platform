@@ -468,6 +468,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         addColumn(datasetId);
 
         addFolderColumn();
+
+        setSupportMerge(getDataset().getKeyManagementType() == Dataset.KeyManagementType.None);
     }
 
 

@@ -19,7 +19,6 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
@@ -44,13 +43,12 @@ public class StandardDialectStringHandler implements DialectStringHandler
 
 
     @Override
-    // Substitute the parameters into the SQL string, following the rules for quoted identifiers, string literals, comments, etc.
-
-    // Previously, we used regular expressions to find (and ignore) string literals and quoted identifiers while doing
-    // parameter substitution, but the first attempt exploded with long string literals (#12866) and the second attempt
-    // occasionally failed to return. So, we wrote this dumb little parser instead.
     public String substituteParameters(SQLFragment frag)
     {
+        // Substitute the parameters into the SQL string, following the rules for quoted identifiers, string literals,
+        // comments, etc. Previously, we used regular expressions to find (and ignore) string literals and quoted
+        // identifiers while doing parameter substitution, but the first attempt exploded with long string literals
+        // (#12866) and the second attempt occasionally failed to return. So, we wrote this dumb little parser instead.
         String sql = frag.getSQL();
         StringBuilder ret = new StringBuilder();
         List<Object> params = new LinkedList<>(frag.getParams());
@@ -62,9 +60,10 @@ public class StandardDialectStringHandler implements DialectStringHandler
         {
             char c = sql.charAt(current);
 
-            switch(c)
+            switch (c)
             {
-                case('?'):
+                case ('?') ->
+                {
                     ret.append(sql.subSequence(begin, current));
                     if (params.isEmpty())
                         ret.append("NULL /*?missing?*/");
@@ -72,21 +71,12 @@ public class StandardDialectStringHandler implements DialectStringHandler
                         ret.append(formatParameter(params.remove(0)));
                     current++;
                     begin = current;
-                    break;
-                case('\''):
-                    current = findEndOfStringLiteral(sql, current + 1);
-                    break;
-                case('"'):
-                    current = findEndOfQuotedIdentifier(sql, current + 1);
-                    break;
-                case('/'):
-                    current = findEndOfBlockComment(sql, current + 1);
-                    break;
-                case('-'):
-                    current = findEndOfLineComment(sql, current + 1);
-                    break;
-                default:
-                    current++;
+                }
+                case ('\'') -> current = findEndOfStringLiteral(sql, current + 1);
+                case ('"') -> current = findEndOfQuotedIdentifier(sql, current + 1);
+                case ('/') -> current = findEndOfBlockComment(sql, current + 1);
+                case ('-') -> current = findEndOfLineComment(sql, current + 1);
+                default -> current++;
             }
         }
 
@@ -136,25 +126,27 @@ public class StandardDialectStringHandler implements DialectStringHandler
         {
             char c = sql.charAt(current++);
 
-            switch(prev)
+            switch (prev)
             {
-                case firstSlash:
+                case firstSlash ->
+                {
                     if (c == '*')
                         prev = Previous.somethingElse;
                     else
                         return --current;  // Not a comment after all, back it up so we don't lose this character
-                    break;
-                case star:
+                }
+                case star ->
+                {
                     if (c == '/')
                         return current;   // End of comment... we're done
-
                     prev = Previous.somethingElse;
                     current--;  // Not the end of comment, back it up so we don't lose this character
-                    break;
-                case somethingElse:
+                }
+                case somethingElse ->
+                {
                     if (c == '*')
                         prev = Previous.star;
-                    break;
+                }
             }
         }
 
@@ -223,13 +215,11 @@ public class StandardDialectStringHandler implements DialectStringHandler
         }
     }
 
-
-    // TODO: This is wrong -- SQL could run against any database (not just core).  Need to pass in dialect.
-    private String booleanValue(Boolean value)
+    @Override
+    public String booleanValue(Boolean value)
     {
-        return CoreSchema.getInstance().getSqlDialect().getBooleanLiteral(value);
+        return Boolean.toString(value); // Most dialects support true/false
     }
-
 
     // ParameterSubstitutionTest tests the full substitution process; this tests edge conditions in the parser.
     public static class TestCase extends Assert
