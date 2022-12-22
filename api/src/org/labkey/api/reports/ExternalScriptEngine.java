@@ -554,4 +554,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     {
         return false;
     }
+
+    // Returns whether this engine can be run in to specified context. Some remote engines
+    // don't support all contexts because input or output files aren't copied into the location
+    // that the script is run.
+    public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
+    {
+        return true;
+    }
 }
