@@ -37,8 +37,10 @@ import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper for code that does not use QueryUpdateService
@@ -295,7 +297,18 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 last = validate;
         }
 
-        return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
+        DataIterator wrapped = LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
+        if (context.getInsertOption().updateOnly && !unusedCols.isEmpty())
+        {
+            Set<String> unusedColNames = new HashSet<>();
+            for (FieldKey fieldKey : unusedCols.keySet())
+            {
+                unusedColNames.add(fieldKey.getName());
+            }
+            ((AbstractDataIterator) wrapped).setUnusedCol(unusedColNames);
+        }
+
+        return wrapped;
     }
 
     protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)

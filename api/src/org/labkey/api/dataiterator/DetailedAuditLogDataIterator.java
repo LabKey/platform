@@ -121,8 +121,9 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data.close();
     }
 
-    public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryService.AuditAction auditAction, final User user, final Container container)
+    public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryUpdateService.InsertOption insertOption, final User user, final Container container)
     {
+        QueryService.AuditAction auditAction = QueryService.AuditAction.getImportAuditAction(insertOption);
         return context ->
         {
             AuditBehaviorType auditType = AuditBehaviorType.NONE;

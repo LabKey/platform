@@ -111,6 +111,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.remoteapi.query.ImportDataCommand;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.query.DatasetTableImpl;
@@ -2288,6 +2289,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
+        DataIterator input = in.getDataIterator(context);
+
         boolean allowImportManagedKey = context.getConfigParameterBoolean(DatasetUpdateService.Config.AllowImportManagedKey);
         b.setAllowImportManagedKeys(allowImportManagedKey);
         b.setUseImportAliases(!allowImportManagedKey);
@@ -2297,12 +2300,22 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
-        DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
-        { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
-            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
+        DataIteratorBuilder persist = null;
+
+        if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+        {
+            persist = ((UpdateableTableInfo)table).persistRows(existing, context, input.getUnusedCols());
         }
-        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+        else
+        {
+            persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+            { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+                CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+                ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate); // TODO add instead of replace
+            }
+        }
+
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);
         return LoggingDataIterator.wrap(audit);
     }
 

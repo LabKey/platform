@@ -40,8 +40,10 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -544,7 +546,15 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
         {
-            return new TableInsertDataIteratorBuilder(data, this);
+            TableInsertDataIteratorBuilder dib = new TableInsertDataIteratorBuilder(data, this);
+
+            if (data instanceof StandardDataIteratorBuilder && context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+            {
+                DataIterator input = data.getDataIterator(context);
+                dib.setDontUpdate(input.getUnusedCols());
+            }
+
+            return dib;
         }
 
         @Override

@@ -1974,7 +1974,11 @@ public class ExpDataIterators
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
             if (context.getInsertOption().updateOnly)
+            {
                 dontUpdate.add("objectid");
+                if (input.getUnusedCols() != null)
+                    dontUpdate.addAll(input.getUnusedCols());
+            }
 
             boolean isMergeOrUpdate = context.getInsertOption().mergeRows || context.getInsertOption().updateOnly;
 

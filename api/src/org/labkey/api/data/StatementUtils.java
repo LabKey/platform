@@ -848,8 +848,17 @@ public class StatementUtils
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
             }
-            sqlfUpdate.append(sqlfWherePK);
-            sqlfUpdate.append(";\n");
+
+            if (Operation.update == _operation && updateCount == 0)
+            {
+                sqlfUpdate.append(new SQLFragment(keys.values().iterator().next().getSelectName()));
+                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1;\n");
+            }
+            else
+            {
+                sqlfUpdate.append(sqlfWherePK);
+                sqlfUpdate.append(";\n");
+            }
 
             if (Operation.merge == _operation)
             {

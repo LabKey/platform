@@ -25,14 +25,20 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         this(data, table, null);
     }
 
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    {
+        this(data, table, container, null);
+    }
+
     /**
      * @param container If container != null, it will be set as a constant in the insert statement.
      */
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container, Set<String> dontUpdate)
     {
         this.builder = data;
         this.table = table;
         this.container = container;
+        this.dontUpdate = dontUpdate;
     }
 
     public TableInsertDataIteratorBuilder setKeyColumns(Set<String> keyColumns)

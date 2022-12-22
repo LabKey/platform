@@ -257,6 +257,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
+        DataIterator input = dib.getDataIterator(context);
+
         if (_enableExistingRecordsDataIterator)
         {
             // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
@@ -265,10 +267,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (context.getInsertOption().updateOnly)
         {
             dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
+            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context, input.getUnusedCols());
         }
-        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+        else
+            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.getImportAuditAction(context.getInsertOption()), user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;
     }
 
