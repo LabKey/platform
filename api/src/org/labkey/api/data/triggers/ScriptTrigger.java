@@ -235,6 +235,13 @@ public class ScriptTrigger implements Trigger
 
     private <T> T _try(Container c, User user, Map<String, Object> extraContext, ScriptFn<T> fn)
     {
+        ViewContext.StackResetter viewContextResetter = null;
+        if (!HttpView.hasCurrentView())
+        {
+            // Push a view context if we don't already have one available. It may be pulled to get the user
+            // in ext4Bridge.js
+            viewContextResetter = ViewContext.pushMockViewContext(user, c, new ActionURL("dummy", "dummy", c));
+        }
         try
         {
             if (!_script.evaluated())
@@ -270,6 +277,13 @@ public class ScriptTrigger implements Trigger
         catch (NoSuchMethodException | ScriptException e)
         {
             throw UnexpectedException.wrap(e);
+        }
+        finally
+        {
+            if (viewContextResetter != null)
+            {
+                viewContextResetter.close();
+            }
         }
     }
 
