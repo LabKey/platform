@@ -66,7 +66,7 @@ public class Constants
      */
     public static int getMaxModules()
     {
-        return 200;
+        return 300;
     }
 
     /**

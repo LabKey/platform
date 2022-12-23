@@ -1648,6 +1648,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             ((DefaultModule)m).unregister();
 
         ContextListener.fireModuleChangeEvent(m);
+        clearUnknownModuleCount();
     }
 
 
@@ -1863,9 +1864,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 return getModules();
 
             return _modules
-                    .stream()
-                    .filter(module -> !module.getRequireSitePermission())
-                    .collect(Collectors.toList());
+                .stream()
+                .filter(module -> !module.getRequireSitePermission())
+                .collect(Collectors.toList());
         }
     }
 
@@ -1877,7 +1878,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         List<Module> result = new ArrayList<>(modules.size());
         result.addAll(getModules()
-                .stream().filter(modules::contains).toList());
+            .stream()
+            .filter(modules::contains)
+            .toList());
         Collections.reverse(result);
         return result;
     }
@@ -2143,6 +2146,21 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public Collection<ModuleContext> getAllModuleContexts()
     {
         return new TableSelector(getTableInfoModules()).getCollection(ModuleContext.class);
+    }
+
+    private volatile Integer _unknownModuleCount = null;
+
+    public int getUnknownModuleCount()
+    {
+        if (null == _unknownModuleCount)
+            _unknownModuleCount = getUnknownModuleContexts().size();
+
+        return _unknownModuleCount;
+    }
+
+    public void clearUnknownModuleCount()
+    {
+        _unknownModuleCount = null;
     }
 
     public Map<String, ModuleContext> getUnknownModuleContexts()
