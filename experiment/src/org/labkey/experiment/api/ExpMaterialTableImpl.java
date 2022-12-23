@@ -1132,7 +1132,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
-        if (_importTemplates != null)
+        if (getRawImportTemplates() != null)
             // respect any metadata overrides
             return super.getImportTemplates(ctx);
         else
