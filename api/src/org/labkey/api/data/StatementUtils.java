@@ -840,7 +840,6 @@ public class StatementUtils
                 FieldKey fk = cols.get(i).getFieldKey();
                 if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(cols.get(i).getName()))
                     continue;
-                // TODO for update, use explicit white lists, if not present in file, skip
                 sqlfUpdate.append(comma);
                 comma = ", ";
                 sqlfUpdate.append(new SQLFragment(cols.get(i).getSelectName()));

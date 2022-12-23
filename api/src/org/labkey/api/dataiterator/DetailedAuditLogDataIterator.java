@@ -149,4 +149,11 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (null != _data)
             _data.debugLogInfo(sb);
     }
+
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
+
 }
