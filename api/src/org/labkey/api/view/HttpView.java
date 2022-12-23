@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.ExceptionUtil;
@@ -634,10 +633,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static URLHelper getContextURLHelper()
     {
         ViewContext context = getRootContext();
-        // If we're invoked from a background thread that lacks a ViewContext, just return a dummy
-        // value. This lets trigger scripts import ActionURL.js without error.
-        if (context == null)
-            return new ActionURL("dummy", "dummy", ContainerManager.getRoot());
         HttpServletRequest request = context.getRequest();
         URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
 
