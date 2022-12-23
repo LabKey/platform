@@ -1132,21 +1132,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
-        List<Pair<String, String>> templates = new ArrayList<>();
-        ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-        url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
-        try
+        if (_importTemplates != null)
+            // respect any metadata overrides
+            return super.getImportTemplates(ctx);
+        else
         {
-            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+            List<Pair<String, String>> templates = new ArrayList<>();
+            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+            try
             {
-                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
-                    url.addParameter("includeColumn", aliasKey);
+                if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+                {
+                    for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                        url.addParameter("includeColumn", aliasKey);
+                }
             }
+            catch (IOException e)
+            {}
+            templates.add(Pair.of("Download Template", url.toString()));
+            return templates;
         }
-        catch (IOException e)
-        {}
-        templates.add(Pair.of("Download Template", url.toString()));
-        return templates;
     }
 
     @Override
