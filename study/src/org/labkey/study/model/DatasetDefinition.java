@@ -2289,8 +2289,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
-        DataIterator input = in.getDataIterator(context);
-
         boolean allowImportManagedKey = context.getConfigParameterBoolean(DatasetUpdateService.Config.AllowImportManagedKey);
         b.setAllowImportManagedKeys(allowImportManagedKey);
         b.setUseImportAliases(!allowImportManagedKey);
@@ -2302,17 +2300,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
         DataIteratorBuilder persist = null;
 
-        if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+        persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+
+        if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
         {
-            persist = ((UpdateableTableInfo)table).persistRows(existing, context, input.getUnusedCols());
-        }
-        else
-        {
-            persist = ((UpdateableTableInfo)table).persistRows(existing, context);
-            { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
-                CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-                ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate); // TODO add instead of replace
-            }
+            // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate); // TODO add instead of replace
         }
 
         DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);

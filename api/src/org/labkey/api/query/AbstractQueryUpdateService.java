@@ -257,7 +257,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
-        DataIterator input = dib.getDataIterator(context);
 
         if (_enableExistingRecordsDataIterator)
         {
@@ -267,7 +266,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (context.getInsertOption().updateOnly)
         {
             dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
-            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context, input.getUnusedCols());
+            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         }
         else
             dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);

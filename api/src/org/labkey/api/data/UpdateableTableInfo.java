@@ -20,8 +20,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -104,12 +102,10 @@ public interface UpdateableTableInfo extends TableInfo
     CaseInsensitiveHashSet skipProperties();
 
 
-    DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context);
-
     /**
-     * Insert/update multiple rows into the database
+     * Insert multiple rows into the database
      *
-     * The default behavior will just match up columns in the data iterator to parameters from insert/update/mergeStatement().
+     * The default behavior will just match up columns in the data iterator to parameters from insertStatement().
      * Conversion, Validation, and default values should be setup before calling this method.  Most special cases
      * can be handled by the default implementation which will look at skipProperties() and remapSchemaColumns().
      * 
@@ -120,13 +116,7 @@ public interface UpdateableTableInfo extends TableInfo
      *
      * NOTE, potential for cleanup, most usages do not require a DataIteratorContext to create a DataIteratorBuilder
      */
-    default DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context, Set<String> dontUpdateCols)
-    {
-        DataIteratorBuilder dib = persistRows(data, context);
-        if (dontUpdateCols != null && dib instanceof TableInsertDataIteratorBuilder)
-            ((TableInsertDataIteratorBuilder) dib).setDontUpdate(dontUpdateCols);
-        return dib;
-    }
+    DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context);
 
     /** persist one row in the database
      *

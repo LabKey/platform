@@ -305,7 +305,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             {
                 unusedColNames.add(fieldKey.getName());
             }
-            ((AbstractDataIterator) wrapped).setUnusedCol(unusedColNames);
+            context.getDontUpdateColumnNames().addAll(unusedColNames);
         }
 
         return wrapped;

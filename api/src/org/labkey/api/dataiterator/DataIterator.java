@@ -107,10 +107,4 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
     {
         sb.append("  " + getDebugName() + ": " + this.getClass().getName() + "\n");
     }
-
-    @Nullable
-    default Set<String> getUnusedCols()
-    {
-        return null;
-    }
 }

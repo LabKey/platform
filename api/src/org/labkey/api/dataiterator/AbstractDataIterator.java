@@ -40,7 +40,6 @@ public abstract class AbstractDataIterator implements DataIterator
     final protected DataIteratorContext _context;
     final BatchValidationException _errors;
     protected ValidationException _rowError = null;
-    private Set<String> _unusedCols;
 
     protected AbstractDataIterator(DataIteratorContext context)
     {
@@ -165,13 +164,4 @@ public abstract class AbstractDataIterator implements DataIterator
         return 0<indexOfExistingRecord ? (Map<String, Object>)get(indexOfExistingRecord) : null;
     }
 
-    public void setUnusedCol(Set<String> unusedCols)
-    {
-        _unusedCols = unusedCols;
-    }
-
-    public Set<String> getUnusedCols()
-    {
-        return _unusedCols;
-    }
 }
