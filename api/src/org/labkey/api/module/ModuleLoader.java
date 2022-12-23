@@ -124,6 +124,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -506,13 +507,39 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         final File lockFile = createLockFile(modulesDir);
 
-        if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
-            _newInstall = true;
-
         // Prune modules before upgrading core module, see Issue 42150
         synchronized (_modulesLock)
         {
             pruneModules(_modules);
+        }
+
+        if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
+        {
+            _newInstall = true;
+        }
+        else
+        {
+            // Refuse to upgrade if any managed module has a schema version that's too old to upgrade. Issue 46922.
+
+            // Module contexts with non-null schema versions
+            Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
+                .filter(ctx -> ctx.getSchemaVersion() != null)
+                .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
+
+            // Names of managed modules with schemas where the installed version is less than "earliest upgrade version"
+            var tooOld = modules.stream()
+                .filter(Module::shouldManageVersion)
+                .map(m -> moduleContextMap.get(m.getName()))
+                .filter(Objects::nonNull)
+                .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
+                .map(ModuleContext::getName)
+                .toList();
+
+            if (!tooOld.isEmpty())
+            {
+                String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
+                throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading schema versions " + Constants.getEarliestUpgradeVersion() + " or greater.");
+            }
         }
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
@@ -1233,9 +1260,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            if (coreContext.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + Constants.getEarliestUpgradeVersion() + " or greater.");
-
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedSchemaVersion());
         }
 
