@@ -37,7 +37,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -552,7 +552,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return new TableInsertDataIteratorBuilder(data, this);
+        return new TableInsertUpdateDataIteratorBuilder(data, this);
     }
 
     @Override

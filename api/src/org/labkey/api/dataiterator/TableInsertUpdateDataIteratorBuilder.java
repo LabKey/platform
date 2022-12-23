@@ -8,7 +8,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import java.util.Map;
 import java.util.Set;
 
-public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
+public class TableInsertUpdateDataIteratorBuilder implements DataIteratorBuilder
 {
     final DataIteratorBuilder builder;
     final TableInfo table;
@@ -20,12 +20,12 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     private Set<DomainProperty> vocabularyProperties;
     Map<String, String> remapSchemaColumns = null;
 
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
+    public TableInsertUpdateDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
     {
         this(data, table, null);
     }
 
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    public TableInsertUpdateDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
     {
         this(data, table, container, null);
     }
@@ -33,7 +33,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     /**
      * @param container If container != null, it will be set as a constant in the insert statement.
      */
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container, Set<String> dontUpdate)
+    public TableInsertUpdateDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container, Set<String> dontUpdate)
     {
         this.builder = data;
         this.table = table;
@@ -41,25 +41,25 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         this.dontUpdate = dontUpdate;
     }
 
-    public TableInsertDataIteratorBuilder setKeyColumns(Set<String> keyColumns)
+    public TableInsertUpdateDataIteratorBuilder setKeyColumns(Set<String> keyColumns)
     {
         this.keyColumns = keyColumns;
         return this;
     }
 
-    public TableInsertDataIteratorBuilder setAddlSkipColumns(Set<String> addlSkipColumns)
+    public TableInsertUpdateDataIteratorBuilder setAddlSkipColumns(Set<String> addlSkipColumns)
     {
         this.addlSkipColumns = addlSkipColumns;
         return this;
     }
 
-    public TableInsertDataIteratorBuilder setDontUpdate(Set<String> dontUpdate)
+    public TableInsertUpdateDataIteratorBuilder setDontUpdate(Set<String> dontUpdate)
     {
         this.dontUpdate = dontUpdate;
         return this;
     }
 
-    public TableInsertDataIteratorBuilder setRemapSchemaColumns(Map<String, String> remapSchemaColumns)
+    public TableInsertUpdateDataIteratorBuilder setRemapSchemaColumns(Map<String, String> remapSchemaColumns)
     {
         this.remapSchemaColumns = remapSchemaColumns;
         return this;
@@ -71,13 +71,13 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
      *
      * This functionality is implemented by using EmbargoDataIterator (with cooperation of StatementDataIterator)
      */
-    public TableInsertDataIteratorBuilder setCommitRowsBeforeContinuing(boolean commitRowsBeforeContinuing)
+    public TableInsertUpdateDataIteratorBuilder setCommitRowsBeforeContinuing(boolean commitRowsBeforeContinuing)
     {
         this.commitRowsBeforeContinuing = commitRowsBeforeContinuing;
         return this;
     }
 
-    public TableInsertDataIteratorBuilder setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
+    public TableInsertUpdateDataIteratorBuilder setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
     {
         this.vocabularyProperties = vocabularyProperties;
         return this;

@@ -33,7 +33,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -615,8 +615,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             step0.addColumn(issueDefCol, new SimpleTranslator.ConstantColumn(_issueDef.getRowId()));
 
             // Insert into issues.issues then the provisioned table
-            var step2 = new TableInsertDataIteratorBuilder(step0, IssuesSchema.getInstance().getTableInfoIssues(), c);
-            var step3 = new TableInsertDataIteratorBuilder(step2, _issueDef.createTable(getUserSchema().getUser()), c);
+            var step2 = new TableInsertUpdateDataIteratorBuilder(step0, IssuesSchema.getInstance().getTableInfoIssues(), c);
+            var step3 = new TableInsertUpdateDataIteratorBuilder(step2, _issueDef.createTable(getUserSchema().getUser()), c);
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
         }

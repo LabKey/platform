@@ -876,7 +876,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return LoggingDataIterator.wrap(step0.getDataIterator(context));
             }
 
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?
 
             // Ensure we have a name column -- makes the NameExpressionDataIterator easier
             if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))

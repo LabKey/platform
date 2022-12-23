@@ -37,7 +37,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
@@ -1704,7 +1704,7 @@ public class Table
             translate.selectAll();
             translate.addBuiltInColumns(dic, JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
-            DataIteratorBuilder load = new TableInsertDataIteratorBuilder(translate, testTable);
+            DataIteratorBuilder load = new TableInsertUpdateDataIteratorBuilder(translate, testTable);
             new Pump(load.getDataIterator(dic), dic).run();
 
             assertFalse(dic.getErrors().hasErrors());

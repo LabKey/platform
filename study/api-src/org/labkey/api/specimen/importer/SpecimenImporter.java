@@ -39,7 +39,7 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -1875,7 +1875,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         DataIteratorBuilder specimenIter = new SpecimenImportBuilder(new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
         DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, getContainer(), getUser(), dix);
-        DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, getContainer())
+        DataIteratorBuilder tableIter = new TableInsertUpdateDataIteratorBuilder(std, target, getContainer())
             .setKeyColumns(keyColumns)
             .setAddlSkipColumns(skipColumns)
             .setDontUpdate(dontUpdate);

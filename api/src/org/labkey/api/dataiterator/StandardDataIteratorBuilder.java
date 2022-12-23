@@ -297,7 +297,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 last = validate;
         }
 
-        DataIterator wrapped = LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
         if (context.getInsertOption().updateOnly && !unusedCols.isEmpty())
         {
             Set<String> unusedColNames = new HashSet<>();
@@ -308,7 +307,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             context.getDontUpdateColumnNames().addAll(unusedColNames);
         }
 
-        return wrapped;
+        return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 
     protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)

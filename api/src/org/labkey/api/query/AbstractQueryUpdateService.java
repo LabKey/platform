@@ -201,6 +201,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
     {
+        // TODO is there a more efficent way to batch verify?
         getRows(user, container, keys, true);
     }
 
@@ -264,12 +265,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
         if (context.getInsertOption().updateOnly)
-        {
             dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
-            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
-        }
-        else
-            dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+
+        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;

@@ -63,7 +63,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
 
     /**
      * Creates and configures a TableInsertDataIterator. DO NOT call this method directly.
-     * Instead instantiate a {@link TableInsertDataIteratorBuilder}.
+     * Instead instantiate a {@link TableInsertUpdateDataIteratorBuilder}.
      * @param container If container != null, it will be set as a constant in the insert statement.
      */
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container container, DataIteratorContext context,

@@ -46,7 +46,7 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -111,7 +111,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.remoteapi.query.ImportDataCommand;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.query.DatasetTableImpl;
@@ -2306,7 +2305,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         {
             // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate); // TODO add instead of replace
+            ((TableInsertUpdateDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
         }
 
         DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);

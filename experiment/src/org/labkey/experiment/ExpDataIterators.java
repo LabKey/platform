@@ -52,7 +52,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SampleUpdateAliquoteDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -2048,14 +2048,14 @@ public class ExpDataIterators
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertUpdateDataIteratorBuilder(step2, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
-            DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step3, _propertiesTable, _container)
+            DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertUpdateDataIteratorBuilder(step3, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))

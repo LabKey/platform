@@ -44,7 +44,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
     final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
     final int existingColIndex;
-    final int aliquotedFromColIndex;
 
     // prefetch of existing records
     final boolean useMark;
@@ -60,7 +59,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
         this.target = target;
         this.existingColIndex = in.getColumnCount()+1;
-        this.aliquotedFromColIndex = in.getColumnCount()+2;
         this.useMark = useMark;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
