@@ -42,14 +42,12 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.NoNewRecordValidationDataIterator;
 import org.labkey.api.dataiterator.Pump;
-import org.labkey.api.dataiterator.SampleUpdateAliquoteDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
@@ -76,7 +74,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -96,6 +93,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
@@ -123,7 +121,6 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
-import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 
 public class ExpDataIterators
@@ -219,10 +216,12 @@ public class ExpDataIterators
     public static class ExpMaterialValidatorIterator extends ValidatorIterator
     {
         private Integer _aliquotedFromColInd = null;
+        private boolean isUpdateOnly;
 
         public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
         {
             super(data, context, c, user);
+            isUpdateOnly = context.getInsertOption().updateOnly;
         }
 
         @Override
@@ -231,8 +230,10 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (columnNameMap.containsKey("AliquotedFrom"))
+                if (!isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
+                else if (isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
+                    _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
                     _aliquotedFromColInd = -1;
             }
@@ -2011,40 +2012,17 @@ public class ExpDataIterators
             // this is a NOOP unless we are merging/updating and QueryService.get().isProductProjectsEnabled()
             DataIteratorBuilder step1 = CrossFolderRecordDataIterator.createBuilder(step0, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
 
-            AuditBehaviorType auditType = AuditBehaviorType.NONE;
-            if (_expTable.supportsAuditTracking())
-                auditType = _expTable.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-
             // Check if record exist in related folder as cross folder merge is not supported
             // this is a NOOP unless we are updating
             DataIteratorBuilder step1a = NoNewRecordValidationDataIterator.createBuilder(step1, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
-
-            DataIteratorBuilder step1b = step1a;
-            if (isSample)
-            {
-                // query for aliquotedfromlsid for updating
-                // this is a NOOP unless we are updating and also auditType != DETAILED
-                step1b = SampleUpdateAliquoteDataIterator.createBuilder(step1, _expTable, ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId(), auditType);
-            }
-
-            if (context.getInsertOption().updateOnly)
-            {
-                if (auditType != DETAILED) // cannot rely on existing record, have to query for aliquotedfromlsid
-                    ;
-                    // need to get aliquotedfromlsid
-                // for samples, use SampleUpdateDataIterator instead
-//                step1a = NoNewRecordValidationDataIterator.createBuilder(step1, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
-            }
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
             Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
             if (context.getInsertOption().updateOnly)
-                existingRecordKey = Set.of(ExpDataTable.Column.Name.toString());
+                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
 
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1b, _expTable, existingRecordKey, true);
-
-            // TODO, can the aliquotedfrom column be added here?
+            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1a, _expTable, existingRecordKey, true);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)

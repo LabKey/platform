@@ -47,6 +47,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -54,6 +55,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.Lsid;
@@ -1004,16 +1006,27 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
+            if (context.getInsertOption() == InsertOption.UPDATE)
+            {
+                SimpleTranslator addAliquotedFrom = new SimpleTranslator(source, context);
+
+                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
+                if (!columnNameMap.containsKey("aliquotedfromlsid"))
+                    addAliquotedFrom.addNullColumn("aliquotedfromlsid", JdbcType.VARCHAR);
+                addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+                addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+                addAliquotedFrom.selectAll();
+
+                var addAliquotedFromX = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), false);
+
+                SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromX, context, sampleType, materialTable);
+                return LoggingDataIterator.wrap(c);
+            }
+
+
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
-
-            if (context.getInsertOption() == InsertOption.UPDATE)
-            {
-                SimpleTranslator addAliquotedFrom = new _SamplesUpdateAliquotedFromDataIterator(c, context, sampleType);
-                addAliquotedFrom.selectAll();
-                return LoggingDataIterator.wrap(addAliquotedFrom);
-            }
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
@@ -1395,17 +1408,4 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    static class _SamplesUpdateAliquotedFromDataIterator extends SimpleTranslator
-    {
-        _SamplesUpdateAliquotedFromDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
-        {
-            super(di, context);
-            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(di);
-            addSampleUpdateAliquotedFromColumn("aliquotedfromlsid", columnNameMap.get("aliquotedfromlsid"), findExistingRecordIndex());
-            addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
-            addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
-
-        }
-
-    }
 }

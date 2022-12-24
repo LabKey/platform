@@ -1,50 +1,22 @@
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
-
-public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
+public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
 {
     public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
     static final String KEY_COLUMN_NAME = "Name";
@@ -58,18 +30,21 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
-    final HashMap<Integer,String> existingParents = new HashMap<>();
+    final HashMap<Integer,String> aliquotParents = new HashMap<>();
 
-    SampleUpdateAliquoteDataIterator(DataIterator in, TableInfo target, int sampleTypeId)
+    boolean _useExistingRecord;
+
+    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useExistingRecord)
     {
         super(in);
 
-        // NOTE it might get wrapped with a LoggingDataIterator, so remember the original DataIterator
         this._unwrapped = (CachingDataIterator)in;
 
         this.target = target;
 
         this._sampleTypeId = sampleTypeId;
+
+        this._useExistingRecord = useExistingRecord;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         this._aliquotedFromColIndex = map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
@@ -98,10 +73,18 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
         if (i != _aliquotedFromColIndex)
             return _delegate.get(i);
         Integer rowNumber = (Integer)_delegate.get(0);
-        String lsid = existingParents.get(rowNumber);
-        if (!StringUtils.isEmpty(lsid))
-            return lsid;
-        // TODO get lsid from existing record
+
+        String lsid = null;
+
+        if (_useExistingRecord)
+        {
+            Map<String, Object> map = getExistingRecord();
+            if (map != null && map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME) != null)
+                lsid = (String) map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
+        }
+        else
+            lsid = aliquotParents.get(rowNumber);
+
         return lsid;
     }
 
@@ -123,11 +106,14 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
 
     protected void prefetchExisting() throws BatchValidationException
     {
+        if (_useExistingRecord)
+            return;
+
         Integer rowNumber = (Integer)_delegate.get(0);
         if (rowNumber <= lastPrefetchRowNumber)
             return;
 
-        existingParents.clear();
+        aliquotParents.clear();
 
         int rowsToFetch = 50;
         Map<Integer, String> rowNameMap = new LinkedHashMap<>();
@@ -138,7 +124,7 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
             String name = (String) pkSupplier.get();
             rowNameMap.put(lastPrefetchRowNumber, name);
             nameRowMap.put(name, lastPrefetchRowNumber);
-            existingParents.put(lastPrefetchRowNumber, null);
+            aliquotParents.put(lastPrefetchRowNumber, null);
         }
         while (--rowsToFetch > 0 && _delegate.next());
 
@@ -156,7 +142,7 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
             if (aliquotedFromLSIDObj != null)
             {
                 Integer rowInd = nameRowMap.get(name);
-                existingParents.put(rowInd, (String) aliquotedFromLSIDObj);
+                aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
             }
         }
 
@@ -178,7 +164,7 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
 
 
 
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, int sampleTypeId, AuditBehaviorType auditType)
+    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, int sampleTypeId)
     {
         return context ->
         {
@@ -186,14 +172,10 @@ public class SampleUpdateAliquoteDataIterator extends WrapperDataIterator
             if (null == di)
                 return null;           // Can happen if context has errors
 
-            if (di.supportsGetExistingRecord()) // if getting existing record, no need to fetch aliquotedfromlsid
-                return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
             if (option.updateOnly)
-            {
-                // if (auditType != DETAILED)  TODO skip for detailed
-                return new SampleUpdateAliquoteDataIterator(new CachingDataIterator(di), target, sampleTypeId);
-            }
+                return new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(di), target, sampleTypeId, di.supportsGetExistingRecord());
+
             return di;
         };
     }

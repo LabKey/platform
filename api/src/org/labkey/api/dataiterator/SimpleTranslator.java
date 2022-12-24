@@ -586,43 +586,43 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
     /** return aliquotedfromlsid if non-null, else return existingrecord.aliquotedfromlsid */
-    protected class SampleUpdateAliquotedFromLSIDColumn implements Supplier
-    {
-        final Integer _lsidCol;
-        final Integer _mapCol;
-
-        SampleUpdateAliquotedFromLSIDColumn(Integer first, Integer second)
-        {
-            _lsidCol = first;
-            _mapCol = second;
-        }
-
-        @Override
-        public Object get()
-        {
-            return null;
-            // TODO should get from existing record col only?
-//            Object v = null;
-//            if (_mapCol >= 0)
-//            {
-//                Object mapVal = _data.get(_mapCol);
-//                if (mapVal instanceof Map<?,?>)
-//                {
-//                    v = ((Map<?, ?>) mapVal).get("aliquotedfromlsid");
-//                    if (v instanceof String)
-//                        v = StringUtils.isEmpty((String)v) ? null : v;
-//                }
-//            }
+//    protected class SampleUpdateAliquotedFromLSIDColumn implements Supplier
+//    {
+//        final Integer _lsidCol;
+//        final Integer _mapCol;
 //
-//            if (_lsidCol >= 0)
-//                v = _data.get(_lsidCol);
-//            if (v instanceof String)
-//                v = StringUtils.isEmpty((String)v) ? null : v;
-//            if (null != v)
-//                return v;
-//            return v;
-        }
-    }
+//        SampleUpdateAliquotedFromLSIDColumn(Integer first, Integer second)
+//        {
+//            _lsidCol = first;
+//            _mapCol = second;
+//        }
+//
+//        @Override
+//        public Object get()
+//        {
+//            return null;
+//            // TODO should get from existing record col only?
+////            Object v = null;
+////            if (_mapCol >= 0)
+////            {
+////                Object mapVal = _data.get(_mapCol);
+////                if (mapVal instanceof Map<?,?>)
+////                {
+////                    v = ((Map<?, ?>) mapVal).get("aliquotedfromlsid");
+////                    if (v instanceof String)
+////                        v = StringUtils.isEmpty((String)v) ? null : v;
+////                }
+////            }
+////
+////            if (_lsidCol >= 0)
+////                v = _data.get(_lsidCol);
+////            if (v instanceof String)
+////                v = StringUtils.isEmpty((String)v) ? null : v;
+////            if (null != v)
+////                return v;
+////            return v;
+//        }
+//    }
 
     protected class SimpleConvertColumn implements Supplier<Object>
     {
@@ -1354,13 +1354,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addCoaleseColumn(name, firstIndex, _data.getSupplier(secondIndex));
     }
 
-    public int addSampleUpdateAliquotedFromColumn(String name, Integer firstIndex, Integer second)
-    {
-        var col = firstIndex != null && firstIndex > -1 ? new BaseColumnInfo(_data.getColumnInfo(firstIndex)) : new BaseColumnInfo(name, JdbcType.VARCHAR);
-        col.setName(name);
-        return addColumn(col, new SampleUpdateAliquotedFromLSIDColumn(firstIndex, second));
-    }
-
+//    public int addSampleUpdateAliquotedFromColumn(String name, Integer firstIndex, Integer second)
+//    {
+//        var col = firstIndex != null && firstIndex > -1 ? new BaseColumnInfo(_data.getColumnInfo(firstIndex)) : new BaseColumnInfo(name, JdbcType.VARCHAR);
+//        col.setName(name);
+//        return addColumn(col, new SampleUpdateAliquotedFromLSIDColumn(firstIndex, second));
+//    }
+//
 
     public int addNullColumn(String name, JdbcType type)
     {
