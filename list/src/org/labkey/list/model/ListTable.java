@@ -36,7 +36,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertUpdateDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.MvColumn;
@@ -529,7 +529,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportDIB()
         data = new _DataIteratorBuilder(data, context);
-        return new TableInsertUpdateDataIteratorBuilder(data, this)
+        return new TableInsertDataIteratorBuilder(data, this)
                 .setKeyColumns(new CaseInsensitiveHashSet(getPkColumnNames()));
     }
 
