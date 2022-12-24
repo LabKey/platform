@@ -519,7 +519,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            // Refuse to upgrade if any managed module has a schema version that's too old to upgrade. Issue 46922.
+            // Refuse to upgrade if any managed module has a schema version that's too old. Issue 46922.
 
             // Module contexts with non-null schema versions
             Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
@@ -538,7 +538,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             if (!tooOld.isEmpty())
             {
                 String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
-                throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading schema versions " + Constants.getEarliestUpgradeVersion() + " or greater.");
+                throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading from schema version " + Constants.getEarliestUpgradeVersion() + " and greater.");
             }
         }
 
