@@ -32,9 +32,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,String> aliquotParents = new HashMap<>();
 
-    boolean _useExistingRecord;
-
-    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useExistingRecord)
+    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId)
     {
         super(in);
 
@@ -43,8 +41,6 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         this.target = target;
 
         this._sampleTypeId = sampleTypeId;
-
-        this._useExistingRecord = useExistingRecord;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         this._aliquotedFromColIndex = map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
@@ -74,18 +70,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
             return _delegate.get(i);
         Integer rowNumber = (Integer)_delegate.get(0);
 
-        String lsid = null;
-
-        if (_useExistingRecord)
-        {
-            Map<String, Object> map = getExistingRecord();
-            if (map != null && map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME) != null)
-                lsid = (String) map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
-        }
-        else
-            lsid = aliquotParents.get(rowNumber);
-
-        return lsid;
+        return aliquotParents.get(rowNumber);
     }
 
     @Override
@@ -106,9 +91,6 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
 
     protected void prefetchExisting() throws BatchValidationException
     {
-        if (_useExistingRecord)
-            return;
-
         Integer rowNumber = (Integer)_delegate.get(0);
         if (rowNumber <= lastPrefetchRowNumber)
             return;
@@ -174,7 +156,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
 
             QueryUpdateService.InsertOption option = context.getInsertOption();
             if (option.updateOnly)
-                return new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(di), target, sampleTypeId, di.supportsGetExistingRecord());
+                return new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(di), target, sampleTypeId);
 
             return di;
         };

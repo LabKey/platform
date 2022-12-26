@@ -1017,12 +1017,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
                 addAliquotedFrom.selectAll();
 
-                var addAliquotedFromX = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), false);
+                var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId());
 
-                SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromX, context, sampleType, materialTable);
+                SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromDI, context, sampleType, materialTable);
                 return LoggingDataIterator.wrap(c);
             }
-
 
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
