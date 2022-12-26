@@ -4224,7 +4224,7 @@ public class QueryController extends SpringActionController
             if (behaviorType != null)
             {
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                String auditComment = json.getString("auditUserComment");
+                String auditComment = json.optString("auditUserComment", null);
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
