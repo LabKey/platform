@@ -1697,7 +1697,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ExportQueriesForm extends ExportQueryForm implements CustomApiForm
+    public static class ExportQueriesForm extends ExportQueryForm implements NewCustomApiForm
     {
         private String filename;
         private List<ExportQueryForm> queryForms;
@@ -1724,17 +1724,17 @@ public class QueryController extends SpringActionController
 
         /**
          * Map JSON to Spring PropertyValue objects.
-         * @param props
+         * @param json the properties
          */
-        private MutablePropertyValues getPropertyValues(org.json.old.JSONObject props)
+        private MutablePropertyValues getPropertyValues(JSONObject json)
         {
             // Collecting mapped properties as a list because adding them to an existing MutablePropertyValues object replaces existing values
             List<PropertyValue> properties = new ArrayList<>();
 
-            for(Map.Entry<String, Object> entry : props.entrySet())
+            for (String key : json.keySet())
             {
-                String key = entry.getKey();
-                if (entry.getValue() instanceof org.json.old.JSONArray val)
+                Object value = json.get(key);
+                if (value instanceof JSONArray val)
                 {
                     // Split arrays into individual pairs to be bound (Issue #45452)
                     for (int i = 0; i < val.length(); i++)
@@ -1744,7 +1744,7 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    properties.add(new PropertyValue(key, entry.getValue()));
+                    properties.add(new PropertyValue(key, value));
                 }
             }
 
@@ -1752,19 +1752,19 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            setFilename(props.get("filename").toString());
+            setFilename(json.get("filename").toString());
             List<ExportQueryForm> forms = new ArrayList<>();
 
-            org.json.old.JSONArray models = (org.json.old.JSONArray)props.get("queryForms");
+            JSONArray models = json.optJSONArray("queryForms");
             if (models == null)
             {
                 QueryController.LOG.error("No models to export; Form's `queryForms` property was null");
                 throw new RuntimeValidationException("No queries to export; Form's `queryForms` property was null");
             }
 
-            for (org.json.old.JSONObject queryModel : models.toJSONObjectArray())
+            for (JSONObject queryModel : JsonUtil.toJSONObjectList(models))
             {
                 ExportQueryForm qf = new ExportQueryForm();
                 qf.setViewContext(getViewContext());
