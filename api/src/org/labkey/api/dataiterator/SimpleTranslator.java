@@ -585,6 +585,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+
+
     protected class SimpleConvertColumn implements Supplier<Object>
     {
         final int index;
@@ -1315,13 +1317,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addCoaleseColumn(name, firstIndex, _data.getSupplier(secondIndex));
     }
 
-//    public int addSampleUpdateAliquotedFromColumn(String name, Integer firstIndex, Integer second)
-//    {
-//        var col = firstIndex != null && firstIndex > -1 ? new BaseColumnInfo(_data.getColumnInfo(firstIndex)) : new BaseColumnInfo(name, JdbcType.VARCHAR);
-//        col.setName(name);
-//        return addColumn(col, new SampleUpdateAliquotedFromLSIDColumn(firstIndex, second));
-//    }
-//
 
     public int addNullColumn(String name, JdbcType type)
     {
