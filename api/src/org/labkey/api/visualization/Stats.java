@@ -200,7 +200,7 @@ public class Stats
 
     private static Double[] getValuesFromRange(Double[] values, int start, int end)
     {
-        Double[] valuesFromRange = new Double[end-start+1];
+        Double[] valuesFromRange = new Double[end-start];
         if (end - start >= 0) System.arraycopy(values, start, valuesFromRange, 0, end - start);
         return valuesFromRange;
     }
