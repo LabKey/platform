@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
@@ -395,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, Container dataContainer)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer)
     {
         Map<String, String> importAliasMap = null;
         try
@@ -408,9 +409,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
 
         Container sampleTypeContainer = getContainer();
-        TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName());
-
         Container nameGenContainer = dataContainer != null ? dataContainer : sampleTypeContainer;
+
+        User user = User.getSearchUser();
+        ContainerFilter cf = null;
+
+        if (dataContainer != null && dataContainer.hasProductProjects())
+            cf = new ContainerFilter.CurrentPlusProjectAndShared(dataContainer, user); // use lookup CF
+
+        TableInfo parentTable = QueryService.get().getUserSchema(user, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
+
         return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
     }
 
