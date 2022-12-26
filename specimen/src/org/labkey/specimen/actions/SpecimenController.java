@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -1961,7 +1961,7 @@ public class SpecimenController extends SpringActionController
 
             List<JSONObject> completions = new ArrayList<>();
             for (AjaxCompletion completion : getAjaxCompletions(study))
-                completions.add(completion.toJSON());
+                completions.add(completion.toNewJSON());
 
             response.put("completions", completions);
             return response;

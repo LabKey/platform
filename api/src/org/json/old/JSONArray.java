@@ -978,4 +978,9 @@ public class JSONArray implements SafeToRender
         myArrayList.addAll(ja.myArrayList);
         return this;
     }
+
+    public static JSONArray toOldJsonArray(org.json.JSONArray jsonArray)
+    {
+        return new JSONArray(jsonArray.toString());
+    }
 }

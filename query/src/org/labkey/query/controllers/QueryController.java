@@ -33,9 +33,9 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1726,7 +1726,7 @@ public class QueryController extends SpringActionController
          * Map JSON to Spring PropertyValue objects.
          * @param props
          */
-        private MutablePropertyValues getPropertyValues(JSONObject props)
+        private MutablePropertyValues getPropertyValues(org.json.old.JSONObject props)
         {
             // Collecting mapped properties as a list because adding them to an existing MutablePropertyValues object replaces existing values
             List<PropertyValue> properties = new ArrayList<>();
@@ -1734,11 +1734,10 @@ public class QueryController extends SpringActionController
             for(Map.Entry<String, Object> entry : props.entrySet())
             {
                 String key = entry.getKey();
-                if (entry.getValue() instanceof JSONArray)
+                if (entry.getValue() instanceof org.json.old.JSONArray val)
                 {
                     // Split arrays into individual pairs to be bound (Issue #45452)
-                    JSONArray val = (JSONArray) entry.getValue();
-                    for(int i=0; i < val.length();i++)
+                    for (int i = 0; i < val.length(); i++)
                     {
                         properties.add(new PropertyValue(key, val.getString(i)));
                     }
@@ -1758,14 +1757,14 @@ public class QueryController extends SpringActionController
             setFilename(props.get("filename").toString());
             List<ExportQueryForm> forms = new ArrayList<>();
 
-            JSONArray models = (JSONArray)props.get("queryForms");
+            org.json.old.JSONArray models = (org.json.old.JSONArray)props.get("queryForms");
             if (models == null)
             {
                 QueryController.LOG.error("No models to export; Form's `queryForms` property was null");
                 throw new RuntimeValidationException("No queries to export; Form's `queryForms` property was null");
             }
 
-            for (JSONObject queryModel : models.toJSONObjectArray())
+            for (org.json.old.JSONObject queryModel : models.toJSONObjectArray())
             {
                 ExportQueryForm qf = new ExportQueryForm();
                 qf.setViewContext(getViewContext());
@@ -1890,7 +1889,7 @@ public class QueryController extends SpringActionController
 
 
     /**
-     * Can be used to generate an excel template for import into a table.  Supported URL params include:
+     * Can be used to generate an Excel template for import into a table.  Supported URL params include:
      * <dl>
      *     <dt>filenamePrefix</dt>
      *     <dd>the prefix of the excel file that is generated, defaults to '_data'</dd>
@@ -2377,12 +2376,12 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             if (json == null)
                 throw new NotFoundException("Empty request");
 
-            String schemaName = json.getString(QueryParam.schemaName.toString());
-            String queryName = json.getString(QueryParam.queryName.toString());
+            String schemaName = json.optString(QueryParam.schemaName.toString(), null);
+            String queryName = json.optString(QueryParam.queryName.toString(), null);
             if (schemaName == null || queryName == null)
                 throw new NotFoundException("schemaName and queryName are required");
 
@@ -3274,7 +3273,7 @@ public class QueryController extends SpringActionController
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             if (object == null)
             {
                 object = new JSONObject();
@@ -4103,7 +4102,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
         {
-            _json = apiSaveRowsForm.getJsonObject();
+            _json = apiSaveRowsForm.getNewJsonObject();
 
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
@@ -4206,7 +4205,7 @@ public class QueryController extends SpringActionController
                 if (null != jsonObj)
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
-                    rowMap.putAll(jsonObj);
+                    rowMap.putAll(jsonObj.toMap());
                     if (allowRowAttachments())
                         addRowAttachments(rowMap, idx);
 
@@ -4215,7 +4214,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            Map<String, Object> extraContext = json.optJSONObject("extraContext");
+            Map<String, Object> extraContext = json.optJSONObject("extraContext").toMap();
             if (extraContext == null)
                 extraContext = new CaseInsensitiveHashMap<>();
 
@@ -4267,7 +4266,7 @@ public class QueryController extends SpringActionController
                 if (json.has("provenance"))
                 {
                     JSONObject provenanceJSON = json.getJSONObject("provenance");
-                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), org.json.old.JSONObject.toOldJSONObject(provenanceJSON), ProvenanceService.ADD_RECORDING);
                     RecordedAction action = svc.createRecordedAction(getViewContext(), params);
                     if (action != null && params.getRecordingId() != null)
                     {
@@ -4275,13 +4274,12 @@ public class QueryController extends SpringActionController
                         if (json.has("rows"))
                         {
                             Object rowObject = json.get("rows");
-                            if (rowObject instanceof JSONArray)
+                            if (rowObject instanceof JSONArray jsonArray)
                             {
-                                JSONArray jsonRows = (JSONArray)rowObject;
                                 // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
                                 // be the row lsid but it configurable in the provenance recording params
                                 //
-                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, org.json.old.JSONArray.toOldJsonArray(jsonArray), responseRows);
                                 if (!provenanceMap.isEmpty())
                                 {
                                     action.getProvenanceMap().addAll(provenanceMap);
@@ -4488,7 +4486,7 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Empty request");
             }
 
-            Map<String, Object> extraContext = json.optJSONObject("extraContext");
+            JSONObject extraContext = json.optJSONObject("extraContext");
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -4540,10 +4538,10 @@ public class QueryController extends SpringActionController
                     // Copy the top-level 'extraContext' and merge in the command-level extraContext.
                     Map<String, Object> commandExtraContext = new HashMap<>();
                     if (extraContext != null)
-                        commandExtraContext.putAll(extraContext);
+                        commandExtraContext.putAll(extraContext.toMap());
                     if (commandObject.has("extraContext"))
                     {
-                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext"));
+                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
@@ -4553,7 +4551,7 @@ public class QueryController extends SpringActionController
                         return null;
 
                     //this would be populated in executeJson when a BatchValidationException is thrown
-                    if (commandResponse.containsKey("errors"))
+                    if (commandResponse.has("errors"))
                     {
                         errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
                     }
@@ -4585,6 +4583,7 @@ public class QueryController extends SpringActionController
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
+
             return new ApiSimpleResponse(result);
         }
     }
@@ -6185,7 +6184,7 @@ public class QueryController extends SpringActionController
                         // Collect children schemas
                         JSONObject children = new JSONObject();
                         visit(schema.getSchemas(_includeHidden), path, children);
-                        if (children.size() > 0)
+                        if (!children.isEmpty())
                             schemaProps.put("schemas", children);
 
                         // Add node's schemaProps to the parent's json.
@@ -6204,13 +6203,11 @@ public class QueryController extends SpringActionController
                 // Ensure consistent exception as other query actions
                 QueryForm.ensureSchemaNotNull(schema);
 
-                // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
+                // Create the JSON response by visiting the schema children. The parent schema information isn't included.
                 JSONObject ret = new JSONObject();
                 visitor.visitTop(schema.getSchemas(includeHidden), ret);
 
-                ApiSimpleResponse resp = new ApiSimpleResponse();
-                resp.putAll(ret);
-                return resp;
+                return new ApiSimpleResponse(ret);
             }
             else
             {

@@ -22,14 +22,15 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Helper methods for parsing JSON objects using Jackson.
@@ -135,10 +136,43 @@ public class JsonUtil
         if (!json.has(propName) || json.get(propName) == null)
             return null;
 
-        JSONArray jsonValues = (JSONArray)json.get(propName);
+        JSONArray jsonValues = json.getJSONArray(propName);
         String[] strValues = new String[jsonValues.length()];
         for (int i = 0; i < jsonValues.length(); i++)
             strValues[i] = jsonValues.getString(i);
         return strValues;
+    }
+
+    public static List<Map<String, Object>> toMapList(JSONArray array)
+    {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object o : array)
+        {
+            if (o != null && !(o instanceof Map))
+            {
+                throw new IllegalStateException("Array contains something other than a map, a " + o.getClass());
+            }
+            result.add((Map<String, Object>)o);
+        }
+        return result;
+    }
+
+    public static List<JSONObject> toJSONObjectList(JSONArray array)
+    {
+        List<JSONObject> result = new ArrayList<>();
+
+        for (Object o : array)
+        {
+            if (o instanceof JSONObject jo)
+            {
+                result.add(jo);
+            }
+            else
+            {
+                throw new IllegalStateException("Array contains something other than a JSONObject, a " + o.getClass());
+            }
+        }
+
+        return result;
     }
 }

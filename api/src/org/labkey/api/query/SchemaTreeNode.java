@@ -21,7 +21,7 @@ package org.labkey.api.query;
  */
 public interface SchemaTreeNode
 {
-    public String getName();
+    String getName();
 
     /**
      * Accept method used to implement the visitor pattern.
@@ -31,5 +31,5 @@ public interface SchemaTreeNode
      * @param <P> type of additional data.
      * @see SchemaTreeVisitor
      */
-    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param);
+    <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param);
 }
