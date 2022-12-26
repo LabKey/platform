@@ -168,7 +168,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer());
+        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer(), getUser());
     }
 
     @Override
@@ -921,13 +921,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final DataIteratorBuilder builder;
         final ExpMaterialTableImpl materialTable;
         final Container container;
+        final User user;
 
-        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container)
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container, User user)
         {
             this.sampleType = sampleType;
             this.builder = in;
             this.materialTable = materialTable;
             this.container = container;
+            this.user = user;
         }
 
         @Override
@@ -988,7 +990,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
                     .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampleType.getContainer()))
                     .addExtraPropsFn(() -> {
                         if (container != null)
@@ -1063,7 +1065,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         String generatedName = null;
 
-        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container dataContainer, MapDataIterator source, DataIteratorContext context, int batchSize)
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container dataContainer, User user, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
             super(source, context);
             this.sampleType = sampleType;
@@ -1081,8 +1083,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // do nothing
             }
-            nameGen = sampleType.getNameGenerator(dataContainer);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer);
+            nameGen = sampleType.getNameGenerator(dataContainer, user);
+            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user);
             if (nameGen != null)
                 nameState = nameGen.createState(true);
             else

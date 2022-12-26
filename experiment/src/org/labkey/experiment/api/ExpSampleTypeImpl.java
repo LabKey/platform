@@ -396,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user)
     {
         Map<String, String> importAliasMap = null;
         try
@@ -411,19 +411,20 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         Container sampleTypeContainer = getContainer();
         Container nameGenContainer = dataContainer != null ? dataContainer : sampleTypeContainer;
 
-        User user = User.getSearchUser();
+        User user_ = user == null ? User.getSearchUser() : user;
         ContainerFilter cf = null;
 
+        // Issue 46939: Naming Patterns for Not Working in Sub Projects
         if (dataContainer != null && dataContainer.hasProductProjects())
-            cf = new ContainerFilter.CurrentPlusProjectAndShared(dataContainer, user); // use lookup CF
+            cf = new ContainerFilter.CurrentPlusProjectAndShared(dataContainer, user_); // use lookup CF
 
-        TableInfo parentTable = QueryService.get().getUserSchema(user, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
+        TableInfo parentTable = QueryService.get().getUserSchema(user_, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
 
         return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
     }
 
     @Nullable
-    public NameGenerator getNameGenerator(Container dataContainer)
+    public NameGenerator getNameGenerator(Container dataContainer, @Nullable User user)
     {
         if (_nameGen == null)
         {
@@ -450,14 +451,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
 
             if (s != null)
-                _nameGen = createNameGenerator(s, dataContainer);
+                _nameGen = createNameGenerator(s, dataContainer, user);
         }
 
         return _nameGen;
     }
 
     @NotNull
-    public NameGenerator getAliquotNameGenerator(Container dataContainer)
+    public NameGenerator getAliquotNameGenerator(Container dataContainer, @Nullable User user)
     {
         if (_aliquotNameGen == null)
         {
@@ -467,7 +468,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             else
                 s = ALIQUOT_NAME_EXPRESSION;
 
-            _aliquotNameGen = createNameGenerator(s, dataContainer);
+            _aliquotNameGen = createNameGenerator(s, dataContainer, user);
         }
 
         return _aliquotNameGen;
@@ -492,14 +493,15 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             throws ExperimentException
     {
         NameGenerator nameGen;
+        User user = User.getSearchUser();
         if (expr != null)
         {
-            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
+            TableInfo parentTable = QueryService.get().getUserSchema(user, getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
             nameGen = new NameGenerator(expr, parentTable, getContainer());
         }
         else
         {
-            nameGen = getNameGenerator(getContainer());
+            nameGen = getNameGenerator(getContainer(), user);
             if (nameGen == null)
                 throw new ExperimentException("Error creating name expression generator");
         }
@@ -539,7 +541,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                                    @Nullable Container container)
             throws ExperimentException
     {
-        NameGenerator nameGen = getNameGenerator(container);
+        return createSampleName(rowMap, parentDatas, parentSamples, container, null);
+    }
+
+    @Override
+    public String createSampleName(@NotNull Map<String, Object> rowMap,
+                                   @Nullable Set<ExpData> parentDatas,
+                                   @Nullable Set<ExpMaterial> parentSamples,
+                                   @Nullable Container container,
+                                   @Nullable User user)
+            throws ExperimentException
+    {
+        NameGenerator nameGen = getNameGenerator(container, user);
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
