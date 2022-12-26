@@ -1961,7 +1961,7 @@ public class SpecimenController extends SpringActionController
 
             List<JSONObject> completions = new ArrayList<>();
             for (AjaxCompletion completion : getAjaxCompletions(study))
-                completions.add(completion.toNewJSON());
+                completions.add(completion.toJSON());
 
             response.put("completions", completions);
             return response;

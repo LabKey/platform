@@ -46,18 +46,7 @@ public final class AjaxCompletion extends Pair<String, String>
         return getValue();
     }
 
-    @Deprecated
-    public org.json.old.JSONObject toJSON()
-    {
-        org.json.old.JSONObject json = new org.json.old.JSONObject();
-
-        json.put("name", getDisplayText());
-        json.put("value", getInsertionText());
-
-        return json;
-    }
-
-    public JSONObject toNewJSON()
+    public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
 
