@@ -101,6 +101,13 @@ public class ScriptTaskImpl extends CommandTaskImpl
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 
+        // issue 46884 : don't allow script pipeline jobs for remote script engines
+        if (_engine instanceof ExternalScriptEngine externalScriptEngine)
+        {
+            if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
+                throw new PipelineJobException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a pipeline job." );
+        }
+
         try
         {
             @Nullable File scriptFile = null;

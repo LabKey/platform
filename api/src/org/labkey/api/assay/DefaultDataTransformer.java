@@ -38,7 +38,6 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewServlet;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -114,6 +113,13 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         .getEngineByExtension(context.getContainer(), FileUtil.getExtension(scriptFile), LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
+                    // issue : 46838 remote scripting engines don't support transform scripts yet
+                    if (engine instanceof ExternalScriptEngine externalScriptEngine)
+                    {
+                        if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
+                            throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
+                    }
+
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
                     // issue 13643: ensure script dir is initially empty
                     FileUtil.deleteDirectoryContents(scriptDir);
