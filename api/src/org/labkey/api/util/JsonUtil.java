@@ -148,11 +148,18 @@ public class JsonUtil
         List<Map<String, Object>> result = new ArrayList<>();
         for (Object o : array)
         {
-            if (o != null && !(o instanceof Map))
+            if (o instanceof Map<?, ?> map)
             {
-                throw new IllegalStateException("Array contains something other than a map, a " + o.getClass());
+                result.add((Map<String, Object>)map);
             }
-            result.add((Map<String, Object>)o);
+            else if (o instanceof JSONObject json)
+            {
+                result.add(json.toMap());
+            }
+            else
+            {
+                throw new IllegalStateException("Can't convert array object to a Map: " + o.getClass());
+            }
         }
         return result;
     }
