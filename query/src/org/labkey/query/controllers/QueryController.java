@@ -4214,9 +4214,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            Map<String, Object> extraContext = json.optJSONObject("extraContext").toMap();
-            if (extraContext == null)
-                extraContext = new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
 
