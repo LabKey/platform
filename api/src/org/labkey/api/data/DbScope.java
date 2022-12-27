@@ -2943,7 +2943,7 @@ public class DbScope
 
             Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
 
-            assertTrue(throwables.first instanceof DeadlockLoserDataAccessException || throwables.second instanceof DeadlockLoserDataAccessException );
+            assertTrue("Unexpected exceptions: " + throwables.first + "\n" + throwables.second, throwables.first instanceof DeadlockLoserDataAccessException || throwables.second instanceof DeadlockLoserDataAccessException );
         }
 
         /**
