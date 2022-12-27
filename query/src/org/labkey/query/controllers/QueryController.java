@@ -3656,7 +3656,7 @@ public class QueryController extends SpringActionController
 
             // Support for 'viewName'
             CustomView view = settings.getCustomView(getViewContext(), form.getQueryDef());
-            if (null != view && view.hasFilterOrSort())
+            if (null != view && view.hasFilterOrSort() && !settings.getIgnoreViewFilter())
             {
                 ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
                 view.applyFilterAndSortToURL(url, dataRegionName);
