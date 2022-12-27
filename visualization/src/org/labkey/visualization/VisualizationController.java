@@ -1587,7 +1587,7 @@ public class VisualizationController extends SpringActionController
             JSONArray members = !json.isNull("members") ? json.getJSONArray("members") : null;
             JSONArray sources = json.getJSONArray("sources");
             String schemaName = json.getString("schema");
-            String colName = json.getString("colName");
+            String colName = json.optString("colName", null);
 
             UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (userSchema == null)
