@@ -4144,9 +4144,9 @@ public class QueryController extends SpringActionController
             return container;
         }
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
+        protected Map<String, Object> executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
-            JSONObject response = new JSONObject();
+            Map<String, Object> response = new HashMap<>();
             Container container = getContainerForCommand(json);
             User user = getUser();
 
@@ -4384,7 +4384,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(getJsonObject(), CommandType.update, true, errors);
+            Map<String, Object> response = executeJson(getJsonObject(), CommandType.update, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4404,7 +4404,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(getJsonObject(), CommandType.insert, true, errors);
+            Map<String, Object> response = executeJson(getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
 
@@ -4425,7 +4425,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
+            Map<String, Object> response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4440,7 +4440,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(getJsonObject(), CommandType.delete, true, errors);
+            Map<String, Object> response = executeJson(getJsonObject(), CommandType.delete, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4543,15 +4543,15 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
+                    Map<String, Object> commandResponse = executeJson(commandObject, command, !transacted, errors);
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
 
                     //this would be populated in executeJson when a BatchValidationException is thrown
-                    if (commandResponse.has("errors"))
+                    if (commandResponse.containsKey("errors"))
                     {
-                        errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
+                        errorCount += ((org.json.old.JSONObject)commandResponse.get("errors")).getInt("errorCount");
                     }
 
                     // If we encountered errors with this particular command and the client requested that don't treat
@@ -4577,7 +4577,7 @@ public class QueryController extends SpringActionController
             }
 
             errorCount += errors.getErrorCount();
-            JSONObject result = new JSONObject();
+            Map<String, Object> result = new HashMap<>();
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
