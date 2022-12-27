@@ -926,7 +926,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
-                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
+                TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
+                if (c.hasProductProjects() && !c.isProject())
+                {
+                    User user = getUserSchema().getUser();
+                    ContainerFilter cf = new ContainerFilter.CurrentPlusProjectAndShared(c, user); // use lookup CF
+                    dataClassTInfo = QueryService.get().getUserSchema(user, c, "exp.data").getTable(getName(), cf);
+                }
+
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, dataClassTInfo, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
                         .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
                         .addExtraPropsFn(() -> {
                             if (c != null)
