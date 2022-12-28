@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.17.1",
-    "@labkey/components": "2.273.4-fb-appProjectMenuConsolidation.2",
+    "@labkey/components": "2.273.4-fb-appProjectMenuConsolidation.3",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
