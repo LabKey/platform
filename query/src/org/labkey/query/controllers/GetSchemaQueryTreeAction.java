@@ -49,7 +49,8 @@ import java.util.TreeMap;
  * Date: Sep 3, 2009
  * Time: 1:09:00 PM
  *
- * This class is used by the schema explorer query tree only
+ * This class is used by the schema browser and the linked schema admin page (because getQueries.api can be much more
+ * expensive)
  */
 
 @RequiresPermission(ReadPermission.class)
