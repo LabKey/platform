@@ -929,6 +929,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
                 if (c.hasProductProjects() && !c.isProject())
                 {
+                    // Issue 46939: Naming Patterns for Not Working in Sub Projects
                     User user = getUserSchema().getUser();
                     ContainerFilter cf = new ContainerFilter.CurrentPlusProjectAndShared(c, user); // use lookup CF
                     dataClassTInfo = QueryService.get().getUserSchema(user, c, "exp.data").getTable(getName(), cf);
