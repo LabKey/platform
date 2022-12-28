@@ -18,8 +18,8 @@ package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -71,7 +72,7 @@ public class CustomViewUtil
         if (jsonColumns == null || jsonColumns.length() == 0)
             throw new IllegalArgumentException("You must select at least one field to display in the grid.");
 
-        for (Map<String, Object> column : jsonColumns.toMapList())
+        for (Map<String, Object> column : JsonUtil.toMapList(jsonColumns))
         {
             FieldKey key = FieldKey.fromString((String)column.get("fieldKey"));
             String title = column.containsKey("title") ? StringUtils.trimToNull((String)column.get("title")) : null;
@@ -93,7 +94,7 @@ public class CustomViewUtil
         JSONArray jsonFilters = jsonView.optJSONArray("filter");
         if (jsonFilters != null && jsonFilters.length() > 0)
         {
-            for (Map<String, Object> filterInfo : jsonFilters.toMapList())
+            for (Map<String, Object> filterInfo : JsonUtil.toMapList(jsonFilters))
             {
                 String fieldKey = (String)filterInfo.get("fieldKey");
                 String op = Objects.toString(filterInfo.get("op"), "");
@@ -106,7 +107,7 @@ public class CustomViewUtil
         if (jsonSorts != null && jsonSorts.length() > 0)
         {
             Sort sort = new Sort();
-            for (Map<String, Object> sortInfo : jsonSorts.toMapList())
+            for (Map<String, Object> sortInfo : JsonUtil.toMapList(jsonSorts))
             {
                 String fieldKey = (String)sortInfo.get("fieldKey");
                 String dir = (String)sortInfo.get("dir");
@@ -122,7 +123,7 @@ public class CustomViewUtil
         JSONArray jsonAggregates = jsonView.optJSONArray("aggregates");
         if (jsonAggregates != null && jsonAggregates.length() > 0)
         {
-            for (Map<String, Object> aggInfo : jsonAggregates.toMapList())
+            for (Map<String, Object> aggInfo : JsonUtil.toMapList(jsonAggregates))
             {
                 String fieldKey = StringUtils.trimToNull((String)aggInfo.get("fieldKey"));
                 String type = StringUtils.trimToNull((String)aggInfo.get("type"));
@@ -138,7 +139,7 @@ public class CustomViewUtil
         JSONArray jsonAnalyticsProviders = jsonView.optJSONArray("analyticsProviders");
         if (jsonAnalyticsProviders != null && jsonAnalyticsProviders.length() > 0)
         {
-            for (Map<String, Object> apInfo : jsonAnalyticsProviders.toMapList())
+            for (Map<String, Object> apInfo : JsonUtil.toMapList(jsonAnalyticsProviders))
             {
                 String fieldKey = StringUtils.trimToNull((String)apInfo.get("fieldKey"));
                 String name = StringUtils.trimToNull((String)apInfo.get("name"));

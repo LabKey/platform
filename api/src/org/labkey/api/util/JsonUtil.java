@@ -22,14 +22,15 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Helper methods for parsing JSON objects using Jackson.
@@ -132,13 +133,53 @@ public class JsonUtil
 
     public static String[] getStringArray(JSONObject json, String propName)
     {
-        if (!json.has(propName) || json.get(propName) == null)
+        JSONArray jsonValues = json.optJSONArray(propName);
+        if (null == jsonValues)
             return null;
 
-        JSONArray jsonValues = (JSONArray)json.get(propName);
         String[] strValues = new String[jsonValues.length()];
         for (int i = 0; i < jsonValues.length(); i++)
             strValues[i] = jsonValues.getString(i);
         return strValues;
+    }
+
+    public static List<Map<String, Object>> toMapList(JSONArray array)
+    {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object o : array)
+        {
+            if (o instanceof Map<?, ?> map)
+            {
+                result.add((Map<String, Object>)map);
+            }
+            else if (o instanceof JSONObject json)
+            {
+                result.add(json.toMap());
+            }
+            else
+            {
+                throw new IllegalStateException("Can't convert array object to a Map: " + o.getClass());
+            }
+        }
+        return result;
+    }
+
+    public static List<JSONObject> toJSONObjectList(JSONArray array)
+    {
+        List<JSONObject> result = new ArrayList<>();
+
+        for (Object o : array)
+        {
+            if (o instanceof JSONObject jo)
+            {
+                result.add(jo);
+            }
+            else
+            {
+                throw new IllegalStateException("Array contains something other than a JSONObject, a " + o.getClass());
+            }
+        }
+
+        return result;
     }
 }

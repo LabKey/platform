@@ -16,7 +16,7 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -704,7 +704,7 @@ public class SpecimenApiController extends SpringActionController
             if (groupingsJSON.isEmpty())
             {
                 // no groupings; create default grouping
-                Map<String, Object> groupingJSON = new JSONObject();
+                Map<String, Object> groupingJSON = new JSONObject().toMap();
                 groupingJSON.put("dummy", true);
                 groupingsJSON.add(groupingJSON);
             }
