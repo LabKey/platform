@@ -1428,4 +1428,9 @@ public class JSONObject extends HashMap<String, Object> implements SafeToRender
     {
         return new org.json.JSONObject(toString());
     }
+
+    public static JSONObject toOldJSONObject(org.json.JSONObject jsonObject)
+    {
+        return new JSONObject(jsonObject.toString());
+    }
 }
