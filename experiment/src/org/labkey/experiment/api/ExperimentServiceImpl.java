@@ -7511,7 +7511,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            LOG.info("Saving data class", dataClass.getName());
+            LOG.debug("Saving data class", dataClass.getName());
             dataClass.save(u);
             if (hasNameChange)
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);

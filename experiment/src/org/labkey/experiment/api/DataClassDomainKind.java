@@ -372,7 +372,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
-        LOG.info("Getting tableInfo for table " + name);
+        LOG.debug("Getting tableInfo for table " + name);
         UserSchema schema = new DataClassUserSchema(container, user);
         return schema.getTable(name, cf);
     }
@@ -380,7 +380,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public void invalidate(Domain domain)
     {
-        LOG.info("Invalidating data class domain " + domain.getStorageTableName());
+        LOG.debug("Invalidating data class domain " + domain.getStorageTableName());
         super.invalidate(domain);
 
         ExpDataClass dc = getDataClass(domain);
