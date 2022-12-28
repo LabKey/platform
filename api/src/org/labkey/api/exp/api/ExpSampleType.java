@@ -189,6 +189,12 @@ public interface ExpSampleType extends ExpObject
                             @Nullable Set<ExpMaterial> parentSamples,
                             @Nullable Container container) throws ExperimentException;
 
+    String createSampleName(@NotNull Map<String, Object> rowMap,
+                            @Nullable Set<ExpData> parentDatas,
+                            @Nullable Set<ExpMaterial> parentSamples,
+                            @Nullable Container container,
+                            @Nullable User user
+    ) throws ExperimentException;
 
     void setIdCol1(String s);
 

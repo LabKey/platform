@@ -323,6 +323,11 @@ public class QueryView extends WebPartView<Object>
                 (getSettings() != null && getSettings().getIgnoreUserFilter());
     }
 
+    // ignores filters on the custom view but not those added through query settings
+    protected boolean ignoreViewFilter()
+    {
+        return getSettings() != null && getSettings().getIgnoreViewFilter();
+    }
 
     protected void renderErrors(PrintWriter out, String message, List<? extends Throwable> errors)
     {
@@ -2227,7 +2232,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         ActionURL customViewUrl = null;
-        if (_customView != null && _customView.hasFilterOrSort())
+        if (_customView != null && _customView.hasFilterOrSort() && !ignoreViewFilter())
         {
             customViewUrl = new ActionURL();
             _customView.applyFilterAndSortToURL(customViewUrl, getDataRegionName());
