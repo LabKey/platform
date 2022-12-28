@@ -16,7 +16,6 @@
 
 package org.labkey.study.query;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
@@ -43,8 +42,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.TitleForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
@@ -166,6 +163,7 @@ public class ParticipantTable extends BaseStudyTable
         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _userSchema.getUser()))
         {
             var categoryColumn = new ParticipantCategoryColumn(category, this);
+            assert initialColumnsAreAdded(); // addColumn() calls above should have initialized the columns
             if (!_columnMap.containsKey(categoryColumn.getName()))
                 addColumn(categoryColumn);
         }

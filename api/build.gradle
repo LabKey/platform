@@ -27,8 +27,6 @@ List apache = [
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "commons-pool:commons-pool:${commonsPoolVersion}",
         "commons-validator:commons-validator:${commonsValidatorVersion}",
-        "org.apache.httpcomponents:httpclient:${httpclientVersion}",
-        "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
         "org.apache.httpcomponents.client5:httpclient5:${httpclient5Version}",
         "org.apache.httpcomponents.core5:httpcore5:${httpcore5Version}",
         "org.apache.poi:poi:${poiVersion}",
