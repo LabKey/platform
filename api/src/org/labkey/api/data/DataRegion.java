@@ -1391,6 +1391,11 @@ public class DataRegion extends DisplayElement
             ignoreFilter = getSettings().getIgnoreUserFilter();
         dataRegionJSON.put("ignoreFilter", ignoreFilter);
 
+        boolean ignoreViewFilter = false;
+        if (getSettings() != null)
+            ignoreViewFilter = getSettings().getIgnoreViewFilter();
+        dataRegionJSON.put("ignoreViewFilter", ignoreViewFilter);
+
         VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if (visUrlProvider != null)
             dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings(), null));
