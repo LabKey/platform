@@ -831,6 +831,7 @@ public class DomainUtil
         if (pd.getPropertyId() > 0)
             return null;
 
+        LOG.debug("Adding property for " + pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
             String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + Lsid.encodePart(pd.getName()), propertyUrisInUse);
@@ -841,8 +842,10 @@ public class DomainUtil
 
         // UNDONE: DomainProperty does not support all PropertyDescriptor fields
         DomainProperty p = domain.addProperty();
+        LOG.debug("Property added as string property");
         defaultValues.put(p, pd.getDefaultValue());
         _copyProperties(p, pd, errors);
+        LOG.debug("Properties copied from " + pd + " to " + p.getPropertyDescriptor() );
         updatePropertyValidators(p, null, pd);
 
         return p;
