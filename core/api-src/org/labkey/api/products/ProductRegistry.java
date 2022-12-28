@@ -110,7 +110,7 @@ public class ProductRegistry
     }
 
     @NotNull
-    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String userMenuProductId, @Nullable List<String> origProductIds, @Nullable Integer itemLimit)
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String userMenuProductId, @Nullable List<String> origProductIds)
     {
         List<String> productIds = origProductIds == null ? getProductIdsForContainer(context.getContainer()) : origProductIds;
 
@@ -122,7 +122,7 @@ public class ProductRegistry
             {
                 if (userMenuProvider == null)
                     userMenuProvider = _productMap.get(productId);
-                sections.addAll(_productMap.get(productId).getSections(context, itemLimit));
+                sections.addAll(_productMap.get(productId).getSections(context));
             }
         }
         // always include the user menu as the last item
@@ -132,25 +132,25 @@ public class ProductRegistry
     }
 
     @NotNull
-    public List<MenuSection> getMenuSections(@NotNull ViewContext context, @NotNull String productId, @Nullable Integer itemLimit)
+    public List<MenuSection> getMenuSections(@NotNull ViewContext context, @NotNull String productId)
     {
         if (!_productMap.containsKey(productId))
         {
             return Collections.emptyList();
         }
         ProductMenuProvider provider = _productMap.get(productId);
-        List<MenuSection> sections = provider.getSections(context, itemLimit);
+        List<MenuSection> sections = provider.getSections(context);
         // always include the user menu as the last item
         sections.add(new UserInfoMenuSection(context, provider));
         return sections;
     }
 
     @Nullable
-    public MenuSection getMenuSection(@NotNull ViewContext context, @NotNull String name, @Nullable Integer itemLimit)
+    public MenuSection getMenuSection(@NotNull ViewContext context, @NotNull String name)
     {
         if (_sectionMap.containsKey(name))
         {
-            return _sectionMap.get(name).getSection(context, name, itemLimit);
+            return _sectionMap.get(name).getSection(context, name);
         }
         else
         {
@@ -160,11 +160,11 @@ public class ProductRegistry
     }
 
     @NotNull
-    public List<MenuSection> getMenuSections(@NotNull ViewContext context, @NotNull List<String> sectionNames, @Nullable Integer itemLimit)
+    public List<MenuSection> getMenuSections(@NotNull ViewContext context, @NotNull List<String> sectionNames)
     {
         List<MenuSection> items = new ArrayList<>();
         sectionNames.forEach((name) -> {
-            MenuSection section = getMenuSection(context, name, itemLimit);
+            MenuSection section = getMenuSection(context, name);
             if (section != null)
                 items.add(section);
             else
@@ -190,9 +190,9 @@ public class ProductRegistry
         private static class TestMenuSection extends MenuSection
         {
 
-            public TestMenuSection(@NotNull ViewContext context, @NotNull String label, @Nullable String iconClass, @Nullable Integer itemLimit)
+            public TestMenuSection(@NotNull ViewContext context, @NotNull String label, @Nullable String iconClass)
             {
-                super(context, label, iconClass, itemLimit, VALID_PRODUCT_ID);
+                super(context, label, iconClass, VALID_PRODUCT_ID);
             }
 
             @Override
@@ -239,10 +239,10 @@ public class ProductRegistry
             }
 
             @Override
-            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Integer itemLimit)
+            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName)
             {
                 if (_sectionNames.contains(sectionName))
-                    return new TestMenuSection(context, sectionName, sectionName, itemLimit);
+                    return new TestMenuSection(context, sectionName, sectionName);
                 return null;
             }
         }
@@ -280,16 +280,16 @@ public class ProductRegistry
         public void getMenuSectionsByProductId()
         {
             ViewContext context = HttpView.currentContext();
-            assertTrue("Should get no sections when using an unregistered product id", registry.getMenuSections(context, "bogus", null).isEmpty());
+            assertTrue("Should get no sections when using an unregistered product id", registry.getMenuSections(context, "bogus").isEmpty());
 
-            List<MenuSection> sections = registry.getMenuSections(context, VALID_PRODUCT_ID, null);
+            List<MenuSection> sections = registry.getMenuSections(context, VALID_PRODUCT_ID);
             assertEquals("Number of sections not as expected", 4, sections.size());
             assertEquals("First section not as expected or with unexpected label", "section X", sections.get(0).getLabel());
             assertEquals("Second section not as expected or with unexpected label", "Section B", sections.get(1).getLabel());
             assertEquals("Third section not as expected or with unexpected label", "section b2", sections.get(2).getLabel());
             assertEquals("Fourth section not as expected or with unexpected label", UserInfoMenuSection.NAME, sections.get(3).getLabel());
 
-            sections = registry.getMenuSections(context, VALID_PRODUCT_ID_2, null);
+            sections = registry.getMenuSections(context, VALID_PRODUCT_ID_2);
             assertEquals("Number of menu sections not as expected when provider has no sections", 1, sections.size());
             assertEquals("User section label not as expected", UserInfoMenuSection.NAME,  sections.get(0).getLabel());
         }
@@ -298,9 +298,9 @@ public class ProductRegistry
         public void getMenuSectionsByName()
         {
             ViewContext context = HttpView.currentContext();
-            assertTrue("Should get no sections when using unknown names", registry.getMenuSections(context, List.of("Unknown1", "also unknown"), null).isEmpty());
+            assertTrue("Should get no sections when using unknown names", registry.getMenuSections(context, List.of("Unknown1", "also unknown")).isEmpty());
 
-            List<MenuSection> sections = registry.getMenuSections(context, List.of("section X", "Unknown", "section b2"), null);
+            List<MenuSection> sections = registry.getMenuSections(context, List.of("section X", "Unknown", "section b2"));
             assertEquals("Number of sections not as expected", 2, sections.size());
             assertEquals("First section not as expected or with unexpected label", "section X", sections.get(0).getLabel());
             assertEquals("Second section not as expected or with unexpected label", "section b2", sections.get(1).getLabel());

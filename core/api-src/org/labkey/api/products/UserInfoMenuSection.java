@@ -31,7 +31,7 @@ public class UserInfoMenuSection extends MenuSection
 
     public UserInfoMenuSection(ViewContext context, ProductMenuProvider provider)
     {
-        super(context, NAME, "user", null, provider != null ? provider.getProductId() : null);
+        super(context, NAME, "user", provider != null ? provider.getProductId() : null);
         _provider = provider;
     }
 
