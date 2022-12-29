@@ -4144,9 +4144,9 @@ public class QueryController extends SpringActionController
             return container;
         }
 
-        protected Map<String, Object> executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
-            Map<String, Object> response = new HashMap<>();
+            JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
 
@@ -4205,7 +4205,8 @@ public class QueryController extends SpringActionController
                 if (null != jsonObj)
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
-                    rowMap.putAll(jsonObj.toMap());
+                    // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
+                    jsonObj.keySet().forEach(key -> rowMap.put(key, jsonObj.get(key)));
                     if (allowRowAttachments())
                         addRowAttachments(rowMap, idx);
 
@@ -4384,7 +4385,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.update, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.update, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4404,7 +4405,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.insert, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
 
@@ -4425,7 +4426,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4440,7 +4441,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.delete, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.delete, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4543,13 +4544,13 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    Map<String, Object> commandResponse = executeJson(commandObject, command, !transacted, errors);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
 
                     //this would be populated in executeJson when a BatchValidationException is thrown
-                    if (commandResponse.containsKey("errors"))
+                    if (commandResponse.has("errors"))
                     {
                         errorCount += ((org.json.old.JSONObject)commandResponse.get("errors")).getInt("errorCount");
                     }
@@ -4577,7 +4578,7 @@ public class QueryController extends SpringActionController
             }
 
             errorCount += errors.getErrorCount();
-            Map<String, Object> result = new HashMap<>();
+            JSONObject result = new JSONObject();
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
