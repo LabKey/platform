@@ -96,7 +96,7 @@ public class MiniProfiler
 
     public static boolean isEnabled(User user)
     {
-        if (ModuleLoader.getInstance().isStartupComplete())
+        if (!ModuleLoader.getInstance().isStartupComplete())
             return false;
 
         // CONSIDER: Add CanSeeProfilingPermission ?
