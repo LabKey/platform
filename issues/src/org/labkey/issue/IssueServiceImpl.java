@@ -81,7 +81,11 @@ public class IssueServiceImpl implements IssueService
                         }
                         issueObject.resolve(user);
                     }
-                    case reopen -> issueObject.open(container, user);
+                    case reopen -> {
+                        // issue 46952 ensure resolution is cleared on reopen
+                        issueObject.beforeReOpen(container, false);
+                        issueObject.open(container, user);
+                    }
                     case close -> issueObject.close(user);
                 }
 

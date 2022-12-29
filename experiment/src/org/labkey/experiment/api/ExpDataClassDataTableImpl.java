@@ -30,7 +30,26 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CoerceDataIterator;
@@ -115,8 +134,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 
 /**
  * User: kevink
@@ -709,6 +728,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
             for (String excludeKey : excludeColumns)
                 url.addParameter("excludeColumn", excludeKey);
+            url.addParameter("filenamePrefix", this.getName());
             templates.add(Pair.of("Download Template", url.toString()));
             return templates;
 
@@ -909,6 +929,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
                 if (c.hasProductProjects() && !c.isProject())
                 {
+                    // Issue 46939: Naming Patterns for Not Working in Sub Projects
                     User user = getUserSchema().getUser();
                     ContainerFilter cf = new ContainerFilter.CurrentPlusProjectAndShared(c, user); // use lookup CF
                     dataClassTInfo = QueryService.get().getUserSchema(user, c, "exp.data").getTable(getName(), cf);

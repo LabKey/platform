@@ -750,6 +750,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
                         if (schema != null)
                         {
                             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
+                            // issue 41377 : ignore any filters on the default view
+                            settings.setIgnoreViewFilter(true);
 
                             Object value = survey.getResponsesPk();
                             if (value == null)
@@ -783,7 +785,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                             surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
                                             false, false, false);
 
-                                    // add some of the survey record information to the response
+                                    // add some survey record information to the response
                                     Map<String, Object> extraProps = new HashMap<>();
                                     extraProps.put("rowId", survey.getRowId());
                                     extraProps.put("label", survey.getLabel());
