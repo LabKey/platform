@@ -263,7 +263,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         boolean identityMapping = true;
         for (FieldKey originalField : suggested)
         {
-            // Check if the field has already be remapped
+            // Check if the field has already been remapped
             FieldKey field = getRemappedField(originalField);
             FieldKey remappedField = mapping == null ? field : mapping.get(field);
             if (remappedField == null)
