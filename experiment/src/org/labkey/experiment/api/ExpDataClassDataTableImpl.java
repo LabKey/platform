@@ -1054,7 +1054,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean filterByContainer) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
@@ -1068,7 +1068,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid");
 
-            if (filterByContainer)
+            if (!allowCrossContainer)
                 sql.append(" WHERE d.Container=?").add(container.getEntityId());
             if (null != rowid)
                 sql.append(" AND d.rowid=?").add(rowid);

@@ -803,7 +803,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (checkCrossFolderData)
                 {
                     String dataContainer = (String) row.get("folder");
-                    if (dataContainer.equals(container.getId()))
+                    if (!dataContainer.equals(container.getId()))
                         throw new InvalidKeyException("TODO");
                 }
             }

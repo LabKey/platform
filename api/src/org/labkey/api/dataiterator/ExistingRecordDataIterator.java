@@ -22,6 +22,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -71,8 +72,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         this.existingColIndex = in.getColumnCount()+1;
         this.useMark = useMark;
 
-        user = target.getUserSchema().getUser();
-        c = target.getUserSchema().getContainer();
+        UserSchema userSchema = target.getUserSchema();
+        user = userSchema != null ? userSchema.getUser() : null;
+        c = userSchema != null ? userSchema.getContainer() : null;
         boolean isExpDataOrMaterial = target instanceof ExpMaterialTable || target instanceof ExpDataClassDataTable;
         _checkCrossFolderData = isExpDataOrMaterial && (option.updateOnly || option.mergeRows);
         _verifyExisting = option.updateOnly;
