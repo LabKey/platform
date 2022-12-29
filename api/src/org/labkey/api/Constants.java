@@ -35,8 +35,17 @@ import java.util.function.Function;
 public class Constants
 {
     /**
+     * Returns the current "base" schema version, the lowest schema version for modules that LabKey manages. The year
+     * portion gets incremented annually in late December, just before we create the xx.1 branch.
+     */
+    public static double getLowestSchemaVersion()
+    {
+        return 23.000;
+    }
+
+    /**
      * Returns the earliest core module schema version that this server will upgrade. This constant should be updated
-     * every major release.
+     * annually in early January, just after we create the xx.1 branch.
      */
     public static double getEarliestUpgradeVersion()
     {
@@ -50,15 +59,6 @@ public class Constants
     public static String getDocumentationVersion()
     {
         return "22.11";
-    }
-
-    /**
-     * Returns the current "base" schema version, the lowest schema version for modules that LabKey manages. The year
-     * portion gets incremented annually in late December, just before we create the xx.1 branch.
-     */
-    public static double getLowestSchemaVersion()
-    {
-        return 22.000;
     }
 
     /**
