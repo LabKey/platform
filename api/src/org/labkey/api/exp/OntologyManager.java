@@ -184,7 +184,6 @@ public class OntologyManager
             Container c = ContainerManager.getForId(key.second);
             if (null == c)
                 return Collections.emptyList();
-            // If we aren't seeing this SQL query, we aren't repopulating the properties cache
             SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
