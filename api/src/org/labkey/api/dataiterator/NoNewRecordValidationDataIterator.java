@@ -39,6 +39,9 @@ public class NoNewRecordValidationDataIterator extends RecordValidationDataItera
             if (null == di)
                 return null;
 
+            if (di.supportsGetExistingRecord()) // use ExistingRecordDataIterator to verify data existence
+                return di;
+
             QueryUpdateService.InsertOption option = context.getInsertOption();
             Container container = target.getUserSchema() == null ? null : target.getUserSchema().getContainer();
             if (option.updateOnly && container != null)

@@ -1010,9 +1010,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
-        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
+        {
+            return getRow(user, container, keys, false);
+        }
+
+        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException
         {
             aliasColumns(_columnMapping, keys);
 
@@ -1027,7 +1033,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null==rowid && null==lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId);
+            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
 
             //PostgreSQL includes a column named _row for the row index, but since this is selecting by
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -1048,7 +1054,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean filterByContainer) throws ConversionException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
@@ -1060,8 +1066,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid")
-                    .append(" WHERE d.Container=?").add(container.getEntityId());
+                    .append(" ON d.lsid = t.lsid");
+
+            if (filterByContainer)
+                sql.append(" WHERE d.Container=?").add(container.getEntityId());
             if (null != rowid)
                 sql.append(" AND d.rowid=?").add(rowid);
             else if (null != lsid)

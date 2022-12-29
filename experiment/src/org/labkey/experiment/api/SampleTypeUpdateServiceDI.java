@@ -713,14 +713,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container)
-            throws QueryUpdateServiceException
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting)
+            throws QueryUpdateServiceException, InvalidKeyException
     {
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
@@ -787,6 +787,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
 
+            Set<String> allNames = new HashSet<>(nameRowNumMap.keySet());
+
             Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -795,7 +797,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 String sampleLsid = (String) row.get("lsid");
                 sampleRows.put(rowNum, row);
                 rowNumLsid.put(rowNum, sampleLsid);
+
+                allNames.remove(name);
+
+                if (checkCrossFolderData)
+                {
+                    String dataContainer = (String) row.get("folder");
+                    if (dataContainer.equals(container.getId()))
+                        throw new InvalidKeyException("TODO");
+                }
             }
+
+            if (verifyExisting && !allNames.isEmpty())
+                throw new InvalidKeyException("TODO");
+
         }
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());

@@ -2008,21 +2008,21 @@ public class ExpDataIterators
                 keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
             }
 
-            // Check if record exist in related folder as cross folder merge is not supported
-            // this is a NOOP unless we are merging/updating and QueryService.get().isProductProjectsEnabled()
-            DataIteratorBuilder step1 = CrossFolderRecordDataIterator.createBuilder(step0, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
-
-            // Check if record exist in related folder as cross folder merge is not supported
-            // this is a NOOP unless we are updating
-            DataIteratorBuilder step1a = NoNewRecordValidationDataIterator.createBuilder(step1, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
-
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
             Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
             if (context.getInsertOption().updateOnly)
                 existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
 
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1a, _expTable, existingRecordKey, true);
+            DataIteratorBuilder step1 = ExistingRecordDataIterator.createBuilder(step0, _expTable, existingRecordKey, true);
+
+            // Check if record exist in related folder as cross folder merge is not supported
+            // this is a NOOP unless we are merging/updating and QueryService.get().isProductProjectsEnabled() and ExistingRecordDataIterator is not enabled
+            DataIteratorBuilder step1a = CrossFolderRecordDataIterator.createBuilder(step1, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
+
+            // Check if record exist in related folder as cross folder merge is not supported
+            // this is a NOOP unless we are updating and ExistingRecordDataIterator is not enabled
+            DataIteratorBuilder step2 = NoNewRecordValidationDataIterator.createBuilder(step1a, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)

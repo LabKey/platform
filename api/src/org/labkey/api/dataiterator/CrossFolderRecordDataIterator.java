@@ -1,22 +1,13 @@
 package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 // throws error if key values found in related folders
 public class CrossFolderRecordDataIterator extends RecordValidationDataIterator
@@ -41,6 +32,9 @@ public class CrossFolderRecordDataIterator extends RecordValidationDataIterator
             DataIterator di = dib.getDataIterator(context);
             if (null == di)
                 return null;
+
+            if (di.supportsGetExistingRecord()) // use ExistingRecordDataIterator to verify data folder
+                return di;
 
             QueryUpdateService.InsertOption option = context.getInsertOption();
             Container container = target.getUserSchema() == null ? null : target.getUserSchema().getContainer();

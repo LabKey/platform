@@ -13,6 +13,8 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -20,13 +22,16 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +55,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark)
+    final User user;
+    final Container c;
+    final boolean _checkCrossFolderData;
+    final boolean _verifyExisting;
+
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, QueryUpdateService.InsertOption option)
     {
         super(in);
 
@@ -60,6 +70,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         this.target = target;
         this.existingColIndex = in.getColumnCount()+1;
         this.useMark = useMark;
+
+        user = target.getUserSchema().getUser();
+        c = target.getUserSchema().getContainer();
+        boolean isExpDataOrMaterial = target instanceof ExpMaterialTable || target instanceof ExpDataClassDataTable;
+        _checkCrossFolderData = isExpDataOrMaterial && (option.updateOnly || option.mergeRows);
+        _verifyExisting = option.updateOnly;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
@@ -163,7 +179,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         return createBuilder(dib, target, keys, false);
     }
 
-
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, boolean useGetRows)
     {
         return context ->
@@ -183,9 +198,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 if (auditType == DETAILED)
                 {
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, option);
                     else
-                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys);
+                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, option);
                 }
             }
             return di;
@@ -196,15 +211,16 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     /* Select using normal TableInfo stuff */
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, QueryUpdateService.InsertOption option)
         {
-            super(in, target, keys, true);
+            super(in, target, keys, true, option);
         }
 
-        private SQLFragment getSelectExistingSql(int rows) throws BatchValidationException
+        private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
         {
             SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
+            Set<Integer> rowNums = new HashSet<>();
             do
             {
                 lastPrefetchRowNumber = (Integer) _delegate.get(0);
@@ -216,6 +232,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
+                rowNums.add(lastPrefetchRowNumber);
             }
             while (--rows > 0 && _delegate.next());
 
@@ -235,7 +252,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
                 and = " AND ";
             }
-            return sqlf;
+            return new Pair<>(sqlf, rowNums);
         }
 
         protected void prefetchExisting() throws BatchValidationException
@@ -245,17 +262,26 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 return;
 
             // fetch N new rows into the existingRecords map
-            SQLFragment select = getSelectExistingSql(50);
+            Pair<SQLFragment, Set<Integer>> selectRowsSql = getSelectExistingSql(50);
+            SQLFragment select = selectRowsSql.first;
+            Set<Integer> rowNums = selectRowsSql.second;
             var list = new SqlSelector(target.getSchema(), select).getArrayList(Map.class);
             existingRecords.clear();
             for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
                 existingRecords.put(r,Map.of());
-            list.forEach(map -> {
-                int r = (Integer)map.get("_row_number_");
+
+            for (Map map : list)
+            {
+                Integer r = (Integer)map.get("_row_number_");
                 map.remove("_row_number_");
                 map.remove("_row"); // I think CachedResultSet adds "_row"
                 existingRecords.put(r,(Map<String,Object>)map);
-            });
+                rowNums.remove(r);
+            }
+
+            if (_verifyExisting && rowNums.size() > 0)
+                throw new BatchValidationException(new ValidationException("No record found at row number: " + rowNums.iterator().next() + "."));
+
             // backup to where we started so caller can iterate through them one at a time
             _unwrapped.reset(); // unwrapped _delegate
             _delegate.next();
@@ -267,15 +293,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     static class ExistingDataIteratorsGetRows extends ExistingRecordDataIterator
     {
         final QueryUpdateService qus;
-        final User user;
-        final Container c;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, QueryUpdateService.InsertOption option)
         {
-            super(in, target, keys, true);
+            super(in, target, keys, true, option);
             qus = target.getUpdateService();
-            user = target.getUserSchema().getUser();
-            c = target.getUserSchema().getContainer();
         }
 
         @Override
@@ -302,7 +324,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap);
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();
@@ -338,7 +360,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
             assertFalse(di.supportsGetExistingRecord());
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, QueryUpdateService.InsertOption.INSERT);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }

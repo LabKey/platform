@@ -94,8 +94,6 @@ public abstract class RecordValidationDataIterator extends WrapperDataIterator
         while (--rowsToFetch > 0 && _delegate.next());
 
         validate(keysMap);
-        if (qus.hasExistingRowsInOtherContainers(c, keysMap))
-            _context.getErrors().addRowError(new ValidationException("Cannot update data that don't belong to the current container."));
 
         // backup to where we started so caller can iterate through them one at a time
         _unwrapped.reset(); // unwrapped _delegate

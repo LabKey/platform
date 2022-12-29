@@ -124,12 +124,14 @@ public interface QueryUpdateService extends HasPermission
      * @param user      The current user.
      * @param container The container in which the data should exist.
      * @param keys      A map of primary key values for each rowNumber.
+     * @param verifyNoCrossFolderData      Throw exception if any key belongs to data outside the desired container.
+     * @param verifyExisting      Throw exception if no existing record is found for any row.
      * @return The rows data as maps for each rowNumber.
      * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
      * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys);

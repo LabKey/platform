@@ -147,6 +147,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return getQueryTable().hasPermission(user, acl);
     }
 
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        return getRow(user, container, keys);
+    }
+
     protected abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
@@ -176,7 +182,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, ReadPermission.class))
@@ -185,9 +191,21 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
-            Map<String, Object> row = getRow(user, container, key.getValue());
+            Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
             if (row != null)
+            {
                 result.put(key.getKey(), row);
+                if (verifyNoCrossFolderData)
+                {
+                    String dataContainer = (String) row.get("container");
+                    if (StringUtils.isEmpty(dataContainer))
+                        dataContainer = (String) row.get("folder");
+                    if (!container.getId().equals(dataContainer))
+                        throw new InvalidKeyException("Data doesn't belong to the current folder: " + key.getValue().values());
+                }
+            }
+            else if (verifyExisting)
+                throw new InvalidKeyException("Data not found for " + key.getValue().values());
         }
         return result;
     }
@@ -264,6 +282,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
+
+        // if ExistingRecordDataIterator, NoNewRecordValidationDataIterator is no-op
         if (context.getInsertOption().updateOnly)
             dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
 
