@@ -804,12 +804,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     String dataContainer = (String) row.get("folder");
                     if (!dataContainer.equals(container.getId()))
-                        throw new InvalidKeyException("TODO");
+                        throw new InvalidKeyException("Sample does not belong to the current container: " + name + ".");
                 }
             }
 
             if (verifyExisting && !allNames.isEmpty())
-                throw new InvalidKeyException("TODO");
+                throw new InvalidKeyException("Sample does not exist: " + allNames.iterator().next() + ".");
 
         }
 
