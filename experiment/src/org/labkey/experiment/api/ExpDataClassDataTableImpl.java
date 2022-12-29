@@ -1066,16 +1066,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid");
+                    .append(" ON d.lsid = t.lsid WHERE ");
+
+            if (null != rowid)
+                sql.append("d.rowid=?").add(rowid);
+            else if (null != lsid)
+                sql.append("d.lsid=?").add(lsid);
+            else
+                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
 
             if (!allowCrossContainer)
-                sql.append(" WHERE d.Container=?").add(container.getEntityId());
-            if (null != rowid)
-                sql.append(" AND d.rowid=?").add(rowid);
-            else if (null != lsid)
-                sql.append(" AND d.lsid=?").add(lsid);
-            else
-                sql.append(" AND d.classid=? AND d.name=?").add(classId).add(name);
+                sql.append(" AND d.Container=?").add(container.getEntityId());
 
             return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
