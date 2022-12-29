@@ -52,9 +52,6 @@ public class ProductController extends SpringActionController
         @Override
         public void validateForm(MenuItemsForm menuItemsForm, Errors errors)
         {
-            if (menuItemsForm.getItemLimit() != null && menuItemsForm.getItemLimit() < 0)
-                errors.reject(ERROR_MSG, "'itemLimit' must be >= 0");
-
             if (menuItemsForm.getCurrentProductId() == null)
                 errors.reject(ERROR_REQUIRED, "currentProductId is required");
 
@@ -74,14 +71,13 @@ public class ProductController extends SpringActionController
         @Override
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
-            return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getUserMenuProductId(), _productIds, menuItemsForm.getItemLimit());
+            return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getUserMenuProductId(), _productIds);
         }
     }
 
     public static class MenuItemsForm
     {
         private String _productIds; // comma-separated list of productIds
-        private Integer _itemLimit;
         private String _currentProductId;
         private String _userMenuProductId;
 
@@ -93,16 +89,6 @@ public class ProductController extends SpringActionController
         public void setProductIds(String productIds)
         {
             _productIds = productIds;
-        }
-
-        public Integer getItemLimit()
-        {
-            return _itemLimit;
-        }
-
-        public void setItemLimit(Integer itemLimit)
-        {
-            _itemLimit = itemLimit;
         }
 
         public String getCurrentProductId()

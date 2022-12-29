@@ -46,7 +46,6 @@ import { QueriesListingPage } from "./QueriesListingPage";
 import { EditableGridPage } from "./EditableGridPage";
 import { DetailPage } from "./DetailPage";
 import { SampleInsertPage } from './SampleInsertPage';
-import { NavigationBarPage } from "./NavigationBarPage";
 import { AssayImportPage } from "./AssayImportPage";
 import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
@@ -72,7 +71,6 @@ const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'Lineage'},
     {value: 'LoadingModal'},
     {value: 'LoadingSpinner'},
-    {value: 'NavigationBar'},
     {value: 'PageDetailHeader'},
     {value: 'PermissionAssignments'},
     {value: 'Progress'},
@@ -340,11 +338,6 @@ export class App extends React.Component<any, State> {
                 {selected === 'LoadingSpinner' &&
                     this.renderPanel('LoadingSpinner',
                         <LoadingSpinner msg={'Loading message goes here...'}/>
-                    )
-                }
-                {selected === 'NavigationBar' &&
-                    this.renderPanel('NavigationBar',
-                        <NavigationBarPage/>
                     )
                 }
                 {selected === 'PageDetailHeader' &&
