@@ -194,7 +194,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a Data with name at a specific time.
      */
     @Nullable
-    ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container);
+    ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container, @Nullable ContainerFilter cf);
 
     /**
      * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
@@ -247,7 +247,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a DataClass with name at a specific time.
      */
-    ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate);
+    ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf);
 
     /**
      * Get a DataClass by name within scope -- current, project, and shared.
@@ -872,9 +872,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param dataType: One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
      * @param effectiveDate The effective date that the legacy name was active
      * @param c
+     * @param cf
      * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
      */
-    Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
+    Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf);
 
     /**
      * Persists a collection of lineage relationships (a.k.a. "edges") between experiment objects.

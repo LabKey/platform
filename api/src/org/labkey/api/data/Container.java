@@ -37,6 +37,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.HasPermission;
@@ -1690,6 +1691,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         // need to exclude the notebook folders in particular here
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
+    }
+
+    public ContainerFilter getProjectDataContainerFilter(User user)
+    {
+        if (!isProductProjectsEnabled())
+            return ContainerFilter.current(this);
+
+        if (isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(this, user);
+        else if (!isProject() && getProject() != null)
+            return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
+
+        return ContainerFilter.current(this);
     }
 
     public boolean isDataspace()
