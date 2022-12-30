@@ -3971,10 +3971,10 @@ public class QueryController extends SpringActionController
                 for (Map<String, Object> row : rows)
                 {
                     //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 BatchValidationException errors = new BatchValidationException();
@@ -4034,10 +4034,10 @@ public class QueryController extends SpringActionController
                 {
                     // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
                     // this should never happen on an update, but we will let it fail later with a better error message instead of the NPE here
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, configParameters, extraContext);
@@ -4230,7 +4230,7 @@ public class QueryController extends SpringActionController
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
-            //setup the response, providing the schema name, query name, and operation
+            //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
             response.put(PROP_SCHEMA_NAME, schemaName);
