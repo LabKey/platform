@@ -61,9 +61,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, QueryUpdateService.InsertOption option)
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context)
     {
         super(in);
+
+        QueryUpdateService.InsertOption option = context.getInsertOption();
 
         // NOTE it might get wrapped with a LoggingDataIterator, so remember the original DataIterator
         this._unwrapped = useMark ? (CachingDataIterator)in : null;
@@ -200,9 +202,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 if (auditType == DETAILED)
                 {
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, option);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context);
                     else
-                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, option);
+                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, context);
                 }
             }
             return di;
@@ -213,9 +215,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     /* Select using normal TableInfo stuff */
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, QueryUpdateService.InsertOption option)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context)
         {
-            super(in, target, keys, true, option);
+            super(in, target, keys, true, context);
         }
 
         private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
@@ -296,9 +298,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final QueryUpdateService qus;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, QueryUpdateService.InsertOption option)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context)
         {
-            super(in, target, keys, true, option);
+            super(in, target, keys, true, context);
             qus = target.getUpdateService();
         }
 
@@ -362,7 +364,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
             assertFalse(di.supportsGetExistingRecord());
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, QueryUpdateService.InsertOption.INSERT);
+            var context = new DataIteratorContext();
+            context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, context);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }
