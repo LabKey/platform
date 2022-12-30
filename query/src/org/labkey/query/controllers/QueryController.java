@@ -1889,7 +1889,7 @@ public class QueryController extends SpringActionController
 
 
     /**
-     * Can be used to generate an Excel template for import into a table.  Supported URL params include:
+     * Can be used to generate an Excel template for import into a table. Supported URL params include:
      * <dl>
      *     <dt>filenamePrefix</dt>
      *     <dd>the prefix of the excel file that is generated, defaults to '_data'</dd>
@@ -1915,7 +1915,7 @@ public class QueryController extends SpringActionController
      *     </dd>
      *
      *     <dt>captionType</dt>
-     *     <dd>determines which column property is used in the header.  either Label or Name</dd>
+     *     <dd>determines which column property is used in the header, either Label or Name</dd>
      * </dl>
      */
     @RequiresPermission(ReadPermission.class)
@@ -2221,8 +2221,8 @@ public class QueryController extends SpringActionController
         if (canEdit)
         {
             // Issue 13594: Disallow setting of the customview inherit bit for query views
-            // that have no available container filter types.  Unfortunately, the only way
-            // to get the container filters is from the QueryView.  Ideally, the query def
+            // that have no available container filter types. Unfortunately, the only way
+            // to get the container filters is from the QueryView. Ideally, the query def
             // would know if it was container filterable or not instead of using the QueryView.
             if (inherit && canSaveForAllUsers && !session)
             {
@@ -3970,7 +3970,7 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
+                    //issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null
                     CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
@@ -4032,7 +4032,7 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
+                    // issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null.
                     // this should never happen on an update, but we will let it fail later with a better error message instead of the NPE here
                     CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
@@ -4206,7 +4206,7 @@ public class QueryController extends SpringActionController
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
-                    jsonObj.keySet().forEach(key -> rowMap.put(key, jsonObj.get(key)));
+                    JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
                         addRowAttachments(rowMap, idx);
 
@@ -5588,7 +5588,7 @@ public class QueryController extends SpringActionController
             DbScope scope = QueryManager.get().getDbSchema().getScope();
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                // Delete the session view.  The view will be restored if an exception is thrown.
+                // Delete the session view. The view will be restored if an exception is thrown.
                 view.delete(getUser(), getViewContext().getRequest());
 
                 // Get any previously existing non-session view.
@@ -5629,11 +5629,11 @@ public class QueryController extends SpringActionController
                 }
                 else if (!existingView.isEditable())
                 {
-                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable.  You may save this view with a different name.");
+                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable. You may save this view with a different name.");
                 }
                 else
                 {
-                    // UNDONE: changing shared property of an existing view is unimplemented.  Not sure if it makes sense from a usability point of view.
+                    // UNDONE: changing shared property of an existing view is unimplemented. Not sure if it makes sense from a usability point of view.
                     existingView.setColumns(view.getColumns());
                     existingView.setFilterAndSort(view.getFilterAndSort());
                     existingView.setColumnProperties(view.getColumnProperties());
