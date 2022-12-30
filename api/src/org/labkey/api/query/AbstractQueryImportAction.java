@@ -322,14 +322,21 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             switch (insertOption)
             {
-                case MERGE, REPLACE, UPSERT -> {
+                case UPDATE -> {
                     if (!canUpdate(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                 }
-                default -> {
+                case MERGE, REPLACE, UPSERT -> {
+                    if (!canUpdate(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                     if (!canInsert(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
                 }
+                case IMPORT, IMPORT_IDENTITY, INSERT -> {
+                    if (!canInsert(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                }
+                default -> { throw new IllegalStateException("unhandled InsertOption"); }
             }
         }
 
