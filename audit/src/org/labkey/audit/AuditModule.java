@@ -55,7 +55,7 @@ public class AuditModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 22.001;
+        return 23.000;
     }
 
     @Override

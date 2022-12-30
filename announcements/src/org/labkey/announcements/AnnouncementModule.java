@@ -97,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public @Nullable Double getSchemaVersion()
     {
-        return 22.004;
+        return 23.000;
     }
 
     @Override
