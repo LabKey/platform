@@ -4308,7 +4308,6 @@ public class QueryController extends SpringActionController
             {
                 if (isSuccessOnValidationError())
                 {
-                    // Note: This old JSONObject gets converted into a new JSONObjects on put (because it's also a map)
                     response.put("errors", createResponseWriter().getJSON(e));
                 }
                 else
