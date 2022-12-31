@@ -182,4 +182,15 @@ public class JsonUtil
 
         return result;
     }
+
+    // The new JSONObject.toMap() translates all JSONObjects into Maps and JSONArrays in Lists. In many cases, this is
+    // fine, but some existing code paths want to maintain the contained JSONObjects and JSONArrays. This method does
+    // that, acting more like the old JSONObject.toMap().
+    public static void fillMapShallow(JSONObject json, Map<String, Object> map)
+    {
+        json.keySet().forEach(key -> {
+            Object value = json.get(key);
+            map.put(key, JSONObject.NULL == value ? null : value);
+        });
+    }
 }
