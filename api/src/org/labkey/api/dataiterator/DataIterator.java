@@ -23,7 +23,6 @@ import org.labkey.api.query.BatchValidationException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -105,6 +104,6 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
 
     default void debugLogInfo(StringBuilder sb)
     {
-        sb.append("  " + getDebugName() + ": " + this.getClass().getName() + "\n");
+        sb.append("  ").append(getDebugName()).append(": ").append(this.getClass().getName()).append("\n");
     }
 }
