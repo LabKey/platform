@@ -4308,6 +4308,7 @@ public class QueryController extends SpringActionController
             {
                 if (isSuccessOnValidationError())
                 {
+                    // Note: This old JSONObject gets converted into a new JSONObjects on put (because it's also a map)
                     response.put("errors", createResponseWriter().getJSON(e));
                 }
                 else
@@ -4552,16 +4553,7 @@ public class QueryController extends SpringActionController
                     //this would be populated in executeJson when a BatchValidationException is thrown
                     if (commandResponse.has("errors"))
                     {
-                        // I don't see how commandResponse.get("errors") would ever return an org.json.JSONObject,
-                        // but WNPRC test failures are adamant that it's an org.json.JSONObject. Allow either for now.
-                        // TODO: Track this down.
-                        Object jsonErrors = commandResponse.get("errors");
-                        if (jsonErrors instanceof org.json.old.JSONObject older)
-                            errorCount += older.getInt("errorCount");
-                        else if (jsonErrors instanceof JSONObject newer)
-                            errorCount += newer.getInt("errorCount");
-                        else
-                            throw new IllegalStateException("jsonErrors was of unexpected class: " + jsonErrors.getClass());
+                        errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
                     }
 
                     // If we encountered errors with this particular command and the client requested that don't treat
