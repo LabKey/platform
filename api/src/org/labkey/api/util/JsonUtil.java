@@ -193,4 +193,14 @@ public class JsonUtil
             map.put(key, JSONObject.NULL == value ? null : value);
         });
     }
+
+    // New JSONObject discards all properties with null values. This returns a JSONObject containing all Map values,
+    // preserving null values using the JSONObject.NULL placeholder. This is a shallow copy; standard JSONObject
+    // handling will be performed on each top-level put.
+    public static JSONObject toJsonPreserveNulls(Map<String, Object> map)
+    {
+        JSONObject json = new JSONObject();
+        map.forEach((k, v) -> json.put(k, null == v ? JSONObject.NULL : v));
+        return json;
+    }
 }
