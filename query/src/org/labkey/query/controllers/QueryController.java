@@ -50,6 +50,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -4258,7 +4259,9 @@ public class QueryController extends SpringActionController
                     auditEvent.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
-                    response.put("rows", responseRows);
+                    response.put("rows", responseRows.stream()
+                        .map(JsonUtil::toJsonPreserveNulls)
+                        .collect(LabKeyCollectors.toJSONArray()));
 
                 // if there is any provenance information, save it here
                 ProvenanceService svc = ProvenanceService.get();
