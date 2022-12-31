@@ -388,11 +388,15 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 file = new FileStream.ByteArrayFileStream(text.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
                 // di = loader.getDataIterator(ve);
             }
-            else if (null != StringUtils.trimToNull(path))
+            else if (StringUtils.isNotBlank(path))
             {
+                var resolver = WebdavService.get().getResolver();
                 // Resolve path under webdav root
-                WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
-                if (resource != null && resource.isFile())
+                Path parsed = Path.parse(StringUtils.trim(path));
+                WebdavResource resource = resolver.lookup(parsed);
+                if ((null == resource || !resource.exists()) && !parsed.startsWith(new Path("_webdav")))
+                    resource = resolver.lookup(new Path("_webdav").append(parsed));
+                if (resource != null && resource.isFile() && resource.canRead(getUser(), true))
                 {
                     hasPostData = true;
                     loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
@@ -403,23 +407,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 {
                     // Resolve file under pipeline root
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null)
-                        throw new NotFoundException("Pipeline root not configured");
-
-                    if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
-                        throw new UnauthorizedException();
-
-                    // Attempt absolute path first, then relative path from pipeline root
-                    File f = new File(path);
-                    if (!root.isUnderRoot(f))
-                        f = root.resolvePath(path);
-
-                    if (NetworkDrive.exists(f) && root.isUnderRoot(f))
+                    if (root != null)
                     {
-                        hasPostData = true;
-                        loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
-                        file = new FileAttachmentFile(dataFile, f.getName());
-                        originalName = f.getName();
+                        // Attempt absolute path first, then relative path from pipeline root
+                        File f = new File(path);
+                        if (!root.isUnderRoot(f))
+                            f = root.resolvePath(path);
+
+                        if (NetworkDrive.exists(f) && root.isUnderRoot(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                        {
+                            hasPostData = true;
+                            loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
+                            file = new FileAttachmentFile(dataFile, f.getName());
+                            originalName = f.getName();
+                        }
                     }
                 }
 

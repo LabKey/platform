@@ -1889,7 +1889,7 @@ public class QueryController extends SpringActionController
 
 
     /**
-     * Can be used to generate an Excel template for import into a table.  Supported URL params include:
+     * Can be used to generate an Excel template for import into a table. Supported URL params include:
      * <dl>
      *     <dt>filenamePrefix</dt>
      *     <dd>the prefix of the excel file that is generated, defaults to '_data'</dd>
@@ -1915,7 +1915,7 @@ public class QueryController extends SpringActionController
      *     </dd>
      *
      *     <dt>captionType</dt>
-     *     <dd>determines which column property is used in the header.  either Label or Name</dd>
+     *     <dd>determines which column property is used in the header, either Label or Name</dd>
      * </dl>
      */
     @RequiresPermission(ReadPermission.class)
@@ -2221,8 +2221,8 @@ public class QueryController extends SpringActionController
         if (canEdit)
         {
             // Issue 13594: Disallow setting of the customview inherit bit for query views
-            // that have no available container filter types.  Unfortunately, the only way
-            // to get the container filters is from the QueryView.  Ideally, the query def
+            // that have no available container filter types. Unfortunately, the only way
+            // to get the container filters is from the QueryView. Ideally, the query def
             // would know if it was container filterable or not instead of using the QueryView.
             if (inherit && canSaveForAllUsers && !session)
             {
@@ -3970,11 +3970,11 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    //issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 BatchValidationException errors = new BatchValidationException();
@@ -4032,12 +4032,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
+                    // issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null.
                     // this should never happen on an update, but we will let it fail later with a better error message instead of the NPE here
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, configParameters, extraContext);
@@ -4089,7 +4089,7 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
+    protected abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
@@ -4144,9 +4144,9 @@ public class QueryController extends SpringActionController
             return container;
         }
 
-        protected Map<String, Object> executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
-            Map<String, Object> response = new HashMap<>();
+            JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
 
@@ -4205,7 +4205,8 @@ public class QueryController extends SpringActionController
                 if (null != jsonObj)
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
-                    rowMap.putAll(jsonObj.toMap());
+                    // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
+                    JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
                         addRowAttachments(rowMap, idx);
 
@@ -4229,7 +4230,7 @@ public class QueryController extends SpringActionController
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
-            //setup the response, providing the schema name, query name, and operation
+            //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
             response.put(PROP_SCHEMA_NAME, schemaName);
@@ -4307,6 +4308,7 @@ public class QueryController extends SpringActionController
             {
                 if (isSuccessOnValidationError())
                 {
+                    // Note: This old JSONObject gets converted into a new JSONObjects on put (because it's also a map)
                     response.put("errors", createResponseWriter().getJSON(e));
                 }
                 else
@@ -4384,7 +4386,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.update, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.update, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4404,7 +4406,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.insert, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
 
@@ -4425,7 +4427,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4440,7 +4442,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            Map<String, Object> response = executeJson(getJsonObject(), CommandType.delete, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.delete, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4477,14 +4479,11 @@ public class QueryController extends SpringActionController
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
-            JSONArray commands = (JSONArray)json.get("commands");
-            JSONArray resultArray = new JSONArray();
+            JSONArray commands = json.optJSONArray("commands");
             if (commands == null || commands.length() == 0)
             {
                 throw new NotFoundException("Empty request");
             }
-
-            JSONObject extraContext = json.optJSONObject("extraContext");
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -4516,6 +4515,9 @@ public class QueryController extends SpringActionController
                 assert scope != null;
             }
 
+            JSONArray resultArray = new JSONArray();
+            JSONObject extraContext = json.optJSONObject("extraContext");
+
             int startingErrorIndex = 0;
             int errorCount = 0;
             // 11741: A transaction may already be active if we're trying to
@@ -4543,15 +4545,15 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    Map<String, Object> commandResponse = executeJson(commandObject, command, !transacted, errors);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
 
                     //this would be populated in executeJson when a BatchValidationException is thrown
-                    if (commandResponse.containsKey("errors"))
+                    if (commandResponse.has("errors"))
                     {
-                        errorCount += ((org.json.old.JSONObject)commandResponse.get("errors")).getInt("errorCount");
+                        errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
                     }
 
                     // If we encountered errors with this particular command and the client requested that don't treat
@@ -4577,7 +4579,7 @@ public class QueryController extends SpringActionController
             }
 
             errorCount += errors.getErrorCount();
-            Map<String, Object> result = new HashMap<>();
+            JSONObject result = new JSONObject();
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
@@ -5587,7 +5589,7 @@ public class QueryController extends SpringActionController
             DbScope scope = QueryManager.get().getDbSchema().getScope();
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                // Delete the session view.  The view will be restored if an exception is thrown.
+                // Delete the session view. The view will be restored if an exception is thrown.
                 view.delete(getUser(), getViewContext().getRequest());
 
                 // Get any previously existing non-session view.
@@ -5628,11 +5630,11 @@ public class QueryController extends SpringActionController
                 }
                 else if (!existingView.isEditable())
                 {
-                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable.  You may save this view with a different name.");
+                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable. You may save this view with a different name.");
                 }
                 else
                 {
-                    // UNDONE: changing shared property of an existing view is unimplemented.  Not sure if it makes sense from a usability point of view.
+                    // UNDONE: changing shared property of an existing view is unimplemented. Not sure if it makes sense from a usability point of view.
                     existingView.setColumns(view.getColumns());
                     existingView.setFilterAndSort(view.getFilterAndSort());
                     existingView.setColumnProperties(view.getColumnProperties());

@@ -111,7 +111,7 @@ public class OntologyManager
             Container proj = c.getProject();
             if (null == proj)
                 proj = c;
-
+            _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
             String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
             List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
             if (!pdArray.isEmpty())
@@ -126,6 +126,7 @@ public class OntologyManager
                     if (pd.getProject().equals(_sharedContainer))
                         pd = pdArray.get(1);
                 }
+                _log.debug("Loaded property descriptor " + pd);
                 return pd;
             }
             return null;
@@ -203,10 +204,12 @@ public class OntologyManager
             {
                 // Be sure to stash the property in the cache in case it hadn't already been loaded
                 // Note that this can skew the cache stats, because it will count as a remove, a miss, and a get
+                _log.debug("Putting descriptor in cache with key " + getCacheKey(pd) + ": " + pd);
                 propDescCache.put(getCacheKey(pd), pd);
                 if (!pd.getContainer().equals(c))
                 {
                     // Also cache the property in its home container
+                    _log.debug("Putting descriptor in cache with key " + getCacheKey(pd.getPropertyURI(), c) + ": " + pd);
                     propDescCache.put(getCacheKey(pd.getPropertyURI(), c), pd);
                 }
                 propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
@@ -1337,6 +1340,7 @@ public class OntologyManager
 
                 if (pd.getContainer().getId().equals(c.getId()))
                 {
+                    _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
                     propDescCache.remove(getCacheKey(pd));
                     domainPropertiesCache.clear();
                     pd.setContainer(project);
@@ -1593,6 +1597,7 @@ public class OntologyManager
             pd = out[0];
             if (1 == rowcount && null != pd)
             {
+                _log.debug("Putting property descriptor into cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
                 propDescCache.put(getCacheKey(pd), pd);
                 return pd;
             }
@@ -2049,6 +2054,7 @@ public class OntologyManager
             executor.execute(deleteObjPropSql);
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
+            _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
             propDescCache.remove(key);
             domainPropertiesCache.clear();
             transaction.commit();
@@ -2627,6 +2633,7 @@ public class OntologyManager
         assert pd.getPropertyId() == 0;
         validatePropertyDescriptor(pd);
         pd = Table.insert(null, getTinfoPropertyDescriptor(), pd);
+        _log.debug("Adding property descriptor to cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
         propDescCache.put(getCacheKey(pd), pd);
         return pd;
     }
@@ -2637,6 +2644,7 @@ public class OntologyManager
     {
         assert pd.getPropertyId() != 0;
         pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+        _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
         propDescCache.put(getCacheKey(pd), pd);
         // It's possible that the propertyURI has changed, thus breaking our reference
         domainPropertiesCache.clear();
@@ -2810,6 +2818,7 @@ public class OntologyManager
 
     public static void clearCaches()
     {
+        _log.debug("Clearing caches");
         ExperimentService.get().clearCaches();
         domainDescByURICache.clear();
         domainDescByIDCache.clear();
