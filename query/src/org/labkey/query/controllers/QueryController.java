@@ -4089,7 +4089,7 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
+    protected abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
@@ -4478,14 +4478,11 @@ public class QueryController extends SpringActionController
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
-            JSONArray commands = (JSONArray)json.get("commands");
-            JSONArray resultArray = new JSONArray();
+            JSONArray commands = json.optJSONArray("commands");
             if (commands == null || commands.length() == 0)
             {
                 throw new NotFoundException("Empty request");
             }
-
-            JSONObject extraContext = json.optJSONObject("extraContext");
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -4516,6 +4513,9 @@ public class QueryController extends SpringActionController
                 }
                 assert scope != null;
             }
+
+            JSONArray resultArray = new JSONArray();
+            JSONObject extraContext = json.optJSONObject("extraContext");
 
             int startingErrorIndex = 0;
             int errorCount = 0;
@@ -4552,7 +4552,16 @@ public class QueryController extends SpringActionController
                     //this would be populated in executeJson when a BatchValidationException is thrown
                     if (commandResponse.has("errors"))
                     {
-                        errorCount += ((org.json.old.JSONObject)commandResponse.get("errors")).getInt("errorCount");
+                        // I don't see how commandResponse.get("errors") would ever return an org.json.JSONObject,
+                        // but WNPRC test failures are adamant that it's an org.json.JSONObject. Allow either for now.
+                        // TODO: Track this down.
+                        Object jsonErrors = commandResponse.get("errors");
+                        if (jsonErrors instanceof org.json.old.JSONObject older)
+                            errorCount += older.getInt("errorCount");
+                        else if (jsonErrors instanceof JSONObject newer)
+                            errorCount += newer.getInt("errorCount");
+                        else
+                            throw new IllegalStateException("jsonErrors was of unexpected class: " + jsonErrors.getClass());
                     }
 
                     // If we encountered errors with this particular command and the client requested that don't treat
