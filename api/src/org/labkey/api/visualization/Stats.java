@@ -159,7 +159,7 @@ public class Stats
 
     public static Double[] getTrailingMeans(Double[] values, int N)
     {
-        if (values == null || values.length <= 1)
+        if (values == null || values.length <= 1 || values.length <= N)
             return new Double[0];
 
         int numOfTrailingValues = values.length - N + 1;
@@ -178,7 +178,7 @@ public class Stats
 
     public static Double[] getTrailingCVs(Double[] values, int N)
     {
-        if (values == null || values.length <= 1)
+        if (values == null || values.length <= 1 || values.length <= N)
             return new Double[0];
 
         int numOfTrailingValues = values.length - N + 1;
