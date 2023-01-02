@@ -60,7 +60,6 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
-import org.labkey.api.dataiterator.NoNewRecordValidationDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TriggerDataBuilderHelper;
@@ -182,7 +181,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, ReadPermission.class))
@@ -277,15 +276,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
 
-        if (_enableExistingRecordsDataIterator)
+        if (_enableExistingRecordsDataIterator || context.getInsertOption().updateOnly)
         {
             // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
-
-        // if ExistingRecordDataIterator, NoNewRecordValidationDataIterator is no-op
-        if (context.getInsertOption().updateOnly)
-            dib = NoNewRecordValidationDataIterator.createBuilder(dib, getQueryTable(), null, null, 200);
 
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());

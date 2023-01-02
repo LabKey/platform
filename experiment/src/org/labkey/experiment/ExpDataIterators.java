@@ -37,7 +37,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
-import org.labkey.api.dataiterator.CrossFolderRecordDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -46,7 +45,6 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
-import org.labkey.api.dataiterator.NoNewRecordValidationDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -1967,10 +1965,10 @@ public class ExpDataIterators
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl;
 
-            SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
+            SimpleTranslator step1 = new SimpleTranslator(input, context);
+            step1.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
-                step0.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
+                step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
@@ -2014,15 +2012,7 @@ public class ExpDataIterators
             if (context.getInsertOption().updateOnly)
                 existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
 
-            DataIteratorBuilder step1 = ExistingRecordDataIterator.createBuilder(step0, _expTable, existingRecordKey, true);
-
-            // Check if record exist in related folder as cross folder merge is not supported
-            // this is a NOOP unless we are merging/updating and QueryService.get().isProductProjectsEnabled() and ExistingRecordDataIterator is not enabled
-            DataIteratorBuilder step1a = CrossFolderRecordDataIterator.createBuilder(step1, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
-
-            // Check if record exist in related folder as cross folder merge is not supported
-            // this is a NOOP unless we are updating and ExistingRecordDataIterator is not enabled
-            DataIteratorBuilder step2 = NoNewRecordValidationDataIterator.createBuilder(step1a, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap, 200);
+            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)

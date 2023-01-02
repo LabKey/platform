@@ -13,8 +13,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -60,8 +58,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final Container c;
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
+    final boolean _getDetailedData; // If true, get extra information, such as lineage
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context)
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context, boolean detailed)
     {
         super(in);
 
@@ -79,6 +78,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
         _verifyExisting = option.updateOnly;
+        _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
@@ -198,12 +198,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                if (auditType == DETAILED)
+                if (auditType == DETAILED || option.updateOnly)
                 {
+                    boolean detailed = auditType == DETAILED;
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
                     else
-                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, context);
+                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, context, detailed);
                 }
             }
             return di;
@@ -214,9 +215,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     /* Select using normal TableInfo stuff */
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true, context);
+            super(in, target, keys, true, context, detailed);
         }
 
         private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
@@ -297,9 +298,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final QueryUpdateService qus;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true, context);
+            super(in, target, keys, true, context, detailed);
             qus = target.getUpdateService();
         }
 
@@ -327,7 +328,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting);
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _getDetailedData);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();
@@ -365,7 +366,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             assertFalse(di.supportsGetExistingRecord());
             var context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, context);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, context, true);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }

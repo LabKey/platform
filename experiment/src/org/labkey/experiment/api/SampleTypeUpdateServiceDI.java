@@ -32,6 +32,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -719,13 +720,26 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, !getDetails);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting)
+    private ContainerFilter getSampleDataCF(Container container, User user)
+    {
+        if (!container.isProductProjectsEnabled())
+            return ContainerFilter.current(container);
+
+        if (container.isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
+        else if (!container.isProject() && container.getProject() != null)
+            return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+
+        return ContainerFilter.current(container);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipInputs)
             throws QueryUpdateServiceException, InvalidKeyException
     {
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
@@ -805,19 +819,30 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 rowNumLsid.put(rowNum, sampleLsid);
 
                 allNames.remove(name);
+            }
 
-                if (checkCrossFolderData)
+            if (checkCrossFolderData && !allNames.isEmpty())
+            {
+                TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+                SimpleFilter cfilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+                cfilter.addCondition(FieldKey.fromParts("Name"), allNames, CompareType.IN);
+                Map<String, Object>[] cfRows = new TableSelector(tInfo, filter, null).getMapArray();
+                for (Map<String, Object> row : cfRows)
                 {
                     String dataContainer = (String) row.get("folder");
                     if (!dataContainer.equals(container.getId()))
-                        throw new InvalidKeyException("Sample does not belong to the current container: " + name + ".");
+                        throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
                 }
+
             }
 
             if (verifyExisting && !allNames.isEmpty())
                 throw new InvalidKeyException("Sample does not exist: " + allNames.iterator().next() + ".");
 
         }
+
+        if (skipInputs)
+            return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
 
