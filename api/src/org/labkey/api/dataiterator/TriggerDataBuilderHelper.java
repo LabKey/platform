@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -148,7 +149,7 @@ public class TriggerDataBuilderHelper
 
             if (includeAllColumns)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
-            else if (context.getInsertOption().mergeRows && !_target.supportMerge())
+            else if (context.getInsertOption().mergeRows && !_target.supportInsertOption(QueryUpdateService.InsertOption.MERGE))
                 return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
 
             coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);

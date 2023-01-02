@@ -758,8 +758,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return List.of();
     }
 
-    default boolean supportMerge()
+    default boolean supportInsertOption(QueryUpdateService.InsertOption option)
     {
-        return false;
+        return true;
     }
 }

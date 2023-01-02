@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
@@ -160,7 +161,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
-        resp.put("supportMerge", tinfo.supportMerge());
+        resp.put("supportMerge", tinfo.supportInsertOption(QueryUpdateService.InsertOption.MERGE));
 
         // check if this query is shadowing a local table
         if (isUserDefined)
