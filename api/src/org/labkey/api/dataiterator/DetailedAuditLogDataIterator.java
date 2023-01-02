@@ -123,7 +123,6 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
     public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryUpdateService.InsertOption insertOption, final User user, final Container container)
     {
-        QueryService.AuditAction auditAction = QueryService.AuditAction.getImportAuditAction(insertOption);
         return context ->
         {
             AuditBehaviorType auditType = AuditBehaviorType.NONE;
@@ -135,7 +134,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
-                return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
+                return new DetailedAuditLogDataIterator(in, context, queryTable, insertOption.auditAction, user, container);
             }
             // Nothing to do, so just return input DataIterator
             return builder.getDataIterator(context);

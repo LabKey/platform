@@ -77,8 +77,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         UserSchema userSchema = target.getUserSchema();
         user = userSchema != null ? userSchema.getUser() : null;
         c = userSchema != null ? userSchema.getContainer() : null;
-        boolean isExpDataOrMaterial = target instanceof ExpMaterialTable || target instanceof ExpDataClassDataTable;
-        _checkCrossFolderData = isExpDataOrMaterial && option.allowUpdate;
+        _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
         _verifyExisting = option.updateOnly;
 
         var map = DataIteratorUtil.createColumnNameMap(in);

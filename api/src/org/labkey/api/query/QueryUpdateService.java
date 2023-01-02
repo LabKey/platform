@@ -47,26 +47,26 @@ public interface QueryUpdateService extends HasPermission
     enum InsertOption
     {
         // interactive/api
-        INSERT(false, false, false, false, false, false, false),
-        UPSERT(false, true, false, false, false, true, false),  // like merge, but with reselectids
+        INSERT(false, false, false, false, false, false, false, QueryService.AuditAction.INSERT),
+        UPSERT(false, true, false, false, false, true, false, QueryService.AuditAction.MERGE),  // like merge, but with reselectids
 
         // bulk
-        IMPORT(true, false, true, false, false, false, false),
+        IMPORT(true, false, true, false, false, false, false, QueryService.AuditAction.INSERT),
         /**
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, true, false, false, true, false),
+        MERGE(true, true, true, false, false, true, false, QueryService.AuditAction.MERGE),
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, true, true, false, true, false),
-        IMPORT_IDENTITY(true, false, true, false, true, false, false),
+        REPLACE(true, true, true, true, false, true, false, QueryService.AuditAction.MERGE),
+        IMPORT_IDENTITY(true, false, true, false, true, false, false, QueryService.AuditAction.INSERT),
 
         /**
          * Will only update existing rows
          */
-        UPDATE(true, false, true, false, false, true, true);
+        UPDATE(true, false, true, false, false, true, true, QueryService.AuditAction.UPDATE);
 
         final public boolean batch;
         final public boolean mergeRows;
@@ -76,8 +76,9 @@ public interface QueryUpdateService extends HasPermission
         final public boolean identity_insert;
         final public boolean allowUpdate;
         final public boolean updateOnly;
+        final public QueryService.AuditAction auditAction;
 
-        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, boolean allowUpdate, boolean updateOnly)
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, boolean allowUpdate, boolean updateOnly, QueryService.AuditAction auditAction)
         {
             this.batch = batch;
             mergeRows = merge;
@@ -89,6 +90,7 @@ public interface QueryUpdateService extends HasPermission
             this.identity_insert = identity_insert;
             this.allowUpdate = allowUpdate;
             this.updateOnly = updateOnly;
+            this.auditAction = auditAction;
         }
     }
 
