@@ -142,7 +142,7 @@ public class TriggerDataBuilderHelper
                 isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
             }
 
-            boolean includeAllColumns = ((!context.getInsertOption().mergeRows && !context.getInsertOption().updateOnly) || mergeKeys == null) || isNewFolderImport;
+            boolean includeAllColumns = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
 

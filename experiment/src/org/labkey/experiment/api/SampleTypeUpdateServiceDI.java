@@ -167,6 +167,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    public void configureDataIteratorContext(DataIteratorContext context)
+    {
+        context.putConfigParameter(ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+    }
+
+    @Override
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";

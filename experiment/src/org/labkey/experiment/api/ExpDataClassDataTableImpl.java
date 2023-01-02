@@ -1256,6 +1256,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        public void configureDataIteratorContext(DataIteratorContext context)
+        {
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+        }
+
+        @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);

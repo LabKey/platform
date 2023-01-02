@@ -1977,7 +1977,7 @@ public class ExpDataIterators
             if (context.getInsertOption().updateOnly)
                 dontUpdate.add("objectid");
 
-            boolean isMergeOrUpdate = context.getInsertOption().mergeRows || context.getInsertOption().updateOnly;
+            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
 
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();

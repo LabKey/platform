@@ -78,7 +78,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         user = userSchema != null ? userSchema.getUser() : null;
         c = userSchema != null ? userSchema.getContainer() : null;
         boolean isExpDataOrMaterial = target instanceof ExpMaterialTable || target instanceof ExpDataClassDataTable;
-        _checkCrossFolderData = isExpDataOrMaterial && (option.updateOnly || option.mergeRows);
+        _checkCrossFolderData = isExpDataOrMaterial && option.allowUpdate;
         _verifyExisting = option.updateOnly;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
@@ -194,7 +194,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
-            if (option.mergeRows || option.updateOnly)
+            if (option.allowUpdate)
             {
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())

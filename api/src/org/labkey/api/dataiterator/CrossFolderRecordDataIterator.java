@@ -38,7 +38,7 @@ public class CrossFolderRecordDataIterator extends RecordValidationDataIterator
 
             QueryUpdateService.InsertOption option = context.getInsertOption();
             Container container = target.getUserSchema() == null ? null : target.getUserSchema().getContainer();
-            if ((option.mergeRows || option.updateOnly)&& container != null && container.isProductProjectsEnabled())
+            if (option.allowUpdate && container != null && container.isProductProjectsEnabled())
             {
                 return new CrossFolderRecordDataIterator(new CachingDataIterator(di), context, target, keys, extraKeyValueMap, batchSize);
             }
