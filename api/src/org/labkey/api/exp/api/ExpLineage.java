@@ -36,9 +36,6 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-/**
- * Created by Nick Arnold on 2/11/2016.
- */
 public class ExpLineage
 {
     private final Set<Identifiable> _seeds;
@@ -97,7 +94,6 @@ public class ExpLineage
 
     /**
      * Get the non-Material and non-Data parent or children encountered when traversing the lineage from one of the seeds.
-     * @return
      */
     public Set<Identifiable> getObjects()
     {
@@ -266,82 +262,93 @@ public class ExpLineage
         return materials;
     }
 
-    public Set<ExpData> findNearestChildDatas(Identifiable seed)
+    /**
+     * Find all ExpData children of the seed, stopping at the first child generation.
+     */
+    public @NotNull Set<ExpData> findNearestChildDatas(Identifiable seed)
     {
         return findNearestChildren(ExpData.class, seed);
     }
 
-    public Set<ExpMaterial> findNearestChildMaterials(Identifiable seed)
+    /**
+     * Find all ExpMaterial children of the seed, stopping at the first child generation.
+     */
+    public @NotNull Set<ExpMaterial> findNearestChildMaterials(Identifiable seed)
     {
         return findNearestChildren(ExpMaterial.class, seed);
     }
 
-    public <T extends ExpRunItem> Set<T> findNearestChildren(Class<T> parentClazz, Identifiable seed)
+    /**
+     * Find all ExpData or ExpMaterial children of the seed, stopping at the first child generation.
+     */
+    public @NotNull <T extends ExpRunItem> Set<T> findNearestChildren(Class<T> parentClazz, Identifiable seed)
     {
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearest(false, parentClazz, null, seed, nodes, edges, false);
+        return findNearest(false, parentClazz, null, seed, false);
     }
 
     /**
-     * Find all parent ExpData that are parents of the seed, stopping at the first parent generation (no grandparents.)
+     * Find all ExpData parents of the seed, stopping at the first parent generation.
      */
-    public Set<ExpData> findNearestParentDatas(Identifiable seed)
+    public @NotNull Set<ExpData> findNearestParentDatas(Identifiable seed)
     {
         return findNearestParents(ExpData.class, seed);
     }
 
-    public Set<ExpMaterial> findNearestParentMaterials(Identifiable seed)
+    /**
+     * Find all ExpMaterial parents of the seed, stopping at the first parent generation.
+     */
+    public @NotNull Set<ExpMaterial> findNearestParentMaterials(Identifiable seed)
     {
         return findNearestParents(ExpMaterial.class, seed);
     }
 
-    public <T extends ExpRunItem> Set<T> findNearestParentMaterialsAndDatas(Identifiable seed)
+    /**
+     * Find all ExpData or ExpMaterial parents of the seed, stopping at the first parent generation.
+     */
+    public @NotNull <T extends ExpRunItem> Set<T> findNearestParentMaterialsAndDatas(Identifiable seed)
     {
-        if (!_seeds.contains(seed))
-            throw new UnsupportedOperationException();
-
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearest(true, null, null, seed, nodes, edges, true);
-    }
-
-    public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed)
-    {
-        if (!_seeds.contains(seed))
-            throw new UnsupportedOperationException();
-
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearest(true, parentClazz, null, seed, nodes, edges, false);
+        return findNearest(true, null, null, seed, true);
     }
 
     /**
-     * Find nearest parents of the given cpasType (SampleType or DataClass)
+     * Find all ExpData or ExpMaterial parents of the seed, stopping at the first parent generation.
      */
-    public <T extends ExpRunItem> Set<T> findNearestParents(String cpasType, Identifiable seed)
+    public @NotNull <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed)
     {
-        if (!_seeds.contains(seed))
-            throw new UnsupportedOperationException();
-
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearest(true, null, cpasType, seed, nodes, edges, false);
+        return findNearest(true, parentClazz, null, seed, false);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearest(
+    /**
+     * Find all parents, of the given cpasType, of the seed, stopping at the first parent generation.
+     */
+    public @NotNull <T extends ExpRunItem> Set<T> findNearestParents(String cpasType, Identifiable seed)
+    {
+        return findNearest(true, null, cpasType, seed, false);
+    }
+
+    /**
+     * Finds all children or parents of the given seed where those children or parents are of a specific type,
+     * stopping at the first generation. The specific type is either a class (which extends ExpRunItem) or a
+     * cpasType (SampleType or DataClass).
+     */
+    private @NotNull <T extends ExpRunItem> Set<T> findNearest(
         boolean findParents,
         @Nullable Class<T> clazz,
         @Nullable String cpasType,
         Identifiable seed,
-        Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> allEdges,
         boolean findBothMaterialAndData
     )
     {
-        if (allEdges.size() == 0)
-            return Collections.emptySet();
+        if (!_seeds.contains(seed))
+            throw new UnsupportedOperationException();
 
         assert cpasType != null || clazz == ExpMaterial.class || clazz == ExpData.class || findBothMaterialAndData;
+
+        Map<String, Identifiable> nodes = processNodes();
+        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> allEdges = processNodeEdges();
+
+        if (allEdges.size() == 0)
+            return Collections.emptySet();
 
         // walk from start through edges looking for all nearest nodes, stopping at first ones found
         Set<T> nearest = new HashSet<>();
@@ -466,7 +473,7 @@ public class ExpLineage
     {
         public final String parent;
         public final String child;
-        private String _role;
+        private final String _role;
 
         public Edge(String parentLSID, String childLSID, String role)
         {
@@ -523,7 +530,7 @@ public class ExpLineage
 
     public static class ExpLineageTree
     {
-        private Identifiable _expObject;
+        private final Identifiable _expObject;
         private final @NotNull List<ExpLineageTree> _children = new LinkedList<>();
 
         public Identifiable getExpObject()
@@ -531,7 +538,7 @@ public class ExpLineage
             return _expObject;
         }
 
-        public List<ExpLineageTree> getChildren()
+        public @NotNull List<ExpLineageTree> getChildren()
         {
             return _children;
         }
