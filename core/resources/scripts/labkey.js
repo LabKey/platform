@@ -7,7 +7,7 @@
 var console = require("console");
 
 // Pull in all of the labkey scripts into a single LABKEY object.
-var LABKEY = require("labkey/init");
+var LABKEY = require("serverContext");
 
 LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
 LABKEY.ActionURL = require("labkey/ActionURL").ActionURL;
