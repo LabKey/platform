@@ -1326,38 +1326,5 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
 
-        @Override
-        public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
-        {
-            Integer dataClassId = null;
-            Set<String> dataNames = new HashSet<>();
-            for (Map<String, Object> keyMap : keys)
-            {
-                Object oName = keyMap.get("Name");
-
-                if (oName != null)
-                    dataNames.add((String) oName);
-
-                if (dataClassId == null)
-                {
-                    Object oClassId = keyMap.get("ClassId");
-                    if (oClassId != null)
-                        dataClassId = (Integer) (_converter.convert(Integer.class, oClassId));
-                }
-            }
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
-            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
-            filter.addCondition(FieldKey.fromParts("Container"), container);
-
-            List<String> foundNames = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("name"), filter, null).getArrayList(String.class);
-            if (dataNames.size() > foundNames.size())
-            {
-                foundNames.forEach(dataNames::remove);
-                String absentName = (new ArrayList<>(dataNames)).get(0);
-                throw new QueryUpdateServiceException("Row not found for " + absentName);
-            }
-        }
-
     }
 }

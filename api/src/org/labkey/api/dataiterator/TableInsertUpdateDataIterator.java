@@ -61,6 +61,9 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
     private Connection _conn = null;
     private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
+    private boolean _skipCurrentIterator = false; // if StatementUtils generates a bad or meaningless (empty) statement, skip this iterator
+    private boolean _failOnEmptyUpdate;
+
     /**
      * Creates and configures a TableInsertDataIterator. DO NOT call this method directly.
      * Instead instantiate a {@link TableInsertDataIteratorBuilder}.
@@ -68,7 +71,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
      */
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container container, DataIteratorContext context,
          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate,
-         @Nullable Set<DomainProperty> vocabularyColumns, boolean commitRowsBeforeContinuing, @Nullable Map<String, String> remapSchemaColumns)
+         @Nullable Set<DomainProperty> vocabularyColumns, boolean commitRowsBeforeContinuing,
+                                      @Nullable Map<String, String> remapSchemaColumns, boolean failOnEmptyUpdate)
             //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
@@ -119,7 +123,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
         {
             keyColumns.addAll(context.getAlternateKeys());
         }
-        TableInsertUpdateDataIterator ti = new TableInsertUpdateDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate);
+        TableInsertUpdateDataIterator ti = new TableInsertUpdateDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate, failOnEmptyUpdate);
         DataIterator ret = ti;
 
 
@@ -142,7 +146,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
 
 
     protected TableInsertUpdateDataIterator(DataIterator data, TableInfo table, @Nullable Container container, DataIteratorContext context,
-                                            @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+                                            @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns,
+                                            @Nullable Set<String> dontUpdate, boolean failOnEmptyUpdate)
     {
         super(table.getSqlDialect(), data, context);
         setDebugName(table.getName());
@@ -157,6 +162,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             _dontUpdate.addAll(dontUpdate);
         if (null != keyColumns)
             _keyColumns.addAll(keyColumns);
+
+        _failOnEmptyUpdate = failOnEmptyUpdate;
 
         ColumnInfo colAutoIncrement = null;
         Integer indexAutoIncrement = null;
@@ -269,6 +276,19 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
         {
             throw new RuntimeSQLException(x);
         }
+        catch(NoUpdatableColumnInDataException x)
+        {
+            if (_failOnEmptyUpdate)
+                throw new IllegalArgumentException(x.getMessage());
+            else
+                _skipCurrentIterator = true;
+        }
+    }
+
+    @Override
+    protected boolean shouldSkipIterator()
+    {
+        return _skipCurrentIterator;
     }
 
     protected ParameterMapStatement getInsertStatement(Map<String, Object> constants) throws SQLException
@@ -307,7 +327,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
         return stmt;
     }
 
-    protected ParameterMapStatement getUpdateStatement(Map<String, Object> constants) throws SQLException
+    protected ParameterMapStatement getUpdateStatement(Map<String, Object> constants) throws SQLException, NoUpdatableColumnInDataException
     {
         ParameterMapStatement stmt;
         setAutoIncrement(INSERT.OFF);
@@ -320,7 +340,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 .updateBuiltinColumns(false)
                 .selectIds(_selectIds)
                 .constants(constants);
-        stmt = util.createStatement(_conn, _container, null);
+        stmt = util.createStatement(_conn, _container, null, true);
         return stmt;
     }
 
@@ -421,5 +441,13 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
     public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
     {
         _adhocPropColumns = adhocPropColumns;
+    }
+
+    public static class NoUpdatableColumnInDataException extends Exception
+    {
+        public NoUpdatableColumnInDataException(String tableName)
+        {
+            super("The provided data contains no updatable column for '" + tableName + "'.");
+        }
     }
 }

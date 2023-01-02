@@ -19,6 +19,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     boolean commitRowsBeforeContinuing = false;
     private Set<DomainProperty> vocabularyProperties;
     Map<String, String> remapSchemaColumns = null;
+    boolean failOnEmptyUpdate = false;
 
     public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
     {
@@ -83,11 +84,17 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
+    public TableInsertDataIteratorBuilder setFailOnEmptyUpdate(boolean failOnEmptyUpdate)
+    {
+        this.failOnEmptyUpdate = failOnEmptyUpdate;
+        return this;
+    }
+
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         DataIterator di = TableInsertUpdateDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
-                dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns);
+                dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns, failOnEmptyUpdate);
         if (null == di)
         {
             //noinspection ThrowableNotThrown

@@ -215,13 +215,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return false;
     }
 
-    @Override
-    public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
-    {
-        // TODO is there a more efficent way to batch verify?
-        getRows(user, container, keys, true);
-    }
-
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
         long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();

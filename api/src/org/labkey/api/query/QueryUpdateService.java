@@ -142,8 +142,6 @@ public interface QueryUpdateService extends HasPermission
 
     boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys);
 
-    void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException;
-
     /**
      * Inserts or merges the given values into the source table of this query.
      * The operation to be performed and import behavior is configured by the <code>context</code> parameter.

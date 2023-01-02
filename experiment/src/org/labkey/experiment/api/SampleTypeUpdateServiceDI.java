@@ -691,35 +691,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public void verifyExistingRows(User user, Container container, List<Map<String, Object>> keys) throws SQLException, QueryUpdateServiceException, InvalidKeyException
-    {
-        Integer sampleTypeId = null;
-        Set<String> sampleNames = new HashSet<>();
-        for (Map<String, Object> keyMap : keys)
-        {
-            String name = getMaterialName(keyMap);
-
-            if (name != null)
-                sampleNames.add(name);
-
-            if (sampleTypeId == null)
-                sampleTypeId = getMaterialSourceId(keyMap);
-        }
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-        filter.addCondition(FieldKey.fromParts("Name"), sampleNames, CompareType.IN);
-        filter.addCondition(FieldKey.fromParts("Container"), container);
-
-        List<String> foundNames = new TableSelector(ExperimentService.get().getTinfoMaterial(), Collections.singleton("name"), filter, null).getArrayList(String.class);
-        if (sampleNames.size() > foundNames.size())
-        {
-            foundNames.forEach(sampleNames::remove);
-            String absentName = (new ArrayList<>(sampleNames)).get(0);
-            throw new QueryUpdateServiceException("Row not found for " + absentName);
-        }
-    }
-
-    @Override
     public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {

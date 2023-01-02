@@ -2020,14 +2020,16 @@ public class ExpDataIterators
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
-                    .setCommitRowsBeforeContinuing(true));
+                    .setCommitRowsBeforeContinuing(true)
+                    .setFailOnEmptyUpdate(false));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step3, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
-                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
+                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns())
+                    .setFailOnEmptyUpdate(false));
 
             DataIteratorBuilder step5 = step4;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
