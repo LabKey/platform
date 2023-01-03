@@ -473,7 +473,7 @@ public class StatementUtils
         ParameterMapStatement statement = null;
         try
         {
-            createStatement(conn, c, user, false);
+            statement = createStatement(conn, c, user, false);
         }
         catch (TableInsertUpdateDataIterator.NoUpdatableColumnInDataException e)
         {
