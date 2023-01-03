@@ -2511,6 +2511,8 @@ public class OntologyManager
             }
 
             PropertyDescriptor pexist = ensurePropertyDescriptor(pd);
+            pexist.setDatabaseDefaultValue(pd.getDatabaseDefaultValue());
+            pexist.setNullable(pd.isNullable());
             pexist.setRequired(pd.isRequired());
 
             ensurePropertyDomain(pexist, dexist, sortOrder);
