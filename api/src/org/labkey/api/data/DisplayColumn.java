@@ -94,6 +94,34 @@ public abstract class DisplayColumn extends RenderColumn
     protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
+    public interface RowSpanner
+    {
+        int getRowSpan(RenderContext ctx);
+        void addQueryColumns(Set<FieldKey> fieldKeys);
+
+        boolean shouldRender(RenderContext ctx);
+    }
+
+    private static final RowSpanner DEFAULT_ROW_SPANNER = new RowSpanner()
+    {
+        @Override
+        public int getRowSpan(RenderContext ctx)
+        {
+            return 1;
+        }
+
+        @Override
+        public void addQueryColumns(Set<FieldKey> fieldKeys) {}
+
+        @Override
+        public boolean shouldRender(RenderContext ctx)
+        {
+            return true;
+        }
+    };
+
+    private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
+
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
     public abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
@@ -258,8 +286,14 @@ public abstract class DisplayColumn extends RenderColumn
             Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _textExpression).getFieldKeys();
             keys.addAll(fields);
         }
+
+        _rowSpanner.addQueryColumns(keys);
     }
 
+    public void setRowSpanner(RowSpanner spanner)
+    {
+        _rowSpanner = spanner;
+    }
 
     /** implement addQueryFieldKeys() instead */
     @Deprecated
@@ -986,8 +1020,12 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
+        if (!_rowSpanner.shouldRender(ctx))
+        {
+            return;
+        }
         out.write("<td");
         String displayClass = getDisplayClass(ctx);
         if (!displayClass.isEmpty())
@@ -1002,6 +1040,11 @@ public abstract class DisplayColumn extends RenderColumn
         if (!style.isEmpty())
         {
             out.write(" style='" + style + "'");
+        }
+        int rowSpan = getRowSpan(ctx);
+        if (rowSpan > 1)
+        {
+            out.write(" rowspan=\"" + rowSpan + "\"");
         }
         String hoverContent = getHoverContent(ctx);
         if (hoverContent != null)
@@ -1018,6 +1061,11 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(">");
         renderGridCellContents(ctx, out);
         out.write("</td>");
+    }
+
+    protected int getRowSpan(RenderContext ctx)
+    {
+        return _rowSpanner.getRowSpan(ctx);
     }
 
     protected String getHoverContent(RenderContext ctx)
