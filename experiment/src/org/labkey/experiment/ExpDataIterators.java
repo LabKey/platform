@@ -817,6 +817,10 @@ public class ExpDataIterators
                         {
                             parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
                         }
+                        else if (o instanceof org.json.JSONArray)
+                        {
+                            parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
+                        }
                         else if (o instanceof Collection)
                         {
                             //noinspection rawtypes
