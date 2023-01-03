@@ -60,9 +60,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean _verifyExisting;
     final boolean _getDetailedData; // If true, get extra information, such as lineage
 
+    final DataIteratorContext _context;
+
     ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context, boolean detailed)
     {
         super(in);
+        _context = context;
 
         QueryUpdateService.InsertOption option = context.getInsertOption();
 
@@ -156,7 +159,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (useMark)
             _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (ret && !pkColumns.isEmpty())
+        if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
             prefetchExisting();
         return ret;
     }
@@ -284,7 +287,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             }
 
             if (_verifyExisting && rowNums.size() > 0)
-                throw new BatchValidationException(new ValidationException("No record found at row number: " + rowNums.iterator().next() + "."));
+                _context.getErrors().addRowError(new ValidationException("No record found at row number: " + rowNums.iterator().next() + "."));
 
             // backup to where we started so caller can iterate through them one at a time
             _unwrapped.reset(); // unwrapped _delegate

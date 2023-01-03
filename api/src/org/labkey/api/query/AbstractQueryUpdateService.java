@@ -1191,6 +1191,41 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         @Test
+        public void UPDATE() throws Exception
+        {
+            if (null == ListService.get())
+                return;
+            INSERT();
+            assertEquals("Wrong number of rows after INSERT", 3, getRows().size());
+
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            var updateRows = new ArrayList<Map<String,Object>>();
+            String colName = _useAlias ? "s_alias" : "s";
+            String pkName = _useAlias ? "pk_alias" : "pk";
+
+            // update using data iterator
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
+            DataIteratorContext context = new DataIteratorContext();
+            context.setInsertOption(InsertOption.UPDATE);
+            var count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertFalse(context.getErrors().hasErrors());
+            assertEquals(count,1);
+            var rows = getRows();
+            // test existing row value is updated
+            assertEquals("TWO-UP", rows.get(2).get("s"));
+            // test existing row value is not updated/erased
+            assertEquals(2, rows.get(2).get("i"));
+
+            // update should fail if a new record is provided
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
+            qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertTrue(context.getErrors().hasErrors());
+        }
+
+        @Test
         public void REPLACE() throws Exception
         {
             if (null == ListService.get())
@@ -1242,6 +1277,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             _useAlias = true;
             REPLACE();
+        }
+
+        @Test
+        public void ALIAS_UPDATE() throws Exception
+        {
+            _useAlias = true;
+            UPDATE();
         }
     }
 }
