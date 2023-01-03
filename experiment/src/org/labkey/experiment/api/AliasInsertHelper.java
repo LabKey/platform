@@ -16,7 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -63,36 +63,32 @@ public class AliasInsertHelper
         if (value == null)
             return;
 
-        if (value instanceof String[])
+        if (value instanceof String[] aa)
         {
-            String[] aa = (String[]) value;
             for (String a : aa)
                 parseValue(a, aliasNames, aliasIds); // recurse
         }
-        else if (value instanceof JSONArray)
+        else if (value instanceof JSONArray array)
         {
             // LABKEY.Query.updateRows passes a JSONArray of individual alias names.
-            for (Object o : ((JSONArray)value).toArray())
+            for (Object o : array.toList())
                 parseValue(o.toString(), aliasNames, aliasIds); // recurse
         }
-        else if (value instanceof Collection)
+        else if (value instanceof Collection<?> col)
         {
             // Generic query insert form and Excel/tsv import passes an ArrayList with a single String element containing the comma-separated list of values: "abc,def"
             // LABKEY.Query.insertRows passes an ArrayList containing individual alias names.
-            for (Object o : (Collection)value)
+            for (Object o : col)
                 parseValue(o, aliasNames, aliasIds); // recurse
         }
         else if (value instanceof String)
         {
             // Parse the single string element value submitted by the generic query insert and the tsv import forms.
-            for (String s : splitAliases((String)value))
-            {
-                aliasNames.add(s);
-            }
+            aliasNames.addAll(splitAliases((String) value));
         }
-        else if (value instanceof Integer)
+        else if (value instanceof Integer i)
         {
-            aliasIds.add((Integer)value);
+            aliasIds.add(i);
         }
         else
         {
@@ -114,7 +110,7 @@ public class AliasInsertHelper
         {
             Set<String> parts = new HashSet<>();
             JSONArray a = new JSONArray(aliases);
-            for (Object o : a.toArray())
+            for (Object o : a.toList())
             {
                 if (o == null)
                     continue;
@@ -132,9 +128,9 @@ public class AliasInsertHelper
         {
             // The user entered a comma-separated list of values
             return Arrays.stream(aliases.split(","))
-                    .map(String::trim)
-                    .filter(StringUtils::isNotEmpty)
-                    .collect(Collectors.toSet());
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.toSet());
         }
         else
         {
@@ -147,9 +143,9 @@ public class AliasInsertHelper
         for (Integer aliasId : aliasIds)
         {
             Map<String, Object> row = CaseInsensitiveHashMap.of(
-                    "container", container.getEntityId(),
-                    "alias", aliasId,
-                    "lsid", lsid
+                "container", container.getEntityId(),
+                "alias", aliasId,
+                "lsid", lsid
             );
             Table.insert(user, aliasMapTable, row);
         }
@@ -163,10 +159,10 @@ public class AliasInsertHelper
     public static Collection<String> getAliases(String lsid)
     {
         SQLFragment sql = new SQLFragment("SELECT AL.name FROM ").append(ExperimentService.get().getTinfoAlias(), "AL")
-                .append(" JOIN ").append(ExperimentService.get().getTinfoMaterialAliasMap(), "MM")
-                .append(" ON AL.rowId = MM.alias")
-                .append(" WHERE MM.lsid = ?")
-                .add(lsid);
+            .append(" JOIN ").append(ExperimentService.get().getTinfoMaterialAliasMap(), "MM")
+            .append(" ON AL.rowId = MM.alias")
+            .append(" WHERE MM.lsid = ?")
+            .add(lsid);
 
         return new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(String.class);
     }
