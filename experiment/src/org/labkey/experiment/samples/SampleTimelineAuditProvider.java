@@ -25,7 +25,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_TYPE_COLUMN_NAME = "SampleType";
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
-    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? TODO remove once we have RowId always available
+    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID";
     public static final String SAMPLE_ID_COLUMN_NAME = "SampleID";
     public static final String METADATA_COLUMN_NAME = "Metadata";
     public static final String IS_LINEAGE_UPDATE_COLUMN_NAME = "IsLineageUpdate";
@@ -46,6 +46,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(IS_LINEAGE_UPDATE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(INVENTORY_UPDATE_TYPE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER_COMMENT));
     }
 
     public SampleTimelineAuditProvider()
@@ -117,6 +118,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Transaction ID");
                 }
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("User Comment");
+                }
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
@@ -155,6 +160,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
             fields.add(createPropertyDescriptor(INVENTORY_UPDATE_TYPE_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING, -1));
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));        // varchar max
