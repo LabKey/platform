@@ -339,9 +339,6 @@ public class ExpLineage
         boolean findBothMaterialAndData
     )
     {
-        if (!_seeds.contains(seed))
-            throw new UnsupportedOperationException();
-
         assert cpasType != null || clazz == ExpMaterial.class || clazz == ExpData.class || findBothMaterialAndData;
 
         Map<String, Identifiable> nodes = processNodes();
