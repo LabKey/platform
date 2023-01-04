@@ -1971,7 +1971,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _disallowedInsertOptions.add(option);
     }
 
-    public boolean removeDisallowedInsertOption(QueryUpdateService.InsertOption option)
+    public boolean setAllowedInsertOption(QueryUpdateService.InsertOption option)
     {
         return _disallowedInsertOptions.remove(option);
     }

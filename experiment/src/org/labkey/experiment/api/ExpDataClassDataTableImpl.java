@@ -166,7 +166,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
 
-        removeDisallowedInsertOption(QueryUpdateService.InsertOption.MERGE);
+        setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
     }
 
     @Override

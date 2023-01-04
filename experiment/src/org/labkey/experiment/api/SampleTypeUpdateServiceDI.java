@@ -664,7 +664,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws QueryUpdateServiceException
     {
-        return getRows(user, container, keys, false, false /*skip addInputs for insertRows*/);
+        return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
     }
 
     @Override
@@ -847,7 +847,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return sampleRows;
     }
 
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent, boolean addInputs)
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
             throws QueryUpdateServiceException
     {
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
@@ -856,17 +856,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs);
             if (materialMap != null)
                 result.add(materialMap);
-            else if (failOnAbsent)
-                throw new QueryUpdateServiceException("TODO");
         }
         return result;
-    }
-
-    @Override
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent)
-            throws QueryUpdateServiceException
-    {
-        return getRows(user, container, keys, failOnAbsent, false);
     }
 
     @Override

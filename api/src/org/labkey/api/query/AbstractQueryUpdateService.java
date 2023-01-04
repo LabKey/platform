@@ -159,12 +159,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getRows(user, container, keys, false);
-    }
-
-    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean failOnAbsent)
-            throws SQLException, QueryUpdateServiceException, InvalidKeyException
-    {
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
@@ -174,8 +168,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = getRow(user, container, rowKeys);
             if (row != null)
                 result.add(row);
-            else if (failOnAbsent)
-                throw new QueryUpdateServiceException("Row not found for key (" + StringUtils.join(rowKeys.values(), ", ") + ")");
         }
         return result;
     }
