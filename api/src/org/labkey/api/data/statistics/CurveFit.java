@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data.statistics;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 import java.util.Map;
 
