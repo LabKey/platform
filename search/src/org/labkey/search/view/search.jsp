@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.json.old.JSONArray" %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
@@ -146,14 +146,14 @@
         if (hitsPerPage < totalHits)
         {
             sb.append("Displaying page ")
-                    .append(Formats.commaf0.format(pageNo))
-                    .append(" of ")
-                    .append(Formats.commaf0.format(pageCount));
+                .append(Formats.commaf0.format(pageNo))
+                .append(" of ")
+                .append(Formats.commaf0.format(pageCount));
         }
         else if (totalHits > 0)
         {
             sb.append("Displaying all ")
-                    .append(h(template.getResultNamePlural()));
+                .append(h(template.getResultNamePlural()));
         }
 
         return sb.toString();
@@ -162,8 +162,8 @@
     String getResultsSummary(long totalHits, @NotNull SearchResultTemplate template)
     {
         StringBuilder sb = new StringBuilder("Found ")
-                .append(Formats.commaf0.format(totalHits))
-                .append(" ");
+            .append(Formats.commaf0.format(totalHits))
+            .append(" ");
 
         if (totalHits == 1)
             sb.append(h(template.getResultNameSingular()));
@@ -530,8 +530,8 @@
                 %>
                 <a href="<%=h(previousURL)%>">&lt; Previous</a>
                 <%
-                    if (pageNo < pageCount)
-                    {
+                        if (pageNo < pageCount)
+                        {
                 %>
                 &nbsp;|&nbsp;
                 <%
@@ -648,7 +648,7 @@
                         e.value = '';
                     }
                     else if (e.name === 'invertSort' && e.value.toLowerCase() === 'false') {
-                            e.value = '';
+                        e.value = '';
                     }
                     else if (e.name === 'sortField' && e.value.toLocaleLowerCase() === 'score') {
                         e.value = '';
