@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
@@ -666,6 +666,7 @@ public class SearchController extends SpringActionController
             response.put("hits", arr);
             response.put("totalHits", totalHits);
             response.put("q", query);
+
             return new ApiSimpleResponse(response);
         }
     }

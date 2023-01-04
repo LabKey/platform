@@ -16,15 +16,15 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="static org.labkey.api.query.QueryUpdateService.InsertOption.MERGE" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -48,7 +48,7 @@
 
     if (null != bean.extraFields)
     {
-        for (JSONObject o : bean.extraFields.toJSONObjectArray())
+        for (JSONObject o : JsonUtil.toJSONObjectList(bean.extraFields))
             extraFormFields += o.toString() + ",\n";
     }
 
