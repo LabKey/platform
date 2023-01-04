@@ -19,7 +19,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
@@ -271,6 +271,5 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
         String domainURI = generateDomainURI(schemaName, tableName, container, user);
         return PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
     }
-
 }
 
