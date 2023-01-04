@@ -6226,6 +6226,8 @@ public class QueryController extends SpringActionController
         private boolean _includeUserQueries = true;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
+        private boolean _includeViewDataUrl = true;
+        private boolean _includeTitle = true;
         private boolean _queryDetailColumns = false;
 
         public String getSchemaName()
@@ -6277,6 +6279,26 @@ public class QueryController extends SpringActionController
         {
             _queryDetailColumns = queryDetailColumns;
         }
+
+        public boolean isIncludeViewDataUrl()
+        {
+            return _includeViewDataUrl;
+        }
+
+        public void setIncludeViewDataUrl(boolean includeViewDataUrl)
+        {
+            _includeViewDataUrl = includeViewDataUrl;
+        }
+
+        public boolean isIncludeTitle()
+        {
+            return _includeTitle;
+        }
+
+        public void setIncludeTitle(boolean includeTitle)
+        {
+            _includeTitle = includeTitle;
+        }
     }
 
 
@@ -6313,8 +6335,8 @@ public class QueryController extends SpringActionController
                 {
                     if (!qdef.isTemporary())
                     {
-                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
+                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
                     }
                 }
             }
@@ -6329,8 +6351,8 @@ public class QueryController extends SpringActionController
                     QueryDefinition qdef = uschema.getQueryDefForTable(qname);
                     if (qdef != null)
                     {
-                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
+                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
                     }
                 }
             }
@@ -6339,7 +6361,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
+        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle)
         {
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("hidden", qdef.isHidden());
@@ -6369,44 +6391,51 @@ public class QueryController extends SpringActionController
             String name = qdef.getName();
             try
             {
-                //get the table info if the user requested column info
-                TableInfo table = qdef.getTable(schema, null, true);
-
-                if (null != table)
+                // get the TableInfo if the user requested column info or title, otherwise skip (it can be expensive)
+                if (includeColumns || includeTitle)
                 {
-                    if (includeColumns)
-                    {
-                        Collection<Map<String, Object>> columns;
+                    TableInfo table = qdef.getTable(schema, null, true);
 
-                        if (useQueryDetailColumns)
+                    if (null != table)
+                    {
+                        if (includeColumns)
                         {
-                            columns = JsonWriter
+                            Collection<Map<String, Object>> columns;
+
+                            if (useQueryDetailColumns)
+                            {
+                                columns = JsonWriter
                                     .getNativeColProps(table, Collections.emptyList(), null, false, false)
                                     .values();
-                        }
-                        else
-                        {
-                            columns = new ArrayList<>();
-                            for (ColumnInfo col : table.getColumns())
-                            {
-                                Map<String, Object> cinfo = new HashMap<>();
-                                cinfo.put("name", col.getName());
-                                if (null != col.getLabel())
-                                    cinfo.put("caption", col.getLabel());
-                                if (null != col.getShortLabel())
-                                    cinfo.put("shortCaption", col.getShortLabel());
-                                if (null != col.getDescription())
-                                    cinfo.put("description", col.getDescription());
-
-                                columns.add(cinfo);
                             }
+                            else
+                            {
+                                columns = new ArrayList<>();
+                                for (ColumnInfo col : table.getColumns())
+                                {
+                                    Map<String, Object> cinfo = new HashMap<>();
+                                    cinfo.put("name", col.getName());
+                                    if (null != col.getLabel())
+                                        cinfo.put("caption", col.getLabel());
+                                    if (null != col.getShortLabel())
+                                        cinfo.put("shortCaption", col.getShortLabel());
+                                    if (null != col.getDescription())
+                                        cinfo.put("description", col.getDescription());
+
+                                    columns.add(cinfo);
+                                }
+                            }
+
+                            if (columns.size() > 0)
+                                qinfo.put("columns", columns);
                         }
 
-                        if (columns.size() > 0)
-                            qinfo.put("columns", columns);
+                        if (includeTitle)
+                        {
+                            name = table.getPublicName();
+                            title = table.getTitle();
+                        }
                     }
-                    name = table.getPublicName();
-                    title = table.getTitle();
                 }
             }
             catch(Exception e)
