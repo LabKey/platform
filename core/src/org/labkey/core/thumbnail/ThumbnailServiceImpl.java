@@ -95,7 +95,10 @@ public class ThumbnailServiceImpl implements ThumbnailService
     @Override
     public void queueThumbnailRendering(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType)
     {
-        QUEUE.offer(new ThumbnailRenderingBean(provider, imageType, thumbnailType));
+        if (!QUEUE.offer(new ThumbnailRenderingBean(provider, imageType, thumbnailType)))
+        {
+            LOG.warn("Thumbnail rendering queue is full, skipping thumbnail rendering for " + provider);
+        }
     }
 
     @Override
@@ -162,6 +165,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
                 while (!interrupted())
                 {
                     ThumbnailRenderingBean bean = QUEUE.take();
+                    LOG.info("Rendering thumbnail for " + bean.getProvider());
                     ThumbnailProvider provider = bean.getProvider();
                     ImageType type = bean.getImageType();
 
@@ -178,6 +182,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
                     {
                         // No matter what, clear this entry from the cache.
                         ThumbnailCache.remove(provider, type);
+                        LOG.info("Finished rendering thumbnail for " + bean.getProvider());
                     }
                 }
             }
