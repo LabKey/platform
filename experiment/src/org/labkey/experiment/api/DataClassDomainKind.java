@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -56,6 +57,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -78,6 +80,7 @@ import java.util.stream.Collectors;
  */
 public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
+    private static final Logger LOG = LogHelper.getLogger(DataClassDomainKind.class, "Data class domain kind changes");
     public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
@@ -369,6 +372,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
+        LOG.debug("Getting tableInfo for table " + name);
         UserSchema schema = new DataClassUserSchema(container, user);
         return schema.getTable(name, cf);
     }
@@ -376,6 +380,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public void invalidate(Domain domain)
     {
+        LOG.debug("Invalidating data class domain " + domain.getStorageTableName());
         super.invalidate(domain);
 
         ExpDataClass dc = getDataClass(domain);
