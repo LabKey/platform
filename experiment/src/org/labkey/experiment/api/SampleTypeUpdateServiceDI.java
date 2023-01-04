@@ -249,7 +249,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             onSamplesChanged();
-            audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
+            audit(context.getInsertOption().auditAction);
         }
         return ret;
     }
