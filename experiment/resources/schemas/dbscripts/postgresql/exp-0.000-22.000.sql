@@ -1440,3 +1440,68 @@ ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
     FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
 ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
     FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+
+/* 21.xxx SQL scripts */
+
+-- Most major file systems cap file lengths at 255 characters. Let's do the same
+ALTER TABLE exp.data ALTER COLUMN Name TYPE VARCHAR(255);
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN DerivationDataScope VARCHAR(20) NULL;
+ALTER TABLE exp.Material ADD COLUMN RootMaterialLSID LSIDtype NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotedFromLSID LSIDtype NULL;
+
+ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkTargetContainer ENTITYID NULL;
+
+ALTER TABLE exp.List ADD COLUMN Category VARCHAR(20) NULL;
+
+SELECT core.executeJavaUpgradeCode('deleteOrphanedUploadedFileObjects');
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN IF NOT EXISTS ConceptSubtree TEXT NULL;
+
+SELECT core.executeJavaUpgradeCode('upgradeMaterialSource');
+
+-- move the StudyPublishProtocol container to the shared folder
+UPDATE exp.protocol
+    SET container = (SELECT entityid FROM core.containers WHERE name = 'Shared')
+    WHERE lsid LIKE 'urn:lsid:labkey.org:Protocol:StudyPublishProtocol%';
+
+SELECT core.executeJavaUpgradeCode('cleanupLengthTypePropertyValidators');
+
+UPDATE exp.propertydescriptor SET scale=4000 WHERE propertyuri LIKE '%WorkflowTask#AssayTypes';
+
+ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkCategory VARCHAR(200) NULL;
+
+ALTER TABLE exp.MaterialSource ADD COLUMN AliquotNameExpression VARCHAR(200) NULL;
+
+ALTER TABLE exp.Material ADD COLUMN SampleState INT;
+
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
+
+ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
+
+SELECT core.executeJavaUpgradeCode('generateExpProtocolApplicationEntityIds');
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId SET NOT NULL;
+
+ALTER TABLE exp.MaterialSource ADD COLUMN Category VARCHAR(20) NULL;
+
+ALTER TABLE exp.ExperimentRun ADD COLUMN WorkflowTask INT;
+
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL;
+
+ALTER TABLE exp.Protocol ADD COLUMN Status VARCHAR(60);
+UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun';
+
+ALTER TABLE exp.Material ADD COLUMN RecomputeRollup BOOL NULL DEFAULT(FALSE);
+ALTER TABLE exp.Material ADD COLUMN AliquotCount INTEGER NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotVolume FLOAT NULL;
+ALTER TABLE exp.Material ADD COLUMN AliquotUnit VARCHAR(10) NULL;
+
+UPDATE exp.Material SET RecomputeRollup=TRUE WHERE lsid IN
+                                                   (
+                                                       SELECT distinct rootMaterialLsid FROM exp.material
+                                                   );
+
+CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=TRUE;
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN Scannable BOOLEAN NOT NULL DEFAULT false;

@@ -135,3 +135,17 @@ CREATE TABLE comm.Tours
 
     CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
 );
+
+/* 21.xxx SQL scripts */
+
+UPDATE prop.properties
+SET value = 'secureOff'
+WHERE name = 'secure' AND value = 'false' AND
+    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
+
+UPDATE prop.properties
+SET value = 'secureWithoutEmail'
+WHERE name = 'secure' AND value = 'true' AND
+    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
+
+ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
