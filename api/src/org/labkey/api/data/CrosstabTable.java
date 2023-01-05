@@ -306,33 +306,15 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         //finally group by the row dimensions
         sql.append("\nGROUP BY ");
         sep = "";
-        for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
+        for (CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep);
-            sql.append(PIVOT_ALIAS + "." + rowDim.getSourceColumn().getAlias());
+            sql.append(sep)
+                .append(PIVOT_ALIAS + ".")
+                .append(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
     } //addCrosstabQuery()
-
-    public Map<String, String> getMeasureNameToColumnNameMap()
-    {
-        Map<String, String> measureNameToColumnName = new HashMap<>();
-        for (Map.Entry<String, ColumnInfo> entry : _columnMap.entrySet())
-        {
-            String colName = entry.getKey();
-            ColumnInfo col = entry.getValue();
-            String measureName;
-            if (col instanceof AggregateColumnInfo)
-                measureName = String.valueOf(((AggregateColumnInfo) col).getMember().getValue());
-            else if (col instanceof DimensionColumnInfo)
-                measureName = ((DimensionColumnInfo) col).getSourceFieldKey().toString();
-            else
-                measureName = col.getName();
-            measureNameToColumnName.put(measureName, colName);
-        }
-        return measureNameToColumnName;
-    }
 
     protected void addPivotQuery(SQLFragment sql)
     {
@@ -342,8 +324,9 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         String sep = "";
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep);
-            sql.append(AGG_FILTERED_ALIAS + "." + rowDim.getSourceColumn().getAlias());
+            sql.append(sep)
+                .append(AGG_FILTERED_ALIAS + ".")
+                .append(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
@@ -431,7 +414,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().get(0);
 
         sql.append("(CASE WHEN ");
-        sql.append(queryAlias + "." + colDimension.getSourceColumn().getAlias());
+        sql.append(queryAlias).append(".").append(colDimension.getSourceColumn().getAlias());
         sql.append("=");
         String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
         sql.append(value);
@@ -530,19 +513,6 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         return sql;
     }
     
-
-    /**
-     * Returns a column map suitable for passing to SimpleFilter's getSQLFragment() method.
-     * The map contains the same columns that are added when the table info is constructed
-     * without any column members (e.g., for customize view).
-     *
-     * @return A column map
-     */
-    protected Map<String, ColumnInfo> getAggregateFilterColMap()
-    {
-        return new CrosstabTable(getSettings())._columnMap;
-    }
-
     protected Map<FieldKey, ColumnInfo> getAggregateFilterColMap(Collection<ColumnInfo> cols)
     {
         Map<FieldKey,ColumnInfo> map = new HashMap<>(cols.size());
