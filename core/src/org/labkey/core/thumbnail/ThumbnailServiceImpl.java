@@ -101,7 +101,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
         }
         else
         {
-            LOG.warn("Queued thumbnail rendering for " + provider);
+            LOG.debug("Queued thumbnail rendering for " + provider);
         }
     }
 
