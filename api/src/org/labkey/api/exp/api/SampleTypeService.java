@@ -201,9 +201,9 @@ public interface SampleTypeService
 
     boolean parentAliasHasCorrectFormat(String parentAlias);
 
-    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
+    void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata);
 
-    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
+    void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 
     // find the max sequence number with '${sampleName}-' prefix
     long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
