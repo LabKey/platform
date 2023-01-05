@@ -64,10 +64,12 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -88,6 +90,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: rossb
@@ -99,8 +102,19 @@ public class ExceptionUtil
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
-    // Allow 10 report submissions to mothership per minute
-    private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
+    /**
+     * Remember all of the exceptions we've seen since the server started up.
+     * Key is the exception's hash as calculated by {@link #hashStackTrace(String)}.
+     */
+    private static final Map<String, ExceptionTally> EXCEPTION_TALLIES = Collections.synchronizedMap(new HashMap<>());
+
+    private static class ExceptionTally
+    {
+        /** Total number of times the exception has happened */
+        private final AtomicInteger _count = new AtomicInteger(0);
+        /** Total number of times the exception h */
+        private long _lastReported = System.currentTimeMillis();
+    }
 
     private ExceptionUtil()
     {
@@ -344,9 +358,6 @@ public class ExceptionUtil
     @Nullable
     public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode, @Nullable String sqlState, @Nullable String extraInfo)
     {
-        if (!shouldSend(level, target.isLocal()))
-            return null;
-
         Map<Enum<?>, String> decorations = getExceptionDecorations(ex);
 
         String exceptionMessage = null;
@@ -364,6 +375,10 @@ public class ExceptionUtil
         String browser = request == null ? null : request.getHeader("User-Agent");
 
         String stackTrace = stringWriter.getBuffer().toString();
+
+        if (!shouldSend(level, target.isLocal(), stackTrace))
+            return null;
+
         if (extraInfo != null)
         {
             stackTrace += "\n" + extraInfo;
@@ -383,9 +398,76 @@ public class ExceptionUtil
         return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, target, level, errorCode);
     }
 
-    /**
-     * This has been separated from logExceptionToMothership() in order to provide more verbose server-side logging of client context
-     */
+    public static String hashStackTrace(String fullStackTrace)
+    {
+        String[] ignoreLineNumberList = {"at java.", "at org.apache.", "at javax.", "at sun."};
+        BufferedReader reader = new BufferedReader(new StringReader(fullStackTrace));
+        StringBuilder sb = new StringBuilder();
+        try
+        {
+            String line = reader.readLine();
+            // Strip off the message part of the exception for hashing
+            if (line != null)
+            {
+                int index = line.indexOf(":");
+                if (index != -1)
+                {
+                    sb.append(line, 0, index);
+                }
+                else
+                {
+                    sb.append(line);
+                }
+            }
+            while ((line = reader.readLine()) != null)
+            {
+                // Don't include the other threads when de-duping stack traces
+                if (line.startsWith(SqlDialect.SEPARATOR_BANNER))
+                {
+                    break;
+                }
+
+                // Don't include lines that vary based on reflection
+                if (line.trim().startsWith("at ") &&
+                        !line.trim().startsWith("at sun.reflect.")
+                        && !(line.trim().startsWith("..."))
+                        && !line.trim().startsWith("Position: ")    // Postgres stack traces can include a third line that indicates the position of the error in the SQL
+                        && !line.trim().startsWith("Detail:")    // Postgres stack traces can include a second details line
+                        && !line.trim().startsWith("Detalhe:"))  // which is oddly sometimes prefixed by "Detalhe:" instead of "Detail:"
+                {
+                    // Don't include line numbers that depend on non-labkey version install
+                    if (line.trim().startsWith("Caused by:") && line.indexOf(":", line.indexOf(":") + 1) != -1)
+                    {
+                        line = line.substring(0, line.indexOf(":", line.indexOf(":") + 1));
+                    }
+                    else
+                    {
+                        for (String ignoreLineNumber : ignoreLineNumberList)
+                        {
+                            if (line.trim().startsWith(ignoreLineNumber) && line.contains("("))
+                            {
+                                line = line.substring(0, line.lastIndexOf("("));
+                                break;
+                            }
+                        }
+                    }
+
+                    sb.append(line);
+                    sb.append("\n");
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            // Shouldn't happen - this is an in-memory source
+            throw UnexpectedException.wrap(e);
+        }
+        return HashHelpers.hash(sb.toString());
+    }
+
+        /**
+         * This has been separated from logExceptionToMothership() in order to provide more verbose server-side logging of client context
+         */
     public static void logClientExceptionToMothership(
             String stackTrace,
             String exceptionMessage,
@@ -400,13 +482,13 @@ public class ExceptionUtil
         {
             // Once to labkey.org, if so configured
             ExceptionReportingLevel level = getExceptionReportingLevel();
-            if (shouldSend(level, false))
+            if (shouldSend(level, false, stackTrace))
             {
                 errorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, MothershipReport.Target.remote, level, null));
             }
 
             // And once to the local server, if so configured
-            if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true))
+            if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true, stackTrace))
             {
                 String newErrorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, MothershipReport.Target.local, ExceptionReportingLevel.HIGH, errorCode));
                 if (null == errorCode)
@@ -429,7 +511,7 @@ public class ExceptionUtil
         }
     }
 
-    private static boolean shouldSend(ExceptionReportingLevel level, boolean local)
+    private static boolean shouldSend(ExceptionReportingLevel level, boolean local, String stackTrace)
     {
         boolean send = true;
         
@@ -447,10 +529,21 @@ public class ExceptionUtil
         {
             send = false;
         }
-        else if (!local && _reportingRateLimiter.add(1, false) > 0)
+        else if (!local)
         {
-            MothershipReport.incrementDroppedExceptionCount();
-            send = false;
+            String hash = hashStackTrace(stackTrace);
+            ExceptionTally tally = EXCEPTION_TALLIES.computeIfAbsent(hash, k -> new ExceptionTally());
+            // Once we've reported an exception 5 times within this server session, don't report it more than every 5 minutes
+            if (tally._count.incrementAndGet() > 5 && System.currentTimeMillis() - tally._lastReported < 1000 * 60 * 5)
+            {
+                LOG.debug("Not logging exception to mothership because it has been reported too many times recently");
+                MothershipReport.incrementDroppedExceptionCount();
+                send = false;
+            }
+            else
+            {
+                tally._lastReported = System.currentTimeMillis();
+            }
         }
 
         return send;
@@ -516,8 +609,7 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
-                (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage())) ||
-                JOB_RUNNER.getJobCount() > 10;
+                (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
     }
 
     static class WebPartErrorView extends WebPartView<Object>
