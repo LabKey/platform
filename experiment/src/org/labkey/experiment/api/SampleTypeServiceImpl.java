@@ -1081,14 +1081,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
-        // not doing anything with userComment at the moment
         return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow);
     }
 
     @Override
     protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
-        // not doing anything with userComment at the moment
         return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
 
