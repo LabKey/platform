@@ -24,6 +24,7 @@ import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -38,7 +39,9 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.FieldKey;
@@ -703,6 +706,72 @@ public class StudyDesignManager
     private void ensureDomain(AbstractStudyDesignDomainKind domainKind, String tableName, Container c, User user)
     {
         String domainURI = domainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, c, null);
-        PropertyService.get().ensureDomain(c, user, domainURI, tableName);
+        PropertyService.get().ensureDomain(domainKind.getDomainContainer(c), user, domainURI, tableName);
+    }
+
+    // called by StudyUpgradeCode.moveDesignDomains to ensure existing domains are saved at the project level
+    public void ensureStudyDesignDomainsContainer(Container studyContainer, Logger log)
+    {
+        ensureDomainContainer(new StudyProductDomainKind(), PRODUCT_TABLE_NAME, studyContainer, log);
+        ensureDomainContainer(new StudyProductAntigenDomainKind(), PRODUCT_ANTIGEN_TABLE_NAME, studyContainer, log);
+        ensureDomainContainer(new StudyTreatmentProductDomainKind(), TREATMENT_PRODUCT_MAP_TABLE_NAME, studyContainer, log);
+        ensureDomainContainer(new StudyTreatmentDomainKind(), TREATMENT_TABLE_NAME, studyContainer, log);
+        ensureDomainContainer(new StudyPersonnelDomainKind(), PERSONNEL_TABLE_NAME, studyContainer, log);
+    }
+
+    /**
+     * Issue 46986 : study design domains need to be moved to the project folder to be consistent with the domain
+     * URI that is generated.
+     * Called from StudyUpgradeCode
+     */
+    private void ensureDomainContainer(AbstractStudyDesignDomainKind domainKind, String tableName, Container studyContainer, Logger log)
+    {
+        if (studyContainer.isProject())
+            return;
+
+        String domainURI = domainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, studyContainer, null);
+        Domain domain = PropertyService.get().getDomain(studyContainer, domainURI);
+
+        if (domain == null)
+        {
+            log.error("Unable to resolve domain for URI : " + domainURI);
+            return;
+        }
+
+        if (!domain.getContainer().equals(studyContainer.getProject()))
+        {
+            log.info("Moving the domain " + domain.getTypeURI() + " to the project level.");
+            moveStudyDomain(domain, studyContainer.getProject());
+        }
+    }
+
+    private void moveStudyDomain(Domain domain, Container container)
+    {
+        try (DbScope.Transaction transaction = OntologyManager.getExpSchema().getScope().ensureTransaction())
+        {
+            OntologyManager.clearCaches();
+
+            // if there are any property descriptors associated with this domain, update their container
+            List<Integer> propertyDescriptors = new SqlSelector(OntologyManager.getExpSchema(), new SQLFragment("SELECT PropertyID FROM ")
+                    .append(OntologyManager.getTinfoPropertyDomain(), "")
+                    .append(" WHERE DomainID = ?").add(domain.getTypeId())).getArrayList(Integer.class);
+
+            if (!propertyDescriptors.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoPropertyDescriptor(), "")
+                        .append(" SET Container = ? WHERE PropertyID ")
+                        .add(container.getId())
+                        .appendInClause(propertyDescriptors, OntologyManager.getSqlDialect());
+
+                new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
+            }
+
+            // update any property descriptors associated with this domain
+            SQLFragment sql = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoDomainDescriptor(), "")
+                    .append(" SET Container = ? WHERE DomainID = ?").add(container.getId()).add(domain.getTypeId());
+            new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
+
+            transaction.commit();
+        }
     }
 }
