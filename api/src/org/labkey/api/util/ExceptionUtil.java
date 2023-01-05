@@ -112,7 +112,7 @@ public class ExceptionUtil
     {
         /** Total number of times the exception has happened */
         private final AtomicInteger _count = new AtomicInteger(0);
-        /** Total number of times the exception h */
+        /** Timestamp of the last time we reported it */
         private long _lastReported = System.currentTimeMillis();
     }
 
