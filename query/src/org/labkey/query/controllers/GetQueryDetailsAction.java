@@ -161,7 +161,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
-        resp.put("supportMerge", tinfo.supportInsertOption(QueryUpdateService.InsertOption.MERGE));
+        resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
 
         // check if this query is shadowing a local table
         if (isUserDefined)

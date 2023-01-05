@@ -317,7 +317,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
             // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
-            if (_target != null && !_target.supportInsertOption(insertOption))
+            if (_target != null && !_target.supportsInsertOption(insertOption))
                 throw new IllegalArgumentException(insertOption + " action is not supported for " + _target.getName() + ".");
 
             // TODO: Check insertOption is supported on the target table
