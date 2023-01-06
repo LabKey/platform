@@ -1915,7 +1915,9 @@ boxPlot.render();
                         config.properties.yAxisDomain = [0, 0];
                     }
 
-                    if (!rangeConverted) {
+                    if (!rangeConverted &&
+                            config.qcPlotType !== LABKEY.vis.TrendingLinePlotType.TrailingCV &&
+                            config.qcPlotType !== LABKEY.vis.TrendingLinePlotType.TrailingMean) {
                         config.properties.yAxisDomain[0] = row[meanProp];
                         config.properties.yAxisDomain[1] = row[meanProp];
                         rangeConverted = true;
