@@ -4297,13 +4297,6 @@ public class StudyManager
         return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap();
     }
 
-
-    public void reindex(Container c)
-    {
-        _enumerateDocuments(null, c);
-    }
-    
-
     private void unindexDataset(DatasetDefinition ds)
     {
         String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId())).toString();
@@ -4400,7 +4393,7 @@ public class StudyManager
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
-    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids)
+    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
     {
         if (null != ptids && ptids.size() == 0)
             return;
@@ -4415,12 +4408,12 @@ public class StudyManager
                 if (list.size() == BATCH_SIZE)
                 {
                     final ArrayList<String> l = list;
-                    Runnable r = () -> indexParticipants(task, c, l);
+                    Runnable r = () -> indexParticipants(task, c, l, modifiedSince);
                     task.addRunnable(r, SearchService.PRIORITY.bulk);
                     list = new ArrayList<>(BATCH_SIZE);
                 }
             }
-            indexParticipants(task, c, list);
+            indexParticipants(task, c, list, modifiedSince);
             return;
         }
 
@@ -4442,7 +4435,7 @@ public class StudyManager
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
-        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, "p").toSQLFragment(null, null);
+        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p").toSQLFragment(null, null);
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
@@ -4515,7 +4508,7 @@ public class StudyManager
 
     final static WeakHashMap<Container, Runnable> _lastEnumerate = new WeakHashMap<>();
 
-    public static void _enumerateDocuments(IndexTask t, final Container c)
+    public static void _enumerateDocuments(IndexTask t, final Container c, @Nullable Date modifiedSince)
     {
         if (null == c)
             return;
@@ -4546,8 +4539,8 @@ public class StudyManager
 
                 if (null != study)
                 {
-                    StudyManager.indexDatasets(task, c, null);
-                    StudyManager.indexParticipants(task, c, null);
+                    StudyManager.indexDatasets(task, c, modifiedSince);
+                    StudyManager.indexParticipants(task, c, null, modifiedSince);
                     // study protocol document
                     _enumerateProtocolDocuments(task, study);
                 }
