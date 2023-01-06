@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -469,6 +470,20 @@ public class StatementUtils
 
     public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
+        ParameterMapStatement statement = null;
+        try
+        {
+            statement = createStatement(conn, c, user, false);
+        }
+        catch (TableInsertUpdateDataIterator.NoUpdatableColumnInDataException e)
+        {
+            // ignore error
+        }
+        return statement;
+    }
+
+    public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws SQLException, TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
+    {
         if (!(_targetTable instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
@@ -577,7 +592,7 @@ public class StatementUtils
 
         boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
-        if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
+        if (Operation.update != _operation && (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty()))
         {
             properties = (null==domain||isMaterializedDomain) ? Collections.emptyList() : domain.getProperties();
 
@@ -847,8 +862,20 @@ public class StatementUtils
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
             }
-            sqlfUpdate.append(sqlfWherePK);
-            sqlfUpdate.append(";\n");
+
+            if (Operation.update == _operation && updateCount == 0)
+            {
+                if (checkUpdatableColumns)
+                    throw new TableInsertUpdateDataIterator.NoUpdatableColumnInDataException(table.getName());
+
+                sqlfUpdate.append(new SQLFragment(keys.values().iterator().next().getSelectName()));
+                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1;\n");
+            }
+            else
+            {
+                sqlfUpdate.append(sqlfWherePK);
+                sqlfUpdate.append(";\n");
+            }
 
             if (Operation.merge == _operation)
             {

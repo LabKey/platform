@@ -158,7 +158,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
-    private boolean _supportMerge;
+    private final Set<QueryUpdateService.InsertOption> _disallowedInsertOptions = new HashSet<>(Arrays.asList(QueryUpdateService.InsertOption.MERGE, QueryUpdateService.InsertOption.REPLACE, QueryUpdateService.InsertOption.UPSERT));
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
@@ -1966,15 +1966,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _hasDeleteURLOverride;
     }
 
-    public void setSupportMerge(boolean supportMerge)
+    public void addDisallowedInsertOption(QueryUpdateService.InsertOption option)
     {
-        _supportMerge = supportMerge;
+        _disallowedInsertOptions.add(option);
+    }
+
+    public boolean setAllowedInsertOption(QueryUpdateService.InsertOption option)
+    {
+        return _disallowedInsertOptions.remove(option);
     }
 
     @Override
-    public boolean supportMerge()
+    public boolean supportsInsertOption(QueryUpdateService.InsertOption option)
     {
-        return _supportMerge;
+        return !_disallowedInsertOptions.contains(option);
     }
 
     public static class TestCase extends Assert{

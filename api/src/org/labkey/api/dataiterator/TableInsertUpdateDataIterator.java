@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
+public class TableInsertUpdateDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
     private final TableInfo _table;
     private final Container _container;
@@ -61,6 +61,9 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     private Connection _conn = null;
     private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
+    private boolean _skipCurrentIterator = false; // if StatementUtils generates a bad or meaningless (empty) statement, skip this iterator
+    private boolean _failOnEmptyUpdate;
+
     /**
      * Creates and configures a TableInsertDataIterator. DO NOT call this method directly.
      * Instead instantiate a {@link TableInsertDataIteratorBuilder}.
@@ -68,7 +71,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
      */
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container container, DataIteratorContext context,
          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate,
-         @Nullable Set<DomainProperty> vocabularyColumns, boolean commitRowsBeforeContinuing, @Nullable Map<String, String> remapSchemaColumns)
+         @Nullable Set<DomainProperty> vocabularyColumns, boolean commitRowsBeforeContinuing,
+                                      @Nullable Map<String, String> remapSchemaColumns, boolean failOnEmptyUpdate)
             //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
@@ -119,7 +123,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             keyColumns.addAll(context.getAlternateKeys());
         }
-        TableInsertDataIterator ti = new TableInsertDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate);
+        TableInsertUpdateDataIterator ti = new TableInsertUpdateDataIterator(di, table, container, context, keyColumns, addlSkipColumns, dontUpdate, failOnEmptyUpdate);
         DataIterator ret = ti;
 
 
@@ -141,8 +145,9 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
 
-    protected TableInsertDataIterator(DataIterator data, TableInfo table, @Nullable Container container, DataIteratorContext context,
-                                      @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+    protected TableInsertUpdateDataIterator(DataIterator data, TableInfo table, @Nullable Container container, DataIteratorContext context,
+                                            @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns,
+                                            @Nullable Set<String> dontUpdate, boolean failOnEmptyUpdate)
     {
         super(table.getSqlDialect(), data, context);
         setDebugName(table.getName());
@@ -157,6 +162,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _dontUpdate.addAll(dontUpdate);
         if (null != keyColumns)
             _keyColumns.addAll(keyColumns);
+
+        _failOnEmptyUpdate = failOnEmptyUpdate;
 
         ColumnInfo colAutoIncrement = null;
         Integer indexAutoIncrement = null;
@@ -237,7 +244,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             ParameterMapStatement stmt;
-            if (_insertOption.mergeRows)
+            if (_insertOption.updateOnly)
+            {
+                stmt = getUpdateStatement(constants);
+            }
+            else if (_insertOption.mergeRows)
             {
                 stmt = getMergeStatement(constants);
             }
@@ -265,6 +276,19 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             throw new RuntimeSQLException(x);
         }
+        catch(NoUpdatableColumnInDataException x)
+        {
+            if (_failOnEmptyUpdate)
+                throw new IllegalArgumentException(x.getMessage());
+            else
+                _skipCurrentIterator = true;
+        }
+    }
+
+    @Override
+    protected boolean shouldSkipIterator()
+    {
+        return _skipCurrentIterator;
     }
 
     protected ParameterMapStatement getInsertStatement(Map<String, Object> constants) throws SQLException
@@ -300,6 +324,23 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                     .selectIds(_selectIds)
                     .constants(constants);
         stmt = util.createStatement(_conn, _container, null);
+        return stmt;
+    }
+
+    protected ParameterMapStatement getUpdateStatement(Map<String, Object> constants) throws SQLException, NoUpdatableColumnInDataException
+    {
+        ParameterMapStatement stmt;
+        setAutoIncrement(INSERT.OFF);
+
+        StatementUtils util = new StatementUtils(StatementUtils.Operation.update, _table)
+                .keys(_keyColumns)
+                .skip(_skipColumnNames)
+                .allowSetAutoIncrement(false)
+                .noupdate(_dontUpdate)
+                .updateBuiltinColumns(false)
+                .selectIds(_selectIds)
+                .constants(constants);
+        stmt = util.createStatement(_conn, _container, null, true);
         return stmt;
     }
 
@@ -400,5 +441,13 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
     {
         _adhocPropColumns = adhocPropColumns;
+    }
+
+    public static class NoUpdatableColumnInDataException extends Exception
+    {
+        public NoUpdatableColumnInDataException(String tableName)
+        {
+            super("The provided data contains no updatable column for '" + tableName + "'.");
+        }
     }
 }

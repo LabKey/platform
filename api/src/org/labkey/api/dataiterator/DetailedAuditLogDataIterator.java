@@ -121,7 +121,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data.close();
     }
 
-    public static DataIteratorBuilder getDataIteratorBuilder(@NotNull TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryService.AuditAction auditAction, final User user, final Container container)
+    public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryUpdateService.InsertOption insertOption, final User user, final Container container)
     {
         return context ->
         {
@@ -134,7 +134,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
-                return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
+                return new DetailedAuditLogDataIterator(in, context, queryTable, insertOption.auditAction, user, container);
             }
             // Nothing to do, so just return input DataIterator
             return builder.getDataIterator(context);
@@ -148,4 +148,11 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (null != _data)
             _data.debugLogInfo(sb);
     }
+
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
+
 }

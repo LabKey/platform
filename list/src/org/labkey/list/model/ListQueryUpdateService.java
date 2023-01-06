@@ -209,7 +209,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, boolean useMerge)
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, InsertOption insertOption)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -217,7 +217,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         User updatedUser = getListUser(user, container);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
-        context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
+        context.setInsertOption(insertOption);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
         setAttachmentDirectory(attachmentDir);
@@ -227,17 +227,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
             {
-                int inserted = _importRowsUsingDIB(updatedUser, container, loader, null, context, new HashMap<>());
+                int imported = _importRowsUsingDIB(updatedUser, container, loader, null, context, new HashMap<>());
 
                 if (!errors.hasErrors())
                 {
                     //Make entry to audit log if anything was inserted
-                    if (inserted > 0)
-                        ListManager.get().addAuditEvent(_list, updatedUser, (useMerge ? "Bulk imported " : "Bulk inserted ") + inserted + " rows to list.");
+                    if (imported > 0)
+                        ListManager.get().addAuditEvent(_list, updatedUser, "Bulk " + (insertOption.updateOnly ? "updated " : (insertOption.mergeRows ? "imported " : "inserted ")) + imported + " rows to list.");
 
                     transaction.commit();
                     ListManager.get().indexList(_list, false); // TODO: Add to a post-commit task?
-                    return inserted;
+                    return imported;
                 }
 
                 return 0;

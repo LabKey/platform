@@ -169,7 +169,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
 
-        setSupportMerge(true);
+        setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
     }
 
     @Override
@@ -881,20 +881,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.setDebugName("step0");
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
-            ColumnInfo lsidCol = expData.getColumn("lsid");
-
-            // TODO: validate dataFileUrl column, it will be saved later
-
-            // Generate LSID before inserting
-            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
-
-            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
-            ColumnInfo genIdCol = _dataClassTableInfo.get().getColumn(FieldKey.fromParts("genId"));
-            final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
-            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
             // Ensure we have a dataClass column and it is of the right value
             // use materialized classId so that parameter binding works for both exp.data as well as materialized table
@@ -905,12 +893,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
             step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
 
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+            {
+                step0.selectAll();
+                return LoggingDataIterator.wrap(step0.getDataIterator(context));
+            }
+
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?
+
             // Ensure we have a name column -- makes the NameExpressionDataIterator easier
             if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
             {
                 ColumnInfo nameCol = expData.getColumn("name");
                 step0.addColumn(nameCol, (Supplier<String>)() -> null);
             }
+
+            ColumnInfo lsidCol = expData.getColumn("lsid");
+
+            // TODO: validate dataFileUrl column, it will be saved later
+
+            // Generate LSID before inserting
+            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
+
+            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
+            ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
+            final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
@@ -1005,9 +1013,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
-        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
+        {
+            return getRow(user, container, keys, false);
+        }
+
+        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException
         {
             aliasColumns(_columnMapping, keys);
 
@@ -1016,10 +1030,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
 
-            if (null==rowid && null==lsid && ((null == name || null == classId)))
-                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name' and 'classid'", keys);
+            if (classId == null)
+                classId = _dataClass.getRowId();
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId);
+            if (null==rowid && null==lsid && null == name)
+                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
+
+            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
 
             //PostgreSQL includes a column named _row for the row index, but since this is selecting by
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -1040,7 +1057,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
@@ -1052,14 +1069,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid")
-                    .append(" WHERE d.Container=?").add(container.getEntityId());
+                    .append(" ON d.lsid = t.lsid WHERE ");
+
             if (null != rowid)
-                sql.append(" AND d.rowid=?").add(rowid);
+                sql.append("d.rowid=?").add(rowid);
             else if (null != lsid)
-                sql.append(" AND d.lsid=?").add(lsid);
+                sql.append("d.lsid=?").add(lsid);
             else
-                sql.append(" AND d.classid=? AND d.name=?").add(classId).add(name);
+                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
+
+            if (!allowCrossContainer)
+                sql.append(" AND d.Container=?").add(container.getEntityId());
 
             return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
@@ -1239,6 +1259,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        public void configureDataIteratorContext(DataIteratorContext context)
+        {
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+        }
+
+        @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
@@ -1248,7 +1274,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             dib = getConceptURIVocabularyDomainDataIteratorBuilder(user, container, dib);
 
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
             return dib;
         }
@@ -1302,5 +1328,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
+
     }
 }
