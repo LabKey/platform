@@ -448,7 +448,7 @@ public class StatementUtils
     public void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey,ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
     {
         String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
-        if (Operation.merge == _operation)
+        if (Operation.merge == _operation || Operation.update == _operation)
         {
             // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
             sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
@@ -583,7 +583,7 @@ public class StatementUtils
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
-        boolean alwaysInsertExpObject = hasObjectURIColumn && updatable.isAlwaysInsertExpObject();
+        boolean alwaysInsertExpObject = (hasObjectURIColumn && updatable.isAlwaysInsertExpObject()) && Operation.update != _operation;
         if (hasObjectURIColumn)
             _dontUpdateColumnNames.add(objectURIColumnName);
 // TODO Should we add created and createdby? Or make the caller decide?
@@ -592,7 +592,7 @@ public class StatementUtils
 
         boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
-        if (Operation.update != _operation && (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty()))
+        if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
         {
             properties = (null==domain||isMaterializedDomain) ? Collections.emptyList() : domain.getProperties();
 

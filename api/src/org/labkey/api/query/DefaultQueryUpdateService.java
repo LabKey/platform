@@ -304,6 +304,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row)
             throws SQLException, ValidationException
     {
+        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
+
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
         if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
@@ -495,6 +497,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
             throws SQLException, ValidationException
     {
+        assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
+
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
 

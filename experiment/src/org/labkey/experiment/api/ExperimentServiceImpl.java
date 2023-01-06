@@ -750,6 +750,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .collect(toList());
     }
 
+    public List<ExpMaterialImpl> getExpMaterialsByNames(Container container, User user, Collection<String> names, @Nullable ExpSampleType sampleType)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("Name"), names);
+        if (sampleType != null)
+            filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
+
+        return new TableSelector(getTinfoMaterial(), TableSelector.ALL_COLUMNS, filter, null)
+                .getArrayList(Material.class)
+                .stream()
+                .map(ExpMaterialImpl::new)
+                .collect(toList());
+    }
+
     @Override
     public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
     {

@@ -320,6 +320,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
+
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)
         {
@@ -467,6 +469,24 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return outputRows;
     }
 
+    protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
+
+        DataIterator di = _toDataIterator(getClass().getSimpleName() + ".updateRows()", rows);
+        DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
+        ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
+        int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
+        afterInsertUpdate(count, context.getErrors());
+
+        if (context.getErrors().hasErrors())
+            return null;
+
+        return outputRows;
+    }
+
 
     protected DataIterator _toDataIterator(String debugName, List<Map<String, Object>> rows)
     {
@@ -500,6 +520,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
 
         boolean hasTableScript = hasTableScript(container);
 
@@ -693,6 +715,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
