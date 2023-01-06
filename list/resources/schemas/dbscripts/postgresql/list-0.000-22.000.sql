@@ -23,7 +23,3 @@ SELECT core.fn_dropifexists('indexvarchar', 'exp', 'TABLE', NULL);
 SELECT core.fn_dropifexists('list', 'exp', 'CONSTRAINT', 'UQ_RowId');
 
 ALTER TABLE exp.list DROP COLUMN IF EXISTS rowid CASCADE;
-
-/* 21.xxx SQL scripts */
-
-SELECT core.executeJavaUpgradeCode('addImportHashColumn');

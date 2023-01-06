@@ -22,11 +22,8 @@ GO
 EXEC core.fn_dropifexists 'indexinteger', 'exp', 'TABLE';
 EXEC core.fn_dropifexists 'indexvarchar', 'exp', 'TABLE';
 EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'UQ_RowId';
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'rowid' AND Object_ID = OBJECT_ID('exp.list'))
     BEGIN
       ALTER TABLE [exp].list DROP COLUMN rowid;
     END
-
-/* 21.xxx SQL scripts */
-
-EXEC core.executeJavaUpgradeCode 'addImportHashColumn';

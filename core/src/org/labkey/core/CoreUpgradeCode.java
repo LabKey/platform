@@ -17,7 +17,6 @@ package org.labkey.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -26,10 +25,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.GUID;
 
 import java.util.List;
@@ -63,43 +58,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
-     */
-    @SuppressWarnings("unused")
-    @DeferredUpgrade
-    public void migrateDefaultDomainSetting(ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            // Taken from AppPropsImpl
-            final String DEFAULT_DOMAIN_PROP = "defaultDomain";
-            final String SITE_CONFIG_NAME = "SiteConfig";
-
-            String defaultDomain = (new AbstractWriteableSettingsGroup(){
-                @Override
-                protected String getGroupName()
-                {
-                    return SITE_CONFIG_NAME;
-                }
-
-                @Override
-                protected String getType()
-                {
-                    return "site settings";
-                }
-
-                private String getDefaultDomain()
-                {
-                    return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
-                }
-            }).getDefaultDomain();
-
-            AuthenticationManager.setDefaultDomain(context.getUpgradeUser(), defaultDomain);
-        }
-    }
-
-    /**
-     * Invoked at 21.005 to set the projects that are excluded from project locking by default
+     * Invoked at bootstrap time to set the projects that are excluded from project locking by default
      */
     @SuppressWarnings("unused")
     @DeferredUpgrade
@@ -111,24 +70,5 @@ public class CoreUpgradeCode implements UpgradeCode
             .map(Container::getEntityId)
             .collect(Collectors.toList());
         ContainerManager.setExcludedProjects(guids, () -> {});
-    }
-
-    /**
-     * Invoked at 21.008 to save placeholder logos into CAS and SAML configurations
-     */
-    @SuppressWarnings("unused")
-    @DeferredUpgrade
-    public void savePlaceholderLogos(ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            AuthenticationManager.getActiveConfigurations(SSOAuthenticationConfiguration.class)
-                .forEach(configuration -> configuration.savePlaceholderLogos(context.getUpgradeUser()));
-
-            // Clear the image cache so the web server sends the new logos
-            AttachmentCache.clearAuthLogoCache();
-            // Bump the look & feel revision to force browsers to retrieve new logos
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-        }
     }
 }

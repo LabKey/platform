@@ -1454,18 +1454,12 @@ ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkTargetContainer ENTITYID NULL;
 
 ALTER TABLE exp.List ADD COLUMN Category VARCHAR(20) NULL;
 
-SELECT core.executeJavaUpgradeCode('deleteOrphanedUploadedFileObjects');
-
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN IF NOT EXISTS ConceptSubtree TEXT NULL;
-
-SELECT core.executeJavaUpgradeCode('upgradeMaterialSource');
 
 -- move the StudyPublishProtocol container to the shared folder
 UPDATE exp.protocol
     SET container = (SELECT entityid FROM core.containers WHERE name = 'Shared')
     WHERE lsid LIKE 'urn:lsid:labkey.org:Protocol:StudyPublishProtocol%';
-
-SELECT core.executeJavaUpgradeCode('cleanupLengthTypePropertyValidators');
 
 UPDATE exp.propertydescriptor SET scale=4000 WHERE propertyuri LIKE '%WorkflowTask#AssayTypes';
 
@@ -1478,8 +1472,6 @@ ALTER TABLE exp.Material ADD COLUMN SampleState INT;
 ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
 
 ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
-
-SELECT core.executeJavaUpgradeCode('generateExpProtocolApplicationEntityIds');
 
 ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId SET NOT NULL;
 

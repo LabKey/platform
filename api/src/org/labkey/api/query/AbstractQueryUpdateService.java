@@ -122,7 +122,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *   - triggers
      *   - coercion/validation
      *   - detailed logging
-     *   - attachements
+     *   - attachments
      *
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
     */
@@ -225,7 +225,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     *  if QUS want to use something other than PKs to select existing rows for merge it can override this method
      * Used only for generating  ExistingRecordDataIterator at the moment
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
@@ -244,7 +244,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
         if (_enableExistingRecordsDataIterator)
         {
-            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            // some tables need to generate PKs, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);

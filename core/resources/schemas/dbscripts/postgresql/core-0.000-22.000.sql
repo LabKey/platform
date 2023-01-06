@@ -697,12 +697,8 @@ UPDATE core.modules SET name = 'Response', classname = 'org.labkey.response.Resp
 ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
 ALTER TABLE core.Containers ADD ExpirationDate TIMESTAMP NULL;
 
-SELECT core.executeJavaUpgradeCode('migrateDefaultDomainSetting');
-
 SELECT core.executeJavaInitializationCode('setDefaultExcludedProjects');
 
 ALTER TABLE core.qcstate RENAME TO DataStates;
 
 ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);
-
-SELECT core.executeJavaUpgradeCode('savePlaceholderLogos');
