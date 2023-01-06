@@ -5321,11 +5321,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         FROM exp.ExperimentRun r
                         INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
                         INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Data d ON pa.RowId = d.sourceApplicationID
                         WHERE di.dataId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR d.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
         sql.append("ORDER BY r.Created DESC");
@@ -5394,11 +5390,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         FROM exp.ExperimentRun r
                         INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
                         INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Material m ON pa.RowId = m.sourceApplicationID
                         WHERE mi.materialId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR m.RowId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
         sql.append("\n");
         sql.append("ORDER BY r.Created DESC");
