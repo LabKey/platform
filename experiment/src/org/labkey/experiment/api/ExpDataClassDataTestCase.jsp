@@ -98,6 +98,8 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
+<%@ page import="org.labkey.api.data.Sort" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -995,4 +997,62 @@ public void testViewSupportForVocabularyDomains() throws Exception
     String insertedLookUpValue = lookUpProp.getOrDefault("Name", null).toString();
     assertEquals("Look up value is not found or equal.", sampleOneLocation, insertedLookUpValue);
 }
+
+@Test
+public void testInsertOptionUpdate() throws Exception
+{
+    final User user = TestContext.get().getUser();
+    final String dataClassName = "DataClassWithImportOption";
+
+    List<GWTPropertyDescriptor> props = new ArrayList<>();
+    props.add(new GWTPropertyDescriptor("prop", "string"));
+
+    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null);
+    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b"));
+
+    UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
+    TableInfo table = schema.getTable(dataClassName);
+    QueryUpdateService qus = table.getUpdateService();
+
+    DataIteratorContext context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+
+    var count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToAdd.get(0).keySet(), rowsToAdd), context, null);
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(count,3);
+
+    TableInfo dataInputTInfo = ((ExperimentServiceImpl) ExperimentService.get()).getTinfoExperimentRunDataInputs();
+    SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+    TableSelector ts = new TableSelector(dataInputTInfo, TableSelector.ALL_COLUMNS, filter, null);
+    int inputCount =  (int) ts.getRowCount();
+
+    // update regular properties as well as datainputs
+    List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a1", "DataInputs/DataClassWithImportOption", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c1", "DataInputs/DataClassWithImportOption", "D-1"));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null));
+
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
+    count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(count,3);
+
+    Set<String> columnNames = new HashSet<>();
+    columnNames.add("Name");
+    columnNames.add("prop");
+
+    List<Map<String,Object>> rows = Arrays.asList(new TableSelector(table, columnNames, null, new Sort("Name")).getMapArray());
+    assertEquals("a1", rows.get(0).get("prop"));
+    assertEquals("c1", rows.get(1).get("prop"));
+    assertEquals("b1", rows.get(2).get("prop"));
+
+    ts = new TableSelector(dataInputTInfo, TableSelector.ALL_COLUMNS, filter, null);
+    int newInputCount =  (int) ts.getRowCount();
+    assertEquals(inputCount + 1, newInputCount);
+}
+
 %>

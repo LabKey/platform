@@ -37,8 +37,10 @@ import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper for code that does not use QueryUpdateService
@@ -237,7 +239,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         //
         // check for unbound columns that are required
         //
-        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation))
+        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation) && !context.getInsertOption().updateOnly)
         {
             for (TranslateHelper pair : unusedCols.values())
             {
@@ -293,6 +295,16 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             }
             if (validate.hasValidators())
                 last = validate;
+        }
+
+        if (context.getInsertOption().updateOnly && !unusedCols.isEmpty())
+        {
+            Set<String> unusedColNames = new HashSet<>();
+            for (FieldKey fieldKey : unusedCols.keySet())
+            {
+                unusedColNames.add(fieldKey.getName());
+            }
+            context.getDontUpdateColumnNames().addAll(unusedColNames);
         }
 
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));

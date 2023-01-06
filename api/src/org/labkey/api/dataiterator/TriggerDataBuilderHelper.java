@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -103,6 +104,16 @@ public class TriggerDataBuilderHelper
             if (null != _delegate)
                 _delegate.debugLogInfo(sb);
         }
+
+        protected TableInfo.TriggerType getTriggerType()
+        {
+            return _context.getInsertOption().updateOnly ? TableInfo.TriggerType.UPDATE : TableInfo.TriggerType.INSERT;
+        }
+
+        protected Map<String, Object> getOldRow()
+        {
+            return _context.getInsertOption().updateOnly ? getExistingRecord() : null;
+        }
     }
 
     class Before implements DataIteratorBuilder
@@ -132,13 +143,13 @@ public class TriggerDataBuilderHelper
                 isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
             }
 
-            boolean includeAllColumns = (!context.getInsertOption().mergeRows || mergeKeys == null) || isNewFolderImport;
+            boolean includeAllColumns = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
             coerce = LoggingDataIterator.wrap(coerce);
 
             if (includeAllColumns)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
-            else if (!_target.supportMerge())
+            else if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
                 return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
 
             coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);
@@ -169,10 +180,10 @@ public class TriggerDataBuilderHelper
         public boolean next() throws BatchValidationException
         {
             _currentRow = null;
-
+            TableInfo.TriggerType triggerType = getTriggerType();
             if (_firstRow)
             {
-                _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, getErrors(), _extraContext);
+                _target.fireBatchTrigger(_c, _user, triggerType, true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
             }
@@ -183,7 +194,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, rowNumber, _currentRow, null, _extraContext);
+                    _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -249,7 +260,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getOldRow(), _extraContext);
                     }
                     catch (ValidationException vex)
                     {
@@ -261,7 +272,7 @@ public class TriggerDataBuilderHelper
             finally
             {
                 if (!hasNext && firedInit && !getErrors().hasErrors())
-                    _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
+                    _target.fireBatchTrigger(_c, _user, getTriggerType(), false, getErrors(), _extraContext);
             }
         }
     }

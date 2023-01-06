@@ -19,20 +19,27 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     boolean commitRowsBeforeContinuing = false;
     private Set<DomainProperty> vocabularyProperties;
     Map<String, String> remapSchemaColumns = null;
+    boolean failOnEmptyUpdate = false;
 
     public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
     {
         this(data, table, null);
     }
 
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    {
+        this(data, table, container, null);
+    }
+
     /**
      * @param container If container != null, it will be set as a constant in the insert statement.
      */
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container, Set<String> dontUpdate)
     {
         this.builder = data;
         this.table = table;
         this.container = container;
+        this.dontUpdate = dontUpdate;
     }
 
     public TableInsertDataIteratorBuilder setKeyColumns(Set<String> keyColumns)
@@ -77,11 +84,17 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
+    public TableInsertDataIteratorBuilder setFailOnEmptyUpdate(boolean failOnEmptyUpdate)
+    {
+        this.failOnEmptyUpdate = failOnEmptyUpdate;
+        return this;
+    }
+
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
-        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
-                dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns);
+        DataIterator di = TableInsertUpdateDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
+                dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns, failOnEmptyUpdate);
         if (null == di)
         {
             //noinspection ThrowableNotThrown

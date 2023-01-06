@@ -440,6 +440,7 @@ public interface QueryService
         {
             return _verbPastTense;
         }
+
     }
 
     /**

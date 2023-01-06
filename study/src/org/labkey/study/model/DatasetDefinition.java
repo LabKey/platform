@@ -2297,12 +2297,18 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
-        DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
-        { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+        DataIteratorBuilder persist = null;
+
+        persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+
+        if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
+        {
+            // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
             ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
         }
-        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);
         return LoggingDataIterator.wrap(audit);
     }
 
