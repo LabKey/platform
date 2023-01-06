@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
+/* list-13.10-13.20.sql */
 
+CREATE SCHEMA list;
 GO
 
-UPDATE exp.ProtocolApplication SET EntityId = NEWID();
+EXEC core.fn_dropifexists 'indexinteger', 'exp', 'TABLE';
+EXEC core.fn_dropifexists 'indexvarchar', 'exp', 'TABLE';
+EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'UQ_RowId';
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'rowid' AND Object_ID = OBJECT_ID('exp.list'))
+    BEGIN
+      ALTER TABLE [exp].list DROP COLUMN rowid;
+    END
 
-ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId ENTITYID NOT NULL;
+/* 21.xxx SQL scripts */
+
+EXEC core.executeJavaUpgradeCode 'addImportHashColumn';

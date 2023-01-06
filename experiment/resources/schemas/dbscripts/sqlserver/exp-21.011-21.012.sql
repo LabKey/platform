@@ -1,1 +1,0 @@
-ALTER TABLE exp.MaterialSource ADD AliquotNameExpression NVARCHAR(200) NULL;

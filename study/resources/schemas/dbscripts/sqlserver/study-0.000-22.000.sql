@@ -1015,3 +1015,22 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
   CONSTRAINT pk_studydesignchallengetypes PRIMARY KEY (Container, Name)
 );
+
+/* 21.xxx SQL scripts */
+
+EXEC core.executeJavaUpgradeCode 'addImportHashColumn';
+
+EXEC core.executeJavaUpgradeCode 'upgradeForSpecimenModule';
+
+EXEC sp_rename 'study.Study.DefaultAssayQCState', 'DefaultPublishDataQCState', 'COLUMN';
+
+EXEC sp_rename 'study.Dataset.ProtocolId', 'PublishSourceId', 'COLUMN';
+
+ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
+GO
+UPDATE study.Dataset SET PublishSourceType = 'Assay'
+    WHERE PublishSourceId IS NOT NULL;
+
+EXEC core.executeJavaUpgradeCode 'ensureDesignDomains';
+
+EXEC core.executeJavaUpgradeCode 'ensureParticipantIds';

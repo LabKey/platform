@@ -1449,3 +1449,73 @@ ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
 ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
     FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
 GO
+
+/* 21.xxx SQL scripts */
+
+-- Most major file systems cap file lengths at 255 characters. Let's do the same
+ALTER TABLE exp.data ALTER COLUMN Name NVARCHAR(255);
+
+ALTER TABLE exp.PropertyDescriptor ADD DerivationDataScope NVARCHAR(20) NULL;
+ALTER TABLE exp.Material ADD RootMaterialLSID LSIDtype NULL;
+ALTER TABLE exp.Material ADD AliquotedFromLSID LSIDtype NULL;
+GO
+
+ALTER TABLE exp.MaterialSource ADD AutoLinkTargetContainer ENTITYID NULL;
+
+ALTER TABLE exp.List ADD Category NVARCHAR(20) NULL;
+
+EXEC core.executeJavaUpgradeCode 'deleteOrphanedUploadedFileObjects';
+
+ALTER TABLE exp.PropertyDescriptor ADD ConceptSubtree NVARCHAR(MAX) NULL;
+
+EXEC core.executeJavaUpgradeCode  'upgradeMaterialSource';
+
+-- move the StudyPublishProtocol container to the shared folder
+UPDATE exp.protocol
+    SET container = (SELECT entityid FROM core.containers WHERE name = 'Shared')
+    WHERE lsid LIKE 'urn:lsid:labkey.org:Protocol:StudyPublishProtocol%';
+
+EXEC core.executeJavaUpgradeCode 'cleanupLengthTypePropertyValidators';
+
+UPDATE exp.propertydescriptor SET scale=4000 WHERE propertyuri LIKE '%WorkflowTask#AssayTypes';
+
+ALTER TABLE exp.MaterialSource ADD AutoLinkCategory NVARCHAR(200) NULL;
+
+ALTER TABLE exp.MaterialSource ADD AliquotNameExpression NVARCHAR(200) NULL;
+
+ALTER TABLE exp.Material ADD SampleState INT;
+GO
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
+
+ALTER TABLE exp.ProtocolApplication ADD EntityId ENTITYID;
+
+GO
+
+UPDATE exp.ProtocolApplication SET EntityId = NEWID();
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN EntityId ENTITYID NOT NULL;
+
+ALTER TABLE exp.MaterialSource ADD Category NVARCHAR(20) NULL;
+
+ALTER TABLE exp.ExperimentRun ADD WorkflowTask INT;
+GO
+ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) ON DELETE SET NULL;
+
+ALTER TABLE exp.Protocol ADD Status NVARCHAR(60);
+GO
+UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun';
+
+ALTER TABLE exp.Material ADD RecomputeRollup BIT NULL CONSTRAINT DF_recomputeRollup DEFAULT(0);
+ALTER TABLE exp.Material ADD AliquotCount INT NULL;
+ALTER TABLE exp.Material ADD AliquotVolume FLOAT NULL;
+ALTER TABLE exp.Material ADD AliquotUnit NVARCHAR(10) NULL;
+GO
+UPDATE exp.Material SET RecomputeRollup=1 WHERE lsid IN
+                                                (
+                                                    SELECT distinct rootMaterialLsid FROM exp.material
+                                                );
+GO
+CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=1;
+
+ALTER TABLE exp.PropertyDescriptor ADD Scannable BIT NOT NULL DEFAULT 0;
+GO

@@ -902,3 +902,19 @@ BEGIN
 END;
 
 GO
+
+/* 21.xxx SQL scripts */
+
+ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
+ALTER TABLE core.Containers ADD ExpirationDate DATETIME NULL;
+
+EXEC core.executeJavaUpgradeCode 'migrateDefaultDomainSetting';
+
+EXEC core.executeJavaInitializationCode 'setDefaultExcludedProjects';
+
+EXEC sp_rename 'core.qcstate', 'DataStates'
+GO
+
+ALTER TABLE core.DataStates ADD StateType NVARCHAR(20);
+
+EXEC core.executeJavaUpgradeCode 'savePlaceholderLogos';
