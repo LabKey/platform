@@ -1452,7 +1452,7 @@ public class XarReader extends AbstractXarImporter
                 if (_auditBehaviorType == AuditBehaviorType.DETAILED)
                 {
                     SampleTypeServiceImpl service = SampleTypeServiceImpl.get();
-                    service.addAuditEvent(getUser(), getContainer(), service.getCommentDetailed(QueryService.AuditAction.INSERT, false), mi, null);
+                    service.addAuditEvent(getUser(), getContainer(), service.getCommentDetailed(QueryService.AuditAction.INSERT, false), null, mi, null);
                 }
                 if (xbMaterial.isSetAlias())
                 {
