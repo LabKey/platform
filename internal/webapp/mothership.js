@@ -124,7 +124,11 @@ LABKEY.Mothership = (function () {
 
             // Firefox error when leaving a page before all scripts have finished loading
             // http://stackoverflow.com/questions/192570/firefox-error-loading-script-loading-google-analytics-in-ff2/7686057#7686057
-            'Error loading script'
+            'Error loading script',
+
+            // Non-fatal ResizeObserver loop detection
+            'ResizeObserver loop limit exceeded',
+            'ResizeObserver loop completed with undelivered notifications.'
         ];
 
         for (i = 0; i < ignoreMsgs.length; i++) {
