@@ -637,7 +637,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
+            if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }
