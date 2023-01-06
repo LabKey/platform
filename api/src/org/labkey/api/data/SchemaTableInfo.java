@@ -855,6 +855,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return null;
     }
 
+    @Override
+    public boolean supportsInsertOption(QueryUpdateService.InsertOption option)
+    {
+        return false;
+    }
+
     @Override @NotNull
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {

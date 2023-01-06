@@ -158,7 +158,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
-    private final Set<QueryUpdateService.InsertOption> _disallowedInsertOptions = new HashSet<>(Arrays.asList(QueryUpdateService.InsertOption.MERGE));
+    private final Set<QueryUpdateService.InsertOption> _disallowedInsertOptions = new HashSet<>(Arrays.asList(QueryUpdateService.InsertOption.MERGE, QueryUpdateService.InsertOption.REPLACE, QueryUpdateService.InsertOption.UPSERT));
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
@@ -1977,7 +1977,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public boolean supportInsertOption(QueryUpdateService.InsertOption option)
+    public boolean supportsInsertOption(QueryUpdateService.InsertOption option)
     {
         return !_disallowedInsertOptions.contains(option);
     }

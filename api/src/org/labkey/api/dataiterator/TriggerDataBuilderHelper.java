@@ -149,7 +149,7 @@ public class TriggerDataBuilderHelper
 
             if (includeAllColumns)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
-            else if (context.getInsertOption().mergeRows && !_target.supportInsertOption(QueryUpdateService.InsertOption.MERGE))
+            else if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
                 return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
 
             coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, true).getDataIterator(context);

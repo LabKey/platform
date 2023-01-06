@@ -758,7 +758,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return List.of();
     }
 
-    default boolean supportInsertOption(QueryUpdateService.InsertOption option)
+    default boolean supportsInsertOption(QueryUpdateService.InsertOption option)
     {
         return true;
     }
