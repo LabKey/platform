@@ -15,7 +15,7 @@
  */
 package org.labkey.core.statistics;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements CurveFit<P>
 {
-    private static double EPSILON = 0.00001;
+    private static final double EPSILON = 0.00001;
 
     protected Map<StatsService.AUCType, Double> _aucMap = new HashMap<>();
     protected List<AUCRange> _ranges = new ArrayList<>();
@@ -271,7 +271,8 @@ public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements 
      */
     private double integrate(double a, double b, double epsilon, int maxRecursionDepth)
     {
-        try {
+        try
+        {
             P parameters = getParameters();
 
             double c = (a + b)/2;

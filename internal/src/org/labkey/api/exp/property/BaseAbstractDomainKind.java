@@ -1,6 +1,6 @@
 package org.labkey.api.exp.property;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 public abstract class BaseAbstractDomainKind extends AbstractDomainKind<JSONObject>
 {

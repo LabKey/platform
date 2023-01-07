@@ -47,26 +47,26 @@ public interface QueryUpdateService extends HasPermission
     enum InsertOption
     {
         // interactive/api
-        INSERT(false, false, false, false, false, false),
-        UPSERT(false, true, false, false, false, false),  // like merge, but with reselectids
+        INSERT(false, false, false, false, false, false, false, QueryService.AuditAction.INSERT),
+        UPSERT(false, true, false, false, false, true, false, QueryService.AuditAction.MERGE),  // like merge, but with reselectids
 
         // bulk
-        IMPORT(true, false, true, false, false, false),
+        IMPORT(true, false, true, false, false, false, false, QueryService.AuditAction.INSERT),
         /**
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, true, false, false, false),
+        MERGE(true, true, true, false, false, true, false, QueryService.AuditAction.MERGE),
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, true, true, false, false),
-        IMPORT_IDENTITY(true, false, true, false, true, false),
+        REPLACE(true, true, true, true, false, true, false, QueryService.AuditAction.MERGE),
+        IMPORT_IDENTITY(true, false, true, false, true, false, false, QueryService.AuditAction.INSERT),
 
         /**
          * Will only update existing rows
          */
-        UPDATE(true, false, true, false, false, true);
+        UPDATE(true, false, true, false, false, true, true, QueryService.AuditAction.UPDATE);
 
         final public boolean batch;
         final public boolean mergeRows;
@@ -74,9 +74,11 @@ public interface QueryUpdateService extends HasPermission
         final public boolean reselectIds;
         final public boolean replace;
         final public boolean identity_insert;
+        final public boolean allowUpdate;
         final public boolean updateOnly;
+        final public QueryService.AuditAction auditAction;
 
-        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, boolean updateOnly)
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, boolean allowUpdate, boolean updateOnly, QueryService.AuditAction auditAction)
         {
             this.batch = batch;
             mergeRows = merge;
@@ -86,7 +88,9 @@ public interface QueryUpdateService extends HasPermission
             this.replace = replace;
             assert !identity_insert || (batch && !merge);   // identity_insert is only supported for bulk_insert
             this.identity_insert = identity_insert;
+            this.allowUpdate = allowUpdate;
             this.updateOnly = updateOnly;
+            this.auditAction = auditAction;
         }
     }
 
@@ -101,7 +105,8 @@ public interface QueryUpdateService extends HasPermission
         TargetMultipleContainers,    // (Bool) allow multi container import
         SkipTriggers,         // (Bool) skip setup and firing of trigger scripts
         SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
-        BulkLoad                // (Bool) skips detailed auditing
+        BulkLoad,                // (Bool) skips detailed auditing
+        CheckForCrossProjectData                // (Bool) Check if data belong to other projects
     }
 
 
@@ -124,12 +129,15 @@ public interface QueryUpdateService extends HasPermission
      * @param user      The current user.
      * @param container The container in which the data should exist.
      * @param keys      A map of primary key values for each rowNumber.
+     * @param verifyNoCrossFolderData      Throw exception if any key belongs to data outside the desired container.
+     * @param verifyExisting      Throw exception if no existing record is found for any row.
+     * @param getDetails      If true, get extra lookup/lineage data
      * @return The rows data as maps for each rowNumber.
      * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
      * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys);

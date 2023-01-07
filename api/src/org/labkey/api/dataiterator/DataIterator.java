@@ -104,6 +104,6 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
 
     default void debugLogInfo(StringBuilder sb)
     {
-        sb.append("  " + getDebugName() + ": " + this.getClass().getName() + "\n");
+        sb.append("  ").append(getDebugName()).append(": ").append(this.getClass().getName()).append("\n");
     }
 }
