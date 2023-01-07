@@ -882,7 +882,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 new Timestamp(ms), rowId);
     }
 
-    public void indexDataClass(ExpDataClass dataClass)
+    public void indexDataClass(ExpDataClassImpl dataClass)
     {
         SearchService ss = SearchService.get();
         if (ss == null)
@@ -896,7 +896,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (d == null)
                 return; // Domain may be null if the DataClass has been deleted
 
-            TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+            TableInfo table = dataClass.getTinfo();
             if (table == null)
                 return;
 
@@ -908,9 +908,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
-    private void indexDataClassData(ExpDataClass dataClass, SearchService.IndexTask task)
+    private void indexDataClassData(ExpDataClassImpl dataClass, SearchService.IndexTask task)
     {
-        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+        TableInfo table = dataClass.getTinfo();
         // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
@@ -924,7 +924,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (Data data : batch)
             {
                 ExpDataImpl impl = new ExpDataImpl(data);
-                impl.index(task);
+                impl.index(task, null);
             }
         });
     }

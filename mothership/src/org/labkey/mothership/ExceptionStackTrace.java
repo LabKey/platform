@@ -20,11 +20,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HashHelpers;
+import org.labkey.api.util.ExceptionUtil;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Date;
 
 /**
@@ -78,84 +75,16 @@ public class ExceptionStackTrace
 
     public String getStackTraceHash()
     {
+        if (_stackTraceHash == null && _stackTrace != null)
+        {
+            _stackTraceHash = ExceptionUtil.hashStackTrace(_stackTrace);
+        }
         return _stackTraceHash;
     }
 
     public void setStackTraceHash(String stackTraceHash)
     {
         _stackTraceHash = stackTraceHash;
-    }
-
-    public void hashStackTrace()
-    {
-        String[] ignoreLineNumberList = { "at java.", "at org.apache.", "at javax.", "at sun." };
-        if (_stackTrace != null)
-        {
-            BufferedReader reader = new BufferedReader(new StringReader(_stackTrace));
-            StringBuilder sb = new StringBuilder();
-            try
-            {
-                String line = reader.readLine();
-                // Strip off the message part of the exception for hashing
-                if (line != null)
-                {
-                    int index = line.indexOf(":");
-                    if (index != -1)
-                    {
-                        sb.append(line.substring(0, index));
-                    }
-                    else
-                    {
-                        sb.append(line);
-                    }
-                }
-                while ((line = reader.readLine()) != null)
-                {
-                    // Don't include the other threads when de-duping stack traces
-                    if (line.startsWith(SqlDialect.SEPARATOR_BANNER))
-                    {
-                        break;
-                    }
-
-                    // Don't include lines that vary based on reflection
-                    // Don't include lines that depend on Groovy view numbers
-                    if (line.trim().startsWith("at ") && 
-                            !line.trim().startsWith("at sun.reflect.")
-                            && !(line.trim().startsWith("..."))
-                            && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:"))
-                            && !line.trim().startsWith("Position: ")    // Postgres stack traces can include a third line that indicates the position of the error in the SQL
-                            && !line.trim().startsWith("Detail:")    // Postgres stack traces can include a second details line
-                            && !line.trim().startsWith("Detalhe:"))  // which is oddly sometimes prefixed by "Detalhe:" instead of "Detail:"
-                    {
-                        // Don't include line numbers that depend on non-labkey version install
-                        if (line.trim().startsWith("Caused by:") && line.indexOf(":", line.indexOf(":") + 1) != -1)
-                        {
-                            line = line.substring(0, line.indexOf(":", line.indexOf(":") + 1));
-                        }
-                        else
-                        {
-                            for (String ignoreLineNumber : ignoreLineNumberList)
-                            {
-                                if (line.trim().startsWith(ignoreLineNumber) && line.contains("("))
-                                {
-                                    line = line.substring(0, line.lastIndexOf("("));
-                                    break;
-                                }
-                            }
-                        }
-
-                        sb.append(line);
-                        sb.append("\n");
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                // Shouldn't happen - this is an in-memory source
-                throw new RuntimeException(e);
-            }
-            _stackTraceHash = HashHelpers.hash(sb.toString());
-        }
     }
 
     public Integer getAssignedTo()
@@ -277,8 +206,6 @@ public class ExceptionStackTrace
                     "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:874)\n" +
                     "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:156)\n");
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
 
             // Change a line number and make sure we get a different hash
@@ -299,7 +226,6 @@ public class ExceptionStackTrace
                     "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:874)\n" +
                     "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:156)\n");
 
-            stackTrace3.hashStackTrace();
             assertNotSame(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
         }
 
@@ -326,9 +252,6 @@ public class ExceptionStackTrace
                     "\tat Experiment.ExperimentController.showRun(ExperimentController.java:788)\n");
 
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
-            stackTrace3.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
 
@@ -355,8 +278,6 @@ public class ExceptionStackTrace
                     "\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)\n" +
                     "\tat java.lang.reflect.Method.invoke(Method.java:585)");
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
 
@@ -493,8 +414,6 @@ public class ExceptionStackTrace
                     "\tat org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:489)\n" +
                     "\tat java.lang.Thread.run(Thread.java:662)");
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
 
@@ -525,35 +444,8 @@ public class ExceptionStackTrace
                     "\tat org.apache.commons.beanutils.BeanUtilsBean.populate(BeanUtilsBean.java:811)\n" +
                     "\tat org.apache.commons.beanutils.BeanUtils.populate(BeanUtils.java:298)");
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
-            stackTrace3.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
             assertFalse(stackTrace1.getStackTraceHash().equals(stackTrace3.getStackTraceHash()));
-        }
-
-        @Test
-        public void testGroovyHashCombining()
-        {
-            ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
-            stackTrace1.setStackTrace("java.lang.NoSuchMethodError: java.util.AbstractMap.get(Ljava/lang/Object;)Lorg/labkey/experiment/CustomPropertyRenderer;\n" +
-                    "\tat gjdk.org.labkey.experiment.ExperimentController$CustomPropertiesView$1_GroovyReflector.invoke(Unknown Source)\n" +
-                    "\tat org.codehaus.groovy.runtime.ScriptBytecodeAdapter.invokeMethodN(ScriptBytecodeAdapter.java:187)\n" +
-                    "\tat script1184078621037.run(script1184078621037.groovy:27)\n" +
-                    "\tat org.labkey.api.view.GroovyView.renderView(GroovyView.java:476)\n" +
-                    "\tat org.labkey.api.view.HttpView.render(HttpView.java:113)\n");
-
-            ExceptionStackTrace stackTrace2 = new ExceptionStackTrace();
-            stackTrace2.setStackTrace("java.lang.NoSuchMethodError: get\n" +
-                    "\tat gjdk.org.labkey.experiment.ExperimentController$CustomPropertiesView$1_GroovyReflector.invoke(Unknown Source)\n" +
-                    "\tat org.codehaus.groovy.runtime.ScriptBytecodeAdapter.invokeMethodN(ScriptBytecodeAdapter.java:187)\n" +
-                    "\tat script1184310712861.run(script1184310712861.groovy:27)\n" +
-                    "\tat org.labkey.api.view.GroovyView.renderView(GroovyView.java:476)\n" +
-                    "\tat org.labkey.api.view.HttpView.render(HttpView.java:113)");
-
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
-            assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
 
         @Test
@@ -579,8 +471,6 @@ public class ExceptionStackTrace
                     "\tCaused by: Exception: 23\n" +
                     "\t... 62 more");
 
-            stackTrace1.hashStackTrace();
-            stackTrace2.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
     }

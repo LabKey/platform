@@ -1,1 +1,0 @@
-ALTER TABLE exp.List ADD COLUMN Category VARCHAR(20) NULL;

@@ -35,6 +35,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -291,6 +292,16 @@ public class CoreWarningProvider implements WarningProvider
             }
             addStandardWarning(warnings, "The following modules experienced errors during startup:", moduleFailures.keySet().toString(), PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()));
         }
+
+        // Issue 46922 - check for and warn about unknown modules
+        int unknownModules = ModuleLoader.getInstance().getUnknownModuleCount();
+
+        if ((!AppProps.getInstance().isDevMode() && unknownModules > 0) || showAllWarnings)
+            addStandardWarning(warnings, "This server is running with " +
+                StringUtilsLabKey.pluralize(unknownModules, "unknown module") +
+                ", modules that were previously installed but are no longer present. Unknown modules, particularly " +
+                "those that create database schemas, can cause upgrade problems in the future. These modules and their " +
+                "schemas should be deleted via the ", "Module Details page", PageFlowUtil.urlProvider(AdminUrls.class).getModulesDetailsURL());
     }
 
     private void getWebSocketConnectionWarnings(Warnings warnings, boolean showAllWarnings)

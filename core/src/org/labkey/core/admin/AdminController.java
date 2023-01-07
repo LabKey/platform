@@ -8183,7 +8183,7 @@ public class AdminController extends SpringActionController
             HtmlStringBuilder unknownDescription = HtmlStringBuilder.of()
                 .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
-                "module is no longer being distributed, the module has been renamed, the server location where the module " +
+                "module is no longer part of the deployed distribution, the module has been renamed, the server location where the module " +
                 "is stored is not accessible, or the module file is corrupted.")
                 .append(HtmlString.unsafe("<br><br>")).append("The delete links below will remove all record of a module from the database tables.");
             HtmlString noModulesDescription = HtmlString.of("A module is considered \"unknown\" if it was installed on this server " +
