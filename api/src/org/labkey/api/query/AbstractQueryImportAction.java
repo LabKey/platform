@@ -746,11 +746,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             DataIteratorContext context = new DataIteratorContext(errors);
             context.setInsertOption(insertOption);
             context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+            if (insertOption.updateOnly) // for "update from file", fail if new records are found
+                context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
             if (auditBehaviorType != null)
             {
-                Map<Enum, Object> configParameters = new HashMap<>();
-                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-                context.setConfigParameters(configParameters);
+                context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
             }
             if (importIdentity)
             {

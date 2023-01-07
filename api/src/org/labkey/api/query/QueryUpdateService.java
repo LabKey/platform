@@ -106,7 +106,8 @@ public interface QueryUpdateService extends HasPermission
         SkipTriggers,         // (Bool) skip setup and firing of trigger scripts
         SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
         BulkLoad,                // (Bool) skips detailed auditing
-        CheckForCrossProjectData                // (Bool) Check if data belong to other projects
+        CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
+        VerifyExistingData      // (Bool) Validate that data is not new but existing data
     }
 
 
