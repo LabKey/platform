@@ -749,8 +749,6 @@ public class StudyDesignManager
     {
         try (DbScope.Transaction transaction = OntologyManager.getExpSchema().getScope().ensureTransaction())
         {
-            OntologyManager.clearCaches();
-
             // if there are any property descriptors associated with this domain, update their container
             List<Integer> propertyDescriptors = new SqlSelector(OntologyManager.getExpSchema(), new SQLFragment("SELECT PropertyID FROM ")
                     .append(OntologyManager.getTinfoPropertyDomain(), "")
@@ -771,6 +769,7 @@ public class StudyDesignManager
                     .append(" SET Container = ? WHERE DomainID = ?").add(container.getId()).add(domain.getTypeId());
             new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
 
+            transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
         }
     }
