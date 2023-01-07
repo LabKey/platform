@@ -49,7 +49,7 @@ public class ProjectAndSiteGroupsCache
         SQLFragment sql = new SQLFragment(
             "SELECT UserId FROM " + CORE.getTableInfoPrincipals() + "\n" +
                 "WHERE Type = '" + PrincipalType.GROUP.getTypeChar() + "' AND Container " + containerClause + "\n" +
-                "ORDER BY LOWER(Name)");  // Force case-insensitve order for consistency
+                "ORDER BY LOWER(Name)");  // Force case-insensitive order for consistency
 
         if (!c.isRoot())
             sql.add(c);
