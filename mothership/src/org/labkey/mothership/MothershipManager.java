@@ -93,7 +93,6 @@ public class MothershipManager
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(INSERT_EXCEPTION_LOCK))
         {
             boolean isNew = false;
-            stackTrace.hashStackTrace();
             ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
             if (existingStackTrace != null)
             {

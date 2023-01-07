@@ -358,7 +358,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (null == newRowKey && null != oldRowKey)
             rowCopy.put(_list.getKeyName(), oldRowKey);
 
-        Map<String, Object> result = super.updateRow(getListUser(user, container), container, rowCopy, oldRow, true);
+        Map<String, Object> result = super.updateRow(getListUser(user, container), container, rowCopy, oldRow, true, false);
 
         if (null != result)
         {

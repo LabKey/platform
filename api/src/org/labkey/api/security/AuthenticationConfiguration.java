@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -191,34 +190,6 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                 catch (Exception e)
                 {
                     LOG.warn("Error while attempting to save logo", e);
-                }
-            }
-        }
-
-        // TODO: Delete everything below once earliest upgrade is later than 21.008. See #43979.
-        void savePlaceholderLogos(User user);
-
-        default void ensureLogos(User user, String prefix)
-        {
-            ensureLogo(user, AuthLogoType.HEADER,  prefix + "_small.png");
-            ensureLogo(user, AuthLogoType.LOGIN_PAGE, prefix + "_big.png");
-        }
-
-        default void ensureLogo(User user, AuthLogoType logoType, String filename)
-        {
-            AttachmentService svc = AttachmentService.get();
-            Attachment att = svc.getAttachment(this, logoType.getFileName());
-
-            if (null == att)
-            {
-                LOG.info("Saving a placeholder " + logoType.getLabel() + " logo for \"" + getDescription() + "\"");
-                try (InputStream is = getClass().getResourceAsStream(filename))
-                {
-                    saveLogo(user, logoType, is);
-                }
-                catch (Exception e)
-                {
-                    LOG.warn("Error while attempting to save placeholder logo", e);
                 }
             }
         }

@@ -163,7 +163,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void setComment(User user, String comment) throws ValidationException
     {
         super.setComment(user, comment);
-        index(null);
+        index(null, null);
     }
 
     @Override
@@ -256,7 +256,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 Table.insert(user, dataClass.getTinfo(), map);
             }
         }
-        index(null);
+        index(null, null);
     }
 
     @Override
@@ -469,16 +469,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     // Get all text strings from the data class for indexing
-    private void getIndexValues(Set<String> identifiers, Set<String> keywords)
+    private void getIndexValues(Set<String> identifiers, Set<String> keywords, TableInfo table)
     {
-        ExpDataClassImpl dc = this.getDataClass(null);
-        if (dc == null)
-            return;
-
-        TableInfo table = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
-        if (table == null)
-            return;
-
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
             // skip the base-columns - they will be added to the index separately
@@ -725,7 +717,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return FileContentService.get().getWebDavUrl(path, c, type);
     }
 
-    public void index(SearchService.IndexTask task)
+    public void index(SearchService.IndexTask task, @Nullable ExpDataClassDataTableImpl tableInfo)
     {
         if (task == null)
         {
@@ -735,11 +727,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             task = ss.defaultTask();
         }
 
-        WebdavResource doc = createDocument();
+        WebdavResource doc = createDocument(tableInfo);
         task.addResource(doc, SearchService.PRIORITY.item);
     }
 
     public WebdavResource createDocument()
+    {
+        return createDocument(null);
+    }
+
+    public WebdavResource createDocument(@Nullable ExpDataClassDataTableImpl tableInfo)
     {
         Map<String, Object> props = new HashMap<>();
         Set<String> keywordsMed = new HashSet<>();
@@ -774,8 +771,20 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             identifiersHi.addAll(aliases);
         }
 
-        // Collect other text columns and lookup display columns
-        getIndexValues(identifiersMed, keywordsLo);
+        if (tableInfo == null)
+        {
+            ExpDataClassImpl dc = this.getDataClass(null);
+            if (dc != null)
+            {
+                tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
+            }
+        }
+
+        if (tableInfo != null)
+        {
+            // Collect other text columns and lookup display columns
+            getIndexValues(identifiersMed, keywordsLo, tableInfo);
+        }
 
         ExpDataClass dc = this.getDataClass(null);
         if (null != dc)

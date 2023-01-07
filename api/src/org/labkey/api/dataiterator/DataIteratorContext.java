@@ -55,6 +55,7 @@ public class DataIteratorContext
 
     int _maxRowErrors = 1;
 
+    @NotNull
     private final Map<Enum, Object> _configParameters = new HashMap<>();
 
     public DataIteratorContext()
