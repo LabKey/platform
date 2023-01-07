@@ -18,16 +18,14 @@ package org.labkey.visualization;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.batik.anim.dom.SVGDOMImplementation;
-import org.apache.batik.transcoder.TranscoderException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
@@ -38,11 +36,11 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -1585,11 +1583,11 @@ public class VisualizationController extends SpringActionController
         @Override
         public ApiResponse execute(SourceCountForm form, BindException errors) throws Exception
         {
-            JSONObject json = form.getProps();
+            JSONObject json = form.getJson();
             JSONArray members = !json.isNull("members") ? json.getJSONArray("members") : null;
             JSONArray sources = json.getJSONArray("sources");
             String schemaName = json.getString("schema");
-            String colName = json.getString("colName");
+            String colName = json.optString("colName", null);
 
             UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (userSchema == null)
@@ -1636,19 +1634,19 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class SourceCountForm implements CustomApiForm
+    public static class SourceCountForm implements NewCustomApiForm
     {
-        private Map<String, Object> _props;
+        private JSONObject _json;
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            _props = props;
+            _json = json;
         }
 
-        public JSONObject getProps()
+        public JSONObject getJson()
         {
-            return (JSONObject) _props;
+            return _json;
         }
     }
 

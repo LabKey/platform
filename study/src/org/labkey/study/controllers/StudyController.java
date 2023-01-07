@@ -2807,7 +2807,10 @@ public class StudyController extends BaseStudyController
                 {
                     Integer protocolId = form.getProtocolId();
                     Integer sampleTypeId = form.getSampleTypeId();
-                    assert protocolId != null || sampleTypeId != null : "Expected one protocolId or sampleTypeId parameters";
+
+                    if (protocolId == null && sampleTypeId == null)
+                        throw new IllegalArgumentException("Expected either a protocolId or sampleId parameter");
+
                     String sourceLsid = form.getSourceLsid(); // the assay protocol or sample type LSID
                     int recordCount = form.getRecordCount();
 

@@ -69,14 +69,14 @@ public abstract class ProductMenuProvider
     public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);
 
     @Nullable
-    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Integer itemLimit);
+    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName);
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames, @Nullable Integer itemLimit)
+    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames)
     {
         List<MenuSection> sections = new ArrayList<>();
         sectionNames.forEach((name) -> {
-            MenuSection section = getSection(context, name, itemLimit);
+            MenuSection section = getSection(context, name);
             if (section != null)
                 sections.add(section);
         });
@@ -85,8 +85,8 @@ public abstract class ProductMenuProvider
     }
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context, Integer itemLimit)
+    public List<MenuSection> getSections(@NotNull ViewContext context)
     {
-        return getSections(context, getSectionNames(context), itemLimit);
+        return getSections(context, getSectionNames(context));
     }
 }

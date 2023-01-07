@@ -397,6 +397,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ActionURL action = getViewContext().getActionURL().clone();
         action.deleteParameter("uploadStep");
         action.deleteParameter("rowId");
+        action.deleteParameter("reRunId");
         view.getDataRegion().setFormActionUrl(action);
 
         view.getDataRegion().addHiddenFormField("uploadStep", uploadStepName);

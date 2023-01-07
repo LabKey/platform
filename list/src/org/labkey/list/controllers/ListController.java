@@ -21,7 +21,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -728,7 +728,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            return _list.insertListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption == QueryUpdateService.InsertOption.MERGE);
+            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption);
         }
 
         @Override

@@ -255,9 +255,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     }
                 }
             }
-            else
+            // Issue 46985: Be tolerant of a row not having an LSID value (as the row may have been
+            // inserted before the table was made extensible), but make sure that we got an LSID field
+            // when fetching the row
+            else if (!row.containsKey(objectUriCol.getName()))
             {
-                throw new IllegalStateException("LSID value not found in table - " + table.getName());
+                throw new IllegalStateException("LSID value not returned when querying table - " + table.getName());
             }
         }
 

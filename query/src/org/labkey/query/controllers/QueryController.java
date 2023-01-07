@@ -33,9 +33,9 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,6 +50,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -1697,7 +1698,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ExportQueriesForm extends ExportQueryForm implements CustomApiForm
+    public static class ExportQueriesForm extends ExportQueryForm implements NewCustomApiForm
     {
         private String filename;
         private List<ExportQueryForm> queryForms;
@@ -1724,28 +1725,27 @@ public class QueryController extends SpringActionController
 
         /**
          * Map JSON to Spring PropertyValue objects.
-         * @param props
+         * @param json the properties
          */
-        private MutablePropertyValues getPropertyValues(JSONObject props)
+        private MutablePropertyValues getPropertyValues(JSONObject json)
         {
             // Collecting mapped properties as a list because adding them to an existing MutablePropertyValues object replaces existing values
             List<PropertyValue> properties = new ArrayList<>();
 
-            for(Map.Entry<String, Object> entry : props.entrySet())
+            for (String key : json.keySet())
             {
-                String key = entry.getKey();
-                if (entry.getValue() instanceof JSONArray)
+                Object value = json.get(key);
+                if (value instanceof JSONArray val)
                 {
                     // Split arrays into individual pairs to be bound (Issue #45452)
-                    JSONArray val = (JSONArray) entry.getValue();
-                    for(int i=0; i < val.length();i++)
+                    for (int i = 0; i < val.length(); i++)
                     {
                         properties.add(new PropertyValue(key, val.getString(i)));
                     }
                 }
                 else
                 {
-                    properties.add(new PropertyValue(key, entry.getValue()));
+                    properties.add(new PropertyValue(key, value));
                 }
             }
 
@@ -1753,19 +1753,19 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            setFilename(props.get("filename").toString());
+            setFilename(json.get("filename").toString());
             List<ExportQueryForm> forms = new ArrayList<>();
 
-            JSONArray models = (JSONArray)props.get("queryForms");
+            JSONArray models = json.optJSONArray("queryForms");
             if (models == null)
             {
                 QueryController.LOG.error("No models to export; Form's `queryForms` property was null");
                 throw new RuntimeValidationException("No queries to export; Form's `queryForms` property was null");
             }
 
-            for (JSONObject queryModel : models.toJSONObjectArray())
+            for (JSONObject queryModel : JsonUtil.toJSONObjectList(models))
             {
                 ExportQueryForm qf = new ExportQueryForm();
                 qf.setViewContext(getViewContext());
@@ -1890,7 +1890,7 @@ public class QueryController extends SpringActionController
 
 
     /**
-     * Can be used to generate an excel template for import into a table.  Supported URL params include:
+     * Can be used to generate an Excel template for import into a table. Supported URL params include:
      * <dl>
      *     <dt>filenamePrefix</dt>
      *     <dd>the prefix of the excel file that is generated, defaults to '_data'</dd>
@@ -1916,7 +1916,7 @@ public class QueryController extends SpringActionController
      *     </dd>
      *
      *     <dt>captionType</dt>
-     *     <dd>determines which column property is used in the header.  either Label or Name</dd>
+     *     <dd>determines which column property is used in the header, either Label or Name</dd>
      * </dl>
      */
     @RequiresPermission(ReadPermission.class)
@@ -2222,8 +2222,8 @@ public class QueryController extends SpringActionController
         if (canEdit)
         {
             // Issue 13594: Disallow setting of the customview inherit bit for query views
-            // that have no available container filter types.  Unfortunately, the only way
-            // to get the container filters is from the QueryView.  Ideally, the query def
+            // that have no available container filter types. Unfortunately, the only way
+            // to get the container filters is from the QueryView. Ideally, the query def
             // would know if it was container filterable or not instead of using the QueryView.
             if (inherit && canSaveForAllUsers && !session)
             {
@@ -2377,12 +2377,12 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             if (json == null)
                 throw new NotFoundException("Empty request");
 
-            String schemaName = json.getString(QueryParam.schemaName.toString());
-            String queryName = json.getString(QueryParam.queryName.toString());
+            String schemaName = json.optString(QueryParam.schemaName.toString(), null);
+            String queryName = json.optString(QueryParam.queryName.toString(), null);
             if (schemaName == null || queryName == null)
                 throw new NotFoundException("schemaName and queryName are required");
 
@@ -3274,7 +3274,7 @@ public class QueryController extends SpringActionController
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            JSONObject object = form.getJsonObject();
+            JSONObject object = form.getNewJsonObject();
             if (object == null)
             {
                 object = new JSONObject();
@@ -3656,7 +3656,7 @@ public class QueryController extends SpringActionController
 
             // Support for 'viewName'
             CustomView view = settings.getCustomView(getViewContext(), form.getQueryDef());
-            if (null != view && view.hasFilterOrSort())
+            if (null != view && view.hasFilterOrSort() && !settings.getIgnoreViewFilter())
             {
                 ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
                 view.applyFilterAndSortToURL(url, dataRegionName);
@@ -3971,11 +3971,11 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    //issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 BatchValidationException errors = new BatchValidationException();
@@ -4033,12 +4033,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
                 for (Map<String, Object> row : rows)
                 {
-                    // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
+                    // issue 13719: use CaseInsensitiveHashMaps. Also allow either values or oldKeys to be null.
                     // this should never happen on an update, but we will let it fail later with a better error message instead of the NPE here
-                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_VALUES)).toMap()) : new CaseInsensitiveHashMap<>();
                     newRows.add(newMap);
 
-                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, configParameters, extraContext);
@@ -4090,7 +4090,7 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
+    protected abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
@@ -4103,7 +4103,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
         {
-            _json = apiSaveRowsForm.getJsonObject();
+            _json = apiSaveRowsForm.getNewJsonObject();
 
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
@@ -4206,7 +4206,8 @@ public class QueryController extends SpringActionController
                 if (null != jsonObj)
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
-                    rowMap.putAll(jsonObj);
+                    // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
+                    JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
                         addRowAttachments(rowMap, idx);
 
@@ -4215,24 +4216,22 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            Map<String, Object> extraContext = json.optJSONObject("extraContext");
-            if (extraContext == null)
-                extraContext = new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
             // If not defined there, check for the audit behavior defined in the action form (json).
-            AuditBehaviorType behaviorType = table.getAuditBehavior(json.getString("auditBehavior"));
+            AuditBehaviorType behaviorType = table.getAuditBehavior(json.optString("auditBehavior", null));
             if (behaviorType != null)
             {
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                String auditComment = json.getString("auditUserComment");
+                String auditComment = json.optString("auditUserComment", null);
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
-            //setup the response, providing the schema name, query name, and operation
+            //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
             response.put(PROP_SCHEMA_NAME, schemaName);
@@ -4260,14 +4259,16 @@ public class QueryController extends SpringActionController
                     auditEvent.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
-                    response.put("rows", responseRows);
+                    response.put("rows", responseRows.stream()
+                        .map(JsonUtil::toJsonPreserveNulls)
+                        .collect(LabKeyCollectors.toJSONArray()));
 
                 // if there is any provenance information, save it here
                 ProvenanceService svc = ProvenanceService.get();
                 if (json.has("provenance"))
                 {
                     JSONObject provenanceJSON = json.getJSONObject("provenance");
-                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), org.json.old.JSONObject.toOldJSONObject(provenanceJSON), ProvenanceService.ADD_RECORDING);
                     RecordedAction action = svc.createRecordedAction(getViewContext(), params);
                     if (action != null && params.getRecordingId() != null)
                     {
@@ -4275,13 +4276,12 @@ public class QueryController extends SpringActionController
                         if (json.has("rows"))
                         {
                             Object rowObject = json.get("rows");
-                            if (rowObject instanceof JSONArray)
+                            if (rowObject instanceof JSONArray jsonArray)
                             {
-                                JSONArray jsonRows = (JSONArray)rowObject;
                                 // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
                                 // be the row lsid but it configurable in the provenance recording params
                                 //
-                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, org.json.old.JSONArray.toOldJsonArray(jsonArray), responseRows);
                                 if (!provenanceMap.isEmpty())
                                 {
                                     action.getProvenanceMap().addAll(provenanceMap);
@@ -4481,14 +4481,11 @@ public class QueryController extends SpringActionController
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
-            JSONArray commands = (JSONArray)json.get("commands");
-            JSONArray resultArray = new JSONArray();
+            JSONArray commands = json.optJSONArray("commands");
             if (commands == null || commands.length() == 0)
             {
                 throw new NotFoundException("Empty request");
             }
-
-            Map<String, Object> extraContext = json.optJSONObject("extraContext");
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -4520,6 +4517,9 @@ public class QueryController extends SpringActionController
                 assert scope != null;
             }
 
+            JSONArray resultArray = new JSONArray();
+            JSONObject extraContext = json.optJSONObject("extraContext");
+
             int startingErrorIndex = 0;
             int errorCount = 0;
             // 11741: A transaction may already be active if we're trying to
@@ -4540,10 +4540,10 @@ public class QueryController extends SpringActionController
                     // Copy the top-level 'extraContext' and merge in the command-level extraContext.
                     Map<String, Object> commandExtraContext = new HashMap<>();
                     if (extraContext != null)
-                        commandExtraContext.putAll(extraContext);
+                        commandExtraContext.putAll(extraContext.toMap());
                     if (commandObject.has("extraContext"))
                     {
-                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext"));
+                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
@@ -4553,7 +4553,7 @@ public class QueryController extends SpringActionController
                         return null;
 
                     //this would be populated in executeJson when a BatchValidationException is thrown
-                    if (commandResponse.containsKey("errors"))
+                    if (commandResponse.has("errors"))
                     {
                         errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
                     }
@@ -4585,6 +4585,7 @@ public class QueryController extends SpringActionController
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
+
             return new ApiSimpleResponse(result);
         }
     }
@@ -5590,7 +5591,7 @@ public class QueryController extends SpringActionController
             DbScope scope = QueryManager.get().getDbSchema().getScope();
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                // Delete the session view.  The view will be restored if an exception is thrown.
+                // Delete the session view. The view will be restored if an exception is thrown.
                 view.delete(getUser(), getViewContext().getRequest());
 
                 // Get any previously existing non-session view.
@@ -5631,11 +5632,11 @@ public class QueryController extends SpringActionController
                 }
                 else if (!existingView.isEditable())
                 {
-                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable.  You may save this view with a different name.");
+                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable. You may save this view with a different name.");
                 }
                 else
                 {
-                    // UNDONE: changing shared property of an existing view is unimplemented.  Not sure if it makes sense from a usability point of view.
+                    // UNDONE: changing shared property of an existing view is unimplemented. Not sure if it makes sense from a usability point of view.
                     existingView.setColumns(view.getColumns());
                     existingView.setFilterAndSort(view.getFilterAndSort());
                     existingView.setColumnProperties(view.getColumnProperties());
@@ -6185,7 +6186,7 @@ public class QueryController extends SpringActionController
                         // Collect children schemas
                         JSONObject children = new JSONObject();
                         visit(schema.getSchemas(_includeHidden), path, children);
-                        if (children.size() > 0)
+                        if (!children.isEmpty())
                             schemaProps.put("schemas", children);
 
                         // Add node's schemaProps to the parent's json.
@@ -6204,13 +6205,11 @@ public class QueryController extends SpringActionController
                 // Ensure consistent exception as other query actions
                 QueryForm.ensureSchemaNotNull(schema);
 
-                // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
+                // Create the JSON response by visiting the schema children. The parent schema information isn't included.
                 JSONObject ret = new JSONObject();
                 visitor.visitTop(schema.getSchemas(includeHidden), ret);
 
-                ApiSimpleResponse resp = new ApiSimpleResponse();
-                resp.putAll(ret);
-                return resp;
+                return new ApiSimpleResponse(ret);
             }
             else
             {
@@ -6226,6 +6225,8 @@ public class QueryController extends SpringActionController
         private boolean _includeUserQueries = true;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
+        private boolean _includeViewDataUrl = true;
+        private boolean _includeTitle = true;
         private boolean _queryDetailColumns = false;
 
         public String getSchemaName()
@@ -6277,6 +6278,26 @@ public class QueryController extends SpringActionController
         {
             _queryDetailColumns = queryDetailColumns;
         }
+
+        public boolean isIncludeViewDataUrl()
+        {
+            return _includeViewDataUrl;
+        }
+
+        public void setIncludeViewDataUrl(boolean includeViewDataUrl)
+        {
+            _includeViewDataUrl = includeViewDataUrl;
+        }
+
+        public boolean isIncludeTitle()
+        {
+            return _includeTitle;
+        }
+
+        public void setIncludeTitle(boolean includeTitle)
+        {
+            _includeTitle = includeTitle;
+        }
     }
 
 
@@ -6313,8 +6334,8 @@ public class QueryController extends SpringActionController
                 {
                     if (!qdef.isTemporary())
                     {
-                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
+                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
                     }
                 }
             }
@@ -6329,8 +6350,8 @@ public class QueryController extends SpringActionController
                     QueryDefinition qdef = uschema.getQueryDefForTable(qname);
                     if (qdef != null)
                     {
-                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
+                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
                     }
                 }
             }
@@ -6339,7 +6360,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
+        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle)
         {
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("hidden", qdef.isHidden());
@@ -6369,44 +6390,51 @@ public class QueryController extends SpringActionController
             String name = qdef.getName();
             try
             {
-                //get the table info if the user requested column info
-                TableInfo table = qdef.getTable(schema, null, true);
-
-                if (null != table)
+                // get the TableInfo if the user requested column info or title, otherwise skip (it can be expensive)
+                if (includeColumns || includeTitle)
                 {
-                    if (includeColumns)
-                    {
-                        Collection<Map<String, Object>> columns;
+                    TableInfo table = qdef.getTable(schema, null, true);
 
-                        if (useQueryDetailColumns)
+                    if (null != table)
+                    {
+                        if (includeColumns)
                         {
-                            columns = JsonWriter
+                            Collection<Map<String, Object>> columns;
+
+                            if (useQueryDetailColumns)
+                            {
+                                columns = JsonWriter
                                     .getNativeColProps(table, Collections.emptyList(), null, false, false)
                                     .values();
-                        }
-                        else
-                        {
-                            columns = new ArrayList<>();
-                            for (ColumnInfo col : table.getColumns())
-                            {
-                                Map<String, Object> cinfo = new HashMap<>();
-                                cinfo.put("name", col.getName());
-                                if (null != col.getLabel())
-                                    cinfo.put("caption", col.getLabel());
-                                if (null != col.getShortLabel())
-                                    cinfo.put("shortCaption", col.getShortLabel());
-                                if (null != col.getDescription())
-                                    cinfo.put("description", col.getDescription());
-
-                                columns.add(cinfo);
                             }
+                            else
+                            {
+                                columns = new ArrayList<>();
+                                for (ColumnInfo col : table.getColumns())
+                                {
+                                    Map<String, Object> cinfo = new HashMap<>();
+                                    cinfo.put("name", col.getName());
+                                    if (null != col.getLabel())
+                                        cinfo.put("caption", col.getLabel());
+                                    if (null != col.getShortLabel())
+                                        cinfo.put("shortCaption", col.getShortLabel());
+                                    if (null != col.getDescription())
+                                        cinfo.put("description", col.getDescription());
+
+                                    columns.add(cinfo);
+                                }
+                            }
+
+                            if (columns.size() > 0)
+                                qinfo.put("columns", columns);
                         }
 
-                        if (columns.size() > 0)
-                            qinfo.put("columns", columns);
+                        if (includeTitle)
+                        {
+                            name = table.getPublicName();
+                            title = table.getTitle();
+                        }
                     }
-                    name = table.getPublicName();
-                    title = table.getTitle();
                 }
             }
             catch(Exception e)

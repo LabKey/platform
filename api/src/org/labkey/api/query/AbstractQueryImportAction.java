@@ -17,8 +17,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -62,7 +62,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
@@ -317,19 +316,30 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (insertOptionParam != null)
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
+            // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
+            if (_target != null && !_target.supportsInsertOption(insertOption))
+                throw new IllegalArgumentException(insertOption + " action is not supported for " + _target.getName() + ".");
+
             // TODO: Check insertOption is supported on the target table
             // TODO: See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42788
 
             switch (insertOption)
             {
-                case MERGE, REPLACE, UPSERT -> {
+                case UPDATE -> {
                     if (!canUpdate(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                 }
-                default -> {
+                case MERGE, REPLACE, UPSERT -> {
+                    if (!canUpdate(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                     if (!canInsert(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
                 }
+                case IMPORT, IMPORT_IDENTITY, INSERT -> {
+                    if (!canInsert(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                }
+                default -> { throw new IllegalStateException("unhandled InsertOption"); }
             }
         }
 
@@ -381,11 +391,15 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 file = new FileStream.ByteArrayFileStream(text.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
                 // di = loader.getDataIterator(ve);
             }
-            else if (null != StringUtils.trimToNull(path))
+            else if (StringUtils.isNotBlank(path))
             {
+                var resolver = WebdavService.get().getResolver();
                 // Resolve path under webdav root
-                WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
-                if (resource != null && resource.isFile())
+                Path parsed = Path.parse(StringUtils.trim(path));
+                WebdavResource resource = resolver.lookup(parsed);
+                if ((null == resource || !resource.exists()) && !parsed.startsWith(new Path("_webdav")))
+                    resource = resolver.lookup(new Path("_webdav").append(parsed));
+                if (resource != null && resource.isFile() && resource.canRead(getUser(), true))
                 {
                     hasPostData = true;
                     loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
@@ -396,23 +410,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 {
                     // Resolve file under pipeline root
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null)
-                        throw new NotFoundException("Pipeline root not configured");
-
-                    if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
-                        throw new UnauthorizedException();
-
-                    // Attempt absolute path first, then relative path from pipeline root
-                    File f = new File(path);
-                    if (!root.isUnderRoot(f))
-                        f = root.resolvePath(path);
-
-                    if (NetworkDrive.exists(f) && root.isUnderRoot(f))
+                    if (root != null)
                     {
-                        hasPostData = true;
-                        loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
-                        file = new FileAttachmentFile(dataFile, f.getName());
-                        originalName = f.getName();
+                        // Attempt absolute path first, then relative path from pipeline root
+                        File f = new File(path);
+                        if (!root.isUnderRoot(f))
+                            f = root.resolvePath(path);
+
+                        if (NetworkDrive.exists(f) && root.isUnderRoot(f) && root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                        {
+                            hasPostData = true;
+                            loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
+                            file = new FileAttachmentFile(dataFile, f.getName());
+                            originalName = f.getName();
+                        }
                     }
                 }
 

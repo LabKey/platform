@@ -75,6 +75,7 @@ public class QuerySettings
     private boolean _allowHeaderLock = true;
     private boolean _showReports = true;
     private boolean _ignoreUserFilter;
+    private boolean _ignoreViewFilter;
     private int _maxRows = 100;
     private boolean _maxRowsSet = false; // Explicitly track setting maxRows, allows for different defaults
     private long _offset = 0;
@@ -602,6 +603,16 @@ public class QuerySettings
     public void setIgnoreUserFilter(boolean b)
     {
         _ignoreUserFilter = b;
+    }
+
+    public boolean getIgnoreViewFilter()
+    {
+        return _ignoreViewFilter;
+    }
+
+    public void setIgnoreViewFilter(boolean ignoreViewFilter)
+    {
+        _ignoreViewFilter = ignoreViewFilter;
     }
 
     /** @return The maxRows parameter when {@link ShowRows#PAGINATED}, otherwise ALL_ROWS. */

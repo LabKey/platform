@@ -246,6 +246,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         catch (Throwable t)
         {
+            if (null == _modules || _modules.isEmpty())
+            {
+                _log.fatal("Failure occurred during ModuleLoader init.", t);
+                System.err.println("The server cannot start.  Check the server error log.");
+                System.exit(1);
+            }
             setStartupFailure(t);
             _log.error("Failure occurred during ModuleLoader init.", t);
         }

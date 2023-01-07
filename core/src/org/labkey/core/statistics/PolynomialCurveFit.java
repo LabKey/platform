@@ -16,7 +16,7 @@
 package org.labkey.core.statistics;
 
 import Jama.Matrix;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -31,11 +31,11 @@ import java.util.Map;
  */
 public class PolynomialCurveFit extends DefaultCurveFit<PolynomialCurveFit.PolynomialParameters> implements CurveFit<PolynomialCurveFit.PolynomialParameters>
 {
-    private static int ORDER = 3;       // the order of the polynomial
+    private static final int ORDER = 3;       // the order of the polynomial
 
     public static class PolynomialParameters implements CurveFit.Parameters
     {
-        private double[] _coefficients = new double[ORDER];
+        private double[] _coefficients;
 
         public PolynomialParameters(double[] coefficients)
         {

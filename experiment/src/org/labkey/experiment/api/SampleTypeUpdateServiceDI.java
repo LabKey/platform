@@ -32,6 +32,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -47,6 +48,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -54,6 +56,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.Lsid;
@@ -165,10 +168,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    public void configureDataIteratorContext(DataIteratorContext context)
+    {
+        context.putConfigParameter(ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+    }
+
+    @Override
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer());
+        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer(), getUser());
     }
 
     @Override
@@ -205,7 +214,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
         UserSchema userSchema = getQueryTable().getUserSchema();
         if (userSchema != null)
@@ -240,7 +249,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             onSamplesChanged();
-            audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
+            audit(context.getInsertOption().auditAction);
         }
         return ret;
     }
@@ -372,6 +381,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
+        rowCopy.remove(AliquotedFromLSID.name());
+        rowCopy.remove(RootMaterialLSID.name());
+        rowCopy.remove("AliquotedFrom");
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
@@ -379,9 +391,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
         DataState newStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
         boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
-
-        rowCopy.remove(AliquotedFromLSID.name());
-        rowCopy.remove(RootMaterialLSID.name());
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
@@ -456,6 +465,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         ret.put("lsid", lsid);
+        ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
         return ret;
     }
 
@@ -681,14 +691,27 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, !getDetails);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container)
-            throws QueryUpdateServiceException
+    private ContainerFilter getSampleDataCF(Container container, User user)
+    {
+        if (!container.isProductProjectsEnabled())
+            return ContainerFilter.current(container);
+
+        if (container.isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
+        else if (!container.isProject() && container.getProject() != null)
+            return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+
+        return ContainerFilter.current(container);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipInputs)
+            throws QueryUpdateServiceException, InvalidKeyException
     {
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
@@ -755,6 +778,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
 
+            Set<String> allNames = new HashSet<>(nameRowNumMap.keySet());
+
             Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -763,8 +788,32 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 String sampleLsid = (String) row.get("lsid");
                 sampleRows.put(rowNum, row);
                 rowNumLsid.put(rowNum, sampleLsid);
+
+                allNames.remove(name);
             }
+
+            if (checkCrossFolderData && !allNames.isEmpty())
+            {
+                TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+                SimpleFilter cfilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+                cfilter.addCondition(FieldKey.fromParts("Name"), allNames, CompareType.IN);
+                Map<String, Object>[] cfRows = new TableSelector(tInfo, filter, null).getMapArray();
+                for (Map<String, Object> row : cfRows)
+                {
+                    String dataContainer = (String) row.get("folder");
+                    if (!dataContainer.equals(container.getId()))
+                        throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
+                }
+
+            }
+
+            if (verifyExisting && !allNames.isEmpty())
+                throw new InvalidKeyException("Sample does not exist: " + allNames.iterator().next() + ".");
+
         }
+
+        if (skipInputs)
+            return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
 
@@ -921,13 +970,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final DataIteratorBuilder builder;
         final ExpMaterialTableImpl materialTable;
         final Container container;
+        final User user;
 
-        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container)
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container, User user)
         {
             this.sampleType = sampleType;
             this.builder = in;
             this.materialTable = materialTable;
             this.container = container;
+            this.user = user;
         }
 
         @Override
@@ -965,6 +1016,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
+            if (context.getInsertOption() == InsertOption.UPDATE)
+            {
+                SimpleTranslator addAliquotedFrom = new SimpleTranslator(source, context);
+
+                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
+                if (!columnNameMap.containsKey("aliquotedfromlsid"))
+                    addAliquotedFrom.addNullColumn("aliquotedfromlsid", JdbcType.VARCHAR);
+                addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+                addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+                addAliquotedFrom.selectAll();
+
+                var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId());
+
+                SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromDI, context, sampleType, materialTable);
+                return LoggingDataIterator.wrap(c);
+            }
+
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
@@ -988,7 +1056,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
                     .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampleType.getContainer()))
                     .addExtraPropsFn(() -> {
                         if (container != null)
@@ -1063,7 +1131,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         String generatedName = null;
 
-        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container dataContainer, MapDataIterator source, DataIteratorContext context, int batchSize)
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container dataContainer, User user, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
             super(source, context);
             this.sampleType = sampleType;
@@ -1081,8 +1149,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // do nothing
             }
-            nameGen = sampleType.getNameGenerator(dataContainer);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer);
+            nameGen = sampleType.getNameGenerator(dataContainer, user);
+            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user);
             if (nameGen != null)
                 nameState = nameGen.createState(true);
             else
@@ -1261,7 +1329,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
-                    if ("AliquotedFrom".equalsIgnoreCase(from.getName()))
+                    if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
                     {
                         derivationDataColInd = i;
                         break;
@@ -1323,6 +1391,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
+        private String getAliquotedFromColName()
+        {
+            // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
+            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : "AliquotedFrom";
+        }
+
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
         {
             var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
@@ -1342,4 +1416,5 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addColumn(col, c);
         }
     }
+
 }
