@@ -296,7 +296,7 @@ public class CoreWarningProvider implements WarningProvider
         // Issue 46922 - check for and warn about unknown modules
         int unknownModules = ModuleLoader.getInstance().getUnknownModuleCount();
 
-        if (unknownModules > 0 || showAllWarnings)
+        if ((!AppProps.getInstance().isDevMode() && unknownModules > 0) || showAllWarnings)
             addStandardWarning(warnings, "This server is running with " +
                 StringUtilsLabKey.pluralize(unknownModules, "unknown module") +
                 ", modules that were previously installed but are no longer present. Unknown modules, particularly " +
