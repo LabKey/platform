@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
-import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -49,11 +48,5 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     public @NotNull Map<String, Object> getCustomProperties()
     {
         return null != _domain ? Map.of("domain", _domain) : Collections.emptyMap();
-    }
-
-    @Override
-    public void savePlaceholderLogos(User user)
-    {
-        // Don't bother with the test configuration
     }
 }
