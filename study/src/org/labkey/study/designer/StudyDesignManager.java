@@ -764,7 +764,8 @@ public class StudyDesignManager
                 new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
             }
 
-            // update any property descriptors associated with this domain
+            // update the domain descriptor associated with this domainId
+
             SQLFragment sql = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoDomainDescriptor(), "")
                     .append(" SET Container = ? WHERE DomainID = ?").add(container.getId()).add(domain.getTypeId());
             new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
