@@ -182,7 +182,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (context.getInsertOption().allowUpdate)
         {
             context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
-            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, context.getInsertOption().updateOnly);
         }
     }
 
