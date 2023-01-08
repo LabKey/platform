@@ -4796,6 +4796,22 @@ public class StudyManager
                 );
             }
         }
+
+        /**
+         * Called from study-23.000-23.001.sql
+         * Issue : 46986. Move the study design domains to the project folder (if not already there), since
+         * their URI references the project folder already.
+         */
+        public static void moveDesignDomains(ModuleContext ctx)
+        {
+            if (ctx.isNewInstall())
+                return;
+
+            _log.info("Ensuring study design domains in all studies are moved to the project level.");
+
+            StudyManager.getInstance().getAllStudies().forEach(
+                    study -> StudyDesignManager.get().ensureStudyDesignDomainsContainer(study.getContainer(), _log));
+        }
     }
 
     // Enable the specimen module (if it exists) in all studies that have specimen rows
