@@ -1,7 +1,7 @@
 package org.labkey.api.assay.sample;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.ContainerFilter;
 
 /**
@@ -11,14 +11,15 @@ import org.labkey.api.data.ContainerFilter;
  */
 public class SampleAssayResultsConfig
 {
+    private final String _title;
+    private final String _schemaName;
+    private final String _queryName;
+    private final String _viewName; //  optional
+    private final String _sampleRowKey; // optional sample row property to use for key in baseFilter, defaults to 'RowId' on client
+    private final String _filterKey; // field key of the query/view to use for the sample filter IN clause
+    private final ContainerFilter.Type _containerFilter; //  optional, defaults to 'Current' on client
+
     private String _moduleName;
-    private String _title;
-    private String _schemaName;
-    private String _queryName;
-    private String _viewName; //  optional
-    private String _sampleRowKey; // optional sample row property to use for key in baseFilter, defaults to 'RowId' on client
-    private String _filterKey; // field key of the query/view to use for the sample filter IN clause
-    private ContainerFilter.Type _containerFilter; //  optional, defaults to 'Current' on client
 
     public SampleAssayResultsConfig(
             String title, String schemaName, String queryName, @Nullable String viewName,
