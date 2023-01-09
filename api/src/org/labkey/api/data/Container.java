@@ -488,50 +488,50 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), Set.of());
+        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), Set.of());
     }
 
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), Set.of());
+        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), Set.of());
     }
 
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), contextualRoles);
+        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
     }
 
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), contextualRoles);
+        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), contextualRoles);
     }
 
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, Set.of());
+        return SecurityManager.hasAllPermissions(null, this, user, permissions, Set.of());
     }
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, contextualRoles);
+        return SecurityManager.hasAllPermissions(null, this, user, permissions, contextualRoles);
     }
 
 
     public boolean hasOneOf(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, perms, Set.of());
+        return SecurityManager.hasAnyPermissions(null, this, user, perms, Set.of());
     }
 
 
     @SafeVarargs
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet<>(Arrays.asList(perms)), Set.of());
+        return SecurityManager.hasAnyPermissions(null, this, user, Set.of(perms), Set.of());
     }
 
     public boolean isForbiddenProject(User user)
@@ -713,8 +713,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //this seems much more cumbersome than it should be
         for (Report report : ReportService.get().getReports(user, this))
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
-            if (policy.hasPermission(user, AdminPermission.class))
+            if (report.getDescriptor().hasPermission(user, AdminPermission.class))
                 ret.add(report.getDescriptor());
         }
 
@@ -722,8 +721,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         PipeRoot root = PipelineService.get().findPipelineRoot(this);
         if (null != root)
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
-            if (policy.hasPermission(user, AdminPermission.class))
+            if (root.hasPermission(user, AdminPermission.class))
                 ret.add(root);
         }
 

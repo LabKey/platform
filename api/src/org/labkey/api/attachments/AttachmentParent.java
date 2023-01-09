@@ -17,7 +17,8 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.SecurityPolicy;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.SecurableResource;
 
 /**
  * User: adam
@@ -30,7 +31,7 @@ public interface AttachmentParent
     String getContainerId();
     @NotNull AttachmentType getAttachmentType();
 
-    default SecurityPolicy getSecurityPolicy()
+    default @Nullable SecurableResource getSecurableResource()
     {
         return null;
     }

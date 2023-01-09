@@ -37,8 +37,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
@@ -176,8 +174,7 @@ class SecurityQuery extends Query
         if (null == canRead)
         {
             SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-            canRead = p.hasPermission(_user, ReadPermission.class);
+            canRead = sr.hasPermission(_user, ReadPermission.class);
             _securableResourceIds.put(resourceId, canRead);
         }
 

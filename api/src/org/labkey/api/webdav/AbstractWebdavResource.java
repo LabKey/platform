@@ -31,6 +31,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -75,6 +76,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 {
     private static final String FOLDER_FONT_CLS = "fa fa-folder-o";
     private SecurityPolicy _policy;
+    private SecurableResource _securableResource;
     protected String _containerId;
 
     protected String _etag = null;
@@ -326,9 +328,21 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Deprecated
     protected void setPolicy(SecurityPolicy policy)
     {
         _policy = policy;
+    }
+
+    protected void setPolicy(SecurityPolicy policy, SecurableResource securableResource)
+    {
+        _policy = policy;
+        _securableResource = securableResource;
+    }
+
+    public SecurableResource getSecurableResource()
+    {
+        return _securableResource;
     }
 
     /** permissions */
@@ -369,7 +383,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(UpdatePermission.class), roles);
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), roles);
     }
 
 
@@ -377,7 +391,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public boolean canCreate(User user, boolean forCreate)
     {
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(InsertPermission.class), Set.of());
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(InsertPermission.class), Set.of());
     }
 
     @Override

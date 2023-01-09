@@ -47,6 +47,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -1172,7 +1173,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             super(path);
             _parent = parent;
-            setPolicy(policy);
+            setPolicy(policy, parent.getSecurableResource());
         }
 
 
@@ -1277,7 +1278,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             Container c = ContainerManager.getForId(parent.getContainerId());
             _containerId = parent.getContainerId();
             if (null != c)
-                setPolicy(c.getPolicy());
+                setPolicy(c.getPolicy(), c);
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
@@ -1321,7 +1322,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
             if (c != null)
-                setPolicy(c.getPolicy());
+                setPolicy(c.getPolicy(), c);
             _name = name;
             _parent = parent;
             _docid = makeDocId(parent,name);
@@ -1614,7 +1615,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void checkSecurityPolicy(AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        if (null != attachmentParent.getSecurityPolicy())
+        if (null != attachmentParent.getSecurableResource())
         {
             User user = null;
             try
@@ -1633,10 +1634,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy)
+        SecurableResource securableResource = attachmentParent.getSecurableResource();
+        if (null != securableResource)
         {
-            if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
+            if (null == user || !securableResource.hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("User does not have permission to access this secure resource.");
         }
     }

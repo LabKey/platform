@@ -2055,7 +2055,7 @@ public class StudyManager
         {
             // If we're not reading from a dataset for cohort definition,
             // we use the container's permission
-            return SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class);
+            return container.hasPermission(user, ReadPermission.class);
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?

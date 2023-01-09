@@ -108,8 +108,7 @@ public class SecurityAccessView extends VBox
             if (!child.isContainerFor(ContainerType.DataType.permissions))
                 continue;
 
-            SecurityPolicy policy = child.getPolicy();
-            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(policy,_principal);
+            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(child, _principal);
             allRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
 
             List<Role> roles = new ArrayList<>();
@@ -138,6 +137,7 @@ public class SecurityAccessView extends VBox
             if (roles.size() > 0)
             {
                 Container project = child.getProject();
+                SecurityPolicy policy = child.getPolicy();
                 List<Group> groups = _projectGroupCache.computeIfAbsent(project, k -> SecurityManager.getGroups(project, true));
                 for (Group group : groups)
                 {

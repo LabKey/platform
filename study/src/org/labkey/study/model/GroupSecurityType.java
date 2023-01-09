@@ -49,9 +49,7 @@ public enum GroupSecurityType
     public static GroupSecurityType getTypeForGroup(Group group, StudyImpl study)
     {
         boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
-        SecurityPolicy folderPolicy = study.getContainer().getPolicy();
         SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
-        boolean hasFolderRead = folderPolicy.hasPermission(group, ReadPermission.class);
         boolean hasUpdatePerm = studyPolicy.hasNonInheritedPermission(group, UpdatePermission.class);
         boolean hasReadSomePerm = studyPolicy.hasNonInheritedPermission(group, ReadSomePermission.class);
         boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasNonInheritedPermission(group, ReadPermission.class);

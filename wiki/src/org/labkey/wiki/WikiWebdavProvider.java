@@ -125,7 +125,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             super(parent.getPath(), WIKI_NAME);
             _c = c;
             _containerId = _c.getId();
-            setPolicy(c.getPolicy());
+            setPolicy(c.getPolicy(), c);
         }
 
         @Override
@@ -217,7 +217,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             super(parent.getPath(), WikiWriterFactory.WIKIS_FILENAME);
             _parent = parent;
-            setPolicy(parent._c.getPolicy());
+            setPolicy(parent._c.getPolicy(), parent._c);
         }
 
         @Override
@@ -322,7 +322,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             super(folder.getPath(), name);
             _c = folder._c;
             _containerId = _c.getId();
-            setPolicy(_c.getPolicy());
+            setPolicy(_c.getPolicy(), _c);
             _wiki = WikiSelectManager.getWiki(_c, name);
             if (null != _wiki)
                 _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki.getAttachmentParent());
@@ -472,7 +472,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             _name = name;
             _entityId = entityId;
             _folder = folder;
-            setPolicy(policy);
+            setPolicy(policy, c);
             _properties = properties;
             _properties.put(SearchService.PROPERTY.categories.toString(), WikiManager.searchCategory.getName());
         }

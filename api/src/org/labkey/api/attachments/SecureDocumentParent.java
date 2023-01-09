@@ -146,10 +146,15 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         SecurityPolicyManager.savePolicy(securityPolicy);
     }
 
-    @Override
     public SecurityPolicy getSecurityPolicy()
     {
         return SecurityPolicyManager.getPolicy(this);
+    }
+
+    @Override
+    public @Nullable SecurableResource getSecurableResource()
+    {
+        return this;
     }
 
     @Override

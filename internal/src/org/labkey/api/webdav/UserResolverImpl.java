@@ -194,6 +194,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
                 new Date()
             );
 
+            // TODO: This is a problem!
             return new FileSystemResource(this, user.getName(), fileRoot, p);
         }
 

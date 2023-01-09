@@ -146,13 +146,12 @@ public class SecurityApiActions
 
         protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean recurse)
         {
-            SecurityPolicy policy = container.getPolicy();
             Map<String, Object> containerPerms = new HashMap<>();
             containerPerms.put("path", container.getPath());
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
             containerPerms.put("isInheritingPerms", container.isInheritedAcl());
-            containerPerms.put("groups", getGroupPerms(container, policy, groups));
+            containerPerms.put("groups", getGroupPerms(container, groups));
 
             if(recurse && container.hasChildren())
             {
@@ -173,15 +172,13 @@ public class SecurityApiActions
             return containerPerms;
         }
 
-        protected List<Map<String, Object>> getGroupPerms(Container container, SecurityPolicy policy, List<Group> groups)
+        protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups)
         {
-            if (null == policy)
-                policy = container.getPolicy();
-
             if (null == groups)
                 return null;
 
             List<Map<String, Object>> groupsPerms = new ArrayList<>();
+            SecurityPolicy policy = container.getPolicy();
 
             for (Group group : groups)
             {
@@ -203,7 +200,7 @@ public class SecurityApiActions
                 }
 
                 //add effective roles array
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, group);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(container, group);
                 ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
@@ -342,7 +339,7 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
+            for(Role effectiveRole : SecurityManager.getEffectiveRoles(container, user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
@@ -371,12 +368,12 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
+                for(Role effectiveRole : SecurityManager.getEffectiveRoles(container, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
                 groupInfo.put("roles", groupEffectiveRoles);
-                groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), group));
+                groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(policy, group));
 
                 groupsInfo.add(groupInfo);
             }
@@ -748,7 +745,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!resource.hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
 
             //get the existing policy so we can audit how it's changed
@@ -956,7 +953,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!resource.hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to delete the security policy for this resource!");
 
             SecurityPolicyManager.deletePolicy(resource);
