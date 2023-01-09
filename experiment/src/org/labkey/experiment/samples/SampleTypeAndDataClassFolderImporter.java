@@ -291,7 +291,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                 {
                                     DataIteratorContext context = new DataIteratorContext(errors);
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
-                                    context.putConfigParameter(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merge during folder import
+                                    context.putConfigParameter(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merge during folder import, needed for eval data loading
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
                                     Map<Enum, Object> options = new HashMap<>();
