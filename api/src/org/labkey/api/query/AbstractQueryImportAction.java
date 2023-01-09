@@ -302,6 +302,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getViewContext().getRequest().getParameter(p.name());
     }
 
+    protected boolean skipInsertOptionValidation()
+    {
+        return false;
+    }
+
     public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
@@ -321,7 +326,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 _insertOption = insertOption;
 
             // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
-            if (_target != null && !_target.supportsInsertOption(_insertOption))
+            if (!skipInsertOptionValidation() && _target != null && !_target.supportsInsertOption(_insertOption))
                 throw new IllegalArgumentException(_insertOption + " action is not supported for " + _target.getName() + ".");
 
             switch (_insertOption)

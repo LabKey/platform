@@ -74,14 +74,6 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    //@Override
-    public int updateRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-    {
-        var count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.UPDATE, configParameters), extraScriptContext);
-        afterInsertUpdate(count, errors);
-        return count;
-    }
-
     @Override
     protected SimpleTable getQueryTable()
     {
