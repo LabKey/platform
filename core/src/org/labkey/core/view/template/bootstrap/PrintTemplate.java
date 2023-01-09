@@ -17,6 +17,7 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
@@ -60,15 +61,9 @@ public class PrintTemplate extends PageTemplate
                 title = title.substring(0, dotIndex);
         }
 
-        String extraPath = helper.getExtraPath();
-        if (null != extraPath && !"".equals(extraPath))
-        {
-            int slashIndex = extraPath.lastIndexOf('/');
-            if (-1 != slashIndex)
-                extraPath = extraPath.substring(slashIndex + 1);
-
-            title = title + ": " + extraPath;
-        }
+        Path extraPath = helper.getParsedPath();
+        if (!extraPath.isEmpty())
+            title = title + ": " + extraPath.getName();
 
         return title;
     }

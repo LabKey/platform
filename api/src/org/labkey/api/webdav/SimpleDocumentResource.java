@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -68,15 +69,18 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _modifiedBy = modifiedBy;
         _modified = toTime("modified", modified, properties);
         // Make sure the "execute URL" container is supplied as a GUID, not a path, since paths are not stable. Also,
-        // the GUID should match either the container ID or the resource ID (if present).
-        assert !(_executeUrl instanceof ActionURL) || ((ActionURL)_executeUrl).getExtraPath().equals(_containerId) || (null != properties && ((ActionURL)_executeUrl).getExtraPath().equals(properties.get(SearchService.PROPERTY.securableResourceId.toString())));
+        if (_executeUrl instanceof ActionURL actionURL)
+        {
+            String extraPath = StringUtils.strip(actionURL.getExtraPath(),"/");
+            assert extraPath.equals(_containerId) || (null != properties && extraPath.equals(properties.get(SearchService.PROPERTY.securableResourceId.toString())));
+        }
         if (null != properties)
             _properties = new HashMap<>(properties);
     }
 
     public SimpleDocumentResource(Path path, String documentId, String contentType, @Nullable String body, ActionURL executeUrl, @Nullable Map<String, Object> properties)
     {
-        this(path, documentId, executeUrl.getExtraPath(), contentType, body, executeUrl, properties);
+        this(path, documentId, executeUrl.getParsedExtraPath().toString("",""), contentType, body, executeUrl, properties);
     }
 
     private static long toTime(String fieldName, @Nullable Date d, @Nullable Map<String, Object> properties)

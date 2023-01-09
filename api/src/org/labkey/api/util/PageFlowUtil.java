@@ -2430,7 +2430,7 @@ public class PageFlowUtil
             try
             {
                 URLHelper urlHelper = new URLHelper(returnURL);
-                Container redirectContainer = ContainerManager.getForPath(new ActionURL(urlHelper.getLocalURIString()).getExtraPath());
+                Container redirectContainer = ContainerManager.getForURL(new ActionURL(urlHelper.getLocalURIString()));
                 if (null != redirectContainer)
                     termsContainer = redirectContainer.getProject();
             }

@@ -569,8 +569,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (!(x instanceof ActionURL) && x.getPath().endsWith(".view"))
             x = new ActionURL(x.toString());
 
-        Path path = x instanceof ActionURL ? ((ActionURL)x).getFullParsedPath() : x.getParsedPath();
-        return normalize(path);
+        return normalize(x.getParsedPath());
     }
 
     /** query parameters will be modified */

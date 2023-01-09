@@ -435,15 +435,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Container c = context.getContainer();
             if (null == c)
             {
-                String containerPath = url.getExtraPath();
-
                 if (!url.isProject())
                 {
-                    throw new NotFoundException("No such folder or workbook: " + containerPath);
+                    throw new NotFoundException("No such folder or workbook: " +  url.getExtraPath());
                 }
                 else
                 {
-                    throw new NotFoundException("No such project: " + containerPath);
+                    throw new NotFoundException("No such project: " +  url.getExtraPath());
                 }
             }
 
