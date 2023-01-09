@@ -382,6 +382,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setConditionalFormats(col.getConditionalFormats());
         setValidators(col.getValidators());
 
@@ -1187,6 +1188,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _shownInUpdateView = xmlCol.getShownInUpdateView();
         if (xmlCol.isSetShownInDetailsView())
             _shownInDetailsView = xmlCol.getShownInDetailsView();
+        if (xmlCol.isSetShownInLookupView())
+            _shownInLookupView = xmlCol.getShownInLookupView();
         if (xmlCol.isSetDimension())
             _dimension = xmlCol.getDimension();
         if (xmlCol.isSetMeasure())

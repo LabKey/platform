@@ -347,6 +347,22 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setShownInLookupView(boolean shownInLookupView)
+        {
+            checkLocked();
+            if (shownInLookupView == delegate.isShownInLookupView())
+                return;
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public boolean isShownInLookupView()
+                {
+                    return shownInLookupView;
+                }
+            };
+        }
+
+        @Override
         public void setURL(StringExpression url)
         {
             checkLocked();
