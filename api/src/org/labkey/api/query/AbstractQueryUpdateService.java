@@ -476,6 +476,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return outputRows;
     }
 
+    // not yet supported
     protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                                       DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
