@@ -320,7 +320,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
+        if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
+            assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
 
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)

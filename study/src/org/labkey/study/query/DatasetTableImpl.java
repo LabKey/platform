@@ -470,7 +470,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         addFolderColumn();
 
         if(getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
+        {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.UPSERT);
+        }
     }
 
 
