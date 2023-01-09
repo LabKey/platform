@@ -77,6 +77,7 @@
     </columns>
   </table>
   <table tableName="Modules" tableDbType="TABLE">
+    <pkColumnName>Name</pkColumnName>
     <columns>
       <column columnName="Name">
         <isKeyField>true</isKeyField>

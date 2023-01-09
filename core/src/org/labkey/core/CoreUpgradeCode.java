@@ -15,7 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -26,8 +25,10 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
  */
 public class CoreUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = LogManager.getLogger(CoreUpgradeCode.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreUpgradeCode.class, "Custom core upgrade steps");
 
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     // ContainerManager's assumptions. For example, older installations don't have a description column until
@@ -70,5 +71,33 @@ public class CoreUpgradeCode implements UpgradeCode
             .map(Container::getEntityId)
             .collect(Collectors.toList());
         ContainerManager.setExcludedProjects(guids, () -> {});
+    }
+
+    /**
+     * Called from core-23.000-23.001.sql on PostgreSQL only. The core.Modules.Name column has been case-sensitive on
+     * PostgreSQL, which has allowed "duplicate" (differing only in case) module names to creep into the column on some
+     * deployments. This upgrade code removes those duplicates and a subsequent SQL statement switches the column to
+     * case-insensitive.
+     */
+    @SuppressWarnings("unused")
+    public static void removeDuplicateModuleEntries(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ModuleLoader ml = ModuleLoader.getInstance();
+        Map<String, ModuleContext> duplicateContexts = ml.getUnknownModuleContexts().entrySet().stream()
+            .filter(e -> null != ml.getModule(e.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!duplicateContexts.isEmpty())
+        {
+            LOG.info("Deleting duplicate entries in core.Modules:");
+            duplicateContexts
+                .forEach((k, v) -> {
+                    LOG.info("Deleting duplicate module context \"" + k + "\"");
+                    ml.removeUnknownModuleContext(v);
+                });
+        }
     }
 }
