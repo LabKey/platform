@@ -1,0 +1,15 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <!-- If you modify this file in any way, confirm the changes are reflected in labkey.js -->
+    <library compileInProductionMode="true">
+        <script path="groupTabPanel/GroupTab.css"/>
+        <script path="groupTabPanel/UngroupedTab.css"/>
+        <script path="groupTabPanel/GroupTabPanel.js"/>
+        <script path="groupTabPanel/GroupTab.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext3" />
+    </dependencies>
+</libraries>
+
+
+
