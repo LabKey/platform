@@ -57,23 +57,23 @@
                     <property name="customFields">
                         <list>
                             <bean class="org.labkey.api.formSchema.RadioField">
-                                <constructor-arg index="0" value="mergeData"/>
+                                <constructor-arg index="0" value="insertOption"/>
                                 <constructor-arg index="1" value="Action"/>
                                 <constructor-arg index="2" value="false" />
-                                <constructor-arg index="3" value="false" />
+                                <constructor-arg index="3" value="APPEND" />
                                 <constructor-arg index="4">
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="true"/>
+                                            <constructor-arg index="0" value="MERGE"/>
                                             <constructor-arg index="1" value="Merge"/>
                                         </bean>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="false"/>
-                                            <constructor-arg index="1" value="Append"/>
+                                            <constructor-arg index="0" value="UPDATE"/>
+                                            <constructor-arg index="1" value="Update"/>
                                         </bean>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="update"/>
-                                            <constructor-arg index="1" value="Update"/>
+                                            <constructor-arg index="0" value="APPEND"/>
+                                            <constructor-arg index="1" value="Append"/>
                                         </bean>
                                     </list>
                                 </constructor-arg>
