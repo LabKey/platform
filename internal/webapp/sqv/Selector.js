@@ -533,14 +533,24 @@ Ext4.define('LABKEY.sqv.Model', {
             if (this.queryCombo.includeSystemQueries === false)
                 includeSystemQueries = false;
 
+            var includeTitle = true;
+            if (this.queryCombo.includeTitle === false)
+                includeTitle = false;
+
+            var includeViewDataUrl = true;
+            if (this.queryCombo.includeViewDataUrl === false)
+                includeViewDataUrl = false;
+
             this.queryCombo.setLoading(true);
             LABKEY.Query.getQueries({
                 containerPath: selectedContainerId,
-                schemaName : selectedSchema,
+                schemaName: selectedSchema,
                 includeUserQueries: includeUserQueries,
                 includeSystemQueries: includeSystemQueries,
+                includeTitle: includeTitle,
+                includeViewDataUrl: includeViewDataUrl,
                 includeColumns: false,
-                success : function (details) {
+                success: function (details) {
                     this.queryCombo.setLoading(false);
                     var newQueries = details.queries;
                     this.queryStore.loadData(newQueries);

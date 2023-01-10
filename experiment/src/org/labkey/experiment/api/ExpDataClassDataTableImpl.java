@@ -106,6 +106,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -144,6 +145,7 @@ import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInp
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private final @NotNull ExpDataClassImpl _dataClass;
+    private final Supplier<TableInfo> _dataClassTableInfo;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     public static final Set<String> DATA_CLASS_ALT_KEYS;
@@ -157,6 +159,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         super(name, ExperimentService.get().getTinfoData(), schema, cf);
         _dataClass = dataClass;
+        _dataClassTableInfo = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
         // leaving commented out until branch that supports merge for data classes is merged
@@ -166,7 +169,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
 
-        setSupportMerge(true);
+        setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
     }
 
     @Override
@@ -353,7 +356,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         else
             setDescription("Contains one row per registered data in the " + _dataClass.getName() + " data class");
 
-        TableInfo extTable = _dataClass.getTinfo();
+        TableInfo extTable = _dataClassTableInfo.get();
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
@@ -545,7 +548,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (_vocabularyDomainProviders != null)
             return _vocabularyDomainProviders;
 
-        TableInfo extTable = _dataClass.getTinfo();
+        TableInfo extTable = _dataClassTableInfo.get();
         _vocabularyDomainProviders = new CaseInsensitiveHashMap<>();
 
         for (ColumnInfo col : extTable.getColumns())
@@ -653,7 +656,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public SQLFragment getFromSQL(String alias)
     {
         checkReadBeforeExecute();
-        TableInfo provisioned = _dataClass.getTinfo();
+        TableInfo provisioned = _dataClassTableInfo.get();
 
         // all columns from exp.data except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
@@ -742,7 +745,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getUniqueIndices());
-        indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
+        indices.putAll(wrapTableIndices(_dataClassTableInfo.get()));
 
         // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
         // RemapCache is used to findExpData using name/rowId remap.
@@ -776,14 +779,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getAllIndices());
-        indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
+        indices.putAll(wrapTableIndices(_dataClassTableInfo.get()));
         return Collections.unmodifiableMap(indices);
     }
 
     @Override
     public boolean hasDbTriggers()
     {
-        return super.hasDbTriggers() || _dataClass.getTinfo().hasDbTriggers();
+        return super.hasDbTriggers() || _dataClassTableInfo.get().hasDbTriggers();
     }
 
     @Override
@@ -830,7 +833,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        TableInfo propertiesTable = _dataClass.getTinfo();
+        TableInfo propertiesTable = _dataClassTableInfo.get();
         PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
         SearchService ss = SearchService.get();
         if (null != ss)
@@ -843,7 +846,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                                 ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                                        expData.index(ss.defaultTask());
+                                        expData.index(ss.defaultTask(), this);
                                 })
                         )
                 );
@@ -878,9 +881,33 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.setDebugName("step0");
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
+
+            // Ensure we have a dataClass column and it is of the right value
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
+            ColumnInfo classIdCol = _dataClassTableInfo.get().getColumn("classId");
+            step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
+
+            // Ensure we have a cpasType column and it is of the right value
+            ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
+            step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
+
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+            {
+                step0.selectAll();
+                return LoggingDataIterator.wrap(step0.getDataIterator(context));
+            }
+
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?
+
+            // Ensure we have a name column -- makes the NameExpressionDataIterator easier
+            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
+            {
+                ColumnInfo nameCol = expData.getColumn("name");
+                step0.addColumn(nameCol, (Supplier<String>)() -> null);
+            }
+
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // TODO: validate dataFileUrl column, it will be saved later
@@ -892,22 +919,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
-
-            // Ensure we have a dataClass column and it is of the right value
-            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
-            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
-            step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
-
-            // Ensure we have a cpasType column and it is of the right value
-            ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
-            step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
-
-            // Ensure we have a name column -- makes the NameExpressionDataIterator easier
-            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
-            {
-                ColumnInfo nameCol = expData.getColumn("name");
-                step0.addColumn(nameCol, (Supplier<String>)() -> null);
-            }
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
@@ -1002,9 +1013,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
-        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
+        {
+            return getRow(user, container, keys, false);
+        }
+
+        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer) throws InvalidKeyException
         {
             aliasColumns(_columnMapping, keys);
 
@@ -1013,10 +1030,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
 
-            if (null==rowid && null==lsid && ((null == name || null == classId)))
-                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name' and 'classid'", keys);
+            if (classId == null)
+                classId = _dataClass.getRowId();
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId);
+            if (null==rowid && null==lsid && null == name)
+                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
+
+            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
 
             //PostgreSQL includes a column named _row for the row index, but since this is selecting by
             //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -1037,26 +1057,29 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
             TableInfo d = getDbTable();
-            TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
+            TableInfo t = _dataClassTableInfo.get();
 
             SQLFragment sql = new SQLFragment()
                     .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid")
-                    .append(" WHERE d.Container=?").add(container.getEntityId());
+                    .append(" ON d.lsid = t.lsid WHERE ");
+
             if (null != rowid)
-                sql.append(" AND d.rowid=?").add(rowid);
+                sql.append("d.rowid=?").add(rowid);
             else if (null != lsid)
-                sql.append(" AND d.lsid=?").add(lsid);
+                sql.append("d.lsid=?").add(lsid);
             else
-                sql.append(" AND d.classid=? AND d.name=?").add(classId).add(name);
+                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
+
+            if (!allowCrossContainer)
+                sql.append(" AND d.Container=?").add(container.getEntityId());
 
             return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
@@ -1104,7 +1127,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
             keys = new Object[] {lsid};
-            TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
+            TableInfo t = _dataClassTableInfo.get();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
                 ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
@@ -1143,7 +1166,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 if (data == null)
                     data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.index(null);
+                data.index(null, ExpDataClassDataTableImpl.this);
             }
 
             ret.put("lsid", lsid);
@@ -1236,6 +1259,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        public void configureDataIteratorContext(DataIteratorContext context)
+        {
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+        }
+
+        @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
@@ -1245,7 +1274,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             dib = getConceptURIVocabularyDomainDataIteratorBuilder(user, container, dib);
 
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
             return dib;
         }
@@ -1299,5 +1328,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
+
     }
 }

@@ -178,7 +178,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return null;
     }
 
-    private ExpDataClass getDataClass(Domain domain)
+    private ExpDataClassImpl getDataClass(Domain domain)
     {
         return ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
     }
@@ -383,7 +383,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         LOG.debug("Invalidating data class domain " + domain.getStorageTableName());
         super.invalidate(domain);
 
-        ExpDataClass dc = getDataClass(domain);
+        ExpDataClassImpl dc = getDataClass(domain);
         if (dc != null && dc.getDomain() != null && dc.getDomain().getStorageTableName() != null)
             ExperimentServiceImpl.get().indexDataClass(dc);
     }

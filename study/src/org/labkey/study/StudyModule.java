@@ -235,7 +235,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 23.000;
+        return 23.001;
     }
 
     @Override
@@ -796,7 +796,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
-        StudyManager._enumerateDocuments(task, c);
+        StudyManager._enumerateDocuments(task, c, modifiedSince);
     }
     
     @Override

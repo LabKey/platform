@@ -17,8 +17,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -62,7 +62,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
@@ -317,19 +316,30 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (insertOptionParam != null)
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
+            // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
+            if (_target != null && !_target.supportsInsertOption(insertOption))
+                throw new IllegalArgumentException(insertOption + " action is not supported for " + _target.getName() + ".");
+
             // TODO: Check insertOption is supported on the target table
             // TODO: See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42788
 
             switch (insertOption)
             {
-                case MERGE, REPLACE, UPSERT -> {
+                case UPDATE -> {
                     if (!canUpdate(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                 }
-                default -> {
+                case MERGE, REPLACE, UPSERT -> {
+                    if (!canUpdate(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                     if (!canInsert(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
                 }
+                case IMPORT, IMPORT_IDENTITY, INSERT -> {
+                    if (!canInsert(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                }
+                default -> { throw new IllegalStateException("unhandled InsertOption"); }
             }
         }
 

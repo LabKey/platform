@@ -37,7 +37,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
-import org.labkey.api.dataiterator.CrossFolderRecordDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -92,6 +91,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
@@ -214,10 +214,12 @@ public class ExpDataIterators
     public static class ExpMaterialValidatorIterator extends ValidatorIterator
     {
         private Integer _aliquotedFromColInd = null;
+        private boolean isUpdateOnly;
 
         public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
         {
             super(data, context, c, user);
+            isUpdateOnly = context.getInsertOption().updateOnly;
         }
 
         @Override
@@ -226,8 +228,10 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (columnNameMap.containsKey("AliquotedFrom"))
+                if (!isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
+                else if (isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
+                    _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
                     _aliquotedFromColInd = -1;
             }
@@ -637,10 +641,13 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
+            if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }
+
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+                return LoggingDataIterator.wrap(new ImportWithUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample));
             return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _skipAliquot));
         }
     }
@@ -653,17 +660,12 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
-    static class DerivationDataIterator extends WrapperDataIterator
+    static class DerivationDataIteratorBase extends WrapperDataIterator
     {
         final DataIteratorContext _context;
-        final Integer _lsidCol;
         final Integer _nameCol;
         final Map<Integer, String> _parentCols;
-        final Integer _aliquotParentCol;
-        final Map<String, String> _lsidNames;
         final Map<String, String> _aliquotParents;
-        // Map from Data LSID to Set of (parentColName, parentName)
-        final Map<String, Set<Pair<String, String>>> _parentNames;
         /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
         final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
         final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
@@ -674,11 +676,8 @@ public class ExpDataIterators
         final Container _container;
         final User _user;
         final boolean _isSample;
-        final boolean _skipAliquot; // skip aliquot validation, used for update/updates cases
 
-        final List<String> _candidateAliquotNames; // used to check if a name is an aliquot, with absent "AliquotedFrom". used for merge only
-
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
+        protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
         {
             super(di);
             _context = context;
@@ -693,20 +692,14 @@ public class ExpDataIterators
                 _currentSampleType = null;
                 _currentDataClass = (ExpDataClass) currentDataType;
             }
-            _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
             _nameCol = map.get("name");
-            _lsidNames = new HashMap<>();
-            _parentNames = new LinkedHashMap<>();
             _parentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
-            _candidateAliquotNames = new ArrayList<>();
             _container = container;
             _user = user;
 
-            Integer aliquotParentCol = -1;
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
@@ -714,7 +707,228 @@ public class ExpDataIterators
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                 }
-                else if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
+            }
+
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+        
+        protected Set<Pair<String, String>> _getParentParts()
+        {
+            Set<Pair<String, String>> allParts = new HashSet<>();
+            for (Integer parentCol : _parentCols.keySet())
+            {
+                Object o = get(parentCol);
+                if (o != null)
+                {
+                    Collection<String> parentNames;
+                    if (o instanceof String)
+                    {
+                        if (((String) o).trim().isEmpty())
+                        {
+                            parentNames = Arrays.asList(((String) o).trim());
+                        }
+                        else
+                        {
+                            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+                            // using TabLoader instead of just splitting on the comma.
+                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            {
+                                tabLoader.setDelimiterCharacter(',');
+                                tabLoader.setUnescapeBackslashes(false);
+                                try
+                                {
+                                    String[][] values = tabLoader.getFirstNLines(1);
+                                    if (values.length > 0)
+                                        parentNames = Arrays.asList(values[0]);
+                                    else
+                                        parentNames = Collections.emptyList();
+                                }
+                                catch (IOException e)
+                                {
+                                    parentNames = Collections.emptyList();
+                                    getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
+                                }
+                            }
+                        }
+                    }
+                    else if (o instanceof JSONArray)
+                    {
+                        parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                    }
+                    else if (o instanceof org.json.JSONArray)
+                    {
+                        parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
+                    }
+                    else if (o instanceof Collection)
+                    {
+                        //noinspection rawtypes
+                        Collection<?> c = ((Collection)o);
+                        parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
+                    }
+                    else if (o instanceof Number)
+                    {
+                        parentNames = Arrays.asList(o.toString());
+                    }
+                    else
+                    {
+                        getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
+                        continue;
+                    }
+
+                    String parentColName = _parentCols.get(parentCol);
+                    Set<Pair<String, String>> parts = parentNames.stream()
+                            .map(String::trim)
+                            .map(s -> Pair.of(parentColName, s))
+                            .collect(Collectors.toSet());
+
+                    allParts.addAll(parts);
+                }
+                else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
+                {
+                    allParts.add(new Pair<>(_parentCols.get(parentCol), null));
+                }
+            }
+            return allParts;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            return super.next();
+        }
+
+        protected void _processRun(ExpRunItem runItem,
+                                   List<UploadSampleRunRecord> runRecords,
+                                   Set<Pair<String, String>> parentNames,
+                                   RemapCache cache,
+                                   Map<Integer, ExpMaterial> materialCache,
+                                   Map<Integer, ExpData> dataCache,
+                                   @Nullable String aliquotedFrom,
+                                   String dataType /*sample type or source type name*/) throws ValidationException, ExperimentException
+        {
+            Pair<RunInputOutputBean, RunInputOutputBean> pair;
+            if (_context.getInsertOption().mergeRows)
+            {
+                pair = resolveInputsAndOutputs(
+                        _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+            }
+            else
+            {
+                pair = resolveInputsAndOutputs(
+                        _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+            }
+
+            if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
+                return;
+
+            if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
+
+            // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
+            if (_context.getInsertOption().mergeRows && pair.first.doClear())
+            {
+                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
+                lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
+                if (!lockCheckMessage.isEmpty())
+                    throw new ValidationException(lockCheckMessage);
+            }
+            else
+            {
+                ExpMaterial currentMaterial = null;
+                Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
+                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
+                Map<ExpData, String> currentDataMap = Collections.emptyMap();
+
+                if (_context.getInsertOption().mergeRows)
+                {
+                    // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
+                    // Since this entry was (maybe) already in the database, we may need to delete old derivation info
+                    previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                }
+
+                if (_isSample)
+                {
+                    ExpMaterial sample = (ExpMaterial) runItem;
+                    currentMaterialMap = new HashMap<>();
+                    currentMaterial = sample;
+                    currentMaterialMap.put(sample, sampleRole(sample));
+                }
+                else
+                {
+                    ExpData data = (ExpData) runItem;
+                    currentDataMap = new HashMap<>();
+                    currentDataMap.put(data, dataRole(data, _user));
+                }
+
+                if (pair.first != null)
+                {
+                    // Add parent derivation run
+                    Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
+
+                    String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, parentMaterialMap.keySet(), runItem.getName(), "parents");
+                    if (!lockCheckMessage.isEmpty())
+                        throw new ValidationException(lockCheckMessage);
+
+                    Map<ExpData, String> parentDataMap = pair.first.getDatas();
+
+                    record(true, runRecords,
+                            parentMaterialMap, currentMaterialMap,
+                            parentDataMap, currentDataMap, pair.first.getAliquotParent(), currentMaterial);
+                }
+
+                if (pair.second != null)
+                {
+                    // Add child derivation run
+                    Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
+                    Map<ExpData, String> childDataMap = pair.second.getDatas();
+                    String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.second, childMaterialMap.keySet(), runItem.getName(), "children");
+                    if (!lockCheckMessage.isEmpty())
+                        throw new ValidationException(lockCheckMessage);
+
+                    record(false, runRecords,
+                            currentMaterialMap, childMaterialMap,
+                            currentDataMap, childDataMap, null, null);
+                }
+            }
+        }
+    }
+    
+    static class DerivationDataIterator extends DerivationDataIteratorBase
+    {
+        final Integer _lsidCol;
+        final Integer _aliquotParentCol;
+        final Map<String, String> _lsidNames;
+        // Map of Data lsid and its aliquotedFromLSID
+        final Map<String, String> _aliquotParents;
+        // Map from Data LSID to Set of (parentColName, parentName)
+        final Map<String, Set<Pair<String, String>>> _parentNames;
+
+        final boolean _skipAliquot; // skip aliquot validation, used for update/updates cases
+
+        final List<String> _candidateAliquotNames; // used to check if a name is an aliquot, with absent "AliquotedFrom". used for merge only
+
+        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
+        {
+            super(di, context, container, user, currentDataType, isSample);
+            _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _lsidCol = map.get("lsid");
+            _lsidNames = new HashMap<>();
+            _parentNames = new LinkedHashMap<>();
+            _aliquotParents = new LinkedHashMap<>();
+            _candidateAliquotNames = new ArrayList<>();
+
+            Integer aliquotParentCol = -1;
+            for (Map.Entry<String, Integer> entry : map.entrySet())
+            {
+                String name = entry.getKey();
+                if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
                 {
                     aliquotParentCol = entry.getValue();
                 }
@@ -776,81 +990,7 @@ public class ExpDataIterators
                     _candidateAliquotNames.add(name);
                 }
 
-                Set<Pair<String, String>> allParts = new HashSet<>();
-                for (Integer parentCol : _parentCols.keySet())
-                {
-                    Object o = get(parentCol);
-                    if (o != null)
-                    {
-                        Collection<String> parentNames;
-                        if (o instanceof String)
-                        {
-                            if (((String) o).trim().isEmpty())
-                            {
-                                parentNames = Arrays.asList(((String) o).trim());
-                            }
-                            else
-                            {
-                                // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
-                                // using TabLoader instead of just splitting on the comma.
-                                try (TabLoader tabLoader = new TabLoader((String) o))
-                                {
-                                    tabLoader.setDelimiterCharacter(',');
-                                    tabLoader.setUnescapeBackslashes(false);
-                                    try
-                                    {
-                                        String[][] values = tabLoader.getFirstNLines(1);
-                                        if (values.length > 0)
-                                            parentNames = Arrays.asList(values[0]);
-                                        else
-                                            parentNames = Collections.emptyList();
-                                    }
-                                    catch (IOException e)
-                                    {
-                                        parentNames = Collections.emptyList();
-                                        getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
-                                    }
-                                }
-                            }
-                        }
-                        else if (o instanceof JSONArray)
-                        {
-                            parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof org.json.JSONArray)
-                        {
-                            parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof Collection)
-                        {
-                            //noinspection rawtypes
-                            Collection<?> c = ((Collection)o);
-                            parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof Number)
-                        {
-                            parentNames = Arrays.asList(o.toString());
-                        }
-                        else
-                        {
-                            getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
-                            continue;
-                        }
-
-                        String parentColName = _parentCols.get(parentCol);
-                        Set<Pair<String, String>> parts = parentNames.stream()
-                                .map(String::trim)
-                                .map(s -> Pair.of(parentColName, s))
-                                .collect(Collectors.toSet());
-
-                        allParts.addAll(parts);
-                    }
-                    else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
-                    {
-                        allParts.add(new Pair<>(_parentCols.get(parentCol), null));
-                    }
-                }
-
+                Set<Pair<String, String>> allParts = _getParentParts();
                 if (!allParts.isEmpty())
                     _parentNames.put(lsid, allParts);
             }
@@ -940,91 +1080,7 @@ public class ExpDataIterators
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
-                        Pair<RunInputOutputBean, RunInputOutputBean> pair;
-                        if (_context.getInsertOption().mergeRows)
-                        {
-                            pair = resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
-                        }
-                        else
-                        {
-                            pair = resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
-                        }
-
-                        if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
-                            continue;
-
-                        if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
-                            throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
-
-                        // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
-                        if (_context.getInsertOption().mergeRows && pair.first.doClear())
-                        {
-                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
-                            String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
-                            lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
-                            if (!lockCheckMessage.isEmpty())
-                                throw new ValidationException(lockCheckMessage);
-                        }
-                        else
-                        {
-                            ExpMaterial currentMaterial = null;
-                            Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
-                            Map<ExpData, String> currentDataMap = Collections.emptyMap();
-
-                            if (_context.getInsertOption().mergeRows)
-                            {
-                                // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
-                                // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                                previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
-                            }
-
-                            if (_isSample)
-                            {
-                                ExpMaterial sample = (ExpMaterial) runItem;
-                                currentMaterialMap = new HashMap<>();
-                                currentMaterial = sample;
-                                currentMaterialMap.put(sample, sampleRole(sample));
-                            }
-                            else
-                            {
-                                ExpData data = (ExpData) runItem;
-                                currentDataMap = new HashMap<>();
-                                currentDataMap.put(data, dataRole(data, _user));
-                            }
-
-                            if (pair.first != null)
-                            {
-                                // Add parent derivation run
-                                Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
-
-                                String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, parentMaterialMap.keySet(), runItem.getName(), "parents");
-                                if (!lockCheckMessage.isEmpty())
-                                    throw new ValidationException(lockCheckMessage);
-
-                                Map<ExpData, String> parentDataMap = pair.first.getDatas();
-
-                                record(true, runRecords,
-                                        parentMaterialMap, currentMaterialMap,
-                                        parentDataMap, currentDataMap, pair.first.getAliquotParent(), currentMaterial);
-                            }
-
-                            if (pair.second != null)
-                            {
-                                // Add child derivation run
-                                Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
-                                Map<ExpData, String> childDataMap = pair.second.getDatas();
-                                String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.second, childMaterialMap.keySet(), runItem.getName(), "children");
-                                if (!lockCheckMessage.isEmpty())
-                                    throw new ValidationException(lockCheckMessage);
-
-                                record(false, runRecords,
-                                        currentMaterialMap, childMaterialMap,
-                                        currentDataMap, childDataMap, null, null);
-                            }
-                        }
+                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFrom, dataType);
                     }
 
                     if (!runRecords.isEmpty())
@@ -1043,6 +1099,157 @@ public class ExpDataIterators
             }
             return hasNext;
         }
+
+
+    }
+    
+    static class ImportWithUpdateDerivationDataIterator extends DerivationDataIteratorBase
+    {
+        // Map from Data name to Set of (parentColName, parentName)
+        final Map<String, Set<Pair<String, String>>> _parentNames;
+        final Integer _aliquotParentCol;
+        // Map of Data name and its aliquotedFromLSID
+        final Map<String, String> _aliquotParents;
+
+        protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
+        {
+            super(di, context, container, user, currentDataType, isSample);
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _parentNames = new LinkedHashMap<>();
+            _aliquotParents = new LinkedHashMap<>();
+
+            Integer aliquotParentCol = -1;
+            for (Map.Entry<String, Integer> entry : map.entrySet())
+            {
+                if (_isSample && "AliquotedFromLSID".equalsIgnoreCase(entry.getKey()))
+                {
+                    aliquotParentCol = entry.getValue();
+                }
+            }
+
+            _aliquotParentCol = aliquotParentCol;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            // skip processing if there are errors upstream
+            if (getErrors().hasErrors())
+                return hasNext;
+
+            // For each iteration, collect the parent col values
+            if (hasNext)
+            {
+                String name = null;
+                if (_nameCol != null)
+                    name = (String) get(_nameCol);
+                if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+                {
+                    Object o = get(_aliquotParentCol);
+                    String aliquotParentName = null;
+                    if (o != null)
+                    {
+                        if (o instanceof String)
+                        {
+                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
+                        }
+                        else if (o instanceof Number)
+                        {
+                            aliquotParentName = o.toString();
+                        }
+                        else
+                        {
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFromLSID"));
+                        }
+
+                        if (aliquotParentName != null)
+                            _aliquotParents.put(name, aliquotParentName);
+                    }
+                }
+
+
+                Set<Pair<String, String>> allParts = _getParentParts();
+                if (!allParts.isEmpty())
+                    _parentNames.put(name, allParts);
+            }
+
+            if (getErrors().hasErrors())
+                return hasNext;
+
+            if (!hasNext)
+            {
+                try
+                {
+                    RemapCache cache = new RemapCache(true);
+                    Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+                    Map<Integer, ExpData> dataCache = new HashMap<>();
+
+
+                    List<UploadSampleRunRecord> runRecords = new ArrayList<>();
+                    Set<String> names = new LinkedHashSet<>();
+                    names.addAll(_parentNames.keySet());
+                    names.addAll(_aliquotParents.keySet());
+                    for (String name : names)
+                    {
+                        Set<Pair<String, String>> parentNames = _parentNames.getOrDefault(name, Collections.emptySet());
+
+                        ExpRunItem runItem;
+                        String aliquotedFromLSID = _aliquotParents.get(name);
+                        String dataType = null;
+                        if (_isSample)
+                        {
+                            ExpMaterial m = _currentSampleType.getSample(_container, name);
+
+                            if (m != null)
+                            {
+                                materialCache.put(m.getRowId(), m);
+                                dataType = _currentSampleType.getName();
+                            }
+                            runItem = m;
+                        }
+                        else
+                        {
+                            ExpData d = _currentDataClass.getData(_container, name);
+
+                            if (d != null)
+                            {
+                                dataCache.put(d.getRowId(), d);
+                                dataType = _currentDataClass.getName();
+                            }
+                            runItem = d;
+                        }
+                        if (runItem == null) // nothing to do if the item does not exist
+                            continue;
+
+                        String aliquotedFrom =  aliquotedFromLSID; // TODO get from from lsid
+                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFrom, dataType);
+                    }
+
+                    if (!runRecords.isEmpty())
+                    {
+                        ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(_container, _user, null), null);
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                catch (ValidationException e)
+                {
+                    getErrors().addRowError(e);
+                }
+            }
+            return hasNext;
+        }
+
     }
 
     private static String checkForLockedSampleRelativeChange(Set<ExpMaterial> previousSampleRelatives, Set<ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
@@ -1762,22 +1969,27 @@ public class ExpDataIterators
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl;
 
-            SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
+            SimpleTranslator step1 = new SimpleTranslator(input, context);
+            step1.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
-                step0.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
+                step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
+            if (context.getInsertOption().updateOnly)
+                dontUpdate.add("objectid");
+
+            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
+
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
-            if (!context.getInsertOption().mergeRows)
+            if (!isMergeOrUpdate)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
             Map<String,Object> extraKeyValueMap = null;
             if (isSample)
             {
-                if (context.getInsertOption().mergeRows)
+                if (isMergeOrUpdate)
                 {
                     extraKeyValueMap = new CaseInsensitiveHashMap<>();
                     extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
@@ -1790,7 +2002,7 @@ public class ExpDataIterators
                 dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
                 dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
             }
-            else if (context.getInsertOption().mergeRows)
+            else if (isMergeOrUpdate)
             {
                 extraKeyValueMap = new CaseInsensitiveHashMap<>();
                 extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
@@ -1798,13 +2010,13 @@ public class ExpDataIterators
                 keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
             }
 
-            // Check if record exist in related folder as cross folder merge is not supported
-            // this is a NOOP unless we are merging and QueryService.get().isProductProjectsEnabled()
-            DataIteratorBuilder step1 = CrossFolderRecordDataIterator.createBuilder(step0, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap);
-
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
-            // this is a NOOP unless we are merging and detailed logging is enabled
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString()), true);
+            // this is a NOOP unless we are merging/updating and detailed logging is enabled
+            Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
+            if (context.getInsertOption().updateOnly)
+                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
+
+            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
@@ -1812,14 +2024,16 @@ public class ExpDataIterators
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
-                    .setCommitRowsBeforeContinuing(true));
+                    .setCommitRowsBeforeContinuing(true)
+                    .setFailOnEmptyUpdate(false));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step3, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
-                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
+                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns())
+                    .setFailOnEmptyUpdate(false));
 
             DataIteratorBuilder step5 = step4;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
@@ -1832,7 +2046,7 @@ public class ExpDataIterators
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step7 = step6;
-            if (null != _indexFunction)
+            if (null != _indexFunction && !context.getInsertOption().updateOnly) //TODO support index for update
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));

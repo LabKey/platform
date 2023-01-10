@@ -1046,7 +1046,7 @@ public class PropertyController extends SpringActionController
             Domain domain = null;
 
             //TODO not a fan of doing this conversion in multiple locations
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtil.createDefaultMapper();
             Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
 
             if (design != null)
@@ -1474,7 +1474,7 @@ public class PropertyController extends SpringActionController
             Object domainKindProps = null;
             if (null != options)
             {
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonUtil.createDefaultMapper();
                 domainKindProps = mapper.convertValue(options, kind.getTypeClass());
             }
             return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings);

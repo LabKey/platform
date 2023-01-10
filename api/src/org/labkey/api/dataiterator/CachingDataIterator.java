@@ -69,7 +69,7 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     }
 
 
-    protected CachingDataIterator(DataIterator in)
+    public CachingDataIterator(DataIterator in)
     {
         super(null);
         _in = in;

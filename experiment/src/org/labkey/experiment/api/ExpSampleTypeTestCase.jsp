@@ -84,11 +84,11 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.sql.SQLException" %>
-<%@ page import="org.labkey.api.query.QueryUpdateServiceException" %>
-<%@ page import="org.labkey.api.query.InvalidKeyException" %>
 <%@ page import="static org.hamcrest.CoreMatchers.containsString" %>
 <%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
+<%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.HashMap" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -1087,4 +1087,122 @@ public void testExpMaterialPermissions() throws Exception
     rows = qus.deleteRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())), null, null);
     assertEquals("Failed to delete material via QUS", 1, rows.size());
 }
+
+private List<Map<String,Object>> getSampleRows(String sampleType)
+{
+    User user = TestContext.get().getUser();
+
+    TableInfo tInfo = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME).getTable(sampleType);
+    return Arrays.asList(new TableSelector(tInfo, TableSelector.ALL_COLUMNS, null, new Sort("Name")).getMapArray());
+}
+
+@Test
+public void testInsertOptionUpdate() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    // create sample type
+    List<GWTPropertyDescriptor> props = new ArrayList<>();
+    props.add(new GWTPropertyDescriptor("name", "string"));
+    props.add(new GWTPropertyDescriptor("intVal", "int"));
+    var requiredCol = new GWTPropertyDescriptor("RequriedCol", "string");
+    requiredCol.setRequired(true);
+    props.add(requiredCol);
+
+    final String sampleTypeName = "TestSamplesWithRequired";
+    SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+    TableInfo table = schema.getTable(sampleTypeName);
+    QueryUpdateService qus = table.getUpdateService();
+
+    // import samples
+    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 10, "AliquotedFrom", null, "RequriedCol", "a"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", null, "intVal", null, "AliquotedFrom", "S-1", "RequriedCol", null));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 20, "AliquotedFrom", null, "RequriedCol", "b"));
+
+    DataIteratorContext context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+    var count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToAdd.get(0).keySet(), rowsToAdd), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(count,3);
+    var rows = getSampleRows(sampleTypeName);
+    assertEquals("S-1", rows.get(0).get("name"));
+    assertEquals(10, rows.get(1).get("intVal"));
+    assertEquals("b", rows.get(2).get("RequriedCol"));
+
+    // Update samples using data iterator
+    // -- AliquotedFrom is not needed for update
+    // -- Required fields can be absent for update
+    List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 100));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-1", "intVal", null));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200));
+
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
+    count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(count,3);
+    rows = getSampleRows(sampleTypeName);
+    // test existing row value is updated
+    assertEquals(100, rows.get(0).get("intVal"));
+    assertEquals(100, rows.get(1).get("intVal"));
+    assertEquals("a", rows.get(1).get("RequriedCol")); // absent columns are not blanked out
+    final String aliquotedFromLSID = (String) rows.get(1).get("AliquotedFromLSID");
+    assertEquals(true, rows.get(1).get("IsAliquot"));
+    assertEquals(100, rows.get(1).get("intVal"));
+    assertEquals(200, rows.get(2).get("intVal"));
+    assertEquals("b", rows.get(2).get("RequriedCol")); // absent columns are not blanked out
+
+    // update a sample that doesn't exist should throw error
+    rowsToUpdate = new ArrayList<>();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
+    boolean hasError = false;
+    try
+    {
+        qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    }
+    catch (Exception e)
+    {
+        hasError = true;
+        assertTrue(e.getMessage().contains("Sample does not exist: S-1-absent."));
+    }
+    assertTrue(hasError);
+
+    // with detailed audit turned on, checking for existing record should still work
+    Map<Enum, Object> auditOptions = new HashMap<>();
+    auditOptions.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    context.setConfigParameters(auditOptions);
+    hasError = false;
+    try
+    {
+        qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    }
+    catch (Exception e)
+    {
+        hasError = true;
+        assertTrue(e.getMessage().contains("Sample does not exist: S-1-absent."));
+    }
+    assertTrue(hasError);
+
+    // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored
+    rowsToUpdate = new ArrayList<>();
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 100, "AliquotedFrom", "S-2"));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-1", "intVal", null, "AliquotedFrom", "S-2"));
+    rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200, "AliquotedFrom", "S-1"));
+
+    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+
+    assertFalse(context.getErrors().hasErrors());
+    assertEquals(count,3);
+    rows = getSampleRows(sampleTypeName);
+    assertNull(rows.get(0).get("AliquotedFromLSID"));
+    assertEquals(aliquotedFromLSID, rows.get(1).get("AliquotedFromLSID"));
+    assertNull(rows.get(2).get("AliquotedFromLSID"));
+
+}
+
 %>

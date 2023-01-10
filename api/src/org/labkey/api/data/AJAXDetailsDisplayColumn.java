@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
@@ -44,9 +44,9 @@ public class AJAXDetailsDisplayColumn extends DataColumn
 {
     @NotNull private final Map<String, FieldKey> _urlParams;
     private final JSONObject _properties;
-    @Nullable private DetailsURL _detailsURL;
+    @Nullable private final DetailsURL _detailsURL;
 
-    private Set<FieldKey> _requiredValues = new HashSet<>();
+    private final Set<FieldKey> _requiredValues = new HashSet<>();
 
     public AJAXDetailsDisplayColumn(@NotNull ColumnInfo col, @Nullable ActionURL detailsURL, @NotNull JSONObject properties)
     {
