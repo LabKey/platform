@@ -68,7 +68,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _created = toTime("created", created, properties);
         _modifiedBy = modifiedBy;
         _modified = toTime("modified", modified, properties);
-        // Make sure the "execute URL" container is supplied as a GUID, not a path, since paths are not stable. Also,
+        // Make sure the "execute URL" container is supplied as a GUID, not a path, since paths are not stable.
         if (_executeUrl instanceof ActionURL actionURL)
         {
             String extraPath = StringUtils.strip(actionURL.getExtraPath(),"/");
