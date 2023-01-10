@@ -337,21 +337,15 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return container;
     }
 
+
     @Override
     public Container getContainer()
     {
         if (null == _c)
         {
-            Container c = null;
             ActionURL url = getActionURL();
             if (null != url)
-            {
-                String path = url.getExtraPath();
-                c = ContainerManager.getForPath(path);
-                if (c == null)
-                    c = ContainerManager.getForId(StringUtils.strip(path, "/"));
-            }
-            _c = c;
+                _c = ContainerManager.getForURL(url);
         }
         return _c;
     }

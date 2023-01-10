@@ -1064,6 +1064,16 @@ public class ContainerManager
         return map.get(name);
     }
 
+
+    public static Container getForURL(@NotNull ActionURL url)
+    {
+        Container ret = getForPath(url.getExtraPath());
+        if (ret == null)
+            ret = getForId(StringUtils.strip(url.getExtraPath(), "/"));
+        return ret;
+    }
+
+
     public static Container getForPath(@NotNull String path)
     {
         Path p = Path.parse(path);
