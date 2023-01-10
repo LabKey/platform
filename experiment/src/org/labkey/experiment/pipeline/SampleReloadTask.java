@@ -47,7 +47,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
     public static final String SAMPLE_NAME_KEY = "name";
     public static final String SAMPLE_ID_KEY = "id";
     public static final String ALTERNATE_KEY_LOOKUP_OPTION = "alternateKeyLookup";
-    public static final String MERGE_OPTION = "mergeData";
+    public static final String INSERT_OPTION = "insertOption";
     public static final String AUDIT_OPTION = "auditBehavior";
 
     private QueryUpdateService.InsertOption _insertOption;
@@ -77,12 +77,12 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
 
         log.info("Loading " + dataFile.getName());
 
-        if (params.containsKey(MERGE_OPTION))
+        if (params.containsKey(INSERT_OPTION))
         {
-            String insertOption = params.get(MERGE_OPTION);
+            String insertOption = params.get(INSERT_OPTION);
             log.info("data insert option set as : " + insertOption);
 
-            if ("true".equalsIgnoreCase(insertOption))
+            if ("merge".equalsIgnoreCase(insertOption))
                 _insertOption = QueryUpdateService.InsertOption.MERGE;
             else if ("update".equalsIgnoreCase(insertOption))
                 _insertOption = QueryUpdateService.InsertOption.UPDATE;
