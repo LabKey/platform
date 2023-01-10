@@ -565,7 +565,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns);
                 }
 
-                if (null == table || (null != errors && !errors.isEmpty()))
+                if (null == table || (null != errors && !errors.isEmpty() && !errors.stream().allMatch(error -> error instanceof QueryParseException && ((QueryParseException)error).isWarning())))
+
                     return null;
 
                 log.debug("Caching table " + schema.getName() + "." + table.getName());
