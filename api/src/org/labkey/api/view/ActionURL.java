@@ -477,7 +477,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
     /*
     * This is the portion path that is not used to resolve the controller-action.
-    * THis is usually the container path or container id.
+    * This is usually the container path or container id.
      */
     public ActionURL setExtraPath(String extraPath)
     {
