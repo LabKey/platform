@@ -129,7 +129,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private int _cacheSize = CacheManager.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
-    /** Columns that aren't part of this table any more, but can still be resolved for backwards compatibility */
+    /** Columns that aren't part of this table anymore, but can still be resolved for backwards compatibility */
     protected final Map<String, ColumnInfo> _resolvedColumns = new CaseInsensitiveHashMap<>();
     private Map<String, MethodInfo> _methodMap;
     private Set<FieldKey> _methodFieldKeys;
@@ -159,6 +159,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private FieldKey _auditRowPk;
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
+
+    private boolean _initialColumnsAreAdded = false;
+
+    protected boolean initialColumnsAreAdded()
+    {
+        return _initialColumnsAreAdded;
+    }
+
+    // Every method that interacts directly with _columnMap should call this first
+    private void ensureInitialColumnsAreAdded()
+    {
+        if (!_initialColumnsAreAdded)
+        {
+            _initialColumnsAreAdded = true;
+            initializeColumns();
+        }
+    }
+
+    // Initializing the column list can be expensive for certain TableInfos (e.g., PivotTableInfo). Adding all columns
+    // in an override of this method (instead of the constructor) allows the TableInfo to avoid that expensive operation
+    // in cases where the column list isn't needed (e.g., schema browser tree, query dependencies, linked schema
+    // drop-down list, etc.).
+    protected void initializeColumns()
+    {
+    }
 
     @NotNull
     @Override
@@ -215,7 +240,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public AbstractTableInfo(DbSchema schema, String name)
     {
         _schema = schema;
-        _columnMap = constructColumnMap();
+        _columnMap = constructColumnMap(); // This is just an empty map, not populating any columns yet
         setName(name);
         addTriggerFactory(new ScriptTriggerFactory());
         MemTracker.getInstance().put(this);
@@ -497,6 +522,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Nullable
     public ColumnInfo getColumn(@NotNull String name, boolean resolveIfNeeded)
     {
+        ensureInitialColumnsAreAdded();
         ColumnInfo ret = _columnMap.get(name);
         if (ret != null)
             return ret;
@@ -601,6 +627,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public List<ColumnInfo> getColumns()
     {
+        ensureInitialColumnsAreAdded();
         return List.copyOf(_columnMap.values());
     }
 
@@ -608,6 +635,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public List<MutableColumnInfo> getMutableColumns()
     {
         checkLocked();
+        ensureInitialColumnsAreAdded();
         return _columnMap.values().stream()
             .map(c -> (MutableColumnInfo)c)
             .peek(MutableColumnInfo::checkLocked)
@@ -617,6 +645,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public Set<String> getColumnNameSet()
     {
+        ensureInitialColumnsAreAdded();
         // Make the set case-insensitive
         return Collections.unmodifiableSet(new CaseInsensitiveTreeSet(_columnMap.keySet()));
     }
@@ -654,6 +683,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean removeColumn(ColumnInfo column)
     {
         checkLocked();
+        ensureInitialColumnsAreAdded();
         // Clear the cached resolved columns so we regenerate it if the shape of the table changes
         _resolvedColumns.clear();
         return _columnMap.remove(column.getName()) != null;
@@ -662,6 +692,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
+        ensureInitialColumnsAreAdded();
         // Not true if this is a VirtualTableInfo
         // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
@@ -692,6 +723,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
         checkLocked();
+        ensureInitialColumnsAreAdded();
         if (updated == existing)
             return updated;
 
@@ -1318,6 +1350,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 // Reorder based on the sequence of columns in XML
                 Map<String, ColumnInfo> originalColumns = constructColumnMap();
+                assert initialColumnsAreAdded(); // getColumnNameSet() call above should have initialized the columns
                 originalColumns.putAll(_columnMap);
                 for (ColumnInfo columnInfo : originalColumns.values())
                 {
@@ -1335,7 +1368,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
                 for (ColumnInfo column : originalColumns.values())
                 {
-                    // Readd the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
+                    // Read the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
                     // be in the same order they were in originally
                     addColumn((BaseColumnInfo) column);
                 }
