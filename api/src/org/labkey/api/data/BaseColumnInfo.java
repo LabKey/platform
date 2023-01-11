@@ -465,6 +465,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setConditionalFormats(col.getConditionalFormats());
         setValidators(col.getValidators());
 
