@@ -1070,9 +1070,10 @@ abstract public class PipelineJob extends Job implements Serializable
     @Override @Trace
     public void run()
     {
+        assert ThreadContext.isEmpty();  // Prevent/detect leaks
         // Connect log messages with the active trace and span
         ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
-        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
 
         try
         {

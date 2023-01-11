@@ -185,9 +185,10 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
+        assert ThreadContext.isEmpty();  // Prevent/detect leaks
         // Connect log messages with the active trace and span
         ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
-        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
 
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
         try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
