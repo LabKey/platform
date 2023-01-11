@@ -233,6 +233,12 @@ public class Path implements Serializable, Comparable, Iterable<String>
     }
 
 
+    public boolean isEmpty()
+    {
+        return 0 == _length;
+    }
+
+
     public String get(int i)
     {
         return _path[i];
