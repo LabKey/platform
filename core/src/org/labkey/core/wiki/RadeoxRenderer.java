@@ -136,8 +136,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     {
         public MyInitialRenderContext()
         {
-            set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
-            set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
+            set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
+            set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
         }
     }
 
