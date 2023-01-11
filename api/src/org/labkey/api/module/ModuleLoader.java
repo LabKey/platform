@@ -1656,7 +1656,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
         }
 
-        Table.delete(getTableInfoModules(), context.getName());
+        removeModuleContext(context);
 
         if (null != m && deleteFiles)
         {
@@ -1670,7 +1670,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             removeMapValue(m, _moduleClassMap);
             removeMapValue(m, _moduleMap);
             removeMapValue(m, _controllerNameToModule);
-            _moduleContextMap.remove(context.getName());
             _modules.remove(m);
         }
 
@@ -1681,6 +1680,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         clearUnknownModuleCount();
     }
 
+    // Simple variant of removeModule(); just remove the row in the table and the context from the map.
+    public void removeModuleContext(ModuleContext context)
+    {
+        Table.delete(getTableInfoModules(), context.getName());
+
+        synchronized (_modulesLock)
+        {
+            _moduleContextMap.remove(context.getName());
+        }
+    }
 
     private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
