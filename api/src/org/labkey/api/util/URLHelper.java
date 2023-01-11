@@ -314,12 +314,14 @@ public class URLHelper implements Cloneable, Serializable, JSONString
      */
     public URLHelper setPath(String path)
     {
-        return setParsedPath(_parsePath(path, false));
+        if (StringUtils.isEmpty(path))
+            setParsedPath(Path.rootPath);
+        else
+            setParsedPath(_parsePath(path, false));
+        return this;
     }
 
-    /**
-     * The path argument is not URL encoded.
-     */
+
     public URLHelper setPath(Path path)
     {
         return setParsedPath(path);

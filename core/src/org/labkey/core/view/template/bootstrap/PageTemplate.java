@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.HttpView;
@@ -349,9 +350,9 @@ public class PageTemplate extends JspView<PageConfig>
     {
         if (page.shouldAppendPathToTitle())
         {
-            String extraPath = getRootContext().getActionURL().getExtraPath();
-            if (extraPath.length() > 0)
-                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath);
+            Path extraPath = getRootContext().getActionURL().getParsedExtraPath();
+            if (!extraPath.isEmpty())
+                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath.toString("",""));
         }
     }
 }

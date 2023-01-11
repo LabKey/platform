@@ -163,7 +163,7 @@ public class StringExpressionFactory
             try
             {
                 ActionURL url = new ActionURL(str);
-                if (StringUtils.isEmpty(url.getExtraPath()))
+                if (url.getParsedExtraPath().isEmpty())
                     expr = new DetailsURL(url, null, nullValueBehavior);
             }
             catch (IllegalArgumentException x)

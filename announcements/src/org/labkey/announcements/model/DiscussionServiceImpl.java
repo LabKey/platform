@@ -78,7 +78,7 @@ public class DiscussionServiceImpl implements DiscussionService
 
     public static String toSaved(ActionURL url)
     {
-        Container c = ContainerManager.getForPath(url.getExtraPath());
+        Container c = ContainerManager.getForURL(url);
         ActionURL saveURL = url.clone();
         if (null != c)
             saveURL.setContainer(c);
