@@ -1706,6 +1706,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     filterItem.setSelected(true);
                 }
+                filterItem.setNoFollow(true);
                 containerFilterItem.addChild(filterItem);
             }
         }
