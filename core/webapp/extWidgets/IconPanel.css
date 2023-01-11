@@ -1,0 +1,46 @@
+.labkey-iconpanel .thumb-wrap{
+	padding: 5px;
+    text-align: center;
+    vertical-align:text-top;
+    word-wrap: break-word;
+}
+
+.labkey-iconpanel .thumb-wrap-bottom{
+    text-align: center;
+    overflow: hidden; /*Issue 38996*/
+}
+
+.labkey-iconpanel .thumb-label-bottom{
+    word-wrap: break-word;
+}
+
+
+.labkey-iconpanel .thumb-wrap-side{
+    position: relative;
+    clear: both;
+    width: 100%;
+    float: left;
+    display: block;
+    margin-bottom: 0;
+}
+.labkey-iconpanel .thumb-wrap-side .fa{
+    width: auto;
+    height: auto;
+}
+
+.labkey-iconpanel .thumb-img-side{
+	float: left;
+    position: relative;
+    padding-right: 8px;
+}
+
+.labkey-iconpanel .thumb-label-side{
+	float: left;
+    padding-top: 2px;
+}
+
+.labkey-iconpanel .x4-item-over{
+    border:1px solid #dddddd;
+    background: #efefef;
+	padding: 4px;
+}
