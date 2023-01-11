@@ -96,7 +96,7 @@ public class CoreUpgradeCode implements UpgradeCode
             duplicateContexts
                 .forEach((k, v) -> {
                     LOG.info("Deleting duplicate module context \"" + k + "\"");
-                    ml.removeUnknownModuleContext(v);
+                    ml.removeModuleContext(v);
                 });
         }
     }
