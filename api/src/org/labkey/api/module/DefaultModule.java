@@ -58,6 +58,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -430,6 +431,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         catch (UnauthorizedException e)
                         {
                             return null;
+                        }
+                        catch (RedirectException ignored)
+                        {
+                            // Likely a terms-of-use redirect, like for setting compliance activity
                         }
                     }
                     // Use the deprecated constructor, since passing in an action class like SimpleAction that is used
