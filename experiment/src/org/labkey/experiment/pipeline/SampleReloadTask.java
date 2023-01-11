@@ -198,7 +198,12 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                             DataIteratorContext context = new DataIteratorContext(errors);
 
                             if (_insertOption != null)
+                            {
+                                if (_insertOption.updateOnly) // fail if new records are found
+                                    context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
                                 context.setInsertOption(_insertOption);
+                            }
+
                             if (_auditBehavior != null)
                                 context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
                             context.setAllowImportLookupByAlternateKey(_alternateKeyLookup);
