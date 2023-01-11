@@ -82,9 +82,9 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             String insertOption = params.get(INSERT_OPTION);
             log.info("data insert option set as : " + insertOption);
 
-            if ("merge".equalsIgnoreCase(insertOption))
+            if (QueryUpdateService.InsertOption.MERGE.name().equalsIgnoreCase(insertOption))
                 _insertOption = QueryUpdateService.InsertOption.MERGE;
-            else if ("update".equalsIgnoreCase(insertOption))
+            else if (QueryUpdateService.InsertOption.UPDATE.name().equalsIgnoreCase(insertOption))
                 _insertOption = QueryUpdateService.InsertOption.UPDATE;
         }
         if (params.containsKey(AUDIT_OPTION))
