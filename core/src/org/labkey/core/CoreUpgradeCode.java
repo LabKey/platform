@@ -15,20 +15,27 @@
  */
 package org.labkey.core;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +46,7 @@ import java.util.stream.Stream;
  */
 public class CoreUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = LogManager.getLogger(CoreUpgradeCode.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreUpgradeCode.class, "Custom core upgrade steps");
 
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     // ContainerManager's assumptions. For example, older installations don't have a description column until
@@ -70,5 +77,42 @@ public class CoreUpgradeCode implements UpgradeCode
             .map(Container::getEntityId)
             .collect(Collectors.toList());
         ContainerManager.setExcludedProjects(guids, () -> {});
+    }
+
+    /**
+     * Called from core-23.000-23.001.sql on PostgreSQL only. The core.Modules.Name column has been case-sensitive on
+     * PostgreSQL, which has allowed "duplicate" (differing only in case) module names to creep into the column on some
+     * deployments. This upgrade code de-duplicates the names and a subsequent SQL statement switches the column to
+     * case-insensitive.
+     */
+    @SuppressWarnings("unused")
+    public static void deduplicateModuleEntries(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ModuleLoader ml = ModuleLoader.getInstance();
+        MultiValuedMap<String, ModuleContext> multiMap = new CaseInsensitiveArrayListValuedMap<>();
+
+        // Add every module context to the multivalued map, with known modules first
+        Set<String> unknown = ml.getUnknownModuleContexts().keySet();
+        ml.getAllModuleContexts().stream()
+            .sorted(Comparator.comparing(ctx -> unknown.contains(ctx.getName())))  // false < true
+            .forEach(ctx -> multiMap.put(ctx.getName(), ctx));
+
+        // For each canonical name, de-duplicate every context after the first one
+        multiMap.asMap().values().stream()
+            .filter(contexts -> contexts.size() > 1)
+            .forEach(contexts -> {
+                MutableInt counter = new MutableInt(1);
+                contexts.stream()
+                    .skip(1)
+                    .forEach(ctx -> {
+                        String oldName = ctx.getName();
+                        String newName = oldName + "_" + counter.incrementAndGet();
+                        LOG.info("De-duplicating module context \"" + oldName + "\" to \"" + newName + "\"");
+                        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment("UPDATE core.Modules SET Name = ? WHERE Name = ?", newName, oldName));
+                    });
+            });
     }
 }

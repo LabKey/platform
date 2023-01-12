@@ -83,13 +83,3 @@ dependencies {
     implementation "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
     api  "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
 }
-
-sourceSets {
-   main {
-      resources {
-         srcDirs = ['src'] // src is included because it contains some properties and xml files
-         exclude '**/*.java'
-         exclude '**/*.jsp'
-      }
-   }
-}

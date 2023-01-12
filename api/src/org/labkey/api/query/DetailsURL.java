@@ -301,7 +301,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
                     throw new IllegalArgumentException("Failed to parse url '" + _urlSource + "'." + SUPPORTED_URL_FORMATS);
                 }
 
-                if (!_parsedUrl.getExtraPath().isEmpty())
+                if (!_parsedUrl.getParsedExtraPath().isEmpty())
                     throw new IllegalArgumentException("Url '" + _urlSource + "' included a container path." + SUPPORTED_URL_FORMATS);
             }
         }
