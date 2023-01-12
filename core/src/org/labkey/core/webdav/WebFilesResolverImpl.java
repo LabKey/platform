@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.webdav;
+package org.labkey.core.webdav;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +38,10 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.webdav.AbstractWebdavResolver;
+import org.labkey.api.webdav.FileSystemResource;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
 import java.io.IOException;

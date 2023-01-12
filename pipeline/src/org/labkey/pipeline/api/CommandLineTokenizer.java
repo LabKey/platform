@@ -1,4 +1,4 @@
-package org.labkey.api.util;
+package org.labkey.pipeline.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;

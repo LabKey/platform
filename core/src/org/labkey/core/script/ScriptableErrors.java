@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import org.labkey.api.query.ValidationException;
 import org.mozilla.javascript.BaseFunction;

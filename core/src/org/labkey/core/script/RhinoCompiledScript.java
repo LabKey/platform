@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import com.sun.phobos.script.util.ExtendedScriptException;
 import org.apache.logging.log4j.LogManager;

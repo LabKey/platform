@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.webdav;
+package org.labkey.core.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
@@ -27,6 +27,11 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.Result;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.webdav.AbstractWebdavResolver;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.FileSystemResource;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
 import java.util.Arrays;
@@ -41,8 +46,9 @@ import java.util.Set;
  */
 public class UserResolverImpl extends AbstractWebdavResolver
 {
-    static UserResolverImpl _instance = new UserResolverImpl(Path.parse(UsersCollectionResource.USERS_LINK));
-    final Path _rootPath;
+    private static final UserResolverImpl _instance = new UserResolverImpl(Path.parse(UsersCollectionResource.USERS_LINK));
+
+    private final Path _rootPath;
 
     private UserResolverImpl(Path path)
     {

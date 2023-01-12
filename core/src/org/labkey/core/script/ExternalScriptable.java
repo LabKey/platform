@@ -22,7 +22,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;

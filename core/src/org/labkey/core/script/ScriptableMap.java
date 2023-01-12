@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;

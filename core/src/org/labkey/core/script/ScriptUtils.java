@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;

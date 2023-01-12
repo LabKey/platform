@@ -20,7 +20,6 @@ import org.labkey.api.data.TableViewFormTestCase;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.script.RhinoService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -57,7 +56,6 @@ public class InternalModule extends CodeOnlyModule
         return Set.of(
             DomainTemplateGroup.TestCase.class,
             ModuleStaticResolverImpl.TestCase.class,
-            RhinoService.TestCase.class,
             TableViewFormTestCase.class,
             WebdavResolverImpl.TestCase.class
         );

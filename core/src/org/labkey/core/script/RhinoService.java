@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +37,8 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.script.ScriptReference;
+import org.labkey.api.script.ScriptService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
@@ -108,7 +110,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.data.triggers.ScriptTrigger.SCRIPT_CONTAINERUSER_KEY;
-import static org.labkey.api.script.RhinoService.LOG;
+import static org.labkey.core.script.RhinoService.LOG;
 
 public final class RhinoService
 {

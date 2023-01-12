@@ -22,7 +22,7 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.labkey.api.script;
+package org.labkey.core.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.phobos.script.util.ExtendedScriptException;
