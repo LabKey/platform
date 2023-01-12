@@ -158,7 +158,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
-import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.core.view.TableViewFormTestCase;
+import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -1179,6 +1180,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LoginController.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
+            ModuleStaticResolverImpl.TestCase.class,
             NotificationServiceImpl.TestCase.class,
             PortalJUnitTest.class,
             PostgreSqlInClauseTest.class,
@@ -1189,6 +1191,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
             SqlScriptController.TestCase.class,
+            TableViewFormTestCase.class,
             UserController.TestCase.class
         );
 

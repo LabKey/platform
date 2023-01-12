@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.core.view;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableViewForm;
+import org.labkey.api.data.TestSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
