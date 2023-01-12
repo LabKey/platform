@@ -30,8 +30,8 @@ import org.labkey.api.view.ViewContext;
  */
 public class TempQuerySettings extends QuerySettings
 {
-    private String _sql;
-    private Container _container;
+    private final String _sql;
+    private final Container _container;
 
     public TempQuerySettings(ViewContext context, String sql)
     {

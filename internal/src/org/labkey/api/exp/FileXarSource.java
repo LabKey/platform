@@ -18,9 +18,7 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.FileUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 

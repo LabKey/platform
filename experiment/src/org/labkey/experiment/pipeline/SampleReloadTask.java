@@ -28,7 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.io.File;
 import java.util.ArrayList;

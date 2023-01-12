@@ -121,7 +121,7 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
-import org.labkey.api.security.SecurityPointcutServiceImpl;
+import org.labkey.core.security.SecurityPointcutServiceImpl;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;

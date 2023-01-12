@@ -77,7 +77,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.experiment.api.GWTDomainMixin;
 import org.labkey.experiment.api.VocabularyDomainKind;
 
 import java.util.ArrayList;

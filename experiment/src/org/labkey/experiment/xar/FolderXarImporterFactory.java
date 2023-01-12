@@ -21,7 +21,6 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.CompressedXarSource;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.pipeline.PipeRoot;
