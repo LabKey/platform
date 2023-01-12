@@ -174,9 +174,12 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
 
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
-        if (requiresLogin && user.isGuest())
+        if (requiresLogin)
         {
-            throw new UnauthorizedException();
+            if (user.isGuest())
+                throw new UnauthorizedException();
+            if (this instanceof BaseViewAction<?> viewaction)
+                viewaction.getPageConfig().setNoIndex();
         }
 
         // User must have ALL permissions in this set
