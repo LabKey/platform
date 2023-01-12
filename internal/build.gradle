@@ -1,5 +1,4 @@
 import org.labkey.gradle.util.BuildUtils
-import org.labkey.gradle.util.ExternalDependency
 
 apply plugin: 'java'
 apply plugin: 'java-library'
