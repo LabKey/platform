@@ -47,6 +47,7 @@ import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
@@ -95,6 +96,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
@@ -241,10 +243,10 @@ public class ApiModule extends CodeOnlyModule
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CachingTestCase.class,
+            CompareType.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
-            CompareType.TestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
             DbSchema.TableSelectTestCase.class,
@@ -254,6 +256,7 @@ public class ApiModule extends CodeOnlyModule
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
             DomTestCase.class,
+            DomainTemplateGroup.TestCase.class,
             Encryption.TestCase.class,
             ExcelColumn.TestCase.class,
             ExceptionUtil.TestCase.class,
@@ -276,21 +279,22 @@ public class ApiModule extends CodeOnlyModule
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
+            SQLFragment.IntegrationTestCase.class,
             SecurityManager.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
-            SQLFragment.IntegrationTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
             StatementUtils.TestCase.class,
+            TabLoader.TabLoaderTestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
             TableSelectorTestCase.class,
-            TabLoader.TabLoaderTestCase.class,
             TempTableInClauseGenerator.TestCase.class,
             TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
+            WebdavResolverImpl.TestCase.class,
             WorkbookContainerType.TestCase.class,
             WriteableLookAndFeelProperties.TestCase.class
         );
