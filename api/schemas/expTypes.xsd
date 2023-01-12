@@ -508,6 +508,7 @@
             <xs:element name="ShownInInsertView" type="boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ShownInUpdateView" type="boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ShownInDetailsView" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ShownInLookupView" type="boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="RangeURI" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ConceptURI" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="Label" type="string" minOccurs="0" maxOccurs="1"/>

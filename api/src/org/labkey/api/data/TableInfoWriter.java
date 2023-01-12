@@ -119,12 +119,18 @@ public class TableInfoWriter
 
         if (column.isHidden())
             columnXml.setIsHidden(true);
+
         if (!column.isShownInInsertView())
             columnXml.setShownInInsertView(false);
+
         if (!column.isShownInUpdateView())
             columnXml.setShownInUpdateView(false);
+
         if (!column.isShownInDetailsView())
             columnXml.setShownInDetailsView(false);
+
+        if (column.isShownInLookupView())
+            columnXml.setShownInLookupView(true);
 
         if (column.isDimension() != ColumnRenderPropertiesImpl.inferIsDimension(column))
             columnXml.setDimension(column.isDimension());

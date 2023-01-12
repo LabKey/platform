@@ -42,6 +42,8 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties, M
 
     void setShownInUpdateView(boolean shownInUpdateView);
 
+    void setShownInLookupView(boolean shownInLookupView);
+
     void setURL(StringExpression url);
 
     void setURLTargetWindow(String urlTargetWindow);
