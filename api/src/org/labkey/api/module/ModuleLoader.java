@@ -533,7 +533,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
 
             // Names of managed modules with schemas where the installed version is less than "earliest upgrade version"
-            var tooOld = modules.stream()
+            var tooOld = _modules.stream()
                 .filter(Module::shouldManageVersion)
                 .map(m -> moduleContextMap.get(m.getName()))
                 .filter(Objects::nonNull)
@@ -1622,7 +1622,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    void saveModuleContext(ModuleContext context)
+    public void saveModuleContext(ModuleContext context)
     {
         ModuleContext stored = getModuleContext(context.getName());
         if (null == stored)
@@ -1656,7 +1656,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
         }
 
-        removeModuleContext(context);
+        Table.delete(getTableInfoModules(), context.getName());
 
         if (null != m && deleteFiles)
         {
@@ -1670,6 +1670,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             removeMapValue(m, _moduleClassMap);
             removeMapValue(m, _moduleMap);
             removeMapValue(m, _controllerNameToModule);
+            _moduleContextMap.remove(context.getName());
             _modules.remove(m);
         }
 
