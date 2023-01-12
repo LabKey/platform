@@ -75,7 +75,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;

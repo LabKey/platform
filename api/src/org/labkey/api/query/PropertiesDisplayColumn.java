@@ -21,8 +21,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 

@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class StringBeanDynaClass extends StringWrapperDynaClass
 {
-    private Class _beanClass;
+    private final Class<?> _beanClass;
     //private Map _dynaClasses = Collections.synchronizedMap(new HashMap());
 
     protected StringBeanDynaClass(Class beanClass)

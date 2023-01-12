@@ -37,7 +37,7 @@ public final class TableExtension
     private final ColumnInfo _extensionCol;
     private final QueryForeignKey _extensionFK;
 
-    protected TableExtension(AbstractTableInfo primaryTable, TableInfo extensionTable, ColumnInfo extensionCol, QueryForeignKey extensionFK)
+    private TableExtension(AbstractTableInfo primaryTable, TableInfo extensionTable, ColumnInfo extensionCol, QueryForeignKey extensionFK)
     {
         _primaryTable = primaryTable;
         _extensionTable = extensionTable;

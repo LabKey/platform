@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.exp.form;
+package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.ProtocolIdForm;
