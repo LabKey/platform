@@ -13,6 +13,7 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     private int _runGroup;
     private String _message;
     private Integer _qcState;
+    private String _userComment;
 
     public ExperimentAuditEvent()
     {
@@ -84,6 +85,16 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         _qcState = qcState;
     }
 
+    public String getUserComment()
+    {
+        return _userComment;
+    }
+
+    public void setUserComment(String comment)
+    {
+        _userComment = comment;
+    }
+
     @Override
     public Map<String, Object> getAuditLogMessageElements()
     {
@@ -94,6 +105,7 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         elements.put("runLsid", getRunLsid());
         elements.put("message", getMessage());
         elements.put("qcState", getQcState());
+        elements.put("userComment", getUserComment());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }
