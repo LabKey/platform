@@ -176,6 +176,7 @@ import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;

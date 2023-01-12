@@ -185,9 +185,10 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
+        assert ThreadContext.isEmpty();  // Prevent/detect leaks
         // Connect log messages with the active trace and span
         ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
-        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
+        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
 
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
         try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
@@ -443,7 +444,7 @@ public class ViewServlet extends HttpServlet
 
     private Container canonicalizeContainer(HttpServletRequest request, ActionURL url)
     {
-        Path path = url.getParsedPath();
+        Path path = url.getParsedExtraPath();
         request.setAttribute(ORIGINAL_URL_CONTAINER_PATH, path);
 
         Container c = ContainerManager.getForPath(path);
@@ -609,10 +610,7 @@ public class ViewServlet extends HttpServlet
         else
             url = new ActionURL(request.getRequestURI());
 
-        String path = url.getExtraPath();
-        Container c = ContainerManager.getForPath(path);
-        if (null == c)
-            c = ContainerManager.getForId(StringUtils.strip(path,"/"));
+        Container c = ContainerManager.getForURL(url);
         if (null != c)
             url.setExtraPath(c.getPath());
         url.setReadOnly();

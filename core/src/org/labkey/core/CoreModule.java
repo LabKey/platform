@@ -40,33 +40,7 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.ContainerServiceImpl;
-import org.labkey.api.data.ContainerTypeRegistry;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.NormalContainerType;
-import org.labkey.api.data.OutOfRangeDisplayColumn;
-import org.labkey.api.data.PropertySchema;
-import org.labkey.api.data.SchemaTableInfoFactory;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.TabContainerType;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.TestSchema;
-import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -108,7 +82,6 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
@@ -121,7 +94,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
-import org.labkey.api.security.SecurityPointcutServiceImpl;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -158,7 +130,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -187,11 +158,9 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
-import org.labkey.api.webdav.FileSystemBatchAuditProvider;
-import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.core.view.TableViewFormTestCase;
+import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
-import org.labkey.api.webdav.UserResolverImpl;
-import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -260,9 +229,11 @@ import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
+import org.labkey.core.script.RhinoService;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
+import org.labkey.core.security.SecurityPointcutServiceImpl;
 import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
@@ -277,6 +248,8 @@ import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.webdav.UserResolverImpl;
+import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.wiki.MarkdownServiceImpl;
 import org.labkey.core.wiki.RadeoxRenderer;
 import org.labkey.core.wiki.WikiRenderingServiceImpl;
@@ -879,7 +852,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new AttachmentAuditProvider());
             AuditLogService.get().registerAuditType(new ContainerAuditProvider());
             AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
-            AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
             AuditLogService.get().registerAuditType(new TransactionAuditProvider());
@@ -1208,15 +1180,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LoginController.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
+            ModuleStaticResolverImpl.TestCase.class,
             NotificationServiceImpl.TestCase.class,
             PortalJUnitTest.class,
             PostgreSqlInClauseTest.class,
             ProductRegistry.TestCase.class,
             RadeoxRenderer.RadeoxRenderTest.class,
+            RhinoService.TestCase.class,
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
             SqlScriptController.TestCase.class,
+            TableViewFormTestCase.class,
             UserController.TestCase.class
         );
 
@@ -1230,7 +1205,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
-            CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,

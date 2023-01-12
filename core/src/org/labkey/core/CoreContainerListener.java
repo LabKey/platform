@@ -15,8 +15,8 @@
  */
 package org.labkey.core;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -30,7 +30,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.Portal;
 

@@ -533,7 +533,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
 
             // Names of managed modules with schemas where the installed version is less than "earliest upgrade version"
-            var tooOld = modules.stream()
+            var tooOld = _modules.stream()
                 .filter(Module::shouldManageVersion)
                 .map(m -> moduleContextMap.get(m.getName()))
                 .filter(Objects::nonNull)
@@ -1622,7 +1622,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    void saveModuleContext(ModuleContext context)
+    public void saveModuleContext(ModuleContext context)
     {
         ModuleContext stored = getModuleContext(context.getName());
         if (null == stored)
@@ -1681,6 +1681,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         clearUnknownModuleCount();
     }
 
+    // Simple variant of removeModule(); just remove the row in the table and the context from the map.
+    public void removeModuleContext(ModuleContext context)
+    {
+        Table.delete(getTableInfoModules(), context.getName());
+
+        synchronized (_modulesLock)
+        {
+            _moduleContextMap.remove(context.getName());
+        }
+    }
 
     private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {

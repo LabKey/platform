@@ -46,7 +46,6 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.rss.RSSService;
-import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;

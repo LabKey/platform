@@ -84,7 +84,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.DirectRequest;
-import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
