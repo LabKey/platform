@@ -547,6 +547,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public boolean isShownInLookupView()
+    {
+        return delegate.isShownInLookupView();
+    }
+
+    @Override
     public StringExpression getURL()
     {
         return delegate.getURL();

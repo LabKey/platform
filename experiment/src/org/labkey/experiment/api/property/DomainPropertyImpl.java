@@ -181,6 +181,12 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public boolean isShownInLookupView()
+    {
+        return _pd.isShownInLookupView();
+    }
+
+    @Override
     public boolean isMeasure()
     {
         return _pd.isMeasure();
@@ -352,6 +358,14 @@ public class DomainPropertyImpl implements DomainProperty
         if (shown == isShownInUpdateView())
             return;
         edit().setShownInUpdateView(shown);
+    }
+
+    @Override
+    public void setShownInLookupView(boolean shown)
+    {
+        if (shown == isShownInLookupView())
+            return;
+        edit().setShownInLookupView(shown);
     }
 
     @Override
@@ -991,6 +1005,7 @@ public class DomainPropertyImpl implements DomainProperty
         setShownInDetailsView(propSrc.isShownInDetailsView());
         setShownInInsertView(propSrc.isShownInInsertView());
         setShownInUpdateView(propSrc.isShownInUpdateView());
+        setShownInLookupView(propSrc.isShownInLookupView());
         setMvEnabled(propSrc.isMvEnabled());
         setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
         setScale(propSrc.getScale());

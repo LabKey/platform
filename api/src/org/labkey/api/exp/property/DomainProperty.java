@@ -51,6 +51,7 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     boolean isShownInInsertView();
     boolean isShownInUpdateView();
     boolean isShownInDetailsView();
+    boolean isShownInLookupView();
     boolean isMeasure();
     boolean isDimension();
     boolean isRecommendedVariable();
@@ -77,6 +78,7 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setShownInInsertView(boolean shown);
     void setShownInUpdateView(boolean shown);
     void setShownInDetailsView(boolean shown);
+    void setShownInLookupView(boolean shown);
     void setMvEnabled(boolean mv);
     void setMeasure(boolean isMeasure);
     void setDimension(boolean isDimension);

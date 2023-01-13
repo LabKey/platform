@@ -149,6 +149,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setDimension(col.isDimension());
         setMeasure(col.isMeasure());
         setLabel(col.getLabel());

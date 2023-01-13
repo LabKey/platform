@@ -502,12 +502,18 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 
         if (xProp.isSetHidden())
             prop.getPropertyDescriptor().setHidden(xProp.getHidden());
+
         if (xProp.isSetShownInDetailsView())
             prop.getPropertyDescriptor().setShownInDetailsView(xProp.getShownInDetailsView());
+
         if (xProp.isSetShownInInsertView())
             prop.getPropertyDescriptor().setShownInInsertView(xProp.getShownInInsertView());
+
         if (xProp.isSetShownInUpdateView())
             prop.getPropertyDescriptor().setShownInUpdateView(xProp.getShownInUpdateView());
+
+        if (xProp.isSetShownInLookupView())
+            prop.getPropertyDescriptor().setShownInLookupView(xProp.getShownInLookupView());
 
         if (xProp.isSetScale())
             prop.getPropertyDescriptor().setScale(xProp.getScale());
