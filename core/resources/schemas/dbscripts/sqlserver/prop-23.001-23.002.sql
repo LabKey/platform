@@ -1,0 +1,1 @@
+ALTER TABLE prop.properties ALTER COLUMN Name NVARCHAR(400);
