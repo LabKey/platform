@@ -120,7 +120,7 @@
                             if (!pdsWithData.contains(pd.getName()))
                                 continue;
 
-                            Object value = bean.formatValue(pd, entry.getValue());
+                            Object value = bean.formatValue(pd, entry.getValue(), getUser());
                     %>
                             <td><%= h(value) %></td>
                     <%
