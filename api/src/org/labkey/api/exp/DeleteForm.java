@@ -35,9 +35,7 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     private String _dataRegionSelectionKey;
     private Integer _singleObjectRowId;
     private List<Integer> _rowIds;
-
     private String _userComment;
-
 
     public void setUserComment(String userComment)
     {

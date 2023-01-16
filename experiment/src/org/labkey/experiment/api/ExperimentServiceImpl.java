@@ -297,9 +297,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
+        auditRunEvent(user, protocol, run, runGroup, comment, null);
+    }
+
+    @Override
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment)
+    {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         ExperimentAuditEvent event = new ExperimentAuditEvent(c.getId(), comment);
-
+        event.setUserComment(userComment);
         event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         if (runGroup != null)
             event.setRunGroup(runGroup.getRowId());
@@ -3551,12 +3557,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
-        deleteRun(runId, datasToDelete, user);
+        deleteRun(runId, datasToDelete, user, null);
         return datasToDelete;
     }
 
 
-    private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user)
+    private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user, String userComment)
     {
         ExpRunImpl run = getExpRun(runId);
         if (run == null)
@@ -3601,7 +3607,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID() );
         }
-        auditRunEvent(user, protocol, run, null, "Run deleted");
+        auditRunEvent(user, protocol, run, null, "Run deleted", userComment);
     }
 
 
@@ -4065,11 +4071,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Integer> ids = new ArrayList<>(selectedRunIds.length);
         for (int id : selectedRunIds)
             ids.add(id);
-        deleteExperimentRunsByRowIds(container, user, ids);
+        deleteExperimentRunsByRowIds(container, user, null, ids);
     }
 
     @Override
-    public void deleteExperimentRunsByRowIds(Container container, final User user, @NotNull Collection<Integer> selectedRunIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, final String userComment, @NotNull Collection<Integer> selectedRunIds)
     {
         if (selectedRunIds.isEmpty())
             return;
@@ -4186,7 +4192,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     //  ideally this would be transacted as a commit task but we decided against it due to complications
                     run.archiveDataFiles(user);
 
-                    deleteRun(runId, datasToDelete, user);
+                    deleteRun(runId, datasToDelete, user, userComment);
 
                     for (ExpData data : datasToDelete)
                     {
@@ -4794,7 +4800,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (containers.size() == 1)
         {
             Container runContainer = containers.iterator().next();
-            deleteExperimentRunsByRowIds(runContainer, user, runsToDelete.stream().map(ExpRun::getRowId).collect(Collectors.toList()));
+            deleteExperimentRunsByRowIds(runContainer, user, null, runsToDelete.stream().map(ExpRun::getRowId).collect(Collectors.toList()));
         }
         else
         {

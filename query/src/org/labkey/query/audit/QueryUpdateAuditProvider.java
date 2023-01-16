@@ -252,6 +252,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             elements.put("schemaName", getSchemaName());
             elements.put("queryName", getQueryName());
             elements.put("transactionId", getTransactionId());
+            elements.put("userComment", getUserComment());
             // N.B. oldRecordMap and newRecordMap are potentially very large (and are not displayed in the default grid view)
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
@@ -276,6 +277,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 
