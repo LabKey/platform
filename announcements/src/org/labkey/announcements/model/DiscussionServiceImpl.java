@@ -20,7 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.AnnouncementsController.InsertMessageView;
+import org.labkey.announcements.api.AnnouncementImpl;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -44,6 +47,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +76,8 @@ public class DiscussionServiceImpl implements DiscussionService
         form.set("title", title);
         form.set("discussionSrcIdentifier", identifier);
         form.set("discussionSrcURL", toSaved(pageURL));
-        return new AnnouncementsController.InsertMessageView(form, viewTitle, null, false, cancelURL, true, allowMultipleDiscussions);
+
+        return new InsertMessageView(form, viewTitle, null, false, cancelURL, true, allowMultipleDiscussions);
     }
 
 
@@ -265,13 +270,27 @@ public class DiscussionServiceImpl implements DiscussionService
         }
     }
 
-
     @Override
     public boolean hasDiscussions(Container container, String identifier)
     {
         return !AnnouncementManager.getDiscussions(container, identifier).isEmpty();
     }
 
+    @Override
+    public Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses)
+    {
+        final List<Announcement> ret = new LinkedList<>();
+
+        for (AnnouncementModel ann : AnnouncementManager.getDiscussions(container, identifier))
+        {
+            ret.add(new AnnouncementImpl(ann));
+
+            if (includeResponses)
+                ann.getResponses().forEach(x -> ret.add(new AnnouncementImpl(x)));
+        }
+
+        return ret;
+    }
 
     @Override
     public DiscussionService.Settings getSettings(Container container)
