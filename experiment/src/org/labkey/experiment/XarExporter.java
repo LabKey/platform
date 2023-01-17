@@ -845,6 +845,7 @@ public class XarExporter
         xProp.setShownInDetailsView(domainProp.isShownInDetailsView());
         xProp.setShownInInsertView(domainProp.isShownInInsertView());
         xProp.setShownInUpdateView(domainProp.isShownInUpdateView());
+        xProp.setShownInLookupView(domainProp.isShownInLookupView());
         xProp.setMvEnabled(domainProp.isMvEnabled());
 
         for (IPropertyValidator validator : domainProp.getValidators())

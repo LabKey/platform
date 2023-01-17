@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.PropertyService;
@@ -149,7 +150,6 @@ public class FileContentModule extends DefaultModule
         return result;
     }
 
-
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
@@ -171,6 +171,8 @@ public class FileContentModule extends DefaultModule
         {
             fsr.addFactories(new FileWriter.Factory(), new FileImporter.Factory());
         }
+
+        AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
     }
 
     @Override

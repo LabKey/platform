@@ -52,7 +52,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.webdav.FileSystemBatchAuditProvider;
+import org.labkey.filecontent.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 

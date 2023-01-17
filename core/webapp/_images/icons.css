@@ -1,0 +1,21 @@
+/* for ext buttons/menus etc */
+.iconUp { background-image: url(up.png) !important; } 
+.iconDelete { background-image: url(delete.png) !important; } 
+.iconReload { background-image: url(reload.png) !important; }
+.iconDownloadManager { background-image: url(download_manager.png) !important; }
+.iconUpload { background-image: url(upload.png) !important; }
+.iconFileNew { background-image: url(filenew.png) !important; }
+.iconFileOpen { background-image: url(fileopen.png) !important; }
+.iconFileShare { background-image: url(fileshare.png) !important; }
+.iconFolderNew { background-image: url(folder_new.png) !important; }
+.iconMessage { background-image: url(message.png) !important; }
+.iconCheck { background-image: url(check.png) !important; }
+.iconAjaxLoading {background-image: url(ajax-loading.gif) !important;}
+.iconAjaxLoadingGreen {background-image: url(ajax-loading-green.gif) !important;}
+.iconAjaxLoadingRed {background-image: url(ajax-loading-red.gif) !important;}
+.iconWarning {background-image: url(warning-icon.png) !important;}
+.iconZip {background-image: url(../_icons/zip.gif) !important;}
+.iconEditFileProps { background-image: url(editprops.png) !important; }
+.iconEmailSettings { background-image: url(email.png) !important; }
+.iconClose { background-image: url(close.png) !important; }
+.iconHelp { background-image: url(info.png) !important; }

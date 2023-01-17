@@ -63,6 +63,7 @@ import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.analysis.ProtocolManagementWebPart;
+import org.labkey.pipeline.api.CommandLineTokenizer;
 import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineJobMarshaller;
@@ -96,7 +97,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
@@ -331,6 +331,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     public Set<Class> getUnitTests()
     {
         return Set.of(
+            CommandLineTokenizer.TestCase.class,
             CommandTaskImpl.TestCase.class,
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,

@@ -51,7 +51,7 @@ import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
-import org.labkey.api.script.RhinoScriptEngine;
+import org.labkey.core.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.Algorithm;

@@ -11,7 +11,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.exp.CompressedInputStreamXarSource;
+import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.Identifiable;

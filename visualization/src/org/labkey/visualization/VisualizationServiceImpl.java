@@ -309,6 +309,7 @@ public class VisualizationServiceImpl implements VisualizationService
         props.put("shownInDetailsView", col.isShownInDetailsView());
         props.put("shownInInsertView", col.isShownInInsertView());
         props.put("shownInUpdateView", col.isShownInUpdateView());
+        props.put("shownInLookupView", col.isShownInLookupView());
 
         return props;
     }

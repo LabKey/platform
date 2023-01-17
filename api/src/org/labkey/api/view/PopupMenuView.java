@@ -205,6 +205,8 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write(" disabled");
         out.write(" tabindex=\"0\"");
         out.write(" style=\"" + styleStr + "\"");
+        if (item.isNoFollow())
+            out.write(" rel=\"nofollow\"");
         out.write(">");
         if (null != itemImageCls)
             out.write("<i class=\"" + itemImageCls + "\"></i>");

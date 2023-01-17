@@ -45,7 +45,7 @@ public class WebdavResourceReadOnly implements WebdavResource
         return _delegate;
     }
 
-    WebdavResourceReadOnly(WebdavResource d)
+    public WebdavResourceReadOnly(WebdavResource d)
     {
         _delegate = d;
     }

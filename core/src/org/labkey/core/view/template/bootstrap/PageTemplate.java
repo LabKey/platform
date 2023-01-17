@@ -352,7 +352,7 @@ public class PageTemplate extends JspView<PageConfig>
         {
             Path extraPath = getRootContext().getActionURL().getParsedExtraPath();
             if (!extraPath.isEmpty())
-                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath.toString("",""));
+                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath.toString("/",""));
         }
     }
 }
