@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.audit.AuditLogService;
@@ -26,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
@@ -110,7 +112,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 23.000;
+        return 23.001;
     }
 
     @Override
@@ -343,6 +345,12 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(PipelineSchema.getInstance().getSchemaName());
+    }
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new PipelineUpgradeCode();
     }
 
     private static class JobRestarter implements Runnable

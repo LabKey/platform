@@ -64,6 +64,7 @@ const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'EditableDetailPanel'},
     {value: 'EditableGridPanel'},
     {value: 'EntityInsertPanel'},
+    {value: 'EntityInsertPanelForUpdate'},
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
     {value: 'GridPanel'},
@@ -277,7 +278,13 @@ export class App extends React.Component<any, State> {
                         <SampleInsertPage/>
                     )
                 }
-                {selected === 'FileAttachmentForm' &&
+                {selected === 'EntityInsertPanelForUpdate' &&
+                    this.renderPanel('EntityInsertPanel',
+                        <SampleInsertPage isUpdate={true}/>
+                    )
+                }
+
+                    {selected === 'FileAttachmentForm' &&
                     <>
                         {this.renderPanel('FileAttachmentForm',
                             <FileAttachmentForm

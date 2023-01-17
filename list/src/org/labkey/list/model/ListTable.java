@@ -327,7 +327,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
 
         if (_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
+        {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.UPSERT);
+        }
+
     }
 
     @Override
