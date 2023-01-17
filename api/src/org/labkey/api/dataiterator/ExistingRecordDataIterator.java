@@ -80,7 +80,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         user = userSchema != null ? userSchema.getUser() : null;
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
-        _verifyExisting = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData);
+        _verifyExisting = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData) && option.updateOnly;
         _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
