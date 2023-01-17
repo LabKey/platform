@@ -424,7 +424,9 @@ public class PageConfig
         {
             if (ignoreParameters.contains(pair.getKey()))
                 continue;
+            // Strip container filters from the URL to prevent crawlers from over-indexing a URL with different parameter values
             if (pair.getKey().endsWith(CONTAINER_FILTER_NAME))
+
                 continue;
             u.addParameter(pair.getKey(), pair.getValue());
         }
