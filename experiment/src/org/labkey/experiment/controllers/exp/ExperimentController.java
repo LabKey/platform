@@ -3786,7 +3786,7 @@ public class ExperimentController extends SpringActionController
                     throw new UnauthorizedException();
                 }
 
-                source.delete(getUser());
+                source.delete(getUser(), deleteForm.getUserComment());
             }
         }
 

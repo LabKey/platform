@@ -13,7 +13,6 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     private int _runGroup;
     private String _message;
     private Integer _qcState;
-    private String _userComment;
 
     public ExperimentAuditEvent()
     {
@@ -83,16 +82,6 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     public void setQcState(Integer qcState)
     {
         _qcState = qcState;
-    }
-
-    public String getUserComment()
-    {
-        return _userComment;
-    }
-
-    public void setUserComment(String comment)
-    {
-        _userComment = comment;
     }
 
     @Override

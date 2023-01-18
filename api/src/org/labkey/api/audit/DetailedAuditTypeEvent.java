@@ -6,7 +6,6 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
 {
     private String _oldRecordMap;
     private String _newRecordMap;
-    private String userComment;
 
     public DetailedAuditTypeEvent()
     {
@@ -50,15 +49,5 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
     public void setNewRecordMap(String newRecordMap)
     {
         _newRecordMap = newRecordMap;
-    }
-
-    public void setUserComment(String userComment)
-    {
-        this.userComment = userComment;
-    }
-
-    public String getUserComment()
-    {
-        return this.userComment;
     }
 }

@@ -52,6 +52,7 @@ public class AuditTypeEvent
     private User _createdBy;
     private Date _modified;
     private User _modifiedBy;
+    private String userComment;
 
     public AuditTypeEvent(String eventType, Container container, String comment)
     {
@@ -165,6 +166,16 @@ public class AuditTypeEvent
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public void setUserComment(String userComment)
+    {
+        this.userComment = userComment;
+    }
+
+    public String getUserComment()
+    {
+        return this.userComment;
     }
 
     protected String getContainerMessageElement(@NotNull String containerId)
