@@ -1,1 +1,1 @@
-SELECT core.executeJavaUpgradeCode('updateSampleReloadTaskMergeDataOptions');
+EXEC core.executeJavaUpgradeCode 'updateSampleReloadTaskMergeDataOptions';
