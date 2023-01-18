@@ -725,6 +725,10 @@ public class DomainUtil
         {
             if (validationException.getErrors().isEmpty())
             {
+                // Issue 46951: be sure the domain is invalidated early in the process of updating so we don't get
+                // a mismatched tableInfo and domain
+                OntologyManager.clearCaches();
+
                 // Reorder the properties based on what we got from GWT
                 Map<String, DomainProperty> dps = new HashMap<>();
                 for (DomainProperty dp : d.getProperties())
