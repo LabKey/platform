@@ -23,4 +23,9 @@ public interface DiscussionSrcTypeProvider
     {
         return new HashSet<>();
     }
+
+    // Called any time a discussion thread is changed (insert, update, or delete)
+    default void discussionChanged(Container container, String discussionSrcIdentifier)
+    {
+    }
 }

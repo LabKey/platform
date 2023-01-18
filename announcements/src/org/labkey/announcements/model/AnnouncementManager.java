@@ -295,11 +295,21 @@ public class AnnouncementManager
                 approve(c, user, sendEmailNotifications, ann, ann.getCreated());
             else
                 notifyModerators(c, user, ann);
+
+            // Wait until new announcement is approved, otherwise it won't be visible to callers
+            notifyDiscussionProviderOfChange(c, ann);
         }
 
         // The approval state, attachments, etc may have changed after insert.
         // Return an up-to-date copy of the model.
         return getAnnouncement(c, ann.getRowId());
+    }
+
+    private static void notifyDiscussionProviderOfChange(Container c, AnnouncementModel ann)
+    {
+        DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+        if (null != typeProvider)
+            typeProvider.discussionChanged(c, ann.getDiscussionSrcIdentifier());
     }
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
@@ -624,10 +634,12 @@ public class AnnouncementManager
 
     public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
+        Container c = ContainerManager.getForId(update.getContainerId());
         update = validateModelWithSideEffects(update, ContainerManager.getForId(update.getContainerId()), user, false);
 
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+        notifyDiscussionProviderOfChange(c, result);
 
         // Member list is attached to each post/response
         saveMemberList(user, result.getMemberListIds(), result.getRowId());
@@ -649,6 +661,7 @@ public class AnnouncementManager
     {
         // Delete the announcement
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
+        notifyDiscussionProviderOfChange(ContainerManager.getForId(ann.getContainerId()), ann);
 
         // Delete the member list associated with this announcement
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
