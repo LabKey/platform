@@ -67,7 +67,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 14.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 15.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
