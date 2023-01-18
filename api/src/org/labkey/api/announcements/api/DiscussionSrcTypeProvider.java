@@ -30,7 +30,7 @@ public interface DiscussionSrcTypeProvider
     }
 
     // Called any time a discussion thread is changed (insert, update, or delete)
-    default void discussionChanged(Container container, String discussionSrcIdentifier, Change change, Announcement ann)
+    default void discussionChanged(Container container, User user, String discussionSrcIdentifier, Change change, Announcement ann)
     {
     }
 }
