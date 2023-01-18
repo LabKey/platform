@@ -132,7 +132,7 @@
         <servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
         <init-param>
           <param-name>resolver</param-name>
-          <param-value>org.labkey.api.webdav.ModuleStaticResolverImpl</param-value>
+          <param-value>org.labkey.core.webdav.ModuleStaticResolverImpl</param-value>
         </init-param>
     </servlet>
 

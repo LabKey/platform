@@ -2894,6 +2894,7 @@ public class OntologyManager
         p.setShownInInsertView(pd.isShownInInsertView());
         p.setShownInUpdateView(pd.isShownInUpdateView());
         p.setShownInDetailsView(pd.isShownInDetailsView());
+        p.setShownInLookupView(pd.isShownInLookupView());
         p.setDimension(pd.isDimension());
         p.setMeasure(pd.isMeasure());
         p.setRecommendedVariable(pd.isRecommendedVariable());

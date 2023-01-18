@@ -11,7 +11,13 @@ import {
     Location,
 } from '@labkey/components';
 
-export const SampleInsertPage: FC = memo(() => {
+
+interface Props {
+    isUpdate?: boolean;
+}
+
+export const SampleInsertPage: FC<Props> = memo(props => {
+    const { isUpdate } = props;
     const [message, setMessage] = useState<string>(undefined);
 
     useEffect(() => {
@@ -38,7 +44,7 @@ export const SampleInsertPage: FC = memo(() => {
                 }}
                 nounPlural="samples"
                 nounSingular="sample"
-                location={{ query: {} } as Location}
+                location={{ query: { mode: isUpdate ? 'update' : 'insert' } } as Location}
             />
         </>
     );

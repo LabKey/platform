@@ -1,5 +1,4 @@
 import org.labkey.gradle.util.BuildUtils
-import org.labkey.gradle.util.ExternalDependency
 
 apply plugin: 'java'
 apply plugin: 'java-library'
@@ -24,56 +23,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}")
     implementation("org.quartz-scheduler:quartz:${quartzVersion}")
     implementation("org.springframework:spring-beans:${springVersion}")
-
-    BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "commons-net:commons-net:${commonsNetVersion}",
-                    "Commons Net",
-                    "Apache",
-                    "http://jakarta.apache.org/commons/net/",
-                    ExternalDependency.APACHE_2_LICENSE_NAME,
-                    ExternalDependency.APACHE_2_LICENSE_URL,
-                    "FTPClient used to retrieve resources from other servers (e.g., GO annotations)"
-            )
-    )
-
-    BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    'com.sun.script.js:jsr223-js-engine:Aug2008',
-                    "JSR-223 ScriptEngine for Rhino",
-                    "Scripting Project",
-                    "https://scripting.dev.java.net/",
-                    ExternalDependency.BSD_LICENSE_NAME,
-                    ExternalDependency.BSD_LICENSE_URL,
-                    "JSR-223 ScriptEngine APIs for Rhino"
-            )
-    )
-    BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    'org.mozilla:rhino:1.7R3',
-                    "Mozilla Rhino",
-                    "Mozilla Rhino",
-                    "http://www.mozilla.org/rhino/",
-                    "MPL 1.1",
-                    "http://www.mozilla.org/MPL",
-                    "Embedded JavaScript engine"
-            )
-    )
-    BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "com.rometools:rome:${romeVersion}",
-                    "ROME",
-                    "ROME",
-                    "https://github.com/rometools/rome",
-                    ExternalDependency.APACHE_2_LICENSE_NAME,
-                    ExternalDependency.APACHE_2_LICENSE_URL,
-                    "Support for RSS and Atom aggregation"
-            )
-    )
 
     BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getRemoteApiProjectPath(project.gradle), depVersion: BuildUtils.getLabKeyClientApiVersion(project))
     BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "runtimeElements")

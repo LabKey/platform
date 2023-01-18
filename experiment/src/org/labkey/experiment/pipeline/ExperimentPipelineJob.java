@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.exp.CompressedXarSource;
+import org.labkey.experiment.xar.CompressedXarSource;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpRun;

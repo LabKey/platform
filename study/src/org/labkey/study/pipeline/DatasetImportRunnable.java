@@ -190,6 +190,7 @@ public class DatasetImportRunnable implements Runnable
                 config.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
             config.put(QueryUpdateService.ConfigParameters.Logger, _logger);
             config.put(DatasetUpdateService.Config.SkipResyncStudy, Boolean.TRUE);
+            config.put(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merging of dataset that uses managed 3rd key
 
             final Integer[] skippedRowCount = new Integer[]{0};
 

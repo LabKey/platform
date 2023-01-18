@@ -157,6 +157,7 @@ public class JsonWriter
         props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());
         props.put("shownInUpdateView", cinfo != null && cinfo.isShownInUpdateView());
         props.put("shownInDetailsView", cinfo == null || cinfo.isShownInDetailsView());
+        props.put("shownInLookupView", cinfo != null && cinfo.isShownInLookupView());
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());

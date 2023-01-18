@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.Pair;
