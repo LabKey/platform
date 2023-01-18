@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.PermissionCheckable;
+import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -55,6 +57,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
@@ -414,6 +417,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 Controller action = ((SpringActionController) controller).getActionResolver().resolveActionName(controller, "begin");
                 if (action != null)
                 {
+                    // In some cases the begin action requires more than read permission
+                    if (action instanceof PermissionCheckableAction checkable && HttpView.hasCurrentView())
+                    {
+                        try
+                        {
+                            checkable.setViewContext(HttpView.currentContext());
+                            checkable.checkPermissions();
+                        }
+                        catch (UnauthorizedException e)
+                        {
+                            return null;
+                        }
+                    }
                     // Use the deprecated constructor, since passing in an action class like SimpleAction that is used
                     // to back multiple URLs with different static HTML files can't be resolved to the right URL
                     return new ActionURL(entry.getKey(), "begin", c);
