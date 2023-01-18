@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ModeratorReviewAction;
+import org.labkey.announcements.api.AnnouncementImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -31,6 +32,7 @@ import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider.Change;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -297,7 +299,7 @@ public class AnnouncementManager
                 notifyModerators(c, user, ann);
 
             // Wait until new announcement is approved, otherwise it won't be visible to callers
-            notifyDiscussionProviderOfChange(c, ann);
+            notifyDiscussionProviderOfChange(c, ann, Change.Insert);
         }
 
         // The approval state, attachments, etc may have changed after insert.
@@ -305,11 +307,11 @@ public class AnnouncementManager
         return getAnnouncement(c, ann.getRowId());
     }
 
-    private static void notifyDiscussionProviderOfChange(Container c, AnnouncementModel ann)
+    private static void notifyDiscussionProviderOfChange(Container c, AnnouncementModel ann, Change change)
     {
         DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
         if (null != typeProvider)
-            typeProvider.discussionChanged(c, ann.getDiscussionSrcIdentifier());
+            typeProvider.discussionChanged(c, ann.getDiscussionSrcIdentifier(), change, new AnnouncementImpl(ann));
     }
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
@@ -639,7 +641,7 @@ public class AnnouncementManager
 
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
-        notifyDiscussionProviderOfChange(c, result);
+        notifyDiscussionProviderOfChange(c, result, Change.Update);
 
         // Member list is attached to each post/response
         saveMemberList(user, result.getMemberListIds(), result.getRowId());
@@ -661,7 +663,7 @@ public class AnnouncementManager
     {
         // Delete the announcement
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
-        notifyDiscussionProviderOfChange(ContainerManager.getForId(ann.getContainerId()), ann);
+        notifyDiscussionProviderOfChange(ContainerManager.getForId(ann.getContainerId()), ann, Change.Delete);
 
         // Delete the member list associated with this announcement
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));

@@ -24,8 +24,13 @@ public interface DiscussionSrcTypeProvider
         return new HashSet<>();
     }
 
+    enum Change
+    {
+        Insert, Update, Delete
+    }
+
     // Called any time a discussion thread is changed (insert, update, or delete)
-    default void discussionChanged(Container container, String discussionSrcIdentifier)
+    default void discussionChanged(Container container, String discussionSrcIdentifier, Change change, Announcement ann)
     {
     }
 }
