@@ -302,7 +302,7 @@ public class AnnouncementManager
             notifyDiscussionProviderOfChange(c, ann, Change.Insert);
         }
 
-        // The approval state, attachments, etc may have changed after insert.
+        // The approval state, attachments, etc. may have changed after insert.
         // Return an up-to-date copy of the model.
         return getAnnouncement(c, ann.getRowId());
     }
@@ -311,7 +311,17 @@ public class AnnouncementManager
     {
         DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
         if (null != typeProvider)
-            typeProvider.discussionChanged(c, ann.getDiscussionSrcIdentifier(), change, new AnnouncementImpl(ann));
+        {
+            try
+            {
+                typeProvider.discussionChanged(c, ann.getDiscussionSrcIdentifier(), change, new AnnouncementImpl(ann));
+            }
+            catch (Throwable e)
+            {
+                // Don't allow providers to fail the current operation
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
     }
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
