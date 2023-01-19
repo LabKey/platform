@@ -46,9 +46,9 @@ import java.util.Map;
  */
 public class CrosstabView extends QueryView
 {
-    private int _numRowAxisCols = 0;
-    private int _numMeasures = 0;
-    private int _numMemberMeasures = 0;
+    protected int _numRowAxisCols = 0;
+    protected int _numMeasures = 0;
+    protected int _numMemberMeasures = 0;
     protected List<FieldKey> _columns;
 
     /** Must call setSettings before using the view */
