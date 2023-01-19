@@ -361,6 +361,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
+        dataTypes.add(StudyArchiveDataTypes.STUDY_SECURITY_POLICY);
 
         dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
 
