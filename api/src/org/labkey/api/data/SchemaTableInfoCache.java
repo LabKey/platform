@@ -137,6 +137,6 @@ public class SchemaTableInfoCache
 
     private static Cache<String, Wrapper<SchemaTableInfo>> createCache(DbScope scope)
     {
-        return CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, "SchemaTableInfos for " + scope.getDisplayName());
+        return new DatabaseCache<>(scope, 10000, CacheManager.UNLIMITED, "SchemaTableInfos for " + scope.getDisplayName());
     }
 }
