@@ -82,7 +82,8 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                                                 BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        boolean useDib = ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS) || (configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.UseDibUpdateRows));
+        boolean useDib = ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS);
+        useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
         useDib = useDib && !getQueryTable().hasTriggers(container);
         if (useDib)
         {

@@ -4237,8 +4237,8 @@ public class QueryController extends SpringActionController
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
-            if (json.optBoolean("UseDibUpdateRows", false))
-                configParameters.put(QueryUpdateService.ConfigParameters.UseDibUpdateRows, true);
+            if (json.optBoolean("SkipBatchUpdateRows", false))
+                configParameters.put(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows, true);
 
             //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to

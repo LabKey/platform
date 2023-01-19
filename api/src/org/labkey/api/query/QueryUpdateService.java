@@ -109,7 +109,7 @@ public interface QueryUpdateService extends HasPermission
         CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
         VerifyExistingData,      // (Bool) Validate that data is not new but existing data
         SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
-        UseDibUpdateRows     // (Bool) Use DIB based updateRow
+        SkipBatchUpdateRows     // (Bool) Update one row at a time, instead of using DIB
     }
 
 
@@ -212,6 +212,19 @@ public interface QueryUpdateService extends HasPermission
     int mergeRows(User user, Container container, DataIteratorBuilder rows,
                          BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws SQLException;
+
+    default List<Map<String,Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
+                                        @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        BatchValidationException errors = new BatchValidationException();
+        List<Map<String,Object>> ret = updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+        if (errors.hasErrors())
+            throw errors;
+
+        return ret;
+    }
 
     /**
      * Updates a set of rows in the source table for this query.

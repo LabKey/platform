@@ -91,7 +91,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -118,7 +117,6 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
-import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
 
 /**
  *
@@ -343,9 +341,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
-        boolean useDib = ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS) || (configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.UseDibUpdateRows));
+        boolean useDib = false;
         if (rows != null && !rows.isEmpty())
-            useDib = useDib && rows.get(0).containsKey("lsid");
+            useDib = rows.get(0).containsKey("lsid");
+
+        useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
 
         List<Map<String, Object>> results;
         if (useDib)
