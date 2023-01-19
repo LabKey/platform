@@ -32,7 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.util.Set;
 

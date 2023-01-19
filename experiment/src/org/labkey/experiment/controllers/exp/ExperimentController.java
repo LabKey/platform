@@ -75,7 +75,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -95,7 +95,6 @@ import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -203,7 +202,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -4012,16 +4011,6 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
-        @Override
-        protected Map<String, String> getRenamedColumns()
-        {
-            Map<String, String> renamedColumns = super.getRenamedColumns();
-            // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
-            renamedColumns.put("SampleId", "Name");
-            renamedColumns.put("Sample Id", "Name");
-            return renamedColumns;
-        }
-
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
