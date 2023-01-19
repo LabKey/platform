@@ -361,7 +361,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
-        dataTypes.add(StudyArchiveDataTypes.STUDY_SECURITY_POLICY);
 
         dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
 
@@ -447,6 +446,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             // custom participant view
             StudyViewsImporter viewsImporter = new StudyViewsImporter();
             viewsImporter.process(importContext, studyDir, errors);
+
+            // custom security policy
+            StudySecurityPolicyImporter policyImporter = new StudySecurityPolicyImporter();
+            policyImporter.process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
