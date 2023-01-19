@@ -105,6 +105,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
@@ -137,6 +138,7 @@ import java.util.function.Supplier;
 
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
 
 /**
  * User: kevink
@@ -1174,15 +1176,29 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+            boolean useDib = ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS) || (configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.UseDibUpdateRows));
+            if (rows != null && !rows.isEmpty())
+                useDib = useDib && rows.get(0).containsKey("lsid");
 
-            /* setup mini dataiterator pipeline to process lineage */
-            DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false, _dataClass, true);
+            List<Map<String, Object>> results;
+            if (useDib)
+            {
+                Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+                finalConfigParameters.put(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate, true);
+                results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
+            }
+            else
+            {
+                results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-            return ret;
+                /* setup mini dataiterator pipeline to process lineage */
+                DataIterator di = _toDataIterator("updateRows.lineage", results);
+                ExpDataIterators.derive(user, container, di, false, _dataClass, true);
+            }
+
+            return results;
         }
 
         @Override

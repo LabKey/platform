@@ -663,6 +663,7 @@ public class ExpDataIterators
     static class DerivationDataIteratorBase extends WrapperDataIterator
     {
         final DataIteratorContext _context;
+        final Integer _lsidCol;
         final Integer _nameCol;
         final Map<Integer, String> _parentCols;
         final Map<String, String> _aliquotParents;
@@ -694,6 +695,7 @@ public class ExpDataIterators
             }
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _lsidCol = map.get("lsid");
             _nameCol = map.get("name");
             _parentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
@@ -808,18 +810,19 @@ public class ExpDataIterators
                                    Map<Integer, ExpMaterial> materialCache,
                                    Map<Integer, ExpData> dataCache,
                                    @Nullable String aliquotedFrom,
-                                   String dataType /*sample type or source type name*/) throws ValidationException, ExperimentException
+                                   String dataType /*sample type or source type name*/,
+                                   boolean updateOnly) throws ValidationException, ExperimentException
         {
             Pair<RunInputOutputBean, RunInputOutputBean> pair;
             if (_context.getInsertOption().mergeRows)
             {
                 pair = resolveInputsAndOutputs(
-                        _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+                        _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType, updateOnly);
             }
             else
             {
                 pair = resolveInputsAndOutputs(
-                        _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+                        _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType, updateOnly);
             }
 
             if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
@@ -900,7 +903,6 @@ public class ExpDataIterators
     
     static class DerivationDataIterator extends DerivationDataIteratorBase
     {
-        final Integer _lsidCol;
         final Integer _aliquotParentCol;
         final Map<String, String> _lsidNames;
         // Map of Data lsid and its aliquotedFromLSID
@@ -918,7 +920,6 @@ public class ExpDataIterators
             _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
             _lsidNames = new HashMap<>();
             _parentNames = new LinkedHashMap<>();
             _aliquotParents = new LinkedHashMap<>();
@@ -1080,7 +1081,7 @@ public class ExpDataIterators
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
-                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFrom, dataType);
+                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFrom, dataType, false);
                     }
 
                     if (!runRecords.isEmpty())
@@ -1111,6 +1112,8 @@ public class ExpDataIterators
         // Map of Data name and its aliquotedFromLSID
         final Map<String, String> _aliquotParents;
 
+        final boolean _useLsid;
+
         protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
         {
             super(di, context, container, user, currentDataType, isSample);
@@ -1129,6 +1132,8 @@ public class ExpDataIterators
             }
 
             _aliquotParentCol = aliquotParentCol;
+
+            _useLsid = map.containsKey("lsid");
         }
 
         private BatchValidationException getErrors()
@@ -1148,9 +1153,9 @@ public class ExpDataIterators
             // For each iteration, collect the parent col values
             if (hasNext)
             {
-                String name = null;
+                String key = null;
                 if (_nameCol != null)
-                    name = (String) get(_nameCol);
+                    key = (String) get(_nameCol);
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
@@ -1171,14 +1176,14 @@ public class ExpDataIterators
                         }
 
                         if (aliquotParentName != null)
-                            _aliquotParents.put(name, aliquotParentName);
+                            _aliquotParents.put(key, aliquotParentName);
                     }
                 }
 
 
                 Set<Pair<String, String>> allParts = _getParentParts();
                 if (!allParts.isEmpty())
-                    _parentNames.put(name, allParts);
+                    _parentNames.put(key, allParts);
             }
 
             if (getErrors().hasErrors())
@@ -1194,19 +1199,21 @@ public class ExpDataIterators
 
 
                     List<UploadSampleRunRecord> runRecords = new ArrayList<>();
-                    Set<String> names = new LinkedHashSet<>();
-                    names.addAll(_parentNames.keySet());
-                    names.addAll(_aliquotParents.keySet());
-                    for (String name : names)
+                    Set<String> keys = new LinkedHashSet<>();
+                    keys.addAll(_parentNames.keySet());
+                    keys.addAll(_aliquotParents.keySet());
+
+                    ExperimentService experimentService = ExperimentService.get();
+                    for (String key : keys)
                     {
-                        Set<Pair<String, String>> parentNames = _parentNames.getOrDefault(name, Collections.emptySet());
+                        Set<Pair<String, String>> parentNames = _parentNames.getOrDefault(key, Collections.emptySet());
 
                         ExpRunItem runItem;
-                        String aliquotedFromLSID = _aliquotParents.get(name);
+                        String aliquotedFromLSID = _aliquotParents.get(key);
                         String dataType = null;
                         if (_isSample)
                         {
-                            ExpMaterial m = _currentSampleType.getSample(_container, name);
+                            ExpMaterial m = _useLsid ? experimentService.getExpMaterial(key) : _currentSampleType.getSample(_container, key);
 
                             if (m != null)
                             {
@@ -1217,7 +1224,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            ExpData d = _currentDataClass.getData(_container, name);
+                            ExpData d = _useLsid ? experimentService.getExpData(key) : _currentDataClass.getData(_container, key);
 
                             if (d != null)
                             {
@@ -1229,8 +1236,7 @@ public class ExpDataIterators
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
-                        String aliquotedFrom =  aliquotedFromLSID; // TODO get from from lsid
-                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFrom, dataType);
+                        _processRun(runItem, runRecords, parentNames, cache, materialCache, dataCache, aliquotedFromLSID, dataType, true);
                     }
 
                     if (!runRecords.isEmpty())
@@ -1509,7 +1515,8 @@ public class ExpDataIterators
                                                                                        Map<String, ExpSampleType> sampleTypes,
                                                                                        Map<String, ExpDataClass> dataClasses,
                                                                                        @Nullable String aliquotedFrom,
-                                                                                       String dataType /*sample type or source type name*/)
+                                                                                       String dataType /*sample type or source type name*/,
+                                                                                       boolean updateOnly)
             throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
@@ -1519,12 +1526,13 @@ public class ExpDataIterators
 
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
-        boolean isMerge = runItem != null;
+        boolean isUpdatingExisting = runItem != null;
 
         ExpMaterial aliquotParent = null;
         boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+        boolean skipExistingAliquotParents = isAliquot && updateOnly; /* skip updating aliquot parent for UPDATE */
 
-        if (isAliquot)
+        if (isAliquot && !updateOnly)
         {
             ExpSampleType sampleType = sampleTypes.computeIfAbsent(dataType, (name) -> SampleTypeService.get().getSampleType(c, user, name));
             if (sampleType == null)
@@ -1550,7 +1558,7 @@ public class ExpDataIterators
             boolean isEmptyEntity = StringUtils.isEmpty(entityName);
 
             String[] parts = entityColName.split("[./]");
-            if (parts.length == 1)
+            if (parts.length == 1 && !skipExistingAliquotParents)
             {
                 if (parts[0].equalsIgnoreCase("parent"))
                 {
@@ -1576,7 +1584,7 @@ public class ExpDataIterators
             if (parts.length == 2)
             {
                 String namePart = QueryKey.decodePart(parts[1]);
-                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) && !skipExistingAliquotParents)
                 {
                     ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
                     if (sampleType == null)
@@ -1584,7 +1592,7 @@ public class ExpDataIterators
 
                     if (isEmptyEntity)
                     {
-                        if (isMerge && !isAliquot)
+                        if (isUpdatingExisting && !isAliquot)
                             parentSampleTypesToRemove.add(namePart);
                     }
                     else
@@ -1629,7 +1637,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT) && !skipExistingAliquotParents)
                 {
                     ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
                     if (dataClass == null)
@@ -1637,7 +1645,7 @@ public class ExpDataIterators
 
                     if (isEmptyEntity)
                     {
-                        if (isMerge && !isAliquot)
+                        if (isUpdatingExisting && !isAliquot)
                             parentDataTypesToRemove.add(namePart);
                     }
                     else
@@ -1679,7 +1687,7 @@ public class ExpDataIterators
             }
         }
 
-        if (isMerge)
+        if (isUpdatingExisting && !skipExistingAliquotParents)
         {
             ExpLineageOptions options = new ExpLineageOptions();
             options.setChildren(false);
@@ -1797,10 +1805,11 @@ public class ExpDataIterators
             _indexFunction = indexFunction;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _useExistingRecord = context.getInsertOption().updateOnly;
 
             _lsidCol = map.get("lsid");
             _lsids = new ArrayList<>(100);
+
+            _useExistingRecord = context.getInsertOption().updateOnly && _lsidCol == null;
         }
 
         @Override
@@ -1933,6 +1942,7 @@ public class ExpDataIterators
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
         Map<String, String> _importAliases;
+        private boolean _isUpdateUsingLsid;
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
@@ -1996,6 +2006,7 @@ public class ExpDataIterators
                 dontUpdate.add("objectid");
 
             boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
+            _isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid");
 
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
@@ -2007,11 +2018,18 @@ public class ExpDataIterators
             {
                 if (isMergeOrUpdate)
                 {
-                    extraKeyValueMap = new CaseInsensitiveHashMap<>();
-                    extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
+                    if (_isUpdateUsingLsid)
+                    {
+                        keyColumns.add(ExpDataTable.Column.LSID.toString());
+                    }
+                    else
+                    {
+                        extraKeyValueMap = new CaseInsensitiveHashMap<>();
+                        extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
 
-                    keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys());
-                    propertyKeyColumns.add("name");
+                        keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys());
+                        propertyKeyColumns.add("name");
+                    }
                 }
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
@@ -2020,16 +2038,23 @@ public class ExpDataIterators
             }
             else if (isMergeOrUpdate)
             {
-                extraKeyValueMap = new CaseInsensitiveHashMap<>();
-                extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
+                if (_isUpdateUsingLsid)
+                {
+                    keyColumns.add(ExpDataTable.Column.LSID.toString());
+                }
+                else
+                {
+                    extraKeyValueMap = new CaseInsensitiveHashMap<>();
+                    extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
 
-                keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
+                    keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
+                }
             }
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
             Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
-            if (context.getInsertOption().updateOnly)
+            if (context.getInsertOption().updateOnly && !_isUpdateUsingLsid)
                 existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
 
             DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);

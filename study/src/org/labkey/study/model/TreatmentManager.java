@@ -429,7 +429,7 @@ public class TreatmentManager
                 if (includeContainerKey)
                     oldKey.put("Container", container.getId());
 
-                updatedRows = qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(oldKey), null, null);
+                updatedRows = qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(oldKey), errors, null, null);
             }
 
             if (errors.hasErrors())

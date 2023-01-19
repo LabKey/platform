@@ -107,7 +107,10 @@ public class ExpProvisionedTableTestHelper
     public List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName, @Nullable UserSchema schema) throws Exception
     {
         UserSchema userSchema = null == schema ? QueryService.get().getUserSchema(user, c, expDataSchemaKey) : schema;
-        List<Map<String, Object>> ret = getQueryUpdateService(userSchema, tableName).updateRows(user, c, rowsToUpdate, oldKeys, null, null);
+        BatchValidationException errors = new BatchValidationException();
+        List<Map<String, Object>> ret = getQueryUpdateService(userSchema, tableName).updateRows(user, c, rowsToUpdate, oldKeys, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
         return ret;
     }
 

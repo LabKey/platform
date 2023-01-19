@@ -252,7 +252,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             List<Map<String, Object>> ret = new LinkedList<>();
             for (Map<String, Object> row : rows)

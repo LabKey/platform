@@ -132,6 +132,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
+
 
 public class QueryModule extends DefaultModule
 {
@@ -227,6 +229,8 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
+        AdminConsole.addExperimentalFeatureFlag(USE_BATCH_UPDATE_ROWS, "Use batch update", "Use prepared statement to update a set of rows in a batch.", false);
+
     }
 
 

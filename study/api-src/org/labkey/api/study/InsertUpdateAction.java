@@ -305,9 +305,9 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         {
             Map<String,Object> data = updateForm.getTypedColumns();
 
+            BatchValidationException batchErrors = new BatchValidationException();
             if (isInsert())
             {
-                BatchValidationException batchErrors = new BatchValidationException();
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), batchErrors, null, null);
                 if (batchErrors.hasErrors())
                     throw batchErrors;
@@ -340,7 +340,9 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             else
             {
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                        Collections.singletonList(Collections.singletonMap("lsid", form.getLsid())), null, null);
+                        Collections.singletonList(Collections.singletonMap("lsid", form.getLsid())), batchErrors,null, null);
+                if (batchErrors.hasErrors())
+                    throw batchErrors;
                 if (updatedRows.size() == 0)
                     return false;
             }

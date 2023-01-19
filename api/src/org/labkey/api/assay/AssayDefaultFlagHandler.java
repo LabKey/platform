@@ -81,7 +81,7 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
                 BatchValidationException errors = new BatchValidationException();
 
                 if (flag.getRowId() != 0)
-                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), null, null);
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), errors, null, null);
                 else
                     qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
             }
