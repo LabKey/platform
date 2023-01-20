@@ -17,13 +17,14 @@ package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ModeratorReviewAction;
+import org.labkey.announcements.api.AnnouncementImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -31,6 +32,7 @@ import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider.Change;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -77,7 +79,9 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -110,6 +114,8 @@ import java.util.stream.Collectors;
  */
 public class AnnouncementManager
 {
+    private static final Logger LOG = LogHelper.getLogger(AnnouncementManager.class, "Announcement handling");
+
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("message", "Messages");
     public static final WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.MARKDOWN;
 
@@ -295,11 +301,45 @@ public class AnnouncementManager
                 approve(c, user, sendEmailNotifications, ann, ann.getCreated());
             else
                 notifyModerators(c, user, ann);
+
+            // Wait until new announcement is approved, otherwise it won't be visible to callers
+            notifyDiscussionProviderOfChange(c, user, ann, Change.Insert);
         }
 
-        // The approval state, attachments, etc may have changed after insert.
+        // The approval state, attachments, etc. may have changed after insert.
         // Return an up-to-date copy of the model.
         return getAnnouncement(c, ann.getRowId());
+    }
+
+    private static void notifyDiscussionProviderOfChange(Container c, @Nullable User user, AnnouncementModel ann, Change change)
+    {
+        DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+        if (null != typeProvider)
+        {
+            try
+            {
+                if (null == user)
+                {
+                    ViewContext ctx = HttpView.currentContext();
+
+                    if (null != ctx)
+                        user = ctx.getUser();
+
+                    if (null == user)
+                    {
+                        LOG.warn("Could not determine current user; skipping discussion change notification.");
+                        return;
+                    }
+                }
+
+                typeProvider.discussionChanged(c, user, ann.getDiscussionSrcIdentifier(), change, new AnnouncementImpl(ann));
+            }
+            catch (Throwable e)
+            {
+                // Don't allow providers to fail the current operation
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
     }
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
@@ -342,8 +382,7 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
-
+            LOG.warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
         }
         else
         {
@@ -624,10 +663,12 @@ public class AnnouncementManager
 
     public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
+        Container c = ContainerManager.getForId(update.getContainerId());
         update = validateModelWithSideEffects(update, ContainerManager.getForId(update.getContainerId()), user, false);
 
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+        notifyDiscussionProviderOfChange(c, user, result, Change.Update);
 
         // Member list is attached to each post/response
         saveMemberList(user, result.getMemberListIds(), result.getRowId());
@@ -649,6 +690,8 @@ public class AnnouncementManager
     {
         // Delete the announcement
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
+        // Too hard to thread User through all the callers. notifyDiscussionProviderOfChange() will attempt to pull user from current context.
+        notifyDiscussionProviderOfChange(ContainerManager.getForId(ann.getContainerId()), null, ann, Change.Delete);
 
         // Delete the member list associated with this announcement
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
