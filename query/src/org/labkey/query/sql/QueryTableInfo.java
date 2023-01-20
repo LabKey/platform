@@ -154,7 +154,8 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
                 Map<FieldKey,FieldKey> flippedMap = new TreeMap<>();
                 for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
                 {
-                    flippedMap.put(e.getValue().getFieldKey(), e.getKey());
+                    if (!e.getValue().getFieldKey().equals(e.getKey()))
+                        flippedMap.put(e.getValue().getFieldKey(), e.getKey());
                     mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
                 }
             }
