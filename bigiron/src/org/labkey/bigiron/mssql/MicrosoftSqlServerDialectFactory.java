@@ -58,7 +58,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         return "com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName) ? new MicrosoftSqlServer2014Dialect() : null;
     }
 
-    static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2022 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException

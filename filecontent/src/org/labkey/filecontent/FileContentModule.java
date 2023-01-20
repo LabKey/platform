@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -30,6 +31,7 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -38,12 +40,15 @@ import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -173,6 +178,18 @@ public class FileContentModule extends DefaultModule
         }
 
         AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+            Map<String, Object> results = new HashMap<>();
+            File root = FileContentService.get().getSiteDefaultRoot();
+            if (root.isDirectory())
+            {
+                long currentTime = System.currentTimeMillis();
+                results.put("fileRootSize", FileUtils.sizeOfDirectory(root));
+                results.put("fileRootMillisecondsToCalculateSize", System.currentTimeMillis() - currentTime);
+            }
+            return results;
+        });
     }
 
     @Override
