@@ -38,10 +38,10 @@ public class StudySecurityPolicyImporter implements InternalStudyImporter
 
             StudyDocument.Study.StudySecurity studySecurity = ctx.getXml().getStudySecurity();
             String policyFileName = studySecurity.getFile();
-            ctx.getLogger().info("Loading security policy file from " + policyFileName);
 
             if (policyFileName != null)
             {
+                ctx.getLogger().info("Loading security policy file from " + policyFileName);
                 try
                 {
                     XmlObject doc = root.getXmlBean(policyFileName);
