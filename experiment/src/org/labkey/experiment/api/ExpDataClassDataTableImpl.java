@@ -58,6 +58,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -77,6 +78,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -149,8 +151,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     public static final Set<String> DATA_CLASS_ALT_KEYS;
+    private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
         DATA_CLASS_ALT_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+        ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("name", "description", "flag", "comment", "alias"));
     }
 
     private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
@@ -868,6 +872,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             _in = in;
         }
 
+        private static boolean isReservedHeader(String name)
+        {
+            for (ExpDataTable.Column column : ExpDataTable.Column.values())
+            {
+                if (column.name().equalsIgnoreCase(name))
+                    return !ALLOWED_IMPORT_HEADERS.contains(column.name().toLowerCase());
+            }
+            return false;
+        }
+
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
@@ -875,6 +889,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             DataIterator input = _in.getDataIterator(context);
             if (null == input)
                 return null;           // Can happen if context has errors
+
+            var drop = new CaseInsensitiveHashSet();
+            for (int i = 1; i <= input.getColumnCount(); i++)
+            {
+                String name = input.getColumnInfo(i).getName();
+                if (isReservedHeader(name))
+                    drop.add(name);
+                else if ("ClassId".equalsIgnoreCase(name))
+                    drop.add(name);
+            }
+            if (context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
+                drop.remove("lsid");
+            if (!drop.isEmpty())
+                input = new DropColumnsDataIterator(input, drop);
 
             final Container c = getContainer();
             final ExperimentService svc = ExperimentService.get();

@@ -54,11 +54,11 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -962,62 +962,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
-    }
-
-    /*
-     * This might be generally useful.
-     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
-     * copies data, this is straight pass through.
-     */
-    private static class DropColumnsDataIterator extends WrapperDataIterator
-    {
-        int[] indexMap;
-        int columnCount = 0;
-
-        DropColumnsDataIterator(DataIterator di, Set<String> drop)
-        {
-            super(di);
-            int inputColumnCount = di.getColumnCount();
-            indexMap = new int[inputColumnCount+1];
-            for (int inIndex = 0; inIndex <= inputColumnCount; inIndex++)
-            {
-                String name = di.getColumnInfo(inIndex).getName();
-                if (!drop.contains(name))
-                {
-                    indexMap[++columnCount] = inIndex;
-                }
-            }
-        }
-
-        @Override
-        public int getColumnCount()
-        {
-            return columnCount;
-        }
-
-        @Override
-        public Object get(int i)
-        {
-            return super.get(indexMap[i]);
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo(int i)
-        {
-            return super.getColumnInfo(indexMap[i]);
-        }
-
-        @Override
-        public Object getConstantValue(int i)
-        {
-            return super.getConstantValue(indexMap[i]);
-        }
-
-        @Override
-        public Supplier<Object> getSupplier(int i)
-        {
-            return super.getSupplier(indexMap[i]);
-        }
     }
 
     // TODO: validate/compare functionality of CoerceDataIterator and loadRows()
