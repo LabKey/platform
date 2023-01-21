@@ -1194,7 +1194,7 @@ public class ExperimentController extends SpringActionController
             }
             for (ExpDataClass dataClass : dataClasses)
             {
-                dataClass.delete(getUser());
+                dataClass.delete(getUser(), deleteForm.getUserComment());
             }
         }
 

@@ -40,6 +40,7 @@ public class AuditTypeEvent
     protected static final String CONTAINER_KEY = "container";
     protected static final String PROJECT_KEY = "project";
     protected static final String COMMENT_KEY = "comment";
+    private static final String USER_COMMENT_KEY = "userComment";
 
     // long type used here to allow for DbSequences to supply the rowId
     private long _rowId;
@@ -226,6 +227,8 @@ public class AuditTypeEvent
             elements.put(PROJECT_KEY, getContainerMessageElement(projectId));
         if (getComment() != null)
             elements.put(COMMENT_KEY, getComment());
+        if (getUserComment() != null)
+            elements.put(USER_COMMENT_KEY, getUserComment());
 
         return elements;
     }

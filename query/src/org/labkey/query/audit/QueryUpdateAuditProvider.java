@@ -70,6 +70,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER_COMMENT));
     }
 
     public QueryUpdateAuditProvider()
@@ -128,6 +129,10 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
                 else if (COLUMN_NAME_QUERY_NAME.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Query Name");
+                }
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("User Comment");
                 }
             }
         };

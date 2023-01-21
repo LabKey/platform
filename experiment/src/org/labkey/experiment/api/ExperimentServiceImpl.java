@@ -5645,7 +5645,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
-    public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
+    public void deleteDataClass(int rowId, Container c, User user, @Nullable final String auditUserComment) throws ExperimentException
     {
         ExpDataClassImpl dataClass = getDataClass(rowId);
         if (null == dataClass)
@@ -5664,7 +5664,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             truncateDataClass(dataClass, user, null);
 
-            d.delete(user);
+            d.delete(user, auditUserComment);
 
             deleteDomainObjects(dcContainer, dataClass.getLSID());
 
