@@ -157,6 +157,13 @@ public class Stats
         return mR;
     }
 
+    /**
+     * Calculate the trailing mean values for a data array, which is a series of averages of different subsets of the full data set.
+     *
+     * @param values              Array of data values to calculate from
+     * @param N                   The subset size for the averages
+     * @returns {double[]}
+     */
     public static Double[] getTrailingMeans(Double[] values, int N)
     {
         if (values == null || values.length <= 1 || values.length <= N)
@@ -176,6 +183,13 @@ public class Stats
         return trailingMeans;
     }
 
+    /**
+     * Calculate the trailing CV values for a data array, which is calculated by taking the standard deviation of the values over a certain period,
+     *
+     * @param values              Array of data values to calculate from
+     * @param N                   The subset size for the cv
+     * @returns {double[]}
+     */
     public static Double[] getTrailingCVs(Double[] values, int N)
     {
         if (values == null || values.length <= 1 || values.length <= N)
