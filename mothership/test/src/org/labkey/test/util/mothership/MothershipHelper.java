@@ -31,7 +31,7 @@ import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.PostCommand;
+import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
@@ -174,7 +174,7 @@ public class MothershipHelper extends LabKeySiteWrapper
     public void updateStackTrace(int exceptionStackTraceId, String bugNumber, String comments, String assignedToEmail)
     {
         Connection connection = createDefaultConnection();
-        PostCommand command = new PostCommand("mothership", "updateStackTrace");
+        SimplePostCommand command = new SimplePostCommand("mothership", "updateStackTrace");
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
         if (bugNumber != null)
