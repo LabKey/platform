@@ -627,7 +627,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, String userComment, @NotNull Collection<Integer> selectedRunIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Integer> selectedRunIds);
 
     void deleteExpExperimentByRowId(Container container, User user, int experimentId);
 

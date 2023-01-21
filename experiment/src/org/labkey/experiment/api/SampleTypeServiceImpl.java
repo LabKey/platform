@@ -543,7 +543,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void deleteSampleType(int rowId, Container c, User user, String auditUserComment) throws ExperimentException
+    public void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException
     {
         CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
@@ -612,20 +612,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl source, Long txAuditId, String auditUserComment)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl sampleType, Long txAuditId, String auditUserComment)
     {
-        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", source.getName()));
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", sampleType.getName()));
         event.setUserComment(auditUserComment);
 
         if (txAuditId != null)
             event.setTransactionId(txAuditId);
 
-        if (source != null)
+        if (sampleType != null)
         {
-            event.setSourceLsid(source.getLSID());
-            event.setSampleSetName(source.getName());
+            event.setSourceLsid(sampleType.getLSID());
+            event.setSampleSetName(sampleType.getName());
         }
-        event.setInsertUpdateChoice("Delete Type");
+        event.setInsertUpdateChoice("delete type");
         AuditLogService.get().addEvent(user, event);
     }
 

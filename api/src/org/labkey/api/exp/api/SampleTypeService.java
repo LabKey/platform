@@ -192,7 +192,7 @@ public interface SampleTypeService
      */
     Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate);
 
-    void deleteSampleType(int rowId, Container c, User user, String auditUserComment) throws ExperimentException;
+    void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     // used by DomainKind.invalidate()
     void indexSampleType(ExpSampleType sampleType);

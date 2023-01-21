@@ -4075,7 +4075,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void deleteExperimentRunsByRowIds(Container container, final User user, final String userComment, @NotNull Collection<Integer> selectedRunIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Integer> selectedRunIds)
     {
         if (selectedRunIds.isEmpty())
             return;
