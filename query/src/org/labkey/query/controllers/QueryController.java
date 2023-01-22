@@ -4020,7 +4020,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, errors, configParameters, extraContext);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, null, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
                 return qus.getRows(user, container, updatedRows);

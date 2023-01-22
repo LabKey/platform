@@ -344,7 +344,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
         boolean useDib = false;
-        if (rows != null && !rows.isEmpty())
+        if (rows != null && !rows.isEmpty() && oldKeys == null)
             useDib = rows.get(0).containsKey("lsid");
 
         useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
