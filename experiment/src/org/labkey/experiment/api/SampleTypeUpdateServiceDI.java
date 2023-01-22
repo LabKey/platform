@@ -254,6 +254,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (rows instanceof DataLoader) // junit test uses ListofMapsDataIterator
             {
+                if (((DataLoader) rows).getColumnInfoMap().isEmpty())
+                    ((DataLoader) rows).setKnownColumns(getQueryTable().getColumns());
                 ColumnDescriptor[] columnDescriptors = ((DataLoader) rows).getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
                 for (ColumnDescriptor columnDescriptor : columnDescriptors)
                 {
