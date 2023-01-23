@@ -117,7 +117,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     @Override
     public int compareTo(@NotNull ColumnLogging o)
     {
-        int ret = this._originalSchemaName.compareTo(o._originalSchemaName);
+        int ret = this._originalSchemaName.compareToIgnoreCase(o._originalSchemaName);
         if (0 == ret)
             ret = this.getOriginalTableName().compareToIgnoreCase(o.getOriginalTableName());
         if (0 == ret)
