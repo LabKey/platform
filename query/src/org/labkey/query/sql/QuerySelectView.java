@@ -222,77 +222,7 @@ public class QuerySelectView extends QueryRelation
 
         allColumns = QueryServiceImpl.get().ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap, allInvolvedColumns);
 
-        // Check allInvolved columns for which need to be logged
-        // Logged columns may also require data logging (e.g. a patientId)
-        // If a data logging column cannot be found, we will only disallow this query (throw an exception)
-        //      if the logged column that requires data logging is in allColumns (which is selected columns plus ones needed for sort/filter)
-        Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
-        Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
-        String columnLoggingComment = null;
-        SelectQueryAuditProvider selectQueryAuditProvider = null;
-        for (ColumnInfo column : allInvolvedColumns)
-        {
-            if (!(column instanceof LookupColumn))
-            {
-                ColumnLogging columnLogging = column.getColumnLogging();
-                if (columnLogging.shouldLogName())
-                {
-                    shouldLogNameLoggings.add(columnLogging);
-                    if (!shouldLogNameToDataLoggingMap.containsKey(column))
-                        shouldLogNameToDataLoggingMap.put(column, new HashSet<>());
-                    shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
-                    if (null == columnLoggingComment)
-                        columnLoggingComment = columnLogging.getLoggingComment();
-                    if (null == selectQueryAuditProvider)
-                        selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
-                }
-            }
-        }
-
-        Set<ColumnInfo> dataLoggingColumns = new HashSet<>();
-        Set<ColumnInfo> extraSelectDataLoggingColumns = new HashSet<>();
-        for (Map.Entry<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMapEntry : shouldLogNameToDataLoggingMap.entrySet())
-        {
-            for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
-            {
-                ColumnInfo loggingColumn = columnMap.get(fieldKey);                 // Look in columnMap
-                if (null == loggingColumn)
-                    loggingColumn = getColumnForDataLogging(table, fieldKey);       // Look in table columns
-
-                if (null == loggingColumn)
-                {
-                    AliasManager manager = new AliasManager(table, allColumns);     // Try to construct column for fieldKey
-                    loggingColumn = QueryServiceImpl.get().getColumn(manager, table, columnMap, fieldKey);
-                }
-
-                if (null != loggingColumn)
-                {
-                    // For the case where we had to add the MRN column in Visualization, that column is in the table.columnMap, but not the local columnMap.
-                    // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
-                    if (!allColumns.contains(loggingColumn))
-                    {
-                        allColumns.add(loggingColumn);
-                        extraSelectDataLoggingColumns.add(loggingColumn);
-                    }
-                    if (!columnMap.containsKey(fieldKey))
-                        columnMap.put(fieldKey, loggingColumn);
-                    dataLoggingColumns.add(loggingColumn);
-                }
-                else
-                {
-                    // Looking for matching column in allColumns; must match by ColumnLogging object, which gets propagated up sql parse tree
-                    for (ColumnInfo column : allColumns)
-                        if (shouldLogNameToDataLoggingMapEntry.getKey().getColumnLogging().equals(column.getColumnLogging()))
-                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'."));
-                }
-            }
-        }
-
-        if (null != table.getUserSchema() && !queryLogging.isReadOnly())
-            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
-                    shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
-        else if (!shouldLogNameLoggings.isEmpty())
-            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Column logging is required but cannot set query logging object."));
+        Set<ColumnInfo> extraSelectDataLoggingColumns = getRequiredDataLoggingColumns(table, queryLogging, allInvolvedColumns, allColumns, columnMap);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
@@ -422,6 +352,86 @@ public class QuerySelectView extends QueryRelation
         }
 
         return ret;
+    }
+
+
+    @NotNull
+    private static Set<ColumnInfo> getRequiredDataLoggingColumns(TableInfo table, @NotNull QueryLogging queryLogging, Set<ColumnInfo> allInvolvedColumns, List<ColumnInfo> allColumns, Map<FieldKey, ColumnInfo> columnMap)
+    {
+        // Check allInvolved columns for which need to be logged
+        // Logged columns may also require data logging (e.g. a patientId)
+        // If a data logging column cannot be found, we will only disallow this query (throw an exception)
+        //      if the logged column that requires data logging is in allColumns (which is selected columns plus ones needed for sort/filter)
+        Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
+        Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
+        String columnLoggingComment = null;
+        SelectQueryAuditProvider selectQueryAuditProvider = null;
+        for (ColumnInfo column : allInvolvedColumns)
+        {
+            if (!(column instanceof LookupColumn))
+            {
+                ColumnLogging columnLogging = column.getColumnLogging();
+                if (null != columnLogging && columnLogging.shouldLogName())
+                {
+                    shouldLogNameLoggings.add(columnLogging);
+                    if (!shouldLogNameToDataLoggingMap.containsKey(column))
+                        shouldLogNameToDataLoggingMap.put(column, new HashSet<>());
+                    shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
+                    if (null == columnLoggingComment)
+                        columnLoggingComment = columnLogging.getLoggingComment();
+                    if (null == selectQueryAuditProvider)
+                        selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
+                }
+            }
+        }
+
+        Set<ColumnInfo> dataLoggingColumns = new HashSet<>();
+        Set<ColumnInfo> extraSelectDataLoggingColumns = new HashSet<>();
+        for (Map.Entry<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMapEntry : shouldLogNameToDataLoggingMap.entrySet())
+        {
+            for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
+            {
+                ColumnInfo loggingColumn = columnMap.get(fieldKey);                 // Look in columnMap
+                if (null == loggingColumn)
+                    loggingColumn = getColumnForDataLogging(table, fieldKey);       // Look in table columns
+
+                if (null == loggingColumn)
+                {
+                    AliasManager manager = new AliasManager(table, allColumns);     // Try to construct column for fieldKey
+                    loggingColumn = QueryServiceImpl.get().getColumn(manager, table, columnMap, fieldKey);
+                }
+
+                if (null != loggingColumn)
+                {
+                    // For the case where we had to add the MRN column in Visualization, that column is in the table.columnMap, but not the local columnMap.
+                    // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
+                    if (!allColumns.contains(loggingColumn))
+                    {
+                        allColumns.add(loggingColumn);
+                        extraSelectDataLoggingColumns.add(loggingColumn);
+                    }
+                    if (!columnMap.containsKey(fieldKey))
+                        columnMap.put(fieldKey, loggingColumn);
+                    dataLoggingColumns.add(loggingColumn);
+                }
+                else
+                {
+                    // Looking for matching column in allColumns; must match by ColumnLogging object, which gets propagated up sql parse tree
+                    for (ColumnInfo column : allColumns)
+                    {
+                        if (shouldLogNameToDataLoggingMapEntry.getKey().getColumnLogging().equals(column.getColumnLogging()))
+                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'."));
+                    }
+                }
+            }
+        }
+
+        if (null != table.getUserSchema() && !queryLogging.isReadOnly())
+            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
+                    shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
+        else if (!shouldLogNameLoggings.isEmpty())
+            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Column logging is required but cannot set query logging object."));
+        return extraSelectDataLoggingColumns;
     }
 
 
