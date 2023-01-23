@@ -18,6 +18,7 @@ package org.labkey.api.announcements;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
@@ -96,6 +97,8 @@ public interface DiscussionService
     void deleteDiscussions(Container container, User user, Collection<String> identifiers);
 
     boolean hasDiscussions(Container container, String identifier);
+
+    Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses);
 
     void unlinkDiscussions(Container container, String identifier, User user);
 

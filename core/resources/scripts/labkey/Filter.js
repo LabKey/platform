@@ -368,7 +368,7 @@ LABKEY.Filter = new function()
         // - js: Filter.js
         // - R: makeFilter.R, makeFilter.Rd
         // - SAS: labkeymakefilter.sas, labkey.org SAS docs
-        // - Python & Perl don't have an filter operator enum
+        // - Python & Perl don't have a filter operator enum
         // - EXPERIMENTAL: Added an optional displaySymbol() for filters that want to support it
         Types : {
 
