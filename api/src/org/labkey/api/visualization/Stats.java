@@ -204,7 +204,14 @@ public class Stats
             Double[] vals = getValuesFromRange(values, start, end);
             double sd = getStdDev(vals, false);
             double mean = getMean(vals);
-            trailingCVs[i] = sd/mean * 100;
+            if (mean == 0)
+            {
+                trailingCVs[i] = null;
+            }
+            else
+            {
+                trailingCVs[i] = sd / mean * 100;
+            }
             start++;
             end++;
         }
