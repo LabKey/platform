@@ -1560,7 +1560,7 @@ public class ExpDataIterators
             boolean isEmptyEntity = StringUtils.isEmpty(entityName);
 
             String[] parts = entityColName.split("[./]");
-            if (parts.length == 1 && !skipExistingAliquotParents)
+            if (parts.length == 1)
             {
                 if (parts[0].equalsIgnoreCase("parent"))
                 {
@@ -1571,6 +1571,9 @@ public class ExpDataIterators
                             String message = "Sample derivation parent input is not allowed for aliquots.";
                             throw new ValidationException(message);
                         }
+
+                        if (skipExistingAliquotParents)
+                            continue;;
 
                         ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
                         if (sample != null)
@@ -1586,12 +1589,8 @@ public class ExpDataIterators
             if (parts.length == 2)
             {
                 String namePart = QueryKey.decodePart(parts[1]);
-                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) && !skipExistingAliquotParents)
+                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
-                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
-                    if (sampleType == null)
-                        throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
-
                     if (isEmptyEntity)
                     {
                         if (isUpdatingExisting && !isAliquot)
@@ -1607,6 +1606,13 @@ public class ExpDataIterators
                             String message = "Sample derivation parent input is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
+
+                        if (skipExistingAliquotParents)
+                            continue;
+
+                        ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                        if (sampleType == null)
+                            throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
                         ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
@@ -1639,12 +1645,8 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT) && !skipExistingAliquotParents)
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                 {
-                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
-                    if (dataClass == null)
-                        throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
-
                     if (isEmptyEntity)
                     {
                         if (isUpdatingExisting && !isAliquot)
@@ -1657,6 +1659,13 @@ public class ExpDataIterators
                             String message = entityColName + " is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
+
+                        if (skipExistingAliquotParents)
+                            continue;
+
+                        ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                        if (dataClass == null)
+                            throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
 
                         ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
