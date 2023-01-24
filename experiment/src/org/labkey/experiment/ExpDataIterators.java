@@ -814,7 +814,7 @@ public class ExpDataIterators
                                    boolean updateOnly) throws ValidationException, ExperimentException
         {
             Pair<RunInputOutputBean, RunInputOutputBean> pair;
-            if (_context.getInsertOption().mergeRows)
+            if (_context.getInsertOption().allowUpdate)
             {
                 pair = resolveInputsAndOutputs(
                         _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType, updateOnly);
@@ -832,7 +832,7 @@ public class ExpDataIterators
                 throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
-            if (_context.getInsertOption().mergeRows && pair.first.doClear())
+            if (_context.getInsertOption().allowUpdate && pair.first.doClear())
             {
                 Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
                 String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
@@ -847,7 +847,7 @@ public class ExpDataIterators
                 Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
                 Map<ExpData, String> currentDataMap = Collections.emptyMap();
 
-                if (_context.getInsertOption().mergeRows)
+                if (_context.getInsertOption().allowUpdate)
                 {
                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
@@ -1154,7 +1154,9 @@ public class ExpDataIterators
             if (hasNext)
             {
                 String key = null;
-                if (_nameCol != null)
+                if (_useLsid && _lsidCol != null)
+                    key = (String) get(_lsidCol);
+                else if (_nameCol != null)
                     key = (String) get(_nameCol);
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
