@@ -4315,7 +4315,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, String auditUserComment, int... selectedProtocolIds) throws ExperimentException
     {
         if (selectedProtocolIds.length == 0)
             return;
@@ -4366,7 +4366,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // Delete runs after deleting datasets so that we don't have to do the work to clear out the data rows
             for (ExpRun run : runs)
             {
-                run.delete(user);
+                run.delete(user, auditUserComment);
             }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
@@ -4381,7 +4381,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
-                            provider.deleteProtocol(protocolToDelete, user);
+                            provider.deleteProtocol(protocolToDelete, user, auditUserComment);
                     }
                 }
                 else
@@ -4412,7 +4412,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql = new SQLFragment("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
-            deleteProtocolByRowIds(c, user, orphanedProtocolIds);
+            deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
 
             if (assayService != null)
             {
@@ -5180,7 +5180,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // now delete protocols (including their nested actions and parameters.
-            deleteProtocolByRowIds(c, user, protIds);
+            deleteProtocolByRowIds(c, user, null, protIds);
 
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all of the run-scoped Materials that were

@@ -3362,7 +3362,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
-                protocol.delete(getUser());
+                protocol.delete(getUser(), form.getUserComment());
             }
 
             return new ApiSimpleResponse();
@@ -3433,7 +3433,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
-                protocol.delete(getUser());
+                protocol.delete(getUser(), form.getUserComment());
             }
         }
     }
