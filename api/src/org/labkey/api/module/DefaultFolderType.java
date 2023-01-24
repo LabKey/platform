@@ -134,7 +134,7 @@ public class DefaultFolderType implements FolderType
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
 
-        List<Portal.WebPart> all = new ArrayList<>();
+        ArrayList<Portal.WebPart> all = new ArrayList<>();
         List<Portal.WebPart> existingParts = Portal.getEditableParts(c);
 
         if (existingParts.isEmpty())
@@ -191,7 +191,7 @@ public class DefaultFolderType implements FolderType
 
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
-        Portal.saveParts(c, DEFAULT_DASHBOARD, all);
+        Portal.saveParts(c, getDefaultTab().getName(), all);
 
         // A few things left to do; ordering is important
 
