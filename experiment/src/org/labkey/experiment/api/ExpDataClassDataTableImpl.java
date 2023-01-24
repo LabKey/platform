@@ -150,10 +150,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private final Supplier<TableInfo> _dataClassTableInfo;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
-    public static final Set<String> DATA_CLASS_ALT_KEYS;
+    public static final Set<String> DATA_CLASS_ALT_MERGE_KEYS;
+    public static final Set<String> DATA_CLASS_ALT_UPDATE_KEYS;
     private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
-        DATA_CLASS_ALT_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+        DATA_CLASS_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name()));
         ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("name", "description", "flag", "comment", "alias"));
     }
 
@@ -831,7 +833,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Set<String> getAltMergeKeys()
     {
-        return DATA_CLASS_ALT_KEYS;
+        return DATA_CLASS_ALT_MERGE_KEYS;
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getAltKeysForUpdate()
+    {
+        return DATA_CLASS_ALT_UPDATE_KEYS;
     }
 
     @Override
