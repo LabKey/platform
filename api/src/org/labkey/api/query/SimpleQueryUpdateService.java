@@ -73,7 +73,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        afterInsertUpdate(result==null?0:result.size(), errors);
+        afterInsertUpdate(result == null ? 0 : result.size(), errors);
         return result;
     }
 
@@ -84,10 +84,12 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     {
         boolean useDib = oldKeys == null && ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS);
         useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
-        useDib = useDib && !getQueryTable().hasTriggers(container);        if (useDib)
+        useDib = useDib && !getQueryTable().hasTriggers(container);
+
+        if (useDib)
         {
             List<Map<String, Object>> result = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, configParameters), extraScriptContext);
-            afterInsertUpdate(result==null?0:result.size(), errors);
+            afterInsertUpdate(result == null ? 0 : result.size(), errors);
             return result;
         }
 

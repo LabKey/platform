@@ -5,6 +5,10 @@ import org.labkey.api.data.ColumnInfo;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/*
+ * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
+ * copies data, this is straight pass through.
+ */
 public class DropColumnsDataIterator extends WrapperDataIterator
 {
     int[] indexMap;

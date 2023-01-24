@@ -905,7 +905,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String name = input.getColumnInfo(i).getName();
                 if (isReservedHeader(name))
                     drop.add(name);
-                else if ("ClassId".equalsIgnoreCase(name))
+                else if (Column.ClassId.name().equalsIgnoreCase(name))
                     drop.add(name);
             }
             if (context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
