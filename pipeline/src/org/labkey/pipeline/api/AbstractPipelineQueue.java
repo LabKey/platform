@@ -69,6 +69,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
                 PipelineStatusManager.setStatusFile(job, user, PipelineJob.TaskStatus.waiting, null, true);
             }
 
+            job.getLogger().debug("Resetting Job ID: " + job.getJobGUID())
             PipelineStatusManager.resetJobId(job.getContainer(), job.getLogFilePath(), job.getJobGUID());
         }
 
@@ -76,6 +77,10 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         {
             // Delay until the transaction has been committed so other threads can find the job in the database
             PipelineSchema.getInstance().getSchema().getScope().addCommitTask(() -> enqueue(job), DbScope.CommitTaskOption.POSTCOMMIT);
+        }
+        else
+        {
+            LOG.debug("Unable to set status to waiting for job: " + job.toString());
         }
     }
 
