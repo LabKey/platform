@@ -54,7 +54,12 @@ public class ColumnLogging implements Comparable<ColumnLogging>
             return this;
         Set<FieldKey> dataLoggingColumns = new HashSet<>();
         for (FieldKey fk : _dataLoggingColumns)
-            dataLoggingColumns.add(FieldKey.remap(fk, baseFieldKey, remap));
+        {
+            var mapped = FieldKey.remap(fk, baseFieldKey, remap);
+            if (null == mapped)
+                throw new MutableColumnInfo.RemapFieldKeysException("Unable to find required logging column " + fk.getName() + " for table " + _originalTableName, this);
+            dataLoggingColumns.add(mapped);
+        }
         return new ColumnLogging(_originalSchemaName, _originalTableName, _originalColumnFieldKey, _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
     }
 

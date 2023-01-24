@@ -17,14 +17,18 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.HasResolvedTables;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -126,15 +130,29 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         remapFieldKeys();
     }
 
+
     public void remapFieldKeys()
     {
         initFieldKeyMap();
+        CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
+
         for (var ci : getMutableColumns())
         {
             Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
-            if (null == remap || remap.isEmpty())
-                continue;
-            ci.remapFieldKeys(null, remap);
+            try
+            {
+                ci.remapFieldKeys(null, null == remap ? Map.of() : remap, warnings, true);
+
+                // NOTE: this is actually too late for these warnings to show up in the query designer
+                // can we move the call to remapFieldKeys() earlier?
+                var queryWarnings = _relation._query.getParseWarnings();
+                for (String w : warnings)
+                    queryWarnings.add(new QueryParseWarning(w, null, 0, 0));
+            }
+            catch (MutableColumnInfo.RemapFieldKeysException fke)
+            {
+                throw new QueryException(fke.getMessage(), fke);
+            }
         }
     }
 
@@ -154,8 +172,8 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
                 Map<FieldKey,FieldKey> flippedMap = new TreeMap<>();
                 for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
                 {
-                    if (!e.getValue().getFieldKey().equals(e.getKey()))
-                        flippedMap.put(e.getValue().getFieldKey(), e.getKey());
+                    // NIOTE we need to include "identity" field mappings, so that the remap code can detect missing mappings
+                    flippedMap.put(e.getValue().getFieldKey(), e.getKey());
                     mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
                 }
             }

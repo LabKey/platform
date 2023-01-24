@@ -1108,10 +1108,11 @@ public class StringExpressionFactory
             StringBuilder source = new StringBuilder();
             for (StringPart p : clone.getParsedExpression())
             {
-                if (p instanceof FieldPart)
+                if (p instanceof FieldPart fp)
                 {
-                    FieldPart fp = (FieldPart)p;
-                    fp._key = FieldKey.remap(fp._key, parent, remap);
+                    var remapped = FieldKey.remap(fp._key, parent, remap);
+                    if (null != remapped)
+                        fp._key = remapped;
                 }
                 source.append(p.toString());
             }

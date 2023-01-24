@@ -39,10 +39,10 @@ import java.util.Map;
  * 1. The name of the column in the underlying real table that the
  * ColumnInfo gets its value from (ColumnInfo.getValueSQL()).
  * 2. The name of the column in the ResultSet (ColumnInfo.getAlias())
- * 3. The name of the column in an URL filter, as a POST param in an update
+ * 3. The name of the column in a URL filter, as a POST param in an update
  * form, etc. (ColumnInfo.getName()).
  * 4. The name of a column in LabKey SQL.
- *
+ * <br>
  * FieldKey's should only ever be used for #3 and #4.
  *
  */
@@ -90,10 +90,10 @@ public class FieldKey extends QueryKey<FieldKey>
         return fromParts(Arrays.asList(parts));
     }
 
-    static public FieldKey fromParts(Enum... parts)
+    static public FieldKey fromParts(Enum<?>... parts)
     {
         List<String> strings = new ArrayList<>(parts.length);
-        for (Enum part : parts)
+        for (Enum<?> part : parts)
         {
             strings.add(part.toString());
         }
@@ -116,16 +116,33 @@ public class FieldKey extends QueryKey<FieldKey>
     }
 
 
-
-    static public FieldKey remap(FieldKey key, @Nullable FieldKey parent, @Nullable Map<FieldKey,FieldKey> remap)
+    static private FieldKey remap_recursive(FieldKey key, Map<FieldKey,FieldKey> remap)
     {
-        FieldKey replace = remap == null ? null : remap.get(key);
-        if (null != replace)
-            return replace;
-        else if (null != parent)
-            return FieldKey.fromParts(parent, key);
+        var ret = remap.get(key);
+        if (null != ret || null == key.getParent())
+            return ret;
+        var newParent = remap_recursive(key.getParent(), remap);
+        return null==newParent ? null : new FieldKey(newParent, key.getName());
+    }
+
+
+    static public FieldKey remap(FieldKey key, @Nullable FieldKey reparent, @Nullable Map<FieldKey,FieldKey> remap)
+    {
+        // see note in MutableColumnInfo.remap()
+        assert( null==reparent || null==remap );
+
+        if (null != remap)
+        {
+            var ret = remap_recursive(key, remap);
+            return ret;
+        }
+        else if (null != reparent)
+        {
+            return FieldKey.fromParts(reparent, key);
+        }
         return key;
     }
+
 
     static public boolean needsEncoding(String str)
     {
@@ -138,7 +155,7 @@ public class FieldKey extends QueryKey<FieldKey>
         super(parent, name);
     }
 
-    public FieldKey(@Nullable FieldKey parent, Enum name)
+    public FieldKey(@Nullable FieldKey parent, Enum<?> name)
     {
         super(parent, name);
     }
@@ -222,7 +239,7 @@ public class FieldKey extends QueryKey<FieldKey>
     }
 
     @Override
-    public int compareTo(FieldKey o)
+    public int compareTo(@NotNull FieldKey o)
     {
         return CASE_INSENSITIVE_ORDER.compare(this, o);
     }
@@ -383,6 +400,62 @@ public class FieldKey extends QueryKey<FieldKey>
             {
                 assertTrue(target.startsWith(prefix));
                 assertFalse(prefix.startsWith(target));
+            }
+        }
+
+        @Test
+        public void testReparent()
+        {
+            {
+                var fk = remap(fromParts("A"), null, null);
+                assertEquals(fromParts("A"), fk);
+            }
+
+            {
+                var fk = remap(fromParts("A"), fromParts("X"), null);
+                assertEquals(fromParts("X", "A"), fk);
+            }
+        }
+
+        @Test
+        public void testRemap()
+        {
+            {
+                var map = Map.of(
+                        fromParts("A1"), fromParts("A2")
+                        );
+
+                var z = remap(fromParts("Z"), null, map);
+                assertEquals(fromParts("Z"), z);
+
+                var a2 = remap(fromParts("A1"), null, map);
+                assertEquals(fromParts("A2"), a2);
+
+                var a2x = remap(fromParts("A1","X"), null, map);
+                assertEquals(fromParts("A2","X"), a2x);
+            }
+
+            {
+                var map = Map.of(
+                        fromParts("X1"), fromParts("X2"),
+                        fromParts("X1","A"), fromParts("A2")
+                        );
+
+                // no match
+                var z = remap(fromParts("Z"), null, map);
+                assertEquals(fromParts("Z"), z);
+
+                // exact match
+                var a2 = remap(fromParts("X1","A"), null, map);
+                assertEquals(fromParts("A2"), a2);
+
+                // partial match (one part)
+                var x2ba = remap(fromParts("X1", "B", "A"), null, map);
+                assertEquals(fromParts("X2","B","A"), x2ba);
+
+                // partial match (two parts)
+                var a2b = remap(fromParts("X1", "A", "B"), null, map);
+                assertEquals(fromParts("A2","B"), a2b);
             }
         }
     }

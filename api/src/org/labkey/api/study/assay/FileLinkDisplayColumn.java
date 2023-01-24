@@ -101,9 +101,17 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             Factory remapped = this.clone();
             if (remapped._pkFieldKey != null)
+            {
                 remapped._pkFieldKey = FieldKey.remap(_pkFieldKey, parent, remap);
+                if (null == remapped._pkFieldKey)
+                    remapped._pkFieldKey = _pkFieldKey;
+            }
             if (remapped._objectURIFieldKey != null)
+            {
                 remapped._objectURIFieldKey = FieldKey.remap(_objectURIFieldKey, parent, remap);
+                if (null == remapped._objectURIFieldKey)
+                    remapped._objectURIFieldKey = _objectURIFieldKey;
+            }
             return remapped;
         }
 

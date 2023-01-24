@@ -993,6 +993,11 @@ public class QueryPivot extends QueryRelation
             return new Sort();
         }
 
+        @Override
+        public void afterConstruct()
+        {
+            super.afterConstruct();
+        }
     }
 
     private CrosstabMeasure.AggregateFunction toAggFn(QAggregate.Type aggType)
