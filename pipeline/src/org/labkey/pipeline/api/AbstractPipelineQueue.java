@@ -69,7 +69,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
                 PipelineStatusManager.setStatusFile(job, user, PipelineJob.TaskStatus.waiting, null, true);
             }
 
-            job.getLogger().debug("Resetting Job ID: " + job.getJobGUID())
+            job.getLogger().debug("Resetting Job ID: " + job.getJobGUID());
             PipelineStatusManager.resetJobId(job.getContainer(), job.getLogFilePath(), job.getJobGUID());
         }
 
