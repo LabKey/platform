@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -128,6 +129,8 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     }
 
 
+    List<Pair<ColumnInfo,Integer>> dataLoggingColumns = null;
+
     protected void updateQueryLogging() throws SQLException
     {
         // For now, only check for expected data logging columns if auditing is turned on; clients get confused when
@@ -136,17 +139,38 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
         // need to improve.
         if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
         {
-            List<ColumnInfo> missingColumns = new ArrayList<>();
-            for (ColumnInfo dataLoggingColumn : _queryLogging.getDataLoggingColumns())
+            if (null == dataLoggingColumns) // FIRST
             {
-                Object obj = getObject(dataLoggingColumn.getAlias());
+                dataLoggingColumns = _queryLogging.getDataLoggingColumns().stream().map(column ->
+                {
+                    try
+                    {
+                        int index = findColumn(column.getAlias().toLowerCase());
+                        return new Pair<>(column,index);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }).toList();
+            }
+
+            List<ColumnInfo> missingColumns = null; // = new ArrayList<>();
+            for (Pair<ColumnInfo, Integer> dataLoggingColumn : dataLoggingColumns)
+            {
+                int index = dataLoggingColumn.second;
+                Object obj = getObject(index);
                 if (null != obj)
                     _dataLoggingValues.add(obj);
                 else
-                    missingColumns.add(dataLoggingColumn);
+                {
+                    if (null == missingColumns)
+                        missingColumns = new ArrayList<>();
+                    missingColumns.add(dataLoggingColumn.first);
+                }
             }
 
-            if (!missingColumns.isEmpty())
+            if (null != missingColumns)
             {
                 throw new IllegalStateException("Unable to read expected data logging column(s) for " +
                         StringUtils.join(missingColumns.stream().map(c -> "\"" + c.getFieldKey().toString() + "\"").collect(Collectors.toList()), ';') +

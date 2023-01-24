@@ -18,6 +18,7 @@ package org.labkey.api.announcements.api;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
@@ -36,11 +37,14 @@ public interface Announcement
     Date getExpires();
     int getRowId();
     String getEntityId();
+    String getParent();
     Container getContainer();
     Collection<Attachment> getAttachments();
     String getStatus();
     Date getCreated();
+    int getCreatedBy();
     Date getModified();
+    int getModifiedBy();
     WikiRendererType getRendererType();
     @NotNull List<Integer> getMemberListIds();
 }

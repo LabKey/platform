@@ -315,6 +315,17 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
+                <xs:element name="studySecurity" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that contains the study security policy. The file must follow the study security policy (studySecurityPolicy.xsd) XML format.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
             </xs:all>
             <xs:attribute name="allowDataspace" type="xs:boolean" default="false">
                 <xs:annotation>
@@ -533,5 +544,4 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
 </xs:schema>

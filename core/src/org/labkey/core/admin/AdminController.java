@@ -9221,7 +9221,7 @@ public class AdminController extends SpringActionController
                         }
                         if (page.getPageId().equalsIgnoreCase(name))
                         {
-                            if (null != page.getCaption() || "portal.default".equalsIgnoreCase(name))
+                            if (null != page.getCaption() || Portal.DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(name))
                                 errors.reject(ERROR_MSG, "You cannot change a tab's name to another tab's original name even if the original name is not visible.");
                             else
                                 errors.reject(ERROR_MSG, "A tab with the same name already exists in this folder.");
