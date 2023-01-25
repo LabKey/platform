@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.PostCommand;
+import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.remoteapi.query.DeleteRowsCommand;
 import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.remoteapi.query.SaveRowsResponse;
@@ -142,7 +142,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         log("Testing adding searchable data classes.");
 
         // create first domain
-        PostCommand createDomainCommand = new PostCommand("property", "createDomain");
+        SimplePostCommand createDomainCommand = new SimplePostCommand("property", "createDomain");
         JSONObject domainJson = new JSONObject();
         domainJson.put("kind", "DataClass");
         JSONArray domainFieldsJson = new JSONArray();
@@ -173,7 +173,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         dataClassDomainUri = commandResponse.getProperty("domainURI");
 
         // create second domain with same fields as first
-        createDomainCommand = new PostCommand("property", "createDomain");
+        createDomainCommand = new SimplePostCommand("property", "createDomain");
         domainJson = new JSONObject();
         domainJson.put("kind", "DataClass");
         domainFieldsJson = new JSONArray();
@@ -297,7 +297,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     {
         // alter domain
 
-        PostCommand saveDomainCommand = new PostCommand("property", "saveDomain");
+        SimplePostCommand saveDomainCommand = new SimplePostCommand("property", "saveDomain");
         JSONObject domainJson = new JSONObject();
         domainJson.put("schemaName", DATA_CLASS_SCHEMA);
         domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
@@ -325,7 +325,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         saveDomainCommand.execute(connection, getCurrentContainerPath());
 
         // update classes with altered domain
-        PostCommand saveRowsCommand = new PostCommand("query", "updateRows");
+        SimplePostCommand saveRowsCommand = new SimplePostCommand("query", "updateRows");
         domainJson = new JSONObject();
         domainJson.put("schemaName", DATA_CLASS_SCHEMA);
         domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
