@@ -19,6 +19,7 @@ package org.labkey.core.user;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONObject;
@@ -57,6 +58,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -116,6 +118,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
@@ -166,6 +169,8 @@ import java.util.stream.Collectors;
 public class UserController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
+
+    private static final Logger LOG = LogHelper.getLogger(UserController.class, "UI for user management");
 
     static
     {
@@ -953,7 +958,9 @@ public class UserController extends SpringActionController
 
             if (domain != null)
             {
-                successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                DomainKind kind = domain.getDomainKind();
+                LOG.debug("Resolved domain kind " + kind + " for user domain " + domainURI);
+                successUrl = kind.urlEditDefinition(domain, getViewContext());
                 successUrl.addReturnURL(getViewContext().getActionURL());
             }
 
