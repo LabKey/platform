@@ -395,7 +395,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return true;
     }
 
-    @Override @Nullable
+    @Override @NotNull
     public FolderTab getDefaultTab()
     {
         return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;
