@@ -672,28 +672,15 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public ExpMaterialImpl getSample(Container c, String name, @Nullable ContainerFilter cf)
     {
-        SimpleFilter filter = getContainerFilterClause(c, cf);
-        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
         filter.addCondition(FieldKey.fromParts("Name"), name);
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)
             return null;
         return new ExpMaterialImpl(material);
-    }
-
-    private SimpleFilter getContainerFilterClause(Container c, @Nullable ContainerFilter cf)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-
-        if (cf != null)
-        {
-            Collection<GUID> containerIds = cf.getIds();
-            if (containerIds != null && containerIds.size() > 1)
-                filter = new SimpleFilter(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
-        }
-
-        return filter;
     }
 
     private ExpMaterialImpl getSampleByObjectId(Integer objectId)

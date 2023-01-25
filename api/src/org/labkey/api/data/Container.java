@@ -37,7 +37,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.HasPermission;
@@ -1693,7 +1692,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
     }
 
-    public ContainerFilter getProjectDataContainerFilter(User user)
+    public ContainerFilter getProductProjectsDataContainerFilter(User user)
     {
         if (!isProductProjectsEnabled())
             return ContainerFilter.current(this);
