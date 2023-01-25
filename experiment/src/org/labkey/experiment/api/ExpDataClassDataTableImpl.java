@@ -1215,6 +1215,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 useDib = rows.get(0).containsKey("lsid");
 
             useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
+            useDib = useDib && hasUniformKeys(rows);
 
             List<Map<String, Object>> results;
             if (useDib)

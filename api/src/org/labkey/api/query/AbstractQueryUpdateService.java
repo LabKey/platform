@@ -704,6 +704,30 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return updateRow(user, container, row, oldRow);
     }
 
+    // used by updateRows to check if all rows have the same set of keys
+    // prepared statement can only be used to updateRows if all rows have the same set of keys
+    protected boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
+    {
+        if (rowsToUpdate == null || rowsToUpdate.isEmpty())
+            return false;
+
+        if (rowsToUpdate.size() == 1)
+            return true;
+
+        Set<String> keys = rowsToUpdate.get(0).keySet();
+        int keySize = keys.size();
+
+        for (int i = 1 ; i < rowsToUpdate.size(); i ++)
+        {
+            Set<String> otherKeys = rowsToUpdate.get(i).keySet();
+            if (otherKeys.size() != keySize)
+                return false;
+            if (!otherKeys.containsAll(keys))
+                return false;
+        }
+
+        return true;
+    }
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,

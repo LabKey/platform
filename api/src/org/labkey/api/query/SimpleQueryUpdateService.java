@@ -85,6 +85,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         boolean useDib = oldKeys == null && ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS);
         useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
         useDib = useDib && !getQueryTable().hasTriggers(container);
+        useDib = useDib && hasUniformKeys(rows);
 
         if (useDib)
         {
