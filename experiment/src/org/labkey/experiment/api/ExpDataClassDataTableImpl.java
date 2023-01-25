@@ -254,7 +254,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case Name:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
-                // TODO: Name is editable in insert view, but not in update view
                 String nameExpression = _dataClass.getNameExpression();
                 c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
@@ -883,7 +882,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         private static boolean isReservedHeader(String name)
         {
-            for (ExpDataTable.Column column : ExpDataTable.Column.values())
+            for (ExpDataClassDataTable.Column column : ExpDataClassDataTable.Column.values())
             {
                 if (column.name().equalsIgnoreCase(name))
                     return !ALLOWED_IMPORT_HEADERS.contains(column.name().toLowerCase());
@@ -904,8 +903,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 String name = input.getColumnInfo(i).getName();
                 if (isReservedHeader(name))
-                    drop.add(name);
-                else if (Column.ClassId.name().equalsIgnoreCase(name))
                     drop.add(name);
             }
             if (context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
