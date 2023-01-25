@@ -314,6 +314,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         catch (Exception e)
         {
             _log.debug("Error dispatching job: " + job, e);
+            throw e;
         }
         finally
         {

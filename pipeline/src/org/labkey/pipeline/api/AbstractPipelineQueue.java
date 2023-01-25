@@ -80,7 +80,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         }
         else
         {
-            LOG.debug("Unable to set status to waiting for job: " + job.toString());
+            LOG.debug("Unable to set status to waiting for job: " + job.toString() + ", GUID: " + job.getJobGUID());
         }
     }
 
