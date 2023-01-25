@@ -17,8 +17,8 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
@@ -414,7 +414,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         return obj;
     }
 
-    public void toJSON(JSONArray parent, ValidationError error)
+    private void toJSON(JSONArray parent, ValidationError error)
     {
         String msg = error.getMessage();
         String key = null;

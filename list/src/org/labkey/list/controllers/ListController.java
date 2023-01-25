@@ -728,7 +728,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            return _list.insertListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption == QueryUpdateService.InsertOption.MERGE);
+            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption);
         }
 
         @Override

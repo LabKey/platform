@@ -190,7 +190,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -4297,13 +4296,6 @@ public class StudyManager
         return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap();
     }
 
-
-    public void reindex(Container c)
-    {
-        _enumerateDocuments(null, c);
-    }
-    
-
     private void unindexDataset(DatasetDefinition ds)
     {
         String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId())).toString();
@@ -4400,7 +4392,7 @@ public class StudyManager
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
-    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids)
+    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
     {
         if (null != ptids && ptids.size() == 0)
             return;
@@ -4415,12 +4407,12 @@ public class StudyManager
                 if (list.size() == BATCH_SIZE)
                 {
                     final ArrayList<String> l = list;
-                    Runnable r = () -> indexParticipants(task, c, l);
+                    Runnable r = () -> indexParticipants(task, c, l, modifiedSince);
                     task.addRunnable(r, SearchService.PRIORITY.bulk);
                     list = new ArrayList<>(BATCH_SIZE);
                 }
             }
-            indexParticipants(task, c, list);
+            indexParticipants(task, c, list, modifiedSince);
             return;
         }
 
@@ -4442,7 +4434,7 @@ public class StudyManager
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
-        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, "p").toSQLFragment(null, null);
+        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p").toSQLFragment(null, null);
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
@@ -4515,7 +4507,7 @@ public class StudyManager
 
     final static WeakHashMap<Container, Runnable> _lastEnumerate = new WeakHashMap<>();
 
-    public static void _enumerateDocuments(IndexTask t, final Container c)
+    public static void _enumerateDocuments(IndexTask t, final Container c, @Nullable Date modifiedSince)
     {
         if (null == c)
             return;
@@ -4546,8 +4538,8 @@ public class StudyManager
 
                 if (null != study)
                 {
-                    StudyManager.indexDatasets(task, c, null);
-                    StudyManager.indexParticipants(task, c, null);
+                    StudyManager.indexDatasets(task, c, modifiedSince);
+                    StudyManager.indexParticipants(task, c, null, modifiedSince);
                     // study protocol document
                     _enumerateProtocolDocuments(task, study);
                 }
@@ -4805,116 +4797,20 @@ public class StudyManager
             }
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void addImportHashColumn(final ModuleContext context)
+        /**
+         * Called from study-23.000-23.001.sql
+         * Issue : 46986. Move the study design domains to the project folder (if not already there), since
+         * their URI references the project folder already.
+         */
+        public static void moveDesignDomains(ModuleContext ctx)
         {
-            if (null!=context && context.isNewInstall())
+            if (ctx.isNewInstall())
                 return;
-            StorageProvisioner sp = StorageProvisioner.get();
-            List<DatasetDefinition> all = new TableSelector(StudySchema.getInstance().getTableInfoDataset()).getArrayList(DatasetDefinition.class);
-            for (var ds : all)
-            {
-                Domain d = ds.getDomain();
-                if (null != d && null != d.getStorageTableName())
-                    sp.ensureBaseProperties(d);
-            }
-        }
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void upgradeForSpecimenModule(final ModuleContext context)
-        {
-            if (!context.isNewInstall())
-            {
-                // SpecimenRequestNotificationEmailTemplate was moved to study API in 21.3; move its template properties to the new location
-                EmailTemplateService.get().relocateEmailTemplateProperties(
-                    "org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate",
-                    "org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate"
-                );
-                StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
-            }
-        }
+            _log.info("Ensuring study design domains in all studies are moved to the project level.");
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        @DeferredUpgrade
-        public void ensureDesignDomains(final ModuleContext context)
-        {
-            if (!context.isNewInstall())
-            {
-                _log.info("Ensuring study design domains in all studies");
-                StudyDesignManager mgr = StudyDesignManager.get();
-                StudyManager.getInstance().getAllStudies()
-                    .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
-            }
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void ensureParticipantIds(final ModuleContext context)
-        {
-            if (!context.isNewInstall())
-            {
-                _log.info("Ensuring participantIds in all study datasets");
-                try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
-                {
-                    // Iterate through all studies
-                    Set<? extends StudyImpl> studies = StudyManager.getInstance().getAllStudies();
-                    for (StudyImpl study : studies)
-                    {
-                        String subjectColName = study.getSubjectColumnName();
-
-                        // Iterate datasets
-                        List<DatasetDefinition> datasets = study.getDatasets();
-                        for (DatasetDefinition dataset : datasets)
-                        {
-                            Domain dom = dataset.getDomain();
-                            if (null != dom)
-                            {
-                                // If subject id renamed then try to correct
-                                if (!subjectColName.equalsIgnoreCase("ParticipantId"))
-                                {
-                                    // Try to correct datasets with subject id overwritten with custom column
-                                    List<? extends DomainProperty> dupeId = dom.getProperties().stream().filter(d -> d.getName().equalsIgnoreCase(subjectColName)).collect(Collectors.toList());
-                                    if (dupeId.size() > 0)
-                                    {
-                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
-                                        updateSql.append(" SET participantid = ").append(subjectColName);
-                                        updateSql.append(" WHERE participantid IS NULL");
-                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
-                                        if (rows > 0)
-                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
-                                    }
-                                    else
-                                    {   // set participantid to Unknown if it is null and doesn't match the above case. Only way known that it could
-                                        // happen is if the above case was corrected before running this script, but should catch any other edge cases
-                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
-                                        updateSql.append(" SET participantid = 'Unknown'");
-                                        updateSql.append(" WHERE participantid IS NULL");
-                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
-                                        if (rows > 0)
-                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
-                                    }
-                                }
-
-                                SQLFragment constraintSql = new SQLFragment("ALTER TABLE studydataset.").append(dom.getStorageTableName());
-                                if (StudySchema.getInstance().getSqlDialect().isPostgreSQL())
-                                {
-                                    constraintSql.append(" ALTER COLUMN participantid SET NOT NULL");
-                                }
-                                else
-                                {
-                                    // Adding not null constraint avoids having to drop indexes to re-declare column as not null
-                                    constraintSql.append(" WITH CHECK ADD CONSTRAINT ").append(dom.getStorageTableName()).append("_participantid_not_null");
-                                    constraintSql.append(" CHECK (participantid IS NOT NULL);");
-                                }
-
-                                new SqlExecutor(StudySchema.getInstance().getScope()).execute(constraintSql);
-                            }
-                        }
-
-                    }
-
-                    transaction.commit();
-                }
-            }
+            StudyManager.getInstance().getAllStudies().forEach(
+                    study -> StudyDesignManager.get().ensureStudyDesignDomainsContainer(study.getContainer(), _log));
         }
     }
 

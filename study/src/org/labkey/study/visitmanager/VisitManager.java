@@ -488,7 +488,7 @@ public abstract class VisitManager
             if (null != potentiallyInsertedParticipants)
             {
                 final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
-                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), c, ptids);
+                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }
             else
@@ -498,7 +498,7 @@ public abstract class VisitManager
                     SimpleFilter filter = SimpleFilter.createContainerFilter(c);
                     filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
                     List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
-                    StudyManager.indexParticipants(ss.defaultTask(), c, ptids);
+                    StudyManager.indexParticipants(ss.defaultTask(), c, ptids, null);
                 };
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }

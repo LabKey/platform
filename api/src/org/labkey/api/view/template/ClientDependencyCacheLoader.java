@@ -72,7 +72,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeT
 
             if (m == null)
             {
-                ClientDependency.logError("Module \"" + moduleName + "\" not found, skipping script file \"" + path + "\".");
+                ClientDependency.logWarning("Module \"" + moduleName + "\" not found, skipping script file \"" + path + "\".");
                 return null;
             }
 
@@ -88,7 +88,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeT
                 // Allows you to run in dev mode without having the concatenated scripts built
                 if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
                 {
-                    ClientDependency.logError("ClientDependency \"" + path + "\" not found, skipping.");
+                    ClientDependency.logWarning("ClientDependency \"" + path + "\" not found, skipping.");
                     return null;
                 }
             }

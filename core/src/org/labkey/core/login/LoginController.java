@@ -1142,8 +1142,15 @@ public class LoginController extends SpringActionController
             // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @. See #6736.
             String encodedEmail = PageFlowUtil.getCookieValue(cookies, "email", null);
 
-            if (null != encodedEmail)
-                email = PageFlowUtil.decode(encodedEmail);
+            try
+            {
+                if (null != encodedEmail)
+                    email = PageFlowUtil.decode(encodedEmail);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // If it's not properly encoded, ignore it
+            }
         }
 
         return email;

@@ -17,8 +17,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -62,7 +62,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
@@ -303,6 +302,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getViewContext().getRequest().getParameter(p.name());
     }
 
+    protected boolean skipInsertOptionValidation()
+    {
+        return false;
+    }
+
     public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
@@ -317,19 +321,31 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (insertOptionParam != null)
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
-            // TODO: Check insertOption is supported on the target table
-            // TODO: See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42788
+            // if subclass already set _insertOption, use their _insertOption
+            if (_insertOption == QueryUpdateService.InsertOption.INSERT && insertOption != QueryUpdateService.InsertOption.INSERT)
+                _insertOption = insertOption;
 
-            switch (insertOption)
+            // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
+            if (!skipInsertOptionValidation() && _target != null && !_target.supportsInsertOption(_insertOption))
+                throw new IllegalArgumentException(_insertOption + " action is not supported for " + _target.getName() + ".");
+
+            switch (_insertOption)
             {
-                case MERGE, REPLACE, UPSERT -> {
+                case UPDATE -> {
                     if (!canUpdate(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                 }
-                default -> {
+                case MERGE, REPLACE, UPSERT -> {
+                    if (!canUpdate(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
                     if (!canInsert(user))
                         errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
                 }
+                case IMPORT, IMPORT_IDENTITY, INSERT -> {
+                    if (!canInsert(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                }
+                default -> { throw new IllegalStateException("unhandled InsertOption"); }
             }
         }
 
@@ -735,11 +751,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             DataIteratorContext context = new DataIteratorContext(errors);
             context.setInsertOption(insertOption);
             context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+            if (insertOption.updateOnly) // for "update from file", fail if new records are found
+                context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
             if (auditBehaviorType != null)
             {
-                Map<Enum, Object> configParameters = new HashMap<>();
-                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-                context.setConfigParameters(configParameters);
+                context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
             }
             if (importIdentity)
             {
@@ -760,23 +776,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 transaction.commit();
                 return count;
             }
-            /* catch (BatchValidationException x)
-            {
-                assert x.hasErrors();
-                if (x != errors)
-                {
-                    for (ValidationException e : x.getRowErrors())
-                        errors.addRowError(e);
-                }
-            }
-            catch (DuplicateKeyException x)
-            {
-                errors.addRowError(new ValidationException(x.getMessage()));
-            }
-            catch (QueryUpdateServiceException x)
-            {
-                errors.addRowError(new ValidationException(x.getMessage()));
-            } */
             catch (SQLException x)
             {
                 boolean isConstraint = RuntimeSQLException.isConstraintException(x);

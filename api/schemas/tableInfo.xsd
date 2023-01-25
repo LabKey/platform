@@ -519,6 +519,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="shownInLookupView" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Set to true if the column should not be shown in lookup views.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="measure" type="xs:boolean" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

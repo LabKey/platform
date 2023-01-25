@@ -475,21 +475,37 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
+    /*
+    * This is the portion path that is not used to resolve the controller-action.
+    * This is usually the container path or container id.
+     */
     public ActionURL setExtraPath(String extraPath)
     {
-        if (null == extraPath) extraPath = "";
-        setParsedPath(Path.parse(extraPath));
+        if (StringUtils.isEmpty(extraPath))
+            return setExtraPath(Path.rootPath);
+        else
+            return setExtraPath(Path.parse(extraPath));
+    }
+
+
+    public ActionURL setExtraPath(@NotNull Path extraPath)
+    {
+        setParsedPath(extraPath);
         return this;
     }
 
 
     public String getExtraPath()
     {
-        String path = _path.toString();
-        if (path.endsWith("/"))
-            path = path.substring(0,path.length()-1);
-        return path;
+        return _path.toString("/", "");
     }
+
+
+    public Path getParsedExtraPath()
+    {
+        return _path;
+    }
+
 
     /**
      * The path argument is not URL encoded.
@@ -586,8 +602,8 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    // CONSIDER: should this override getParsedPath()
-    public Path getFullParsedPath()
+    /** This subclass reuses the base class member _path, so we need to override getParsedPath() as well as getPath() */
+    public Path getParsedPath()
     {
         return _contextPath.append(_controller).append(_path).append(_action + ".view");
     }

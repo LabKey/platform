@@ -17,7 +17,7 @@ package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.data.Container;
@@ -32,7 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.util.Set;
 

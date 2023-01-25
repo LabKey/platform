@@ -15,7 +15,7 @@
  */
 package org.labkey.core.statistics;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.SigmoidalParameters> implements CurveFit<ParameterCurveFit.SigmoidalParameters>
 {
-    private StatsService.CurveFitType _fitType;
+    private final StatsService.CurveFitType _fitType;
 
     public static class SigmoidalParameters implements CurveFit.Parameters, Cloneable
     {
@@ -150,7 +150,8 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
     @Override
     public double fitCurve(double x)
     {
-        try {
+        try
+        {
             return fitCurve(x, getParameters());
         }
         catch (FitFailedException e)

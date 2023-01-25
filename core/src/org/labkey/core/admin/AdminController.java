@@ -176,6 +176,7 @@ import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
@@ -8183,7 +8184,7 @@ public class AdminController extends SpringActionController
             HtmlStringBuilder unknownDescription = HtmlStringBuilder.of()
                 .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
-                "module is no longer being distributed, the module has been renamed, the server location where the module " +
+                "module is no longer part of the deployed distribution, the module has been renamed, the server location where the module " +
                 "is stored is not accessible, or the module file is corrupted.")
                 .append(HtmlString.unsafe("<br><br>")).append("The delete links below will remove all record of a module from the database tables.");
             HtmlString noModulesDescription = HtmlString.of("A module is considered \"unknown\" if it was installed on this server " +
@@ -9220,7 +9221,7 @@ public class AdminController extends SpringActionController
                         }
                         if (page.getPageId().equalsIgnoreCase(name))
                         {
-                            if (null != page.getCaption() || "portal.default".equalsIgnoreCase(name))
+                            if (null != page.getCaption() || Portal.DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(name))
                                 errors.reject(ERROR_MSG, "You cannot change a tab's name to another tab's original name even if the original name is not visible.");
                             else
                                 errors.reject(ERROR_MSG, "A tab with the same name already exists in this folder.");

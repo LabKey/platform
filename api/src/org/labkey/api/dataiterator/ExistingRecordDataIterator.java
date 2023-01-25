@@ -20,13 +20,17 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,9 +54,20 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark)
+    final User user;
+    final Container c;
+    final boolean _checkCrossFolderData;
+    final boolean _verifyExisting;
+    final boolean _getDetailedData; // If true, get extra information, such as lineage
+
+    final DataIteratorContext _context;
+
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context, boolean detailed)
     {
         super(in);
+        _context = context;
+
+        QueryUpdateService.InsertOption option = context.getInsertOption();
 
         // NOTE it might get wrapped with a LoggingDataIterator, so remember the original DataIterator
         this._unwrapped = useMark ? (CachingDataIterator)in : null;
@@ -60,6 +75,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         this.target = target;
         this.existingColIndex = in.getColumnCount()+1;
         this.useMark = useMark;
+
+        UserSchema userSchema = target.getUserSchema();
+        user = userSchema != null ? userSchema.getUser() : null;
+        c = userSchema != null ? userSchema.getContainer() : null;
+        _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
+        _verifyExisting = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData) && option.updateOnly;
+        _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
@@ -137,7 +159,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (useMark)
             _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (ret && !pkColumns.isEmpty())
+        if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
             prefetchExisting();
         return ret;
     }
@@ -163,7 +185,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         return createBuilder(dib, target, keys, false);
     }
 
-
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, boolean useGetRows)
     {
         return context ->
@@ -175,17 +196,19 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
-            if (option.mergeRows)
+            boolean validateExistingData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData);
+            if (option.mergeRows || validateExistingData)
             {
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                if (auditType == DETAILED)
+                if (auditType == DETAILED || validateExistingData)
                 {
+                    boolean detailed = auditType == DETAILED;
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
                     else
-                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys);
+                        return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, context, detailed);
                 }
             }
             return di;
@@ -196,15 +219,16 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     /* Select using normal TableInfo stuff */
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true);
+            super(in, target, keys, true, context, detailed);
         }
 
-        private SQLFragment getSelectExistingSql(int rows) throws BatchValidationException
+        private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
         {
             SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
+            Set<Integer> rowNums = new HashSet<>();
             do
             {
                 lastPrefetchRowNumber = (Integer) _delegate.get(0);
@@ -216,6 +240,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
+                rowNums.add(lastPrefetchRowNumber);
             }
             while (--rows > 0 && _delegate.next());
 
@@ -235,7 +260,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
                 and = " AND ";
             }
-            return sqlf;
+            return new Pair<>(sqlf, rowNums);
         }
 
         protected void prefetchExisting() throws BatchValidationException
@@ -245,17 +270,26 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 return;
 
             // fetch N new rows into the existingRecords map
-            SQLFragment select = getSelectExistingSql(50);
+            Pair<SQLFragment, Set<Integer>> selectRowsSql = getSelectExistingSql(50);
+            SQLFragment select = selectRowsSql.first;
+            Set<Integer> rowNums = selectRowsSql.second;
             var list = new SqlSelector(target.getSchema(), select).getArrayList(Map.class);
             existingRecords.clear();
             for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
                 existingRecords.put(r,Map.of());
-            list.forEach(map -> {
-                int r = (Integer)map.get("_row_number_");
+
+            for (Map map : list)
+            {
+                Integer r = (Integer)map.get("_row_number_");
                 map.remove("_row_number_");
                 map.remove("_row"); // I think CachedResultSet adds "_row"
                 existingRecords.put(r,(Map<String,Object>)map);
-            });
+                rowNums.remove(r);
+            }
+
+            if (_verifyExisting && rowNums.size() > 0)
+                _context.getErrors().addRowError(new ValidationException("No record found at row number: " + rowNums.iterator().next() + "."));
+
             // backup to where we started so caller can iterate through them one at a time
             _unwrapped.reset(); // unwrapped _delegate
             _delegate.next();
@@ -267,15 +301,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     static class ExistingDataIteratorsGetRows extends ExistingRecordDataIterator
     {
         final QueryUpdateService qus;
-        final User user;
-        final Container c;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true);
+            super(in, target, keys, true, context, detailed);
             qus = target.getUpdateService();
-            user = target.getUserSchema().getUser();
-            c = target.getUserSchema().getContainer();
         }
 
         @Override
@@ -302,7 +332,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap);
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _getDetailedData);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();
@@ -338,7 +368,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
             assertFalse(di.supportsGetExistingRecord());
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null);
+            var context = new DataIteratorContext();
+            context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, context, true);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }

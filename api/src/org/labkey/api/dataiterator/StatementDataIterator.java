@@ -351,6 +351,9 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             boolean hasNextRow = _data.next();
 
+            if (shouldSkipIterator())
+                return hasNextRow;
+
             if (hasNextRow)
             {
                 int n = (Integer)_data.get(0);
@@ -495,6 +498,11 @@ public class StatementDataIterator extends AbstractDataIterator
         _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
 
         assert _execute.stop();
+    }
+
+    protected boolean shouldSkipIterator()
+    {
+        return false;
     }
 
     private void log(String message)

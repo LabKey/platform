@@ -88,6 +88,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private String _metadata;
     private String _inventoryUpdateType;
     private Long _transactionId;
+    private String _userComment;
 
     public SampleTimelineAuditEvent()
     {
@@ -189,6 +190,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         _transactionId = transactionId;
     }
 
+    public String getUserComment()
+    {
+        return _userComment;
+    }
+
+    public void setUserComment(String userComment)
+    {
+        _userComment = userComment;
+    }
+
     @Override
     public Map<String, Object> getAuditLogMessageElements()
     {
@@ -202,6 +213,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("inventoryUpdateType", getInventoryUpdateType());
         elements.put("transactionId", getTransactionId());
         elements.put("metadata", getMetadata());
+        elements.put("userComment", getUserComment());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

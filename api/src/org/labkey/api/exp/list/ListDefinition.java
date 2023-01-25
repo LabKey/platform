@@ -26,6 +26,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -326,7 +327,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
     int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException;
-    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, boolean useMerge) throws IOException;
+    int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, QueryUpdateService.InsertOption insertOption) throws IOException;
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);

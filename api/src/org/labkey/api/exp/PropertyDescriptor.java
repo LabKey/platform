@@ -71,6 +71,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private String _lookupQuery;
     private boolean _mvEnabled;
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
+    private Object _databaseDefaultValue;
 
     private static final Logger LOG = LogManager.getLogger(PropertyDescriptor.class);
 
@@ -148,6 +149,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setDimension(col.isDimension());
         setMeasure(col.isMeasure());
         setLabel(col.getLabel());
@@ -218,7 +220,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         _storageColumnName = storageColumnName;
         if (_mvEnabled)
             _mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
-
     }
 
     public String getLegalSelectName(SqlDialect dialect)
@@ -291,11 +292,13 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         return _propertyURI + " name=" + _name + " project="+  (_project == null ? "null" : _project.getPath()) + " container="+  (_container ==null ? "null" : _container.getPath()) + " label=" + _label + " range=" + _rangeURI + " concept=" + _conceptURI;
     }
 
-    public Container getContainer() {
+    public Container getContainer()
+    {
         return _container;
     }
 
-    public void setContainer(Container container) {
+    public void setContainer(Container container)
+    {
         _container = container;
         if (null== _project)
             _project =container.getProject();
@@ -303,11 +306,13 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
             _project =container;
     }
 
-    public Container getProject() {
+    public Container getProject()
+    {
         return _project;
     }
 
-    public void setProject(Container proj) {
+    public void setProject(Container proj)
+    {
         _project = proj;
     }
 
@@ -521,6 +526,16 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
                     .anyMatch(d -> VOCABULARY_DOMAIN.equals(d.getKindName()));
         }
         return _vocabulary;
+    }
+
+    public @Nullable Object getDatabaseDefaultValue()
+    {
+        return _databaseDefaultValue;
+    }
+
+    public void setDatabaseDefaultValue(@Nullable Object databaseDefaultValue)
+    {
+        _databaseDefaultValue = databaseDefaultValue;
     }
 }
 

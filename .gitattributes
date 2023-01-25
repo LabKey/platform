@@ -1842,7 +1842,6 @@ core/resources/credits/scripts.txt -text
 core/resources/credits/tomcat_jars.txt -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
-core/resources/schemas/dbscripts/postgresql/prop-0.00-16.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-13.20.sql -text
@@ -1852,7 +1851,6 @@ core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install_1.00.23696.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_uninstall.sql -text
-core/resources/schemas/dbscripts/sqlserver/prop-0.00-16.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/scripts/ExtAdapter.js -text
@@ -2638,8 +2636,6 @@ issues/webapp/issues/createIssueDef.js -text
 issues/webapp/issues/createRelated.js -text
 issues/webapp/issues/move.js -text
 list/module.properties -text
-list/resources/schemas/dbscripts/postgresql/list-0.00-14.10.sql -text
-list/resources/schemas/dbscripts/sqlserver/list-0.00-14.10.sql -text
 list/schemas/lists.xsd -text
 list/src/org/labkey/list/controllers/ListController.java -text
 list/src/org/labkey/list/ListModule.java -text

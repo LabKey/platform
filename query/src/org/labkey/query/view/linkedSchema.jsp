@@ -392,7 +392,9 @@
                     tablesValue = tables.join(",");
                 }
                 return tablesValue;
-            }
+            },
+            includeViewDataUrl: false,
+            includeTitle: false
         }));
         tablesCombo.on('change', updateTablesMessage);
         tablesCombo.on('dataloaded', updateTablesMessage);

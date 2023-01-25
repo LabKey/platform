@@ -112,7 +112,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         return new SQLFragment("NULL");
     }
 
-    protected static Container getDomainContainer(Container c)
+    public Container getDomainContainer(Container c)
     {
         // for now create the domains per project, override to root the domains at
         // a different level.
@@ -125,7 +125,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(c), u);
     }
 
-    public static String getDomainURI(String schemaName, String tableName, String namespacePrefix, Container c, User u)
+    private String getDomainURI(String schemaName, String tableName, String namespacePrefix, Container c, User u)
     {
         try
         {

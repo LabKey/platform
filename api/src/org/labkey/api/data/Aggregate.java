@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
@@ -494,7 +495,9 @@ public class Aggregate
         }
         else
         {
-            return _type.getAliasName() + (_distinct ? "Distinct" : "") + alias;
+            // Issue 45977: aggregate alias too long after adding the aggregate name prefix (i.e. "COUNT_DISTINCT")
+            String alias_ = _type.getAliasName() + (_distinct ? "Distinct" : "") + alias;
+            return AliasManager.makeLegalName(alias_, null);
         }
     }
 

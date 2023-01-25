@@ -134,7 +134,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         _fieldKey = key;
         _parentTable = parentTable;
-        _columnLogging = new ColumnLogging(key, parentTable);
+
+        // I'd kind of prefer using null here.  But this is currently used to column matching in the column logging code using ColumnLogging.equals()
+        // See QuerySelectView.getRequiredDataLoggingColumns()
+        if (null != getParentTable())
+            _columnLogging = ColumnLogging.defaultLogging(this);
     }
 
     public BaseColumnInfo(FieldKey key, JdbcType t)
@@ -382,6 +386,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setConditionalFormats(col.getConditionalFormats());
         setValidators(col.getValidators());
 
@@ -464,6 +469,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setShownInLookupView(col.isShownInLookupView());
         setConditionalFormats(col.getConditionalFormats());
         setValidators(col.getValidators());
 
@@ -1187,6 +1193,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _shownInUpdateView = xmlCol.getShownInUpdateView();
         if (xmlCol.isSetShownInDetailsView())
             _shownInDetailsView = xmlCol.getShownInDetailsView();
+        if (xmlCol.isSetShownInLookupView())
+            _shownInLookupView = xmlCol.getShownInLookupView();
         if (xmlCol.isSetDimension())
             _dimension = xmlCol.getDimension();
         if (xmlCol.isSetMeasure())
@@ -2055,7 +2063,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _parentTable = parentTable;
-        _columnLogging.setOriginalTableName(null != parentTable ? parentTable.getName() : "");
+        if (null == getColumnLogging())
+            setColumnLogging(ColumnLogging.defaultLogging(this));
     }
 
     @Override

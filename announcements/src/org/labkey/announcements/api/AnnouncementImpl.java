@@ -20,10 +20,10 @@ import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -73,6 +73,12 @@ public class AnnouncementImpl implements Announcement
     public String getEntityId()
     {
         return _model.getEntityId();
+    }
+
+    @Override
+    public String getParent()
+    {
+        return _model.getParent();
     }
 
     @Override
@@ -131,6 +137,12 @@ public class AnnouncementImpl implements Announcement
     }
 
     @Override
+    public int getCreatedBy()
+    {
+        return _model.getCreatedBy();
+    }
+
+    @Override
     public Date getModified()
     {
         return _model.getModified();
@@ -139,6 +151,12 @@ public class AnnouncementImpl implements Announcement
     public void setModified(Date modified)
     {
         _model.setModified(modified);
+    }
+
+    @Override
+    public int getModifiedBy()
+    {
+        return _model.getModifiedBy();
     }
 
     @Override
@@ -155,7 +173,7 @@ public class AnnouncementImpl implements Announcement
     @Override
     public @NotNull List<Integer> getMemberListIds()
     {
-        return _model.getMemberListIds() != null ? _model.getMemberListIds() : Collections.emptyList();
+        return _model.getMemberListIds();
     }
 
     // This needs to be filled out more completely

@@ -269,7 +269,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 throw new IllegalStateException();
 
             // Get the DataClass defined in the current container by rowId
-            ExpDataClass dc = ExperimentService.get().getDataClass(c, rowId);
+            ExpDataClassImpl dc = ExperimentServiceImpl.get().getDataClass(c, rowId);
             if (dc == null)
                 throw new NotFoundException("DataClass not found");
 

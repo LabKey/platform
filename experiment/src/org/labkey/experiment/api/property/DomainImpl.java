@@ -1048,6 +1048,8 @@ public class DomainImpl implements Domain
                 str.append("ShownInDetails: ").append(renderOldVsNew(renderBool(pdOld.isShownInDetailsView()), renderBool(prop.isShownInDetailsView()))).append("; ");
             if (pdOld.isShownInUpdateView() != prop.isShownInUpdateView())
                 str.append("ShownInUpdate: ").append(renderOldVsNew(renderBool(pdOld.isShownInUpdateView()), renderBool(prop.isShownInUpdateView()))).append("; ");
+            if (pdOld.isShownInLookupView() != prop.isShownInLookupView())
+                str.append("ShownInLookupView: ").append(renderOldVsNew(renderBool(pdOld.isShownInLookupView()), renderBool(prop.isShownInLookupView()))).append("; ");
             if (pdOld.isRecommendedVariable() != prop.isRecommendedVariable())
                 str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
             if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
@@ -1202,6 +1204,7 @@ public class DomainImpl implements Domain
     {
         PropertyDescriptor pd = new PropertyDescriptor();
         pd.setContainer(getContainer());
+        pd.setDatabaseDefaultValue(spec.getDefaultValue());
         pd.setName(spec.getName());
         pd.setJdbcType(spec.getJdbcType(), spec.getSize());
         pd.setNullable(spec.isNullable());

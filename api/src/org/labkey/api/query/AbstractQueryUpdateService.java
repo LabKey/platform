@@ -122,7 +122,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *   - triggers
      *   - coercion/validation
      *   - detailed logging
-     *   - attachements
+     *   - attachments
      *
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
     */
@@ -146,6 +146,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return getQueryTable().hasPermission(user, acl);
     }
 
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        return getRow(user, container, keys);
+    }
+
     protected abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
@@ -167,7 +173,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, ReadPermission.class))
@@ -176,9 +182,21 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
-            Map<String, Object> row = getRow(user, container, key.getValue());
+            Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
             if (row != null)
+            {
                 result.put(key.getKey(), row);
+                if (verifyNoCrossFolderData)
+                {
+                    String dataContainer = (String) row.get("container");
+                    if (StringUtils.isEmpty(dataContainer))
+                        dataContainer = (String) row.get("folder");
+                    if (!container.getId().equals(dataContainer))
+                        throw new InvalidKeyException("Data doesn't belong to the current folder: " + key.getValue().values());
+                }
+            }
+            else if (verifyExisting)
+                throw new InvalidKeyException("Data not found for " + key.getValue().values());
         }
         return result;
     }
@@ -225,7 +243,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     *  if QUS want to use something other than PKs to select existing rows for merge it can override this method
      * Used only for generating  ExistingRecordDataIterator at the moment
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
@@ -242,14 +260,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
-        if (_enableExistingRecordsDataIterator)
+
+        if (_enableExistingRecordsDataIterator || context.getInsertOption().updateOnly)
         {
-            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            // some tables need to generate PKs, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
+
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;
     }
 
@@ -300,6 +320,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
+            assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
+
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)
         {
@@ -338,7 +361,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         else
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count, auditType);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType);
             return count;
         }
     }
@@ -435,6 +458,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
+    }
+
+    protected @Nullable List<Map<String, Object>> _insertUpdateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                     DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
@@ -445,6 +474,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return null;
 
         return outputRows;
+    }
+
+    // not yet supported
+    protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
+
+        return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
     }
 
 
@@ -480,6 +519,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
 
         boolean hasTableScript = hasTableScript(container);
 
@@ -673,6 +714,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
@@ -1163,6 +1206,52 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         @Test
+        public void UPDATE() throws Exception
+        {
+            if (null == ListService.get())
+                return;
+            INSERT();
+            assertEquals("Wrong number of rows after INSERT", 3, getRows().size());
+
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            var updateRows = new ArrayList<Map<String,Object>>();
+            String colName = _useAlias ? "s_alias" : "s";
+            String pkName = _useAlias ? "pk_alias" : "pk";
+
+            // update using data iterator
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
+            DataIteratorContext context = new DataIteratorContext();
+            context.setInsertOption(InsertOption.UPDATE);
+            var count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertFalse(context.getErrors().hasErrors());
+            assertEquals(count,1);
+            var rows = getRows();
+            // test existing row value is updated
+            assertEquals("TWO-UP", rows.get(2).get("s"));
+            // test existing row value is not updated/erased
+            assertEquals(2, rows.get(2).get("i"));
+
+            // update should skip the new record row silently and update the rest rows successfully
+            updateRows = new ArrayList<Map<String,Object>>();
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertFalse(context.getErrors().hasErrors());
+            assertEquals(count,2);
+            rows = getRows();
+            assertEquals(rows.size(),3);
+            assertEquals("TWO-UP-2", rows.get(2).get("s"));
+
+            // update should fail if a new record is provided and VerifyExistingData = true
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true); // simulate file import
+            qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertTrue(context.getErrors().hasErrors());
+        }
+
+        @Test
         public void REPLACE() throws Exception
         {
             if (null == ListService.get())
@@ -1214,6 +1303,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             _useAlias = true;
             REPLACE();
+        }
+
+        @Test
+        public void ALIAS_UPDATE() throws Exception
+        {
+            _useAlias = true;
+            UPDATE();
         }
     }
 }

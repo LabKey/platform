@@ -115,6 +115,7 @@ public class AsyncQueryRequest<T>
             if (current != null)
                  MemTracker.get().startProfiler("async query");
 
+            assert ThreadContext.isEmpty();  // Prevent/detect leaks
             // Connect log messages with the active trace and span
             ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), traceId);
             ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), spanId);
@@ -137,7 +138,7 @@ public class AsyncQueryRequest<T>
                 // Wrap up the span
                 span.finish();
                 ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
-                ThreadContext.remove(CorrelationIdentifier.getSpanId());
+                ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
             }
         };
 

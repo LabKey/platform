@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.TableInsertUpdateDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -447,7 +448,7 @@ public class StatementUtils
     public void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey,ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
     {
         String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
-        if (Operation.merge == _operation)
+        if (Operation.merge == _operation || Operation.update == _operation)
         {
             // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
             sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
@@ -468,6 +469,20 @@ public class StatementUtils
     }
 
     public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
+    {
+        ParameterMapStatement statement = null;
+        try
+        {
+            statement = createStatement(conn, c, user, false);
+        }
+        catch (TableInsertUpdateDataIterator.NoUpdatableColumnInDataException e)
+        {
+            // ignore error
+        }
+        return statement;
+    }
+
+    public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws SQLException, TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
     {
         if (!(_targetTable instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
@@ -568,7 +583,7 @@ public class StatementUtils
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
-        boolean alwaysInsertExpObject = hasObjectURIColumn && updatable.isAlwaysInsertExpObject();
+        boolean alwaysInsertExpObject = (hasObjectURIColumn && updatable.isAlwaysInsertExpObject()) && Operation.update != _operation;
         if (hasObjectURIColumn)
             _dontUpdateColumnNames.add(objectURIColumnName);
 // TODO Should we add created and createdby? Or make the caller decide?
@@ -847,8 +862,20 @@ public class StatementUtils
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
             }
-            sqlfUpdate.append(sqlfWherePK);
-            sqlfUpdate.append(";\n");
+
+            if (Operation.update == _operation && updateCount == 0)
+            {
+                if (checkUpdatableColumns)
+                    throw new TableInsertUpdateDataIterator.NoUpdatableColumnInDataException(table.getName());
+
+                sqlfUpdate.append(new SQLFragment(keys.values().iterator().next().getSelectName()));
+                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1;\n");
+            }
+            else
+            {
+                sqlfUpdate.append(sqlfWherePK);
+                sqlfUpdate.append(";\n");
+            }
 
             if (Operation.merge == _operation)
             {

@@ -74,6 +74,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
  */
 public class PageConfig
 {
+    private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match ContentSecurityPolicyFilter.HEADER_NONCE
 
     private static final Logger LOG = LogHelper.getLogger(PageConfig.class, "Log problems generating pages.");
 
@@ -560,11 +561,11 @@ public class PageConfig
     @NotNull
     public static String getScriptNonceHeader(HttpServletRequest request)
     {
-        String nonce = (String)request.getAttribute("HttpUtil.class#ScriptNonce");
+        String nonce = (String)request.getAttribute(HEADER_NONCE);
         if (nonce != null)
             return nonce;
         nonce = GUID.makeHash();
-        request.setAttribute("HttpUtil.class#ScriptNonce", nonce);
+        request.setAttribute(HEADER_NONCE, nonce);
         return nonce;
     }
 

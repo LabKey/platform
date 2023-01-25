@@ -15,25 +15,27 @@
  */
 package org.labkey.core;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,7 +46,7 @@ import java.util.stream.Stream;
  */
 public class CoreUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = LogManager.getLogger(CoreUpgradeCode.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreUpgradeCode.class, "Custom core upgrade steps");
 
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     // ContainerManager's assumptions. For example, older installations don't have a description column until
@@ -63,43 +65,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
-     */
-    @SuppressWarnings("unused")
-    @DeferredUpgrade
-    public void migrateDefaultDomainSetting(ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            // Taken from AppPropsImpl
-            final String DEFAULT_DOMAIN_PROP = "defaultDomain";
-            final String SITE_CONFIG_NAME = "SiteConfig";
-
-            String defaultDomain = (new AbstractWriteableSettingsGroup(){
-                @Override
-                protected String getGroupName()
-                {
-                    return SITE_CONFIG_NAME;
-                }
-
-                @Override
-                protected String getType()
-                {
-                    return "site settings";
-                }
-
-                private String getDefaultDomain()
-                {
-                    return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
-                }
-            }).getDefaultDomain();
-
-            AuthenticationManager.setDefaultDomain(context.getUpgradeUser(), defaultDomain);
-        }
-    }
-
-    /**
-     * Invoked at 21.005 to set the projects that are excluded from project locking by default
+     * Invoked at bootstrap time to set the projects that are excluded from project locking by default
      */
     @SuppressWarnings("unused")
     @DeferredUpgrade
@@ -114,21 +80,39 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked at 21.008 to save placeholder logos into CAS and SAML configurations
+     * Called from core-23.000-23.001.sql on PostgreSQL only. The core.Modules.Name column has been case-sensitive on
+     * PostgreSQL, which has allowed "duplicate" (differing only in case) module names to creep into the column on some
+     * deployments. This upgrade code de-duplicates the names and a subsequent SQL statement switches the column to
+     * case-insensitive.
      */
     @SuppressWarnings("unused")
-    @DeferredUpgrade
-    public void savePlaceholderLogos(ModuleContext context)
+    public static void deduplicateModuleEntries(ModuleContext context)
     {
-        if (!context.isNewInstall())
-        {
-            AuthenticationManager.getActiveConfigurations(SSOAuthenticationConfiguration.class)
-                .forEach(configuration -> configuration.savePlaceholderLogos(context.getUpgradeUser()));
+        if (context.isNewInstall())
+            return;
 
-            // Clear the image cache so the web server sends the new logos
-            AttachmentCache.clearAuthLogoCache();
-            // Bump the look & feel revision to force browsers to retrieve new logos
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-        }
+        ModuleLoader ml = ModuleLoader.getInstance();
+        MultiValuedMap<String, ModuleContext> multiMap = new CaseInsensitiveArrayListValuedMap<>();
+
+        // Add every module context to the multivalued map, with known modules first
+        Set<String> unknown = ml.getUnknownModuleContexts().keySet();
+        ml.getAllModuleContexts().stream()
+            .sorted(Comparator.comparing(ctx -> unknown.contains(ctx.getName())))  // false < true
+            .forEach(ctx -> multiMap.put(ctx.getName(), ctx));
+
+        // For each canonical name, de-duplicate every context after the first one
+        multiMap.asMap().values().stream()
+            .filter(contexts -> contexts.size() > 1)
+            .forEach(contexts -> {
+                MutableInt counter = new MutableInt(1);
+                contexts.stream()
+                    .skip(1)
+                    .forEach(ctx -> {
+                        String oldName = ctx.getName();
+                        String newName = oldName + "_" + counter.incrementAndGet();
+                        LOG.info("De-duplicating module context \"" + oldName + "\" to \"" + newName + "\"");
+                        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment("UPDATE core.Modules SET Name = ? WHERE Name = ?", newName, oldName));
+                    });
+            });
     }
 }

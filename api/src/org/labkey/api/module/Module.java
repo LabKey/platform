@@ -265,10 +265,8 @@ public interface Module
     Set<Class> getUnitTests();
 
     /**
-     * Returns a set of schemas that the module wants tested.
-     * The DbSchema junit test calls this and ensures that the
-     * the tables/views/columns described in schema XML match
-     * those in the database metadata.
+     * Returns a set of schemas that the module wants tested. The DbSchema junit test calls this and ensures that the
+     * tables/views/columns described in schema XML match those in the database metadata.
      * @return the schemas associated with this module that should be tested
      */
     @NotNull
@@ -276,8 +274,8 @@ public interface Module
     Set<DbSchema> getSchemasToTest();
 
     /**
-     * Returns the names of all schemas that this module owns, both module and provisioned. Used to determine which module
-     * should load the related resources and to help administrators manage schemas & modules.
+     * Returns the names of all schemas that this module owns, both module and provisioned. Used to determine which
+     * module should load the related resources and to help administrators manage schemas & modules.
      * @return the schema names owned by this module
      */
     @NotNull

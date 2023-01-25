@@ -49,8 +49,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
@@ -79,6 +80,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     private DomainUpdateHelper _helper = null;
     /** Map from DbTable column names to QueryTable column names, if they have been aliased */
     protected Map<String, String> _columnMapping = Collections.emptyMap();
+    /** Hold onto the ColumnInfos, so we don't have to regenerate them for every row we process */
+    private final Supplier<Map<String, ColumnInfo>> _tableMapSupplier = new CachingSupplier<>(() -> DataIteratorUtil.createTableMap(getQueryTable(), true));
     private final ValidatorContext _validatorContext;
 
     public DefaultQueryUpdateService(@NotNull TableInfo queryTable, TableInfo dbTable)
@@ -304,6 +307,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row)
             throws SQLException, ValidationException
     {
+        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
+
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
         if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
@@ -343,12 +348,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return updateRow(user, container, row, oldRow, false, false);
     }
 
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
-    {
-        return updateRow(user, container, row, oldRow, allowOwner, false);
-    }
-
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
@@ -363,7 +362,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         setSpecialColumns(container, row, user, UpdatePermission.class);
 
-        Map<String,ColumnInfo> tableAliasesMap = DataIteratorUtil.createTableMap(getQueryTable(), true);
+        Map<String, ColumnInfo> tableAliasesMap = _tableMapSupplier.get();
         Map<ColumnInfo, Pair<String,Object>> colFrequency = new HashMap<>();
 
         //resolve passed in row including columns in the table and other properties (vocabulary properties) not in the Domain/table
@@ -495,6 +494,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
             throws SQLException, ValidationException
     {
+        assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
+
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
 
@@ -549,9 +550,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 Object value = rowEntry.getValue();
 
                 ColumnInfo col = getQueryTable().getColumn(colName);
-                if (col instanceof PropertyColumn)
+                if (col instanceof PropertyColumn propCol)
                 {
-                    PropertyColumn propCol = (PropertyColumn) col;
                     PropertyDescriptor pd = propCol.getPropertyDescriptor();
                     if (pd.isVocabulary() && !tableProperties.contains(pd))
                     {

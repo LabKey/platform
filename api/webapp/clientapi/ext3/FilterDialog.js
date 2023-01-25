@@ -70,9 +70,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 scope: this
             }],
             width: this.isConceptColumnFilter() ?
-                    (Ext.isGecko ? 533 : 518) :
+                    (Ext.isGecko ? 613 : 598) :
                     // 24846
-                    (Ext.isGecko ? 425 : 410),
+                    (Ext.isGecko ? 505 : 490),
             // listeners
             listeners: {
                 destroy: function() {
@@ -605,8 +605,8 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             listWidth: (this.jsonType == 'date' || this.jsonType == 'boolean') ? null : 380,
             emptyText: idx === 0 ? 'Choose a filter:' : 'No other filter',
             autoSelect: false,
-            width: 250,
-            minListWidth: 250,
+            width: 330,
+            minListWidth: 330,
             triggerAction: 'all',
             fieldLabel: (idx === 0 ?'Filter Type' : 'and'),
             store: this.getSelectionStore(idx),
@@ -723,7 +723,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             itemId        : 'inputField' + idx,
             filterIndex   : idx,
             id            : 'value_'+(idx + 1),   //for compatibility with tests...
-            width         : 250,
+            width         : 330,
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
             value         : null,

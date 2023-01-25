@@ -36,18 +36,6 @@
         <filter-class>org.labkey.api.data.TransactionFilter</filter-class>
     </filter>
 
-    <!-- filter for fast polling -->
-    <filter>
-        <filter-name>PollingFilter</filter-name>
-        <filter-class>org.labkey.api.util.PollingUtil$PollingFilter</filter-class>
-    </filter>
-    
-    <filter-mapping>
-        <filter-name>PollingFilter</filter-name>
-        <url-pattern>*.poll</url-pattern>
-    </filter-mapping>
-
-
     <filter>
         <filter-name>ShortURLFilter</filter-name>
         <filter-class>org.labkey.core.view.ShortURLFilter</filter-class>
@@ -144,7 +132,7 @@
         <servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
         <init-param>
           <param-name>resolver</param-name>
-          <param-value>org.labkey.api.webdav.ModuleStaticResolverImpl</param-value>
+          <param-value>org.labkey.core.webdav.ModuleStaticResolverImpl</param-value>
         </init-param>
     </servlet>
 

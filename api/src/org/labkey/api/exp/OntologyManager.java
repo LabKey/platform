@@ -2511,6 +2511,8 @@ public class OntologyManager
             }
 
             PropertyDescriptor pexist = ensurePropertyDescriptor(pd);
+            pexist.setDatabaseDefaultValue(pd.getDatabaseDefaultValue());
+            pexist.setNullable(pd.isMvEnabled() || pd.isNullable());
             pexist.setRequired(pd.isRequired());
 
             ensurePropertyDomain(pexist, dexist, sortOrder);
@@ -2892,6 +2894,7 @@ public class OntologyManager
         p.setShownInInsertView(pd.isShownInInsertView());
         p.setShownInUpdateView(pd.isShownInUpdateView());
         p.setShownInDetailsView(pd.isShownInDetailsView());
+        p.setShownInLookupView(pd.isShownInLookupView());
         p.setDimension(pd.isDimension());
         p.setMeasure(pd.isMeasure());
         p.setRecommendedVariable(pd.isRecommendedVariable());
