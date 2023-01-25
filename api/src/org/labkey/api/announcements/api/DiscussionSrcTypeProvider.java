@@ -10,8 +10,17 @@ import java.util.Set;
 
 public interface DiscussionSrcTypeProvider
 {
+    /**
+     * Should the discussion service send email notifications for each added/updated comment?
+     * @return true if discussion service emails are desired, false if caller is responsible for notification emails
+     */
+    boolean shouldSendEmailNotifications();
+
     @Nullable
-    ActionURL getThreadURL(Container container, User user, int announcementRowId, String discussionSrcIdentifier);
+    default ActionURL getThreadURL(Container container, User user, int announcementRowId, String discussionSrcIdentifier)
+    {
+        return null;
+    }
 
     @Nullable
     default String getEmailSubject(Container container, User user, int announcementRowId, String discussionSrcIdentifier, String body, String title, String parentBody)
