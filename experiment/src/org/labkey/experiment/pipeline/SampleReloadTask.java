@@ -6,11 +6,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
@@ -37,14 +39,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
+import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
+
 public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
 {
     public static final String SAMPLE_NAME_KEY = "name";
     public static final String SAMPLE_ID_KEY = "id";
     public static final String ALTERNATE_KEY_LOOKUP_OPTION = "alternateKeyLookup";
-    public static final String MERGE_OPTION = "mergeData";
+    public static final String INSERT_OPTION = "insertOption";
+    public static final String AUDIT_OPTION = "auditBehavior";
 
-    private boolean _mergeData;
+    private QueryUpdateService.InsertOption _insertOption;
+    private AuditBehaviorType _auditBehavior;
     private boolean _alternateKeyLookup;
 
     private SampleReloadTask(SampleReloadTask.Factory factory, PipelineJob job)
@@ -70,13 +77,29 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
 
         log.info("Loading " + dataFile.getName());
 
-        // parse any options
-        if (params.containsKey(MERGE_OPTION))
-            _mergeData = Boolean.parseBoolean(params.get(MERGE_OPTION));
+        if (params.containsKey(INSERT_OPTION))
+        {
+            String insertOption = params.get(INSERT_OPTION);
+            log.info("data insert option set as : " + insertOption);
+
+            if (QueryUpdateService.InsertOption.MERGE.name().equalsIgnoreCase(insertOption))
+                _insertOption = QueryUpdateService.InsertOption.MERGE;
+            else if (QueryUpdateService.InsertOption.UPDATE.name().equalsIgnoreCase(insertOption))
+                _insertOption = QueryUpdateService.InsertOption.UPDATE;
+        }
+        if (params.containsKey(AUDIT_OPTION))
+        {
+            String auditLevel = params.get(AUDIT_OPTION);
+            log.info("data audit behavior set as : " + auditLevel);
+
+            if ("detailed".equalsIgnoreCase(auditLevel))
+                _auditBehavior = DETAILED;
+            else if ("summary".equalsIgnoreCase(auditLevel))
+                _auditBehavior = SUMMARY;
+        }
         if (params.containsKey(ALTERNATE_KEY_LOOKUP_OPTION))
             _alternateKeyLookup = Boolean.parseBoolean(params.get(ALTERNATE_KEY_LOOKUP_OPTION));
 
-        log.info("data merge option set as : " + _mergeData);
         log.info("import by alternate key option set as : " + _alternateKeyLookup);
 
         if (params.containsKey(SAMPLE_NAME_KEY) && params.containsKey(SAMPLE_ID_KEY))
@@ -174,8 +197,15 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                             BatchValidationException errors = new BatchValidationException();
                             DataIteratorContext context = new DataIteratorContext(errors);
 
-                            if (_mergeData)
-                                context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+                            if (_insertOption != null)
+                            {
+                                if (_insertOption.updateOnly) // fail if new records are found
+                                    context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
+                                context.setInsertOption(_insertOption);
+                            }
+
+                            if (_auditBehavior != null)
+                                context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
                             context.setAllowImportLookupByAlternateKey(_alternateKeyLookup);
 
                             int count = qus.loadRows(user, c, loader, context, null);

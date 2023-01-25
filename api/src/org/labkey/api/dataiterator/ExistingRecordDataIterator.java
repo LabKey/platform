@@ -80,7 +80,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         user = userSchema != null ? userSchema.getUser() : null;
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
-        _verifyExisting = option.updateOnly;
+        _verifyExisting = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData) && option.updateOnly;
         _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
@@ -196,12 +196,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
-            if (option.allowUpdate)
+            boolean validateExistingData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData);
+            if (option.mergeRows || validateExistingData)
             {
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                if (auditType == DETAILED || option.updateOnly)
+                if (auditType == DETAILED || validateExistingData)
                 {
                     boolean detailed = auditType == DETAILED;
                     if (useGetRows)

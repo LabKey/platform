@@ -1788,6 +1788,7 @@ public class ExpDataIterators
         final Integer _lsidCol;
         final ArrayList<String> _lsids;
         final Function<List<String>, Runnable> _indexFunction;
+        final boolean _useExistingRecord;
 
         protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<List<String>, Runnable> indexFunction)
         {
@@ -1796,6 +1797,8 @@ public class ExpDataIterators
             _indexFunction = indexFunction;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _useExistingRecord = context.getInsertOption().updateOnly;
+
             _lsidCol = map.get("lsid");
             _lsids = new ArrayList<>(100);
         }
@@ -1807,9 +1810,22 @@ public class ExpDataIterators
 
             if (hasNext)
             {
-                String lsid = (String) get(_lsidCol);
-                if (null != lsid)
-                    _lsids.add(lsid);
+                if (_useExistingRecord)
+                {
+                    Map<String, Object> map = getExistingRecord();
+                    if (map != null && map.containsKey("lsid"))
+                    {
+                        String lsid = (String) map.get("lsid");
+                        if (null != lsid)
+                            _lsids.add(lsid);
+                    }
+                 }
+                else
+                {
+                    String lsid = (String) get(_lsidCol);
+                    if (null != lsid)
+                        _lsids.add(lsid);
+                }
             }
             else
             {
@@ -2046,7 +2062,7 @@ public class ExpDataIterators
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step7 = step6;
-            if (null != _indexFunction && !context.getInsertOption().updateOnly) //TODO support index for update
+            if (null != _indexFunction)
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));

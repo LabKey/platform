@@ -138,6 +138,7 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
         remapForeignKeyFieldKeys(parent, remap);
         remapSortFieldKeys(parent, remap);
         remapDisplayColumnFactory(parent, remap);
+        remapColumnLogging(parent, remap);
     }
 
 
@@ -194,5 +195,14 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
         RemappingDisplayColumnFactory remapped = ((RemappingDisplayColumnFactory) factory).remapFieldKeys(parent, remap);
         setDisplayColumnFactory(remapped);
+    }
+
+    default void remapColumnLogging(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        ColumnLogging logging = getColumnLogging();
+        if (logging == null)
+            return;
+        ColumnLogging remapped = logging.remapFieldKeys(parent, remap);
+        setColumnLogging(remapped);
     }
 }

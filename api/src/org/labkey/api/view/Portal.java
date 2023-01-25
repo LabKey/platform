@@ -850,7 +850,7 @@ public class Portal implements ModuleChangeListener
         for (PortalPage p : pageMap.values())
             maxOriginalIndex = Math.max(maxOriginalIndex, p.getIndex());
 
-        boolean startingWithNoPages = pageMap.isEmpty() || (pageMap.size() == 1 && pageMap.containsKey("portal.default"));
+        boolean startingWithNoPages = pageMap.isEmpty() || (pageMap.size() == 1 && pageMap.containsKey(DEFAULT_PORTAL_PAGE_ID));
         if (resetIndexes)
         {
             // Indexes only matter relative to each other

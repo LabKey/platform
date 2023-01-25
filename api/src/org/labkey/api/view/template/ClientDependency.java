@@ -126,7 +126,7 @@ public abstract class ClientDependency
 
     protected abstract void init();
 
-    static void logError(String message)
+    static void logWarning(String message)
     {
         URLHelper url = null;
         ViewContext ctx = HttpView.getRootContext();
@@ -134,7 +134,7 @@ public abstract class ClientDependency
         if (null != ctx)
             url = HttpView.getContextURLHelper();
 
-        LOG.error(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
+        LOG.warn(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
     }
 
     public static boolean isExternalDependency(String path)

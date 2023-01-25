@@ -320,6 +320,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
+            assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
+
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)
         {
@@ -455,6 +458,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
+    }
+
+    protected @Nullable List<Map<String, Object>> _insertUpdateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                     DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
@@ -465,6 +474,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return null;
 
         return outputRows;
+    }
+
+    // not yet supported
+    protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
+
+        return _insertUpdateRowsUsingDIB(user, container, rows, context, extraScriptContext);
     }
 
 
@@ -500,6 +519,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
 
         boolean hasTableScript = hasTableScript(container);
 
@@ -693,6 +714,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
+
+        assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
@@ -1211,8 +1234,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // test existing row value is not updated/erased
             assertEquals(2, rows.get(2).get("i"));
 
-            // update should fail if a new record is provided
+            // update should skip the new record row silently and update the rest rows successfully
+            updateRows = new ArrayList<Map<String,Object>>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            assertFalse(context.getErrors().hasErrors());
+            assertEquals(count,2);
+            rows = getRows();
+            assertEquals(rows.size(),3);
+            assertEquals("TWO-UP-2", rows.get(2).get("s"));
+
+            // update should fail if a new record is provided and VerifyExistingData = true
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true); // simulate file import
             qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
         }

@@ -302,6 +302,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getViewContext().getRequest().getParameter(p.name());
     }
 
+    protected boolean skipInsertOptionValidation()
+    {
+        return false;
+    }
+
     public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
@@ -316,14 +321,15 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (insertOptionParam != null)
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
+            // if subclass already set _insertOption, use their _insertOption
+            if (_insertOption == QueryUpdateService.InsertOption.INSERT && insertOption != QueryUpdateService.InsertOption.INSERT)
+                _insertOption = insertOption;
+
             // Issue 42788: Updating dataset data when LK-managed key turned on only inserts new rows
-            if (_target != null && !_target.supportsInsertOption(insertOption))
-                throw new IllegalArgumentException(insertOption + " action is not supported for " + _target.getName() + ".");
+            if (!skipInsertOptionValidation() && _target != null && !_target.supportsInsertOption(_insertOption))
+                throw new IllegalArgumentException(_insertOption + " action is not supported for " + _target.getName() + ".");
 
-            // TODO: Check insertOption is supported on the target table
-            // TODO: See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42788
-
-            switch (insertOption)
+            switch (_insertOption)
             {
                 case UPDATE -> {
                     if (!canUpdate(user))
@@ -745,11 +751,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             DataIteratorContext context = new DataIteratorContext(errors);
             context.setInsertOption(insertOption);
             context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+            if (insertOption.updateOnly) // for "update from file", fail if new records are found
+                context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true);
             if (auditBehaviorType != null)
             {
-                Map<Enum, Object> configParameters = new HashMap<>();
-                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-                context.setConfigParameters(configParameters);
+                context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
             }
             if (importIdentity)
             {
@@ -770,23 +776,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 transaction.commit();
                 return count;
             }
-            /* catch (BatchValidationException x)
-            {
-                assert x.hasErrors();
-                if (x != errors)
-                {
-                    for (ValidationException e : x.getRowErrors())
-                        errors.addRowError(e);
-                }
-            }
-            catch (DuplicateKeyException x)
-            {
-                errors.addRowError(new ValidationException(x.getMessage()));
-            }
-            catch (QueryUpdateServiceException x)
-            {
-                errors.addRowError(new ValidationException(x.getMessage()));
-            } */
             catch (SQLException x)
             {
                 boolean isConstraint = RuntimeSQLException.isConstraintException(x);

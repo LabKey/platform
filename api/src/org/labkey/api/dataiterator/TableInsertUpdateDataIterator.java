@@ -322,7 +322,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                     .noupdate(_dontUpdate)
                     .updateBuiltinColumns(false)
                     .selectIds(_selectIds)
-                    .constants(constants);
+                    .constants(constants)
+                    .setVocabularyProperties(_adhocPropColumns);
         stmt = util.createStatement(_conn, _container, null);
         return stmt;
     }
@@ -339,7 +340,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 .noupdate(_dontUpdate)
                 .updateBuiltinColumns(false)
                 .selectIds(_selectIds)
-                .constants(constants);
+                .constants(constants)
+                .setVocabularyProperties(_adhocPropColumns);
         stmt = util.createStatement(_conn, _container, null, true);
         return stmt;
     }

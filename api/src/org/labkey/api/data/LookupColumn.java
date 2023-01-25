@@ -79,20 +79,6 @@ public class LookupColumn extends BaseColumnInfo
         LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn, joinType);
         ret.copyAttributesFrom(lookupColumn);
 
-        // ColumnLogging: make fieldkeys include the lookup
-        if (!lookupColumn.getColumnLogging().getDataLoggingColumns().isEmpty())
-        {
-            ColumnLogging columnLogging = lookupColumn.getColumnLogging();
-            Set<FieldKey> dataLoggingFieldKeys = new HashSet<>();
-            columnLogging.getDataLoggingColumns().forEach(fieldKey -> {
-                dataLoggingFieldKeys.add(FieldKey.fromParts(foreignKey.getFieldKey(), fieldKey));
-            });
-
-            ret.setColumnLogging(new ColumnLogging(columnLogging.shouldLogName(), FieldKey.fromParts(foreignKey.getFieldKey(), lookupColumn.getFieldKey()),
-                            foreignKey.getParentTable(), dataLoggingFieldKeys, columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider()));
-        }
-
-
         // Copy the URL but don't reparent the FieldKey
         ret.copyURLFrom(lookupColumn, null, null);
         // Reparent all column FieldKeys including the URL just copied and DisplayColumnFactories
