@@ -848,6 +848,7 @@ Ext4.define('File.panel.Browser', {
 
         if (tbarConfig) {
             var actionConfig;
+            var hiddenActions = [];
 
             // Iterate across tbarConfig as button ordering is determined by array order
             for (i=0; i < tbarConfig.length; i++) {
@@ -867,6 +868,9 @@ Ext4.define('File.panel.Browser', {
                             console.warn('Unable to find action:', actionConfig.id);
                         }
                     }
+                    else {
+                        hiddenActions.push(actionConfig.id);
+                    }
                 }
             }
         }
@@ -877,6 +881,7 @@ Ext4.define('File.panel.Browser', {
         }
 
         this.linkIdMap = {};
+        this.hiddenActions = hiddenActions;
 
         if (Ext4.isArray(actionButtons)) {
             var link, id;
@@ -3507,8 +3512,22 @@ Ext4.define('File.panel.Browser', {
                 ];
             }
 
+            //Issue 46778: File browser dropdown menu shows 'blank' options (that work) for buttons that are not shown
+            var visibleItems = [];
+            for (var i=0; i < items.length; i++) {
+                var item = items[i];
+                if (!item)
+                    continue;
+
+                if (item === '-')
+                    visibleItems.push(item);
+                else if (!this.hiddenActions || this.hiddenActions.indexOf(item['itemId']) === -1) {
+                    visibleItems.push(item);
+                }
+            }
+
             this.contextMenu = Ext4.create('File.panel.ContextMenu', {
-                items: items
+                items: visibleItems
             });
         }
 
