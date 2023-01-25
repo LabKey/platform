@@ -3605,7 +3605,7 @@ public class QueryController extends SpringActionController
             QueryLogging queryLogging = new QueryLogging();
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-            if (queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
+            if (queryLogging.isShouldAudit() && queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
             {
                 errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
                 return null;
