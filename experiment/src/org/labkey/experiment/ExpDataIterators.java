@@ -2038,7 +2038,7 @@ public class ExpDataIterators
                         extraKeyValueMap = new CaseInsensitiveHashMap<>();
                         extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
 
-                        keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys());
+                        keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys(context));
                         propertyKeyColumns.add("name");
                     }
                 }
@@ -2058,7 +2058,7 @@ public class ExpDataIterators
                     extraKeyValueMap = new CaseInsensitiveHashMap<>();
                     extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
 
-                    keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys());
+                    keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context));
                 }
             }
 
@@ -2066,7 +2066,7 @@ public class ExpDataIterators
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
             Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
             if (context.getInsertOption().updateOnly && !_isUpdateUsingLsid)
-                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys();
+                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys(context);
 
             DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
 

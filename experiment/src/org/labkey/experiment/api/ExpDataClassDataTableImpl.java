@@ -830,8 +830,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public Set<String> getAltMergeKeys()
+    public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
+        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
+            return getAltKeysForUpdate();
         return DATA_CLASS_ALT_MERGE_KEYS;
     }
 
