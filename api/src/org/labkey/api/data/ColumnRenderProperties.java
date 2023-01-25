@@ -70,6 +70,8 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     boolean isShownInUpdateView();
 
+    boolean isShownInLookupView();
+
     StringExpression getURL();
 
     String getURLTargetWindow();

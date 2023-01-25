@@ -15,8 +15,6 @@
  */
 package org.labkey.filecontent.message;
 
-import org.labkey.api.message.digest.PeriodicMessageDigest;
-
 /**
  * User: klum
  * Date: Jan 14, 2011

@@ -87,6 +87,8 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -129,6 +131,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
     public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
 
+    public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
+    static {
+        SAMPLE_ALT_IMPORT_NAME_COLS = new CaseInsensitiveHashMap<>();
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
+    }
+
     public enum Options {
         SkipDerivation,
         SkipAliquot
@@ -170,7 +179,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public void configureDataIteratorContext(DataIteratorContext context)
     {
-        context.putConfigParameter(ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+        if (context.getInsertOption().allowUpdate)
+        {
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
+            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, context.getInsertOption().updateOnly);
+        }
     }
 
     @Override
@@ -233,6 +246,28 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+
+        // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
+        // Issue 46639: "SampleId" column header not recognized when loading samples from pipeline trigger
+        try
+        {
+            if (rows instanceof DataLoader) // junit test uses ListofMapsDataIterator
+            {
+                ColumnDescriptor[] columnDescriptors = ((DataLoader) rows).getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
+                for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                {
+                    if (SAMPLE_ALT_IMPORT_NAME_COLS.containsKey(columnDescriptor.getColumnName()))
+                    {
+                        columnDescriptor.name = SAMPLE_ALT_IMPORT_NAME_COLS.get(columnDescriptor.getColumnName());
+                    }
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {

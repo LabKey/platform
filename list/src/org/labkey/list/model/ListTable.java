@@ -327,7 +327,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
 
         if (_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
+        {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
+            setAllowedInsertOption(QueryUpdateService.InsertOption.UPSERT);
+        }
+
     }
 
     @Override
@@ -397,7 +402,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         var col = super.wrapColumn(underlyingColumn);
-        col.getColumnLogging().setOriginalTableName(getName());
+        var logging = underlyingColumn.getColumnLogging();
+        if (null != logging)
+            col.setColumnLogging(logging.reparent(this));
         return col;
     }
 
@@ -408,7 +415,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         var col = super.addWrapColumn(column);
-        col.getColumnLogging().setOriginalTableName(getName());
+        var logging = column.getColumnLogging();
+        if (null != logging)
+            col.setColumnLogging(logging.reparent(this));
         return col;
     }
 

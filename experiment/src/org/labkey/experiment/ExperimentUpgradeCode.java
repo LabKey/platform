@@ -42,7 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
-import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;

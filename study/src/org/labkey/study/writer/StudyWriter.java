@@ -62,18 +62,11 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             // Support '<X> Dataset Definition' and '<X> Dataset Data' options
             DatasetDefinitionWriter definitionWriter = new DatasetDefinitionWriter();
             InternalStudyWriter datasetDataWriter = new DatasetDataWriter();
-            boolean hasDatasetDefinition = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
-            boolean hasDatasetData = dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
 
-            if (hasDatasetData)
-            {
+            if (includeDatasetMetadata(ctx))
                 definitionWriter.write(study, ctx, vf);
+            if (includeDatasetData(ctx))
                 datasetDataWriter.write(study, ctx, vf);
-            }
-            else if (hasDatasetDefinition)
-            {
-                definitionWriter.write(study, ctx, vf);
-            }
 
             // Call all the writers defined in the study module.
             for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistry.get().getInternalStudyWriters())
@@ -97,5 +90,25 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
         }
 
         LOG.info("Done exporting study to " + vf.getLocation());
+    }
+
+    public static boolean includeDatasetMetadata(StudyExportContext ctx)
+    {
+        Set<String> dataTypes = ctx.getDataTypes();
+
+        return includeDatasetData(ctx) ||
+                dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS) ||
+                dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS) ||
+                dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
+     }
+
+    public static boolean includeDatasetData(StudyExportContext ctx)
+    {
+        Set<String> dataTypes = ctx.getDataTypes();
+
+        return dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA) ||
+                dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) ||
+                dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) ||
+                dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
     }
 }

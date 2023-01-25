@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryUpdateService
 {
-    private IntegerConverter _converter = new IntegerConverter();
+    private final IntegerConverter _converter = new IntegerConverter();
 
     public AbstractBeanQueryUpdateService(TableInfo queryTable)
     {

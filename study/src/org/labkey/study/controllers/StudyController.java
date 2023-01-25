@@ -7209,6 +7209,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        protected boolean skipInsertOptionValidation()
+        {
+            return true; // allow QueryUpdateService.InsertOption.INSERT for study.participant
+        }
+
+        @Override
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();

@@ -1,4 +1,4 @@
-SELECT core.executeJavaUpgradeCode('removeDuplicateModuleEntries');
+SELECT core.executeJavaUpgradeCode('deduplicateModuleEntries');
 
 -- Switch Name from PK to case-insensitive unique constraint
 ALTER TABLE core.Modules DROP CONSTRAINT PK_Modules;

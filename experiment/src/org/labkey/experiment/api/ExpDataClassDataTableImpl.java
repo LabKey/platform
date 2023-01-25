@@ -1261,7 +1261,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public void configureDataIteratorContext(DataIteratorContext context)
         {
-            context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, context.getInsertOption().allowUpdate);
+            if (context.getInsertOption().allowUpdate)
+            {
+                context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
+                context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, context.getInsertOption().updateOnly);
+            }
         }
 
         @Override

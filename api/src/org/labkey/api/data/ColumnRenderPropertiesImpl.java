@@ -85,6 +85,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected boolean _shownInInsertView = true;
     protected boolean _shownInUpdateView = true;
     protected boolean _shownInDetailsView = true;
+    protected boolean _shownInLookupView = false;
     protected StringExpression _url;
     protected String _urlTargetWindow;
     protected String _urlCls;
@@ -394,6 +395,18 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _shownInUpdateView = shownInUpdateView;
+    }
+
+    @Override
+    public boolean isShownInLookupView()
+    {
+        return _shownInLookupView;
+    }
+
+    @Override
+    public void setShownInLookupView(boolean shownInLookupView)
+    {
+        _shownInLookupView = shownInLookupView;
     }
 
     @Override

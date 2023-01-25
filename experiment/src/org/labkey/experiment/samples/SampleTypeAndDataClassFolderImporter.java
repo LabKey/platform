@@ -11,7 +11,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.exp.CompressedInputStreamXarSource;
+import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.Identifiable;
@@ -291,6 +291,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                 {
                                     DataIteratorContext context = new DataIteratorContext(errors);
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+                                    context.putConfigParameter(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merge during folder import, needed for eval data loading
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
                                     Map<Enum, Object> options = new HashMap<>();

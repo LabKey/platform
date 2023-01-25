@@ -206,7 +206,7 @@ public class SecurityController extends SpringActionController
                 }
 
                 StudyPermissionExporter exporter = new StudyPermissionExporter();
-                StudySecurityPolicyDocument doc = exporter.getStudySecurityPolicyDocument(study);
+                StudySecurityPolicyDocument doc = exporter.getStudySecurityPolicyDocument(study, true);
 
                 XmlOptions xmlOptions = new XmlOptions();
                 xmlOptions.setSavePrettyPrint();
