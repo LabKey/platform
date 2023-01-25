@@ -19,10 +19,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.SimpleGetCommand;
 import org.labkey.remoteapi.security.GetContainersCommand;
 import org.labkey.remoteapi.security.GetContainersResponse;
 import org.labkey.test.BaseWebDriverTest;
@@ -80,7 +80,7 @@ public abstract class SearchTest extends StudyBaseTest
 
     private String FOLDER_NAME = FOLDER_A;
 
-    private PortalHelper portalHelper = new PortalHelper(this);
+    private final PortalHelper portalHelper = new PortalHelper(this);
 
     @Override
     public List<String> getAssociatedModules()
@@ -150,8 +150,8 @@ public abstract class SearchTest extends StudyBaseTest
     {
         Connection connection = createDefaultConnection();
 
-        Command<CommandResponse> command = new Command<>("search", "json");
-        command.setParameters(new HashMap<>(Map.of("q", q, "scope", "All")));
+        SimpleGetCommand command = new SimpleGetCommand("search", "json");
+        command.setParameters(Map.of("q", q, "scope", "All"));
         CommandResponse searchResponse = command.execute(connection, "/");
         List<Map<String, Object>> hits = searchResponse.getProperty("hits");
         Set<String> containerIds = new HashSet<>();
