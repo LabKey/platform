@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public class DataGenerator<T extends DataGenerator.Config>
 {
@@ -172,6 +173,29 @@ public class DataGenerator<T extends DataGenerator.Config>
     public void setCustomDataClasses(List<ExpDataClass> customDataClasses)
     {
         _customDataClasses = customDataClasses;
+    }
+
+    public void generateFolders(String namePrefix)
+    {
+        checkAlive(_job);
+        int numFolders = _config.getNumFolders();
+        CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
+        timer.start();
+        Set<String> currentChildren = ContainerManager.getChildren(getContainer()).stream().map(Container::getName).collect(Collectors.toSet());
+        int i = 1;
+        int numCreated = 0;
+        while (numCreated < numFolders)
+        {
+            String name = String.format("%s%04d", namePrefix, i);
+            if (!currentChildren.contains(name))
+            {
+                ContainerManager.createContainer(getContainer(), name);
+                numCreated++;
+            }
+            i++;
+        }
+        timer.stop();
+        _log.info(String.format("Generating %d sub-folders took %s", numFolders, timer.getDuration() + "."));
     }
 
     public void generateSampleTypes(String namePrefix, String namingPatternPrefix) throws ExperimentException, SQLException
@@ -446,7 +470,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     }
 
 
-    public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException
     {
         QueryUpdateService svc = getDataClassSchema().getTable(dataClass.getName()).getUpdateService();
         return generateDomainData(numObjects, svc, dataClass.getDomain());
@@ -623,6 +647,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public static class Config
     {
+        public static final String NUM_FOLDERS = "numFolders";
         public static final String NUM_SAMPLE_TYPES = "numSampleTypes";
         public static final String PCT_ALIQUOTS = "percentAliquots";
         public static final String PCT_DERIVED = "percentDerived";
@@ -636,7 +661,9 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String MAX_GENERATIONS = "maxGenerations";
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
+        public static final String NUM_ASSAY_DESIGNS = "numAssayDesigns";
 
+        int _numFolders = 0;
         int _numSampleTypes = 0;
         int _minSamples = 0;
         int _maxSamples = 0;
@@ -653,6 +680,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
         public Config(Properties properties)
         {
+            _numFolders = Integer.parseInt(properties.getProperty(NUM_FOLDERS, "0"));
             _numSampleTypes = Integer.parseInt(properties.getProperty(NUM_SAMPLE_TYPES, "0"));
             _minSamples = Integer.parseInt(properties.getProperty(MIN_SAMPLES, "0"));
             _maxSamples = Math.max(Integer.parseInt(properties.getProperty(DataGenerator.Config.MAX_SAMPLES, "0")), _minSamples);
@@ -669,6 +697,16 @@ public class DataGenerator<T extends DataGenerator.Config>
             _minFields = Integer.parseInt(properties.getProperty(MIN_NUM_FIELDS, "1"));
             _maxFields = Math.max(Integer.parseInt(properties.getProperty(MAX_NUM_FIELDS, "1")), _minFields);
 
+        }
+
+        public int getNumFolders()
+        {
+            return _numFolders;
+        }
+
+        public void setNumFolders(int numFolders)
+        {
+            _numFolders = numFolders;
         }
 
         public int getNumSampleTypes()
