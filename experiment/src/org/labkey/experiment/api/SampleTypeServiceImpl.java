@@ -94,6 +94,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -542,7 +543,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void deleteSampleType(int rowId, Container c, User user) throws ExperimentException
+    public void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException
     {
         CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
@@ -582,6 +583,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
+            addSampleTypeAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
@@ -607,6 +610,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         timer.stop();
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
+    }
+
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl sampleType, Long txAuditId, String auditUserComment)
+    {
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", sampleType.getName()));
+        event.setUserComment(auditUserComment);
+
+        if (txAuditId != null)
+            event.setTransactionId(txAuditId);
+
+        if (sampleType != null)
+        {
+            event.setSourceLsid(sampleType.getLSID());
+            event.setSampleSetName(sampleType.getName());
+        }
+        event.setInsertUpdateChoice("delete type");
+        AuditLogService.get().addEvent(user, event);
     }
 
 

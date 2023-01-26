@@ -78,6 +78,10 @@ public interface Domain extends IPropertyType
     Lock getDatabaseLock();
 
     void delete(@Nullable User user) throws DomainNotFoundException;
+    default void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
+    {
+        delete(user);
+    }
     void save(User user) throws ChangePropertyDescriptorException;
     void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException;
 
