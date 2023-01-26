@@ -832,7 +832,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
+        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
             return getAltKeysForUpdate();
         return DATA_CLASS_ALT_MERGE_KEYS;
     }
@@ -884,7 +884,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         private static boolean isReservedHeader(String name)
         {
-            for (ExpDataClassDataTable.Column column : ExpDataClassDataTable.Column.values())
+            for (ExpDataTable.Column column : ExpDataTable.Column.values()) // use ExpDataTable instead of ExpDataClassDataTable for a larger set of reserved fields
             {
                 if (column.name().equalsIgnoreCase(name))
                     return !ALLOWED_IMPORT_HEADERS.contains(column.name().toLowerCase());
@@ -906,8 +906,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String name = input.getColumnInfo(i).getName();
                 if (isReservedHeader(name))
                     drop.add(name);
+                else if (Column.ClassId.name().equalsIgnoreCase(name))
+                    drop.add(name);
             }
-            if (context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
                 drop.remove("lsid");
             if (!drop.isEmpty())
                 input = new DropColumnsDataIterator(input, drop);
@@ -1223,7 +1225,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (useDib)
             {
                 Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-                finalConfigParameters.put(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate, true);
+                finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
                 results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
             }
             else

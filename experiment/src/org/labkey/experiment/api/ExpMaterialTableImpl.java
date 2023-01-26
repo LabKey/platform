@@ -1070,7 +1070,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(SampleTypeUpdateServiceDI.Options.UseLsidForUpdate))
+        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
             return getAltKeysForUpdate();
 
         return MATERIAL_ALT_MERGE_KEYS;

@@ -140,8 +140,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     public enum Options {
         SkipDerivation,
-        SkipAliquot,
-        UseLsidForUpdate
+        SkipAliquot
     }
 
     // SampleType may be null for read or delete. We don't allow insert or update without a sample type.
@@ -354,7 +353,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (useDib)
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-            finalConfigParameters.put(Options.UseLsidForUpdate, true);
+            finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
             DbScope scope = getSchema().getDbSchema().getScope();
             results = scope.executeWithRetry(transaction ->
@@ -1020,7 +1019,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
             }
 
-            if (context.getConfigParameterBoolean(Options.UseLsidForUpdate))
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
                 drop.remove("lsid");
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);

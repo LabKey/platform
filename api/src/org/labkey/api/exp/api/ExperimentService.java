@@ -125,6 +125,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
         ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
+    enum QueryOptions
+    {
+        UseLsidForUpdate
+    }
+
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 

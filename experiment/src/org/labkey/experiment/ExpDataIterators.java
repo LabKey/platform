@@ -1133,7 +1133,7 @@ public class ExpDataIterators
 
             _aliquotParentCol = aliquotParentCol;
 
-            _useLsid = map.containsKey("lsid");
+            _useLsid = map.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
         }
 
         private BatchValidationException getErrors()
@@ -2017,7 +2017,7 @@ public class ExpDataIterators
                 dontUpdate.add("objectid");
 
             boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
-            _isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid");
+            _isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
 
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
