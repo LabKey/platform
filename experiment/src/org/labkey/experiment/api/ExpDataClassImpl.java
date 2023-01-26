@@ -279,9 +279,15 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public void delete(User user)
     {
+        delete(user, null);
+    }
+
+    @Override
+    public void delete(User user, @Nullable String auditUserComment)
+    {
         try
         {
-            ExperimentServiceImpl.get().deleteDataClass(getRowId(), getContainer(), user);
+            ExperimentServiceImpl.get().deleteDataClass(getRowId(), getContainer(), user, auditUserComment);
         }
         catch (ExperimentException e)
         {

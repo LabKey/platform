@@ -193,23 +193,27 @@ public class DefaultFolderType implements FolderType
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
 
-        // Split out any menu bar items which are stored in the "portal.default" portal page
-        List<WebPart> menuParts = new ArrayList<>();
-        for (WebPart webPart : all)
+        String mainTabId = getDefaultPageId(c);
+        if (!Portal.DEFAULT_PORTAL_PAGE_ID.equals(mainTabId))
         {
-            if (WebPartFactory.LOCATION_MENUBAR.equalsIgnoreCase(webPart.getLocation()))
+            // Split out any menu bar items which are stored in the "portal.default" portal page
+            List<WebPart> menuParts = new ArrayList<>();
+            for (WebPart webPart : all)
             {
-                menuParts.add(webPart);
+                if (WebPartFactory.LOCATION_MENUBAR.equalsIgnoreCase(webPart.getLocation()))
+                {
+                    menuParts.add(webPart);
+                }
+            }
+            if (!menuParts.isEmpty())
+            {
+                Portal.saveParts(c, Portal.DEFAULT_PORTAL_PAGE_ID, menuParts);
+                // Remove any menu items so we can save the rest
+                all.removeAll(menuParts);
             }
         }
-        if (!menuParts.isEmpty())
-        {
-            Portal.saveParts(c, Portal.DEFAULT_PORTAL_PAGE_ID, menuParts);
-        }
 
-        // Remove any menu items and save the rest
-        all.removeAll(menuParts);
-        Portal.saveParts(c, getDefaultTab().getName(), all);
+        Portal.saveParts(c, mainTabId, all);
 
         // A few things left to do; ordering is important
 
@@ -501,7 +505,7 @@ public class DefaultFolderType implements FolderType
     }
 
     @Override
-    public String getDefaultPageId(ViewContext ctx)
+    public String getDefaultPageId(Container c)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }

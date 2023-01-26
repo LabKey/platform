@@ -59,6 +59,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER_COMMENT));
     }
 
     public SampleTypeAuditProvider()
@@ -94,6 +95,8 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             {
                 if (COLUMN_NAME_SAMPLE_TYPE_NAME.equalsIgnoreCase(col.getName()))
                     col.setLabel("Sample Type");
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                    col.setLabel("User Comment");
             }
         };
     }
@@ -175,6 +178,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             elements.put("sampleSetName", getSampleSetName());
             elements.put("insertUpdateChoice", getInsertUpdateChoice());
             elements.put("transactionId", getTransactionId());
+            elements.put("userComment", getUserComment());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -195,6 +199,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_INSERT_UPDATE_CHOICE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 

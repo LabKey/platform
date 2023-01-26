@@ -1194,7 +1194,7 @@ public class ExperimentController extends SpringActionController
             }
             for (ExpDataClass dataClass : dataClasses)
             {
-                dataClass.delete(getUser());
+                dataClass.delete(getUser(), deleteForm.getUserComment());
             }
         }
 
@@ -3179,7 +3179,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(false));
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getUserComment(), deleteForm.getIds(false));
         }
     }
 
@@ -3244,7 +3244,7 @@ public class ExperimentController extends SpringActionController
                     runIdsToDelete.addAll(runIdsCascadeDeleted);
             }
 
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), runIdsToDelete);
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), form.getUserComment(), runIdsToDelete);
 
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("runIdsDeleted", runIdsToDelete);
@@ -3362,7 +3362,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
-                protocol.delete(getUser());
+                protocol.delete(getUser(), form.getUserComment());
             }
 
             return new ApiSimpleResponse();
@@ -3433,7 +3433,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
-                protocol.delete(getUser());
+                protocol.delete(getUser(), form.getUserComment());
             }
         }
     }
@@ -3786,7 +3786,7 @@ public class ExperimentController extends SpringActionController
                     throw new UnauthorizedException();
                 }
 
-                source.delete(getUser());
+                source.delete(getUser(), deleteForm.getUserComment());
             }
         }
 

@@ -182,10 +182,10 @@ public interface FolderType
     boolean hasContainerTabs();
 
     /**
-     * @return The pageId, which is primarily intended to support tabbed folders.  By default it will return
+     * @return The pageId, which is primarily intended to support tabbed folders.  By default, it will return
      * Portal.DEFAULT_PORTAL_PAGE_ID
      */
-    String getDefaultPageId(ViewContext ctx);
+    String getDefaultPageId(Container container);
 
     /**
      * Clear active portal page if there is one

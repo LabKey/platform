@@ -68,6 +68,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DOMAIN_URI));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
+        defaultVisibleColumns.add(FieldKey.fromParts("UserComment"));
     }
 
     public DomainAuditProvider()
@@ -106,6 +107,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     col.setLabel("Domain");
                     col.setDisplayColumnFactory(colInfo -> new DomainColumn(colInfo, "Container", "DomainName"));
                 }
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                    col.setLabel("User Comment");
             }
         };
     }
@@ -191,6 +194,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_URI, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 

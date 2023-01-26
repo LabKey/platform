@@ -2816,13 +2816,17 @@ public class QueryServiceImpl implements QueryService
             @Override
             protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
             {
-                return createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row);
+                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row);
+                event.setUserComment(userComment);
+                return event;
             }
 
             @Override
             protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
             {
-                return createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow);
+                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow);
+                event.setUserComment(userComment);
+                return event;
             }
 
             private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
