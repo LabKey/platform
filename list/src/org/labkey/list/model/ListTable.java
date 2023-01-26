@@ -402,7 +402,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         var col = super.wrapColumn(underlyingColumn);
-        col.getColumnLogging().setOriginalTableName(getName());
+        var logging = underlyingColumn.getColumnLogging();
+        if (null != logging)
+            col.setColumnLogging(logging.reparent(this));
         return col;
     }
 
@@ -413,7 +415,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         var col = super.addWrapColumn(column);
-        col.getColumnLogging().setOriginalTableName(getName());
+        var logging = column.getColumnLogging();
+        if (null != logging)
+            col.setColumnLogging(logging.reparent(this));
         return col;
     }
 

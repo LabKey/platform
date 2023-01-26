@@ -27,6 +27,7 @@ import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
+import org.labkey.study.importer.StudySecurityPolicyImporter;
 import org.labkey.study.importer.StudyQcStatesImporter;
 import org.labkey.study.importer.StudyViewsImporter;
 import org.labkey.study.importer.TopLevelStudyPropertiesImporter;
@@ -71,6 +72,7 @@ public class StudySerializationRegistry
             new TreatmentDataWriter(),
             new VisitMapWriter(),
             new StudyViewsWriter(),
+            new StudySecurityPolicyWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
         );
     }
@@ -97,6 +99,7 @@ public class StudySerializationRegistry
             new VisitImporter(),
             new VisitCohortAssigner(),
             new StudyViewsImporter(),
+            new StudySecurityPolicyImporter(),
             new TopLevelStudyPropertiesImporter()
         );
     }

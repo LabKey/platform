@@ -39,6 +39,7 @@ public class StudyArchiveDataTypes
     public static final String TOP_LEVEL_STUDY_PROPERTIES = "Top-level Study Properties";
     public static final String TREATMENT_DATA = "Treatment Data";
     public static final String VISIT_MAP = "Visit Map";
+    public static final String STUDY_SECURITY_POLICY = "Permissions for Custom Study Security";
 
     private StudyArchiveDataTypes() {}
 }

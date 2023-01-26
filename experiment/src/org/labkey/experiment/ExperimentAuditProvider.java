@@ -47,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.audit.AbstractAuditTypeProvider.COLUMN_NAME_USER_COMMENT;
+
 /**
  * User: klum
  * Date: 7/21/13
@@ -74,6 +76,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_MESSAGE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QCSTATE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER_COMMENT));
     }
 
     public ExperimentAuditProvider()
@@ -176,7 +179,16 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                 }
                 else if (COLUMN_NAME_QCSTATE.equalsIgnoreCase(col.getName()))
                 {
+                    col.setLabel("QC State");
                     col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoDataStates(), null, "RowId", "Label"));
+                }
+                else if (COLUMN_NAME_MESSAGE.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("QC Message");
+                }
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("User Comment");
                 }
             }
         };
@@ -208,6 +220,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             fields.add(createPropertyDescriptor(COLUMN_NAME_RUN_GROUP, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_MESSAGE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_QCSTATE, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
 
             _fields = Collections.unmodifiableSet(fields);
         }
