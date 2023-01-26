@@ -375,6 +375,16 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     break;
                 }
             }
+
+            if (null == result)
+            {
+                List<FolderTab> defaults = getDefaultTabs();
+                if (!defaults.isEmpty())
+                {
+                    result = defaults.get(0).getName();
+                }
+            }
+
             if (null == result)
                 result = Portal.DEFAULT_PORTAL_PAGE_ID;
         }
