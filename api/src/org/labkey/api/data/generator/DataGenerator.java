@@ -3,6 +3,7 @@ package org.labkey.api.data.generator;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -189,7 +190,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
         CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
         timer.start();
-        Set<String> currentChildren = ContainerManager.getChildren(getContainer()).stream().map(Container::getName).collect(Collectors.toSet());
+        Set<String> currentChildren = new CaseInsensitiveHashSet(ContainerManager.getChildren(getContainer()).stream().map(Container::getName).collect(Collectors.toSet()));
         int i = 1;
         int numCreated = 0;
         while (numCreated < numFolders)
@@ -682,20 +683,20 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
 
-        int _numFolders = 0;
-        int _numSampleTypes = 0;
-        int _minSamples = 0;
-        int _maxSamples = 0;
-        float _pctAliquots = 0;
-        float _pctPooled = 0;
-        float _pctDerived = 0;
-        float _pctDerivedFromSamples = 1;
-        int _maxPoolSize = 2;
-        int _maxGenerations = 1;
-        int _maxAliquotsPerParent = 0;
-        int _maxChildrenPerParent = 0;
-        int _minFields = 1;
-        int _maxFields = 1;
+        int _numFolders;
+        int _numSampleTypes;
+        int _minSamples;
+        int _maxSamples;
+        float _pctAliquots;
+        float _pctPooled;
+        float _pctDerived;
+        float _pctDerivedFromSamples;
+        int _maxPoolSize;
+        int _maxGenerations;
+        int _maxAliquotsPerParent;
+        int _maxChildrenPerParent;
+        int _minFields;
+        int _maxFields;
 
         public Config(Properties properties)
         {
