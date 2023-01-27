@@ -16,7 +16,6 @@
 package org.labkey.api.products;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -27,6 +26,7 @@ import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class ProductRegistry
 {
     public static final String PRODUCT_ID_PROPERTY_NAME = "productId";
-    private static final Logger _logger = LogManager.getLogger(ProductRegistry.class);
+    private static final Logger _logger = LogHelper.getLogger(ProductRegistry.class, "Application product registry");
     private static final Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final Map<String, ProductMenuProvider> _moduleProviderMap = new ConcurrentHashMap<>();
     private static final Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();
@@ -82,9 +82,7 @@ public class ProductRegistry
             _productMap.remove(provider.getProductId());
             _moduleProviderMap.remove(provider.getModuleName());
         }
-        provider.getSectionNames(null).forEach((name) -> {
-            _sectionMap.remove(name);
-        });
+        provider.getSectionNames(null).forEach(_sectionMap::remove);
     }
 
     @NotNull
@@ -109,25 +107,28 @@ public class ProductRegistry
         return getRegisteredProducts().stream().filter(product -> productIds.contains(product.getProductId())).findFirst().orElse(null);
     }
 
+    @Nullable
+    public MenuSection getUserMenuSection(@NotNull ViewContext context, @NotNull String productId)
+    {
+        ProductMenuProvider userMenuProvider = _productMap.get(productId);
+        if (userMenuProvider != null)
+            return new UserInfoMenuSection(context, userMenuProvider);
+        return null;
+    }
+
     @NotNull
-    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String userMenuProductId, @Nullable List<String> origProductIds)
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @Nullable List<String> origProductIds)
     {
         List<String> productIds = origProductIds == null ? getProductIdsForContainer(context.getContainer()) : origProductIds;
 
         List<MenuSection> sections = new ArrayList<>();
-        ProductMenuProvider userMenuProvider = _productMap.get(userMenuProductId);
         for (String productId : productIds)
         {
             if (_productMap.containsKey(productId))
             {
-                if (userMenuProvider == null)
-                    userMenuProvider = _productMap.get(productId);
                 sections.addAll(_productMap.get(productId).getSections(context));
             }
         }
-        // always include the user menu as the last item
-        if (userMenuProvider != null)
-            sections.add(new UserInfoMenuSection(context, userMenuProvider));
         return sections;
     }
 
