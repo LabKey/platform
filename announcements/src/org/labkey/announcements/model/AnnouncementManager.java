@@ -105,6 +105,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -348,7 +349,7 @@ public class AnnouncementManager
         if (updateApproved(c, ann, date))
         {
             // Send email if there's body text or an attachment.
-            if (sendEmailNotifications && (null != ann.getBody() || !ann.getAttachments().isEmpty()))
+            if (sendEmailNotifications && SHOULD_SEND_ANNOUNCEMENT_NOTIFICATION.test(ann) && (null != ann.getBody() || !ann.getAttachments().isEmpty()))
             {
                 String rendererTypeName = ann.getRendererType();
                 WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
@@ -362,6 +363,19 @@ public class AnnouncementManager
             indexThread(ann);
         }
     }
+
+    // Send notifications if announcement has no associated DiscussionSrcTypeProvider or shouldSendEmailNotifications() is true
+    static final Predicate<AnnouncementModel> SHOULD_SEND_ANNOUNCEMENT_NOTIFICATION = new Predicate<>()
+    {
+        private static final AnnouncementService SVC = AnnouncementService.get();
+
+        @Override
+        public boolean test(AnnouncementModel ann)
+        {
+            DiscussionSrcTypeProvider provider = SVC.getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+            return null == provider || provider.shouldSendEmailNotifications();
+        }
+    };
 
     private static void notifyModerators(Container c, User user, AnnouncementModel ann)
     {

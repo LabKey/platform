@@ -354,7 +354,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
 
     @Override
-    public String getDefaultPageId(ViewContext ctx)
+    public String getDefaultPageId(Container container)
     {
         String result = null;
         if (_activePortalPage != null)
@@ -364,7 +364,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            List<Portal.PortalPage> activeTabs = Portal.getTabPages(ctx.getContainer());
+            List<Portal.PortalPage> activeTabs = Portal.getTabPages(container);
 
             // Use the left-most tab as the default
             for (Portal.PortalPage tab : activeTabs)
@@ -395,7 +395,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return true;
     }
 
-    @Override @Nullable
+    @Override @NotNull
     public FolderTab getDefaultTab()
     {
         return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;

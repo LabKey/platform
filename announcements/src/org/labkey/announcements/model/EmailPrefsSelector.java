@@ -25,7 +25,6 @@ import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 

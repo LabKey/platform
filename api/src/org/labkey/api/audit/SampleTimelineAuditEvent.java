@@ -88,7 +88,6 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private String _metadata;
     private String _inventoryUpdateType;
     private Long _transactionId;
-    private String _userComment;
 
     public SampleTimelineAuditEvent()
     {
@@ -188,16 +187,6 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public void setTransactionId(Long transactionId)
     {
         _transactionId = transactionId;
-    }
-
-    public String getUserComment()
-    {
-        return _userComment;
-    }
-
-    public void setUserComment(String userComment)
-    {
-        _userComment = userComment;
     }
 
     @Override

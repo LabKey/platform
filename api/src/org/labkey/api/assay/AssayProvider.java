@@ -202,7 +202,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId);
 
-    void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
+    void deleteProtocol(ExpProtocol protocol, User user, @Nullable String auditUserComment) throws ExperimentException;
 
     /**
      * Get the action that implements the assay designer for this type or null if the assay has no designer.
