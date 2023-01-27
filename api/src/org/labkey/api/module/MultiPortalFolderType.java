@@ -354,10 +354,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
 
     @Override
-    public String getDefaultPageId(Container container)
+    public String getDefaultPageId(Container container, boolean considerActive)
     {
         String result = null;
-        if (_activePortalPage != null)
+        if (_activePortalPage != null && considerActive)
         {
             // If we have an explicit selection, use that
             result = _activePortalPage;
