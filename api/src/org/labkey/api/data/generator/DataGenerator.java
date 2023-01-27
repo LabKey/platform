@@ -56,17 +56,17 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected Container _container;
     protected final User _user;
     protected final Logger _log;
-    protected  final PipelineJob _job;
-    protected T  _config;
+    protected final PipelineJob _job;
+    protected T _config;
 
-    // Keep the set of timers so we can produce a report of all times at the end
+    // Keep the set of timers, so we can produce a report of all times at the end
     protected final List<CPUTimer> _timers = new ArrayList<>();
 
     protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
 
     public record NamingPatternData(String prefix, Long startGenId) {};
 
-    // Map from type name to pair of name prefix and suffix (genId) start value
+    // Map from type name to a pair of name prefix and suffix (genId) start value
     protected final Map<String, NamingPatternData> _nameData = new HashMap<>();
 
     protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
@@ -77,20 +77,13 @@ public class DataGenerator<T extends DataGenerator.Config>
     record FieldPrefix(String uri, String namePrefix) { }
 
     private static final List<FieldPrefix> fieldPrefixes = new ArrayList<>();
-    static {
+
+    static
+    {
         fieldPrefixes.add(new FieldPrefix("string", "TextField"));
         fieldPrefixes.add(new FieldPrefix("int", "IntField"));
         fieldPrefixes.add(new FieldPrefix("float", "FloatField"));
         fieldPrefixes.add(new FieldPrefix("date", "DateField"));
-    }
-
-    public DataGenerator(Container container, User user, T config, Logger log)
-    {
-        _container = container;
-        _user = user;
-        _log = log;
-        _config = config;
-        _job = null;
     }
 
     public DataGenerator(PipelineJob job, T config)
@@ -110,6 +103,16 @@ public class DataGenerator<T extends DataGenerator.Config>
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    public User getUser()
+    {
+        return _user;
+    }
+
+    public List<CPUTimer> getTimers()
+    {
+        return _timers;
     }
 
     public static void checkAlive(PipelineJob job)
@@ -179,6 +182,11 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         checkAlive(_job);
         int numFolders = _config.getNumFolders();
+        if (numFolders <= 0)
+        {
+            _log.info(String.format("No folders generated because %s=%d", Config.NUM_FOLDERS, numFolders));
+            return;
+        }
         CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
         timer.start();
         Set<String> currentChildren = ContainerManager.getChildren(getContainer()).stream().map(Container::getName).collect(Collectors.toSet());
@@ -202,10 +210,14 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         checkAlive(_job);
         int numSampleTypes = _config.getNumSampleTypes();
+        if (numSampleTypes <= 0) {
+            _log.info(String.format("No sample types generated because %s=%d", Config.NUM_SAMPLE_TYPES, numSampleTypes));
+            return;
+        }
         int minFields = _config.getMinFields();
         int maxFields = _config.getMaxFields();
 
-        int fieldIncrement = numSampleTypes <= 1 ? 0 : (maxFields - minFields)/(numSampleTypes-1);
+        int fieldIncrement = numSampleTypes <= 1 ? 0 : (maxFields - minFields) / (numSampleTypes - 1);
         SampleTypeService service = SampleTypeService.get();
         CPUTimer timer = addTimer(String.format("%d sample types", numSampleTypes));
         timer.start();
@@ -214,10 +226,12 @@ public class DataGenerator<T extends DataGenerator.Config>
         for (int i = 0; i < numSampleTypes; i++)
         {
             String sampleTypeName;
-            do {
+            do
+            {
                 typeIndex++;
                 sampleTypeName = namePrefix + typeIndex;
-            } while (service.getSampleType(_container, _user, sampleTypeName) != null);
+            }
+            while (service.getSampleType(_container, _user, sampleTypeName) != null);
             String prefixWithIndex = namingPatternPrefix + typeIndex + "_";
             String namingPattern = prefixWithIndex + "${genId}";
             ExpSampleType sampleType = generateSampleType(sampleTypeName, namingPattern, numFields);
@@ -246,8 +260,13 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         DataGenerator.Config config = getConfig();
 
-        int sampleIncrement = config.getNumSampleTypes() <= 1 ? 0 : (config.getMaxSamples() - config.getMinSamples())/(config.getNumSampleTypes()-1);
+        int sampleIncrement = config.getNumSampleTypes() <= 1 ? 0 : (config.getMaxSamples() - config.getMinSamples()) / (config.getNumSampleTypes() - 1);
         int numSamples = config.getMinSamples();
+        if (numSamples <= 0 && config.getMaxSamples() <= 0)
+        {
+            _log.info(String.format("No samples generated because %s=%d and %s=%d", Config.MIN_SAMPLES, numSamples, Config.MAX_SAMPLES, config.getMaxSamples()));
+            return;
+        }
         List<String> parentTypes = new ArrayList<>();
         for (ExpSampleType sampleType : _sampleTypes)
         {
@@ -323,11 +342,12 @@ public class DataGenerator<T extends DataGenerator.Config>
         do
         {
             checkAlive(_job);
-            List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity/100)));
+            List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
             numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()));
             totalAliquots += numGenerated;
             iterations++;
-        } while (totalAliquots < quantity && numGenerated > 0);
+        }
+        while (totalAliquots < quantity && numGenerated > 0);
         timer.stop();
         if (totalAliquots < quantity)
             _log.warn(String.format("Generated only %d aliquots after %d iterations", totalAliquots, iterations));
@@ -375,7 +395,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
-            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size()/2), randomInt(aliquots.size()/2, aliquots.size())), svc, quantity-generatedCount, numGenerated + generatedCount, generation+1, maxGenerations);
+            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size() / 2), randomInt(aliquots.size() / 2, aliquots.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations);
         }
         return generatedCount;
     }
@@ -456,7 +476,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     }
 
 
-   public ExpDataClass generateDataClass(String dataClassName, @Nullable String namingPattern, int numFields, Logger log, @Nullable String category) throws ExperimentException
+    public ExpDataClass generateDataClass(String dataClassName, @Nullable String namingPattern, int numFields, Logger log, @Nullable String category) throws ExperimentException
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         addDomainProperties(props, numFields);
@@ -465,8 +485,8 @@ public class DataGenerator<T extends DataGenerator.Config>
 
         log.info(String.format("Creating Data Class '%s' with %d fields", dataClassName, numFields));
         return service.createDataClass(_container, _user, dataClassName, "Custom data class with " + numFields + " fields",
-                    props, List.of(), null,
-                    namingPattern, null, category);
+                props, List.of(), null,
+                namingPattern, null, category);
     }
 
 
@@ -510,8 +530,8 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numRows = Math.min(batchSize, quantity - totalImported);
             List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
             // choose a random set of object names from the parent type
-           List<Map<String, Object>> parents = isDataClass ?
-                    getRandomDataClassObjects((ExpDataClass) parentObject, batchSize):
+            List<Map<String, Object>> parents = isDataClass ?
+                    getRandomDataClassObjects((ExpDataClass) parentObject, batchSize) :
                     getRandomSamples((ExpSampleType) parentObject, batchSize);
             int rowNum = 0;
             int p = 0;
@@ -578,7 +598,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return numImported;
     }
 
-    private void addDomainProperties(List<GWTPropertyDescriptor> props, int numFields)
+    protected void addDomainProperties(List<GWTPropertyDescriptor> props, int numFields)
     {
         for (int i = 0; i < numFields; i++)
         {
@@ -625,7 +645,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public static String randomDouble(int min, int max)
     {
-        double random = Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
+        double random = Math.random() < 0.5 ? ((1 - Math.random()) * (max - min) + min) : (Math.random() * (max - min) + min);
         return String.format("%.2f", random);
     }
 
@@ -661,7 +681,6 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String MAX_GENERATIONS = "maxGenerations";
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
-        public static final String NUM_ASSAY_DESIGNS = "numAssayDesigns";
 
         int _numFolders = 0;
         int _numSampleTypes = 0;
@@ -840,4 +859,9 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
     }
 
+    public interface DataGenerationDriver
+    {
+        List<CPUTimer> generateData(PipelineJob job, Properties properties) throws Exception;
+
+    }
 }
