@@ -1109,8 +1109,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new DetailsView(region, dataRowId);
     }
 
-    @Deprecated //Prefer overload that accepts the additional audit comment
-    public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
+    // Please use new overload with additional String parameter, this version is no longer called, so any custom implementation may get missed.
+    // Not sure how else to catch overrides as caller is modified. This should be a breaking change, to ensure any custom Assay Providers are updated.
+    final public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
     {
         deleteProtocol(protocol, user, null);
     }
