@@ -23,8 +23,8 @@ import java.util.Set;
 
 /**
  * A read-through, transaction-specific cache. Reads through to the shared cache until any write occurs, at which point
- * it switches to using a private cache for the remainder of the transaction. This avoids polluting the shared cache if
- * the transaction is rolled back for any reason.
+ * it switches to using a private cache for the remainder of the transaction. This avoids polluting the shared cache
+ * during the transaction and in the case of a rollback.
  * User: adam
  * Date: Nov 9, 2009
  */
@@ -35,7 +35,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
 
-    /** Whether or not we've written to our private, transaction-specific cache */
+    /** Whether we've written to our private, transaction-specific cache */
     private boolean _hasWritten = false;
 
     public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
@@ -56,7 +56,6 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
         return v;
     }
-
 
     @Override
     public V get(@NotNull K key, Object arg, CacheLoader<K, V> loader)

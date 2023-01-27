@@ -22,7 +22,9 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.Wrapper;
+import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -36,38 +38,37 @@ public class SchemaTableInfoCache
     private static final Logger LOG = LogHelper.getLogger(SchemaTableInfoCache.class, "Loading of schema and table metadata from database schemas");
 
     private final BlockingCache<String, SchemaTableInfo> _blockingCache;
-    private final DbSchemaType _schemaType;
 
-    public SchemaTableInfoCache(DbScope scope, DbSchemaType schemaType)
+    public SchemaTableInfoCache(DbScope scope, boolean provisioned)
     {
-        _blockingCache = new SchemaTableInfoBlockingCache(scope, schemaType);
-        _schemaType = schemaType;
+        _blockingCache = new SchemaTableInfoBlockingCache(scope, provisioned);
     }
 
-    <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo get(@NotNull OptionType options)
+    <OptionType extends SchemaTableOptions> SchemaTableInfo get(@NotNull OptionType options)
     {
-        String key = getCacheKey(options.getSchema().getName(), options.getTableName());
+        DbSchema schema = options.getSchema();
+        String key = getCacheKey(schema.getName(), options.getTableName(), schema.getType());
         return _blockingCache.get(key, options);
     }
 
-    void remove(@NotNull String schemaName, @NotNull String tableName)
+    void remove(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
     {
-        LOG.debug("remove " + _schemaType + " schema table: " + schemaName + "." + tableName);
-        String key = getCacheKey(schemaName, tableName);
+        LOG.debug("remove " + type + " schema table: " + schemaName + "." + tableName);
+        String key = getCacheKey(schemaName, tableName, type);
         _blockingCache.remove(key);
     }
 
-    void removeAllTables(@NotNull String schemaName)
+    void removeAllTables(@NotNull String schemaName, @NotNull DbSchemaType type)
     {
-        LOG.debug("remove all " + _schemaType + " schema tables: " + schemaName);
-        final String prefix = _schemaType.getCacheKey(schemaName);
+        LOG.debug("remove all " + type + " schema tables: " + schemaName);
+        final String prefix = type.getCacheKey(schemaName);
 
         _blockingCache.removeUsingFilter(new Cache.StringPrefixFilter(prefix));
     }
 
-    private String getCacheKey(@NotNull String schemaName, @NotNull String tableName)
+    private String getCacheKey(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
     {
-        return _schemaType.getCacheKey(schemaName) + "|" + tableName.toLowerCase();
+        return type.getCacheKey(schemaName) + "|" + tableName.toLowerCase();
     }
 
     private static class SchemaTableLoader implements CacheLoader<String, SchemaTableInfo>
@@ -77,7 +78,7 @@ public class SchemaTableInfoCache
         {
             try
             {
-                DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
+                SchemaTableOptions options = (SchemaTableOptions)argument;
 
                 LOG.debug("loading schema table: " + options.getSchema().getName() + "." + options.getTableName());
                 return options.getSchema().loadTable(options.getTableName(), options);
@@ -94,22 +95,27 @@ public class SchemaTableInfoCache
         }
     }
 
+    // Ask the DbSchemaType how long to cache each table
+    @SuppressWarnings("DataFlowIssue")
+    private static final CacheTimeChooser<String> TABLE_CACHE_TIME_CHOOSER = (key, argument) -> ((SchemaTableOptions)argument).getSchema().getType().getCacheTimeToLive();
+
     private static class SchemaTableInfoBlockingCache extends BlockingCache<String, SchemaTableInfo>
     {
-        private SchemaTableInfoBlockingCache(DbScope scope, DbSchemaType schemaType)
+        private SchemaTableInfoBlockingCache(DbScope scope, boolean transactionAware)
         {
-            super(createCache(scope, schemaType), new SchemaTableLoader());
+            super(createCache(scope, transactionAware), new SchemaTableLoader());
+            setCacheTimeChooser(TABLE_CACHE_TIME_CHOOSER);
         }
     }
 
-    private static Cache<String, Wrapper<SchemaTableInfo>> createCache(DbScope scope, DbSchemaType schemaType)
+    private static Cache<String, Wrapper<SchemaTableInfo>> createCache(DbScope scope, boolean provisioned)
     {
-        String comment = "SchemaTableInfos for " + schemaType + " schemas in scope \"" + scope.getDisplayName() + "\"";
+        String comment = "SchemaTableInfos for " + (provisioned ? "provisioned" : "non-provisioned") + " schemas in scope \"" + scope.getDisplayName() + "\"";
 
         // We modify provisioned tables inside of transactions, so use a DatabaseCache to help with proper invalidation. See #46951.
-        if (schemaType == DbSchemaType.Provisioned)
-            return new DatabaseCache<>(scope, 10000, schemaType.getCacheTimeToLive(), comment);
+        if (provisioned)
+            return new DatabaseCache<>(scope, 10000, CacheManager.UNLIMITED, comment);
         else
-            return CacheManager.getStringKeyCache(10000, schemaType.getCacheTimeToLive(), comment);
+            return CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, comment);
     }
 }
