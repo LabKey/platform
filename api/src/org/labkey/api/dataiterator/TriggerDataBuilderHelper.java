@@ -135,7 +135,7 @@ public class TriggerDataBuilderHelper
 
             Set<String> mergeKeys = null;
             if (_target instanceof ExpTable)
-                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys();
+                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys(context);
 
             boolean isNewFolderImport = false;
             if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)

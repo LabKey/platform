@@ -677,10 +677,13 @@ public class PipelineManager
                 rowList.add(row);
                 if (qus != null)
                 {
+                    BatchValidationException errors = new BatchValidationException();
                     if (row.get("RowId") != null)
-                        rowList = qus.updateRows(user, container, rowList, null, null, null);
+                        rowList = qus.updateRows(user, container, rowList, null, errors, null, null);
                     else
-                        rowList = qus.insertRows(user, container, rowList, new BatchValidationException(), null, null);
+                        rowList = qus.insertRows(user, container, rowList, errors, null, null);
+                    if (errors.hasErrors())
+                        throw errors;
                 }
                 return rowList.size() > 0;
             }

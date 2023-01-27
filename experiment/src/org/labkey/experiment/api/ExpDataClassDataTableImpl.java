@@ -58,6 +58,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -77,6 +78,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -148,9 +150,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private final Supplier<TableInfo> _dataClassTableInfo;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
-    public static final Set<String> DATA_CLASS_ALT_KEYS;
+    public static final Set<String> DATA_CLASS_ALT_MERGE_KEYS;
+    public static final Set<String> DATA_CLASS_ALT_UPDATE_KEYS;
+    private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
-        DATA_CLASS_ALT_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+        DATA_CLASS_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
+        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name()));
+        ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("name", "description", "flag", "comment", "alias", "datafileurl"));
     }
 
     private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
@@ -248,7 +254,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case Name:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
-                // TODO: Name is editable in insert view, but not in update view
                 String nameExpression = _dataClass.getNameExpression();
                 c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
@@ -825,9 +830,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public Set<String> getAltMergeKeys()
+    public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        return DATA_CLASS_ALT_KEYS;
+        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+            return getAltKeysForUpdate();
+        return DATA_CLASS_ALT_MERGE_KEYS;
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getAltKeysForUpdate()
+    {
+        return DATA_CLASS_ALT_UPDATE_KEYS;
     }
 
     @Override
@@ -868,6 +882,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             _in = in;
         }
 
+        private static boolean isReservedHeader(String name)
+        {
+            for (ExpDataTable.Column column : ExpDataTable.Column.values()) // use ExpDataTable instead of ExpDataClassDataTable for a larger set of reserved fields
+            {
+                if (column.name().equalsIgnoreCase(name))
+                    return !ALLOWED_IMPORT_HEADERS.contains(column.name().toLowerCase());
+            }
+            return false;
+        }
+
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
@@ -875,6 +899,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             DataIterator input = _in.getDataIterator(context);
             if (null == input)
                 return null;           // Can happen if context has errors
+
+            var drop = new CaseInsensitiveHashSet();
+            for (int i = 1; i <= input.getColumnCount(); i++)
+            {
+                String name = input.getColumnInfo(i).getName();
+                if (isReservedHeader(name))
+                    drop.add(name);
+                else if (Column.ClassId.name().equalsIgnoreCase(name))
+                    drop.add(name);
+            }
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+                drop.remove("lsid");
+            if (!drop.isEmpty())
+                input = new DropColumnsDataIterator(input, drop);
 
             final Container c = getContainer();
             final ExperimentService svc = ExperimentService.get();
@@ -1174,15 +1212,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+            boolean useDib = false;
+            if (rows != null && !rows.isEmpty() && oldKeys == null)
+                useDib = rows.get(0).containsKey("lsid");
 
-            /* setup mini dataiterator pipeline to process lineage */
-            DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false, _dataClass, true);
+            useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
+            useDib = useDib && hasUniformKeys(rows);
 
-            return ret;
+            List<Map<String, Object>> results;
+            if (useDib)
+            {
+                Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+                finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+                results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
+            }
+            else
+            {
+                results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+                /* setup mini dataiterator pipeline to process lineage */
+                DataIterator di = _toDataIterator("updateRows.lineage", results);
+                ExpDataIterators.derive(user, container, di, false, _dataClass, true);
+            }
+
+            return results;
         }
 
         @Override

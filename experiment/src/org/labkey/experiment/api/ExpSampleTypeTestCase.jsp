@@ -580,7 +580,8 @@ public void testBlankRows() throws Exception
     updated.put("name", material1.getName());
     updated.put("lsid", material1.getLSID());
     updated.put("age", age1 + 1);
-    svc.updateRows(user, c, Collections.singletonList(updated), null, null, null);
+    svc.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
+    assertFalse(errors.hasErrors());
     var result = new TableSelector(table, TableSelector.ALL_COLUMNS, new SimpleFilter("lsid", material1.getLSID()), null).getMap();
     assertEquals(21, ((Integer)result.get("age")).intValue());
 
@@ -824,7 +825,8 @@ public void testParentColAndDataInputDerivation() throws Exception
     rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("rowId", D.getRowId(), "MaterialInputs/Samples", "B,E"));
 
-    List<Map<String, Object>> updated = svc.updateRows(user, c, rows, null, null, null);
+    List<Map<String, Object>> updated = svc.updateRows(user, c, rows, null, errors, null, null);
+    assertFalse(errors.hasErrors());
     assertEquals(1, updated.size());
 
     ExpMaterial D2 = st.getSample(c, "D");
@@ -972,7 +974,8 @@ public void testDetailedAuditLog() throws Exception
     // UPDATE
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("RowId", rowid, "Measure", "Updated", "Value", 2.0));
-    qus.updateRows(user, c, rows, null, config, null);
+    qus.updateRows(user, c, rows, null, errors, config, null);
+    assertFalse(errors.hasErrors());
     // check audit log
     events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());

@@ -1606,7 +1606,10 @@ public class StudyController extends BaseStudyController
                 throw new UnauthorizedException();
             try (DbScope.Transaction transaction = studyProperties.getSchema().getScope().ensureTransaction())
             {
-                qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null, null);
+                BatchValidationException batchErrors = new BatchValidationException();
+                qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), batchErrors, null, null);
+                if (batchErrors.hasErrors())
+                    throw batchErrors;
                 List<AttachmentFile> files = getAttachmentFileList();
                 getStudyThrowIfNull().attachProtocolDocument(files, getUser());
                 transaction.commit();
