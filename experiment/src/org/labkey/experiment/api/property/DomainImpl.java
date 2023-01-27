@@ -331,8 +331,14 @@ public class DomainImpl implements Domain
         return getDomainKind().urlShowData(this, context);
     }
 
+
     @Override
     public void delete(@Nullable User user) throws DomainNotFoundException
+    {
+        delete(user, null);
+    }
+    @Override
+    public void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
         Lock domainLock = getLock(_dd);
@@ -341,7 +347,7 @@ public class DomainImpl implements Domain
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
-            addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
+            addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()), auditUserComment);
             DomainPropertyManager.clearCaches();
             transaction.commit();
         }
@@ -783,16 +789,16 @@ public class DomainImpl implements Domain
                 getDomainKind().invalidate(this);
 
             if (isDomainNew)
-                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
+                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()), null);
 
             if (propChanged)
             {
-                final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
+                final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()), null);
                 propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
             }
             else if (!isDomainNew)
             {
-                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
+                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()), null);
             }
 
             transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
@@ -890,11 +896,12 @@ public class DomainImpl implements Domain
         }
     }
 
-    private Long addAuditEvent(@Nullable User user, String comment)
+    private Long addAuditEvent(@Nullable User user, String comment, @Nullable String auditUserComment)
     {
         if (user != null)
         {
             DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer().getId(), comment);
+            event.setUserComment(auditUserComment);
 
             if (_dd.getProject() != null)
                 event.setProjectId(_dd.getProject().getId());

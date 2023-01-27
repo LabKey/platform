@@ -70,6 +70,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SCHEMA_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QUERY_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_USER_COMMENT));
     }
 
     public QueryUpdateAuditProvider()
@@ -128,6 +129,10 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
                 else if (COLUMN_NAME_QUERY_NAME.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Query Name");
+                }
+                else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("User Comment");
                 }
             }
         };
@@ -252,6 +257,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             elements.put("schemaName", getSchemaName());
             elements.put("queryName", getQueryName());
             elements.put("transactionId", getTransactionId());
+            elements.put("userComment", getUserComment());
             // N.B. oldRecordMap and newRecordMap are potentially very large (and are not displayed in the default grid view)
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
@@ -276,6 +282,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 
