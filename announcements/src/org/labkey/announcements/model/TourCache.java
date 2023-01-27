@@ -41,7 +41,7 @@ public class TourCache
     public static class TourCacheLoader implements CacheLoader<Container, TourCollections>
     {
         @Override
-        public TourCollections load(Container c, Object argument)
+        public TourCollections load(@NotNull Container c, Object argument)
         {
             Selector selector = new TableSelector(_comm.getTableInfoTours(), SimpleFilter.createContainerFilter(c), null);
             Collection<TourModel> tours = selector.getCollection(TourModel.class);

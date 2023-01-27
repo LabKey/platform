@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -31,7 +32,7 @@ public class WikiCache
 {
     private static final String WIKI_COLLECTIONS_KEY = "~~wiki_collections~~";
     private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final BlockingCache<String, Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Wikis and wiki collections", null);
+    private static final BlockingCache<String, Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(100000, CacheManager.DAY, "Wikis and wiki collections", null);
 
     // Passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with individual wikis)
     public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>
@@ -39,7 +40,7 @@ public class WikiCache
         abstract V load(String key, Container c);
 
         @Override
-        public V load(String key, Object argument)
+        public V load(@NotNull String key, Object argument)
         {
             return load(key, (Container)argument);
         }

@@ -110,7 +110,7 @@ public class DbSchemaCache
     private class DbSchemaLoader implements CacheLoader<String, DbSchema>
     {
         @Override
-        public DbSchema load(String key, Object schemaDetails)
+        public DbSchema load(@NotNull String key, Object schemaDetails)
         {
             try
             {
@@ -123,7 +123,6 @@ public class DbSchemaCache
             }
         }
     }
-
 
     private class DbSchemaBlockingCache extends BlockingCache<String, DbSchema>
     {
