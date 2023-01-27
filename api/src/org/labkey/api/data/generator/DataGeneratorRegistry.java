@@ -10,7 +10,7 @@ public class DataGeneratorRegistry
         Storage,
     };
 
-    private static Map<DataType, DataGenerator.DataGenerationDriver> _dataGeneratorMap = new HashMap<>();
+    private static final Map<DataType, DataGenerator.DataGenerationDriver> _dataGeneratorMap = new HashMap<>();
 
     public static void registerGenerator(DataType type, DataGenerator.DataGenerationDriver generator)
     {
