@@ -165,6 +165,7 @@ public interface FolderType
     List<FolderTab> getDefaultTabs();
 
     /** @return The default tab to select, which defaults to the first (including for non-tabbed folders) */
+    @Nullable
     FolderTab getDefaultTab();
 
     /** @return the folder tab in htis folder type's default tabs whose name matches the tabName; null if none found */
@@ -181,10 +182,10 @@ public interface FolderType
     boolean hasContainerTabs();
 
     /**
-     * @return The pageId, which is primarily intended to support tabbed folders.  By default it will return
+     * @return The pageId, which is primarily intended to support tabbed folders.  By default, it will return
      * Portal.DEFAULT_PORTAL_PAGE_ID
      */
-    String getDefaultPageId(ViewContext ctx);
+    String getDefaultPageId(Container container, boolean considerActive);
 
     /**
      * Clear active portal page if there is one

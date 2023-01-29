@@ -30,6 +30,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
@@ -112,7 +113,7 @@ public class DefaultFolderType implements FolderType
         return _folderTabs;
     }
 
-    @Override
+    @Override @NotNull
     public FolderTab getDefaultTab()
     {
         return getDefaultTabs().get(0);
@@ -191,7 +192,28 @@ public class DefaultFolderType implements FolderType
 
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
-        Portal.saveParts(c, DEFAULT_DASHBOARD, all);
+
+        String mainTabId = getDefaultPageId(c, false);
+        if (!Portal.DEFAULT_PORTAL_PAGE_ID.equals(mainTabId))
+        {
+            // Split out any menu bar items which are stored in the "portal.default" portal page
+            List<WebPart> menuParts = new ArrayList<>();
+            for (WebPart webPart : all)
+            {
+                if (WebPartFactory.LOCATION_MENUBAR.equalsIgnoreCase(webPart.getLocation()))
+                {
+                    menuParts.add(webPart);
+                }
+            }
+            if (!menuParts.isEmpty())
+            {
+                Portal.saveParts(c, Portal.DEFAULT_PORTAL_PAGE_ID, menuParts);
+                // Remove any menu items so we can save the rest
+                all.removeAll(menuParts);
+            }
+        }
+
+        Portal.saveParts(c, mainTabId, all);
 
         // A few things left to do; ordering is important
 
@@ -320,7 +342,7 @@ public class DefaultFolderType implements FolderType
     public String getStartPageLabel(ViewContext ctx)
     {
         FolderTab folderTab = getDefaultTab();
-        if (null != folderTab && folderTab.isDefaultTab())
+        if (folderTab.isDefaultTab())
         {
             String caption = folderTab.getCaption(ctx);
             if (null != caption)
@@ -483,7 +505,7 @@ public class DefaultFolderType implements FolderType
     }
 
     @Override
-    public String getDefaultPageId(ViewContext ctx)
+    public String getDefaultPageId(Container c, boolean considerActive)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }

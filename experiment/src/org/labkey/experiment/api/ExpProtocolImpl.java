@@ -234,9 +234,14 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public void delete(User user)
     {
+        delete(user, null);
+    }
+
+    public void delete(User user, @Nullable final String auditUserComment )
+    {
         try
         {
-            ExperimentServiceImpl.get().deleteProtocolByRowIds(getContainer(), user, getRowId());
+            ExperimentServiceImpl.get().deleteProtocolByRowIds(getContainer(), user, auditUserComment, getRowId());
         }
         catch (ExperimentException e)
         {

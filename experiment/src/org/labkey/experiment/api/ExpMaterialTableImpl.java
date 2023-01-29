@@ -120,9 +120,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
 
-    public static final Set<String> MATERIAL_ALT_KEYS;
+    public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
+    public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
     static {
-        MATERIAL_ALT_KEYS = new HashSet<>(Arrays.asList(Column.MaterialSourceId.name(), Column.Name.name()));
+        MATERIAL_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.MaterialSourceId.name(), Column.Name.name()));
+        MATERIAL_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name()));
     }
 
     public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
@@ -238,7 +240,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
-                columnInfo.setLabel("Aliquoted From");
+                columnInfo.setLabel("Aliquoted From Parent");
                 return columnInfo;
             }
             case IsAliquot:
@@ -1066,9 +1068,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public Set<String> getAltMergeKeys()
+    public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        return MATERIAL_ALT_KEYS;
+        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+            return getAltKeysForUpdate();
+
+        return MATERIAL_ALT_MERGE_KEYS;
+    }
+
+    @NotNull
+    @Override
+    public Set<String> getAltKeysForUpdate()
+    {
+        return MATERIAL_ALT_UPDATE_KEYS;
     }
 
     @Override

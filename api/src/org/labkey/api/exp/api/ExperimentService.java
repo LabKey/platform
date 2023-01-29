@@ -125,6 +125,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
         ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
+    enum QueryOptions
+    {
+        UseLsidForUpdate
+    }
+
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
@@ -627,7 +632,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, @NotNull Collection<Integer> selectedRunIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Integer> selectedRunIds);
 
     void deleteExpExperimentByRowId(Container container, User user, int experimentId);
 
@@ -811,6 +816,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     HttpView createFileExportView(Container container, String defaultFilenamePrefix);
 
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
+    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message, String userComment);
 
     List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
 

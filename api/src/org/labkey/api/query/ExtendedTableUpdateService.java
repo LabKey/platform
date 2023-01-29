@@ -76,7 +76,10 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
         Map<String, Object> updatedRow = super.updateRow(user, container, row, oldRow);
         try
         {
-            _baseTableUpdateService.updateRows(user, container, Arrays.asList(row), Arrays.asList(oldRow), null, null);
+            BatchValidationException errors = new BatchValidationException();
+            _baseTableUpdateService.updateRows(user, container, Arrays.asList(row), Arrays.asList(oldRow), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
         }
         catch (BatchValidationException e)
         {

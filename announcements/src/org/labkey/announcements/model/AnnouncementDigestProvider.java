@@ -48,6 +48,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static org.labkey.announcements.model.AnnouncementManager.SHOULD_SEND_ANNOUNCEMENT_NOTIFICATION;
 
 /**
  * User: klum
@@ -123,7 +126,12 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private static Collection<AnnouncementModel> getRecentAnnouncementsInContainer(Container c, Date min, Date max)
     {
-        return new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).getCollection(AnnouncementModel.class);
+        try (Stream<AnnouncementModel> announcementStream = new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).uncachedStream(AnnouncementModel.class))
+        {
+            return announcementStream
+                .filter(SHOULD_SEND_ANNOUNCEMENT_NOTIFICATION)
+                .toList();
+        }
     }
 
     private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
@@ -220,10 +228,10 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                     if (null != threadURL)
                     {
                         sb.append("<tr><td><a href=\"")
-                                .append(threadURL.getURIString())
-                                .append("\">View this ")
-                                .append(PageFlowUtil.filter(dailyDigestBean.conversationName))
-                                .append("</a></td></tr>");
+                            .append(threadURL.getURIString())
+                            .append("\">View this ")
+                            .append(PageFlowUtil.filter(dailyDigestBean.conversationName))
+                            .append("</a></td></tr>");
                     }
 
                     threadURL = AnnouncementsController.getThreadURL(dailyDigestBean.c, previousThread, ann.getRowId());

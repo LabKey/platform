@@ -70,6 +70,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -328,11 +329,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public void delete(User user)
     {
+        delete(user, null);
+    }
+
+    @Override
+    public void delete(User user, @Nullable final String auditUserComment)
+    {
         if (!canDelete(user))
         {
             throw new UnauthorizedException();
         }
-        ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, getRowId());
+        ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, auditUserComment, Arrays.asList(getRowId()));
     }
 
     @Override

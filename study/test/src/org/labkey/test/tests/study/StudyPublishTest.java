@@ -882,7 +882,8 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Treatment Data");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View",
+                "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents", "Treatment Data");
         clickButton("Next", 0);
 
         // Lists

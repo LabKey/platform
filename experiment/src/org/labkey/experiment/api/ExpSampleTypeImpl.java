@@ -810,11 +810,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
+    @Deprecated // Prefer to use the version that provides an audit comment
     public void delete(User user)
+    {
+        delete(user, null);
+    }
+
+    @Override
+    public void delete(User user, String auditUserComment)
     {
         try
         {
-            SampleTypeService.get().deleteSampleType(getRowId(), getContainer(), user);
+            SampleTypeService.get().deleteSampleType(getRowId(), getContainer(), user, auditUserComment);
         }
         catch (ExperimentException e)
         {

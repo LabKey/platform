@@ -94,6 +94,7 @@ public class ExperimentAuditEvent extends AuditTypeEvent
         elements.put("runLsid", getRunLsid());
         elements.put("message", getMessage());
         elements.put("qcState", getQcState());
+        elements.put("userComment", getUserComment());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }
