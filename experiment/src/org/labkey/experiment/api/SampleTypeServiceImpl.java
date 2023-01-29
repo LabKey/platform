@@ -338,7 +338,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
-    public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Integer objectId)
     {
         OntologyObject obj = OntologyManager.getOntologyObject(objectId);
         if (obj == null)
@@ -348,13 +348,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectiveDate)
+    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer);
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
-            return getSampleTypeByObjectId(definitionContainer, legacyObjectId);
+            return getSampleTypeByObjectId(legacyObjectId);
 
-        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName);
+        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, user, includeOtherContainers, sampleTypeName);
         if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
             return sampleType;
 
