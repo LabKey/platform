@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -77,12 +78,22 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+    private boolean canUpdateUsingDIB()
+    {
+        if (getQueryTable() == null)
+            return false;
+
+        TableInfo table = getQueryTable().getSchemaTableInfo();
+
+        return table.getTableType() == DatabaseTableType.TABLE && null != table.getMetaDataName();
+    }
+
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
                                                 BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        boolean useDib = oldKeys == null;
+        boolean useDib = oldKeys == null && canUpdateUsingDIB();
         useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
         useDib = useDib && !getQueryTable().hasTriggers(container);
         useDib = useDib && hasUniformKeys(rows);
