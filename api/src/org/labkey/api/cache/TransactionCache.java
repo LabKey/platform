@@ -17,26 +17,34 @@
 package org.labkey.api.cache;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
 import java.util.Set;
 
 /**
- * A read-through, transaction-specific cache. Reads through to the shared cache until any write occurs, at which point
- * it switches to using a private cache for the remainder of the transaction. This avoids polluting the shared cache
+ * A read-through, transaction-specific cache. Reads through to the shared cache for each entry until a write operation
+ * (put or remove) occurs on that entry, at which point only the private cache is consulted for this entry for the
+ * remainder of the transaction. This should provide for good performance while avoiding pollution of the shared cache
  * during the transaction and in the case of a rollback.
  * User: adam
  * Date: Nov 9, 2009
  */
 public class TransactionCache<K, V> implements Cache<K, V>
 {
+    /** Need our own markers so we can distinguish missing vs. cached miss and missing vs. removed */
+    @SuppressWarnings("unchecked")
+    private final V NULL_MARKER = (V)new Object();
+    @SuppressWarnings("unchecked")
+    private final V REMOVED_MARKER = (V)new Object();
+
     /** Cache shared by other threads */
     private final Cache<K, V> _sharedCache;
     /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
 
-    /** Whether we've written to our private, transaction-specific cache */
-    private boolean _hasWritten = false;
+    /** Whether the cache has been cleared. Once clear() is invoked, the shared cache is ignored. */
+    private boolean _hasBeenCleared = false;
 
     public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
     {
@@ -47,81 +55,74 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public V get(@NotNull K key)
     {
-        V v;
-
-        if (_hasWritten)
-            v = _privateCache.get(key);
-        else
-            v = _sharedCache.get(key);
-
-        return v;
+        return get(key, null, null);
     }
 
     @Override
-    public V get(@NotNull K key, Object arg, CacheLoader<K, V> loader)
+    public V get(@NotNull K key, Object arg, @Nullable CacheLoader<K, V> loader)
     {
-        V v;
+        V v = _privateCache.get(key);
 
-        if (_hasWritten)
+        if (v == REMOVED_MARKER)
         {
-            // Look only in our private cache at this point
-            v = _privateCache.get(key, arg, loader);
+            v = null; // Entry has been removed from private cache; treat as missing.
         }
-        else
+        else if (null == v && !_hasBeenCleared)
         {
-            // This doesn't handle caching of null values correct - nulls will cause us to always requery and store
-            // in the private cache
-            v = _sharedCache.get(key);
-
-            if (null == v)
-            {
-                v = loader.load(key, arg);
-                _hasWritten = true;
-                _privateCache.put(key, v);
-            }
+            v = _sharedCache.get(key); // Never written to; read-through to shared cache.
         }
 
-        return v;
+        // If removed/cleared from private cache or missing from both caches, attempt to load and put into private cache.
+        if (null == v && null != loader)
+        {
+            v = loader.load(key, arg);
+            put(key, v);
+        }
+
+        return (v == NULL_MARKER || v == REMOVED_MARKER) ? null : v;
     }
 
     @Override
     public void put(@NotNull K key, V value)
     {
-        _hasWritten = true;
+        if (null == value)
+            value = NULL_MARKER;
         _privateCache.put(key, value);
     }
 
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
-        _hasWritten = true;
+        if (null == value)
+            value = NULL_MARKER;
         _privateCache.put(key, value, timeToLive);
     }
 
     @Override
     public void remove(@NotNull K key)
     {
-        _hasWritten = true;
-        _privateCache.remove(key);
+        _privateCache.put(key, REMOVED_MARKER);
     }
 
     @Override
     public int removeUsingFilter(Filter<K> filter)
     {
-        _hasWritten = true;
-        return _privateCache.removeUsingFilter(filter);
+        return (int)(
+            _privateCache.getKeys().stream().peek(this::remove).count() +
+            _sharedCache.getKeys().stream().peek(this::remove).count()
+        );
     }
 
     @Override
     public Set<K> getKeys()
     {
-        return null;
+        throw new UnsupportedOperationException("getKeys() is not implemented");
     }
 
     @Override
     public void clear()
     {
-        _hasWritten = true;
+        _hasBeenCleared = true;
         _privateCache.clear();
     }
 
