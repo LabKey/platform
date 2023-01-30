@@ -65,21 +65,21 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
         if (v == REMOVED_MARKER)
         {
-            v = null; // Entry has been removed from private cache; treat as missing.
+            v = null; // Entry has been removed from private cache, so treat as missing
         }
         else if (null == v && !_hasBeenCleared)
         {
-            v = _sharedCache.get(key); // Never written to; read-through to shared cache.
+            v = _sharedCache.get(key); // Entry has never been modified, read-through to shared cache
         }
 
-        // If removed/cleared from private cache or missing from both caches, attempt to load and put into private cache.
+        // If removed/cleared from private cache or missing from both caches, attempt to load and put into private cache
         if (null == v && null != loader)
         {
             v = loader.load(key, arg);
             put(key, v);
         }
 
-        return (v == NULL_MARKER || v == REMOVED_MARKER) ? null : v;
+        return v == NULL_MARKER ? null : v;
     }
 
     @Override
