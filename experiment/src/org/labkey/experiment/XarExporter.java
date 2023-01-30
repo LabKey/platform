@@ -430,14 +430,18 @@ public class XarExporter
             }
             else
             {
-                dataLSID.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
                 if (data.getCpasType() != null && !ExpData.DEFAULT_CPAS_TYPE.equalsIgnoreCase(data.getCpasType()))
                 {
+                    dataLSID.setCpasType(_relativizedLSIDs.relativize(data.getCpasType()));
                     ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(data.getCpasType());
                     if (dataClass != null)
                     {
                         addDataClass(dataClass);
                     }
+                }
+                else
+                {
+                    dataLSID.setCpasType(ExpData.DEFAULT_CPAS_TYPE);
                 }
             }
         }
@@ -579,7 +583,7 @@ public class XarExporter
         logProgress("Adding material " + material.getLSID());
         addSampleType(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
-        xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
+        xMaterial.setCpasType(material.getCpasType() == null || ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
         if (material.getRootMaterialLSID() != null)
             xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(material.getRootMaterialLSID()));
@@ -931,7 +935,7 @@ public class XarExporter
         logProgress("Adding data " + data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
-        xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
+        xData.setCpasType(data.getCpasType() == null || ExpData.DEFAULT_CPAS_TYPE .equals(data.getCpasType()) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
         Path path = data.getFilePath();
         if (path != null)
