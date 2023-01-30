@@ -1258,20 +1258,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // test existing row value is not updated/erased
             assertEquals(2, rows.get(2).get("i"));
 
-            // update should skip the new record row silently and update the rest rows successfully
+            // update should fail if a new record is provided and VerifyExistingData = true
             updateRows = new ArrayList<Map<String,Object>>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
-            assertFalse(context.getErrors().hasErrors());
-            assertEquals(count,2);
-            rows = getRows();
-            assertEquals(rows.size(),3);
-            assertEquals("TWO-UP-2", rows.get(2).get("s"));
-
-            // update should fail if a new record is provided and VerifyExistingData = true
-            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, true); // simulate file import
-            qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
         }
 

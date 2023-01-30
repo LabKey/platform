@@ -1,5 +1,6 @@
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -80,7 +81,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         user = userSchema != null ? userSchema.getUser() : null;
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
-        _verifyExisting = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData) && option.updateOnly;
+        _verifyExisting = option.updateOnly;
         _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
@@ -196,13 +197,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
-            boolean validateExistingData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.VerifyExistingData);
-            if (option.mergeRows || validateExistingData)
+            if (option.allowUpdate)
             {
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                if (auditType == DETAILED || validateExistingData)
+                if (auditType == DETAILED || option.updateOnly)
                 {
                     boolean detailed = auditType == DETAILED;
                     if (useGetRows)
@@ -219,9 +219,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     /* Select using normal TableInfo stuff */
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
+        final Set<String> allowedContainers = new HashSet<>();
+
         ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
             super(in, target, keys, true, context, detailed);
+            allowedContainers.add(c.getId());
         }
 
         private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
@@ -281,6 +284,22 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             for (Map map : list)
             {
                 Integer r = (Integer)map.get("_row_number_");
+
+                if (_verifyExisting)
+                {
+                    String containerId = null;
+                    if (map.containsKey("container"))
+                        containerId = (String) map.getOrDefault("container", "");
+                    else if (map.containsKey("folder"))
+                        containerId = (String) map.getOrDefault("folder", "");
+
+                    if (!StringUtils.isEmpty(containerId))
+                    {
+                        if (!allowedContainers.contains(containerId))
+                            _context.getErrors().addRowError(new ValidationException("Data doesn't belong to the current folder at row number: " + r));
+                    }
+                }
+
                 map.remove("_row_number_");
                 map.remove("_row"); // I think CachedResultSet adds "_row"
                 existingRecords.put(r,(Map<String,Object>)map);
