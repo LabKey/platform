@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
@@ -54,7 +55,7 @@ public interface ExpSampleType extends ExpObject
     ExpMaterial getSample(Container c, String name);
 
     /** get the sample with name at a specific time */
-    ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate);
+    ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate, @Nullable ContainerFilter cf);
 
     @NotNull
     Domain getDomain();

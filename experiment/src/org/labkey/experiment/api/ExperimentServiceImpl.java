@@ -1406,7 +1406,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, null, false, dataClassName);
     }
 
-    public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
+    public ExpDataClassImpl getDataClassByObjectId(Integer objectId)
     {
         OntologyObject obj = OntologyManager.getOntologyObject(objectId);
         if (obj == null)
@@ -1417,13 +1417,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
 
     @Override
-    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate)
+    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
+        Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
-            return getDataClassByObjectId(definitionContainer, legacyObjectId);
+            return getDataClassByObjectId(legacyObjectId);
 
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, dataClassName);
+        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeOtherContainers, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1566,10 +1567,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Nullable
-    public ExpDataImpl getDataByObjectId(Container c, Integer objectId)
+    public ExpDataImpl getDataByObjectId(Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId);
 
         Data data = new TableSelector(getTinfoData(), filter, null).getObject(Data.class);
         if (data == null)
@@ -1579,11 +1579,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container)
+    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
+        Integer legacyObjectId = getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, container, cf);
         if (legacyObjectId != null)
-            return getDataByObjectId(container, legacyObjectId);
+            return getDataByObjectId(legacyObjectId);
 
         ExpDataImpl data = getExpData(dataClass, name);
         if (data != null && data.getCreated().compareTo(effectiveDate) <= 0)
@@ -8122,19 +8122,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c)
+    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf)
     {
+        Set<GUID> containerIds = new HashSet<>();
+        if (cf != null)
+        {
+            Collection<GUID> ids = cf.getIds();
+            if (ids != null && ids.size() > 1)
+                containerIds.addAll(ids);
+        }
+
+        if (containerIds.isEmpty())
+            containerIds.add(c.getEntityId());
+
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
                 "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?) " +
-                "ORDER BY CREATED DESC");
+                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
-        sql.add(c.getId());
+        sql.appendInClause(containerIds, tableInfo.getSqlDialect());
+        sql.append(") ORDER BY CREATED DESC");
 
         Map<String, Object>[] legacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
 
@@ -8146,11 +8157,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Date nameEndTime = (Date) legacyNames[0].get("Created");
             SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
                     "WHERE ObjectType = ? AND Created < ? " +
-                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
-                    "ORDER BY CREATED DESC");
+                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container ");
             previousNameSql.add(dataType);
             previousNameSql.add(nameEndTime);
-            previousNameSql.add(c);
+            previousNameSql.appendInClause(containerIds, tableInfo.getSqlDialect());
+            previousNameSql.append(") ORDER BY CREATED DESC");
 
             Map<String, Object>[] previousLegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
             if (previousLegacyNames.length >= 1)

@@ -426,7 +426,8 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.add(row);
     List<Map<String, Object>> keys = new ArrayList<>();
     keys.add(PageFlowUtil.mapInsensitive("lsid", lsidFirstRow));
-    ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, null, null);
+    ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, errors, null, null);
+    assertFalse(errors.hasErrors());
     assert(ret.size() == 1);
 }
 
@@ -477,7 +478,8 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("LSID", lsidRet, "Measure", "Updated", "Value", 2.0));
 //        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Updated", "Value", 2.0));
-    qus.updateRows(_context.getUser(), study.getContainer(), rows, null, config, null);
+    qus.updateRows(_context.getUser(), study.getContainer(), rows, null, errors, config, null);
+    assertFalse(errors.hasErrors());
 
     events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());

@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
@@ -63,6 +64,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -665,9 +667,15 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public ExpMaterialImpl getSample(Container c, String name)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        return getSample(c, name, null);
+    }
+
+    public ExpMaterialImpl getSample(Container c, String name, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
         filter.addCondition(FieldKey.fromParts("Name"), name);
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)
@@ -675,10 +683,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return new ExpMaterialImpl(material);
     }
 
-    private ExpMaterialImpl getSampleByObjectId(Container c, Integer objectId)
+    private ExpMaterialImpl getSampleByObjectId(Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId);
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)
@@ -687,13 +694,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate)
+    public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c);
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c, cf);
         if (legacyObjectId != null)
-            return getSampleByObjectId(c, legacyObjectId);
+            return getSampleByObjectId(legacyObjectId);
 
-        ExpMaterial material = getSample(c, name);
+        ExpMaterial material = getSample(c, name, cf);
         if (material != null && material.getCreated().compareTo(effectiveDate) <= 0)
             return material;
 

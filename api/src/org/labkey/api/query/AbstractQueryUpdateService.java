@@ -317,8 +317,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!hasPermission(user, InsertPermission.class))
-            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+        if (!hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class))
+            throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
             assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
@@ -464,7 +464,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected @Nullable List<Map<String, Object>> _insertUpdateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
+        DataIterator di = _toDataIterator(getClass().getSimpleName() + (context.getInsertOption().updateOnly ? ".updateRows" : ".insertRows()"), rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
@@ -704,9 +704,34 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return updateRow(user, container, row, oldRow);
     }
 
+    // used by updateRows to check if all rows have the same set of keys
+    // prepared statement can only be used to updateRows if all rows have the same set of keys
+    protected boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
+    {
+        if (rowsToUpdate == null || rowsToUpdate.isEmpty())
+            return false;
+
+        if (rowsToUpdate.size() == 1)
+            return true;
+
+        Set<String> keys = rowsToUpdate.get(0).keySet();
+        int keySize = keys.size();
+
+        for (int i = 1 ; i < rowsToUpdate.size(); i ++)
+        {
+            Set<String> otherKeys = rowsToUpdate.get(i).keySet();
+            if (otherKeys.size() != keySize)
+                return false;
+            if (!otherKeys.containsAll(keys))
+                return false;
+        }
+
+        return true;
+    }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
+                                                BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, UpdatePermission.class))
@@ -717,7 +742,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
-        BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
