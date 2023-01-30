@@ -193,7 +193,7 @@ public class DefaultFolderType implements FolderType
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
 
-        String mainTabId = getDefaultPageId(c, false);
+        String mainTabId = getDefaultPageId(c);
         if (!Portal.DEFAULT_PORTAL_PAGE_ID.equals(mainTabId))
         {
             // Split out any menu bar items which are stored in the "portal.default" portal page
@@ -505,7 +505,7 @@ public class DefaultFolderType implements FolderType
     }
 
     @Override
-    public String getDefaultPageId(Container c, boolean considerActive)
+    public String getDefaultPageId(Container c)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }
