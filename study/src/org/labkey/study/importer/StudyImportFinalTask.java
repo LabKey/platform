@@ -69,6 +69,7 @@ public class StudyImportFinalTask
 
             // TreatmentVisitMap needs to import after cohort info is loaded (issue 19947)
             internalImporters.add(new TreatmentVisitMapImporter());
+            internalImporters.add(new StudySecurityPolicyImporter());
 
             VirtualFile vf = ctx.getRoot();
             for (InternalStudyImporter importer : internalImporters)

@@ -3605,7 +3605,7 @@ public class QueryController extends SpringActionController
             QueryLogging queryLogging = new QueryLogging();
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-            if (queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
+            if (queryLogging.isShouldAudit() && queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
             {
                 errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
                 return null;
@@ -4019,7 +4019,10 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, configParameters, extraContext);
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, null, errors, configParameters, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
                 return qus.getRows(user, container, updatedRows);
             }
         },
@@ -4041,7 +4044,10 @@ public class QueryController extends SpringActionController
                     CaseInsensitiveHashMap<Object> oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap<>(((JSONObject)row.get(SaveRowsAction.PROP_OLD_KEYS)).toMap()) : new CaseInsensitiveHashMap<>();
                     oldKeys.add(oldMap);
                 }
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, configParameters, extraContext);
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, errors, configParameters, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -4230,6 +4236,9 @@ public class QueryController extends SpringActionController
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
+
+            if (json.optBoolean("SkipBatchUpdateRows", false))
+                configParameters.put(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows, true);
 
             //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to

@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -129,7 +130,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
         return null;
     }
 
-    @Nullable default Set<String> getAltMergeKeys()
+    @Nullable default Set<String> getAltMergeKeys(DataIteratorContext context)
     {
         return null;
     }

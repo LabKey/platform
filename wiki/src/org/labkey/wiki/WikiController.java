@@ -1151,6 +1151,10 @@ public class WikiController extends SpringActionController
             }
             else
             {
+                // Result was found; strip the "_docid" parameter and redirect as a convenience
+                if (null != getViewContext().getActionURL().getParameter("_docid"))
+                    throw new RedirectException(getViewContext().cloneActionURL().deleteParameter("_docid"));
+
                 int version = form.getVersion();
 
                 if (0 == version)

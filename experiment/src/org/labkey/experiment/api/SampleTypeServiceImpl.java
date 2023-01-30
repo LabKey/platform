@@ -94,6 +94,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -337,7 +338,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
-    public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Integer objectId)
     {
         OntologyObject obj = OntologyManager.getOntologyObject(objectId);
         if (obj == null)
@@ -347,13 +348,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectiveDate)
+    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer);
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
-            return getSampleTypeByObjectId(definitionContainer, legacyObjectId);
+            return getSampleTypeByObjectId(legacyObjectId);
 
-        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName);
+        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, user, includeOtherContainers, sampleTypeName);
         if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
             return sampleType;
 
@@ -542,7 +544,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void deleteSampleType(int rowId, Container c, User user) throws ExperimentException
+    public void deleteSampleType(int rowId, Container c, User user, @Nullable String auditUserComment) throws ExperimentException
     {
         CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
@@ -582,6 +584,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
+            addSampleTypeAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
@@ -607,6 +611,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         timer.stop();
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
+    }
+
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl sampleType, Long txAuditId, String auditUserComment)
+    {
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", sampleType.getName()));
+        event.setUserComment(auditUserComment);
+
+        if (txAuditId != null)
+            event.setTransactionId(txAuditId);
+
+        if (sampleType != null)
+        {
+            event.setSourceLsid(sampleType.getLSID());
+            event.setSampleSetName(sampleType.getName());
+        }
+        event.setInsertUpdateChoice("delete type");
+        AuditLogService.get().addEvent(user, event);
     }
 
 

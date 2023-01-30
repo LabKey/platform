@@ -1692,6 +1692,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
     }
 
+    public ContainerFilter getProductProjectsDataContainerFilter(User user)
+    {
+        if (!isProductProjectsEnabled())
+            return ContainerFilter.current(this);
+
+        if (isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(this, user);
+        else if (!isProject() && getProject() != null)
+            return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
+
+        return ContainerFilter.current(this);
+    }
+
     public boolean isDataspace()
     {
         return StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(getFolderType().getName());

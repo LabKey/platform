@@ -297,9 +297,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
+        auditRunEvent(user, protocol, run, runGroup, comment, null);
+    }
+
+    @Override
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment)
+    {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         ExperimentAuditEvent event = new ExperimentAuditEvent(c.getId(), comment);
-
+        event.setUserComment(userComment);
         event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         if (runGroup != null)
             event.setRunGroup(runGroup.getRowId());
@@ -1400,7 +1406,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, null, false, dataClassName);
     }
 
-    public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
+    public ExpDataClassImpl getDataClassByObjectId(Integer objectId)
     {
         OntologyObject obj = OntologyManager.getOntologyObject(objectId);
         if (obj == null)
@@ -1411,13 +1417,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
 
     @Override
-    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate)
+    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
+        Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
-            return getDataClassByObjectId(definitionContainer, legacyObjectId);
+            return getDataClassByObjectId(legacyObjectId);
 
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, dataClassName);
+        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeOtherContainers, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1560,10 +1567,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Nullable
-    public ExpDataImpl getDataByObjectId(Container c, Integer objectId)
+    public ExpDataImpl getDataByObjectId(Integer objectId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId);
 
         Data data = new TableSelector(getTinfoData(), filter, null).getObject(Data.class);
         if (data == null)
@@ -1573,11 +1579,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container)
+    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container, @Nullable ContainerFilter cf)
     {
-        Integer legacyObjectId = getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
+        Integer legacyObjectId = getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, container, cf);
         if (legacyObjectId != null)
-            return getDataByObjectId(container, legacyObjectId);
+            return getDataByObjectId(legacyObjectId);
 
         ExpDataImpl data = getExpData(dataClass, name);
         if (data != null && data.getCreated().compareTo(effectiveDate) <= 0)
@@ -3551,12 +3557,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
-        deleteRun(runId, datasToDelete, user);
+        deleteRun(runId, datasToDelete, user, null);
         return datasToDelete;
     }
 
 
-    private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user)
+    private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user, String userComment)
     {
         ExpRunImpl run = getExpRun(runId);
         if (run == null)
@@ -3601,7 +3607,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID() );
         }
-        auditRunEvent(user, protocol, run, null, "Run deleted");
+        auditRunEvent(user, protocol, run, null, "Run deleted", userComment);
     }
 
 
@@ -3819,7 +3825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (includeProjectAndShared)
         {
             Container project = container.getProject();
-            if (project != null && project.hasPermission(user, ReadPermission.class))
+            if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
             {
                 containerIds.add(project.getId());
             }
@@ -4065,11 +4071,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Integer> ids = new ArrayList<>(selectedRunIds.length);
         for (int id : selectedRunIds)
             ids.add(id);
-        deleteExperimentRunsByRowIds(container, user, ids);
+        deleteExperimentRunsByRowIds(container, user, null, ids);
     }
 
     @Override
-    public void deleteExperimentRunsByRowIds(Container container, final User user, @NotNull Collection<Integer> selectedRunIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Integer> selectedRunIds)
     {
         if (selectedRunIds.isEmpty())
             return;
@@ -4186,7 +4192,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     //  ideally this would be transacted as a commit task but we decided against it due to complications
                     run.archiveDataFiles(user);
 
-                    deleteRun(runId, datasToDelete, user);
+                    deleteRun(runId, datasToDelete, user, userComment);
 
                     for (ExpData data : datasToDelete)
                     {
@@ -4309,7 +4315,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, String auditUserComment, int... selectedProtocolIds) throws ExperimentException
     {
         if (selectedProtocolIds.length == 0)
             return;
@@ -4360,7 +4366,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // Delete runs after deleting datasets so that we don't have to do the work to clear out the data rows
             for (ExpRun run : runs)
             {
-                run.delete(user);
+                run.delete(user, auditUserComment);
             }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
@@ -4375,7 +4381,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
-                            provider.deleteProtocol(protocolToDelete, user);
+                            provider.deleteProtocol(protocolToDelete, user, auditUserComment);
                     }
                 }
                 else
@@ -4406,7 +4412,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql = new SQLFragment("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
-            deleteProtocolByRowIds(c, user, orphanedProtocolIds);
+            deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
 
             if (assayService != null)
             {
@@ -4794,7 +4800,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (containers.size() == 1)
         {
             Container runContainer = containers.iterator().next();
-            deleteExperimentRunsByRowIds(runContainer, user, runsToDelete.stream().map(ExpRun::getRowId).collect(Collectors.toList()));
+            deleteExperimentRunsByRowIds(runContainer, user, null, runsToDelete.stream().map(ExpRun::getRowId).collect(Collectors.toList()));
         }
         else
         {
@@ -5174,7 +5180,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // now delete protocols (including their nested actions and parameters.
-            deleteProtocolByRowIds(c, user, protIds);
+            deleteProtocolByRowIds(c, user, null, protIds);
 
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
@@ -5639,7 +5645,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
-    public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
+    public void deleteDataClass(int rowId, Container c, User user, @Nullable final String auditUserComment) throws ExperimentException
     {
         ExpDataClassImpl dataClass = getDataClass(rowId);
         if (null == dataClass)
@@ -5658,7 +5664,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             truncateDataClass(dataClass, user, null);
 
-            d.delete(user);
+            d.delete(user, auditUserComment);
 
             deleteDomainObjects(dcContainer, dataClass.getLSID());
 
@@ -8116,19 +8122,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c)
+    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c, @Nullable ContainerFilter cf)
     {
+        Set<GUID> containerIds = new HashSet<>();
+        if (cf != null)
+        {
+            Collection<GUID> ids = cf.getIds();
+            if (ids != null && ids.size() > 1)
+                containerIds.addAll(ids);
+        }
+
+        if (containerIds.isEmpty())
+            containerIds.add(c.getEntityId());
+
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
                 "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?) " +
-                "ORDER BY CREATED DESC");
+                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
-        sql.add(c.getId());
+        sql.appendInClause(containerIds, tableInfo.getSqlDialect());
+        sql.append(") ORDER BY CREATED DESC");
 
         Map<String, Object>[] legacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
 
@@ -8140,11 +8157,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Date nameEndTime = (Date) legacyNames[0].get("Created");
             SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
                     "WHERE ObjectType = ? AND Created < ? " +
-                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
-                    "ORDER BY CREATED DESC");
+                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container ");
             previousNameSql.add(dataType);
             previousNameSql.add(nameEndTime);
-            previousNameSql.add(c);
+            previousNameSql.appendInClause(containerIds, tableInfo.getSqlDialect());
+            previousNameSql.append(") ORDER BY CREATED DESC");
 
             Map<String, Object>[] previousLegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
             if (previousLegacyNames.length >= 1)

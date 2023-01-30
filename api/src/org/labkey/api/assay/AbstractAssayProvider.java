@@ -1109,8 +1109,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new DetailsView(region, dataRowId);
     }
 
-    @Override
+    @Deprecated //Prefer overload that accepts the additional audit comment
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
+    {
+        deleteProtocol(protocol, user, null);
+    }
+
+    @Override
+    public void deleteProtocol(ExpProtocol protocol, User user, @Nullable final String auditUserComment) throws ExperimentException
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos =  getDomains(protocol);
         List<Domain> domains = new ArrayList<>();
@@ -1130,7 +1136,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
             try
             {
-                domain.delete(user);
+                domain.delete(user, auditUserComment);
             }
             catch (DomainNotFoundException e)
             {

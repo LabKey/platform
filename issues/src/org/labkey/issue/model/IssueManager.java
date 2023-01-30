@@ -349,7 +349,9 @@ public class IssueManager
                 else
                 {
                     issue.beforeUpdate(user);
-                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), null, null);
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), batchErrors, null, null);
+                    if (batchErrors.hasErrors())
+                        throw batchErrors;
                 }
                 issue.setRelated(related);
                 saveComments(user, issue);

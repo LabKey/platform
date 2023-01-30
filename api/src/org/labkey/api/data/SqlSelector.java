@@ -42,6 +42,8 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbScope scope, @Nullable Connection conn, CharSequence sql)
     {
         this(scope, conn, new SQLFragment(sql));
+        if (sql instanceof SQLFragment)
+            throw new IllegalStateException();
     }
 
     public SqlSelector(DbScope scope, SQLFragment sql, @NotNull QueryLogging queryLogging)
@@ -65,6 +67,13 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbSchema schema, SQLFragment sql)
     {
         this(schema.getScope(), sql);
+        if (null == sql)
+            throw new NullPointerException();
+    }
+
+    public SqlSelector(DbSchema schema, SQLFragment sql, @NotNull QueryLogging queryLogging)
+    {
+        this(schema.getScope(), sql, queryLogging);
         if (null == sql)
             throw new NullPointerException();
     }

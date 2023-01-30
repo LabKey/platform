@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,32 +29,62 @@ import java.util.Set;
  */
 public class ColumnLogging implements Comparable<ColumnLogging>
 {
+    private final String _originalSchemaName;
+    private final String _originalTableName;
+    private final FieldKey _originalColumnFieldKey;
     private final boolean _shouldLogName;
     private final Set<FieldKey> _dataLoggingColumns;
     private final String _loggingComment;
-    private final FieldKey _originalColumnFieldKey;
-    private String _originalTableName;
-    private SelectQueryAuditProvider _selectQueryAuditProvider;
+    private final SelectQueryAuditProvider _selectQueryAuditProvider;
 
-    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
+    public static ColumnLogging defaultLogging(ColumnInfo col)
     {
+        var parent = col.getParentTable();
+        var tableName = null == parent ? "" : parent.getName();
+        var schemaName = null == parent ? "" : parent.getPublicSchemaName();
+        return new ColumnLogging(schemaName, tableName, col.getFieldKey(), false, Set.of(), "", null);
+    }
+
+
+    public ColumnLogging remapFieldKeys(FieldKey baseFieldKey, Map<FieldKey,FieldKey> remap)
+    {
+        if (null == baseFieldKey && (null == remap || remap.isEmpty()))
+            return this;
+        if (_dataLoggingColumns.isEmpty())
+            return this;
+        Set<FieldKey> dataLoggingColumns = new HashSet<>();
+        for (FieldKey fk : _dataLoggingColumns)
+            dataLoggingColumns.add(FieldKey.remap(fk, baseFieldKey, remap));
+        return new ColumnLogging(_originalSchemaName, _originalTableName, _originalColumnFieldKey, _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
+    }
+
+
+    // we don't usually want to change the original table, but if we do here you go
+    public ColumnLogging reparent(TableInfo table)
+    {
+        return new ColumnLogging(table.getSchema().getName(), table.getName(), _originalColumnFieldKey, _shouldLogName, _dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
+    }
+
+
+    public ColumnLogging(String schemaName, String tableName, FieldKey originalColumnFieldKey, boolean shouldLogName, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
+    {
+        _originalSchemaName = schemaName;
+        _originalTableName = tableName;
+        _originalColumnFieldKey = originalColumnFieldKey;
         _shouldLogName = shouldLogName;
-        _dataLoggingColumns = dataLoggingColumns;
+        _dataLoggingColumns = Collections.unmodifiableSet(dataLoggingColumns);
         _loggingComment = loggingComment;
-        _originalColumnFieldKey = columnFieldKey;
-        _originalTableName = null != parentTable ? parentTable.getName() : "";
         _selectQueryAuditProvider = selectQueryAuditProvider;
     }
 
-    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment)
+
+    @Deprecated
+    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
     {
-        this(shouldLogName, columnFieldKey, parentTable, dataLoggingColumns, loggingComment, null);
+        this(parentTable.getSchema().getName(), parentTable.getName(), columnFieldKey, shouldLogName, dataLoggingColumns, loggingComment, selectQueryAuditProvider);
     }
 
-    public ColumnLogging(FieldKey columnFieldKey, TableInfo parentTable)
-    {
-        this(false, columnFieldKey, parentTable, Collections.emptySet(), "");
-    }
+
 
     /** If true, then this column's name should be logged when used in a query */
     public boolean shouldLogName()
@@ -82,15 +114,12 @@ public class ColumnLogging implements Comparable<ColumnLogging>
         return _originalTableName;
     }
 
-    public void setOriginalTableName(String originalTableName)
-    {
-        _originalTableName = originalTableName;
-    }
-
     @Override
     public int compareTo(@NotNull ColumnLogging o)
     {
-        int ret = this.getOriginalTableName().compareToIgnoreCase(o.getOriginalTableName());
+        int ret = this._originalSchemaName.compareToIgnoreCase(o._originalSchemaName);
+        if (0 == ret)
+            ret = this.getOriginalTableName().compareToIgnoreCase(o.getOriginalTableName());
         if (0 == ret)
             ret = this.getOriginalColumnFieldKey().compareTo(o.getOriginalColumnFieldKey());
         return ret;
@@ -100,5 +129,4 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     {
         return _selectQueryAuditProvider;
     }
-
 }

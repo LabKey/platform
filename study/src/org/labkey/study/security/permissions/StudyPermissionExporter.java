@@ -70,7 +70,7 @@ public class StudyPermissionExporter
 
     }
 
-    public StudySecurityPolicyDocument getStudySecurityPolicyDocument(StudyImpl study)
+    public StudySecurityPolicyDocument getStudySecurityPolicyDocument(StudyImpl study, boolean includeDatasetsPolicy)
     {
         SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
 
@@ -98,7 +98,7 @@ public class StudyPermissionExporter
         sp.setGroupPermissions(gp);
 
         //per dataset permissions
-        if (study.getSecurityType().isSupportsPerDatasetPermissions())
+        if (includeDatasetsPolicy && study.getSecurityType().isSupportsPerDatasetPermissions())
         {
             ArrayList<Group> restrictedGroups = new ArrayList<>();
             for (Group g : groups)
@@ -166,19 +166,144 @@ public class StudyPermissionExporter
         return xml;
     }
 
-    public void loadFromXmlFile(StudyImpl study, User u, File file, List<String> errorMsgs) throws IllegalArgumentException
+    public List<String> loadSecurityPolicyDocument(StudyImpl study, User u, StudySecurityPolicyDocument doc)
     {
+        List<String> errorMsgs = new ArrayList<>();
         study = study.createMutable();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(study);
-        FileInputStream is = null;
-        try
+
+        StudySecurityPolicy sp = doc.getStudySecurityPolicy();
+        SecurityType st = SecurityType.valueOf(sp.getSecurityType().toString());
+
+        // NOTE: we do not allow advanced security policy in a shared study
+        Study shared = StudyManager.getInstance().getSharedStudy(study.getContainer());
+        if (null != shared && shared.getShareDatasetDefinitions())
+        {
+            if (study.isDataspaceStudy())
+            {
+                errorMsgs.add("Shared studies only support read-only datasets");
+                return errorMsgs;
+            }
+            else if (st.isSupportsPerDatasetPermissions())
+            {
+                errorMsgs.add("Studies with shared datasets do not support per dataset permissions");
+                return errorMsgs;
+            }
+        }
+
+        study.setSecurityType(st);
+        StudyManager.getInstance().updateStudy(u, study);
+
+        for (GroupPermission gp : sp.getGroupPermissions().getGroupPermissionArray())
+        {
+            //note: groups are currently only allowed at root or project level
+            Integer groupId = SecurityManager.getGroupId(study.getContainer().getProject(), gp.getGroupName(), false);
+            if (groupId == null)
+            {
+                groupId = SecurityManager.getGroupId(null, gp.getGroupName(), false);
+            }
+
+            if (groupId == null)
+            {
+                errorMsgs.add("Unable to find group with name: " + gp.getGroupName() + ", skipping");
+                continue;
+            }
+
+            Group group = SecurityManager.getGroup(groupId);
+            GroupSecurityType securityType = GroupSecurityType.valueOf(gp.getSecurityType().toString());
+
+            if (group != null)
+            {
+                if (securityType == GroupSecurityType.UPDATE_ALL)
+                    policy.addRoleAssignment(group, EditorRole.class);
+                else if (securityType == GroupSecurityType.READ_ALL)
+                    policy.addRoleAssignment(group, ReaderRole.class);
+                else if (securityType == GroupSecurityType.PER_DATASET)
+                    policy.addRoleAssignment(group, RestrictedReaderRole.class);
+                else if (securityType == GroupSecurityType.NONE)
+                    policy.addRoleAssignment(group, NoPermissionsRole.class);
+                else
+                    throw new IllegalArgumentException("Unexpected permission type: " + securityType.name());
+            }
+        }
+
+        study.savePolicy(policy, u);
+        if (sp.isSetPerDatasetPermissions())
+        {
+            Map<Dataset, List<PerDatasetPermission>> map = new HashMap<>();
+            for (PerDatasetPermission pd : sp.getPerDatasetPermissions().getDatasetPermissionArray())
+            {
+                Dataset ds = study.getDatasetByName(pd.getDatasetName());
+                if (ds == null)
+                {
+                    errorMsgs.add("Unable to find dataset with name: " + pd.getDatasetName() + ", skipping");
+                    continue;
+                }
+
+                List<PerDatasetPermission> list = map.get(ds);
+                if (list == null)
+                    list = new ArrayList<>();
+
+                list.add(pd);
+                map.put(ds, list);
+            }
+
+            for (Dataset ds : study.getDatasets())
+            {
+                MutableSecurityPolicy dsPolicy = new MutableSecurityPolicy(ds);
+                List<PerDatasetPermission> list = map.get(ds);
+                if (list != null)
+                {
+                    for (PerDatasetPermission pd : list)
+                    {
+                        //note: groups are currently only allowed at root or project level
+                        Integer groupId = SecurityManager.getGroupId(study.getContainer().getProject(), pd.getGroupName(), false);
+                        if (groupId == null)
+                        {
+                            groupId = SecurityManager.getGroupId(null, pd.getGroupName(), false);
+                        }
+
+                        if (groupId == null)
+                        {
+                            errorMsgs.add("Unable to find group with name: " + pd.getGroupName() + ", skipping");
+                            continue;
+                        }
+
+                        Group group = SecurityManager.getGroup(groupId);
+
+                        String roleClass = pd.getRole();
+                        boolean foundRole = false;
+                        for (Role role : RoleManager.getAllRoles())
+                        {
+                            if (role.getClass().getName().equals(roleClass))
+                            {
+                                dsPolicy.addRoleAssignment(group, role);
+                                foundRole = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundRole && !"NONE".equals(roleClass))
+                        {
+                            errorMsgs.add("Unable to find role: " + roleClass);
+                        }
+                    }
+                }
+                ds.savePolicy(dsPolicy, u);
+            }
+        }
+        return errorMsgs;
+    }
+
+    public void loadFromXmlFile(StudyImpl study, User u, File file, List<String> errorMsgs) throws IllegalArgumentException
+    {
+        try (FileInputStream is = new FileInputStream(file))
         {
             XmlOptions xmlOptions = new XmlOptions();
             Map<String, String> namespaceMap = new HashMap<>();
             namespaceMap.put("", "http://labkey.org/studySecurityPolicy/xml");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
-            is = new FileInputStream(file);
             StudySecurityPolicyDocument spd = StudySecurityPolicyDocument.Factory.parse(is, xmlOptions);
             if (AppProps.getInstance().isDevMode())
             {
@@ -191,144 +316,11 @@ public class StudyPermissionExporter
                     throw new IllegalArgumentException("Invalid XML file: " + e.getDetails());
                 }
             }
-
-            StudySecurityPolicy sp = spd.getStudySecurityPolicy();
-            SecurityType st = SecurityType.valueOf(sp.getSecurityType().toString());
-
-            // NOTE: we do not allow advanced security policy in a shared study
-            Study shared = StudyManager.getInstance().getSharedStudy(study.getContainer());
-            if (null != shared && shared.getShareDatasetDefinitions())
-            {
-                if (study.isDataspaceStudy())
-                {
-                    errorMsgs.add("Shared studies only support read-only datasets");
-                    return;
-                }
-                else if (st.isSupportsPerDatasetPermissions())
-                {
-                    errorMsgs.add("Studies with shared datasets do not support per dataset permissions");
-                    return;
-                }
-            }
-
-            study.setSecurityType(st);
-            StudyManager.getInstance().updateStudy(u, study);
-
-            for (GroupPermission gp : sp.getGroupPermissions().getGroupPermissionArray())
-            {
-                //note: groups are currently only allowed at root or project level
-                Integer groupId = SecurityManager.getGroupId(study.getContainer().getProject(), gp.getGroupName(), false);
-                if (groupId == null)
-                {
-                    groupId = SecurityManager.getGroupId(null, gp.getGroupName(), false);
-                }
-
-                if (groupId == null)
-                {
-                    errorMsgs.add("Unable to find group with name: " + gp.getGroupName() + ", skipping");
-                    continue;
-                }
-
-                Group group = SecurityManager.getGroup(groupId);
-                GroupSecurityType securityType = GroupSecurityType.valueOf(gp.getSecurityType().toString());
-
-                if (securityType == GroupSecurityType.UPDATE_ALL)
-                    policy.addRoleAssignment(group, EditorRole.class);
-                else if (securityType == GroupSecurityType.READ_ALL)
-                    policy.addRoleAssignment(group, ReaderRole.class);
-                else if (securityType == GroupSecurityType.PER_DATASET)
-                    policy.addRoleAssignment(group, RestrictedReaderRole.class);
-                else if (securityType == GroupSecurityType.NONE)
-                    policy.addRoleAssignment(group, NoPermissionsRole.class);
-                else
-                    throw new IllegalArgumentException("Unexpected permission type: " + securityType.name());
-            }
-
-            study.savePolicy(policy, u);
-
-            if (sp.isSetPerDatasetPermissions())
-            {
-                Map<Dataset, List<PerDatasetPermission>> map = new HashMap<>();
-                for (PerDatasetPermission pd : sp.getPerDatasetPermissions().getDatasetPermissionArray())
-                {
-                    Dataset ds = study.getDatasetByName(pd.getDatasetName());
-                    if (ds == null)
-                    {
-                        errorMsgs.add("Unable to find dataset with name: " + pd.getDatasetName() + ", skipping");
-                        continue;
-                    }
-
-                    List<PerDatasetPermission> list = map.get(ds);
-                    if (list == null)
-                        list = new ArrayList<>();
-
-                    list.add(pd);
-                    map.put(ds, list);
-                }
-
-                for (Dataset ds : study.getDatasets())
-                {
-                    MutableSecurityPolicy dsPolicy = new MutableSecurityPolicy(ds);
-                    List<PerDatasetPermission> list = map.get(ds);
-                    if (list != null)
-                    {
-                        for (PerDatasetPermission pd : list)
-                        {
-                            //note: groups are currently only allowed at root or project level
-                            Integer groupId = SecurityManager.getGroupId(study.getContainer().getProject(), pd.getGroupName(), false);
-                            if (groupId == null)
-                            {
-                                groupId = SecurityManager.getGroupId(null, pd.getGroupName(), false);
-                            }
-
-                            if (groupId == null)
-                            {
-                                errorMsgs.add("Unable to find group with name: " + pd.getGroupName() + ", skipping");
-                                continue;
-                            }
-
-                            Group group = SecurityManager.getGroup(groupId);
-
-                            String roleClass = pd.getRole();
-                            boolean foundRole = false;
-                            for (Role role : RoleManager.getAllRoles())
-                            {
-                                if (role.getClass().getName().equals(roleClass))
-                                {
-                                    dsPolicy.addRoleAssignment(group, role);
-                                    foundRole = true;
-                                    break;
-                                }
-                            }
-
-                            if (!foundRole && !"NONE".equals(roleClass))
-                            {
-                                errorMsgs.add("Unable to find role: " + roleClass);
-                            }
-                        }
-                    }
-
-                    ds.savePolicy(dsPolicy, u);
-                }
-            }
+            errorMsgs.addAll(loadSecurityPolicyDocument(study, u, spd));
         }
         catch (XmlException | IOException e)
         {
             throw new IllegalArgumentException("Unable to read XML file: " + e.getMessage(), e);
-        }
-        finally
-        {
-            if (is != null)
-            {
-                try
-                {
-                    is.close();
-                }
-                catch (IOException e)
-                {
-                    //ignore
-                }
-            }
         }
     }
 }

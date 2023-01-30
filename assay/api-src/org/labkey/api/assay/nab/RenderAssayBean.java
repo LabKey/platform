@@ -125,7 +125,7 @@ public class RenderAssayBean extends RenderAssayForm
                         Object value = entry.getValue();
                         if (value != null)
                         {
-                            _displayProperties.put(property.getNonBlankCaption(), formatValue(property, value));
+                            _displayProperties.put(property.getNonBlankCaption(), formatValue(property, value, _context.getUser()));
                         }
                     }
                 }
@@ -147,9 +147,14 @@ public class RenderAssayBean extends RenderAssayForm
         return _displayProperties;
     }
 
-    public Object formatValue(PropertyDescriptor pd, Object value)
+    public Object formatValue(PropertyDescriptor pd, Object value, User user)
     {
-        if (pd.getFormat() != null)
+        // issue 47093 - special handling for created by field
+        if ("CreatedBy".equalsIgnoreCase(pd.getName()) && value instanceof Integer userId)
+        {
+            value = UserManager.getDisplayName(userId, user);
+        }
+        else if (pd.getFormat() != null)
         {
             if (pd.getPropertyType() == PropertyType.DOUBLE)
             {

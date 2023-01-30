@@ -20,6 +20,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
 {
     public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
     static final String KEY_COLUMN_NAME = "Name";
+    static final String KEY_COLUMN_LSID = "LSID";
 
     final CachingDataIterator _unwrapped;
     final TableInfo target;
@@ -27,12 +28,13 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
     final ColumnInfo pkColumn;
     final Supplier<Object> pkSupplier;
     final int _aliquotedFromColIndex;
+    final boolean _useLsid;
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,String> aliquotParents = new HashMap<>();
 
-    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId)
+    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useLsid)
     {
         super(in);
 
@@ -41,15 +43,17 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         this.target = target;
 
         this._sampleTypeId = sampleTypeId;
+        this._useLsid = useLsid;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         this._aliquotedFromColIndex = map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
 
-        Integer index = map.get(KEY_COLUMN_NAME);
-        ColumnInfo col = target.getColumn(KEY_COLUMN_NAME);
+        String keyCol = useLsid ? KEY_COLUMN_LSID : KEY_COLUMN_NAME;
+        Integer index = map.get(keyCol);
+        ColumnInfo col = target.getColumn(keyCol);
         if (null == index || null == col)
         {
-            throw new IllegalStateException("Key column not found: " + KEY_COLUMN_NAME);
+            throw new IllegalStateException("Key column not found: " + keyCol);
         }
         pkSupplier = in.getSupplier(index);
         pkColumn = col;
@@ -98,32 +102,33 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         aliquotParents.clear();
 
         int rowsToFetch = 50;
-        Map<Integer, String> rowNameMap = new LinkedHashMap<>();
-        Map<String, Integer> nameRowMap = new LinkedHashMap<>();
+        Map<Integer, String> rowKeyMap = new LinkedHashMap<>();
+        Map<String, Integer> keyRowMap = new LinkedHashMap<>();
         do
         {
             lastPrefetchRowNumber = (Integer) _delegate.get(0);
-            String name = (String) pkSupplier.get();
-            rowNameMap.put(lastPrefetchRowNumber, name);
-            nameRowMap.put(name, lastPrefetchRowNumber);
+            String key = (String) pkSupplier.get();
+            rowKeyMap.put(lastPrefetchRowNumber, key);
+            keyRowMap.put(key, lastPrefetchRowNumber);
             aliquotParents.put(lastPrefetchRowNumber, null);
         }
         while (--rowsToFetch > 0 && _delegate.next());
 
-
+        String keyCol = _useLsid ? KEY_COLUMN_LSID : KEY_COLUMN_NAME;
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), _sampleTypeId);
-        filter.addCondition(FieldKey.fromParts("Name"), rowNameMap.values(), CompareType.IN);
+        FieldKey keyField = FieldKey.fromParts(keyCol);
+        filter.addCondition(keyField, rowKeyMap.values(), CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), target.getUserSchema().getContainer());
 
-        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("name", "aliquotedfromlsid"), filter, null).getMapArray();
+        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(keyCol, "aliquotedfromlsid"), filter, null).getMapArray();
 
         for (Map<String, Object> result : results)
         {
-            String name = (String) result.get("name");
+            String key = (String) result.get(keyCol);
             Object aliquotedFromLSIDObj = result.get("aliquotedFromLSID");
             if (aliquotedFromLSIDObj != null)
             {
-                Integer rowInd = nameRowMap.get(name);
+                Integer rowInd = keyRowMap.get(key);
                 aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
             }
         }
@@ -142,24 +147,6 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         if (ret)
             prefetchExisting();
         return ret;
-    }
-
-
-
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, int sampleTypeId)
-    {
-        return context ->
-        {
-            DataIterator di = dib.getDataIterator(context);
-            if (null == di)
-                return null;           // Can happen if context has errors
-
-            QueryUpdateService.InsertOption option = context.getInsertOption();
-            if (option.updateOnly)
-                return new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(di), target, sampleTypeId);
-
-            return di;
-        };
     }
 
 }

@@ -30,7 +30,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -87,5 +86,4 @@ public interface InventoryService
         Set<Module> moduleSet = c.getActiveModules();
         return moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"));
     }
-
 }

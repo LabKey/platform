@@ -170,6 +170,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _columns;
     }
 
+    public Map<String, ColumnInfo> getColumnInfoMap()
+    {
+        return _columnInfoMap;
+    }
+
     public ColumnDescriptor[] getActiveColumns() throws IOException
     {
         ArrayList<ColumnDescriptor> active = new ArrayList<>();
