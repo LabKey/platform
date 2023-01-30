@@ -49,6 +49,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -189,6 +190,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * NOTE: Postgres does not consider rows with NULL values to be "equal" so NULLs may be repeated!
      */
     @NotNull List<ColumnInfo> getAlternateKeyColumns();
+
+    @NotNull default Set<String> getAltKeysForUpdate()
+    {
+       return Collections.emptySet();
+    }
 
     ColumnInfo getVersionColumn();
 

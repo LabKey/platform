@@ -381,7 +381,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             "MaterialInputs/MySamples", "S-2, " + numericSampleName
         ));
 
-        List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
+        BatchValidationException errors = new BatchValidationException();
+
+        List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
         assertEquals(1, updatedRows.size());
 
         // The merge behavior for dataclasses matches samples. An existing derivation run will be updated for the lineage changes
@@ -405,7 +408,9 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             "MaterialInputs/MySamples", "S-2"
         ));
 
-        updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
+        updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
+
         assertEquals(1, updatedRows.size());
 
         // Verify the lineage

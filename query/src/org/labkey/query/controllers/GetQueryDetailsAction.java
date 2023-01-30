@@ -288,6 +288,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 jsonIndices.put(entry.getKey(), jsonIndex);
             }
             resp.put("indices", jsonIndices);
+
+            if (!tinfo.getAltKeysForUpdate().isEmpty())
+                resp.put("altUpdateKeys", tinfo.getAltKeysForUpdate());
         }
         catch (QueryParseException e)
         {

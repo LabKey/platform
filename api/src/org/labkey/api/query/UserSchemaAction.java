@@ -249,19 +249,17 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
             {
+                BatchValidationException batchErrors = new BatchValidationException();
                 if (insert)
                 {
-                    BatchValidationException batchErrors = new BatchValidationException();
                     ret = qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
-                    if (batchErrors.hasErrors())
-                        batchErrors.addToErrors(errors);
                 }
                 else
                 {
                     // Currently, bulkUpdate doesn't support oldValues due to the need to re-query...
                     if (form.isBulkUpdate())
                     {
-                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, null, null, null);
+                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, null, batchErrors, null, null);
                     }
                     else
                     {
@@ -275,9 +273,12 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
                         // 18292 - updateRows expects a null list in the case of an "empty" or null map.
                         List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
-                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, null, null);
+                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, batchErrors, null, null);
                     }
                 }
+                if (batchErrors.hasErrors())
+                    batchErrors.addToErrors(errors);
+
                 if (!errors.hasErrors())
                     transaction.commit();       // Only commit if there were no errors
             }
