@@ -84,20 +84,6 @@ public enum DbSchemaType
             return new DbSchema(metaDataName, Fast, scope, tableInfoFactoryMap, module);
         }
     },
-    All("", 0, false)
-    {
-        @Override
-        protected long getCacheTimeToLive()
-        {
-            throw new IllegalStateException("Should not be caching a schema of this type");
-        }
-
-        @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
-        {
-            throw new IllegalStateException("Should not be creating a schema of type " + All);
-        }
-    },
     // This is a marker type that tells DbScope to infer the actual DbSchemaType, for the (very rare) case when the caller doesn't know
     Unknown("", 0, false)
     {

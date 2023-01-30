@@ -33,6 +33,7 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.generator.DataGeneratorRegistry;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -51,7 +52,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -59,6 +59,7 @@ import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.assay.data.generator.AssayDesignGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
@@ -153,6 +154,8 @@ public class AssayModule extends SpringModule
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
 
         RoleManager.registerRole(new AssayDesignerRole());
+
+        DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayDesigns, new AssayDesignGenerator.Driver());
     }
 
     @Override

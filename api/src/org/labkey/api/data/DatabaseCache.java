@@ -63,7 +63,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return (Cache<K, V>)CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
+        return CacheManager.getCache(maxSize, defaultTimeToLive, debugName);
     }
 
     @Override

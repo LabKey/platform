@@ -29,11 +29,14 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
 
 /**
  * User: kevink
@@ -70,8 +73,28 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        afterInsertUpdate(result==null?0:result.size(), errors);
+        afterInsertUpdate(result == null ? 0 : result.size(), errors);
         return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
+                                                BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        boolean useDib = oldKeys == null && ExperimentalFeatureService.get().isFeatureEnabled(USE_BATCH_UPDATE_ROWS);
+        useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
+        useDib = useDib && !getQueryTable().hasTriggers(container);
+        useDib = useDib && hasUniformKeys(rows);
+
+        if (useDib)
+        {
+            List<Map<String, Object>> result = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, configParameters), extraScriptContext);
+            afterInsertUpdate(result == null ? 0 : result.size(), errors);
+            return result;
+        }
+
+        return super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
     }
 
     @Override

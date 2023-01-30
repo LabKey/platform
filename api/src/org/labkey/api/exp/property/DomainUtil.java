@@ -54,6 +54,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
@@ -1073,6 +1074,7 @@ public class DomainUtil
 
                 try
                 {
+                    BatchValidationException batchErrors = new BatchValidationException();
                     // use update rows against each distinct row container to map the text choice value to the updated value,
                     // using each row container so that the audit events end up in the right container
                     if (domainTable.getContainerFieldKey() != null)
@@ -1082,11 +1084,14 @@ public class DomainUtil
                         for (String rowContainer : rowContainers)
                         {
                             List<Map<String, Object>> containerRows = rows.stream().filter((row) -> row.get(containerFieldName).equals(rowContainer)).collect(Collectors.toList());
-                            domainTable.getUpdateService().updateRows(user, ContainerManager.getForId(rowContainer), containerRows, containerRows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                            domainTable.getUpdateService().updateRows(user, ContainerManager.getForId(rowContainer), containerRows, containerRows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
                         }
                     }
                     else
-                        domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                        domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+
+                    if (batchErrors.hasErrors())
+                        throw batchErrors;
                 }
                 catch (Exception e)
                 {

@@ -230,7 +230,7 @@ class UserCache
     private static class UserCollectionsLoader implements CacheLoader<String, UserCollections>
     {
         @Override
-        public UserCollections load(String key, @Nullable Object argument)
+        public UserCollections load(@NotNull String key, @Nullable Object argument)
         {
             Collection<User> allUsers = new TableSelector(CORE.getTableInfoUsers(), null, new Sort("Email")).getCollection(User.class);
 

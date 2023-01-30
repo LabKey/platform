@@ -54,11 +54,11 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -253,6 +253,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (rows instanceof DataLoader) // junit test uses ListofMapsDataIterator
             {
+                if (((DataLoader) rows).getColumnInfoMap().isEmpty())
+                    ((DataLoader) rows).setKnownColumns(getQueryTable().getColumns());
                 ColumnDescriptor[] columnDescriptors = ((DataLoader) rows).getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
                 for (ColumnDescriptor columnDescriptor : columnDescriptors)
                 {
@@ -336,22 +338,46 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
 
-        /* setup mini dataiterator pipeline to process lineage */
-        DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.derive(user, container, di, true, _sampleType, true);
+        boolean useDib = false;
+        if (rows != null && !rows.isEmpty() && oldKeys == null)
+            useDib = rows.get(0).containsKey("lsid");
 
-        if (ret.size() > 0)
+        useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
+        useDib = useDib && hasUniformKeys(rows);
+
+        List<Map<String, Object>> results;
+        if (useDib)
+        {
+            Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+            finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+
+            DbScope scope = getSchema().getDbSchema().getScope();
+            results = scope.executeWithRetry(transaction ->
+                    super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext));
+
+            if (InventoryService.get() != null && results != null && results.size() > 0 && !errors.hasErrors())
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+        }
+        else
+        {
+            results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+            /* setup mini dataiterator pipeline to process lineage */
+            DataIterator di = _toDataIterator("updateRows.lineage", results);
+            ExpDataIterators.derive(user, container, di, true, _sampleType, true);
+        }
+
+        if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
             audit(QueryService.AuditAction.UPDATE);
         }
 
-        return ret;
+        return results;
     }
 
     @Override
@@ -940,62 +966,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         AuditLogService.get().addEvent(getUser(), event);
     }
 
-    /*
-     * This might be generally useful.
-     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
-     * copies data, this is straight pass through.
-     */
-    private static class DropColumnsDataIterator extends WrapperDataIterator
-    {
-        int[] indexMap;
-        int columnCount = 0;
-
-        DropColumnsDataIterator(DataIterator di, Set<String> drop)
-        {
-            super(di);
-            int inputColumnCount = di.getColumnCount();
-            indexMap = new int[inputColumnCount+1];
-            for (int inIndex = 0; inIndex <= inputColumnCount; inIndex++)
-            {
-                String name = di.getColumnInfo(inIndex).getName();
-                if (!drop.contains(name))
-                {
-                    indexMap[++columnCount] = inIndex;
-                }
-            }
-        }
-
-        @Override
-        public int getColumnCount()
-        {
-            return columnCount;
-        }
-
-        @Override
-        public Object get(int i)
-        {
-            return super.get(indexMap[i]);
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo(int i)
-        {
-            return super.getColumnInfo(indexMap[i]);
-        }
-
-        @Override
-        public Object getConstantValue(int i)
-        {
-            return super.getConstantValue(indexMap[i]);
-        }
-
-        @Override
-        public Supplier<Object> getSupplier(int i)
-        {
-            return super.getSupplier(indexMap[i]);
-        }
-    }
-
     // TODO: validate/compare functionality of CoerceDataIterator and loadRows()
     private static class PrepareDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -1048,6 +1018,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     drop.add(name);
                 }
             }
+
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+                drop.remove("lsid");
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
@@ -1062,7 +1035,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
                 addAliquotedFrom.selectAll();
 
-                var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId());
+                var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
 
                 SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromDI, context, sampleType, materialTable);
                 return LoggingDataIterator.wrap(c);

@@ -58,6 +58,7 @@ import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
@@ -1234,7 +1235,11 @@ public class UserController extends SpringActionController
                 List<Map<String, Object>> rows = new ArrayList<>(Arrays.asList(row));
                 List<Map<String, Object>> keys = new ArrayList<>(Arrays.asList(Map.of("UserId", form.getUserId())));
 
-                response.put("updatedRows", table.getUpdateService().updateRows(getUser(), root, rows, keys, null, null));
+                BatchValidationException batchErrors = new BatchValidationException();
+                response.put("updatedRows", table.getUpdateService().updateRows(getUser(), root, rows, keys, batchErrors, null, null));
+                if (batchErrors.hasErrors())
+                    throw batchErrors;
+
                 response.put("success", true);
 
                 transaction.commit();

@@ -50,7 +50,7 @@ public class UserInfoMenuSection extends MenuSection
         String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
         {
-            items.add(new MenuItem(_provider.getDocumentationLabel(), docUrl, 0, DOCS_KEY, null, null));
+            items.add(new MenuItem("Help", docUrl, 0, DOCS_KEY, null, null));
         }
         items.addAll(_provider.getUserMenuItems(_context));
 

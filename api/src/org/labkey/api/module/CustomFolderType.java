@@ -250,7 +250,7 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
-    public String getDefaultPageId(Container container)
+    public String getDefaultPageId(Container container, boolean considerActive)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }

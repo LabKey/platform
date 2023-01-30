@@ -1387,8 +1387,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         Set<String> added = t.addBuiltInColumns(context, c, user, target, false);
         skipColumns.addAll(added);
-        added = t.addDbSequenceColumns(c, target);
-        skipColumns.addAll(added);
+        if (!context.getInsertOption().updateOnly)
+        {
+            added = t.addDbSequenceColumns(c, target);
+            skipColumns.addAll(added);
+        }
 
         t.selectAll(skipColumns);
 

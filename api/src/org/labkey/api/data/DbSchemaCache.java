@@ -53,26 +53,28 @@ public class DbSchemaCache
         _cache = new DbSchemaBlockingCache(_scope.getDisplayName());
     }
 
+    public static DbSchemaType getSchemaType(DbScope scope, String schemaName)
+    {
+        DbSchemaType type = ModuleLoader.getInstance().getSchemaType(scope, schemaName);
+
+        if (null == type)
+            type = DbSchemaType.Bare;  // Schema isn't claimed by any module
+
+        return type;
+    }
+
     @NotNull DbSchema get(String schemaName, DbSchemaType type)
     {
         // Infer type if it's unknown... should be rare
         if (DbSchemaType.Unknown == type)
-        {
-            type = ModuleLoader.getInstance().getSchemaType(_scope, schemaName);
-
-            if (null == type)
-                type = DbSchemaType.Bare;  // Schema isn't claimed by a module
-        }
+            type = getSchemaType(_scope, schemaName);
 
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
     }
 
     void remove(String schemaName, DbSchemaType type)
     {
-        if (type == DbSchemaType.Module)
-            LOG.debug("removing module schema: " + schemaName, new Throwable("removing module schema: " + schemaName));
-        else
-            LOG.debug("remove " + type + " schema: " + schemaName);
+        LOG.debug("remove " + type + " schema: " + schemaName);
         _cache.removeUsingFilter(new Cache.StringPrefixFilter(getKey(schemaName, type)));
     }
 
@@ -82,7 +84,7 @@ public class DbSchemaCache
     }
 
 
-    private class SchemaDetails
+    private static class SchemaDetails
     {
         private final String _schemaName;
         private final DbSchemaType _type;
@@ -108,7 +110,7 @@ public class DbSchemaCache
     private class DbSchemaLoader implements CacheLoader<String, DbSchema>
     {
         @Override
-        public DbSchema load(String key, Object schemaDetails)
+        public DbSchema load(@NotNull String key, Object schemaDetails)
         {
             try
             {
@@ -121,7 +123,6 @@ public class DbSchemaCache
             }
         }
     }
-
 
     private class DbSchemaBlockingCache extends BlockingCache<String, DbSchema>
     {
