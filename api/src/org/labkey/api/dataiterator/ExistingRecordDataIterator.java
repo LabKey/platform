@@ -224,7 +224,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
         {
             super(in, target, keys, true, context, detailed);
-            allowedContainers.add(c.getId());
+            if (c != null)
+                allowedContainers.add(c.getId());
         }
 
         private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException

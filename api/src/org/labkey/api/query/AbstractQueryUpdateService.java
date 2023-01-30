@@ -1258,7 +1258,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // test existing row value is not updated/erased
             assertEquals(2, rows.get(2).get("i"));
 
-            // update should fail if a new record is provided and VerifyExistingData = true
+            // update should fail if a new record is provided
             updateRows = new ArrayList<Map<String,Object>>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
