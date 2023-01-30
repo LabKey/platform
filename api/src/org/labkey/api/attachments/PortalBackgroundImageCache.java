@@ -15,6 +15,7 @@
  */
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -44,7 +45,7 @@ public class PortalBackgroundImageCache
     private static class ImageLoader implements CacheLoader<String, CacheableWriter>
     {
         @Override
-        public CacheableWriter load(String key, Object argument)
+        public CacheableWriter load(@NotNull String key, Object argument)
         {
             @SuppressWarnings("unchecked")
             Pair<AttachmentParent, String> pair = (Pair<AttachmentParent, String>) argument;
