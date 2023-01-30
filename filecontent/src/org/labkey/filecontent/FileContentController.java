@@ -70,6 +70,7 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -891,10 +892,12 @@ public class FileContentController extends SpringActionController
         {
             TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
             QueryUpdateService qus = ti.getUpdateService();
-
+            BatchValidationException batchErrors = new BatchValidationException();
             try
             {
-                qus.updateRows(getUser(), getContainer(), _files, null, null, null);
+                qus.updateRows(getUser(), getContainer(), _files, null, batchErrors, null, null);
+                if (batchErrors.hasErrors())
+                    errors.reject(SpringActionController.ERROR_MSG, batchErrors.getMessage());
             }
             catch (QueryUpdateServiceException e)
             {

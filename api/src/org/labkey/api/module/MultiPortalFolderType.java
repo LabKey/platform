@@ -354,10 +354,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
 
     @Override
-    public String getDefaultPageId(Container container)
+    public String getDefaultPageId(Container container, boolean considerActive)
     {
         String result = null;
-        if (_activePortalPage != null)
+        if (_activePortalPage != null && considerActive)
         {
             // If we have an explicit selection, use that
             result = _activePortalPage;
@@ -375,6 +375,16 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     break;
                 }
             }
+
+            if (null == result)
+            {
+                List<FolderTab> defaults = getDefaultTabs();
+                if (!defaults.isEmpty())
+                {
+                    result = defaults.get(0).getName();
+                }
+            }
+
             if (null == result)
                 result = Portal.DEFAULT_PORTAL_PAGE_ID;
         }

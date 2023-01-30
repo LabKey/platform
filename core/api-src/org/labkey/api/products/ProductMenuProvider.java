@@ -35,11 +35,6 @@ public abstract class ProductMenuProvider
         return "https://www.labkey.org/Documentation/wiki-page.view?name=default&referrer=" + HelpTopic.Referrer.docMenu;
     }
 
-    public String getDocumentationLabel()
-    {
-        return "Help";
-    }
-
     public @NotNull List<MenuItem> getUserMenuItems(ViewContext context)
     {
         return Collections.emptyList();

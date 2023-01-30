@@ -54,6 +54,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -208,6 +209,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return super._insertRowsUsingDIB(getListUser(user, container), container, rows, context, extraScriptContext);
     }
 
+    @Override
+    protected @Nullable List<Map<String, Object>> _updateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
+
+        return super._updateRowsUsingDIB(getListUser(user, container), container, rows, context, extraScriptContext);
+    }
+
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
                                        @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, InsertOption insertOption)
     {
@@ -275,13 +286,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
-                                                @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+                                                BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to update data into this table.");
 
-        List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, configParameters, extraScriptContext);
+        List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
         if (result.size() > 0)
             ListManager.get().indexList(_list, false);
         return result;
