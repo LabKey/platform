@@ -69,7 +69,7 @@ public interface Cache<K, V>
     void clear();
 
     /**
-     * Some CacheProviders (e.g., Ehcache) hold on to the caches they create.  close() lets us discard temporary
+     * Some CacheProviders (e.g., Ehcache) hold on to the caches they create. close() lets us discard temporary
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
     void close();

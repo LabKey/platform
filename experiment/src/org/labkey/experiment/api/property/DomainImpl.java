@@ -784,10 +784,6 @@ public class DomainImpl implements Domain
                 }
             }
 
-            // Invalidate even if !propChanged, because ordering might have changed (#25296)
-            if (getDomainKind() != null)
-                getDomainKind().invalidate(this);
-
             if (isDomainNew)
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()), null);
 
@@ -801,7 +797,16 @@ public class DomainImpl implements Domain
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()), null);
             }
 
-            transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            Runnable afterDomainCommit = () ->
+            {
+                // Even if no storage table schema changes occured, we want to invalidate table to pick up an metadata changes
+                // Invalidate even if !propChanged, because ordering might have changed (#25296)
+                OntologyManager.invalidateDomain(this);
+                if (getDomainKind() != null)
+                    getDomainKind().invalidate(this);
+            };
+            transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+
             QueryService.get().updateLastModified();
             transaction.commit();
         }

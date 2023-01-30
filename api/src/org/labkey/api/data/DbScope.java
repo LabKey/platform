@@ -128,7 +128,8 @@ public class DbScope
     private final String _driverVersion;
     private final String _driverLocation;
     private final DbSchemaCache _schemaCache;
-    private final SchemaTableInfoCache _tableCache;
+    private final SchemaTableInfoCache _provisionedTableCache;
+    private final SchemaTableInfoCache _nonProvisionedTableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final boolean _rds;
@@ -162,7 +163,7 @@ public class DbScope
 
         /**
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
-         * outer-most layer of the transaction has completed (either by committing or closing the connection).
+         * outermost layer of the transaction has completed (either by committing or closing the connection).
          */
         default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
@@ -265,7 +266,8 @@ public class DbScope
         _driverVersion = null;
         _driverLocation = null;
         _schemaCache = null;
-        _tableCache = null;
+        _nonProvisionedTableCache = null;
+        _provisionedTableCache = null;
         _rds = false;
         _escape = null;
     }
@@ -358,7 +360,8 @@ public class DbScope
             _driverVersion = dbmd.getDriverVersion();
             _driverLocation = determineDriverLocation();
             _schemaCache = new DbSchemaCache(this);
-            _tableCache = new SchemaTableInfoCache(this);
+            _nonProvisionedTableCache = new SchemaTableInfoCache(this, false);
+            _provisionedTableCache = new SchemaTableInfoCache(this, true);
             _rds = _dialect.isRds(this);
             _escape = dbmd.getSearchStringEscape();
         }
@@ -1181,7 +1184,7 @@ public class DbScope
         return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
             .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
             .sorted()
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     // Verify that the two ways for determining schema names yield identical results
@@ -1201,7 +1204,6 @@ public class DbScope
         return _schemaCache.get(schemaName, type);
     }
 
-
     // Get the special "labkey" schema created in each module data source
     @JsonIgnore
     public @NotNull DbSchema getLabKeySchema()
@@ -1209,12 +1211,16 @@ public class DbScope
         return getSchema("labkey", DbSchemaType.Module);
     }
 
-
-    // Each scope holds the cache for all its tables. This makes it easier to 1) configure that cache on a per-scope
-    // basis and 2) invalidate schemas and their tables together
+    // Each scope holds a map with a table cache for each DbSchemaType. This makes it easier to 1) configure that cache
+    // on a per-scope and per-DbSchemaType basis and 2) invalidate schemas and their tables together
     public <OptionType extends SchemaTableOptions> SchemaTableInfo getTable(OptionType options)
     {
-        return _tableCache.get(options);
+        return getTableInfoCache(options.getSchema().getType()).get(options);
+    }
+
+    private SchemaTableInfoCache getTableInfoCache(DbSchemaType type)
+    {
+        return type == DbSchemaType.Provisioned ? _provisionedTableCache : _nonProvisionedTableCache;
     }
 
     // Collection of schema names in this scope, in no particular order.
@@ -1223,13 +1229,11 @@ public class DbScope
         return SchemaNameCache.get().getSchemaNameMap(this).values();
     }
 
-
     /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(DbSchema schema)
     {
         invalidateSchema(schema.getName(), schema.getType());
     }
-
 
     /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(String schemaName, DbSchemaType type)
@@ -1239,21 +1243,24 @@ public class DbScope
         invalidateAllTables(schemaName, type);
     }
 
-
-    // Invalidates all tables in the table cache. Careful: callers probably need to invalidate the schema as well (it holds a list of table names)
-    void invalidateAllTables(String schemaName, DbSchemaType type)
+    // Invalidates all tables in the table cache. Careful: callers probably need to invalidate the schema as well (it holds a list of table names).
+    private void invalidateAllTables(String schemaName, DbSchemaType type)
     {
-        _tableCache.removeAllTables(schemaName, type);
+        // If caller doesn't know the schema type then clear the schema tables from all caches
+        if (type == DbSchemaType.Unknown)
+            type = DbSchemaCache.getSchemaType(this, schemaName);
+
+        getTableInfoCache(type).removeAllTables(schemaName, type);
     }
 
-    // DbSchema holds a hard-coded list of table names, so we need to invalidate the DbSchema to update this list.
-    // Note that all other TableInfos remain cached; this is simply invalidating the schema info and reloading the
-    // meta data XML. If this is too heavyweight, we could instead cache and invalidate the list of table names separate
-    // from the DbSchema.
+    // DbSchema holds a list of table names, so we need to invalidate the DbSchema to update this list. Note that all
+    // other TableInfos remain cached; this is simply invalidating the schema info and reloading the metadata XML. If
+    // this is too heavyweight, we could instead cache and invalidate the list of table names separate from the
+    // DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
         QueryService.get().updateLastModified();
-        _tableCache.remove(schemaName, tableName, type);
+        getTableInfoCache(type).remove(schemaName, tableName, type);
         _schemaCache.remove(schemaName, type);
     }
 

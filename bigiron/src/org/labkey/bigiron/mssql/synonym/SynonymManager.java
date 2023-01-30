@@ -180,7 +180,7 @@ public class SynonymManager
     private static class SynonymLoader implements CacheLoader<String, Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiValuedMap<String, Synonym>>>>>
     {
         @Override
-        public Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiValuedMap<String, Synonym>>>> load(String key, @Nullable Object argument)
+        public Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiValuedMap<String, Synonym>>>> load(@NotNull String key, @Nullable Object argument)
         {
             DbScope scope = DbScope.getDbScope(key);
 

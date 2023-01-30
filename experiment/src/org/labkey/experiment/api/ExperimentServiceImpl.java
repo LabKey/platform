@@ -3825,7 +3825,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (includeProjectAndShared)
         {
             Container project = container.getProject();
-            if (project != null && project.hasPermission(user, ReadPermission.class))
+            if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
             {
                 containerIds.add(project.getId());
             }

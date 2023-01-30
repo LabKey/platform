@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Something that knows how to fetch a value when it's not yet available from a cache.
- * User: matthewb
- * Date: Sep 16, 2010
  */
 public interface CacheLoader<K, V>
 {
