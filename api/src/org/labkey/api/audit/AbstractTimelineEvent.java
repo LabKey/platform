@@ -28,6 +28,7 @@ public abstract class AbstractTimelineEvent
 
     public static Object getUserObject(User user, User currentUser)
     {
+        if (user == null) return null;
         return createEntityObject(user.getUserId(), user.getDisplayName(currentUser), null, "user");
     }
 
