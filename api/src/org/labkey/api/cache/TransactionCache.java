@@ -50,6 +50,8 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
     public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache, @Nullable CacheLoader<K, V> privateCacheLoader)
     {
+        assert !(privateCache instanceof BlockingCache<K,V>) || null != privateCacheLoader : "Using a BlockingCache requires passing the private cache CacheLoader into DatabaseCache()";
+
         _privateCache = privateCache;
         _sharedCache = sharedCache;
         _privateCacheLoader = privateCacheLoader;
