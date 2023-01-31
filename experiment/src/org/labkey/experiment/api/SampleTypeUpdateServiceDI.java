@@ -180,10 +180,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public void configureDataIteratorContext(DataIteratorContext context)
     {
         if (context.getInsertOption().allowUpdate)
-        {
             context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
-            context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, context.getInsertOption().updateOnly);
-        }
     }
 
     @Override
@@ -821,25 +818,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
+        Set<String> allKeys = new HashSet<>();
+        boolean useLsid = false;
+
         if (!lsidRowNumMap.isEmpty())
         {
+            useLsid = true;
+            allKeys.addAll(lsidRowNumMap.keySet());
+
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
             Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String sampleLsid = (String) row.get("lsid");
                 Integer rowNum = lsidRowNumMap.get(sampleLsid);
-
                 sampleRows.put(rowNum, row);
+
+                allKeys.remove(sampleLsid);
             }
         }
 
         if (!nameRowNumMap.isEmpty())
         {
+            allKeys.addAll(nameRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
-
-            Set<String> allNames = new HashSet<>(nameRowNumMap.keySet());
 
             Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -850,28 +853,28 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 sampleRows.put(rowNum, row);
                 rowNumLsid.put(rowNum, sampleLsid);
 
-                allNames.remove(name);
+                allKeys.remove(name);
             }
+        }
 
-            if (checkCrossFolderData && !allNames.isEmpty())
+        if (checkCrossFolderData && !allKeys.isEmpty())
+        {
+            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+            existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
+            Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
+            for (Map<String, Object> row : cfRows)
             {
-                TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
-                SimpleFilter cfilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-                cfilter.addCondition(FieldKey.fromParts("Name"), allNames, CompareType.IN);
-                Map<String, Object>[] cfRows = new TableSelector(tInfo, filter, null).getMapArray();
-                for (Map<String, Object> row : cfRows)
-                {
-                    String dataContainer = (String) row.get("folder");
-                    if (!dataContainer.equals(container.getId()))
-                        throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
-                }
-
+                String dataContainer = (String) row.get("folder");
+                if (!dataContainer.equals(container.getId()))
+                    throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
             }
-
-            if (verifyExisting && !allNames.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: " + allNames.iterator().next() + ".");
 
         }
+
+        if (verifyExisting && !allKeys.isEmpty())
+            throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
+
 
         if (skipInputs)
             return sampleRows;
