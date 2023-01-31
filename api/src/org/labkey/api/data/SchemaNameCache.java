@@ -56,7 +56,7 @@ public class SchemaNameCache
     }
 
     /**
-     * Returns a map of all schema names in this scope. The map has case-insensitive keys and values that are the canonical meta data names.
+     * Returns a map of all schema names in this scope. The map has case-insensitive keys and values that are the canonical metadata names.
      */
     public Map<String, String> getSchemaNameMap(DbScope scope)
     {

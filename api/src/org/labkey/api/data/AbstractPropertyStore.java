@@ -211,7 +211,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     protected class PropertyLoader implements CacheLoader<String, PropertyManager.PropertyMap>
     {
         @Override
-        public PropertyManager.PropertyMap load(String key, Object argument)
+        public PropertyManager.PropertyMap load(@NotNull String key, Object argument)
         {
             Object[] params = (Object[])argument;
             User user = (User)params[1];

@@ -77,7 +77,7 @@ public class CacheManager
 
     public static <V> Cache<String, V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        return CacheManager.createCache(limit, defaultTimeToLive, debugName);
+        return createCache(limit, defaultTimeToLive, debugName);
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)

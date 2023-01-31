@@ -2818,6 +2818,14 @@ public class OntologyManager
         }
     }
 
+
+    public static void invalidateDomain(Domain d)
+    {
+        // TODO can we please implement a surgical version of this
+        clearCaches();
+    }
+
+
     public static void clearCaches()
     {
         _log.debug("Clearing caches");

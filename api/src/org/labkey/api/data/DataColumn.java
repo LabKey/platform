@@ -491,7 +491,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Nullable
-    private ConditionalFormat findApplicableFormat(RenderContext ctx)
+    protected ConditionalFormat findApplicableFormat(RenderContext ctx)
     {
         if (getBoundColumn() == null)
         {

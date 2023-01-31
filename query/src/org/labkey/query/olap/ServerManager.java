@@ -173,7 +173,7 @@ public class ServerManager
     private static class OlapCacheLoader implements CacheLoader<Container, Map<String, OlapSchemaDescriptor>>
     {
         @Override
-        public Map<String, OlapSchemaDescriptor> load(Container c, @Nullable Object argument)
+        public Map<String, OlapSchemaDescriptor> load(@NotNull Container c, @Nullable Object argument)
         {
             Map<String, OlapSchemaDescriptor> map = new HashMap<>();
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);

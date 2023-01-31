@@ -15,6 +15,7 @@
  */
 package org.labkey.core.thumbnail;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.BlockingCache;
@@ -72,7 +73,7 @@ public class ThumbnailCache
     private static class DynamicThumbnailLoader implements CacheLoader<String, CacheableWriter>
     {
         @Override
-        public CacheableWriter load(String key, Object argument)
+        public CacheableWriter load(@NotNull String key, Object argument)
         {
             @SuppressWarnings("unchecked")
             Pair<ThumbnailProvider, ImageType> pair = (Pair<ThumbnailProvider, ImageType>) argument;
