@@ -115,4 +115,11 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     {
         return super.createImportDIB(user, container, data, context);
     }
+
+    @Override
+    protected boolean supportUpdateUsingDIB()
+    {
+        return false;
+    }
+
 }

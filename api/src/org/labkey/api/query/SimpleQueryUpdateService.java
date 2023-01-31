@@ -78,14 +78,34 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    private boolean canUpdateUsingDIB()
+    protected boolean supportUpdateUsingDIB()
     {
+        return true;
+    }
+
+    private boolean shouldUpdateUsingDIB(Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters)
+    {
+        if (oldKeys != null) // could be called by updateChangingKeys
+            return false;
+
+        if (!supportUpdateUsingDIB())
+            return false;
+
         if (getQueryTable() == null)
             return false;
 
         TableInfo table = getQueryTable().getSchemaTableInfo();
 
-        return table.getTableType() == DatabaseTableType.TABLE && null != table.getMetaDataName();
+        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
+            return false;
+
+        if (getQueryTable().hasTriggers(container)) // dib not yet supported for simple tables with triggers
+            return false;
+
+        if (configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows))
+            return false;
+
+        return hasUniformKeys(rows);
     }
 
     @Override
@@ -93,12 +113,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                                                 BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        boolean useDib = oldKeys == null && canUpdateUsingDIB();
-        useDib = useDib && !(configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows));
-        useDib = useDib && !getQueryTable().hasTriggers(container);
-        useDib = useDib && hasUniformKeys(rows);
-
-        if (useDib)
+        if (shouldUpdateUsingDIB(container, rows, oldKeys, configParameters))
         {
             List<Map<String, Object>> result = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, configParameters), extraScriptContext);
             afterInsertUpdate(result == null ? 0 : result.size(), errors);
