@@ -28,7 +28,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,7 +38,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -196,9 +194,9 @@ public class SchemaColumnMetaData
         {
             // With the Microsoft JDBC driver we're seeing more deadlocks loading schema metadata so try multiple
             // times when possible
-            ti.getSchema().getScope().executeWithRetry(createRetryWrapper((tx) -> loadColumnsFromMetaData(ti)));
-            ti.getSchema().getScope().executeWithRetry(createRetryWrapper((tx) -> loadPkColumns(ti)));
-            ti.getSchema().getScope().executeWithRetry(createRetryWrapper((tx) -> loadIndices(ti)));
+            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadColumnsFromMetaData(ti)));
+            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadPkColumns(ti)));
+            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadIndices(ti)));
         }
         catch (RuntimeSQLException e)
         {
