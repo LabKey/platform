@@ -33,12 +33,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 /**
- * User: matthewb
- * Date: Dec 12, 2006
- * Time: 9:54:06 AM
- *
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
- *
  * No synchronization is necessary in this class since the underlying caches are thread-safe, and the transaction cache
  * creation is single-threaded since the Transaction is thread local.
  *
@@ -48,11 +43,19 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 {
     protected final Cache<K, V> _sharedCache;
     private final DbScope _scope;
+    private final CacheLoader<K, V> _privateCacheLoader;
 
-    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    // Callers that set a CacheLoader on the private cache must pass that loader into DatabaseCache
+    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> privateCacheLoader)
     {
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
+        _privateCacheLoader = privateCacheLoader;
+    }
+
+    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    {
+        this(scope, maxSize, defaultTimeToLive, debugName, null);
     }
 
     public DatabaseCache(DbScope scope, int maxSize, String debugName)
@@ -87,7 +90,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
+                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()), _privateCacheLoader);
                 t.addCache(this, transactionCache);
             }
 

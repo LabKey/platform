@@ -40,22 +40,25 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
     /** Cache shared by other threads */
     private final Cache<K, V> _sharedCache;
+    private final @Nullable CacheLoader<K, V> _privateCacheLoader;
+
     /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
 
     /** Whether the cache has been cleared. Once clear() is invoked, the shared cache is ignored. */
     private boolean _hasBeenCleared = false;
 
-    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
+    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache, @Nullable CacheLoader<K, V> privateCacheLoader)
     {
         _privateCache = privateCache;
         _sharedCache = sharedCache;
+        _privateCacheLoader = privateCacheLoader;
     }
 
     @Override
     public V get(@NotNull K key)
     {
-        return get(key, null, null);
+        return get(key, null, _privateCacheLoader);
     }
 
     @Override

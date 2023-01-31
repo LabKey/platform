@@ -43,23 +43,21 @@ import java.util.stream.Collectors;
  * This cache keeps various collections of users in memory for fast access. The cache holds a single element containing
  * various user collections; all collections are populated via a single bulk query. This scales better than adding and
  * invalidating individual user objects since many common operations require the full list of users (or active users).
- *
  * Caching a single object may seem a bit silly, but it provides mem tracker integration, statistics gathering, etc. for free.
- * User: adam
- * Date: 12/30/11
  */
 class UserCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
+    private static final UserCollectionsLoader USER_COLLECTIONS_LOADER = new UserCollectionsLoader();
 
-    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections")
+    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", USER_COLLECTIONS_LOADER)
     {
         @Override
         protected Cache<String, UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
         {
             Cache<String, Wrapper<UserCollections>> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
-            return new BlockingCache<>(shared, new UserCollectionsLoader());
+            return new BlockingCache<>(shared, USER_COLLECTIONS_LOADER);
         }
 
         @Override
@@ -67,7 +65,7 @@ class UserCache
         {
             Tracking tracking = sharedCache.getTrackingCache();
             Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getTransactionStats());
-            return new BlockingCache<>(temp, new UserCollectionsLoader());
+            return new BlockingCache<>(temp, USER_COLLECTIONS_LOADER);
         }
     };
 
@@ -124,9 +122,9 @@ class UserCache
         Collection<User> users = getUserCollections().getUserIdMap().values();
 
         return users
-                .stream()
-                .map(User::cloneUser)
-                .collect(Collectors.toList());
+            .stream()
+            .map(User::cloneUser)
+            .collect(Collectors.toList());
     }
 
     static @NotNull List<Integer> getUserIds()
