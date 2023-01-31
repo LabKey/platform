@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
+import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
 
 /**
  * User: kevink
@@ -86,6 +86,9 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     private boolean shouldUpdateUsingDIB(Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters)
     {
         if (oldKeys != null) // could be called by updateChangingKeys
+            return false;
+
+        if (ExperimentalFeatureService.get().isFeatureEnabled(USE_ROW_BY_ROW_UPDATE))
             return false;
 
         if (!supportUpdateUsingDIB())

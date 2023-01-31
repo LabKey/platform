@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -132,7 +131,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.query.QueryService.USE_BATCH_UPDATE_ROWS;
+import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
 
 
 public class QueryModule extends DefaultModule
@@ -229,7 +228,7 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        AdminConsole.addExperimentalFeatureFlag(USE_BATCH_UPDATE_ROWS, "Use batch update", "Use prepared statement to update a set of rows in a batch.", false);
+        AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row by row update", "For Query.updateRows api, do row by row update, instead of using prepared statement that update rows in a batch.", false);
 
     }
 
