@@ -135,8 +135,10 @@ public class DefaultFolderType implements FolderType
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
 
+        String mainTabId = getDefaultPageId(c);
+
         List<Portal.WebPart> all = new ArrayList<>();
-        List<Portal.WebPart> existingParts = Portal.getEditableParts(c);
+        List<Portal.WebPart> existingParts = Portal.getEditableParts(c, mainTabId);
 
         if (existingParts.isEmpty())
         {
@@ -193,7 +195,6 @@ public class DefaultFolderType implements FolderType
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
 
-        String mainTabId = getDefaultPageId(c);
         if (!Portal.DEFAULT_PORTAL_PAGE_ID.equals(mainTabId))
         {
             // Split out any menu bar items which are stored in the "portal.default" portal page
