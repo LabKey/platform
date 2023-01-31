@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +37,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.element.Input;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenuView;
@@ -64,7 +64,7 @@ import java.util.Set;
  */
 public abstract class DisplayColumn extends RenderColumn
 {
-    private static final Logger LOG = LogManager.getLogger(DisplayColumn.class);
+    private static final Logger LOG = LogHelper.getLogger(DisplayColumn.class, "Renders columns/fields in HTML grids, detail views, etc.");
 
     protected String _textAlign = null;
     protected boolean _nowrap = false;
@@ -93,6 +93,38 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
+
+    /** Handles spanning multiple rows in a grid. A separate interface to allow for easier mixing and matching with DisplayColumn implementations. */
+    public interface RowSpanner
+    {
+        /** @return total rows the current row should span. 1 is standard */
+        int getRowSpan(RenderContext ctx);
+        void addQueryColumns(Set<FieldKey> fieldKeys);
+
+        /** @return false if we don't need to render anything for the current row because a previous row has a span that covers this row too */
+        boolean shouldRenderInCurrentRow(RenderContext ctx);
+    }
+
+    /** Default implementation that doesn't span rows */
+    private static final RowSpanner DEFAULT_ROW_SPANNER = new RowSpanner()
+    {
+        @Override
+        public int getRowSpan(RenderContext ctx)
+        {
+            return 1;
+        }
+
+        @Override
+        public void addQueryColumns(Set<FieldKey> fieldKeys) {}
+
+        @Override
+        public boolean shouldRenderInCurrentRow(RenderContext ctx)
+        {
+            return true;
+        }
+    };
+
+    private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -258,8 +290,14 @@ public abstract class DisplayColumn extends RenderColumn
             Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _textExpression).getFieldKeys();
             keys.addAll(fields);
         }
+
+        _rowSpanner.addQueryColumns(keys);
     }
 
+    public void setRowSpanner(RowSpanner spanner)
+    {
+        _rowSpanner = spanner;
+    }
 
     /** implement addQueryFieldKeys() instead */
     @Deprecated
@@ -986,8 +1024,13 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
+        if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
+        {
+            // An earlier row has covered this cell with a rowspan so no need to render any HTML
+            return;
+        }
         out.write("<td");
         String displayClass = getDisplayClass(ctx);
         if (!displayClass.isEmpty())
@@ -1002,6 +1045,11 @@ public abstract class DisplayColumn extends RenderColumn
         if (!style.isEmpty())
         {
             out.write(" style='" + style + "'");
+        }
+        int rowSpan = _rowSpanner.getRowSpan(ctx);
+        if (rowSpan > 1)
+        {
+            out.write(" rowspan=\"" + rowSpan + "\"");
         }
         String hoverContent = getHoverContent(ctx);
         if (hoverContent != null)
