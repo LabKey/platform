@@ -70,11 +70,7 @@ import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 
 /**
  * Query is the "interface" to the SQL->SQL transformation code
- *
- * This class manages the state transitions from
- *
- * parse, resolve, generateSQL
- *
+ * This class manages the state transitions from parse, resolve, generateSQL
  */
 
 public class Query
@@ -82,7 +78,6 @@ public class Query
     private final QuerySchema _schema;
     private final String _queryName;
     private final IdentityHashMap<QuerySchema, HashMap<FieldKey, Pair<QuerySchema, TableInfo>>> _resolveCache = new IdentityHashMap<>();
-    private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
 
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
@@ -105,13 +100,18 @@ public class Query
     // for displaying dependency graph in UI
     private final HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
 
-    final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
-
     final private Map<String, QueryRelation> _cteTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
     private boolean _hasRecursiveWith = false;
     private Map<String, TableType> _metadataTableMap = null;
     private boolean _parsingWith = false;
     private boolean _allowDuplicateColumns = true;
+
+
+    // Caches for helping track columns through the query, see also RelationColumn.getUniqueName()
+    final IdentityHashMap<QueryTable, Boolean> _qtables = new IdentityHashMap<>();
+    public Map<String,FieldKey> _mapQueryUniqueNamesToSelectAlias = null;
+    final public Map<String,QueryRelation> _mapUniqueNamesToQueryRelation = new HashMap<>();
+
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -161,6 +161,15 @@ public class Query
 		return _schema;
 	}
 
+    void addQueryTable(QueryTable t)
+    {
+        _qtables.put(t, Boolean.TRUE);
+    }
+
+    boolean hasQueryTable(QueryTable t)
+    {
+        return _qtables.containsKey(t);
+    }
 
     public final int incrementAliasCounter()
     {
@@ -611,14 +620,15 @@ public class Query
         return new QueryInternalException(ex, sql);
     }
 
-    public void addInvolvedTableColumn(QueryTable.TableColumn column)
-    {
-        _involvedTableColumns.add(column);
-    }
 
     public Set<QueryTable.TableColumn> getInvolvedTableColumns()
     {
-        return _involvedTableColumns;
+        Set<QueryTable.TableColumn> ret = new HashSet<>();
+        for (QueryTable qt : _qtables.keySet())
+        {
+            ret.addAll(qt.getSelectedColumns().values());
+        }
+        return ret;
     }
 
 
@@ -928,6 +938,9 @@ public class Query
                 resolveExceptions.addAll(query.getParseErrors());
                 return null;
             }
+
+            // merge list of QueryTable objects
+            _qtables.putAll(query._qtables);
 
             // merge parameter lists
             mergeParameters(query);

@@ -85,4 +85,9 @@ public enum PHI
     {
         return _label;
     }
+
+    public static PHI max(PHI a, PHI b)
+    {
+        return a.ordinal() > b.ordinal() ? a : b;
+    }
 }

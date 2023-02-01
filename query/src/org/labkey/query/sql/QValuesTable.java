@@ -203,6 +203,12 @@ public class QValuesTable extends QTable
                 RelationColumn rc = new RelationColumn()
                 {
                     @Override
+                    public String getUniqueName()
+                    {
+                        return super._defaultUniqueName(_QueryRelation.this);
+                    }
+
+                    @Override
                     public FieldKey getFieldKey()
                     {
                         return new FieldKey(null, getAlias());

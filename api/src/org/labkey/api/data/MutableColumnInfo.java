@@ -117,18 +117,6 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
     void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior);
 
 
-    class RemapFieldKeysException extends IllegalStateException
-    {
-        public Object obj;
-
-        public RemapFieldKeysException(String message, Object obj)
-        {
-            super(message);
-            this.obj = obj;
-        }
-    }
-
-
     // helpers
     // TODO: fix up OORIndicator
 
@@ -161,7 +149,7 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
         remapForeignKeyFieldKeys(parent, remap, remapWarnings);
         remapSortFieldKeys(parent, remap, remapWarnings);
         remapDisplayColumnFactory(parent, remap, remapWarnings);
-        remapColumnLogging(parent, remap);
+        remapColumnLogging(parent, remap, remapWarnings);
     }
 
 
@@ -228,12 +216,12 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
     }
 
     /** remapColumnLogging always throws on error, so we don't need to pass in throwErrors */
-    default void remapColumnLogging(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    default void remapColumnLogging(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap, @Nullable Set<String> remapWarnings)
     {
         ColumnLogging logging = getColumnLogging();
         if (logging == null)
             return;
-        ColumnLogging remapped = logging.remapFieldKeys(parent, remap);
+        ColumnLogging remapped = logging.remapFieldKeys(parent, remap, remapWarnings);
         setColumnLogging(remapped);
     }
 }

@@ -16,8 +16,11 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.QueryParseException;
+
+import java.util.Collection;
 
 
 public class QQuery extends QExpr
@@ -155,5 +158,21 @@ public class QQuery extends QExpr
         /* We could now traverse the nested QueryRelation, chasing down references.
          * Instead, we just addRef() all "upward" references in QuerySelect.getField()
          */
+    }
+
+    @Override
+    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    {
+        var relation = getQuerySelect();
+        if (relation instanceof QueryLookupWrapper qlw)
+            relation = qlw.getSource();
+        if (relation instanceof QuerySelect select)
+        {
+            QuerySelect.SelectColumn col = select.getFirstColumn();
+            if (null != col)
+                col._resolved.gatherInvolvedSelectColumns(collect);
+            return collect;
+        }
+        throw new NotImplementedException();
     }
 }

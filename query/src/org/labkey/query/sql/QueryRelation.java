@@ -20,10 +20,12 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -32,9 +34,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,6 +63,7 @@ public abstract class QueryRelation
     protected Query _query;
     protected QuerySchema _schema;
     protected String _alias = null;
+    protected final String _guid = GUID.makeGUID();
     private CommonTableExpressions _commonTableExpressions = null;
 
     // used to resolve column in outer scope
@@ -276,6 +281,16 @@ public abstract class QueryRelation
 
         abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
 
+        ColumnLogging getColumnLogging()
+        {
+            return null;
+        }
+
+        PHI getPHI()
+        {
+            return null;
+        }
+
         // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()
         {
@@ -325,6 +340,31 @@ public abstract class QueryRelation
             return count != 0;
         }
 
+
+        /**
+         * Withing a query, column names can be slippery.  We give each column a unique internal name.
+         * This facilitates correctly reconnecting related columns after a query is parsed.
+         *
+         * Given "FROM TableA as X, TableB as Y", column X.value and Y.value are considered different columns
+         * and will have different unique identifiers.
+         *
+         * @return query wide unique identifier for this column.
+         */
+        abstract public String getUniqueName();
+
+        public static final String UNIQUE_NAME_PREFIX = ".--UN--";
+        public static final String UNIQUE_NAME_SUFFIX = ".-- ";
+
+        protected String _defaultUniqueName(QueryRelation r)
+        {
+            // all unique names should start with some recognizable prefix/suffix so that we can assert that these names don't escape from Query somehow
+            return UNIQUE_NAME_PREFIX + r._guid + "." + r.getAlias() + System.identityHashCode(this) + "." + getAlias() + ".. ";
+        }
+
+        public static boolean isUniqueName(String s)
+        {
+            return s.startsWith(UNIQUE_NAME_PREFIX) && s.endsWith(UNIQUE_NAME_SUFFIX);
+        }
 
         public String getDebugString()
         {
@@ -376,5 +416,56 @@ public abstract class QueryRelation
     public List<Sort.SortField> getSortFields()
     {
         return List.of();
+    }
+
+
+/*
+    // This is a helper method to create a map from column names in one scope (e.g QueryTable) to those columns found in
+    // an outer scope (e.g. query output columns).  See QueryTableInfo.  The inner table provides a map from column FieldKeys to
+    // column unique names.  Another map from uniquename to String is also provided.  This method returns a virtual "Map" from one to the other.
+    //
+    Map<FieldKey,FieldKey> generateRemapMap(Map<FieldKey,String> innerMap, Map<String,FieldKey> outerMap)
+    {
+        return new AbstractMap<>()
+        {
+            @NotNull
+            @Override
+            public Set<Entry<FieldKey, FieldKey>> entrySet()
+            {
+                throw new IllegalStateException();
+            }
+
+            @Override
+            public FieldKey get(Object key)
+            {
+                return outerMap.get(innerMap.get(key));
+            }
+
+            @Override
+            public FieldKey put(FieldKey key, FieldKey value)
+            {
+                throw new IllegalStateException();
+            }
+        };
+    }
+
+    Map<FieldKey,FieldKey> generateRemapMap()
+    {
+        return null;
+    }
+*/
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o instanceof QueryRelation qr)
+            return _guid.equals(qr._guid);
+        return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _guid.hashCode();
     }
 }

@@ -421,6 +421,11 @@ public class QueryPivot extends QueryRelation
             _s = s;
         }
 
+        public String getUniqueName()
+        {
+            return _s.getUniqueName();
+        }
+
         @Override
         SQLFragment getInternalSql()
         {
@@ -595,6 +600,11 @@ public class QueryPivot extends QueryRelation
 
         return new RelationColumn()
         {
+            public String getUniqueName()
+            {
+                return super._defaultUniqueName(QueryPivot.this);
+            }
+
             @Override
             public FieldKey getFieldKey()
             {
@@ -838,6 +848,7 @@ public class QueryPivot extends QueryRelation
                 var columnInfo = new RelationColumnInfo(this, col);
                 addColumn(columnInfo);
             }
+            afterInitializeColumns();
         }
 
         private SQLFragment _sqlPivot = null;

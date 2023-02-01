@@ -8,7 +8,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SelectQueryAuditProvider;
@@ -46,14 +45,14 @@ import java.util.stream.Collectors;
  * This class is very similar to QuerySelect, it generates a SELECT/FROM/WHERE/ORDER BY sql query.  However, instead
  * of being constructed from a SQL parse tree, it is constructed by components provided by (usually) a QueryView.
  * This is meant to mimic and replace the functionality of QueryServiceImpl.getSelectSQL()
- *
+ * <p>
  * I did not call this class "QueryView" because we already have a "QueryView"!
- *
+ * <p>
  * NOTE: one oddness is that a list of ColumnInfo objects is passed in. This is because of how DataRegion/QueryView
  * have always worked. See QueryServiceImpl.getColumns() and RenderContext.getSelectColumns()
- *
+ * <p>
  * We can still implement getTableInfo etc, but we probably want to preserve the aliases of the initial ColumnInfo objects.
- *
+ * <p>
  * IDEAS:
  * a) flush out full QueryRelation implementation to make it possible to use a saved queryview in the FROM of another query
  * b) write a CustomView object constructor?
@@ -188,7 +187,6 @@ public class QuerySelectView extends QueryRelation
 
         if (null == selectColumns)
             selectColumns = table.getColumns();
-        Set<ColumnInfo> allInvolvedColumns = table.getAllInvolvedColumns(selectColumns);
 
         // Check incoming columns to ensure they come from table
         assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
@@ -220,9 +218,9 @@ public class QuerySelectView extends QueryRelation
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
 
-        allColumns = QueryServiceImpl.get().ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap, allInvolvedColumns);
+        allColumns = QueryServiceImpl.get().ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap);
 
-        Set<ColumnInfo> extraSelectDataLoggingColumns = getRequiredDataLoggingColumns(table, queryLogging, allInvolvedColumns, allColumns, columnMap);
+        Set<ColumnInfo> extraSelectDataLoggingColumns = getRequiredDataLoggingColumns(table, queryLogging, allColumns, columnMap);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
@@ -356,31 +354,35 @@ public class QuerySelectView extends QueryRelation
 
 
     @NotNull
-    private static Set<ColumnInfo> getRequiredDataLoggingColumns(TableInfo table, @NotNull QueryLogging queryLogging, Set<ColumnInfo> allInvolvedColumns, List<ColumnInfo> allColumns, Map<FieldKey, ColumnInfo> columnMap)
+    private static Set<ColumnInfo> getRequiredDataLoggingColumns(TableInfo table, @NotNull QueryLogging queryLogging, List<ColumnInfo> allColumns, Map<FieldKey, ColumnInfo> columnMap)
     {
-        // Check allInvolved columns for which need to be logged
-        // Logged columns may also require data logging (e.g. a patientId)
-        // If a data logging column cannot be found, we will only disallow this query (throw an exception)
-        //      if the logged column that requires data logging is in allColumns (which is selected columns plus ones needed for sort/filter)
         Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
         String columnLoggingComment = null;
         SelectQueryAuditProvider selectQueryAuditProvider = null;
-        for (ColumnInfo column : allInvolvedColumns)
+        for (ColumnInfo column : allColumns)
         {
-            if (!(column instanceof LookupColumn))
+            ColumnLogging columnLogging = column.getColumnLogging();
+            if (null == columnLogging)
+                continue;
+            if (columnLogging.shouldLogName())
             {
-                ColumnLogging columnLogging = column.getColumnLogging();
-                if (null != columnLogging && columnLogging.shouldLogName())
+                shouldLogNameLoggings.add(columnLogging);
+                if (null == selectQueryAuditProvider)
+                    selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
+                if (null == columnLoggingComment)
+                    columnLoggingComment = columnLogging.getLoggingComment();
+                if (null != columnLogging.getException())
                 {
-                    shouldLogNameLoggings.add(columnLogging);
+                    UnauthorizedException uae = columnLogging.getException();
+                    // Use UnexpectedException to be consistent I guess??
+                    queryLogging.setExceptionToThrowIfLoggingIsEnabled(uae);
+                }
+                else
+                {
                     if (!shouldLogNameToDataLoggingMap.containsKey(column))
                         shouldLogNameToDataLoggingMap.put(column, new HashSet<>());
                     shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
-                    if (null == columnLoggingComment)
-                        columnLoggingComment = columnLogging.getLoggingComment();
-                    if (null == selectQueryAuditProvider)
-                        selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
                 }
             }
         }
@@ -392,8 +394,6 @@ public class QuerySelectView extends QueryRelation
             for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
             {
                 ColumnInfo loggingColumn = columnMap.get(fieldKey);                 // Look in columnMap
-                if (null == loggingColumn)
-                    loggingColumn = getColumnForDataLogging(table, fieldKey);       // Look in table columns
 
                 if (null == loggingColumn)
                 {
@@ -416,21 +416,20 @@ public class QuerySelectView extends QueryRelation
                 }
                 else
                 {
-                    // Looking for matching column in allColumns; must match by ColumnLogging object, which gets propagated up sql parse tree
-                    for (ColumnInfo column : allColumns)
-                    {
-                        if (shouldLogNameToDataLoggingMapEntry.getKey().getColumnLogging().equals(column.getColumnLogging()))
-                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'."));
-                    }
+                    queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'."));
                 }
             }
         }
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
+        {
             queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
                     shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
+        }
         else if (!shouldLogNameLoggings.isEmpty())
+        {
             queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Column logging is required but cannot set query logging object."));
+        }
         return extraSelectDataLoggingColumns;
     }
 
@@ -498,22 +497,4 @@ public class QuerySelectView extends QueryRelation
         }
         return addedSortKeys;
     }
-
-
-    @Nullable
-    private static ColumnInfo getColumnForDataLogging(TableInfo table, FieldKey fieldKey)
-    {
-        ColumnInfo loggingColumn = table.getColumn(fieldKey);
-        if (null != loggingColumn)
-            return loggingColumn;
-
-        // Column names may be mangled by visualization; lookup by original column name
-        for (ColumnInfo column : table.getColumns())
-        {
-            if (column.getColumnLogging().getOriginalColumnFieldKey().equals(fieldKey))
-                return column;
-        }
-        return null;
-    }
-
 }

@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -72,6 +73,7 @@ public class QueryTable extends QueryRelation
     private AliasManager _aliasManager;
     private TableInfo _tableInfo;
     private TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
+    private final HashMap<String,FieldKey> _uniqueNameMap = new HashMap<>();
     private String _innerAlias;
     private Boolean _selectAllColumns = false;
 
@@ -89,6 +91,7 @@ public class QueryTable extends QueryRelation
     {
         // For recursive queries we need to create this object before we create the TableInfo
         super(query, schema, alias);
+        query.addQueryTable(this);
         _originalAlias = alias;
 
         // call this now so we it doesn't change if _getSql() is called more than once
@@ -139,6 +142,12 @@ public class QueryTable extends QueryRelation
     int getSelectedColumnCount()
     {
         return _selectedColumns.size();
+    }
+
+
+    public Map<FieldKey,QueryTable.TableColumn> getSelectedColumns()
+    {
+        return _selectedColumns;
     }
 
 
@@ -444,6 +453,7 @@ public class QueryTable extends QueryRelation
         ColumnInfo _col;
         final String _alias;
         final TableColumn _parent;
+        final String _uniqueName;
 
         TableColumn(@NotNull FieldKey key, @NotNull ColumnInfo col, @Nullable TableColumn parent)
         {
@@ -455,6 +465,12 @@ public class QueryTable extends QueryRelation
             _col = col;
             _alias = _aliasManager.decideAlias(col.getAlias());
             _parent = parent;
+            _uniqueName = super._defaultUniqueName(QueryTable.this);
+        }
+
+        public String getUniqueName()
+        {
+            return _uniqueName;
         }
 
         @Override
@@ -547,18 +563,26 @@ public class QueryTable extends QueryRelation
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
+            to.setColumnLogging(_col.getColumnLogging().addScope(_guid));
             if (_suggestedColumn)
             {
                 to.setHidden(true);
 //                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
             }
+            assert _query.hasQueryTable(QueryTable.this);
+        }
 
-            if (null == _mapOutputColToTableColumn)
-            {
-                _mapOutputColToTableColumn = new TreeMap<>();
-                _query.qtableColumnMaps.put(QueryTable.this, _mapOutputColToTableColumn);
-            }
-            _mapOutputColToTableColumn.put(to.getFieldKey(), this);
+
+        @Override
+        ColumnLogging getColumnLogging()
+        {
+            return _col.getColumnLogging();
+        }
+
+        @Override
+        PHI getPHI()
+        {
+            return _col.getPHI();
         }
 
         @Override
@@ -775,6 +799,6 @@ public class QueryTable extends QueryRelation
     private void addSelectedColumn(FieldKey key, TableColumn column)
     {
         _selectedColumns.put(key, column);
-        _query.addInvolvedTableColumn(column);
+        _uniqueNameMap.put(column.getUniqueName(), column.getFieldKey());
     }
 }

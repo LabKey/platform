@@ -1743,14 +1743,14 @@ public class QueryServiceImpl implements QueryService
     {
         HashMap<FieldKey, ColumnInfo> hm = new HashMap<>();
         Set<ColumnInfo> involvedColumns = new HashSet<>();
-        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm, involvedColumns);
+        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm);
     }
 
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
     public List<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
                                                    @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns,
-                                                   Map<FieldKey, ColumnInfo> columnMap /* IN/OUT */, Set<ColumnInfo> allInvolvedColumns /* IN/OUT */)
+                                                   Map<FieldKey, ColumnInfo> columnMap /* IN/OUT */)
     {
         AliasManager manager = new AliasManager(table, columns);
 
@@ -1823,12 +1823,12 @@ public class QueryServiceImpl implements QueryService
                 if (col != null)
                 {
                     ret.putIfAbsent(col.getFieldKey(),col);
-                    resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
+                    resolveSortColumns(col, columnMap, manager, ret, false);
                 }
                 //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
                 else if (columnMap.containsKey(field.getFieldKey()))
                 {
-                    resolveSortColumns(columnMap.get(field.getFieldKey()), columnMap, manager, ret, allInvolvedColumns, true);
+                    resolveSortColumns(columnMap.get(field.getFieldKey()), columnMap, manager, ret, true);
                 }
             }
         }
@@ -1850,13 +1850,12 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
-        allInvolvedColumns.addAll(ret.values());
         return new ArrayList<>(ret.values());
     }
 
 
     private void resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
-                                                     LinkedHashMap<FieldKey,ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
+                                                     LinkedHashMap<FieldKey,ColumnInfo> ret, boolean addSortKeysOnly)
     {
         if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
         {
@@ -1886,15 +1885,17 @@ public class QueryServiceImpl implements QueryService
                 }
             }
 
-            toAdd.forEach(c -> ret.putIfAbsent(c.getFieldKey(), c));
-            allInvolvedColumns.addAll(toAdd);
+            toAdd.forEach(c -> {
+                ret.putIfAbsent(c.getFieldKey(), c);
+                columnMap.putIfAbsent(c.getFieldKey(), c);
+            });
         }
         else
         {
             if (!addSortKeysOnly)
             {
                 ret.putIfAbsent(col.getFieldKey(),col);
-                allInvolvedColumns.add(col);
+                columnMap.putIfAbsent(col.getFieldKey(), col);
             }
         }
     }

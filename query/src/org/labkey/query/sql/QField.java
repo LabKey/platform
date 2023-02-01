@@ -27,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 
 
@@ -230,5 +231,12 @@ public class QField extends QInternalExpr
     public boolean isConstant()
     {
         return false;
+    }
+
+    @Override
+    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    {
+        collect.add(this._column);
+        return collect;
     }
 }

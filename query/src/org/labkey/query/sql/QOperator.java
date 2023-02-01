@@ -19,6 +19,8 @@ package org.labkey.query.sql;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
+import java.util.Collection;
+
 
 final public class QOperator extends QExpr
 {
@@ -142,5 +144,14 @@ final public class QOperator extends QExpr
                 return false;
         }
         return true;
+    }
+
+    @Override
+    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    {
+        // result is bool and does not depend on argument
+        if (_op.getResultType() == Operator.ResultType.bool)
+            return collect;
+        return super.gatherInvolvedSelectColumns(collect);
     }
 }

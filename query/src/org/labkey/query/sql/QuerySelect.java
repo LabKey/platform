@@ -349,6 +349,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
             // Remember schema-qualified key to resolve schema-qualified tables in declareFields()
             if (null != key && null == qtable._alias && key.size() > 1)
                 _qualifiedTables.put(key, relation);
+
+            // make sure the first column is always selected (e.g. for nested (SELECT) queries)
+            if (!_columns.isEmpty())
+                _columns.values().iterator().next().addRef(this);
         }
 
         ArrayList<SelectColumn> columnList = new ArrayList<>();
@@ -1406,6 +1410,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             if (StringUtils.equalsIgnoreCase(aliasedColumn.getName(),key))
                 aliasedColumn.setKeyField(true);
         }
+        ret.afterInitializeColumns();
         MemTracker.getInstance().put(ret);
         return ret;
     }
@@ -1876,6 +1881,13 @@ public class QuerySelect extends QueryRelation implements Cloneable
         return col;
     }
 
+    // 1 indexed to be compatible with all the other database-y apis
+    SelectColumn getFirstColumn()
+    {
+        if (_columns.isEmpty())
+            return null;
+        return _columns.values().iterator().next();
+    }
 
     @Override
     protected Map<String,RelationColumn> getAllColumns()
@@ -2112,6 +2124,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         QExpr _resolved;
         ColumnInfo _colinfo = null;
         Map<String,Object> _annotations = null;
+        String _uniqueName = null;
 
         QIdentifier _aliasId;
         String _alias;
@@ -2200,6 +2213,29 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 _alias = _aliasManager.decideAlias(getName());
             }
         }
+
+
+        @Override
+        public String getUniqueName()
+        {
+            if (null == _uniqueName)
+            {
+                QExpr expr = getResolvedField();
+                if (expr instanceof QField)
+                {
+                    RelationColumn rc = ((QField)expr).getRelationColumn();
+                    if (null == rc)
+                        parseError("Can't resolve column: " + expr.getSourceText(), expr);
+                    _uniqueName = null==rc ? "--parseError" : rc.getUniqueName();
+                }
+                else
+                {
+                    _uniqueName = super._defaultUniqueName(QuerySelect.this);
+                }
+            }
+            return _uniqueName;
+        }
+
 
         @Override
         SQLFragment getInternalSql()

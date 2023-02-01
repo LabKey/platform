@@ -46,6 +46,12 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         }
 
         @Override
+        public String getUniqueName()
+        {
+            return _wrapped.getUniqueName();
+        }
+
+        @Override
         public FieldKey getFieldKey()
         {
             return _wrapped.getFieldKey();

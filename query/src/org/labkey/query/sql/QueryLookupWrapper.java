@@ -79,12 +79,19 @@ public class QueryLookupWrapper extends QueryRelation
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
         _alias = "qlw" + relation.getAlias();
-        if (null != relation)
+        _source = relation;
+        _inFromClause = relation._inFromClause;
+        relation._parent = this;
+
+        for (var col : relation.getAllColumns().values())
         {
-            _source = relation;
-            _inFromClause = relation._inFromClause;
-            relation._parent = this;
+            PassThroughColumn pt = new PassThroughColumn(new FieldKey(null, col.getAlias()), col);
+            _selectedColumns.put(pt.getFieldKey(), pt);
         }
+
+        // add ref to first column, this may be used in (SELECT) expression
+        if (!_selectedColumns.isEmpty())
+            _selectedColumns.values().iterator().next().addRef(this);
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
@@ -390,6 +397,9 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
+        public abstract String getUniqueName();
+
+        @Override
         String getAlias()
         {
             return _alias;
@@ -413,6 +423,14 @@ public class QueryLookupWrapper extends QueryRelation
                 return;
             _columnFK = _fkMap.get(key.getName());
         }
+
+
+        @Override
+        public String getUniqueName()
+        {
+            return _wrapped.getUniqueName();
+        }
+
 
         @Override
         public ForeignKey getFk()
@@ -539,6 +557,7 @@ public class QueryLookupWrapper extends QueryRelation
         final RelationColumn _foreignKey;
         final ForeignKey _fk;
         final ColumnInfo _lkCol;
+        final String _uniqueName;
 
         protected QueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk, BaseColumnInfo lkCol)
         {
@@ -547,6 +566,13 @@ public class QueryLookupWrapper extends QueryRelation
             _foreignKey = parent;
             _fk = fk;
             _lkCol = lkCol;
+            _uniqueName = super._defaultUniqueName(_table);
+        }
+
+        @Override
+        public String getUniqueName()
+        {
+            return _uniqueName;
         }
 
         @Override

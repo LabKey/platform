@@ -340,7 +340,9 @@ public class QueryUnion extends QueryRelation
         }
         for (UnionColumn unioncol : _allColumns)
             ret.addUnionColumn(new RelationColumnInfo(ret, unioncol));
-        
+
+        ret.afterInitializeColumns();
+
         assert unionSql.appendComment("</QueryUnion>", _schema.getDbSchema().getSqlDialect());
 		_unionSql = unionSql;
         return ret;
@@ -515,7 +517,13 @@ public class QueryUnion extends QueryRelation
             _name = new FieldKey(null, name);
             _first = col;
         }
-        
+
+        @Override
+        public String getUniqueName()
+        {
+            return super._defaultUniqueName(QueryUnion.this);
+        }
+
         @Override
         public FieldKey getFieldKey()
         {

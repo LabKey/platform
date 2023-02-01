@@ -28,6 +28,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -281,6 +282,25 @@ abstract public class QNode implements Cloneable
             ret.appendChild(c.copyTree());
 
         return ret;
+    }
+
+
+    /**
+     * Return set of columns that might contribute to the visible value of this expression.
+     * For instance
+     *      SELECT (SELECT foo FROM X WHERE bar==1) AS A ...
+     *      "foo" contributes to the select value, "bar" does not.
+     *
+     *       SELECT COUNT(foo), MIN(bar)
+     *       "foo" is not returned, "bar" is returned.
+     *
+     *   returns passed in collection for convenience
+     */
+    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    {
+        for (QNode c : children())
+            c.gatherInvolvedSelectColumns(collect);
+        return collect;
     }
 
 
