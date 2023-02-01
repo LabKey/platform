@@ -109,8 +109,8 @@ public class TransactionCache<K, V> implements Cache<K, V>
     public int removeUsingFilter(Filter<K> filter)
     {
         return (int)(
-            _privateCache.getKeys().stream().peek(this::remove).count() +
-            _sharedCache.getKeys().stream().peek(this::remove).count()
+            _privateCache.getKeys().stream().filter(filter::accept).peek(this::remove).count() +
+            _sharedCache.getKeys().stream().filter(filter::accept).peek(this::remove).count()
         );
     }
 
