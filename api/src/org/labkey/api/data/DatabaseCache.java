@@ -44,19 +44,11 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 {
     protected final Cache<K, V> _sharedCache;
     private final DbScope _scope;
-    private final CacheLoader<K, V> _privateCacheLoader;
-
-    // Callers that set a CacheLoader on the private cache must pass that loader into DatabaseCache
-    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> privateCacheLoader)
-    {
-        _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
-        _scope = scope;
-        _privateCacheLoader = privateCacheLoader;
-    }
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
-        this(scope, maxSize, defaultTimeToLive, debugName, null);
+        _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
+        _scope = scope;
     }
 
     public DatabaseCache(DbScope scope, int maxSize, String debugName)
@@ -76,7 +68,8 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return createTemporaryCache(getTrackingCache());
     }
 
-    // Note: If you want to set a default CacheLoader then wrap the DatabaseCache with a BlockingCache
+    // Note: No need to subclass and override this method. If you want to set a default CacheLoader then wrap the
+    // DatabaseCache with a BlockingCache
     protected final Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
@@ -92,7 +85,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()), _privateCacheLoader);
+                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
                 t.addCache(this, transactionCache);
             }
 

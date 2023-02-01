@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * A read-through, transaction-specific cache. Reads through to the shared cache for each entry until a write operation
  * (put or remove) occurs on that entry, at which point only the private cache is consulted for this entry for the
- * remainder of the transaction. This should provide for good performance while avoiding pollution of the shared cache
+ * remainder of the transaction. This should provide good performance while avoiding pollution of the shared cache
  * during the transaction and in the case of a rollback.
  * User: adam
  * Date: Nov 9, 2009
@@ -40,7 +40,6 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
     /** Cache shared by other threads */
     private final Cache<K, V> _sharedCache;
-    private final @Nullable CacheLoader<K, V> _privateCacheLoader;
 
     /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
@@ -48,19 +47,16 @@ public class TransactionCache<K, V> implements Cache<K, V>
     /** Whether the cache has been cleared. Once clear() is invoked, the shared cache is ignored. */
     private boolean _hasBeenCleared = false;
 
-    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache, @Nullable CacheLoader<K, V> privateCacheLoader)
+    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
     {
-        assert !(privateCache instanceof BlockingCache<K,V>) || null != privateCacheLoader : "Using a BlockingCache requires passing the private cache CacheLoader into DatabaseCache()";
-
         _privateCache = privateCache;
         _sharedCache = sharedCache;
-        _privateCacheLoader = privateCacheLoader;
     }
 
     @Override
     public V get(@NotNull K key)
     {
-        return get(key, null, _privateCacheLoader);
+        return get(key, null, null);
     }
 
     @Override
