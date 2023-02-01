@@ -47,6 +47,7 @@ public class IssueServiceImpl implements IssueService
     {
         Container container = context.getContainer();
         User user = context.getUser();
+        Integer issueId = null;
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -163,8 +164,8 @@ public class IssueServiceImpl implements IssueService
 
                 if (!errors.hasErrors())
                 {
+                    issueId = issueObject.getIssueId();
                     transaction.commit();
-                    return IssueManager.getIssue(container, user, issueObject.getIssueId());
                 }
             }
         }
@@ -172,10 +173,9 @@ public class IssueServiceImpl implements IssueService
         {
             String message = x.getMessage() == null ? x.toString() : x.getMessage();
             errors.reject(ERROR_MSG, message);
-
-            return null;
         }
-        return null;
+
+        return null != issueId ? IssueManager.getIssue(container, user, issueId) : null;
     }
 
     @Override
