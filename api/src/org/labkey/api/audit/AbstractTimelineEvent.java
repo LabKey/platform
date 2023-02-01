@@ -34,20 +34,18 @@ public abstract class AbstractTimelineEvent
 
     public static Object getUserObject(User user, User currentUser)
     {
-        // Issue 47194: if the user has been deleted, still show the userId in the timeline event details
         if (user == null) return null;
-
         return getUserObject(user.getUserId(), user, currentUser);
     }
 
     private static Object getUserObject(int userId, User user, User currentUser)
     {
-        User _user = user != null ? user : UserManager.getUser(userId);
+        User eventUser = user != null ? user : UserManager.getUser(userId);
 
         // Issue 47194: if the user has been deleted, still show the userId in the timeline event details
-        if (_user == null) return createEntityObject(userId, null, null, "user");
+        if (eventUser == null) return createEntityObject(userId, null, null, "user");
 
-        return createEntityObject(_user.getUserId(), _user.getDisplayName(currentUser), null, "user");
+        return createEntityObject(eventUser.getUserId(), eventUser.getDisplayName(currentUser), null, "user");
     }
 
     public static Object getTimestampObject(Date date, Container container)
