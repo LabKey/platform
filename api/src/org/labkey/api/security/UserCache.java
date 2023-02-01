@@ -21,9 +21,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.Tracking;
-import org.labkey.api.cache.TrackingCache;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.Sort;
@@ -43,31 +40,15 @@ import java.util.stream.Collectors;
  * This cache keeps various collections of users in memory for fast access. The cache holds a single element containing
  * various user collections; all collections are populated via a single bulk query. This scales better than adding and
  * invalidating individual user objects since many common operations require the full list of users (or active users).
- * Caching a single object may seem a bit silly, but it provides mem tracker integration, statistics gathering, etc. for free.
+ * Caching a single object may seem a bit silly, but it provides mem tracker integration, transaction isolation,
+ * statistics gathering, etc. for free.
  */
 class UserCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
-    private static final UserCollectionsLoader USER_COLLECTIONS_LOADER = new UserCollectionsLoader();
 
-    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", USER_COLLECTIONS_LOADER)
-    {
-        @Override
-        protected Cache<String, UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
-        {
-            Cache<String, Wrapper<UserCollections>> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
-            return new BlockingCache<>(shared, USER_COLLECTIONS_LOADER);
-        }
-
-        @Override
-        protected Cache<String, UserCollections> createTemporaryCache(TrackingCache<String, UserCollections> sharedCache)
-        {
-            Tracking tracking = sharedCache.getTrackingCache();
-            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getTransactionStats());
-            return new BlockingCache<>(temp, USER_COLLECTIONS_LOADER);
-        }
-    };
+    private static final Cache<String, UserCollections> CACHE = new BlockingCache<>(new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections"), new UserCollectionsLoader());
 
     private UserCache()
     {
