@@ -30,6 +30,7 @@ import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -70,12 +71,13 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public Cache<K, V> createTemporaryCache()
+    public final Cache<K, V> createTemporaryCache()
     {
         return createTemporaryCache(getTrackingCache());
     }
 
-    protected Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
+    // Note: If you want to set a default CacheLoader then wrap the DatabaseCache with a BlockingCache
+    protected final Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
@@ -358,7 +360,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             // transaction testing
-            try(DbScope.Transaction transaction = scope.beginTransaction())
+            try (DbScope.Transaction transaction = scope.beginTransaction())
             {
                 assertTrue(scope.isTransactionActive());
 
@@ -434,9 +436,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             @Override
             public boolean isTransactionActive()
             {
-                if (null != overrideTransactionActive)
-                    return overrideTransactionActive;
-                return super.isTransactionActive();
+                return Objects.requireNonNullElseGet(overrideTransactionActive, super::isTransactionActive);
             }
 
             @Override

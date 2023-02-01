@@ -1246,10 +1246,6 @@ public class DbScope
     // Invalidates all tables in the table cache. Careful: callers probably need to invalidate the schema as well (it holds a list of table names).
     private void invalidateAllTables(String schemaName, DbSchemaType type)
     {
-        // If caller doesn't know the schema type then clear the schema tables from all caches
-        if (type == DbSchemaType.Unknown)
-            type = DbSchemaCache.getSchemaType(this, schemaName);
-
         getTableInfoCache(type).removeAllTables(schemaName, type);
     }
 
