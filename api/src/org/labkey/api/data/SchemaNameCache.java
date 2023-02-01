@@ -33,7 +33,7 @@ public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
 
-    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(50, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
+    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(500, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
         DbScope scope = DbScope.getDbScope(dsName);
 
         try
@@ -61,6 +61,11 @@ public class SchemaNameCache
     public Map<String, String> getSchemaNameMap(DbScope scope)
     {
         return _cache.get(scope.getDataSourceName());
+    }
+
+    public void remove(DbScope scope)
+    {
+        _cache.remove(scope.getDataSourceName());
     }
 
     // Query the JDBC metadata for all schemas in this database.

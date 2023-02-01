@@ -494,9 +494,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         DetailsURL detailsURL = new DetailsURL(actionURL, Collections.singletonMap("rowId", "rowId"));
         setDetailsURL(detailsURL);
 
-        StringExpression url = StringExpressionFactory.create(detailsURL.getActionURL().getLocalURIString(true));
-        rowIdCol.setURL(url);
-        nameCol.setURL(url);
+        rowIdCol.setURL(detailsURL);
+        nameCol.setURL(detailsURL);
 
         if (canUserAccessPhi())
         {
