@@ -17,6 +17,7 @@
 import React from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
+    App as Util,
     Alert,
     BeforeUnload,
     DomainDesign,
@@ -25,7 +26,9 @@ import {
     getSampleTypeDetails,
     LoadingSpinner,
     SampleTypeDesigner,
-    SampleTypeModel
+    SampleTypeModel,
+    SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS,
+    SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -63,6 +66,11 @@ export class App extends React.PureComponent<any, State> {
     }
 
     componentDidMount() {
+        const freezerManagementEnabled = Util.isFreezerManagementEnabled();
+        const systemFields = freezerManagementEnabled
+            ? SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS.concat(SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS)
+            : SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS;
+
         // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
         const rowId = this.getRowIdParam();
@@ -76,7 +84,8 @@ export class App extends React.PureComponent<any, State> {
                     // Then query for actual domain design
                     getSampleTypeDetails(undefined, domainId)
                         .then((sampleType: DomainDetails) => {
-                            this.setState(()=> ({sampleType, isLoading: false}));
+                            let updatedSampleType = sampleType.setIn(['options', 'systemFields'], systemFields) as DomainDetails;
+                            this.setState(()=> ({sampleType: updatedSampleType, isLoading: false}));
                         }).catch(error => {
                             this.setState(() => ({message: 'Sample type does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
                         }
@@ -95,7 +104,8 @@ export class App extends React.PureComponent<any, State> {
                     // allow for support of URL params for a name value that is readOnly
                     const updatedSampleType = sampleType.merge({
                         nameReadOnly,
-                        domainDesign: sampleType.domainDesign.merge({ name })
+                        domainDesign: sampleType.domainDesign.merge({ name }),
+                        options: sampleType.options.set('systemFields', systemFields),
                     }) as DomainDetails;
 
                     this.setState(()=> ({sampleType: updatedSampleType, isLoading: false}));
