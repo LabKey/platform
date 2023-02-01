@@ -461,7 +461,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outermost commit() attempt actually performs the commit.
      *
      * The preferred usage pattern is:
      * <pre>
@@ -471,7 +471,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
@@ -485,7 +485,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outermost commit() attempt actually performs the commit.
      * The preferred usage pattern is:
      * <pre>
      *     try (DbScope.Transaction transaction = scope.ensureTransaction()) {
@@ -494,11 +494,11 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
-     * they should all call commit() first if the transaction should be persisted.
+     * Note that if there are multiple exit points from inside the try-block (such as return statements), they should
+     * all call commit() first if the transaction should be persisted.
      *
-     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
-     *                        a new Connection is handed out and used until it is committed/rolled back.
+     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's
+     *                        kind, a new Connection is handed out and used until it is committed/rolled back.
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
      *              Locks will be released when close() is called on the Transaction.
@@ -533,7 +533,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
@@ -555,7 +555,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
@@ -598,15 +598,15 @@ public class DbScope
                     // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                     // to the current thread
                     List<Lock> serverLocks = Arrays.stream(locks)
-                            .filter((l) -> l instanceof ServerLock)
-                            .collect(Collectors.toList());
+                        .filter((l) -> l instanceof ServerLock)
+                        .toList();
                     List<Lock> memoryLocks;
                     if (serverLocks.isEmpty())
                         memoryLocks = Arrays.asList(locks);
                     else
                         memoryLocks = Arrays.stream(locks)
-                                .filter((l) -> !(l instanceof ServerLock))
-                                .collect(Collectors.toList());
+                            .filter((l) -> !(l instanceof ServerLock))
+                            .collect(Collectors.toList());
 
                     boolean createdTransactionObject = false;
                     try
@@ -1931,7 +1931,7 @@ public class DbScope
 
     public enum CommitTaskOption
     {
-        /** Run inside of the same transaction, immediately before committing it */
+        /** Run inside the same transaction, immediately before committing it */
         PRECOMMIT
         {
             @Override
@@ -2017,8 +2017,8 @@ public class DbScope
         void commit();
 
         /**
-         * Commit the current transaction, running pre and post commit tasks, but don't close the connection
-         * or remove transaction from thread pool. Effectively starts new transaction with same pre and post commit tasks.
+         * Commit the current transaction, running pre- and post-commit tasks, but don't close the connection or remove
+         * transaction from thread pool. Effectively starts new transaction with same pre- and post-commit tasks.
          */
         void commitAndKeepConnection();
 

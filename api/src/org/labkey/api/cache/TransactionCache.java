@@ -62,6 +62,8 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public V get(@NotNull K key, Object arg, @Nullable CacheLoader<K, V> loader)
     {
+        // No locks or synchronization below because we're always single-threaded (unlike BlockingCache)
+
         V v = _privateCache.get(key);
 
         if (v == REMOVED_MARKER)
@@ -70,7 +72,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
         }
         else if (null == v && !_hasBeenCleared)
         {
-            v = _sharedCache.get(key); // Entry has never been modified, read-through to shared cache
+            v = _sharedCache.get(key); // Entry has never been modified, so read-through to shared cache
         }
 
         // If removed/cleared from private cache or missing from both caches, attempt to load and put into private cache
