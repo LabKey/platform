@@ -376,7 +376,7 @@
                     },
                 },
                 items: [{
-                    boxLabel: 'Add ' + type,
+                    boxLabel: 'Add ' + type + ' ' + ((!helpTopic || !helpDisplayText) ? "" : <%=q(new HelpTopic(bean.importHelpTopic).getLinkHtml(bean.importHelpDisplayText))%>),
                     inputValue: 'IMPORT',
                     checked: true
                 },{
