@@ -494,9 +494,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         DetailsURL detailsURL = new DetailsURL(actionURL, Collections.singletonMap("rowId", "rowId"));
         setDetailsURL(detailsURL);
 
-        StringExpression url = StringExpressionFactory.create(detailsURL.getActionURL().getLocalURIString(true));
-        rowIdCol.setURL(url);
-        nameCol.setURL(url);
+        rowIdCol.setURL(detailsURL);
+        nameCol.setURL(detailsURL);
 
         if (canUserAccessPhi())
         {
@@ -1317,10 +1316,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public void configureDataIteratorContext(DataIteratorContext context)
         {
             if (context.getInsertOption().allowUpdate)
-            {
                 context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
-                context.putConfigParameter(QueryUpdateService.ConfigParameters.VerifyExistingData, context.getInsertOption().updateOnly);
-            }
         }
 
         @Override
