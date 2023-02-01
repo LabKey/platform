@@ -307,8 +307,14 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         MuleClient client = null;
         try
         {
+            _log.debug("Dispatching job: " + job);
             client = new MuleClient();
             client.dispatch(EPipelineQueueImpl.PIPELINE_QUEUE_NAME, job, null);
+        }
+        catch (Exception e)
+        {
+            _log.debug("Error dispatching job: " + job, e);
+            throw e;
         }
         finally
         {

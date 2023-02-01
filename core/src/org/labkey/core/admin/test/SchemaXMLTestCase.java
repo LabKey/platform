@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.labkey.api.admin.TableXmlUtils;
+import org.labkey.api.admin.sitevalidation.SiteValidationResult;
+import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.test.TestTimeout;
@@ -66,13 +68,16 @@ public class SchemaXMLTestCase extends Assert
 
     private void testSchemaXml(DbSchema schema)
     {
+        SiteValidationResultList mismatches = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
         // Not using assertNotNull, because it appends non-legal HTML text to our message
-        if (TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasErrors())
+        if (mismatches.hasErrors())
         {
             ActionURL url = new ActionURL(AdminController.GetSchemaXmlDocAction.class, ContainerManager.getRoot()).addParameter("dbSchema", schema.getDisplayName());
             fail(DOM.DIV("Errors in schema " + schema.getDisplayName() + ".xml ",
                     DOM.A(DOM.at(DOM.Attribute.href, url), "Click here for an XML doc with fixes"),
-                    DOM.BR()).renderToString());
+                    DOM.BR(),
+                    mismatches.getResults().stream().map(r -> DOM.DIV(r.getMessage()))
+                    ).renderToString());
         }
 
 /* TODO: Uncomment once we change to all generic type names in schema .xml files
