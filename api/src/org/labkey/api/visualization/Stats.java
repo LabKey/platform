@@ -156,4 +156,73 @@ public class Stats
         }
         return mR;
     }
+
+    /**
+     * Calculate the trailing mean values for a data array, which is a series of averages of different subsets of the full data set.
+     *
+     * @param values              Array of data values to calculate from
+     * @param N                   The subset size for the averages
+     * @returns {double[]}
+     */
+    public static Double[] getTrailingMeans(Double[] values, int N)
+    {
+        if (values == null || values.length <= 1 || values.length <= N)
+            return new Double[0];
+
+        int numOfTrailingValues = values.length - N + 1;
+        Double[] trailingMeans = new Double[numOfTrailingValues];
+        int start = 0;
+        int end = N;
+        for (int i = 0; i < numOfTrailingValues; i++)
+        {
+            trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
+            start++;
+            end++;
+        }
+
+        return trailingMeans;
+    }
+
+    /**
+     * Calculate the trailing CV values for a data array, which is calculated by taking the standard deviation of the values over a certain period,
+     *
+     * @param values              Array of data values to calculate from
+     * @param N                   The subset size for the cv
+     * @returns {double[]}
+     */
+    public static Double[] getTrailingCVs(Double[] values, int N)
+    {
+        if (values == null || values.length <= 1 || values.length <= N)
+            return new Double[0];
+
+        int numOfTrailingValues = values.length - N + 1;
+        Double[] trailingCVs = new Double[numOfTrailingValues];
+        int start = 0;
+        int end = N;
+        for (int i = 0; i < numOfTrailingValues; i++)
+        {
+            Double[] vals = getValuesFromRange(values, start, end);
+            double sd = getStdDev(vals, false);
+            double mean = getMean(vals);
+            if (mean == 0)
+            {
+                trailingCVs[i] = null;
+            }
+            else
+            {
+                trailingCVs[i] = sd / mean * 100;
+            }
+            start++;
+            end++;
+        }
+
+        return trailingCVs;
+    }
+
+    private static Double[] getValuesFromRange(Double[] values, int start, int end)
+    {
+        Double[] valuesFromRange = new Double[end-start];
+        if (end - start >= 0) System.arraycopy(values, start, valuesFromRange, 0, end - start);
+        return valuesFromRange;
+    }
 }
