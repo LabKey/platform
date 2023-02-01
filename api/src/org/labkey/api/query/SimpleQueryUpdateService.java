@@ -105,9 +105,6 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         if (getQueryTable().hasTriggers(container)) // dib not yet supported for simple tables with triggers
             return false;
 
-        if (configParameters != null && Boolean.TRUE == configParameters.get(QueryUpdateService.ConfigParameters.SkipBatchUpdateRows))
-            return false;
-
         return hasUniformKeys(rows);
     }
 

@@ -107,8 +107,7 @@ public interface QueryUpdateService extends HasPermission
         SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
         BulkLoad,                // (Bool) skips detailed auditing
         CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
-        SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
-        SkipBatchUpdateRows     // (Bool) Update one row at a time, instead of using DIB
+        SkipInsertOptionValidation  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
     }
 
 
