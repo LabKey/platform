@@ -544,7 +544,8 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
         {
-            return new TableInsertDataIteratorBuilder(data, this);
+            return new TableInsertDataIteratorBuilder(data, this)
+                    .setKeyColumns(new CaseInsensitiveHashSet(getPkColumnNames()));
         }
 
         @Override

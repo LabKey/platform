@@ -892,6 +892,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 for (Object o1 : ((JSONArray)o).toArray())
                     values.add(_c.convert(o1));
             }
+            else if (o instanceof org.json.JSONArray)
+            {
+                // Only supports array of simple values right now.
+                for (Object o1 : ((org.json.JSONArray) o).toList())
+                    values.add(_c.convert(o1));
+            }
             else if (o != null)
             {
                 values.add(_c.convert(o));
