@@ -278,7 +278,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields));
         return service.createSampleType(_container, _user, sampleTypeName,
                 "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
-                LABEL_COLORS.get(randomInt(0, LABEL_COLORS.size())), UNITS.get(randomInt(0, UNITS.size())), null, null, null);
+                randomIndex(LABEL_COLORS), randomIndex(UNITS), null, null, null);
     }
 
     public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
@@ -672,6 +672,11 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         double random = Math.random() < 0.5 ? ((1 - Math.random()) * (max - min) + min) : (Math.random() * (max - min) + min);
         return String.format("%.2f", random);
+    }
+
+    public static <T> T randomIndex(List<T> list)
+    {
+        return list.get(randomInt(0, list.size()));
     }
 
     public static <T> T randomIndex(T[] array)
