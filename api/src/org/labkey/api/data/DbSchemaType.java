@@ -100,7 +100,7 @@ public enum DbSchemaType
         }
     };
 
-    private final String _cacheKeyPostFix;  // Postfix makes it easy for All type to remove all versions of a schema from the cache
+    private final String _cacheKeySuffix;  // Suffix makes it easy for Unknown type to remove all versions of a schema from the cache
     private final long _cacheTimeToLive;
     private final boolean _applyXmlMetaData;
 
@@ -120,16 +120,19 @@ public enum DbSchemaType
         XML_META_DATA_TYPES = Collections.unmodifiableCollection(metaDataTypes);
     }
 
-    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData)
+    DbSchemaType(String cacheKeySuffix, long cacheTimeToLive, boolean applyXmlMetaData)
     {
-        _cacheKeyPostFix = cacheKeyPostFix;
+        _cacheKeySuffix = cacheKeySuffix;
         _cacheTimeToLive = cacheTimeToLive;
         _applyXmlMetaData = applyXmlMetaData;
     }
 
+    // Note: _cacheKeySuffix is used because a single database schema could be cached under multiple different types,
+    // e.g., Module, Bare, Fast. Some invalidation callers don't know the type which is why Unknown has an empty suffix
+    // and SchemaTableInfoCache & DbSchemaCache invalidate using removeUsingPrefix().
     String getCacheKey(String schemaName)
     {
-        return schemaName.toLowerCase() + "|" + _cacheKeyPostFix;
+        return schemaName.toLowerCase() + "|" + _cacheKeySuffix;
     }
 
     long getCacheTimeToLive()

@@ -23,11 +23,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * This class is used to read JDBC meta data via the standard DatabaseMetaData methods. It follows the basic Selector
+ * This class is used to read JDBC metadata via the standard DatabaseMetaData methods. It follows the basic Selector
  * pattern, but much simpler to keep it out of that class hierarchy.
- * User: adam
- * Date: 7/10/2014
- * Time: 8:52 AM
  */
 
 public class JdbcMetaDataSelector
