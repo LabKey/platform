@@ -23,6 +23,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HashHelpers;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -180,11 +181,11 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
     private String getCacheKey(@NotNull JdbcType jdbcType, @NotNull Collection<?> params)
     {
-        StringBuilder key = new StringBuilder(jdbcType.name());
+        StringBuilder paramBuilder = new StringBuilder();
         for (Object param : params)
-            key.append("_").append(param);
+            paramBuilder.append(param);
 
-        return key.toString();
+        return jdbcType.name() + "_" + params.size() + "_" + HashHelpers.hash(paramBuilder.toString());
     }
 
     public static class TestCase
