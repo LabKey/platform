@@ -43,7 +43,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -1695,7 +1694,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 
-                    // isCalculated is typically an query-level ExprColumn, but in this case we have a real calculated column in the database
+                    // isCalculated is typically a query-level ExprColumn, but in this case we have a real calculated column in the database
                     col.setCalculated(reader.isGeneratedColumn());
 
                     inferMetadata(col);
@@ -1713,7 +1712,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             JdbcMetaDataSelector keySelector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> dbmd.getImportedKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
 
             // load keys in two phases
-            // 1) combine multi column keys
+            // 1) combine multi-column keys
             // 2) update columns
 
             try (ResultSet rsKeys = keySelector.getResultSet())
