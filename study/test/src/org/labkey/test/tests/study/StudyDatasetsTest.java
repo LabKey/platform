@@ -28,9 +28,9 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
+import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.util.DataRegionTable;
@@ -255,23 +255,14 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             .selectDatasetByName(datasetName)
             .clickViewData();
         waitForText("All data");
-        new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
+        ImportDataPage importDataPage = new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         waitForText("Copy/paste text");
 
-        setImportOption(checkMergeOption);
+        importDataPage.setCopyPasteMerge(checkMergeOption);
 
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);
         waitForText(WAIT_FOR_PAGE, msg);
-    }
-
-    protected void setImportOption(boolean merge)
-    {
-        Checkbox checkbox = new Checkbox(Locator.inputById("insertOption1-inputEl").findWhenNeeded(this.getWrappedDriver()));
-        if (merge)
-            checkbox.check();
-        else
-            checkbox.uncheck();
     }
 
     @LogMethod
