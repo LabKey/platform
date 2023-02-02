@@ -6,6 +6,7 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,19 +24,20 @@ public class CachingTestCase extends Assert
         assertNotNull(testTable);
         DbCache.clear(testTable);
 
-        Map<String, Object> m = new HashMap<>();
-        m.put("DatetimeNotNull", new Date());
-        m.put("BitNotNull", Boolean.TRUE);
-        m.put("Text", "Added by Caching Test Suite");
-        m.put("IntNotNull", 0);
-        m.put("Container", JunitUtil.getTestContainer());
-        m = Table.insert(ctx.getUser(), testTable, m);
-        Integer rowId1 = ((Integer) m.get("RowId"));
+        Map<String, Object> mm = new HashMap<>();                  // Modifiable map
+        Map<String, Object> umm = Collections.unmodifiableMap(mm); // Unmodifiable map
+        mm.put("DatetimeNotNull", new Date());
+        mm.put("BitNotNull", Boolean.TRUE);
+        mm.put("Text", "Added by Caching Test Suite");
+        mm.put("IntNotNull", 0);
+        mm.put("Container", JunitUtil.getTestContainer());
+        mm = Table.insert(ctx.getUser(), testTable, mm);
+        Integer rowId1 = ((Integer) mm.get("RowId"));
 
         String key = "RowId" + rowId1;
-        DbCache.put(testTable, key, m);
+        DbCache.put(testTable, key, umm);
         Map m2 = (Map) DbCache.get(testTable, key);
-        assertEquals(m, m2);
+        assertEquals(umm, m2);
 
         //Does cache get cleared on delete
         Table.delete(testTable, rowId1);
@@ -43,26 +45,26 @@ public class CachingTestCase extends Assert
         assertNull(m2);
 
         //Does cache get cleared on insert
-        m.remove("RowId");
-        m = Table.insert(ctx.getUser(), testTable, m);
-        int rowId2 = ((Integer) m.get("RowId"));
+        mm.remove("RowId");
+        mm = Table.insert(ctx.getUser(), testTable, mm);
+        int rowId2 = ((Integer) mm.get("RowId"));
         key = "RowId" + rowId2;
-        DbCache.put(testTable, key, m);
-        m.remove("RowId");
-        m = Table.insert(ctx.getUser(), testTable, m);
-        int rowId3 = ((Integer) m.get("RowId"));
+        DbCache.put(testTable, key, umm);
+        mm.remove("RowId");
+        mm = Table.insert(ctx.getUser(), testTable, mm);
+        int rowId3 = ((Integer) mm.get("RowId"));
         m2 = (Map) DbCache.get(testTable, key);
         assertNull(m2);
 
         //Make sure things are not inserted in transaction
-        m.remove("RowId");
+        mm.remove("RowId");
         String key2;
-        try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
+        try (DbScope.Transaction ignored = testSchema.getScope().beginTransaction())
         {
-            m = Table.insert(ctx.getUser(), testTable, m);
-            int rowId4 = ((Integer) m.get("RowId"));
+            mm = Table.insert(ctx.getUser(), testTable, mm);
+            int rowId4 = ((Integer) mm.get("RowId"));
             key2 = "RowId" + rowId4;
-            DbCache.put(testTable, key2, m);
+            DbCache.put(testTable, key2, umm);
         }
         m2 = (Map) DbCache.get(testTable, key2);
         assertNull(m2);
