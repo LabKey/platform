@@ -681,7 +681,8 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (cf != null)
             filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
 
-        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getRowCount();
+        TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
+        return new TableSelector(tInfo, tInfo.getPkColumns(), filter, null).getRowCount();
     }
 
     @Override
