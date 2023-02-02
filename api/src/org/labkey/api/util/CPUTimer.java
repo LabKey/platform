@@ -129,6 +129,16 @@ public class CPUTimer
     }
     
 
+    public long getAverage()
+    {
+        return (_calls == 0 ? 0 : getTotalMilliseconds() / _calls);
+    }
+
+    public long getCalls()
+    {
+        return _calls;
+    }
+
     public static String dumpAllTimers()
     {
 		synchronized(timers)
