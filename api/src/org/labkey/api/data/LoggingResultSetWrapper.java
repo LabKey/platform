@@ -155,28 +155,13 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
                 }).toList();
             }
 
-            List<ColumnInfo> missingColumns = null; // = new ArrayList<>();
             for (Pair<ColumnInfo, Integer> dataLoggingColumn : dataLoggingColumns)
             {
                 int index = dataLoggingColumn.second;
                 Object obj = getObject(index);
                 if (null != obj)
                     _dataLoggingValues.add(obj);
-                else
-                {
-                    if (null == missingColumns)
-                        missingColumns = new ArrayList<>();
-                    missingColumns.add(dataLoggingColumn.first);
-                }
-            }
-
-            if (null != missingColumns)
-            {
-                throw new IllegalStateException("Unable to read expected data logging column(s) for " +
-                        StringUtils.join(missingColumns.stream().map(c -> "\"" + c.getFieldKey().toString() + "\"").collect(Collectors.toList()), ';') +
-                        " with alias(es) " +
-                        StringUtils.join(missingColumns.stream().map(c -> "\"" + c.getAlias() + "\"").collect(Collectors.toList()), ';')
-                );
+                // NOTE: the logging column may be null due to left outer join or lookup "misses"
             }
         }
     }
