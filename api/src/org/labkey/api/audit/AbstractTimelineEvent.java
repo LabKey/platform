@@ -3,6 +3,7 @@ package org.labkey.api.audit;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.text.SimpleDateFormat;
@@ -26,9 +27,25 @@ public abstract class AbstractTimelineEvent
     protected Map<String, Object> _metadataObject = new LinkedHashMap<>();
     protected Object _entityObject;
 
+    public static Object getUserObject(int userId, User currentUser)
+    {
+        return getUserObject(userId, null, currentUser);
+    }
+
     public static Object getUserObject(User user, User currentUser)
     {
-        return createEntityObject(user.getUserId(), user.getDisplayName(currentUser), null, "user");
+        if (user == null) return null;
+        return getUserObject(user.getUserId(), user, currentUser);
+    }
+
+    private static Object getUserObject(int userId, User user, User currentUser)
+    {
+        User eventUser = user != null ? user : UserManager.getUser(userId);
+
+        // Issue 47194: if the user has been deleted, still show the userId in the timeline event details
+        if (eventUser == null) return createEntityObject(userId, null, null, "user");
+
+        return createEntityObject(eventUser.getUserId(), eventUser.getDisplayName(currentUser), null, "user");
     }
 
     public static Object getTimestampObject(Date date, Container container)
