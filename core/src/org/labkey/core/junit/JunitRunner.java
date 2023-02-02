@@ -27,6 +27,7 @@ import org.junit.runner.Runner;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
@@ -75,8 +76,7 @@ public class JunitRunner
 
         try
         {
-            if (desc.testCount() > 1)
-                LOG.info("Starting suite: " + description + " (" + desc.testCount() + " tests)");
+            LOG.info("Starting suite: " + description + " (" + StringUtilsLabKey.pluralize(desc.testCount(), "test") + ")");
 
             ArrayList<CPUTimer> allTimers = new ArrayList<>();
             Map<Description, ArrayList<CPUTimer>> testTimers = new LinkedHashMap<>();
@@ -118,8 +118,7 @@ public class JunitRunner
         finally
         {
             TestContext.get().clearPerfResults();
-            if (desc.testCount() > 1)
-                LOG.info("Completed suite: " + description);
+            LOG.info("Completed suite: " + description);
         }
     }
 }

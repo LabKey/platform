@@ -30,15 +30,11 @@ import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * User: matthewb
- * Date: Dec 12, 2006
- * Time: 9:54:06 AM
- *
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
- *
  * No synchronization is necessary in this class since the underlying caches are thread-safe, and the transaction cache
  * creation is single-threaded since the Transaction is thread local.
  *
@@ -67,12 +63,14 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public Cache<K, V> createTemporaryCache()
+    public final Cache<K, V> createTemporaryCache()
     {
         return createTemporaryCache(getTrackingCache());
     }
 
-    protected Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
+    // Note: No need to subclass and override this method. If you want to set a default CacheLoader then wrap the
+    // DatabaseCache with a BlockingCache
+    protected final Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
@@ -355,7 +353,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             // transaction testing
-            try(DbScope.Transaction transaction = scope.beginTransaction())
+            try (DbScope.Transaction transaction = scope.beginTransaction())
             {
                 assertTrue(scope.isTransactionActive());
 
@@ -431,9 +429,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             @Override
             public boolean isTransactionActive()
             {
-                if (null != overrideTransactionActive)
-                    return overrideTransactionActive;
-                return super.isTransactionActive();
+                return Objects.requireNonNullElseGet(overrideTransactionActive, super::isTransactionActive);
             }
 
             @Override
