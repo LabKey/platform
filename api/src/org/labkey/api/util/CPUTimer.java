@@ -131,7 +131,7 @@ public class CPUTimer
 
     public float getAverage()
     {
-        return (_calls == 0 ? 0 : (float)getTotalMilliseconds() / _calls);
+        return _calls == 0 ? 0 : (float)getTotalMilliseconds() / _calls;
     }
 
     public long getCalls()
