@@ -303,11 +303,11 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromDataClass / dataClassParentTypes.size();
             for (String parentType : dataClassParentTypes)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType, _container);
             }
         }
 
-        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain());
+        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain(), _container);
         int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
@@ -316,7 +316,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType, _container);
             }
         }
         // TODO create some % of the pooled samples
@@ -494,10 +494,10 @@ public class DataGenerator<T extends DataGenerator.Config>
     public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException
     {
         QueryUpdateService svc = getDataClassSchema().getTable(dataClass.getName()).getUpdateService();
-        return generateDomainData(numObjects, svc, dataClass.getDomain());
+        return generateDomainData(numObjects, svc, dataClass.getDomain(), _container);
     }
 
-    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity) throws SQLException, BatchValidationException
+    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity, Container container) throws SQLException, BatchValidationException
     {
         if (_config.getMaxChildrenPerParent() <= 0)
         {
@@ -547,7 +547,7 @@ public class DataGenerator<T extends DataGenerator.Config>
                 }
                 p++;
             }
-            int numImported = importRows(rows, errors, service);
+            int numImported = importRows(rows, errors, service, container);
             dataChanged = numImported > 0;
             totalImported += numImported;
 
@@ -559,10 +559,10 @@ public class DataGenerator<T extends DataGenerator.Config>
         return totalImported;
     }
 
-    protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service) throws BatchValidationException, SQLException
+    protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service, Container container) throws BatchValidationException, SQLException
     {
         ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-        var numImported = service.importRows(_user, _container, rowsDI, errors, null, null);
+        var numImported = service.importRows(_user, container, rowsDI, errors, null, null);
         if (errors.hasErrors())
             throw errors;
         return numImported;
@@ -583,7 +583,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return timer;
     }
 
-    private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
+    private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain, Container container) throws BatchValidationException, SQLException
     {
         checkAlive(_job);
         _log.info(String.format("Generating %d rows of data ...", totalRows));
@@ -593,7 +593,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         while (numImported < totalRows)
         {
             List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
-            numImported += importRows(rows, errors, service);
+            numImported += importRows(rows, errors, service, container);
             _log.info("... " + numImported);
         }
         return numImported;

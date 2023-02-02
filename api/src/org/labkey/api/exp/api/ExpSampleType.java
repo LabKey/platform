@@ -48,8 +48,14 @@ public interface ExpSampleType extends ExpObject
     String getMaterialLSIDPrefix();
 
 
-    /** pass in a container to request a sample */
+    /** pass in a container to request a set of samples*/
     List<? extends ExpMaterial> getSamples(Container c);
+
+    /** pass in a container to request a set of samples*/
+    List<? extends ExpMaterial> getSamples(Container c, @Nullable ContainerFilter cf);
+
+    /** number of samples in the given container **/
+    public long getSamplesCount(Container c, @Nullable ContainerFilter cf);
 
     /** pass in a container to request a sample */
     ExpMaterial getSample(Container c, String name);
