@@ -53,6 +53,29 @@ import java.util.stream.Collectors;
 
 public class DataGenerator<T extends DataGenerator.Config>
 {
+    private static final List<String> UNITS = List.of("g", "mg", "uL", "mL", "unit");
+    private static final List<String> LABEL_COLORS = new ArrayList<>();
+    static {
+        LABEL_COLORS.add("#800000"); // maroon,
+        LABEL_COLORS.add("#B22222"); // firebrick
+        LABEL_COLORS.add("#DC143C"); // crimson
+        LABEL_COLORS.add("#FA8072"); // salmon
+        LABEL_COLORS.add("#FFD700"); // gold
+        LABEL_COLORS.add("#808000"); // olive
+        LABEL_COLORS.add("#9ACD32"); // yellow green
+        LABEL_COLORS.add("#6B8E23"); // olive drab
+        LABEL_COLORS.add("#008000"); // olive
+        LABEL_COLORS.add("#556B2F"); // dark olive green
+        LABEL_COLORS.add("#008080"); // teal
+        LABEL_COLORS.add("#00FFFF"); // aqua
+        LABEL_COLORS.add("#4682B4"); // steel blue
+        LABEL_COLORS.add("#1E90FF"); // dodger blue
+        LABEL_COLORS.add("#0000CD"); // medium blue
+        LABEL_COLORS.add("#8A2BE2"); // blue violet
+        LABEL_COLORS.add("#4B0082"); // indigo
+        LABEL_COLORS.add("#8B008B"); // dark magenta
+        LABEL_COLORS.add("#D2691E"); // chocolate
+    }
     protected static final int MAX_BATCH_SIZE = 10000;
     protected Container _container;
     protected final User _user;
@@ -254,7 +277,8 @@ public class DataGenerator<T extends DataGenerator.Config>
         SampleTypeService service = SampleTypeService.get();
         _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields));
         return service.createSampleType(_container, _user, sampleTypeName,
-                "Generated sample type", props, List.of(), namingPattern);
+                "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
+                LABEL_COLORS.get(randomInt(0, LABEL_COLORS.size())), UNITS.get(randomInt(0, UNITS.size())), null, null, null);
     }
 
     public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
