@@ -745,7 +745,9 @@ public class Portal implements ModuleChangeListener
 
     public static WebPart addPart(Container c, WebPartFactory desc, @Nullable String location, int partIndex, @Nullable Map<String, String> properties)
     {
-        return addPart(c, DEFAULT_PORTAL_PAGE_ID, desc, location, partIndex, properties);
+        // Add to the default portal tab for the container
+        String defaultPage = c.getFolderType().getDefaultPageId(c);
+        return addPart(c, defaultPage, desc, location, partIndex, properties);
     }
 
     // Add a web part to the container at the specified index, with properties
