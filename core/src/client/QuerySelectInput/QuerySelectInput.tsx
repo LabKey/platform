@@ -25,7 +25,7 @@ export const QuerySelectInput: FC<Props> = memo(props => {
             key={'query-select' + name}
             inputClass={'col-sm-8 col-xs-12'}
             name={name}
-            schemaQuery={SchemaQuery.create(schemaName, queryName)}
+            schemaQuery={new SchemaQuery(schemaName, queryName)}
             containerPath={containerPath}
             disabled={disabled}
             value={value}
