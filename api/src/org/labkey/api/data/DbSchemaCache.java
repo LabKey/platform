@@ -53,21 +53,16 @@ public class DbSchemaCache
         _cache = new DbSchemaBlockingCache(_scope.getDisplayName());
     }
 
-    public static DbSchemaType getSchemaType(DbScope scope, String schemaName)
-    {
-        DbSchemaType type = ModuleLoader.getInstance().getSchemaType(scope, schemaName);
-
-        if (null == type)
-            type = DbSchemaType.Bare;  // Schema isn't claimed by any module
-
-        return type;
-    }
-
     @NotNull DbSchema get(String schemaName, DbSchemaType type)
     {
         // Infer type if it's unknown... should be rare
         if (DbSchemaType.Unknown == type)
-            type = getSchemaType(_scope, schemaName);
+        {
+            type = ModuleLoader.getInstance().getSchemaType(_scope, schemaName);
+
+            if (null == type)
+                type = DbSchemaType.Bare;  // Schema isn't claimed by any module
+        }
 
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
     }

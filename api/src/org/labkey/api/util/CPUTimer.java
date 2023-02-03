@@ -129,6 +129,16 @@ public class CPUTimer
     }
     
 
+    public float getAverage()
+    {
+        return _calls == 0 ? 0 : (float)getTotalMilliseconds() / _calls;
+    }
+
+    public long getCalls()
+    {
+        return _calls;
+    }
+
     public static String dumpAllTimers()
     {
 		synchronized(timers)
@@ -168,7 +178,7 @@ public class CPUTimer
                 ms,
                 t._min * msFactor,
                 t._max * msFactor,
-                (t._calls == 0 ? 0 : ms / t._calls),
+                t.getAverage(),
                 t._calls);
     }
 

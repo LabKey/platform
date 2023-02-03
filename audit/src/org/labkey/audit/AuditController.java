@@ -268,7 +268,7 @@ public class AuditController extends SpringActionController
             if (event != null)
             {
                 response.put("comment", event.getComment());
-                response.put("eventUserId", event.getCreatedBy().getUserId());
+                response.put("eventUserId", event.getCreatedBy() != null ? event.getCreatedBy().getUserId() : null);
                 response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
                 if (event.getUserComment() != null)
                     response.put("userComment", event.getUserComment());

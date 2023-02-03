@@ -362,7 +362,7 @@ public class ProjectController extends SpringActionController
 
             if (pageId == null)
             {
-                pageId = folderType.getDefaultPageId(getContainer(), true);
+                pageId = folderType.getDefaultPageId(getContainer());
             }
             Portal.populatePortalView(getViewContext(), pageId, template, isPrint());
 
