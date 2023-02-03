@@ -185,6 +185,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         for (Object param : params)
             paramBuilder.append(param);
 
+        // Hash the param string to avoid very large cache keys filling up memory
         return jdbcType.name() + "_" + params.size() + "_" + HashHelpers.hash(paramBuilder.toString());
     }
 
