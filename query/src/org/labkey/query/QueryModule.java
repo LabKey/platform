@@ -57,12 +57,12 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
-import org.labkey.api.reports.report.r.RReport;
-import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.python.IpynbReportDescriptor;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -184,8 +183,6 @@ public class QueryModule extends DefaultModule
         ExternalSchema.register();
         LinkedSchema.register();
 
-        ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
-
         QueryService.get().addQueryListener(new CustomViewQueryChangeListener());
         QueryService.get().addQueryListener(new QuerySnapshotQueryChangeListener());
 
@@ -255,6 +252,8 @@ public class QueryModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
+
         if (null != PipelineService.get())
             PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         QueryController.registerAdminConsoleLinks();

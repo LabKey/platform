@@ -151,7 +151,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             // < 10.0 should result in bad version error
             badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
 
-            String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";
+            String driverName = "Microsoft JDBC Driver";
 
             // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
             good("Microsoft SQL Server", 10.0, 11.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
