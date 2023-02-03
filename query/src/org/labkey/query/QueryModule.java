@@ -226,7 +226,7 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row by row update", "For Query.updateRows api, do row by row update, instead of using prepared statement that update rows in a batch.", false);
+        AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update", "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
 
     }
 

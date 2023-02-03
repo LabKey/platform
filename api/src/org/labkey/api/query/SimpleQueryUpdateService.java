@@ -123,7 +123,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
             boolean hasObjectUriValue = false;
             Object objectUri = rows.get(0).get(objectURIColumnName);
             if (objectUri != null)
-                hasObjectUriValue = StringUtils.isEmpty((String) objectUri);
+                hasObjectUriValue = !StringUtils.isEmpty((String) objectUri);
 
             return !hasObjectUriValue;
         }
