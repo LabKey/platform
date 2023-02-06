@@ -1721,6 +1721,13 @@ public class DbScope
         }
     }
 
+    public static @NotNull Set<String> getDataSourceNames()
+    {
+        return getLoaders().stream()
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toSet());
+    }
+
     /**
      * Ensures that initialization has been attempted on all DbScopes and returns those that were successfully initialized
      * @return A collection of DbScopes
@@ -1730,7 +1737,7 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::get)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     /**
@@ -1742,7 +1749,7 @@ public class DbScope
     {
         return getDbScopes().stream()
             .filter(scope->scope.getSqlDialect().shouldTest())
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     /**
@@ -1754,7 +1761,18 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::getIfPresent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
+    }
+
+    /**
+     * Clear out the DbScopeLoaders that previously failed to connect to their data source. Next call to getDbScopes()
+     * will attempt to retry those failed connections.
+     */
+    public static void clearFailedDbScopes()
+    {
+        getLoaders().stream()
+            .filter(DbScopeLoader::isFailed)
+            .forEach(DbScopeLoader::clearDbScope);
     }
 
     /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
