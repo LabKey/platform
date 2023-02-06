@@ -478,12 +478,12 @@ public class QueryController extends SpringActionController
             return urlExternalSchemaAdmin(c, null);
         }
 
-        public ActionURL urlExternalSchemaAdmin(Container c, @Nullable String reloadedSchema)
+        public ActionURL urlExternalSchemaAdmin(Container c, @Nullable String message)
         {
             ActionURL url = new ActionURL(AdminAction.class, c);
 
-            if (null != reloadedSchema)
-                url.addParameter("reloadedSchema", reloadedSchema);
+            if (null != message)
+                url.addParameter("message", message);
 
             return url;
         }
@@ -5355,7 +5355,7 @@ public class QueryController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(SchemaForm form)
         {
-            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), _userSchemaName);
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "Schema " + _userSchemaName + " was reloaded successfully.");
         }
     }
 
@@ -5378,10 +5378,31 @@ public class QueryController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(Object o)
         {
-            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "ALL");
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "All schemas in this folder were reloaded successfully.");
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class ReloadFailedConnectionsAction extends FormHandlerAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            DbScope.clearFailedDbScopes();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "Reconnection was attempted on all data sources that failed previous connection attempts.");
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public static class TableInfoAction extends SimpleViewAction<TableInfoForm>

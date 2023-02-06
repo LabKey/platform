@@ -18,7 +18,10 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.controllers.QueryController.QueryUrlsImpl" %>
@@ -27,8 +30,7 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h3>External Schemas</h3>
@@ -61,22 +63,12 @@ else
 {
     defs.sort(Comparator.comparing(ExternalSchemaDef::getUserSchemaName, String.CASE_INSENSITIVE_ORDER));
 
-    String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
+    String message = StringUtils.trimToNull(request.getParameter("message"));
 
-    if (null != reloadedSchema)
+    if (null != message)
     {
         %>
-        <div class="labkey-message"><%
-
-        if ("ALL".equals(reloadedSchema))
-        { %>
-            All schemas in this folder were reloaded successfully.<%
-        }
-        else
-        { %>
-            Schema <%=h(reloadedSchema)%> was reloaded successfully.<%
-        } %>
-        </div><br>
+        <div class="labkey-message"><%=h(message)%></div><br>
         <%
     } %>
 
@@ -93,6 +85,8 @@ else
         </tr>
     <%
 
+    Set<String> dataSourceNames = DbScope.getDataSourceNames();
+
     int i = 0;
     for (ExternalSchemaDef def : defs)
     {
@@ -100,18 +94,19 @@ else
         ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
         ActionURL urlReload = urls.urlReloadExternalSchema(c, def);
         ActionURL urlDelete = urls.urlDeleteSchema(c, def);
+        String ds = def.getDataSource();
 
     %>
         <tr class='<%=getShadeRowClass(i)%>'>
             <td><%=h(def.getUserSchemaName())%></td>
-            <td><%=h(def.getDataSource())%></td>
+            <td><%=h(ds)%></td>
             <td><%=h(def.getSourceSchemaName())%></td>
             <td><%=h(DateUtil.formatDate(c, def.getCreated()))%></td>
             <td><%=h(UserManager.getUser(def.getCreatedBy()) == null ? "" : UserManager.getUser(def.getCreatedBy()).getDisplayName(getUser()))%></td>
             <td><%=h(DateUtil.formatDate(c, def.getModified()))%></td>
             <td><%=h(UserManager.getUser(def.getModifiedBy()) == null ? "" : UserManager.getUser(def.getModifiedBy()).getDisplayName(getUser()))%></td>
             <%
-                if (null != DbScope.getDbScope(def.getDataSource()))
+                if (null != DbScope.getDbScope(ds))
                 {
             %>
             <td class="labkey-noborder"><%=link("view schema", urlView)%></td>
@@ -122,12 +117,13 @@ else
                 }
                 else
                 {
+                    HtmlString notAvailableMessage = h(dataSourceNames.contains(ds) ? "connection to " + ds + " failed" : "no data source configuration exists for " + ds);
             %>
             <td class="labkey-noborder">&nbsp;</td>
             <% if (isAdmin) {%><td class="labkey-noborder">&nbsp;</td><%}%>
             <td class="labkey-noborder">&nbsp;</td>
             <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>
-            <td class="labkey-noborder"><div class="labkey-error">Not available: can't connect to <%=h(def.getDataSource())%></div></td>
+            <td class="labkey-noborder"><div class="labkey-error">Not available: <%=notAvailableMessage%></div></td>
             <%
                 }
             %>
@@ -147,8 +143,12 @@ else
     { %>
     <%=link("reload all schemas", QueryController.ReloadAllUserSchemas.class).usePost()%><%
     }
+    if (isAdmin)
+    { %>
+    <%=link("retry failed data source connections", QueryController.ReloadFailedConnectionsAction.class).usePost()%>
+    <%
+    }
     %>
-
 
 <h3>Linked Schemas</h3>
 <p>
