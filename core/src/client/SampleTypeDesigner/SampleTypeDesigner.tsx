@@ -27,7 +27,7 @@ import {
     LoadingSpinner,
     SampleTypeDesigner,
     SampleTypeModel,
-    SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS,
+    SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS,
     SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS
 } from '@labkey/components';
 
@@ -68,8 +68,8 @@ export class App extends React.PureComponent<any, State> {
     componentDidMount() {
         const freezerManagementEnabled = Util.isFreezerManagementEnabled();
         const systemFields = freezerManagementEnabled
-            ? SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS.concat(SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS)
-            : SAMPLE_DOMAIN_BASE_SYSTEM_FIELDS;
+            ? SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS.concat(SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS)
+            : SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS;
 
         // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
