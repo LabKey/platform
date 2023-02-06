@@ -63,6 +63,7 @@ public class SchemaTableInfoCache
         LOG.debug("remove all " + type + " schema tables: " + schemaName);
         final String prefix = type.getCacheKey(schemaName);
 
+        // Note: A single database schema could be cached under multiple types, e.g., Module, Bare, Fast
         _blockingCache.removeUsingFilter(new Cache.StringPrefixFilter(prefix));
     }
 

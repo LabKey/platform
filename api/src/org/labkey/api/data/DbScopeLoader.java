@@ -1,24 +1,28 @@
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope.LabKeyDataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 
-import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Holds a data source's configuration information, attempts to connect to the corresponding database when requested,
+ * and holds the DbScope associated with each successfully connected data source. Currently, we attempt a connection
+ * when the data source is first referenced... or if all data sources are requested (e.g., when showing the external
+ * schema admin page or sending data source metrics to labkey.org). {@link #clearDbScope()} can be used to attempt a
+ * re-connection to a data source that failed its previous connection attempt(s). This is used by the external schema
+ * admin page, which provides a link to attempt re-connecting to all data sources that failed previous connection(s).
+ */
 class DbScopeLoader
 {
-    private static final Logger LOG = LogManager.getLogger(DbScopeLoader.class);
+    private static final Logger LOG = LogHelper.getLogger(DbScopeLoader.class, "DataSource connection problems");
 
-    // Marker object for scope that failed initial connection. For now, we try once and never again. We could easily
-    // adjust to mark scopes that fail subsequent connection attempts and retry if enough time has passed since the last
-    // failure. This would provide for more graceful handling of data sources that come and go.
+    // Marker object for scope that has failed to connect
     private static final DbScope BAD_SCOPE = new DbScope();
 
     private final DataSourceProperties _dsProps;
@@ -46,6 +50,11 @@ class DbScopeLoader
             return dsName;
     }
 
+    void clearDbScope()
+    {
+        _dbScopeRef.set(null);
+    }
+
     private final Object LOCK = new Object();
 
     @Nullable DbScope get()
@@ -69,7 +78,7 @@ class DbScopeLoader
                     catch (Throwable t)
                     {
                         // Always log, but callers determine if null DbScope is fatal or not
-                        LOG.error("Cannot connect to DataSource \"" + _dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session.", t);
+                        LOG.error("Cannot connect to DataSource \"" + _dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", t);
                         DbScope.addDataSourceFailure(_dsName, t);
                         scope = BAD_SCOPE;
                     }
@@ -88,6 +97,11 @@ class DbScopeLoader
     {
         DbScope scope = _dbScopeRef.get();
         return scope != BAD_SCOPE ? scope : null;
+    }
+
+    boolean isFailed()
+    {
+        return BAD_SCOPE == _dbScopeRef.get();
     }
 
     public DataSourceProperties getDsProps()

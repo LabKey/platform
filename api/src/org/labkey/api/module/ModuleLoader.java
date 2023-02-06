@@ -40,6 +40,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SchemaNameCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
@@ -1654,6 +1655,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             _log.info("Dropping schema " + schema);
             new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
             scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
+            scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
+            SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
         }
 
         Table.delete(getTableInfoModules(), context.getName());
@@ -1681,17 +1684,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         clearUnknownModuleCount();
     }
 
-    // Simple variant of removeModule(); just remove the row in the table and the context from the map.
-    public void removeModuleContext(ModuleContext context)
-    {
-        Table.delete(getTableInfoModules(), context.getName());
-
-        synchronized (_modulesLock)
-        {
-            _moduleContextMap.remove(context.getName());
-        }
-    }
-
     private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
@@ -1711,7 +1703,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
     }
-
 
     // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     // performedUpgrade is true if any module required upgrading

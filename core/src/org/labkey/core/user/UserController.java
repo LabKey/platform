@@ -1656,7 +1656,7 @@ public class UserController extends SpringActionController
 
             if (isUserManager)
             {
-                // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record
+                // Always display "Reset/Create Password" button (even for LDAP and SSO users)... except for admin's own record
                 if (null != detailsEmail && !isOwnRecord && canManageDetailsUser && !isLoginAutoRedirect)
                 {
                     // Allow admins to create a logins entry if it doesn't exist. Addresses scenario of user logging in

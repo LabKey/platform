@@ -222,6 +222,8 @@ public class ClosureQueryHelper
                 var ret = (MutableColumnInfo) super.createLookupColumn(foreignKey, displayField);
                 if (ret != null)
                 {
+                    if (ret.getConceptURI() == null)
+                        ret.setConceptURI(CONCEPT_URI);
                     ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
                 }
                 return ret;

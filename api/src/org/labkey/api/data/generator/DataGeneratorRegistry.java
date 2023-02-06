@@ -7,7 +7,8 @@ public class DataGeneratorRegistry
 {
     public enum DataType {
         AssayDesigns,
-        Storage,
+        StorageHierarchy,
+        SamplesInStorage,
     };
 
     private static final Map<DataType, DataGenerator.DataGenerationDriver> _dataGeneratorMap = new HashMap<>();

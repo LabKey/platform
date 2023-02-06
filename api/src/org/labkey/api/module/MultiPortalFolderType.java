@@ -15,10 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,13 +32,11 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.SimpleFolderTab;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,13 +48,12 @@ import java.util.Set;
  */
 public abstract class MultiPortalFolderType extends DefaultFolderType
 {
-    private String _activePortalPage = null;
-    private  String _startUrl = null;
+    private final String _startUrl;
     protected FolderTab _defaultTab = null;
 
     public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
-        super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
+        this(name, description, requiredParts, preferredParts, activeModules, defaultModule, null);
     }
 
     public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, String startUrl)
@@ -124,7 +119,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         // No page index should be 0
         assert !(sortedPages.size() > 0 && sortedPages.get(0).getIndex() <= 0);
 
-        _activePortalPage = null;
+        String activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<>();
         List<NavTree> buttons = new ArrayList<>();
         List<NavTree> subContainerTabs = new ArrayList<>();
@@ -157,12 +152,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     navMap.put(portalPage.getPageId(), nav);
 
                     // Stop looking for a tab to select if we've already found one
-                    if (_activePortalPage == null && !portalPage.isHidden() &&
+                    if (activePortalPage == null && !portalPage.isHidden() &&
                             (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
                                     (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
                     {
                         nav.setSelected(true);
-                        _activePortalPage = folderTab.getName();
+                        activePortalPage = folderTab.getName();
 
                         // If container tab, add tabs for its folderType as children
                         if (folderTab.isContainerTab())
@@ -170,7 +165,6 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                             Container folderContainer = folderTab.getContainerTab(container, ctx.getUser());
                             assert (null != folderContainer);        // we checked above here
                             FolderType folderType = folderContainer.getFolderType();        // get type from container because it may be different from original
-                            folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
                             boolean foundSelected = false;
                             List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType, false);
                             for (FolderTab subTab : subTabs)
@@ -197,7 +191,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         // If we didn't find a match, and there is a tab that should be the default, and we're on the generic portal page
-        if (_activePortalPage == null && !navMap.isEmpty() &&
+        if (activePortalPage == null && !navMap.isEmpty() &&
             ctx.getActionURL().clone().deleteParameters().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())) &&
             null == ctx.getActionURL().getParameter("pageId"))
         {
@@ -207,22 +201,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 if (!nav.isDisabled())
                 {
                     // Mark the first visible tab as selected
-                    _activePortalPage = entry.getKey();
+                    activePortalPage = entry.getKey();
                     nav.setSelected(true);
                     break;
                 }
             }
-        }
-
-        if (null != childContainer && childContainer.getFolderType() instanceof MultiPortalFolderType)
-        {
-            // We have childContainer, which means childContainer is a Container Tab
-            // Weird that this migration is here, but if childContainer is of MultiPortalFolderType, it needs to be done. But it only applys to MultiPortals so don't do it otherwise
-            migrateLegacyPortalPage(childContainer);
-        }
-        else
-        {
-            migrateLegacyPortalPage(ctx.getContainer());
         }
 
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons, subContainerTabs);
@@ -262,91 +245,6 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
     }
 
-    private void migrateLegacyPortalPage(Container container)
-    {
-        try (var ignored = SpringActionController.ignoreSqlUpdates())
-        {
-            _migrateLegacyPortalPage(container);
-        }
-    }
-
-    private void _migrateLegacyPortalPage(Container container)
-    {
-        List<Portal.WebPart> legacyPortalParts = new ArrayList<>(Portal.getParts(container));
-        if (!legacyPortalParts.isEmpty())
-        {
-            FolderType folderType = container.getFolderType();
-            if (null == folderType.getDefaultTab() || null == StringUtils.trimToNull(folderType.getDefaultTab().getName()))
-                return;         // Nothing to do
-
-            // Check if there's a tab that has the legacy portal page ID
-            for (FolderTab folderTab : folderType.getDefaultTabs())
-            {
-                if (Portal.DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(folderTab.getName()))
-                {
-                    // If so, we don't need to migrate anything
-                    return;
-                }
-            }
-
-            // get editable versions
-            legacyPortalParts = new ArrayList<>(Portal.getEditableParts(container));
-
-            String defaultTabName = folderType.getDefaultTab().getName();
-            List<Portal.WebPart> mergedParts = new ArrayList<>(Portal.getEditableParts(container, defaultTabName));
-            Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
-            List<Portal.WebPart> required = getRequiredWebParts();
-            boolean changedLegacy = false;
-            boolean changedMerged = false;
-            while (i.hasNext())
-            {
-                Portal.WebPart defaultPortalPart = i.next();
-                String legacyPageAdded = defaultPortalPart.getPropertyMap().get(Portal.WEBPART_PROP_LegacyPageAdded);
-                if (!WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
-                {
-                    if ((null == legacyPageAdded || !legacyPageAdded.equalsIgnoreCase("true")))
-                    {
-                        // Add it to the default tab if it's not already there
-                        if (null == findPart(mergedParts, defaultPortalPart))
-                        {
-                            Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
-                            webPart.setPageId(defaultTabName);
-                            mergedParts.add(webPart);
-                            changedMerged = true;
-                        }
-                        // Remember that legacy portal page has been added to default tab
-                        defaultPortalPart.setProperty(Portal.WEBPART_PROP_LegacyPageAdded, "true");
-                        changedLegacy = true;
-                    }
-                    if (defaultPortalPart.isPermanent() && null != findPart(required, defaultPortalPart))
-                    {
-                        Portal.WebPart actualPart = findPart(mergedParts, defaultPortalPart);
-                        if (null == actualPart)
-                        {
-                            // It's required in this foldertype, but it's missing; add it
-                            Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
-                            webPart.setPageId(defaultTabName);
-                            mergedParts.add(webPart);
-                            changedMerged = true;
-                        }
-                        else if (!actualPart.isPermanent())
-                        {
-                            // A required part is not marked required (perhaps because of switching folder types) so mark it so
-                            actualPart.setPermanent(true);
-                            changedMerged = true;
-                        }
-                    }
-                }
-            }
-
-            // Save the newly merged page and/or the legacy page
-            if (changedLegacy)
-                Portal.saveParts(container, legacyPortalParts);
-            if (changedMerged)
-                Portal.saveParts(container, defaultTabName, mergedParts);
-        }
-    }
-
     protected String getFolderTitle(ViewContext context)
     {   // Default; often overridden
         return context.getContainer().getTitle();
@@ -354,42 +252,26 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
 
     @Override
-    public String getDefaultPageId(Container container, boolean considerActive)
+    public String getDefaultPageId(Container container)
     {
-        String result = null;
-        if (_activePortalPage != null && considerActive)
+        List<Portal.PortalPage> activeTabs = Portal.getTabPages(container);
+
+        // Use the left-most tab as the default
+        for (Portal.PortalPage tab : activeTabs)
         {
-            // If we have an explicit selection, use that
-            result = _activePortalPage;
-        }
-        else
-        {
-            List<Portal.PortalPage> activeTabs = Portal.getTabPages(container);
-
-            // Use the left-most tab as the default
-            for (Portal.PortalPage tab : activeTabs)
+            if (!tab.isHidden())
             {
-                if (!tab.isHidden())
-                {
-                    result = tab.getPageId();
-                    break;
-                }
+                return tab.getPageId();
             }
-
-            if (null == result)
-            {
-                List<FolderTab> defaults = getDefaultTabs();
-                if (!defaults.isEmpty())
-                {
-                    result = defaults.get(0).getName();
-                }
-            }
-
-            if (null == result)
-                result = Portal.DEFAULT_PORTAL_PAGE_ID;
         }
 
-        return result;
+        List<FolderTab> defaults = getDefaultTabs();
+        if (!defaults.isEmpty())
+        {
+            return defaults.get(0).getName();
+        }
+
+        return Portal.DEFAULT_PORTAL_PAGE_ID;
     }
 
     private boolean hasPermission(FolderTab folderTab, Container container, User user)
@@ -397,10 +279,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         if (folderTab.isContainerTab())
         {
             Container folderContainer = folderTab.getContainerTab(container, user);
-            if (null != folderContainer && !folderContainer.hasPermission(user, ReadPermission.class))
-            {
-                return false;
-            }
+            return null == folderContainer || folderContainer.hasPermission(user, ReadPermission.class);
         }
         return true;
     }
@@ -500,11 +379,5 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private String getTabIdFromLabel(String folderLabel)
     {
         return folderLabel.replace(" ", "") + "Tab";
-    }
-
-    @Override
-    public void clearActivePortalPage()
-    {
-        _activePortalPage = null;
     }
 }

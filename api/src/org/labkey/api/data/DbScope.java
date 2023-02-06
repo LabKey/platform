@@ -461,7 +461,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outermost commit() attempt actually performs the commit.
      *
      * The preferred usage pattern is:
      * <pre>
@@ -471,7 +471,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
@@ -485,7 +485,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outermost commit() attempt actually performs the commit.
      * The preferred usage pattern is:
      * <pre>
      *     try (DbScope.Transaction transaction = scope.ensureTransaction()) {
@@ -494,11 +494,11 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
-     * they should all call commit() first if the transaction should be persisted.
+     * Note that if there are multiple exit points from inside the try-block (such as return statements), they should
+     * all call commit() first if the transaction should be persisted.
      *
-     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
-     *                        a new Connection is handed out and used until it is committed/rolled back.
+     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's
+     *                        kind, a new Connection is handed out and used until it is committed/rolled back.
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
      *              Locks will be released when close() is called on the Transaction.
@@ -533,7 +533,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
@@ -555,7 +555,7 @@ public class DbScope
      *     } // Transaction.close() automatically invoked by auto-closeable.
      * </pre>
      *
-     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * Note that if there are multiple exit points from inside the try-block (such as return statements),
      * they should all call commit() first if the transaction should be persisted.
      *
      * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
@@ -598,15 +598,15 @@ public class DbScope
                     // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                     // to the current thread
                     List<Lock> serverLocks = Arrays.stream(locks)
-                            .filter((l) -> l instanceof ServerLock)
-                            .collect(Collectors.toList());
+                        .filter((l) -> l instanceof ServerLock)
+                        .toList();
                     List<Lock> memoryLocks;
                     if (serverLocks.isEmpty())
                         memoryLocks = Arrays.asList(locks);
                     else
                         memoryLocks = Arrays.stream(locks)
-                                .filter((l) -> !(l instanceof ServerLock))
-                                .collect(Collectors.toList());
+                            .filter((l) -> !(l instanceof ServerLock))
+                            .collect(Collectors.toList());
 
                     boolean createdTransactionObject = false;
                     try
@@ -1246,10 +1246,6 @@ public class DbScope
     // Invalidates all tables in the table cache. Careful: callers probably need to invalidate the schema as well (it holds a list of table names).
     private void invalidateAllTables(String schemaName, DbSchemaType type)
     {
-        // If caller doesn't know the schema type then clear the schema tables from all caches
-        if (type == DbSchemaType.Unknown)
-            type = DbSchemaCache.getSchemaType(this, schemaName);
-
         getTableInfoCache(type).removeAllTables(schemaName, type);
     }
 
@@ -1725,6 +1721,13 @@ public class DbScope
         }
     }
 
+    public static @NotNull Set<String> getDataSourceNames()
+    {
+        return getLoaders().stream()
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toSet());
+    }
+
     /**
      * Ensures that initialization has been attempted on all DbScopes and returns those that were successfully initialized
      * @return A collection of DbScopes
@@ -1734,7 +1737,7 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::get)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     /**
@@ -1746,7 +1749,7 @@ public class DbScope
     {
         return getDbScopes().stream()
             .filter(scope->scope.getSqlDialect().shouldTest())
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     /**
@@ -1758,7 +1761,18 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::getIfPresent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
+    }
+
+    /**
+     * Clear out the DbScopeLoaders that previously failed to connect to their data source. Next call to getDbScopes()
+     * will attempt to retry those failed connections.
+     */
+    public static void clearFailedDbScopes()
+    {
+        getLoaders().stream()
+            .filter(DbScopeLoader::isFailed)
+            .forEach(DbScopeLoader::clearDbScope);
     }
 
     /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
@@ -1935,7 +1949,7 @@ public class DbScope
 
     public enum CommitTaskOption
     {
-        /** Run inside of the same transaction, immediately before committing it */
+        /** Run inside the same transaction, immediately before committing it */
         PRECOMMIT
         {
             @Override
@@ -2021,8 +2035,8 @@ public class DbScope
         void commit();
 
         /**
-         * Commit the current transaction, running pre and post commit tasks, but don't close the connection
-         * or remove transaction from thread pool. Effectively starts new transaction with same pre and post commit tasks.
+         * Commit the current transaction, running pre- and post-commit tasks, but don't close the connection or remove
+         * transaction from thread pool. Effectively starts new transaction with same pre- and post-commit tasks.
          */
         void commitAndKeepConnection();
 
