@@ -264,6 +264,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     nameCol.setShownInUpdateView(false);
                 }
                 return nameCol;
+            case StoredAmount:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+                columnInfo.setLabel("Amount");
+                return columnInfo;
+            }
+            case Units:
+                return wrapColumn(alias, _rootTable.getColumn("Units"));
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case SampleSet:
@@ -422,7 +430,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case AliquotVolume:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
-                ret.setLabel("Aliquot Total Volume");
+                ret.setLabel("Aliquot Total Amount");
                 return ret;
             }
             case AliquotUnit:
@@ -687,8 +695,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null && !st.isMedia())
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());
 
@@ -696,7 +702,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
+        addColumn(Column.AliquotCount);
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotCount));
+        addColumn(Column.AliquotVolume);
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotVolume));
+        addColumn(Column.AliquotUnit);
+        addColumn(Column.RecomputeRollup);
 
+        addColumn(Column.StoredAmount);
+        defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+        addColumn(Column.Units);
+        defaultCols.add(FieldKey.fromParts(Column.Units));
+        if (st != null)
+        {
+            if (InventoryService.get() != null && !st.isMedia())
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+        }
 
         addVocabularyDomains();
         addColumn(Column.Properties);

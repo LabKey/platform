@@ -61,6 +61,8 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         AliquotVolume,
         AliquotUnit,
         QueryableInputs,
+        StoredAmount, // name chosen to avoid collision on existing sample type domains
+        Units, // name chosen to avoid collision on existing sample type domains
     }
 
     void populate(@Nullable ExpSampleType st, boolean filterSampleType);

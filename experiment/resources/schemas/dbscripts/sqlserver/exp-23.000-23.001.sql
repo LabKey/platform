@@ -1,0 +1,3 @@
+ALTER TABLE exp.Material ADD StoredAmount DOUBLE PRECISION;
+ALTER TABLE exp.Material ADD Units NVARCHAR(20);
+GO

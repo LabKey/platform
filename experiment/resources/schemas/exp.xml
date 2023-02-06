@@ -296,6 +296,13 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
+      <column columnName="StoredAmount">
+          <columnTitle>Amount</columnTitle>
+          <description>The amount of this sample currently on hand</description>
+      </column>
+      <column columnName="Units">
+          <description>The units associated with the Amount for this sample</description>
+      </column>
       <column columnName="RecomputeRollup">
           <isHidden>true</isHidden>
           <isUserEditable>false</isUserEditable>
@@ -311,7 +318,7 @@
           <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="AliquotVolume">
-          <columnTitle>Aliquot Total Volume</columnTitle>
+          <columnTitle>Aliquot Total Amount</columnTitle>
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>
           <shownInInsertView>false</shownInInsertView>
@@ -988,6 +995,8 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="StoredAmount"/>
+      <column columnName="Units"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
