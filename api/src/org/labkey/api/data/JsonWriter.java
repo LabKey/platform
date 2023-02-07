@@ -166,6 +166,8 @@ public class JsonWriter
         props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
+        // Issue 46618: Indicate if this column has an additional sort key applied
+        props.put("hasSortKey", cinfo != null && cinfo.getSortFieldKeys() != null && !cinfo.getSortFieldKeys().isEmpty());
         props.put("filterable", dc.isFilterable());
         props.put("scannable", cinfo != null && cinfo.isScannable());
 
