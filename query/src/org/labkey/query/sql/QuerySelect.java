@@ -26,6 +26,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -64,7 +65,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public class QuerySelect extends QueryRelation implements Cloneable
+public class QuerySelect extends AbstractQueryRelation implements Cloneable
 {
     private static final Logger _log = LogManager.getLogger(QuerySelect.class);
 
@@ -160,7 +161,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     // create a simple QuerySelect over a QRelation
-    QuerySelect(QueryRelation from, QOrder order, QLimit limit)
+    QuerySelect(AbstractQueryRelation from, QOrder order, QLimit limit)
     {
         this(from._query, from.getSchema(), null);
 
@@ -182,9 +183,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
     }
 
 
-    QueryRelation createSubquery(QQuery qquery, boolean inFromClause, String alias)
+    AbstractQueryRelation createSubquery(QQuery qquery, boolean inFromClause, String alias)
     {
-        QueryRelation sub = Query.createQueryRelation(_query, qquery, inFromClause);
+        AbstractQueryRelation sub = Query.createQueryRelation(_query, qquery, inFromClause);
         sub._parent = this;
         if (null != alias)
             sub.setAlias(alias);
@@ -193,7 +194,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    void setQuery(Query query)
+    public void setQuery(Query query)
     {
 //        assert getParseErrors().size() == 0;
         super.setQuery(query);
@@ -333,7 +334,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
                     relation = _query.resolveTable(_schema, node, key, alias, containerFilter);
                     assert relation == null || alias.equals(relation.getAlias());
                     if (null != relation)
-                        relation._parent = this;
+                        relation.setParent(this);
                 }
             }
             assert relation != null || !getParseErrors().isEmpty();
@@ -855,7 +856,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
      * CONSIDER: mark method identifiers...
      */
     @Override
-    protected QField getField(FieldKey key, QNode expr, Object referant)
+    public QField getField(FieldKey key, QNode expr, Object referant)
     {
         return getFieldInternal(key, expr, referant, false);
     }
@@ -919,7 +920,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
      * Indicate that a particular ColumnInfo is used by this query.
      */
     @Override
-    protected RelationColumn declareField(FieldKey declareKey, QExpr location)
+    public RelationColumn declareField(FieldKey declareKey, QExpr location)
     {
         RelationColumn colTry = _declaredFields.get(declareKey);
         if (colTry != null)
@@ -1865,14 +1866,14 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _columns.size();
     }
 
 
     @Override
-    SelectColumn getColumn(@NotNull String name)
+    public SelectColumn getColumn(@NotNull String name)
     {
         FieldKey key = new FieldKey(null,name);
         SelectColumn col = _columns.get(key);
@@ -1882,7 +1883,8 @@ public class QuerySelect extends QueryRelation implements Cloneable
     }
 
     // 1 indexed to be compatible with all the other database-y apis
-    SelectColumn getFirstColumn()
+    @Override
+    public SelectColumn getFirstColumn()
     {
         if (_columns.isEmpty())
             return null;
@@ -1890,7 +1892,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     }
 
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public Map<String,RelationColumn> getAllColumns()
     {
         LinkedHashMap<String,RelationColumn> ret = new LinkedHashMap<>(_columns.size()*2);
         for (Map.Entry<FieldKey,SelectColumn> e : _columns.entrySet())
@@ -1917,7 +1919,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    Collection<String> getKeyColumns()
+    public Collection<String> getKeyColumns()
     {
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
@@ -1958,7 +1960,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    SelectColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
+    public SelectColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
         assert parentRelCol.getTable() == QuerySelect.this;
@@ -2015,7 +2017,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         if (skipSuggestedColumns)
             return Collections.emptySet();
@@ -2080,7 +2082,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
         assert parentRelCol.getTable() == QuerySelect.this;
@@ -2292,7 +2294,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return QuerySelect.this;
         }
@@ -2423,6 +2425,18 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
             if (_parsedTables.size() != 1)
                 to.setKeyField(false);
+        }
+
+        @Override
+        ColumnLogging getColumnLogging()
+        {
+            return super.getColumnLogging();
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            return getResolvedField().gatherInvolvedSelectColumns(collect);
         }
 
         private String chooseLabel()
@@ -2646,7 +2660,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         }
 
         @Override
-        protected void setAlias(String alias)
+        public void setAlias(String alias)
         {
             cteAlias = alias;
         }
@@ -2671,7 +2685,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         }
 
         @Override
-        protected void resolveFields()
+        public void resolveFields()
         {
             super.resolveFields();
         }

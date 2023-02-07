@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -38,6 +39,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -53,7 +55,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
  * Date: Jan 12, 2011
  * Time: 11:47:53 AM
  */
-public class QueryPivot extends QueryRelation
+public class QueryPivot extends AbstractQueryRelation
 {
     final QuerySelect _from;
     final AliasManager _manager;
@@ -72,7 +74,7 @@ public class QueryPivot extends QueryRelation
     RelationColumn _pivotColumn;
     Map<String,IConstant> _pivotValues;
 
-    QueryRelation _inQuery;
+    AbstractQueryRelation _inQuery;
 
 
     public QueryPivot(Query query, QuerySelect from, QQuery root)
@@ -196,9 +198,9 @@ public class QueryPivot extends QueryRelation
     }
 
 
-    QueryRelation createSubquery(QQuery qquery, String alias)
+    AbstractQueryRelation createSubquery(QQuery qquery, String alias)
     {
-        QueryRelation sub = Query.createQueryRelation(_query, qquery, true);
+        AbstractQueryRelation sub = Query.createQueryRelation(_query, qquery, true);
         sub._parent = this;
         if (null != alias)
             sub.setAlias(alias);
@@ -395,7 +397,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
         _inQuery.resolveFields();
     }
@@ -427,6 +429,12 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            return _s.gatherInvolvedSelectColumns(collect);
+        }
+
+        @Override
         SQLFragment getInternalSql()
         {
             SQLFragment ret = _s.getInternalSql();
@@ -448,7 +456,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return QueryPivot.this;
         }
@@ -500,7 +508,7 @@ public class QueryPivot extends QueryRelation
     Map<String,RelationColumn> _columns = null;
 
     @Override
-    protected Map<String, RelationColumn> getAllColumns()
+    public Map<String, RelationColumn> getAllColumns()
     {
         if (null == _columns)
         {
@@ -545,6 +553,14 @@ public class QueryPivot extends QueryRelation
         return _columns;
     }
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        var cols = getAllColumns();
+        if (cols.isEmpty())
+            return null;
+        return cols.values().iterator().next();
+    }
 
     final static String PIVOT_SEPARATOR = "::";
 
@@ -556,19 +572,19 @@ public class QueryPivot extends QueryRelation
     
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public RelationColumn getColumn(@NotNull String name)
     {
         return getAllColumns().get(name);
     }
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _select.size();
     }
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull final String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull final String name)
     {
         if (!(parent instanceof PivotColumn))
             return null;
@@ -598,88 +614,117 @@ public class QueryPivot extends QueryRelation
 
         final CrosstabMember member = createCrosstabMember(c.getValue(), name);
 
-        return new RelationColumn()
-        {
-            public String getUniqueName()
-            {
-                return super._defaultUniqueName(QueryPivot.this);
-            }
-
-            @Override
-            public FieldKey getFieldKey()
-            {
-                return key;
-            }
-
-            @Override
-            String getAlias()
-            {
-                return alias;
-            }
-
-            @Override
-            boolean isHidden()
-            {
-                return agg.isHidden();
-            }
-
-            @Override
-            String getPrincipalConceptCode()
-            {
-                return agg.getPrincipalConceptCode();
-            }
-
-            @Override
-            String getConceptURI()
-            {
-                return agg.getConceptURI();
-            }
-
-            @Override
-            QueryRelation getTable()
-            {
-                return QueryPivot.this;
-            }
-
-            @NotNull
-            @Override
-            public JdbcType getJdbcType()
-            {
-                return agg.getJdbcType();
-            }
-
-            @Override
-            void copyColumnAttributesTo(BaseColumnInfo to)
-            {
-                agg.copyColumnAttributesTo(to);
-
-                to.setCrosstabColumnDimension(agg.getFieldKey());
-                to.setCrosstabColumnMember(member);
-
-                if (_aggregates.size() == 1)
-                    to.setLabel(name);
-                else
-                {
-                    String aggLabel = to.getLabel();
-                    to.setLabel(name + " " + aggLabel);
-                }
-            }
-
-            @Override
-            public SQLFragment getValueSql()
-            {
-                if (null == c)
-                    return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(getJdbcType())));
-                else
-                    return new SQLFragment(getTable().getAlias() + "." + alias);
-            }
-        };
+        return new _PivotedAggColumn(key, alias, agg, member, name, c);
     }
 
 
+    private class _PivotedAggColumn extends RelationColumn
+    {
+        private final FieldKey _key;
+        private final String _alias;
+        private final @NotNull RelationColumn _agg;
+        private final CrosstabMember _member;
+        private final @NotNull String _name;
+        private final IConstant _c;
+
+        private final String _uniqueName;
+
+        public _PivotedAggColumn(FieldKey key, String alias, @NotNull RelationColumn agg, CrosstabMember member, @NotNull String name, IConstant c)
+        {
+            _key = key;
+            _alias = alias;
+            _agg = agg;
+            _member = member;
+            _name = name;
+            _c = c;
+            _uniqueName = super._defaultUniqueName(QueryPivot.this);
+
+            _query.addUniqueRelationColumn(this);
+        }
+
+        public String getUniqueName()
+        {
+            return _uniqueName;
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            return _agg.gatherInvolvedSelectColumns(collect);
+        }
+
+        @Override
+        public FieldKey getFieldKey()
+        {
+            return _key;
+        }
+
+        @Override
+        String getAlias()
+        {
+            return _alias;
+        }
+
+        @Override
+        boolean isHidden()
+        {
+            return _agg.isHidden();
+        }
+
+        @Override
+        String getPrincipalConceptCode()
+        {
+            return _agg.getPrincipalConceptCode();
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return _agg.getConceptURI();
+        }
+
+        @Override
+        AbstractQueryRelation getTable()
+        {
+            return QueryPivot.this;
+        }
+
+        @NotNull
+        @Override
+        public JdbcType getJdbcType()
+        {
+            return _agg.getJdbcType();
+        }
+
+        @Override
+        void copyColumnAttributesTo(BaseColumnInfo to)
+        {
+            _agg.copyColumnAttributesTo(to);
+
+            to.setCrosstabColumnDimension(_agg.getFieldKey());
+            to.setCrosstabColumnMember(_member);
+
+            if (_aggregates.size() == 1)
+                to.setLabel(_name);
+            else
+            {
+                String aggLabel = to.getLabel();
+                to.setLabel(_name + " " + aggLabel);
+            }
+        }
+
+        @Override
+        public SQLFragment getValueSql()
+        {
+            if (null == _c)
+                return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(getJdbcType())));
+            else
+                return new SQLFragment(getTable().getAlias() + "." + _alias);
+        }
+    }
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         return null;
     }
@@ -813,7 +858,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    String getQueryText()
+    public String getQueryText()
     {
         return null;
     }
@@ -827,7 +872,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         return Collections.emptySet();
     }

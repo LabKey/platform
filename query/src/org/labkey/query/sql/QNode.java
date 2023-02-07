@@ -294,9 +294,11 @@ abstract public class QNode implements Cloneable
      *       SELECT COUNT(foo), MIN(bar)
      *       "foo" is not returned, "bar" is returned.
      *
-     *   returns passed in collection for convenience
+     * The RelationColumn objects returned should support getColumnLogging().
+     *
+     *   The passed in collection is returned for convenience
      */
-    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
     {
         for (QNode c : children())
             c.gatherInvolvedSelectColumns(collect);

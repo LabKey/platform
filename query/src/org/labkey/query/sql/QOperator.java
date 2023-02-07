@@ -147,7 +147,7 @@ final public class QOperator extends QExpr
     }
 
     @Override
-    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
     {
         // result is bool and does not depend on argument
         if (_op.getResultType() == Operator.ResultType.bool)

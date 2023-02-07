@@ -63,7 +63,7 @@ import java.util.TreeSet;
  * Time: 2:33:46 PM
  */
 
-public class QueryTable extends QueryRelation
+public class QueryTable extends AbstractQueryRelation implements QueryRelation.ColumnResolvingRelation
 {
     private static final Logger _log = LogManager.getLogger(QueryTable.class);
 
@@ -73,7 +73,7 @@ public class QueryTable extends QueryRelation
     private AliasManager _aliasManager;
     private TableInfo _tableInfo;
     private TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
-    private final HashMap<String,FieldKey> _uniqueNameMap = new HashMap<>();
+    private final HashMap<FieldKey, String> _uniqueNameMap = new HashMap<>();
     private String _innerAlias;
     private Boolean _selectAllColumns = false;
 
@@ -91,7 +91,7 @@ public class QueryTable extends QueryRelation
     {
         // For recursive queries we need to create this object before we create the TableInfo
         super(query, schema, alias);
-        query.addQueryTable(this);
+//        query.addQueryTable(this);
         _originalAlias = alias;
 
         // call this now so we it doesn't change if _getSql() is called more than once
@@ -133,13 +133,13 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
     }
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _selectedColumns.size();
     }
@@ -152,7 +152,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    protected MethodInfo getMethod(String name)
+    public MethodInfo getMethod(String name)
     {
         MethodInfo m = _tableInfo.getMethod(name);
         if (null != m)
@@ -192,7 +192,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public RelationColumn getColumn(@NotNull String name)
     {
         FieldKey k = new FieldKey(null,name);
         TableColumn ret = _selectedColumns.get(k);
@@ -207,9 +207,15 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        throw new UnsupportedOperationException();
+    }
+
     /** This method does not mark returned columns as selected */
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public Map<String,RelationColumn> getAllColumns()
     {
         List<ColumnInfo> columns = _tableInfo.getColumns();
         LinkedHashMap<String,RelationColumn> map = new LinkedHashMap<>(columns.size()*2);
@@ -226,14 +232,14 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    Collection<String> getKeyColumns()
+    public Collection<String> getKeyColumns()
     {
         return _tableInfo.getPkColumnNames();
     }
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
         assert parentRelCol.getTable() == this;
@@ -256,7 +262,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
         assert parentRelCol.getTable() == this;
@@ -441,7 +447,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    String getQueryText()
+    public String getQueryText()
     {
         return _tableInfo.getSelectName();
     }
@@ -466,11 +472,20 @@ public class QueryTable extends QueryRelation
             _alias = _aliasManager.decideAlias(col.getAlias());
             _parent = parent;
             _uniqueName = super._defaultUniqueName(QueryTable.this);
+
+            _query.addUniqueRelationColumn(this);
         }
 
         public String getUniqueName()
         {
             return _uniqueName;
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            collect.add(this);
+            return collect;
         }
 
         @Override
@@ -525,7 +540,7 @@ public class QueryTable extends QueryRelation
         }
 
         @Override
-        public QueryRelation getTable()
+        public AbstractQueryRelation getTable()
         {
             return QueryTable.this;
         }
@@ -569,7 +584,7 @@ public class QueryTable extends QueryRelation
                 to.setHidden(true);
 //                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
             }
-            assert _query.hasQueryTable(QueryTable.this);
+//            assert _query.hasQueryTable(QueryTable.this);
         }
 
 
@@ -611,7 +626,12 @@ public class QueryTable extends QueryRelation
         }
     }
 
-    Map<FieldKey,RelationColumn> _mapOutputColToTableColumn = null;
+
+    @Override
+    public Map<FieldKey, FieldKey> getRemapMap(Map<String,FieldKey> outerMap)
+    {
+        return QueryRelation.generateRemapMap(_uniqueNameMap, outerMap);
+    }
 
 
     @Override
@@ -725,7 +745,7 @@ public class QueryTable extends QueryRelation
     // we are currently because of the getColumn() call
     // NOTE: Every type of suggested column should have a corresponding fixup in ColumnInfo.remapFieldKeys().
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         if (_query._strictColumnList)
             return Collections.emptySet();
@@ -799,6 +819,6 @@ public class QueryTable extends QueryRelation
     private void addSelectedColumn(FieldKey key, TableColumn column)
     {
         _selectedColumns.put(key, column);
-        _uniqueNameMap.put(column.getUniqueName(), column.getFieldKey());
+        _uniqueNameMap.put(column.getFieldKey(), column.getUniqueName());
     }
 }

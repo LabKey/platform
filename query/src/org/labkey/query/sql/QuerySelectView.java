@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * b) write a CustomView object constructor?
  */
 
-public class QuerySelectView extends QueryRelation
+public class QuerySelectView extends AbstractQueryRelation
 {
     final AliasManager aliasManager;
     final TableInfo table;
@@ -107,7 +107,7 @@ public class QuerySelectView extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
 
     }
@@ -119,31 +119,40 @@ public class QuerySelectView extends QueryRelation
     }
 
     @Override
-    protected Map<String, RelationColumn> getAllColumns()
+    public Map<String, RelationColumn> getAllColumns()
     {
         return null;
     }
 
     @Override
-    @Nullable RelationColumn getColumn(@NotNull String name)
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @Nullable
+    public RelationColumn getColumn(@NotNull String name)
     {
         return null;
     }
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return 0;
     }
 
     @Override
-    @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
+    @Nullable
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
         return null;
     }
 
     @Override
-    @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, ColumnType.@NotNull Fk fk, @NotNull String name)
+    @Nullable
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, ColumnType.@NotNull Fk fk, @NotNull String name)
     {
         return null;
     }
@@ -155,7 +164,7 @@ public class QuerySelectView extends QueryRelation
     }
 
     @Override
-    String getQueryText()
+    public String getQueryText()
     {
         return null;
     }
@@ -167,7 +176,7 @@ public class QuerySelectView extends QueryRelation
     }
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         return null;
     }

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
+public class QueryRelationWrapper<R extends QueryRelation> extends AbstractQueryRelation
 {
     R _wrapped;
 
@@ -52,6 +52,12 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         }
 
         @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            return _wrapped.gatherInvolvedSelectColumns(collect);
+        }
+
+        @Override
         public FieldKey getFieldKey()
         {
             return _wrapped.getFieldKey();
@@ -64,7 +70,7 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return QueryRelationWrapper.this;
         }
@@ -191,11 +197,19 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         return ret;
     }
 
+
+
     @Override
     @Nullable
     public RelationColumn getColumn(@NotNull String name)
     {
         return wrap(_wrapped.getColumn(name));
+    }
+
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        return wrap(_wrapped.getFirstColumn());
     }
 
     @Override

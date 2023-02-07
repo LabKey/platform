@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
@@ -30,13 +31,14 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class QueryUnion extends QueryRelation
+public class QueryUnion extends AbstractQueryRelation
 {
 	QUnion _qunion;
 	QOrder _qorderBy;
@@ -69,7 +71,7 @@ public class QueryUnion extends QueryRelation
         setQUnion(qunion);
     }
 
-    QueryUnion(QueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
+    QueryUnion(AbstractQueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
     {
         this(parent._query, qunion);
         assert inFromClause == (alias != null);
@@ -88,7 +90,7 @@ public class QueryUnion extends QueryRelation
     }
 
     @Override
-    void setQuery(Query query)
+    public void setQuery(Query query)
     {
         // UNION within a CTE can be recursive, need to guard against that.
         if (query != _query)
@@ -184,7 +186,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
         for (QueryRelation r : _termList)
             r.resolveFields();
@@ -420,22 +422,29 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _unionColumns.size();
     }
     
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public RelationColumn getColumn(@NotNull String name)
     {
         initColumns();
         return _unionColumns.get(name);
     }
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        if (_unionColumns.isEmpty())
+            return null;
+        return _unionColumns.values().iterator().next();
+    }
 
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public Map<String,RelationColumn> getAllColumns()
     {
         initColumns();
         return new LinkedHashMap<>(_unionColumns);
@@ -443,14 +452,14 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
         return null;
     }
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         return null;
     }
@@ -501,7 +510,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         return Collections.emptySet();
     }
@@ -525,6 +534,13 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            collect.add(this);
+            return collect;
+        }
+
+        @Override
         public FieldKey getFieldKey()
         {
             return _name;
@@ -537,7 +553,7 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return QueryUnion.this;
         }

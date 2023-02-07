@@ -41,14 +41,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable, HasResolvedTables
 {
-    QueryRelation _relation;
+    AbstractQueryRelation _relation;
 
 
-    public QueryTableInfo(QueryRelation relation, String name)
+    public QueryTableInfo(AbstractQueryRelation relation, String name)
     {
         super(relation._query.getSchema().getDbSchema(), name);
         _relation = relation;
@@ -135,6 +134,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
+/*
     public void remapFieldKeys()
     {
         Query query = _relation._query;
@@ -146,8 +146,9 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         {
             // Find if this column is associated with a QueryTable.
             // If it is, use that tables "remap" map to fix up column using ColumnInfo.remapFieldKeys().
-            String uniqueName = ((QueryRelation.RelationColumnInfo) ci)._column.getUniqueName();
-            QueryRelation sourceRelation = query._mapUniqueNamesToQueryRelation.get(uniqueName);
+            String uniqueName = ((AbstractQueryRelation.RelationColumnInfo) ci)._column.getUniqueName();
+            AbstractQueryRelation.RelationColumn sourceColumn = query._mapUniqueNamesToRelationColumn.get(uniqueName);
+            QueryRelation sourceRelation = null == sourceColumn ? null : sourceColumn.getTable();
             Map<FieldKey, FieldKey> remap = sourceRelation instanceof QueryTable qt ? mapFieldKeyToSiblings.get(qt) : null;
 
             if (null != remap)
@@ -182,43 +183,49 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             assert !(ci.getColumnLogging() instanceof QueryColumnLogging);
         }
     }
+*/
 
-
-    // map output column to its related columns (grouped by source querytable)
-    Map<QueryTable, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = null;
-
-    private void initFieldKeyMap()
+    public void remapFieldKeys()
     {
         Query query = _relation._query;
 
-        assert null == query._mapQueryUniqueNamesToSelectAlias;
-        assert query._mapUniqueNamesToQueryRelation.isEmpty();
-        assert null == mapFieldKeyToSiblings;
+        Map<String,FieldKey> outerMap = getUniqueKeyMap();
+        CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
 
-        // Create map of unique names to the SELECT output columns
+        for (var ci : getMutableColumns())
+        {
+            // Find if this column is associated with a ColumnResolvingRelation (e.g. QueryTable).
+            // If it is, use that tables "remap" map to fix up column using ColumnInfo.remapFieldKeys().
+            String uniqueName = ((AbstractQueryRelation.RelationColumnInfo) ci)._column.getUniqueName();
+            AbstractQueryRelation.RelationColumn sourceColumn = query._mapUniqueNamesToRelationColumn.get(uniqueName);
+            QueryRelation sourceRelation = null == sourceColumn ? null : sourceColumn.getTable();
+            Map<FieldKey, FieldKey> remap = sourceRelation instanceof QueryRelation.ColumnResolvingRelation crr ? crr.getRemapMap(outerMap) : null;
+
+            if (null != remap)
+            {
+                ci.remapFieldKeys(null, remap, warnings, true);
+                var queryWarnings = _relation._query.getParseWarnings();
+                for (String w : warnings)
+                    queryWarnings.add(new QueryParseWarning(w, null, 0, 0));
+            }
+
+            // handle QueryColumnLogging which need to be converted to a normal ColumnLogging
+            if (ci.getColumnLogging() instanceof QueryColumnLogging qcl)
+            {
+                ci.setColumnLogging(qcl.remapQueryFieldKeys(this, ci, outerMap));
+            }
+            assert !(ci.getColumnLogging() instanceof QueryColumnLogging);
+        }
+    }
+
+
+    private Map<String,FieldKey> getUniqueKeyMap()
+    {
+          // Create map of unique names to the SELECT output columns
         Map<String,FieldKey> mapQueryUniqueNamesToAlias = new HashMap<>();
         for (var e : _relation.getAllColumns().entrySet())
             mapQueryUniqueNamesToAlias.put(e.getValue().getUniqueName(), new FieldKey(null, e.getKey()));
-        query._mapQueryUniqueNamesToSelectAlias = Collections.unmodifiableMap(mapQueryUniqueNamesToAlias);
-
-
-        // For each QueryTable, create a map from table field keys to selected column field keys
-        mapFieldKeyToSiblings = new HashMap<>();
-        for (QueryTable queryTable : query._qtables.keySet())
-        {
-            Map<FieldKey, FieldKey> remap = new TreeMap<>();
-            for (var e : queryTable.getSelectedColumns().entrySet())
-            {
-                var tc = e.getValue();
-                FieldKey tableFieldKey = tc.getFieldKey();
-                String uniqueNane = tc.getUniqueName();
-                query._mapUniqueNamesToQueryRelation.put(tc.getUniqueName(), queryTable);
-                FieldKey targetFk = query._mapQueryUniqueNamesToSelectAlias.get(uniqueNane);
-                if (null != targetFk)
-                    remap.put(tableFieldKey, targetFk);
-            }
-            mapFieldKeyToSiblings.put(queryTable, remap);
-        }
+        return mapQueryUniqueNamesToAlias;
     }
 
 

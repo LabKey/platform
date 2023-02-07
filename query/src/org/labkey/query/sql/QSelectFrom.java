@@ -38,7 +38,7 @@ public class QSelectFrom extends QNode
     }
 
     @Override
-    public Collection<QueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<QueryRelation.RelationColumn> collect)
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
     {
         throw new UnsupportedOperationException();
     }

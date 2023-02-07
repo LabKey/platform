@@ -34,7 +34,7 @@ public class QTable implements QJoinOrTable
         _cfType = cfType;
     }
 
-    public QTable(QueryRelation t, String alias)
+    public QTable(AbstractQueryRelation t, String alias)
     {
         _queryRelation = t;
         _alias = new QIdentifier(alias);

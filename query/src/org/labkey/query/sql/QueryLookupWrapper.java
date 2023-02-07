@@ -58,12 +58,12 @@ import java.util.stream.Collectors;
  * QueryLookupWrapper is actually very similar to QueryTable, the difference being that
  * the input to QueryLookupWrapper is a QueryRelation rather than a TableInfo
  */
-public class QueryLookupWrapper extends QueryRelation
+public class QueryLookupWrapper extends AbstractQueryRelation
 {
     private static final Logger _log = LogManager.getLogger(QueryLookupWrapper.class);
 
     final AliasManager _aliasManager;
-    QueryRelation _source;
+    AbstractQueryRelation _source;
     boolean _hasLookups = false;
 
     Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
@@ -74,7 +74,7 @@ public class QueryLookupWrapper extends QueryRelation
     SQLTableInfo _sti = null;
 
 
-    QueryLookupWrapper(Query query, QueryRelation relation, @Nullable TableType md)
+    QueryLookupWrapper(Query query, AbstractQueryRelation relation, @Nullable TableType md)
     {
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
@@ -109,7 +109,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    void setQuery(Query query)
+    public void setQuery(Query query)
     {
         super.setQuery(query);
         _source.setQuery(query);
@@ -117,7 +117,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected void setAlias(String alias)
+    public void setAlias(String alias)
     {
         super.setAlias(alias);
         if (_hasLookups)
@@ -144,7 +144,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
         _source.resolveFields();
     }
@@ -172,14 +172,14 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _selectedColumns.size();
     }
     
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public RelationColumn getColumn(@NotNull String name)
     {
         FieldKey k = new FieldKey(null, name);
         RelationColumn ret = _selectedColumns.get(k);
@@ -197,9 +197,15 @@ public class QueryLookupWrapper extends QueryRelation
         return ret;
     }
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        var first =  _source.getFirstColumn();
+        return getColumn(first.getAlias());
+    }
 
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public Map<String,RelationColumn> getAllColumns()
     {
         Map<String,RelationColumn> all = _source.getAllColumns();
         Map<String,RelationColumn> ret = new LinkedHashMap<>(2*all.size());
@@ -214,7 +220,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof _WrapperColumn;
         assert parentRelCol.getTable() == this;
@@ -236,7 +242,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         _WrapperColumn parent = (_WrapperColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
@@ -273,7 +279,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    Collection<String> getKeyColumns()
+    public Collection<String> getKeyColumns()
     {
         return _source.getKeyColumns();
     }
@@ -335,7 +341,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    String getQueryText()
+    public String getQueryText()
     {
         return _source.getQueryText();
     }
@@ -349,7 +355,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         // TODO handle lookup columns
         HashSet<RelationColumn> unwrapped = new HashSet<>();
@@ -373,11 +379,11 @@ public class QueryLookupWrapper extends QueryRelation
 
     private static abstract class _WrapperColumn extends RelationColumn
     {
-        final QueryRelation _table;
+        final AbstractQueryRelation _table;
         final FieldKey _key;
         final String _alias;
         
-        _WrapperColumn(QueryRelation table, FieldKey key, String alias)
+        _WrapperColumn(AbstractQueryRelation table, FieldKey key, String alias)
         {
             _table = table;
             _key = key;
@@ -391,7 +397,7 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return _table;
         }
@@ -409,7 +415,7 @@ public class QueryLookupWrapper extends QueryRelation
 
     class PassThroughColumn extends _WrapperColumn
     {
-        QueryRelation.RelationColumn _wrapped;
+        AbstractQueryRelation.RelationColumn _wrapped;
         ColumnType.Fk _columnFK;
         ForeignKey _fk;
 
@@ -429,6 +435,13 @@ public class QueryLookupWrapper extends QueryRelation
         public String getUniqueName()
         {
             return _wrapped.getUniqueName();
+        }
+
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            return _wrapped.gatherInvolvedSelectColumns(collect);
         }
 
 
@@ -573,6 +586,13 @@ public class QueryLookupWrapper extends QueryRelation
         public String getUniqueName()
         {
             return _uniqueName;
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            collect.add(this);
+            return collect;
         }
 
         @Override

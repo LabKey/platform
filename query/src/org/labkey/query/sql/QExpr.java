@@ -19,7 +19,6 @@ package org.labkey.query.sql;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
@@ -113,7 +112,7 @@ abstract public class QExpr extends QNode
             }
         };
 
-        Set<QueryRelation.RelationColumn> columns = (Set<QueryRelation.RelationColumn>)gatherInvolvedSelectColumns(new HashSet<>());
+        Set<AbstractQueryRelation.RelationColumn> columns = (Set<AbstractQueryRelation.RelationColumn>)gatherInvolvedSelectColumns(new HashSet<>());
         if (!columns.isEmpty())
         {
             var columnLogging = QueryColumnLogging.create(table, expr.getFieldKey(), columns);

@@ -25,9 +25,9 @@ import java.util.Set;
  */
 public class QueryColumnLogging extends ColumnLogging
 {
-    final Collection<QueryRelation.RelationColumn> columnsUsed;
+    final Collection<AbstractQueryRelation.RelationColumn> columnsUsed;
 
-    QueryColumnLogging(TableInfo parentTable, FieldKey column, Collection<QueryRelation.RelationColumn> columnsUsed,
+    QueryColumnLogging(TableInfo parentTable, FieldKey column, Collection<AbstractQueryRelation.RelationColumn> columnsUsed,
                        boolean shouldLogName, String loggingComment, SelectQueryAuditProvider sqap)
     {
         super(parentTable.getSchema().getName(), parentTable.getName(), column,
@@ -36,7 +36,7 @@ public class QueryColumnLogging extends ColumnLogging
         this.columnsUsed = columnsUsed;
     }
 
-    static QueryColumnLogging create(TableInfo parentTable, FieldKey column, Collection<QueryRelation.RelationColumn> cols)
+    static QueryColumnLogging create(TableInfo parentTable, FieldKey column, Collection<AbstractQueryRelation.RelationColumn> cols)
     {
         boolean shouldLogName = false;
         String loggingComment = null;
@@ -84,11 +84,11 @@ public class QueryColumnLogging extends ColumnLogging
     }
 
 
-    ColumnLogging remapQueryFieldKeys(QueryTableInfo table, ColumnInfo column)
+    ColumnLogging remapQueryFieldKeys(QueryTableInfo table, ColumnInfo column, Map<String,FieldKey> outerMap)
     {
         Query query = table._relation._query;
-        assert null != query._mapQueryUniqueNamesToSelectAlias;
-        assert null != table.mapFieldKeyToSiblings;
+//        assert null != query._mapQueryUniqueNamesToSelectAlias;
+//        assert null != table.mapFieldKeyToSiblings;
 
         if (columnsUsed.isEmpty())
             return ColumnLogging.defaultLogging(column);
@@ -96,23 +96,24 @@ public class QueryColumnLogging extends ColumnLogging
         Set<FieldKey> dataLoggingColumns = new HashSet<>();
         for (var used : columnsUsed)
         {
-            QueryRelation r = used.getTable();
             ColumnLogging columnLogging = used.getColumnLogging();
+            if (null == columnLogging)
+                continue;
 
-            if (null != columnLogging && r instanceof QueryTable)
+            QueryRelation r = used.getTable();
+            assert r instanceof QueryRelation.ColumnResolvingRelation;
+
+            Map<FieldKey, FieldKey> remap = ((QueryRelation.ColumnResolvingRelation)r).getRemapMap(outerMap);
+            for (FieldKey fk : columnLogging.getDataLoggingColumns())
             {
-                Map<FieldKey, FieldKey> remap = table.mapFieldKeyToSiblings.get((QueryTable)r);
-                for (FieldKey fk : columnLogging.getDataLoggingColumns())
-                {
-                    var mapped = FieldKey.remap(fk, null, remap);
-                    if (null == mapped)
-                        return ColumnLogging.error(_shouldLogName, _selectQueryAuditProvider, "Unable to find required logging column " + fk.getName() + " for table " + _originalTableName);
-                    dataLoggingColumns.add(mapped);
-                }
+                var mapped = FieldKey.remap(fk, null, remap);
+                if (null == mapped)
+                    return ColumnLogging.error(_shouldLogName, _selectQueryAuditProvider, "Unable to find required logging column " + fk.getName() + " for table " + _originalTableName);
+                dataLoggingColumns.add(mapped);
             }
         }
 
-        String unique = makeUniqueKey(table, column.getFieldKey());
+//        String unique = makeUniqueKey(table, column.getFieldKey());
         return new ColumnLogging(
             table.getUserSchema().getSchemaName(), table.getName(), column.getFieldKey(),
 //            unique, null,
