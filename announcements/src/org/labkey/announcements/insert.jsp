@@ -67,7 +67,7 @@
 <table class="lk-fields-table" style="max-width: 1050px"> <!-- 13625 -->
 <%
     ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
-    if (!mr.isApproved(c, user))
+    if (!mr.isApproved(c, user, true))
     {
         %><tr><td colspan="3"><span class="labkey-message">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
     }

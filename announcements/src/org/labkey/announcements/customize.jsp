@@ -90,7 +90,8 @@
         </td>
     </tr>
     <%
-        boolean moderatorReview = "InitialPost".equals(settings.getModeratorReview()) || "All".equals(settings.getModeratorReview());
+        boolean moderatorReview = "InitialPost".equals(settings.getModeratorReview()) || "All".equals(settings.getModeratorReview())
+                || "NewThread".equals(settings.getModeratorReview());
     %>
     <tr>
         <td class="labkey-form-label" valign="middle">Moderator review</td>
@@ -103,6 +104,10 @@
                 <tr>
                     <td valign="top"><input type="radio" name="moderatorReview" value="InitialPost"<%=checked("InitialPost".equals(settings.getModeratorReview()))%>></td>
                     <td><b>Initial Post</b> - Authors must have their initial message(s) approved by a moderator. Subsequent messages are approved automatically.</td>
+                </tr>
+                <tr>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="NewThread"<%=checked("NewThread".equals(settings.getModeratorReview()))%>></td>
+                    <td><b>New Thread</b> - New message threads started by an Author must be approved by a moderator.</td>
                 </tr>
                 <tr>
                     <td valign="top"><input type="radio" name="moderatorReview" value="All"<%=checked("All".equals(settings.getModeratorReview()))%>></td>

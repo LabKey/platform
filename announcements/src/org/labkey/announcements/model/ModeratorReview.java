@@ -53,6 +53,23 @@ public enum ModeratorReview
             return new TableSelector(CommSchema.getInstance().getTableInfoAnnouncements(), filter, null).exists();
         }
     },
+    NewThread
+    {
+        @Override
+        public boolean isApproved(Container c, User user)
+        {
+            return isApproved(c, user, false);
+        }
+
+        @Override
+        public boolean isApproved(Container c, User user, boolean newThread)
+        {
+            if (All.isApproved(c, user))
+                return true;
+
+            return !newThread; // Starting a new thread requires moderator approval
+        }
+    },
     All
     {
         @Override
@@ -64,6 +81,11 @@ public enum ModeratorReview
     };
 
     public abstract boolean isApproved(Container c, User user);
+
+    public boolean isApproved(Container c, User user, boolean newThread)
+    {
+        return isApproved(c, user);
+    }
 
     public static ModeratorReview get(String s)
     {

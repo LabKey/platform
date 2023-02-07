@@ -291,7 +291,7 @@ public class AnnouncementManager
 
             ModeratorReview mr = ModeratorReview.get(getMessageBoardSettings(c).getModeratorReview());
 
-            if (mr.isApproved(c, user))
+            if (mr.isApproved(c, user, insert.getParent() == null))
                 approve(c, user, sendEmailNotifications, ann, ann.getCreated());
             else
                 notifyModerators(c, user, ann);
