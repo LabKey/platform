@@ -412,9 +412,7 @@
                         listeners: {
                             change: function(field, newValue) {
                                 var insertOption = Ext4.getCmp('insertOptionHidden' + index);
-                                if (newValue) {
-                                    insertOption.setValue("MERGE");
-                                }
+                                insertOption.setValue(newValue ? "MERGE" : "UPDATE");
                             }
                         }
                     }]
