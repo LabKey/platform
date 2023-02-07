@@ -3204,7 +3204,13 @@ public class QueryServiceImpl implements QueryService
     {
         // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
         if (container != null && container.isProductProjectsEnabled())
+        {
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS))
+                return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+
             return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+        }
+
         return null;
     }
 
