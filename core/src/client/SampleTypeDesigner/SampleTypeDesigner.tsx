@@ -17,7 +17,6 @@
 import React from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
-    App as Util,
     Alert,
     BeforeUnload,
     DomainDesign,
@@ -27,8 +26,7 @@ import {
     LoadingSpinner,
     SampleTypeDesigner,
     SampleTypeModel,
-    SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS,
-    SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS
+    getSampleDomainDefaultSystemFields,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -66,10 +64,7 @@ export class App extends React.PureComponent<any, State> {
     }
 
     componentDidMount() {
-        const freezerManagementEnabled = Util.isFreezerManagementEnabled();
-        const systemFields = freezerManagementEnabled
-            ? SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS.concat(SAMPLE_DOMAIN_INVENTORY_SYSTEM_FIELDS)
-            : SAMPLE_DOMAIN_DEFAULT_SYSTEM_FIELDS;
+        const systemFields = getSampleDomainDefaultSystemFields();
 
         // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
