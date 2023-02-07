@@ -406,7 +406,7 @@ public class QueryModule extends DefaultModule
         boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
         json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
         json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
-        json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, AppProps.getInstance().isExperimentalFeatureEnabled(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS));
+        json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductProjectsAllFolderScopeEnabled());
 
         return json;
     }
