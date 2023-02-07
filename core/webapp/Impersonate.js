@@ -15,6 +15,9 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
     impersonatePath: LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path,
 
     initComponent : function() {
+        Ext4.tip.QuickTipManager.init();
+        Ext4.apply(Ext4.tip.QuickTipManager.getQuickTip(), { minWidth: 275 });
+
         this.buttons = ['->', {
             text: 'Cancel',
             scope: this,
@@ -66,7 +69,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div data-qtip="Inactive users can\'t be impersonated" class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode})</div>',
+                        '<div data-qtip="Inactive users can\'t be impersonated." class="x4-boundlist-item x4-item-disabled" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '</tpl>',
                 '</tpl>')
         });
