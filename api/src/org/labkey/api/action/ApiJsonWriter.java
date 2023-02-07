@@ -200,13 +200,14 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeString(DateUtil.formatJsonDateTime((Date) value));
         }
-        else if (!isSerializeViaJacksonAnnotations())
+        // Always use Jackson serialization for SimpleResponse, Issue 47216
+        else if (isSerializeViaJacksonAnnotations() || value instanceof SimpleResponse<?>)
         {
-            jg.writeString(value.toString());
+            jg.writeObject(value);
         }
         else
         {
-            jg.writeObject(value);
+            jg.writeString(value.toString());
         }
 
         // 21112: Malformed JSON response in production environments

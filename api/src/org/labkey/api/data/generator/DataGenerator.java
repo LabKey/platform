@@ -53,6 +53,29 @@ import java.util.stream.Collectors;
 
 public class DataGenerator<T extends DataGenerator.Config>
 {
+    private static final List<String> UNITS = List.of("g", "mg", "uL", "mL", "unit");
+    private static final List<String> LABEL_COLORS = new ArrayList<>();
+    static {
+        LABEL_COLORS.add("#800000"); // maroon,
+        LABEL_COLORS.add("#B22222"); // firebrick
+        LABEL_COLORS.add("#DC143C"); // crimson
+        LABEL_COLORS.add("#FA8072"); // salmon
+        LABEL_COLORS.add("#FFD700"); // gold
+        LABEL_COLORS.add("#808000"); // olive
+        LABEL_COLORS.add("#9ACD32"); // yellow green
+        LABEL_COLORS.add("#6B8E23"); // olive drab
+        LABEL_COLORS.add("#008000"); // olive
+        LABEL_COLORS.add("#556B2F"); // dark olive green
+        LABEL_COLORS.add("#008080"); // teal
+        LABEL_COLORS.add("#00FFFF"); // aqua
+        LABEL_COLORS.add("#4682B4"); // steel blue
+        LABEL_COLORS.add("#1E90FF"); // dodger blue
+        LABEL_COLORS.add("#0000CD"); // medium blue
+        LABEL_COLORS.add("#8A2BE2"); // blue violet
+        LABEL_COLORS.add("#4B0082"); // indigo
+        LABEL_COLORS.add("#8B008B"); // dark magenta
+        LABEL_COLORS.add("#D2691E"); // chocolate
+    }
     protected static final int MAX_BATCH_SIZE = 10000;
     protected Container _container;
     protected final User _user;
@@ -254,7 +277,8 @@ public class DataGenerator<T extends DataGenerator.Config>
         SampleTypeService service = SampleTypeService.get();
         _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields));
         return service.createSampleType(_container, _user, sampleTypeName,
-                "Generated sample type", props, List.of(), namingPattern);
+                "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
+                randomIndex(LABEL_COLORS), randomIndex(UNITS), null, null, null);
     }
 
     public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
@@ -303,11 +327,11 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromDataClass / dataClassParentTypes.size();
             for (String parentType : dataClassParentTypes)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType, _container);
             }
         }
 
-        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain());
+        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain(), _container);
         int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
@@ -316,7 +340,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType, _container);
             }
         }
         // TODO create some % of the pooled samples
@@ -494,10 +518,10 @@ public class DataGenerator<T extends DataGenerator.Config>
     public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException
     {
         QueryUpdateService svc = getDataClassSchema().getTable(dataClass.getName()).getUpdateService();
-        return generateDomainData(numObjects, svc, dataClass.getDomain());
+        return generateDomainData(numObjects, svc, dataClass.getDomain(), _container);
     }
 
-    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity) throws SQLException, BatchValidationException
+    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity, Container container) throws SQLException, BatchValidationException
     {
         if (_config.getMaxChildrenPerParent() <= 0)
         {
@@ -547,7 +571,7 @@ public class DataGenerator<T extends DataGenerator.Config>
                 }
                 p++;
             }
-            int numImported = importRows(rows, errors, service);
+            int numImported = importRows(rows, errors, service, container);
             dataChanged = numImported > 0;
             totalImported += numImported;
 
@@ -559,10 +583,10 @@ public class DataGenerator<T extends DataGenerator.Config>
         return totalImported;
     }
 
-    protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service) throws BatchValidationException, SQLException
+    protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service, Container container) throws BatchValidationException, SQLException
     {
         ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-        var numImported = service.importRows(_user, _container, rowsDI, errors, null, null);
+        var numImported = service.importRows(_user, container, rowsDI, errors, null, null);
         if (errors.hasErrors())
             throw errors;
         return numImported;
@@ -583,7 +607,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return timer;
     }
 
-    private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
+    private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain, Container container) throws BatchValidationException, SQLException
     {
         checkAlive(_job);
         _log.info(String.format("Generating %d rows of data ...", totalRows));
@@ -593,7 +617,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         while (numImported < totalRows)
         {
             List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
-            numImported += importRows(rows, errors, service);
+            numImported += importRows(rows, errors, service, container);
             _log.info("... " + numImported);
         }
         return numImported;
@@ -648,6 +672,11 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         double random = Math.random() < 0.5 ? ((1 - Math.random()) * (max - min) + min) : (Math.random() * (max - min) + min);
         return String.format("%.2f", random);
+    }
+
+    public static <T> T randomIndex(List<T> list)
+    {
+        return list.get(randomInt(0, list.size()));
     }
 
     public static <T> T randomIndex(T[] array)

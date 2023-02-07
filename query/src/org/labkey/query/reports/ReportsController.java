@@ -4020,6 +4020,63 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class GetReportInfosAction extends ReadOnlyApiAction<GetReportInfosForm>
+    {
+        @Override
+        public ApiResponse execute(GetReportInfosForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> json = new ArrayList<>();
+
+            DataViewProvider.Type type = DataViewService.get().getDataTypeByName("reports");
+            if (type != null)
+            {
+                DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
+                if (provider != null)
+                {
+                    List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
+                    for (DataViewInfo report : reports)
+                    {
+                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+                    }
+                }
+            }
+
+            response.put("schemaName", form.getSchemaName());
+            response.put("queryName", form.getQueryName());
+            response.put("reports", json);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    private static class GetReportInfosForm
+    {
+        private String _schemaName;
+        private String _queryName;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
+
     public static class ParticipantViewReportForm extends ReportForm
     {
         private boolean _showInParticipantView;

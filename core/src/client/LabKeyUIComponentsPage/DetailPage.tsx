@@ -82,7 +82,7 @@ export const DetailPage: FC<Props> = memo(props => {
             setQueryConfigs({
                 model: {
                     keyValue: keyValue,
-                    schemaQuery: SchemaQuery.create(schemaName, queryName),
+                    schemaQuery: new SchemaQuery(schemaName, queryName),
                 }
             });
         }

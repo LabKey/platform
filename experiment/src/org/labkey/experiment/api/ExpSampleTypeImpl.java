@@ -658,10 +658,31 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public List<ExpMaterialImpl> getSamples(Container c)
     {
+        return getSamples(c, null);
+    }
+
+    @Override
+    public List<ExpMaterialImpl> getSamples(Container c, @Nullable ContainerFilter cf)
+    {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
+    }
+
+    @Override
+    public long getSamplesCount(Container c, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+
+        TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
+        return new TableSelector(tInfo, tInfo.getPkColumns(), filter, null).getRowCount();
     }
 
     @Override
