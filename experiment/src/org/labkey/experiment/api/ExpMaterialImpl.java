@@ -228,6 +228,30 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public Double getStoredAmount()
+    {
+        return _object.getStoredAmount();
+    }
+
+    @Override
+    public void setStoredAmount(Double amount)
+    {
+        _object.setStoredAmount(amount);
+    }
+
+    @Override
+    public String getUnits()
+    {
+        return _object.getUnits();
+    }
+
+    @Override
+    public void setUnits(String units)
+    {
+        _object.setUnits(units);
+    }
+
+    @Override
     public boolean isRecomputeRollup()
     {
         return _object.isRecomputeRollup();

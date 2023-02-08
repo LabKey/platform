@@ -34,6 +34,9 @@ public class Material extends RunItem
     private String aliquotedFromLSID;
     private Integer sampleState;
 
+    private Double storedAmount;
+    private String units;
+
     // aliquot rollup columns
     private Boolean recomputeRollup;
     private Integer aliquotCount;
@@ -78,6 +81,26 @@ public class Material extends RunItem
     public Integer getSampleState()
     {
         return sampleState;
+    }
+
+    public Double getStoredAmount()
+    {
+        return storedAmount;
+    }
+
+    public void setStoredAmount(Double storedAmount)
+    {
+        this.storedAmount = storedAmount;
+    }
+
+    public String getUnits()
+    {
+        return units;
+    }
+
+    public void setUnits(String units)
+    {
+        this.units = units;
     }
 
     public void setSampleState(Integer sampleState)

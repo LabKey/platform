@@ -66,6 +66,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
@@ -214,12 +215,12 @@ public class ExpDataIterators
     public static class ExpMaterialValidatorIterator extends ValidatorIterator
     {
         private Integer _aliquotedFromColInd = null;
-        private boolean isUpdateOnly;
+        private final boolean _isUpdateOnly;
 
         public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
         {
             super(data, context, c, user);
-            isUpdateOnly = context.getInsertOption().updateOnly;
+            _isUpdateOnly = context.getInsertOption().updateOnly;
         }
 
         @Override
@@ -228,9 +229,9 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (!isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
+                if (!_isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
-                else if (isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
+                else if (_isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
                     _aliquotedFromColInd = -1;
@@ -259,6 +260,54 @@ public class ExpDataIterators
 
             return v.validate(rowNum, value);
         }
+    }
+
+    public static class ExpMaterialAmountDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final User _user;
+        private final ExpSampleType _sampleType;
+
+        public ExpMaterialAmountDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container container, @NotNull User user)
+        {
+            _in = in;
+            _container = container;
+            _user = user;
+            _sampleType = ((ExpMaterialTableImpl) target).getSampleType();
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new ExpMaterialAmountDataIterator(pre, context, _sampleType));
+        }
+    }
+
+    public static class ExpMaterialAmountDataIterator extends WrapperDataIterator
+    {
+        List<String> _errorMsgs = new ArrayList<>();
+        private final SampleMeasurementUnit _metricUnit;
+        final Integer _storedAmountCol;
+        final Integer _storedUnitsCol;
+        final DataIteratorContext _context;
+
+        protected ExpMaterialAmountDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
+        {
+            super(di);
+            _context = context;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _storedAmountCol = map.get("StoredAmount");
+            _storedUnitsCol = map.get("Units");
+            _metricUnit = sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(sampleType.getMetricUnit()) : null;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
     }
 
     public static class ExpMaterialDataIteratorBuilder extends StandardDataIteratorBuilder
@@ -342,7 +391,7 @@ public class ExpDataIterators
             if (getErrors().hasErrors())
                 return hasNext;
 
-            // after the last row, insert all of the aliases
+            // after the last row, insert all aliases
             if (!hasNext)
             {
                 final ExperimentService svc = ExperimentService.get();

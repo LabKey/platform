@@ -67,6 +67,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -221,6 +222,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
+        dib = new ExpDataIterators.ExpMaterialAmountDataIteratorBuilder(getQueryTable(), dib, container, user);
 
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
@@ -1004,7 +1006,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
                 if (isReservedHeader(name) || isContainerField)
                 {
-                    // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
+                    // Allow some fields on exp.materials to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.
                     if (isCommentHeader(name))
                         continue;
@@ -1017,6 +1019,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isAliasHeader(name))
                         continue;
                     if (isSampleStateHeader(name))
+                        continue;
+                    if (isStoredAmountHeader(name))
+                        continue;
+                    if (isUnitsHeader(name))
                         continue;
                     drop.add(name);
                 }
@@ -1121,6 +1127,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliasHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.Alias, name);
+        }
+
+        private static boolean isStoredAmountHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.StoredAmount, name);
+        }
+
+        public static boolean isUnitsHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Units, name);
         }
     }
 
@@ -1335,16 +1351,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             int derivationDataColInd = -1;
-            for (int i = 1; i <= count; i++)
+            int unitDataColInd = -1;
+            for (int i = 1; i <= count && derivationDataColInd < 0 && unitDataColInd < 0; i++)
             {
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
-                    {
                         derivationDataColInd = i;
-                        break;
-                    }
+                    else if ("Units".equalsIgnoreCase(from.getName()))
+                        unitDataColInd = i;
                 }
             }
 
@@ -1381,6 +1397,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         }
                         else
                             addColumn(to.getName(), i);
+                    }
+                    else if (name.equalsIgnoreCase("Units"))
+                    {
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
+                    }
+                    else if (name.equalsIgnoreCase("StoredAmount"))
+                    {
+                        addColumn(to, new SampleAmountConvertColumn(name, i, unitDataColInd, to.getJdbcType()));
                     }
                     else
                     {
@@ -1425,6 +1449,110 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
+        }
+
+
+        protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
+        {
+            private final SampleMeasurementUnit _metricUnit;
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            {
+                super(fieldName, indexFrom, to, true);
+                _metricUnit = _sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(_sampleType.getMetricUnit()) : null;
+            }
+
+            @Override
+            protected Object convert(Object o)
+            {
+                return getUnits((String) o);
+            }
+
+            protected String getUnits(String sampleUnits)
+            {
+                if (!StringUtils.isEmpty(sampleUnits))
+                {
+                    sampleUnits = sampleUnits.trim();
+                    try
+                    {
+                        SampleMeasurementUnit mUnit = SampleMeasurementUnit.valueOf(sampleUnits);
+                        if (_metricUnit != null && mUnit.getType() != _metricUnit.getType())
+                            throw new ConversionException("Units value (" + sampleUnits + ") cannot be converted to the default units (" + _metricUnit + ") for this sample type.");
+                        return sampleUnits;
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        SampleMeasurementUnit unit = SampleMeasurementUnit.getUnitFromLabel(sampleUnits);
+                        if (unit == null)
+                            throw new ConversionException("Unsupported Units value (" + sampleUnits + ").  Supported values are: " + StringUtils.join(SampleMeasurementUnit.values(), ", ") + ".");
+                        else
+                            return unit.toString();
+                    }
+                }
+
+                return _metricUnit == null ? null : _metricUnit.name();
+            }
+        }
+
+        protected class SampleAmountConvertColumn extends SampleUnitsConvertColumn
+        {
+            private final int _unitsIndex;
+
+            public SampleAmountConvertColumn(String fieldName, int indexFrom, int unitsIndex, @Nullable JdbcType to)
+            {
+                super(fieldName, indexFrom, to);
+                _unitsIndex = unitsIndex;
+            }
+
+            @Override
+            protected Object convert(Object amountObj)
+            {
+                Double amount;
+                if (amountObj == null)
+                    return null;
+                else if (amountObj instanceof Integer)
+                {
+                    amount = Double.valueOf((int) amountObj);
+                }
+                else if (amountObj instanceof Double)
+                {
+                    amount =  (Double) amountObj;
+                }
+                else if (amountObj instanceof String)
+                    try
+                    {
+                        amount =  Double.valueOf((String) amountObj);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        throw new ConversionException("StoredAmount (" + amountObj + ") must be a number.");
+                    }
+                else
+                   throw new ConversionException("StoredAmount (" + amountObj + ") must be a number.");
+
+                String sampleTypeUnitStr = _sampleType.getMetricUnit();
+                try
+                {
+                    String sampleUnitStr = getUnits((String) _data.get(_unitsIndex));
+                    if (!StringUtils.isEmpty(sampleTypeUnitStr) && !StringUtils.isEmpty(sampleUnitStr))
+                    {
+                        if (sampleTypeUnitStr.equals(sampleUnitStr))
+                            return amount;
+
+                        SampleMeasurementUnit sampleTypeUnit = SampleMeasurementUnit.getUnitFromLabel(sampleTypeUnitStr);
+                        SampleMeasurementUnit sampleUnit = SampleMeasurementUnit.getUnitFromLabel(sampleUnitStr);
+                        if (sampleTypeUnit != null && sampleUnit != null)
+                        {
+                            return sampleUnit.convertAmount(amount, sampleTypeUnit);
+                        }
+                    }
+                }
+                catch (ConversionException ignored)
+                {
+                    // this exception is better associated with the units field.
+                }
+
+                return amount;
+            }
         }
     }
 
