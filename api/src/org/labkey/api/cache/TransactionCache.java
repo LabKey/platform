@@ -62,7 +62,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public V get(@NotNull K key, Object arg, @Nullable CacheLoader<K, V> loader)
     {
-        // No locks or synchronization below because we're always single-threaded (unlike BlockingCache)
+        // No locks or synchronization below because this code is always single-threaded (unlike BlockingCache)
 
         V v = _privateCache.get(key);
 
@@ -72,7 +72,19 @@ public class TransactionCache<K, V> implements Cache<K, V>
         }
         else if (null == v && !_hasBeenCleared)
         {
-            v = _sharedCache.get(key); // Entry has never been modified, so read-through to shared cache
+            try
+            {
+                v = _sharedCache.get(key, null, (key1, argument) -> {
+                    throw new MissingCacheEntryException();
+                });
+                // Shared cache has an entry for this key, so don't invoke the loader
+                if (null == v)
+                    v = NULL_MARKER; // Cached miss; use null marker to skip loading. Issue 47234
+            }
+            catch (MissingCacheEntryException e)
+            {
+                // Missing from private & shared cache; fall through to private cache load/put
+            }
         }
 
         // If removed/cleared from private cache or missing from both caches, attempt to load and put into private cache
@@ -145,5 +157,9 @@ public class TransactionCache<K, V> implements Cache<K, V>
     public Cache<K, V> createTemporaryCache()
     {
         throw new UnsupportedOperationException();
+    }
+
+    private static class MissingCacheEntryException extends RuntimeException
+    {
     }
 }
