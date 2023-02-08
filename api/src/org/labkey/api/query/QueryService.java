@@ -71,7 +71,7 @@ public interface QueryService
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
-    String USE_BATCH_UPDATE_ROWS = "useBatchUpdateRows";
+    String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);

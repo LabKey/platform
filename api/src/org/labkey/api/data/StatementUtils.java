@@ -82,6 +82,7 @@ public class StatementUtils
     private boolean _selectIds = false;
     private boolean _selectObjectUri = false;
     private boolean _allowUpdateAutoIncrement = false;
+    private boolean _preferPKOverObjectUriAsKey = false;
 
     // variable/parameter tracking helpers
     private boolean useVariables = false;
@@ -166,6 +167,12 @@ public class StatementUtils
     public StatementUtils setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
     {
         _vocabularyProperties = vocabularyProperties;
+        return this;
+    }
+
+    public StatementUtils setPreferPKOverObjectUriAsKey(boolean preferPKOverObjectUriAsKey)
+    {
+        _preferPKOverObjectUriAsKey = preferPKOverObjectUriAsKey;
         return this;
     }
 
@@ -529,9 +536,6 @@ public class StatementUtils
         // Keys for UPDATE or MERGE
         //
 
-        // TODO more control/configuration
-        // using objectURIColumnName preferentially to be backward compatible with OntologyManager.saveTabDelimited
-        //    which in turn is only called by LuminexDataHandler.saveDataRows()
         LinkedHashMap<FieldKey,ColumnInfo> keys = new LinkedHashMap<>();
         ColumnInfo col = table.getColumn("Container");
         if (null != col)
@@ -548,8 +552,10 @@ public class StatementUtils
         }
         else
         {
+            // using objectURIColumnName preferentially to be backward compatible with OntologyManager.saveTabDelimited
+            //    which in turn is only called by LuminexDataHandler.saveDataRows()
             col = objectURIColumnName == null ? null : table.getColumn(objectURIColumnName);
-            if (null != col)
+            if (null != col && !_preferPKOverObjectUriAsKey)
                 keys.put(col.getFieldKey(), col);
             else
             {

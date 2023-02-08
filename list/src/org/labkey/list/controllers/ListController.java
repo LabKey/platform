@@ -720,7 +720,9 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            setShowImportOptions(_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger);
+            boolean allowImportOptions = _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger;
+            setShowMergeOption(allowImportOptions);
+            setShowUpdateOption(allowImportOptions);
             setSuccessMessageSuffix("imported");
             return getDefaultImportView(form, errors);
         }
