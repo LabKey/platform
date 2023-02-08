@@ -39,6 +39,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
@@ -96,6 +97,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -1282,4 +1285,73 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         return message + " " + operation.getDescription() + ".";
     }
+
+    private Collection<Integer> _getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment(
+                """
+                        SELECT parent.rowId
+                        FROM exp.material AS parent
+                        WHERE parent.container = ?
+                            AND parent.RecomputeRollup = ?
+                            AND parent.lsid NOT IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE rootMaterialLsid IS NOT NULL)
+                            AND parent.cpastype = ?"""
+        );
+
+        sql.add(container.getId());
+        sql.add(true);
+        sql.add(sampleTypeLsid);
+
+        Set<Integer> parentIds = new HashSet<>();
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+                parentIds.add(rs.getInt(1));
+        }
+
+        return parentIds;
+    }
+
+    private int _resetRecomputeFlagForNonParents(Collection<Integer> parentIds)
+    {
+        if (!parentIds.isEmpty())
+        {
+            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+            DbScope scope = tableInfo.getSchema().getScope();
+
+            try (Connection c = scope.getConnection())
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
+                        append(" SET RecomputeRollup = ? WHERE RowId ");
+                sql.add(false);
+                sql.appendInClause(parentIds, tableInfo.getSqlDialect());
+                new SqlExecutor(tableInfo.getSchema()).execute(sql);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+        return parentIds.size();
+    }
+
+    // volumne/unit update events might have marked sample that is not an aliquot parent as need re-calc, which should be cleaned up
+    @Override
+    public int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
+    {
+        Collection<Integer> parentIds = _getNonAliquotParentsWithRecalcSql(sampleType.getLSID(), container);
+        return _resetRecomputeFlagForNonParents(parentIds);
+    }
+
+    @Override
+    public long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container)
+    {
+        var s = DbSchema.get("exp", DbSchemaType.Module);
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT rowId FROM exp.material WHERE RecomputeRollup=" + s.getSqlDialect().getBooleanTRUE());
+        sql.append(" AND cpastype = ? AND container = ?");
+        sql.add(sampleType.getLSID());
+        sql.add(container.getId());
+        return new SqlSelector(s, sql).getRowCount();
+    }
+
 }
