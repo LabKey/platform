@@ -74,12 +74,13 @@ public class TransactionCache<K, V> implements Cache<K, V>
         {
             try
             {
+                // Entry has not been modified in the private cache, so read through to shared cache
                 v = _sharedCache.get(key, null, (key1, argument) -> {
                     throw new MissingCacheEntryException();
                 });
-                // Shared cache has an entry for this key, so don't invoke the loader
+                // Shared cache has an entry for this key, so return it and don't invoke the loader
                 if (null == v)
-                    v = NULL_MARKER; // Cached miss; use null marker to skip loading. Issue 47234
+                    v = NULL_MARKER; // Cached miss in shared cache; use null marker to skip loading. Issue 47234
             }
             catch (MissingCacheEntryException e)
             {
