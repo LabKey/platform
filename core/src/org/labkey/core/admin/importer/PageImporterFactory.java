@@ -17,7 +17,6 @@ package org.labkey.core.admin.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
@@ -27,7 +26,6 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -41,8 +39,7 @@ import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.PagesDocument;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,9 +126,15 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(pagesFileName, e);
                 }
 
-                PagesDocument.Pages.Page[] pageXmls = pagesDocXml.getPages().getPageArray();
+                List<PagesDocument.Pages.Page> pageXmls = new ArrayList<>(Arrays.asList(pagesDocXml.getPages().getPageArray()));
                 List<FolderTab> tabs = new ArrayList<>();
                 int webpartCount = 0;
+
+                FolderTab defaultTab = ctx.getContainer().getFolderType().getDefaultTab();
+                String defaultPageId = defaultTab == null ? Portal.DEFAULT_PORTAL_PAGE_ID : defaultTab.getName();
+
+                dedupePortalTabs(pageXmls, defaultPageId);
+
                 for (PagesDocument.Pages.Page pageXml : pageXmls)
                 {
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
@@ -196,7 +199,52 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 // Clear the cache one more time - attempt to avoid race condition on TeamCity
                 WebPartCache.remove(ctx.getContainer());
 
-                ctx.getLogger().info("Done importing " + pageXmls.length + " page(s) with " + webpartCount + " webpart(s)");
+                ctx.getLogger().info("Done importing " + pageXmls.size() + " page(s) with " + webpartCount + " webpart(s)");
+            }
+        }
+
+        private void dedupePortalTabs(List<PagesDocument.Pages.Page> pageXmls, String defaultPageId)
+        {
+            // See if the folder isn't using the legacy portal definition by default
+            if (!defaultPageId.equals(Portal.DEFAULT_PORTAL_PAGE_ID))
+            {
+                // Need to check and potentially de-dupe the legacy and new default tab, so find them in the list
+                PagesDocument.Pages.Page folderDefaultTabXml = null;
+                PagesDocument.Pages.Page portalDefaultTabXml = null;
+                for (PagesDocument.Pages.Page pageXml : pageXmls)
+                {
+                    if (Portal.DEFAULT_PORTAL_PAGE_ID.equals(pageXml.getName()))
+                    {
+                        portalDefaultTabXml = pageXml;
+                    }
+                    else if (defaultPageId.equals(pageXml.getName()))
+                    {
+                        folderDefaultTabXml = pageXml;
+                    }
+                }
+
+                // We found both the legacy name and the default tab for this folder
+                if (portalDefaultTabXml != null && folderDefaultTabXml != null)
+                {
+                    // The folder's default tab is empty
+                    if (folderDefaultTabXml.getWebpartArray().length == 0)
+                    {
+                        // Remove it from the list and repurpose the legacy name
+                        pageXmls.remove(folderDefaultTabXml);
+                        portalDefaultTabXml.setName(defaultPageId);
+                    }
+                    else
+                    {
+                        // Prefer the folder's default tab
+                        pageXmls.remove(portalDefaultTabXml);
+                    }
+                }
+
+                if (portalDefaultTabXml != null && folderDefaultTabXml == null)
+                {
+                    // We only have the legacy version - rename it to the folder's default
+                    portalDefaultTabXml.setName(defaultPageId);
+                }
             }
         }
 
