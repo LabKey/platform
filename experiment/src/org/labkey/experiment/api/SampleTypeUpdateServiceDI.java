@@ -1352,7 +1352,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             int derivationDataColInd = -1;
             int unitDataColInd = -1;
-            for (int i = 1; i <= count && derivationDataColInd < 0 && unitDataColInd < 0; i++)
+            int amountDataColInd = -1;
+            for (int i = 1; i <= count && (derivationDataColInd < 0 || unitDataColInd < 0 || amountDataColInd < 0); i++)
             {
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
@@ -1361,6 +1362,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         derivationDataColInd = i;
                     else if ("Units".equalsIgnoreCase(from.getName()))
                         unitDataColInd = i;
+                    else if ("StoredAmount".equalsIgnoreCase(from.getName()))
+                        amountDataColInd = i;
                 }
             }
 
@@ -1400,7 +1403,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (name.equalsIgnoreCase("Units"))
                     {
-                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, amountDataColInd, to.getJdbcType()));
                     }
                     else if (name.equalsIgnoreCase("StoredAmount"))
                     {
@@ -1454,10 +1457,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
+            private final int _amountIndex;
             private final SampleMeasurementUnit _metricUnit;
-            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, int amountIndex, @Nullable JdbcType to)
             {
                 super(fieldName, indexFrom, to, true);
+                _amountIndex = amountIndex;
                 _metricUnit = _sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(_sampleType.getMetricUnit()) : null;
             }
 
@@ -1499,7 +1504,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             public SampleAmountConvertColumn(String fieldName, int indexFrom, int unitsIndex, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, to);
+                super(fieldName, indexFrom, indexFrom, to);
                 _unitsIndex = unitsIndex;
             }
 
@@ -1524,22 +1529,25 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     catch (NumberFormatException e)
                     {
-                        throw new ConversionException("StoredAmount (" + amountObj + ") must be a number.");
+                        throw new ConversionException("Amount (" + amountObj + ") must be a number.");
                     }
                 else
-                   throw new ConversionException("StoredAmount (" + amountObj + ") must be a number.");
+                   throw new ConversionException("Amount (" + amountObj + ") must be a number.");
 
                 String sampleTypeUnitStr = _sampleType.getMetricUnit();
                 try
                 {
+                    if (_unitsIndex < 0)
+                        return amount;
+
                     String sampleUnitStr = getUnits((String) _data.get(_unitsIndex));
                     if (!StringUtils.isEmpty(sampleTypeUnitStr) && !StringUtils.isEmpty(sampleUnitStr))
                     {
                         if (sampleTypeUnitStr.equals(sampleUnitStr))
                             return amount;
 
-                        SampleMeasurementUnit sampleTypeUnit = SampleMeasurementUnit.getUnitFromLabel(sampleTypeUnitStr);
-                        SampleMeasurementUnit sampleUnit = SampleMeasurementUnit.getUnitFromLabel(sampleUnitStr);
+                        SampleMeasurementUnit sampleTypeUnit = SampleMeasurementUnit.getUnit(sampleTypeUnitStr);
+                        SampleMeasurementUnit sampleUnit = SampleMeasurementUnit.getUnit(sampleUnitStr);
                         if (sampleTypeUnit != null && sampleUnit != null)
                         {
                             return sampleUnit.convertAmount(amount, sampleTypeUnit);

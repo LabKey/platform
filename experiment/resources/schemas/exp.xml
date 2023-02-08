@@ -299,9 +299,15 @@
       <column columnName="StoredAmount">
           <columnTitle>Amount</columnTitle>
           <description>The amount of this sample currently on hand</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.StoredAmountDisplayFactory</className>
+          </displayColumnFactory>
       </column>
       <column columnName="Units">
           <description>The units associated with the Amount for this sample</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
+          </displayColumnFactory>
       </column>
       <column columnName="RecomputeRollup">
           <isHidden>true</isHidden>
@@ -995,8 +1001,16 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
-      <column columnName="StoredAmount"/>
-      <column columnName="Units"/>
+      <column columnName="StoredAmount">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.StoredAmountDisplayFactory</className>
+          </displayColumnFactory>
+      </column>
+      <column columnName="Units">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
+          </displayColumnFactory>
+      </column>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">

@@ -45,6 +45,14 @@ public enum SampleMeasurementUnit
         return otherUnit != null && this._type == otherUnit._type;
     }
 
+    public static SampleMeasurementUnit getUnit(String unitString)
+    {
+        SampleMeasurementUnit unit = getUnitFromName(unitString);
+        if (unit != null)
+            return unit;
+        return getUnitFromLabel(unitString);
+    }
+
     public static SampleMeasurementUnit getUnitFromLabel(String label)
     {
         if (label == null)
