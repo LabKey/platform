@@ -99,7 +99,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public List<Pair<String, String>> urlExcelTemplates = null;
         public String importMessage = null;
         public String successMessageSuffix = "inserted";
-        public boolean showImportOptions = false;
+        public boolean showMergeOption = false;
+        public boolean showUpdateOption = false;
         public boolean hideTsvCsvCombo = false;
         // extra EXT config to inject into the form
         public JSONArray extraFields = null;
@@ -175,10 +176,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _importViewBean.importHelpDisplayText = displayText;
     }
 
-    protected void setShowImportOptions(boolean b)
+    protected void setShowMergeOption(boolean b)
     {
         if (b && canUpdate(getUser()))
-            _importViewBean.showImportOptions = true;
+            _importViewBean.showMergeOption = true;
+    }
+
+    protected void setShowUpdateOption(boolean b)
+    {
+        if (b && canUpdate(getUser()))
+            _importViewBean.showUpdateOption = true;
     }
 
     protected void setTypeName(String name)

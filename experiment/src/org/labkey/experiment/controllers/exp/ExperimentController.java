@@ -4036,7 +4036,6 @@ public class ExperimentController extends SpringActionController
             initRequest(form);
             setHelpTopic("importSampleSets");           // page-wide help topic
             setImportHelpTopic("importSampleSets");     // importOptions help topic
-            setShowImportOptions(true);
             setTypeName("samples");
             return getDefaultImportView(form, errors);
         }
@@ -4072,7 +4071,12 @@ public class ExperimentController extends SpringActionController
             if (!qpe.isEmpty())
                 throw qpe.get(0);
             if (null != t)
+            {
                 setTarget(t);
+                setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
+                setShowUpdateOption(t.supportsInsertOption(QueryUpdateService.InsertOption.UPDATE));
+            }
+
             _auditBehaviorType = form.getAuditBehavior();
         }
 
@@ -4157,7 +4161,6 @@ public class ExperimentController extends SpringActionController
             initRequest(form);
             setHelpTopic("dataClass");           // page wide help topic
             setImportHelpTopic("dataClass#ui");     // importOptions help topic
-            setShowImportOptions(true);
             setTypeName("data");
             return getDefaultImportView(form, errors);
         }

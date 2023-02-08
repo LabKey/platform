@@ -123,6 +123,8 @@
     var successMessageSuffix = <%=q(bean.successMessageSuffix)%>;
     var importTsvForm;
     var uploadFileForm;
+    var allowUpdate = <%=bean.showUpdateOption%>;
+    var allowMerge = <%=bean.showMergeOption%>;
 
     // attach listeners to the buttons
     var importTsvExpando = Ext4.get(<%=q(copyPasteDivId+"Expando")%>);
@@ -332,24 +334,113 @@
 
     function getImportOptions(index)
     {
-        <%
-        if (bean.showImportOptions) {
-        %>
+        if (allowUpdate) {
+            return [{
+                xtype: 'radiogroup',
+                id:'insertOptionUI' + index,
+                itemId: 'insertOptionUI' + index,
+                name: 'insertOptionUI',
+                submitValue: false,
+                preventMark: true,
+                fieldLabel: 'Import Options',
+                columns: 1,
+                helpPopup: LABKEY.Utils.encodeHtml(
+                        '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
+                        'if there are existing row identifiers that match those being imported.</p>' +
+                        '<p>When \'Update ' + type + '\' is selected, data will be updated for matching row identifiers. When \'Allow new ' + type + ' during update\' is checked, new ' + type + ' will be created for any that do not match.' +
+                        ' Data will not be changed for any columns not in the imported data/file.</p>'
+                ),
+                defaults: {
+                    name: 'insertOptionUI'
+                },
+                listeners: {
+                    scope : this,
+                    change: function(field, newValue) {
+                        var isUpdate = newValue.insertOptionUI === 'UPDATE';
+
+                        if (allowMerge) {
+                            var mergeField = Ext4.getCmp('allowMergeCheckbox' + index);
+                            mergeField.setDisabled(!isUpdate);
+                            if (!isUpdate) {
+                                mergeField.setValue(false);
+                            }
+                        }
+
+                        var insertOption = Ext4.getCmp('insertOptionHidden' + index);
+                        if (!isUpdate) {
+                            insertOption.setValue("IMPORT");
+                        }
+                        else {
+                            insertOption.setValue("UPDATE");
+                        }
+                    },
+                },
+                items: [{
+                    boxLabel: 'Add ' + type + ' ' + ((!helpTopic || !helpDisplayText) ? "" : <%=q(new HelpTopic(bean.importHelpTopic).getLinkHtml(bean.importHelpDisplayText))%>),
+                    inputValue: 'IMPORT',
+                    checked: true
+                },{
+                    boxLabel: 'Update ' + type,
+                    inputValue: 'UPDATE',
+
+                }]
+            },{
+                xtype: 'fieldcontainer',
+                fieldLabel: '&nbsp;',
+                defaultType: 'checkboxfield',
+                id:'allowMergeField' + index,
+                itemId: 'allowMergeField' + index,
+                name: 'allowMergeField',
+                defaults: {
+                    name: 'allowMergeField'
+                },
+                labelWidth: 135,
+                labelSeparator : "",
+                submitValue: false,
+                hidden: !allowMerge,
+                items: [
+                    {
+                        boxLabel  : 'Allow new ' + type + ' during update',
+                        defaults: {
+                            name: 'allowMerge'
+                        },
+                        inputValue: true,
+                        itemId    : 'allowMergeCheckbox' + index,
+                        id        : 'allowMergeCheckbox' + index,
+                        disabled  : true,
+                        submitValue: false,
+                        listeners: {
+                            change: function(field, newValue) {
+                                var insertOption = Ext4.getCmp('insertOptionHidden' + index);
+                                insertOption.setValue(newValue ? "MERGE" : "UPDATE");
+                            }
+                        }
+                    }]
+            }, {
+                xtype   : 'hidden',
+                name    : 'insertOption',
+                itemId  : 'insertOptionHidden' + index,
+                id      : 'insertOptionHidden' + index,
+                value   : 'IMPORT',
+                submitValue: true
+            }];
+        }
+        else if (allowMerge) {
             return [{
                 xtype: 'checkbox',
-                id:'insertOption' + index,
+                id: 'insertOption' + index,
                 itemId: 'insertOption',
                 name: 'insertOption',
                 inputValue: <%=q(QueryUpdateService.InsertOption.MERGE.name())%>,
                 fieldLabel: 'Import Options',
                 boxLabel: 'Update data for existing ' + type + ' during import. ' +
-                        ((!helpTopic||!helpDisplayText) ? "" : <%=q(new HelpTopic(bean.importHelpTopic).getLinkHtml(bean.importHelpDisplayText))%>),
+                        ((!helpTopic || !helpDisplayText) ? "" : <%=q(new HelpTopic(bean.importHelpTopic).getLinkHtml(bean.importHelpDisplayText))%>),
                 preventMark: true,
                 helpPopup: LABKEY.Utils.encodeHtml(
-                    '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
-                    'if there are existing row identifiers that match those being imported.</p>' +
-                    '<p>When update is selected, data will be updated for matching row identifiers, and new rows will be created for any that do not match.' +
-                    ' Data will not be changed for any columns not in the imported data/file.</p>'
+                        '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
+                        'if there are existing row identifiers that match those being imported.</p>' +
+                        '<p>When update is selected, data will be updated for matching row identifiers, and new rows will be created for any that do not match.' +
+                        ' Data will not be changed for any columns not in the imported data/file.</p>'
                 ),
                 columns: 1,
                 defaults: {
@@ -368,14 +459,10 @@
                     }
                 ]
             }];
-        <%
         }
         else {
-        %>
             return [];
-        <%
         }
-        %>
     }
 
 
