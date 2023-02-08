@@ -1700,8 +1700,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (isProject())
             return new ContainerFilter.CurrentAndSubfoldersPlusShared(this, user);
 
-        if (getProject() != null && !QueryService.get().isProductProjectsAllFolderScopeEnabled())
-            return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
+        if (getProject() != null && QueryService.get().isProductProjectsAllFolderScopeEnabled())
+            return new ContainerFilter.AllInProjectPlusShared(this, user);
 
         return ContainerFilter.current(this);
     }

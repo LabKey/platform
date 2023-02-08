@@ -91,8 +91,24 @@ public class PdLookupForeignKey extends AbstractForeignKey
 
         if ("core".equalsIgnoreCase(null==lookupSchemaKey?null:lookupSchemaKey.getName()) && "Containers".equalsIgnoreCase(lookupQuery))
             cf = new ContainerFilter.AllFolders(user);
-        else if (targetContainer != null || cf == null)
-            cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer != null ? targetContainer : container);
+        else if (targetContainer != null)
+            cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer);
+        else
+        {
+            boolean allFolderScope = QueryService.get().isProductProjectsAllFolderScopeEnabled() && container.isProductProjectsEnabled();
+
+            if (cf == null)
+            {
+                if (allFolderScope)
+                    cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                else
+                    cf = new ContainerFilter.SimpleContainerFilterWithUser(user, container);
+            }
+            else if (allFolderScope && ContainerFilter.Type.Current.equals(cf.getType()))
+            {
+                cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            }
+        }
 
         return new PdLookupForeignKey(sourceSchema, container, user, cf, pd, lookupSchemaKey, lookupQuery, targetContainer);
     }
