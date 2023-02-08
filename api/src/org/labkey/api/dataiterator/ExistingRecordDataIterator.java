@@ -49,6 +49,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
     final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
     final int existingColIndex;
+    final Integer containerCol;
 
     // prefetch of existing records
     final boolean useMark;
@@ -85,6 +86,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
+        containerCol = map.get("Container");
+
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
         for (String name : keyNames)
         {
@@ -228,14 +231,23 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 allowedContainers.add(c.getId());
         }
 
-        private Pair<SQLFragment, Set<Integer>> getSelectExistingSql(int rows) throws BatchValidationException
+        private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
         {
             SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
-            Set<Integer> rowNums = new HashSet<>();
+            Map<Integer, String> rowNumContainers = new HashMap<>();
+            String container;
             do
             {
+                container = null;
                 lastPrefetchRowNumber = (Integer) _delegate.get(0);
+                if (containerCol != null)
+                {
+                    Object containerObj = _delegate.get(containerCol);
+                    if (containerObj != null)
+                        container = (String) containerObj;
+                }
+
                 sqlf.append(comma).append("(").append(lastPrefetchRowNumber);
                 comma = "\n,";
                 for (int p = 0; p < pkColumns.size(); p++)
@@ -244,7 +256,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
-                rowNums.add(lastPrefetchRowNumber);
+                rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
 
@@ -264,7 +276,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
                 and = " AND ";
             }
-            return new Pair<>(sqlf, rowNums);
+            return new Pair<>(sqlf, rowNumContainers);
         }
 
         protected void prefetchExisting() throws BatchValidationException
@@ -274,9 +286,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 return;
 
             // fetch N new rows into the existingRecords map
-            Pair<SQLFragment, Set<Integer>> selectRowsSql = getSelectExistingSql(50);
+            Pair<SQLFragment, Map<Integer, String>> selectRowsSql = getSelectExistingSql(50);
             SQLFragment select = selectRowsSql.first;
-            Set<Integer> rowNums = selectRowsSql.second;
+            Map<Integer, String> rowNumContainers = selectRowsSql.second;
             var list = new SqlSelector(target.getSchema(), select).getArrayList(Map.class);
             existingRecords.clear();
             for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
@@ -288,27 +300,34 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
                 if (_verifyExisting)
                 {
-                    String containerId = null;
+                    String existingContainerId = null;
                     if (map.containsKey("container"))
-                        containerId = (String) map.getOrDefault("container", "");
+                        existingContainerId = (String) map.getOrDefault("container", "");
                     else if (map.containsKey("folder"))
-                        containerId = (String) map.getOrDefault("folder", "");
+                        existingContainerId = (String) map.getOrDefault("folder", "");
 
-                    if (!StringUtils.isEmpty(containerId))
+                    if (!StringUtils.isEmpty(existingContainerId))
                     {
-                        if (!allowedContainers.contains(containerId))
-                            _context.getErrors().addRowError(new ValidationException("Data doesn't belong to the current folder at row number: " + r));
+                        if (!allowedContainers.contains(existingContainerId))
+                        {
+                            String providedContainer = rowNumContainers.get(r);
+
+                            // if a Container value is provided in the rows, its allowRowMutationForContainer has already been validated in SimpleTranslator.ContainerColumn
+                            if (!existingContainerId.equals(providedContainer))
+                                _context.getErrors().addRowError(new ValidationException("Data doesn't belong to the current container at row number: " + r));
+                        }
+
                     }
                 }
 
                 map.remove("_row_number_");
                 map.remove("_row"); // I think CachedResultSet adds "_row"
                 existingRecords.put(r,(Map<String,Object>)map);
-                rowNums.remove(r);
+                rowNumContainers.remove(r);
             }
 
-            if (_verifyExisting && rowNums.size() > 0)
-                _context.getErrors().addRowError(new ValidationException("No record found at row number: " + rowNums.iterator().next() + "."));
+            if (_verifyExisting && rowNumContainers.size() > 0)
+                _context.getErrors().addRowError(new ValidationException("No record found at row number: " + rowNumContainers.keySet().iterator().next() + "."));
 
             // backup to where we started so caller can iterate through them one at a time
             _unwrapped.reset(); // unwrapped _delegate

@@ -58,7 +58,7 @@ public class Constants
      */
     public static String getDocumentationVersion()
     {
-        return "22.11";
+        return "23.3";
     }
 
     /**
