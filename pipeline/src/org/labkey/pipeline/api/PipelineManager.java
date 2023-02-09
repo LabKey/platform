@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
@@ -766,7 +767,14 @@ public class PipelineManager
         JSONObject json = null;
         if (configuration != null)
         {
-            json = new JSONObject(configuration.toString());
+            try
+            {
+                json = new JSONObject(configuration.toString());
+            }
+            catch (JSONException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid JSON object for the configuration field: " + e);
+            }
         }
 
         // give the PipelineTriggerType a chance to validate the configuration JSON object
