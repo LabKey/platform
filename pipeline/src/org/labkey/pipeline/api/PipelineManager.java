@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -757,25 +756,17 @@ public class PipelineManager
             validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true, container, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, Container sourceContainer, User user)
+    private static void validateConfigJson(PipelineTriggerType<?> triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, Container sourceContainer, User user)
     {
         validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors, false, sourceContainer, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly, Container sourceContainer, User user)
+    private static void validateConfigJson(PipelineTriggerType<?> triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly, Container sourceContainer, User user)
     {
         JSONObject json = null;
         if (configuration != null)
         {
-            try
-            {
-                ObjectMapper mapper = new ObjectMapper();
-                json = mapper.readValue(configuration.toString(), JSONObject.class);
-            }
-            catch (IOException e)
-            {
-                errors.reject("Invalid JSON object for the configuration field: " + e.toString());
-            }
+            json = new JSONObject(configuration.toString());
         }
 
         // give the PipelineTriggerType a chance to validate the configuration JSON object
@@ -785,12 +776,6 @@ public class PipelineManager
             for (Pair<String, String> msg : configErrors)
                 errors.rejectValue(msg.first, null, msg.second);
         }
-    }
-
-    @Deprecated // Prefer validateFolderImportFileNioPath //TODO not sure if this is used or exposed outside of our code
-    public static File validateFolderImportFilePath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
-    {
-        return validateFolderImportFileNioPath(archiveFilePath, pipeRoot, errors).toFile();
     }
 
     public static Path validateFolderImportFileNioPath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
