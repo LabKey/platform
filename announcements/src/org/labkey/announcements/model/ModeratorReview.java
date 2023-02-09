@@ -31,7 +31,7 @@ public enum ModeratorReview
     None
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newUser)
         {
             return true;
         }
@@ -39,10 +39,10 @@ public enum ModeratorReview
     InitialPost
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newUser)
         {
             // Users approved by All setting are automatically approved here
-            if (All.isApproved(c, user))
+            if (All.isApproved(c, user, newUser))
                 return true;
 
             // Does this user have at least one approved announcement in this message board?
@@ -56,36 +56,27 @@ public enum ModeratorReview
     NewThread
     {
         @Override
-        public boolean isApproved(Container c, User user)
-        {
-            return isApproved(c, user, false);
-        }
-
-        @Override
         public boolean isApproved(Container c, User user, boolean newThread)
         {
-            if (All.isApproved(c, user))
+            if (All.isApproved(c, user, newThread))
                 return true;
 
-            return !newThread; // Starting a new thread requires moderator approval
+            // Approve if this is not a new thread AND the user has at least one approved message in the message board
+            return !newThread
+                    && InitialPost.isApproved(c, user, newThread);
         }
     },
     All
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             // Editors and above don't require moderator review; check for Delete permission as a proxy
             return c.hasPermission(user, DeletePermission.class);
         }
     };
 
-    public abstract boolean isApproved(Container c, User user);
-
-    public boolean isApproved(Container c, User user, boolean newThread)
-    {
-        return isApproved(c, user);
-    }
+    public abstract boolean isApproved(Container c, User user, boolean newThread);
 
     public static ModeratorReview get(String s)
     {
