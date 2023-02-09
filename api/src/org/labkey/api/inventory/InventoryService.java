@@ -53,8 +53,6 @@ public interface InventoryService
             "StorageLocation",
             "EnteredStorage",
             "StorageStatus",
-            "StoredAmount",
-            "Units",
             "StorageComment"
     );
 
