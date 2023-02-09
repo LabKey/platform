@@ -25,5 +25,5 @@ import org.labkey.api.security.User;
  */
 public interface SummaryNavItem extends NavItem
 {
-    public Long getRowCount(Container c, User u);
+    Long getRowCount(Container c, User u);
 }

@@ -26,11 +26,11 @@ import org.labkey.api.view.ActionURL;
  */
 public interface ImportingNavItem extends NavItem
 {
-    public ActionURL getImportUrl(Container c, User u);
+    ActionURL getImportUrl(Container c, User u);
 
-    public ActionURL getSearchUrl(Container c, User u);
+    ActionURL getSearchUrl(Container c, User u);
 
-    public ActionURL getBrowseUrl(Container c, User u);
+    ActionURL getBrowseUrl(Container c, User u);
 
-    public boolean isImportIntoWorkbooks(Container c, User u);
+    boolean isImportIntoWorkbooks(Container c, User u);
 }
