@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
@@ -66,10 +66,6 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 /**
- * User: brittp
- * Date: Sep 21, 2005
- * Time: 4:26:39 PM
- *
  * This class is used by an action to configure the template page.
  */
 public class PageConfig

@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline.trigger;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -51,7 +51,7 @@ public interface PipelineTriggerType<C extends PipelineTriggerConfig>
     /**
      * Allows the trigger type a chance to validate the configuration string on insert/update.
      * @param pipelineId The pipelineId
-     * @param isEnabled Whether or not the configuration is set to enabled.
+     * @param isEnabled Whether the configuration is enabled.
      * @param json The configuration (JSON) object
      * @return Error messages why the configuration is invalid for the given trigger type. Default empty list.
      */
