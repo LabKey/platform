@@ -304,7 +304,7 @@
           </displayColumnFactory>
       </column>
       <column columnName="Units">
-          <description>The units associated with the Amount for this sample</description>
+          <description>The units associated with the StoredAmount for this sample</description>
           <displayColumnFactory>
               <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
           </displayColumnFactory>
