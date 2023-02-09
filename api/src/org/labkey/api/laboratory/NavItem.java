@@ -20,13 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 /**
- * User: bimber
- * Date: 10/1/12
- * Time: 8:44 AM
- */
-
-/**
- * Experimental.  This describes
+ * Experimental
  */
 public interface NavItem
 {
