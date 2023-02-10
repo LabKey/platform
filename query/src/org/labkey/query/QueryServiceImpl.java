@@ -3203,12 +3203,24 @@ public class QueryServiceImpl implements QueryService
     public ContainerFilter getContainerFilterForLookups(Container container, User user)
     {
         // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
+        ContainerFilter.Type type = getContainerFilterTypeForLookups(container);
+
+        if (type == null)
+            return null;
+
+        return type.create(container, user);
+    }
+
+    @Override
+    @Nullable
+    public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
+    {
         if (container != null && container.isProductProjectsEnabled())
         {
             if (isProductProjectsAllFolderScopeEnabled())
-                return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+                return ContainerFilter.Type.AllInProjectPlusShared;
 
-            return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+            return ContainerFilter.Type.CurrentPlusProjectAndShared;
         }
 
         return null;

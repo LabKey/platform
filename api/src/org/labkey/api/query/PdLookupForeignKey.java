@@ -106,7 +106,9 @@ public class PdLookupForeignKey extends AbstractForeignKey
             }
             else if (allFolderScope && ContainerFilter.Type.Current.equals(cf.getType()))
             {
-                cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                ContainerFilter lookupCf = QueryService.get().getContainerFilterForLookups(container, user);
+                if (lookupCf != null)
+                    cf = lookupCf;
             }
         }
 

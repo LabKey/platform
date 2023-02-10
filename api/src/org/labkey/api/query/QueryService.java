@@ -625,5 +625,8 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
+    @Nullable
+    ContainerFilter.Type getContainerFilterTypeForLookups(Container container);
+
     boolean isProductProjectsAllFolderScopeEnabled();
 }

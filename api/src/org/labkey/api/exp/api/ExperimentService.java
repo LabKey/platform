@@ -191,8 +191,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     List<? extends ExpData> getExpDatas(ExpDataClass dataClass);
 
+    @Nullable
     ExpData getExpData(ExpDataClass dataClass, String name);
 
+    @Nullable
     ExpData getExpData(ExpDataClass dataClass, int rowId);
 
     /**
