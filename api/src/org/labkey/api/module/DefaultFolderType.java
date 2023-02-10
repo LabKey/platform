@@ -511,12 +511,6 @@ public class DefaultFolderType implements FolderType
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }
 
-    @Override
-    public void clearActivePortalPage()
-    {
-
-    }
-
     @NotNull
     @Override
     public List<NavTree> getExtraSetupSteps(Container c)

@@ -30,7 +30,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
@@ -42,8 +41,6 @@ import org.labkey.folder.xml.viewCategory.CategoryType;
 import org.labkey.folder.xml.viewCategory.ViewCategoryType;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * User: klum

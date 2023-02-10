@@ -15,14 +15,12 @@
  */
 package org.labkey.announcements.model;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 
 import java.io.Serializable;
 
 /**
- * Created by Marty on 1/15/2015.
- *
  * Bean class for comm.Tours
  */
 public class TourModel extends Entity implements Serializable
@@ -113,9 +111,9 @@ public class TourModel extends Entity implements Serializable
     public JSONObject toJSON()
     {
         JSONObject out = new JSONObject();
-        if (!this.getJson().equals(""))
+        if (!getJson().equals(""))
         {
-              out = new JSONObject(this.getJson());
+              out = new JSONObject(getJson());
         }
         return out;
     }

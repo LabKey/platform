@@ -20,36 +20,30 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 /**
- * User: bimber
- * Date: 10/1/12
- * Time: 8:44 AM
- */
-
-/**
- * Experimental.  This describes
+ * Experimental
  */
 public interface NavItem
 {
-    public static final String PROPERTY_CATEGORY = "ldk.navItem";
-    public static final String VIEW_PROPERTY_CATEGORY = "ldk.navItemDefaultView";
+    String PROPERTY_CATEGORY = "ldk.navItem";
+    String VIEW_PROPERTY_CATEGORY = "ldk.navItemDefaultView";
 
-    public DataProvider getDataProvider();
+    DataProvider getDataProvider();
 
-    public String getName();
+    String getName();
 
-    public String getLabel();
+    String getLabel();
 
-    public String getReportCategory();
+    String getReportCategory();
 
-    public String getRendererName();
+    String getRendererName();
 
-    public boolean isVisible(Container c, User u);
+    boolean isVisible(Container c, User u);
 
-    public boolean getDefaultVisibility(Container c, User u);
+    boolean getDefaultVisibility(Container c, User u);
 
-    public JSONObject toJSON(Container c, User u);
+    JSONObject toJSON(Container c, User u);
 
-    public String getPropertyManagerKey();
+    String getPropertyManagerKey();
 
-    public LaboratoryService.NavItemCategory getItemType();
+    LaboratoryService.NavItemCategory getItemType();
 }
