@@ -308,6 +308,12 @@
           <displayColumnFactory>
               <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
           </displayColumnFactory>
+          <fk>
+              <fkColumnName>Value</fkColumnName>
+              <fkDbSchema>exp</fkDbSchema>
+              <fkTable>SampleMeasurementUnit</fkTable>
+              <fkDisplayColumnName>Value</fkDisplayColumnName>
+          </fk>
       </column>
       <column columnName="RecomputeRollup">
           <isHidden>true</isHidden>
