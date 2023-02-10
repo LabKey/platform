@@ -1286,7 +1286,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
-    private Collection<Integer> _getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
+    private Collection<Integer> getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
     {
         SQLFragment sql = new SQLFragment(
                 """
@@ -1298,7 +1298,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                             AND parent.cpastype = ?"""
         );
 
-        sql.add(container.getId());
+        sql.add(container);
         sql.add(true);
         sql.add(sampleTypeLsid);
 
@@ -1312,7 +1312,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return parentIds;
     }
 
-    private int _resetRecomputeFlagForNonParents(Collection<Integer> parentIds)
+    private int resetRecomputeFlagForNonParents(Collection<Integer> parentIds)
     {
         if (!parentIds.isEmpty())
         {
@@ -1339,8 +1339,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
-        Collection<Integer> parentIds = _getNonAliquotParentsWithRecalcSql(sampleType.getLSID(), container);
-        return _resetRecomputeFlagForNonParents(parentIds);
+        Collection<Integer> parentIds = getNonAliquotParentsWithRecalcSql(sampleType.getLSID(), container);
+        return resetRecomputeFlagForNonParents(parentIds);
     }
 
     @Override
@@ -1350,7 +1350,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SQLFragment sql = new SQLFragment("SELECT DISTINCT rowId FROM exp.material WHERE RecomputeRollup=" + s.getSqlDialect().getBooleanTRUE());
         sql.append(" AND cpastype = ? AND container = ?");
         sql.add(sampleType.getLSID());
-        sql.add(container.getId());
+        sql.add(container);
         return new SqlSelector(s, sql).getRowCount();
     }
 

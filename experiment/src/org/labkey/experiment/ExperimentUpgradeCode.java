@@ -269,7 +269,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-22.003-20.004.sql
+     * Called from exp-23.000-23.001.sql
      */
     public static void cleanUpAliquotRecomputeFlag(ModuleContext context)
     {
