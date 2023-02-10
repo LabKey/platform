@@ -160,7 +160,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
      * TODO: HtmlString - Eventually, remove this method and all usages.
-     *
      * Use HtmlString.unsafe() instead, or even better use h() if possible
      */
     @Deprecated
@@ -266,7 +265,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Note that if you think that you require double quotes (") to be escaped, then it probably means that you
      * need to HTML escape the quoted string (i.e. call "hq" instead of "q").
      * Javascript inside of element event attributes (e.g. onclick="dosomething") needs to be HTML escaped.
-     * Javascript inside of &lt;script> tags should NEVER be HTML escaped.
+     * Javascript inside &lt;script> tags should NEVER be HTML escaped.
      */
     final protected JavaScriptFragment q(String str)
     {
@@ -300,7 +299,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     /**
      * Creates a JavaScript string literal of an HTML escaped value.
-     *
      * Ext, for example, will use the 'id' config parameter as an attribute value in an XTemplate.
      * The string value is inserted directly into the dom and so should be HTML encoded.
      */
@@ -657,14 +655,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         for (ObjectError e : l)
             _returnedErrors.put(e,path);
         return l;
-    }
-
-    public ObjectError getErrorForPath(String path)
-    {
-        List<ObjectError> l = _getErrorsForPath(path);
-        ObjectError e = l.size() == 0 ? null : l.get(0);
-        _returnedErrors.put(e,path);
-        return e;
     }
 
     public String formatErrorsForPathStr(String path)

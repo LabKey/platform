@@ -42,9 +42,9 @@ abstract public class AbstractNavItem implements NavItem
 
     private String _ownerKey = null;
     private Container _targetContainer = null;
-    private LaboratoryService.NavItemCategory _itemType;
-    private String _reportCategory;
-    private DataProvider _provider;
+    private final LaboratoryService.NavItemCategory _itemType;
+    private final String _reportCategory;
+    private final DataProvider _provider;
 
     protected AbstractNavItem(DataProvider provider, @Nullable LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
@@ -93,7 +93,7 @@ abstract public class AbstractNavItem implements NavItem
                 return false;
         }
 
-        Map<String, String> map = new CaseInsensitiveHashMap(PropertyManager.getProperties(targetContainer, NavItem.PROPERTY_CATEGORY));
+        Map<String, String> map = new CaseInsensitiveHashMap<>(PropertyManager.getProperties(targetContainer, NavItem.PROPERTY_CATEGORY));
         if (map.containsKey(getPropertyManagerKey()))
             return Boolean.parseBoolean(map.get(getPropertyManagerKey()));
 

@@ -35,74 +35,65 @@ public interface DataProvider
 {
     /**
      * Return the name of this DataProvider
-     * @return
      */
-    public String getName();
+    String getName();
 
     /**
      * Returns a key used to identify this provider
      */
-    public String getKey();
+    String getKey();
 
     /**
      * Return the URL holding instructions / help information
-     * @return
      */
-    public ActionURL getInstructionsUrl(Container c, User u);
+    ActionURL getInstructionsUrl(Container c, User u);
 
     /**
      * Return the list of NavItems that will appear in the list of data types
-     * @return
      */
-    public List<NavItem> getDataNavItems(Container c, User u);
+    List<NavItem> getDataNavItems(Container c, User u);
 
     /**
      * Return the list of NavItems that will appear in the list of samples
-     * @return
      */
-    public List<NavItem> getSampleNavItems(Container c, User u);
+    List<NavItem> getSampleNavItems(Container c, User u);
 
     /**
      * Return the list SettingsItems that will appear in the UI
-     * @return
      */
-    public List<NavItem> getSettingsItems(Container c, User u);
+    List<NavItem> getSettingsItems(Container c, User u);
 
     /**
      * Return the list of ReportItems that will appear in the list of reports
-     * @return
      */
-    public List<NavItem> getReportItems(Container c, User u);
+    List<NavItem> getReportItems(Container c, User u);
 
     /**
      * Return the list of ReportItems that will appear in the tabbed report UI
-     * @return
      */
-    public List<TabbedReportItem> getTabbedReportItems(Container c, User u);
+    List<TabbedReportItem> getTabbedReportItems(Container c, User u);
 
     /**
      * Return the list of NavItems that will appear under the Misc section in the UI
-     * @return
      */
-    public List<NavItem> getMiscItems(Container c, User u);
+    List<NavItem> getMiscItems(Container c, User u);
 
     /**
      * A metadata config object that will be applied to the fields on the run template page
-     * @return
      */
-    public JSONObject getTemplateMetadata(ViewContext ctx);
+    JSONObject getTemplateMetadata(ViewContext ctx);
 
     /**
      * @return Optional.  Returns a set of ClientDependencies that will be loaded on the request page for this assay
      */
-    public Set<ClientDependency> getClientDependencies();
+    Set<ClientDependency> getClientDependencies();
 
     /**
      * @return The module which provides this DataProvider
      */
-    public Module getOwningModule();
+    Module getOwningModule();
 
-    public List<SummaryNavItem> getSummary(Container c, User u);
+    List<SummaryNavItem> getSummary(Container c, User u);
 
-    public List<NavItem> getSubjectIdSummary(Container c, User u, String subjectId);
+    List<NavItem> getSubjectIdSummary(Container c, User u, String subjectId);
 }

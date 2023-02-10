@@ -32,81 +32,71 @@ import java.util.List;
  */
 public interface AssayImportMethod
 {
-    abstract public String getName();
+    String getName();
 
     /**
      * The display label
-     * @return
      */
-    abstract public String getLabel();
+    String getLabel();
 
     /**
      * If true, no link to download an excel template will appear on the result upload page.  Defaults to false
-     * @return
      */
-    abstract public boolean hideTemplateDownload();
+    boolean hideTemplateDownload();
 
     /**
      * @return A tooltip used for the radio button
      */
-    abstract public String getTooltip();
+    String getTooltip();
 
     /**
      * controls whether file content area shows. otherwise this would be a web form only. defaults to false
-     * @return
      */
-    abstract public boolean doEnterResultsInGrid();
+    boolean doEnterResultsInGrid();
 
     /**
      * URL to a file with example data
-     * @return
      */
-    abstract public String getExampleDataUrl(ViewContext ctx);
+    String getExampleDataUrl(ViewContext ctx);
 
     /**
      * instructions that will be displayed above the results area
-     * @return
      */
-    abstract public String getTemplateInstructions();
+    String getTemplateInstructions();
 
     /**
      * The name of an Ext class that will render the results preview.  Defaults to 'Laboratory.ext.AssayPreviewPanel'
-     * @return
      */
-    abstract public String getPreviewPanelClass();
+    String getPreviewPanelClass();
 
     /**
      * A metadata config object that will be applied to the fields on the import page
-     * @return
      */
-    abstract public JSONObject getMetadata(ViewContext ctx, ExpProtocol protocol);
+    JSONObject getMetadata(ViewContext ctx, ExpProtocol protocol);
 
     /**
      * Serialized this import method to JSON, which is consumed by the client
-     * @return
      */
-    abstract public JSONObject toJson(ViewContext ctx, ExpProtocol protocol);
+    JSONObject toJson(ViewContext ctx, ExpProtocol protocol);
 
     /**
      * Returns the AssayParser used to process data imported through this pathway.
-     * @return
      */
-    abstract public AssayParser getFileParser(Container c, User u, int assayId);
+    AssayParser getFileParser(Container c, User u, int assayId);
 
     /**
      * Returns true if this import method supports assay run templates, which allow the user to proactively
      * upload sample metadata and create an export to be read directly into an instrument
-     * @return
      */
-    abstract public boolean supportsRunTemplates();
+    boolean supportsRunTemplates();
 
-    abstract public String getProviderName();
+    String getProviderName();
 
-    abstract public void generateTemplate(ViewContext ctx, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json) throws BatchValidationException;
+    void generateTemplate(ViewContext ctx, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json) throws BatchValidationException;
 
-    abstract public void validateTemplate(User u, Container c, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, BatchValidationException errors) throws BatchValidationException;
+    void validateTemplate(User u, Container c, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, BatchValidationException errors) throws BatchValidationException;
 
-    abstract public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol);
+    List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol);
 
-    abstract public JSONObject getSupplementalTemplateMetadata();
+    JSONObject getSupplementalTemplateMetadata();
 }
