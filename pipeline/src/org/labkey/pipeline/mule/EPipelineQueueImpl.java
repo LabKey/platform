@@ -267,6 +267,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         {
             try
             {
+                job.setSubmitted();  // Enterprise Pipeline jobs don't get submitted in the same fashion as the standard pipeline, so set the flag here
                 dispatchJob(job);
             }
             catch (UMOException e)

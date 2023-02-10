@@ -434,17 +434,6 @@ abstract public class PipelineJob extends Job implements Serializable
         return _pipeRoot;
     }
 
-    /**
-     * Set Log file path and clear/reset logger
-     */
-    private void updateLogFilePath(Path logFile)
-    {
-        _logger = null; //This should trigger getting the new Logger next time getLogger is called
-        _logFile = logFile;
-
-        // Intentionally leave any existing log output in the file
-    }
-
     @Deprecated //Please switch to the Path version
     public void setLogFile(File logFile)
     {
@@ -453,9 +442,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFile(Path logFile)
     {
-        Path normalizedPath = logFile.toAbsolutePath().normalize();
-        updateLogFilePath(normalizedPath);
-        _logFile = normalizedPath;
+        // Set Log file path and clear/reset logger
+        _logFile = logFile.toAbsolutePath().normalize();;
+        _logger = null; //This should trigger getting the new Logger next time getLogger is called
     }
 
     public File getLogFile()
@@ -1119,7 +1108,7 @@ abstract public class PipelineJob extends Job implements Serializable
     // Should be called in run()'s finally by any class that overrides run(), if class uses LocalDirectory
     protected void finallyCleanUpLocalDirectory()
     {
-        if (null != _localDirectory & isDone())
+        if (null != _localDirectory && isDone())
         {
             try
             {
@@ -1882,8 +1871,6 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
         if (notificationProvider != null)
             notificationProvider.onJobDone(this);
-
-        finallyCleanUpLocalDirectory();  //Since this potentially contains the job log, it should be run after the notifications tasks are executed
     }
 
     protected String getJobNotificationProvider()

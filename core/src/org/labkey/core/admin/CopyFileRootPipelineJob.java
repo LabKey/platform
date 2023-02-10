@@ -156,10 +156,6 @@ public class CopyFileRootPipelineJob extends PipelineJob
             error("Unexpected error; ending job.", e);
             setStatus(TaskStatus.error);
         }
-        finally
-        {
-            finallyCleanUpLocalDirectory();
-        }
     }
 
     private TaskStatus copyOneFolder(Container container, Path sourceDir, Path destDir, long startTime)
