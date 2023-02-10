@@ -17,8 +17,8 @@ package org.labkey.api.laboratory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -211,13 +211,13 @@ public class TabbedReportItem extends AbstractNavItem
         if (map.containsKey(getOverridesPropertyKey(item)))
         {
             JSONObject props = new JSONObject(map.get(getOverridesPropertyKey(item)));
-            if (props.containsKey("label"))
+            if (props.has("label"))
                 json.put("label", props.get("label"));
 
-            if (props.containsKey("reportCategory"))
+            if (props.has("reportCategory"))
                 json.put("reportCategory", props.get("reportCategory"));
             // retained for settings saved prior to refactor
-            else if (props.containsKey("category"))
+            else if (props.has("category"))
                 json.put("reportCategory", props.get("category"));
         }
     }
