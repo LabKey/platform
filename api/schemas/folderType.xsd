@@ -17,11 +17,10 @@
         <xsd:element ref="ft:preferredWebParts" minOccurs="0" maxOccurs="1"/>
         <xsd:element ref="ft:folderTabs" minOccurs="0" maxOccurs="1"/>
         <xsd:element ref="ft:modules"  minOccurs="1" maxOccurs="1"/>
-        <xsd:element ref="ft:defaultModule" minOccurs="1" maxOccurs="1"/>
+        <xsd:element ref="ft:defaultModule" minOccurs="0" maxOccurs="1"/>
         <xsd:element ref="ft:workbookType" minOccurs="0" maxOccurs="1" />
         <xsd:element ref="ft:forceAssayUploadIntoWorkbooks" minOccurs="0" maxOccurs="1"/>
         <xsd:element ref="ft:folderIconPath" minOccurs="0" maxOccurs="1"/>
-        <xsd:element ref="ft:menubarEnabled" minOccurs="0" maxOccurs="1"/>
       </xsd:sequence>
     </xsd:complexType>
 
@@ -69,8 +68,6 @@
     </xsd:element>
 
   <xsd:element name="description" type="xsd:string"/>
-
-  <xsd:element name="menubarEnabled" type="xsd:boolean"/>
 
   <xsd:element name="caption" type="xsd:string"/>
 

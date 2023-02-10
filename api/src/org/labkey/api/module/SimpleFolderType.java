@@ -16,10 +16,10 @@
 package org.labkey.api.module;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
@@ -29,6 +29,9 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
@@ -58,7 +61,7 @@ import java.util.Set;
  */
 public class SimpleFolderType extends MultiPortalFolderType
 {
-    private static final Logger LOGGER = LogManager.getLogger(SimpleFolderType.class);
+    private static final Logger LOG = LogHelper.getLogger(SimpleFolderType.class, "File-based folder types");
 
     private final String _name;
     private final String _description;
@@ -66,16 +69,12 @@ public class SimpleFolderType extends MultiPortalFolderType
     private Module _defaultModule;
     protected boolean _hasContainerTabs = false;
 
-    private SimpleFolderType(Resource folderTypeFile, FolderType folderType)
+    private SimpleFolderType(Resource folderTypeFile, FolderType type)
     {
-        super(folderType.getName(), folderType.getDescription(), null, null, null, null, folderType.getStartURL());
+        super(type.getName(), type.getDescription(), null, null, null, null, type.getStartURL());
 
-        FolderType type = parseFile(folderTypeFile);
         _name = type.getName();
         _description = type.getDescription();
-
-        if (type.isSetMenubarEnabled())
-            menubarEnabled = type.getMenubarEnabled();
 
         if (type.getPreferredWebParts() != null)
             preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), false);
@@ -93,7 +92,10 @@ public class SimpleFolderType extends MultiPortalFolderType
                     for (Portal.WebPart wp : preferredParts)
                     {
                         if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                        {
                             hasError = true;
+                            break;
+                        }
                     }
                 }
                 if (requiredParts != null)
@@ -101,11 +103,14 @@ public class SimpleFolderType extends MultiPortalFolderType
                     for (Portal.WebPart wp : requiredParts)
                     {
                         if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                        {
                             hasError = true;
+                            break;
+                        }
                     }
                 }
                 if (hasError)
-                    LOGGER.error("Error in " + folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
+                    LOG.error("Error in " + folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
             }
             _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray());
         }
@@ -140,7 +145,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 }
                 else
                 {
-                    LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
+                    LOG.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
                 }
             }
         }
@@ -149,15 +154,14 @@ public class SimpleFolderType extends MultiPortalFolderType
             _defaultModule = getModule(type.getDefaultModule());
     }
 
-    public static SimpleFolderType create(Resource folderTypeFile)
+    public static @Nullable SimpleFolderType create(Resource folderTypeFile)
     {
         FolderType type = parseFile(folderTypeFile);
-        return new SimpleFolderType(folderTypeFile, type);
+        return null != type ? new SimpleFolderType(folderTypeFile, type) : null;
     }
 
-    private static FolderType parseFile(Resource folderTypeFile)
+    private static @Nullable FolderType parseFile(Resource folderTypeFile)
     {
-        Logger log = LogManager.getLogger(SimpleFolderType.class);
         XmlOptions xmlOptions = new XmlOptions();
 
         Map<String,String> namespaceMap = new HashMap<>();
@@ -168,18 +172,22 @@ public class SimpleFolderType extends MultiPortalFolderType
         try
         {
             doc = FolderTypeDocument.Factory.parse(folderTypeFile.getInputStream(), xmlOptions);
+            XmlBeansUtil.validateXmlDocument(doc, folderTypeFile.toString());
+        }
+        catch (XmlValidationException e)
+        {
+            LOG.error("Unable to load custom folder type from file " + folderTypeFile + ".", e);
+            return null;
         }
         catch (XmlException | IOException e)
         {
-            log.error(e);
-            throw new RuntimeException("Unable to load custom folder type from file " +
-                    folderTypeFile + ".", e);
+            LOG.error(e);
+            throw new RuntimeException("Unable to load custom folder type from file " + folderTypeFile + ".", e);
         }
-        if(null == doc || null == doc.getFolderType())
+        if (null == doc || null == doc.getFolderType())
         {
-            IllegalStateException error = new IllegalStateException("Folder type definition file " +
-                    folderTypeFile + " does not contain a root 'folderType' element!");
-            log.error(error);
+            IllegalStateException error = new IllegalStateException("Folder type definition file " + folderTypeFile + " does not contain a root 'folderType' element!");
+            LOG.error(error);
             throw error;
         }
         return doc.getFolderType();
@@ -228,12 +236,12 @@ public class SimpleFolderType extends MultiPortalFolderType
                 }
                 else
                 {
-                    LOGGER.error(stringBuilder);
+                    LOG.error(stringBuilder);
                 }
             }
             else
             {
-                LOGGER.error("Folder type '" + _name + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
+                LOG.error("Folder type '" + _name + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
             }
         }
 
@@ -257,7 +265,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 //this is to debug intermittent team city failures and probably should not be merged
                 if (perm == null)
                 {
-                    LOGGER.error("unknown permission class: " + permClass + " from the role: " + role.getName(), new Exception());
+                    LOG.error("unknown permission class: " + permClass + " from the role: " + role.getName(), new Exception());
                     continue;
                 }
 
@@ -289,7 +297,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 parts.add(webPart);
             }
             else
-                LOGGER.log(required ? Level.ERROR : Level.WARN,
+                LOG.log(required ? Level.ERROR : Level.WARN,
                         "Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
         }
         return parts;

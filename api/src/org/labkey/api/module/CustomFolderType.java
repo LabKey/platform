@@ -244,12 +244,6 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
-    public boolean isMenubarEnabled()
-    {
-        return false;
-    }
-
-    @Override
     public String getDefaultPageId(Container container)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;

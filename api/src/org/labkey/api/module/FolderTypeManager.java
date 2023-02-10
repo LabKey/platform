@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -271,6 +272,7 @@ public class FolderTypeManager
             return unmodifiable(resources
                 .filter(getFilter(SIMPLE_TYPE_FILE_EXTENSION))
                 .map(SimpleFolderType::create)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         }
 

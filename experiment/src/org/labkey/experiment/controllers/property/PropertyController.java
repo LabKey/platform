@@ -1452,7 +1452,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable Object options, Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1465,9 +1465,14 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        if (JSONObject.class == kind.getTypeClass())
+        if (JSONObject.class == kind.getTypeClass()) // Old JSONObject. TODO: Remove this once all DomainKinds use new JSONObject
         {
             return kind.updateDomain(original, update, options, container, user, includeWarnings);
+        }
+        else if (org.json.JSONObject.class == kind.getTypeClass()) // New JSONObject
+        {
+            Object props = null != options ? options.toNewJSONObject() : null; // TODO: Remove this once new JSONObject is passed in
+            return kind.updateDomain(original, update, props, container, user, includeWarnings);
         }
         else
         {
