@@ -17,7 +17,6 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,9 +24,9 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -60,6 +59,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -75,7 +75,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -202,7 +201,6 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -223,6 +221,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -242,6 +241,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -373,7 +373,7 @@ public class ExperimentController extends SpringActionController
     {
         Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
         ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
-        JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+        JspView<ChooseExperimentTypeBean> chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
         ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
         view.setFrame(WebPartView.FrameType.NONE);
@@ -417,13 +417,14 @@ public class ExperimentController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            String selectionKey = form.getJsonObject().optString("selectionKey", null);
+            JSONObject json = form.getNewJsonObject();
+            String selectionKey = json.optString("selectionKey", null);
             List<ExpRun> runs = new ArrayList<>();
 
             // Accept either an explicit list of run IDs
-            if (form.getJsonObject().has("runIds"))
+            if (json.has("runIds"))
             {
-                JSONArray runIds = form.getJsonObject().getJSONArray("runIds");
+                JSONArray runIds = json.getJSONArray("runIds");
                 for (int i = 0; i < runIds.length(); i++)
                 {
                     ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i));
@@ -1573,7 +1574,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (ExperimentException e)
             {
-                PageFlowUtil.streamTextAsImage(getViewContext().getResponse(), "ERROR: " + e.getMessage(), 600, 150, java.awt.Color.RED);
+                PageFlowUtil.streamTextAsImage(getViewContext().getResponse(), "ERROR: " + e.getMessage(), 600, 150, Color.RED);
                 return null;
             }
 
@@ -2339,7 +2340,7 @@ public class ExperimentController extends SpringActionController
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
         boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(format);
 
-        org.json.JSONArray sheetsArray;
+        JSONArray sheetsArray;
         if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
         {
             try
@@ -2368,13 +2369,13 @@ public class ExperimentController extends SpringActionController
                     for (ColumnDescriptor col : cols)
                         col.clazz = String.class;
 
-                org.json.JSONArray rowsArray = new org.json.JSONArray();
-                org.json.JSONArray headerArray = new org.json.JSONArray();
+                JSONArray rowsArray = new JSONArray();
+                JSONArray headerArray = new JSONArray();
                 for (ColumnDescriptor col : cols)
                 {
                     if (extended)
                     {
-                        org.json.JSONObject valueObject = new org.json.JSONObject();
+                        JSONObject valueObject = new JSONObject();
                         valueObject.put("value", col.name);
                         headerArray.put(valueObject);
                     }
@@ -2390,13 +2391,13 @@ public class ExperimentController extends SpringActionController
                     if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
                         break;
 
-                    org.json.JSONArray rowArray = new org.json.JSONArray();
+                    JSONArray rowArray = new JSONArray();
                     for (ColumnDescriptor col : cols)
                     {
                         Object value = rowMap.get(col.name);
                         if (extended)
                         {
-                            org.json.JSONObject valueObject = new org.json.JSONObject();
+                            JSONObject valueObject = new JSONObject();
                             valueObject.put("value", value);
                             rowArray.put(valueObject);
                         }
@@ -2408,17 +2409,17 @@ public class ExperimentController extends SpringActionController
                     rowsArray.put(rowArray);
                 }
 
-                org.json.JSONObject sheetJSON = new org.json.JSONObject();
+                JSONObject sheetJSON = new JSONObject();
                 sheetJSON.put("name", "flat");
                 sheetJSON.put("data", rowsArray);
-                sheetsArray = new org.json.JSONArray();
+                sheetsArray = new JSONArray();
                 sheetsArray.put(sheetJSON);
             }
         }
 
         try (ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse()))
         {
-            org.json.JSONObject workbookJSON = new org.json.JSONObject();
+            JSONObject workbookJSON = new JSONObject();
             workbookJSON.put("fileName", realContent.getName());
             workbookJSON.put("sheets", sheetsArray);
             if (originalFileName != null)
@@ -2460,19 +2461,19 @@ public class ExperimentController extends SpringActionController
         {
             try
             {
-                org.json.JSONObject rootObject;
-                org.json.JSONArray sheetsArray;
+                JSONObject rootObject;
+                JSONArray sheetsArray;
                 if (form.getJson() == null || form.getJson().trim().length() == 0)
                 {
                     // Create JSON so that we return an empty file
-                    rootObject = new org.json.JSONObject();
-                    sheetsArray = new org.json.JSONArray();
-                    org.json.JSONObject sheetObject = new org.json.JSONObject();
+                    rootObject = new JSONObject();
+                    sheetsArray = new JSONArray();
+                    JSONObject sheetObject = new JSONObject();
                     sheetsArray.put(sheetObject);
                 }
                 else
                 {
-                    rootObject = new org.json.JSONObject(form.getJson());
+                    rootObject = new JSONObject(form.getJson());
                     sheetsArray = rootObject.getJSONArray("sheets");
                 }
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
@@ -2485,7 +2486,7 @@ public class ExperimentController extends SpringActionController
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
-                    org.json.JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                    JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
                     if (qInfo != null)
                     {
                         QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
@@ -2496,7 +2497,7 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
-            catch (org.json.JSONException | ClassCastException e)
+            catch (JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
                 ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, false, false);
@@ -2549,8 +2550,8 @@ public class ExperimentController extends SpringActionController
                 {
                     for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
-                        ArrayIterator it = new ArrayIterator(oa);
+                        List<Object> objectList = ((JSONArray) rowsArray.get(i)).toList();
+                        Iterator<Object> it = objectList.iterator();
                         List<String> list = new ArrayList<>();
 
                         while (it.hasNext())
@@ -2562,11 +2563,11 @@ public class ExperimentController extends SpringActionController
                                 list.add("");
                         }
 
-                        writer.writeNext(list.toArray(new String[list.size()]));
+                        writer.writeNext(list.toArray(new String[0]));
                     }
                 }
 
-                JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                JSONObject qInfo = rootObject.optJSONObject("queryinfo");
                 if (qInfo != null)
                 {
                     QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"), qInfo.getString("query"),
@@ -5702,7 +5703,7 @@ public class ExperimentController extends SpringActionController
                 if (outputData.size() > 0)
                     successMessage.append(outputData.size()).append(" data");
 
-                JSONObject ret;
+                org.json.old.JSONObject ret;
                 if (run != null)
                     ret = ExperimentJSONConverter.serializeRun(run, null, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                 else
@@ -5852,7 +5853,7 @@ public class ExperimentController extends SpringActionController
             DataRegion drg = new DataRegion();
 
             drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
-            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
+            drg.addHiddenFormField("addSelectedRuns", Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
             // Fix issue 27562 - include session-stored selection
             if (form.getDataRegionSelectionKey() != null)
