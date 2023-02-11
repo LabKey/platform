@@ -2339,7 +2339,7 @@ public class ExperimentController extends SpringActionController
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
         boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(format);
 
-        JSONArray sheetsArray;
+        org.json.JSONArray sheetsArray;
         if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
         {
             try
@@ -2368,13 +2368,13 @@ public class ExperimentController extends SpringActionController
                     for (ColumnDescriptor col : cols)
                         col.clazz = String.class;
 
-                JSONArray rowsArray = new JSONArray();
-                JSONArray headerArray = new JSONArray();
+                org.json.JSONArray rowsArray = new org.json.JSONArray();
+                org.json.JSONArray headerArray = new org.json.JSONArray();
                 for (ColumnDescriptor col : cols)
                 {
                     if (extended)
                     {
-                        JSONObject valueObject = new JSONObject();
+                        org.json.JSONObject valueObject = new org.json.JSONObject();
                         valueObject.put("value", col.name);
                         headerArray.put(valueObject);
                     }
@@ -2390,13 +2390,13 @@ public class ExperimentController extends SpringActionController
                     if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
                         break;
 
-                    JSONArray rowArray = new JSONArray();
+                    org.json.JSONArray rowArray = new org.json.JSONArray();
                     for (ColumnDescriptor col : cols)
                     {
                         Object value = rowMap.get(col.name);
                         if (extended)
                         {
-                            JSONObject valueObject = new JSONObject();
+                            org.json.JSONObject valueObject = new org.json.JSONObject();
                             valueObject.put("value", value);
                             rowArray.put(valueObject);
                         }
@@ -2408,20 +2408,23 @@ public class ExperimentController extends SpringActionController
                     rowsArray.put(rowArray);
                 }
 
-                JSONObject sheetJSON = new JSONObject();
+                org.json.JSONObject sheetJSON = new org.json.JSONObject();
                 sheetJSON.put("name", "flat");
                 sheetJSON.put("data", rowsArray);
-                sheetsArray = new JSONArray();
+                sheetsArray = new org.json.JSONArray();
                 sheetsArray.put(sheetJSON);
             }
         }
-        ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-        JSONObject workbookJSON = new JSONObject();
-        workbookJSON.put("fileName", realContent.getName());
-        workbookJSON.put("sheets", sheetsArray);
-        if (originalFileName != null)
-            workbookJSON.put("originalFileName", originalFileName);
-        writer.writeResponse(new ApiSimpleResponse(workbookJSON));
+
+        try (ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse()))
+        {
+            org.json.JSONObject workbookJSON = new org.json.JSONObject();
+            workbookJSON.put("fileName", realContent.getName());
+            workbookJSON.put("sheets", sheetsArray);
+            if (originalFileName != null)
+                workbookJSON.put("originalFileName", originalFileName);
+            writer.writeResponse(new ApiSimpleResponse(workbookJSON));
+        }
     }
 
 
@@ -2457,19 +2460,19 @@ public class ExperimentController extends SpringActionController
         {
             try
             {
-                JSONObject rootObject;
-                JSONArray sheetsArray;
+                org.json.JSONObject rootObject;
+                org.json.JSONArray sheetsArray;
                 if (form.getJson() == null || form.getJson().trim().length() == 0)
                 {
                     // Create JSON so that we return an empty file
-                    rootObject = new JSONObject();
-                    sheetsArray = new JSONArray();
-                    JSONObject sheetObject = new JSONObject();
+                    rootObject = new org.json.JSONObject();
+                    sheetsArray = new org.json.JSONArray();
+                    org.json.JSONObject sheetObject = new org.json.JSONObject();
                     sheetsArray.put(sheetObject);
                 }
                 else
                 {
-                    rootObject = new JSONObject(form.getJson());
+                    rootObject = new org.json.JSONObject(form.getJson());
                     sheetsArray = rootObject.getJSONArray("sheets");
                 }
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
@@ -2482,7 +2485,7 @@ public class ExperimentController extends SpringActionController
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
-                    JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                    org.json.JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
                     if (qInfo != null)
                     {
                         QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
@@ -2493,7 +2496,7 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
-            catch (JSONException | ClassCastException e)
+            catch (org.json.JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
                 ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, false, false);
