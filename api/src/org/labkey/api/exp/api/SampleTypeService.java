@@ -212,4 +212,7 @@ public interface SampleTypeService
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
+    int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
+
+    long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
 }
