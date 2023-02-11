@@ -271,7 +271,7 @@ public class FolderTypeManager
         {
             return unmodifiable(resources
                 .filter(getFilter(SIMPLE_TYPE_FILE_EXTENSION))
-                .map(SimpleFolderType::create)
+                .map(r -> SimpleFolderType.create(r, module))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         }

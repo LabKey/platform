@@ -35,8 +35,8 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.SimpleFolderTab;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.folderType.FolderTabDocument;
 import org.labkey.data.xml.folderType.FolderType;
@@ -63,23 +63,11 @@ public class SimpleFolderType extends MultiPortalFolderType
 {
     private static final Logger LOG = LogHelper.getLogger(SimpleFolderType.class, "File-based folder types");
 
-    private final String _name;
-    private final String _description;
-    private final Set<Module> _activeModules;
-    private Module _defaultModule;
     protected boolean _hasContainerTabs = false;
 
-    private SimpleFolderType(Resource folderTypeFile, FolderType type)
+    private SimpleFolderType(Resource folderTypeFile, FolderType type, List<WebPart> requiredParts, List<WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
-        super(type.getName(), type.getDescription(), null, null, null, null, type.getStartURL());
-
-        _name = type.getName();
-        _description = type.getDescription();
-
-        if (type.getPreferredWebParts() != null)
-            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), false);
-        if (type.getRequiredWebParts() != null)
-            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), true);
+        super(type.getName(), type.getDescription(), requiredParts, preferredParts, activeModules, defaultModule, type.getStartURL());
 
         if (type.getFolderTabs() != null)
         {
@@ -89,7 +77,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 boolean hasError = false;
                 if (preferredParts != null)
                 {
-                    for (Portal.WebPart wp : preferredParts)
+                    for (WebPart wp : preferredParts)
                     {
                         if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
                         {
@@ -100,7 +88,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 }
                 if (requiredParts != null)
                 {
-                    for (Portal.WebPart wp : requiredParts)
+                    for (WebPart wp : requiredParts)
                     {
                         if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
                         {
@@ -130,34 +118,44 @@ public class SimpleFolderType extends MultiPortalFolderType
         String _iconPath = type.getFolderIconPath();
         if(_iconPath != null)
             setFolderIconPath(_iconPath);
-
-        Set<Module> activeModules = new HashSet<>();
-        ModulesDocument.Modules modules = type.getModules();
-        String[] moduleNames = modules != null ? modules.getModuleNameArray() : null;
-        if (moduleNames != null)
-        {
-            for (String moduleName : moduleNames)
-            {
-                if (ModuleLoader.getInstance().hasModule(moduleName))
-                {
-                    Module module = getModule(moduleName);
-                    activeModules.add(module);
-                }
-                else
-                {
-                    LOG.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
-                }
-            }
-        }
-        _activeModules = activeModules;
-        if (type.getDefaultModule() != null)
-            _defaultModule = getModule(type.getDefaultModule());
     }
 
-    public static @Nullable SimpleFolderType create(Resource folderTypeFile)
+    public static @Nullable SimpleFolderType create(Resource folderTypeFile, Module module)
     {
-        FolderType type = parseFile(folderTypeFile);
-        return null != type ? new SimpleFolderType(folderTypeFile, type) : null;
+        FolderType typeDoc = parseFile(folderTypeFile);
+        SimpleFolderType type = null;
+
+        if (null != typeDoc)
+        {
+            String name = typeDoc.getName();
+
+            List<WebPart> preferredParts = typeDoc.getPreferredWebParts() != null ? createWebParts(typeDoc.getPreferredWebParts().getWebPartArray(), false) : null;
+            List<WebPart> requiredParts = typeDoc.getRequiredWebParts() != null ? createWebParts(typeDoc.getRequiredWebParts().getWebPartArray(), true) : null;
+
+            Set<Module> activeModules = new HashSet<>();
+            ModulesDocument.Modules modules = typeDoc.getModules();
+            String[] moduleNames = modules != null ? modules.getModuleNameArray() : null;
+
+            if (moduleNames != null)
+            {
+                for (String moduleName : moduleNames)
+                {
+                    if (ModuleLoader.getInstance().hasModule(moduleName))
+                    {
+                        activeModules.add(getModule(moduleName));
+                    }
+                    else
+                    {
+                        LOG.warn("Module '" + moduleName + "' not available for folder type '" + name + "'");
+                    }
+                }
+            }
+
+            Module defaultModule = typeDoc.isSetDefaultModule() ? getModule(typeDoc.getDefaultModule()) : module;
+            type = new SimpleFolderType(folderTypeFile, typeDoc, requiredParts, preferredParts, activeModules, defaultModule);
+        }
+
+        return type;
     }
 
     private static @Nullable FolderType parseFile(Resource folderTypeFile)
@@ -241,16 +239,16 @@ public class SimpleFolderType extends MultiPortalFolderType
             }
             else
             {
-                LOG.error("Folder type '" + _name + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
+                LOG.error("Folder type '" + getName() + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
             }
         }
 
         return tabs;
     }
 
-    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, boolean required)
+    public static List<WebPart> createWebParts(WebPartDocument.WebPart[] references, boolean required)
     {
-        List<Portal.WebPart> parts = new ArrayList<>();
+        List<WebPart> parts = new ArrayList<>();
         HashMap<String, Permission> permissionsMap = new HashMap<>();
 
         // permissionsMap maps the permissions name (not necessarily unique) to the permission class. We use this so
@@ -282,7 +280,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 String location = null;
                 if (reference.getLocation() != null)
                     location = SimpleWebPartFactory.getInternalLocationName(reference.getLocation().toString());
-                Portal.WebPart webPart = factory.createWebPart(location);
+                WebPart webPart = factory.createWebPart(location);
 
                 if (reference.getPermission() != null)
                 {
@@ -304,46 +302,15 @@ public class SimpleFolderType extends MultiPortalFolderType
     }
 
     @Override
-    public Module getDefaultModule()
-    {
-        return _defaultModule;
-    }
-
-    @Override
-    public String getName()
-    {
-        return _name;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return _description;
-    }
-
-    @Override
-    public Set<Module> getActiveModules()
-    {
-        return _activeModules;
-    }
-
-    @Override
     public List<FolderTab> getDefaultTabs()
     {
         return _folderTabs;
     }
 
-
-    @Override
-    protected String getFolderTitle(ViewContext context)
-    {
-        return context.getContainer().getTitle();
-    }
-
     @Override
     public String toString()
     {
-        return "Folder type: " + _name;
+        return "Folder type: " + getName();
     }
 
     @Override

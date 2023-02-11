@@ -30,6 +30,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.SimpleFolderTab;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.menu.FolderAdminMenu;
@@ -51,12 +52,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private final String _startUrl;
     protected FolderTab _defaultTab = null;
 
-    public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
+    public MultiPortalFolderType(String name, String description, @Nullable List<WebPart> requiredParts, @Nullable List<WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         this(name, description, requiredParts, preferredParts, activeModules, defaultModule, null);
     }
 
-    public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, String startUrl)
+    public MultiPortalFolderType(String name, String description, @Nullable List<WebPart> requiredParts, @Nullable List<WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, String startUrl)
     {
         super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
         _startUrl = startUrl;
@@ -246,7 +247,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     }
 
     protected String getFolderTitle(ViewContext context)
-    {   // Default; often overridden
+    {
+        // Default; often overridden
         return context.getContainer().getTitle();
     }
 
