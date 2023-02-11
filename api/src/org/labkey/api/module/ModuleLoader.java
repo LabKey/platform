@@ -593,7 +593,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         synchronized (_modulesLock)
         {
             for (ModuleContext context : getAllModuleContexts())
-                _moduleContextMap.put(context.getName(), context);
+                _moduleContextMap.putIfAbsent(context.getName(), context); // Don't replace the "Core" context otherwise we'll overwrite its _newInstall and _originalVersion properties
 
             // Refresh our list of modules as some may have been filtered out based on dependencies or DB platform
             modules = getModules();

@@ -310,8 +310,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private CoreWarningProvider _warningProvider;
-    private boolean _bootstrapping = false;
-
     @Override
     public boolean hasScripts()
     {
@@ -759,11 +757,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void bootstrap()
     {
-        // We need to do some bootstrapping later in the process, after folder types have been registered in
-        // startupAfterSpringConfig(). By then the ModuleContext will no longer consider this a new install, so remember
-        // the state for ourselves
-        _bootstrapping = true;
-
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
@@ -850,15 +843,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
-        if (_bootstrapping)
+        if (moduleContext.isNewInstall())
         {
             // In order to initialize the portal layout correctly, we need to add the web parts after the folder
             // types have been registered. Thus, needs to be here in startupAfterSpringConfig() instead of grouped
-            // in bootstrap()
+            // in bootstrap().
             Container homeContainer = ContainerManager.getHomeContainer();
             int count = Portal.getParts(homeContainer, homeContainer.getFolderType().getDefaultPageId(homeContainer)).size();
             addWebPart(PROJECTS_WEB_PART_NAME, homeContainer, HttpView.BODY, count);
-            _bootstrapping = false;
         }
 
         EmailService.setInstance(new EmailServiceImpl());
