@@ -608,23 +608,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     _moduleContextMap.put(module.getName(), context);
                 }
 
-                if (context.needsUpgrade(module.getSchemaVersion()))
+                if (context.getModuleState() != ModuleState.ReadyToStart) // If upgraded, core module is ready-to-start
                 {
-                    context.setModuleState(ModuleState.InstallRequired);
-                    modulesRequiringUpgrade.add(context.getName());
-                }
-                else
-                {
-                    context.setModuleState(ModuleState.ReadyToStart);
+                    if (context.needsUpgrade(module.getSchemaVersion()))
+                    {
+                        context.setModuleState(ModuleState.InstallRequired);
+                        modulesRequiringUpgrade.add(context.getName());
+                    }
+                    else
+                    {
+                        context.setModuleState(ModuleState.ReadyToStart);
 
-                    // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
-                    // The scenario is a schema in an external data source that needs to be installed or upgraded.
-                    List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(module);
-                    additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
+                        // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
+                        // The scenario is a schema in an external data source that needs to be installed or upgraded.
+                        List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(module);
+                        additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
 
-                    // Also check for module "downgrades" so we can warn admins, #30773
-                    if (context.isDowngrade(module.getSchemaVersion()))
-                        downgradedModules.add(context.getName());
+                        // Also check for module "downgrades" so we can warn admins, #30773
+                        if (context.isDowngrade(module.getSchemaVersion()))
+                            downgradedModules.add(context.getName());
+                    }
                 }
             }
 
