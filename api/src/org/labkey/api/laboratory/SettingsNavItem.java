@@ -22,5 +22,4 @@ package org.labkey.api.laboratory;
  */
 public interface SettingsNavItem extends ImportingNavItem
 {
-
 }

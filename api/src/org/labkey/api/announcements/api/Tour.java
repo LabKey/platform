@@ -15,7 +15,7 @@
  */
 package org.labkey.api.announcements.api;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 /**
  * Tours offer a guided walkthrough some part of the UI with a click-through, highlighting specific elements.

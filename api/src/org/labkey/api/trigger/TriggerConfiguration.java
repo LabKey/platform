@@ -16,7 +16,7 @@
 package org.labkey.api.trigger;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 
 import java.util.ArrayList;
@@ -331,7 +331,7 @@ public class TriggerConfiguration extends Entity
         List<String> keys = new ArrayList<>();
         List<String> values = new ArrayList<>();
 
-        json.forEach((key, value) -> {
+        json.toMap().forEach((key, value) -> {
             keys.add(key);
             values.add(String.valueOf(value));
         });

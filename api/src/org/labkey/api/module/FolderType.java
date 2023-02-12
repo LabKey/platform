@@ -37,9 +37,6 @@ import java.util.Set;
 /**
  * Interface to define look & feel of a folder. Folders with a folder type other than FolderType.NONE will have a single
  * "tab" owned by the FolderType. This "dashboard" drill down to arbitrary URLs without changing its look & feel.
- *
- * User: Mark Igra
- * Date: Aug 3, 2006
  */
 public interface FolderType
 {
@@ -54,7 +51,7 @@ public interface FolderType
 
     /**
      * This FolderType is being *removed* as the owner of the container. Clean up anything that you
-     * might want. Typically this involves turning off the *permanent* bit for the web parts this
+     * might want. Typically, this involves turning off the *permanent* bit for the web parts this
      * FolderType may have set.
      */
     void unconfigureContainer(Container c, User user);
@@ -132,7 +129,7 @@ public interface FolderType
     @Nullable Module getDefaultModule();
 
     /**
-     * Return all modules required by this foldertype, INCLUDING the default module if any.  Note: in order to find the
+     * Return all modules required by this folder type, INCLUDING the default module if any. Note: in order to find the
      * requiredModules for a given container, you should call getRequiredModules() on that container rather than rely
      * on the folderType.
      * @return set
@@ -186,11 +183,6 @@ public interface FolderType
      * Portal.DEFAULT_PORTAL_PAGE_ID
      */
     String getDefaultPageId(Container container);
-
-    /**
-     * Clear active portal page if there is one
-     */
-    void clearActivePortalPage();
 
     /**
      * @return any additional setup steps for the container creation wizard.

@@ -58,6 +58,12 @@ public class ButtonBarConfig
 
     private static final Logger LOG = LogManager.getLogger(ButtonBarConfig.class);
 
+    public ButtonBarConfig(org.json.JSONObject json)
+    {
+        this(JSONObject.toOldJSONObject(json));
+    }
+
+    @Deprecated
     public ButtonBarConfig(JSONObject json)
     {
         if (json.has("position") && null != json.getString("position"))
@@ -78,9 +84,8 @@ public class ButtonBarConfig
                     config.setSuppressWarning(suppressWarnings);
                     _items.add(config);
                 }
-                else if (item instanceof JSONObject)
+                else if (item instanceof JSONObject obj)
                 {
-                    JSONObject obj = (JSONObject)item;
                     //new button config
                     UserDefinedButtonConfig button = new UserDefinedButtonConfig();
                     try
@@ -156,7 +161,7 @@ public class ButtonBarConfig
 
     public ButtonBarConfig(ButtonBarConfig cfg)
     {
-        this(new JSONObject());
+        this(new org.json.JSONObject());
         if (cfg.getPosition() != null)
             this.setPosition(cfg.getPosition());
 
