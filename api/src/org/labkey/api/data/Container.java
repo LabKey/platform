@@ -143,7 +143,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 }
                 Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
                 requiredModules.add(ModuleLoader.getInstance().getModule("API"));
-                requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
 
                 for (Container child: c.getChildren())
                 {

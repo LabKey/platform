@@ -7581,4 +7581,50 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class RecomputeAliquotRollup extends SimpleViewAction<Object>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws SQLException
+        {
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                Container container = getContainer();
+                User user = getUser();
+
+                List<? extends ExpSampleType> sampleTypes = SampleTypeService.get()
+                        .getSampleTypes(container, user, true);
+
+                StringBuilder builder = new StringBuilder();
+                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th><th>#Cleaned</th><th>#Needs Further Recalc</th></tr>");
+
+                InventoryService inventoryService = InventoryService.get();
+                for (ExpSampleType sampleType : sampleTypes)
+                {
+                    int updatedCount;
+                    updatedCount = inventoryService.recomputeSampleTypeRollup(sampleType, container, true);
+                    int cleanedCount = SampleTypeServiceImpl.get().resetRecomputeFlagForNonParents(sampleType, container);
+                    long remainingCount = SampleTypeServiceImpl.get().getRecomputeRollupRowCount(sampleType, container);
+                    builder.append("<tr><td>")
+                            .append(sampleType.getName())
+                            .append("</td><td>")
+                            .append(updatedCount)
+                            .append("</td><td>")
+                            .append(cleanedCount)
+                            .append("</td><td>")
+                            .append(remainingCount)
+                            .append("</td></tr>");
+                }
+
+                builder.append("</table>");
+                return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
+            }
+        }
+    }
+
 }
