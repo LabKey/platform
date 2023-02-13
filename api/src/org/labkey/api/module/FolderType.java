@@ -117,11 +117,6 @@ public interface FolderType
     @Nullable String getHelpTopic();
 
     /**
-     * Whether the menu bar should be shown by default.
-     */
-    boolean isMenubarEnabled();
-
-    /**
      * Module that *owns* this folder. Used in constructing navigation paths. If current URL's module is NOT part of the owning module
      * extra links will be added to automatically generated nav path
      * @return Owning module. May be null
