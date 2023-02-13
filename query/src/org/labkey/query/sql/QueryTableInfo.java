@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.HasResolvedTables;
@@ -120,9 +121,9 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
-    protected void afterInitializeColumns()
+    void afterInitializeColumns()
     {
-        remapFieldKeys();
+        remapSelectFieldKeys(false);
     }
 
 
@@ -185,7 +186,8 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 */
 
-    public void remapFieldKeys()
+    /* helper method to fixup fieldkeys for columns in QueryTableInfo  */
+    public void remapSelectFieldKeys(boolean skipColumnLogging)
     {
         Query query = _relation._query;
 
@@ -203,7 +205,13 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
             if (null != remap)
             {
+                // QueryUnion handles ColumnLogging, so don't try to remap again
+                ColumnLogging cl = ci.getColumnLogging();
+                if (skipColumnLogging)
+                    ci.setColumnLogging(null);
                 ci.remapFieldKeys(null, remap, warnings, true);
+                if (skipColumnLogging)
+                    ci.setColumnLogging(cl);
                 var queryWarnings = _relation._query.getParseWarnings();
                 for (String w : warnings)
                     queryWarnings.add(new QueryParseWarning(w, null, 0, 0));
@@ -212,7 +220,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             // handle QueryColumnLogging which need to be converted to a normal ColumnLogging
             if (ci.getColumnLogging() instanceof QueryColumnLogging qcl)
             {
-                ci.setColumnLogging(qcl.remapQueryFieldKeys(this, ci, outerMap));
+                ci.setColumnLogging(qcl.remapQueryFieldKeys(this, ci.getFieldKey(), outerMap));
             }
             assert !(ci.getColumnLogging() instanceof QueryColumnLogging);
         }

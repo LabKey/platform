@@ -1334,6 +1334,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             // Hold a separate reference so we can null it out if the container filter changes
             private SQLFragment _sqlAllColumns = null;
 
+            @Override
+            protected void afterInitializeColumns()
+            {
+                super.afterInitializeColumns();
+            }
+
             @NotNull
             @Override
             public SQLFragment getFromSQL(String alias)
@@ -2223,11 +2229,13 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (null == _uniqueName)
             {
                 QExpr expr = getResolvedField();
-                if (expr instanceof QField)
+                if (expr instanceof QField qfield)
                 {
-                    RelationColumn rc = ((QField)expr).getRelationColumn();
+                    RelationColumn rc = qfield.getRelationColumn();
+                    String text = getAlias();
+                    try {text = expr.getSourceText();} catch (UnsupportedOperationException ignore) {/* pass */}
                     if (null == rc)
-                        parseError("Can't resolve column: " + expr.getSourceText(), expr);
+                        parseError("Can't resolve column: " + text, expr);
                     _uniqueName = null==rc ? "--parseError" : rc.getUniqueName();
                 }
                 else

@@ -70,12 +70,17 @@ public class ColumnLogging implements Comparable<ColumnLogging>
 
     public static ColumnLogging defaultLogging(ColumnInfo col)
     {
-        var parent = col.getParentTable();
+        return defaultLogging(col.getParentTable(), col.getFieldKey());
+    }
+
+
+    public static ColumnLogging defaultLogging(TableInfo parent, FieldKey col)
+    {
         Objects.requireNonNull(parent);
         var tableName  = parent.getName();
         var schemaName = null != parent.getUserSchema() ? parent.getUserSchema().getName() : parent.getSchema().getName();
-        var uniqueColumnKey = makeUniqueKey(parent, col.getFieldKey());
-        return new ColumnLogging(schemaName, tableName, col.getFieldKey(),
+        var uniqueColumnKey = makeUniqueKey(parent, col);
+        return new ColumnLogging(schemaName, tableName, col,
 //                uniqueColumnKey, null,
                 false, Set.of(), "", null);
     }

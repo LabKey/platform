@@ -15,6 +15,7 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.Pair;
@@ -32,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
+public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>, Serializable
 {
     boolean _readonly = false;
 
@@ -299,6 +300,37 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         Collection<V> ret = a;
         assert null != (ret = Collections.unmodifiableCollection(ret));
         return ret;
+    }
+
+
+    @NotNull
+    @Override
+    public Iterator<V> iterator()
+    {
+        return new Iterator<>()
+        {
+            private int _i = 0;
+
+            {
+                while (_i < _row.size() && _row.get(_i) == DOES_NOT_CONTAINKEY)
+                    _i++;
+            }
+
+            @Override
+            public boolean hasNext()
+            {
+                return _i < _row.size();
+            }
+
+            @Override
+            public V next()
+            {
+                var ret = _row.get(_i++);
+                while (_i < _row.size() && _row.get(_i) == DOES_NOT_CONTAINKEY)
+                    _i++;
+                return (V)ret;
+            }
+        };
     }
 
 

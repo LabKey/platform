@@ -84,14 +84,14 @@ public class QueryColumnLogging extends ColumnLogging
     }
 
 
-    ColumnLogging remapQueryFieldKeys(QueryTableInfo table, ColumnInfo column, Map<String,FieldKey> outerMap)
+    ColumnLogging remapQueryFieldKeys(QueryTableInfo table, FieldKey column, Map<String,FieldKey> outerMap)
     {
-        Query query = table._relation._query;
+//        Query query = table._relation._query;
 //        assert null != query._mapQueryUniqueNamesToSelectAlias;
 //        assert null != table.mapFieldKeyToSiblings;
 
         if (columnsUsed.isEmpty())
-            return ColumnLogging.defaultLogging(column);
+            return ColumnLogging.defaultLogging(table, column);
 
         Set<FieldKey> dataLoggingColumns = new HashSet<>();
         for (var used : columnsUsed)
@@ -108,14 +108,14 @@ public class QueryColumnLogging extends ColumnLogging
             {
                 var mapped = FieldKey.remap(fk, null, remap);
                 if (null == mapped)
-                    return ColumnLogging.error(_shouldLogName, _selectQueryAuditProvider, "Unable to find required logging column " + fk.getName() + " for table " + _originalTableName);
+                    return ColumnLogging.error(_shouldLogName, _selectQueryAuditProvider, "Unable to find required logging column " + fk.getName() + (null==_originalTableName ? "" : (" for table " + _originalTableName)));
                 dataLoggingColumns.add(mapped);
             }
         }
 
 //        String unique = makeUniqueKey(table, column.getFieldKey());
         return new ColumnLogging(
-            table.getUserSchema().getSchemaName(), table.getName(), column.getFieldKey(),
+            table.getUserSchema().getSchemaName(), table.getName(), column,
 //            unique, null,
             _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
     }
