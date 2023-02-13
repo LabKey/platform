@@ -38,7 +38,7 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
         return new FolderTypeWriter();
     }
 
-    public class FolderTypeWriter extends BaseFolderWriter
+    public static class FolderTypeWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -64,6 +64,5 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
                 modulesXml.addModuleName(module.getName());
             }
         }
-
     }
 }

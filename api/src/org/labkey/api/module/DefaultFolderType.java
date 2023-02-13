@@ -59,7 +59,6 @@ public class DefaultFolderType implements FolderType
     protected boolean workbookType = false;
     protected String folderIconPath = DEFAULT_FOLDER_ICON_PATH;
     protected boolean forceAssayUploadIntoWorkbooks = false;
-    protected boolean menubarEnabled = false;
     protected List<FolderTab> _folderTabs = null;
 
     public static String DEFAULT_DASHBOARD = "DefaultDashboard";
@@ -497,12 +496,6 @@ public class DefaultFolderType implements FolderType
             if (tab.getLegacyNames().contains(caption))
                 return tab;
         return null;
-    }
-
-    @Override
-    public boolean isMenubarEnabled()
-    {
-        return menubarEnabled;
     }
 
     @Override
