@@ -28,7 +28,7 @@ SELECT
        DisplayKey,
        '{' || SelectKey || '}' AS SelectKey,
        Value,
-       CASE WHEN Type = 'string' THEN Value END AS StringValue,
+       CAST(CASE WHEN Type = 'string' THEN Value END AS VARCHAR) AS StringValue,
        CAST(CASE WHEN Type = 'number' THEN Value END AS DECIMAL) AS NumberValue,
        CAST(CASE WHEN Type = 'boolean' THEN Value END AS BOOLEAN) AS BooleanValue,
        CASE WHEN Type = 'object' THEN Value END AS ObjectValue,
