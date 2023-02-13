@@ -15,13 +15,13 @@
  */
 package org.labkey.pipeline.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
@@ -757,24 +757,23 @@ public class PipelineManager
             validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true, container, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, Container sourceContainer, User user)
+    private static void validateConfigJson(PipelineTriggerType<?> triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, Container sourceContainer, User user)
     {
         validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors, false, sourceContainer, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly, Container sourceContainer, User user)
+    private static void validateConfigJson(PipelineTriggerType<?> triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly, Container sourceContainer, User user)
     {
         JSONObject json = null;
         if (configuration != null)
         {
             try
             {
-                ObjectMapper mapper = new ObjectMapper();
-                json = mapper.readValue(configuration.toString(), JSONObject.class);
+                json = new JSONObject(configuration.toString());
             }
-            catch (IOException e)
+            catch (JSONException e)
             {
-                errors.reject("Invalid JSON object for the configuration field: " + e.toString());
+                errors.reject(ERROR_MSG, "Invalid JSON object for the configuration field: " + e);
             }
         }
 
@@ -785,12 +784,6 @@ public class PipelineManager
             for (Pair<String, String> msg : configErrors)
                 errors.rejectValue(msg.first, null, msg.second);
         }
-    }
-
-    @Deprecated // Prefer validateFolderImportFileNioPath //TODO not sure if this is used or exposed outside of our code
-    public static File validateFolderImportFilePath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
-    {
-        return validateFolderImportFileNioPath(archiveFilePath, pipeRoot, errors).toFile();
     }
 
     public static Path validateFolderImportFileNioPath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)

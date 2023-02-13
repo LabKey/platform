@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.query.QueryUpdateService.ConfigParameters.PreferPKOverObjectUriAsKey;
+
 public class TableInsertUpdateDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
     private final TableInfo _table;
@@ -63,6 +65,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
 
     private boolean _skipCurrentIterator = false; // if StatementUtils generates a bad or meaningless (empty) statement, skip this iterator
     private boolean _failOnEmptyUpdate;
+
+    private boolean _preferPKOverObjectUriAsKey = false;
 
     /**
      * Creates and configures a TableInsertDataIterator. DO NOT call this method directly.
@@ -140,6 +144,9 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
         {
             ti.setAdhocPropColumns(vocabularyColumns);
         }
+
+        if (context.getConfigParameterBoolean(PreferPKOverObjectUriAsKey))
+            ti.setPreferPKOverObjectUriAsKey(true);
 
         return ret;
     }
@@ -340,6 +347,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 .noupdate(_dontUpdate)
                 .updateBuiltinColumns(false)
                 .selectIds(_selectIds)
+                .setPreferPKOverObjectUriAsKey(_preferPKOverObjectUriAsKey)
                 .constants(constants)
                 .setVocabularyProperties(_adhocPropColumns);
         stmt = util.createStatement(_conn, _container, null, true);
@@ -443,6 +451,11 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
     public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
     {
         _adhocPropColumns = adhocPropColumns;
+    }
+
+    public void setPreferPKOverObjectUriAsKey(boolean preferPKOverObjectUriAsKey)
+    {
+        _preferPKOverObjectUriAsKey = preferPKOverObjectUriAsKey;
     }
 
     public static class NoUpdatableColumnInDataException extends Exception

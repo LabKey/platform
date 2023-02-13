@@ -2485,7 +2485,9 @@ public class StudyController extends BaseStudyController
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
-            setShowImportOptions(_def.getKeyManagementType() == Dataset.KeyManagementType.None);
+            boolean showImportOptions = _def.getKeyManagementType() == Dataset.KeyManagementType.None;
+            setShowMergeOption(showImportOptions);
+            setShowUpdateOption(showImportOptions);
             setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
             return getDefaultImportView(form, errors);
         }

@@ -977,7 +977,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
         {
-            includeList.addAll(Arrays.asList("Core","API","Internal"));
+            includeList.addAll(Arrays.asList("Core", "API"));
             includedModules = new CaseInsensitiveTreeMap<>();
             while (!includeList.isEmpty())
             {
