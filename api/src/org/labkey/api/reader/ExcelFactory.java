@@ -315,7 +315,8 @@ public class ExcelFactory
 
                 for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
                 {
-                    Object value = rowArray.get(colIndex);
+                    // NOTE: if the value is null, it is stored as JSONObject.NULL. check for this:
+                    Object value = rowArray.isNull(colIndex) ? null : rowArray.get(colIndex);
                     JSONObject metadataObject = null;
                     CellStyle cellStyle = defaultStyle;
                     if (value instanceof JSONObject)
