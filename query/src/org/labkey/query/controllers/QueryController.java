@@ -3605,10 +3605,18 @@ public class QueryController extends SpringActionController
             QueryLogging queryLogging = new QueryLogging();
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-            if (queryLogging.isShouldAudit() && queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
+            if (queryLogging.isShouldAudit())
             {
-                errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
-                return null;
+                if (null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
+                {
+                    errors.reject(ERROR_MSG, queryLogging.getExceptionToThrowIfLoggingIsEnabled().getMessage());
+                    return null;
+                }
+                else if (queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
+                {
+                    errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
+                    return null;
+                }
             }
 
             // Regenerate the column since the alias may have changed after call to getSelectSQL()
@@ -3635,7 +3643,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            return new SqlSelector(table.getSchema().getScope(), sql, QueryLogging.noValidationNeededQueryLogging());
+            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
         }
     }
 
