@@ -2536,11 +2536,11 @@ public class ExperimentController extends SpringActionController
                     rowsArray = rootObject.getJSONArray("rows");
                 }
 
-                TSVWriter.DELIM delimType = (rootObject.getString("delim") != null ? TSVWriter.DELIM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM.TAB);
-                TSVWriter.QUOTE quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE.NONE);
-                String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export");
+                TSVWriter.DELIM delimType = (!rootObject.isNull("delim") ? TSVWriter.DELIM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM.TAB);
+                TSVWriter.QUOTE quoteType = (!rootObject.isNull("quoteChar") ? TSVWriter.QUOTE.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE.NONE);
+                String filenamePrefix = (!rootObject.isNull("fileNamePrefix") ? rootObject.getString("fileNamePrefix") : "Export");
                 String filename = filenamePrefix + "." + delimType.extension;
-                String newlineChar = rootObject.getString("newlineChar") != null ? rootObject.getString("newlineChar") : "\n";
+                String newlineChar = !rootObject.isNull("newlineChar") ? rootObject.getString("newlineChar") : "\n";
 
                 PageFlowUtil.prepareResponseForFile(response, Collections.emptyMap(), filename, true);
                 response.setContentType(delimType.contentType);
