@@ -426,7 +426,8 @@ public class FieldKey extends QueryKey<FieldKey>
                         );
 
                 var z = remap(fromParts("Z"), null, map);
-                assertEquals(fromParts("Z"), z);
+                // can't remap Z so return null
+                assertNull(z);
 
                 var a2 = remap(fromParts("A1"), null, map);
                 assertEquals(fromParts("A2"), a2);
@@ -443,7 +444,8 @@ public class FieldKey extends QueryKey<FieldKey>
 
                 // no match
                 var z = remap(fromParts("Z"), null, map);
-                assertEquals(fromParts("Z"), z);
+                // can't remap Z so return null
+                assertNull(z);
 
                 // exact match
                 var a2 = remap(fromParts("X1","A"), null, map);
