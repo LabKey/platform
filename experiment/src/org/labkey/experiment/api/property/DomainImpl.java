@@ -784,28 +784,35 @@ public class DomainImpl implements Domain
                 }
             }
 
-            if (isDomainNew)
-                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()), null);
+            final boolean finalPropChanged = propChanged;
 
-            if (propChanged)
-            {
-                final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()), null);
-                propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
-            }
-            else if (!isDomainNew)
-            {
-                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()), null);
-            }
-
+            // Move audit event creation to outside the transaction to avoid deadlocks involving audit storage table creation
             Runnable afterDomainCommit = () ->
             {
-                // Even if no storage table schema changes occured, we want to invalidate table to pick up an metadata changes
+                if (isDomainNew)
+                    addAuditEvent(user, String.format("The domain %s was created", _dd.getName()), null);
+
+                if (finalPropChanged)
+                {
+                    final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()), null);
+                    propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
+                }
+                else if (!isDomainNew)
+                {
+                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()), null);
+                }
+            };
+            transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT);
+
+            Runnable afterDomainCommitOrRollback = () ->
+            {
+                // Even if no storage table schema changes occurred, we want to invalidate table to pick up an metadata changes
                 // Invalidate even if !propChanged, because ordering might have changed (#25296)
                 OntologyManager.invalidateDomain(this);
                 if (getDomainKind() != null)
                     getDomainKind().invalidate(this);
             };
-            transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            transaction.addCommitTask(afterDomainCommitOrRollback, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
 
             QueryService.get().updateLastModified();
             transaction.commit();
