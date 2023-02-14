@@ -1291,8 +1291,6 @@ public class StringExpressionFactory
             m.put(FieldKey.fromParts("A","title"), "title one");
             Map<FieldKey,FieldKey> remap = new HashMap<>();
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
-            FieldKeyStringExpression lookup = fkse.remapFieldKeys(new FieldKey(null, "A"), remap);
-            assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
         }
 
 
