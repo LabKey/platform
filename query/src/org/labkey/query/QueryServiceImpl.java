@@ -3232,6 +3232,7 @@ public class QueryServiceImpl implements QueryService
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
+    @Override
     public boolean isProductProjectsDataListingScopedToProject()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);

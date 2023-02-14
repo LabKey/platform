@@ -634,9 +634,12 @@ public interface QueryService
     ContainerFilter.Type getContainerFilterTypeForLookups(Container container);
 
     /**
-     *
+     * Returns true if the "Less restrictive product project lookups" experimental feature is enabled.
      */
     boolean isProductProjectsAllFolderScopeEnabled();
 
+    /**
+     * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
+     */
     boolean isProductProjectsDataListingScopedToProject();
 }
