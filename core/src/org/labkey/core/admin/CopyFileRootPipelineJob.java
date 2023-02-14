@@ -156,6 +156,15 @@ public class CopyFileRootPipelineJob extends PipelineJob
             error("Unexpected error; ending job.", e);
             setStatus(TaskStatus.error);
         }
+        finally
+        {
+            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
+            // This results in the done event being slightly out of order, but better than where it was.
+            if (PipelineService.get().isEnterprisePipeline())
+            {
+                done(null);
+            }
+        }
     }
 
     private TaskStatus copyOneFolder(Container container, Path sourceDir, Path destDir, long startTime)

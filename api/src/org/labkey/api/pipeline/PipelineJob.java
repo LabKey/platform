@@ -1098,7 +1098,12 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         finally
         {
-            finallyCleanUpLocalDirectory();
+            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
+            // This results in the done event being slightly out of order, but better than where it was.
+            if (PipelineService.get().isEnterprisePipeline())
+            {
+                done(null);
+            }
 
             ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
             ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
@@ -1871,6 +1876,8 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
         if (notificationProvider != null)
             notificationProvider.onJobDone(this);
+
+        finallyCleanUpLocalDirectory();  //Since this potentially contains the job log, it should be run after the notifications tasks are executed
     }
 
     protected String getJobNotificationProvider()
