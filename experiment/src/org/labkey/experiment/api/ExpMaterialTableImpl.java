@@ -194,15 +194,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    @NotNull
-    private ContainerFilter getLookupContainerFilter()
-    {
-        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(getUserSchema().getContainer(), getUserSchema().getUser());
-        if (cf == null)
-            cf = getContainerFilter();
-        return cf;
-    }
-
     @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
@@ -219,7 +210,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case MaterialSourceId ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
-                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, null, "RowId", "Name")
+                columnInfo.setFk(new LookupForeignKey(getLookupContainerFilter(), null, null, null, null, "RowId", "Name")
                 {
                     @Override
                     public TableInfo getLookupTableInfo()

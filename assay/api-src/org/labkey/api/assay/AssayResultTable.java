@@ -152,10 +152,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
                     ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
                     if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
-                    {
-                        ContainerFilter lookupCf = QueryService.get().getContainerFilterForLookups(_userSchema.getContainer(), _userSchema.getUser());
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, lookupCf == null ? cf : lookupCf));
-                    }
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
                 }
                 addColumn(col);
 

@@ -54,8 +54,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     Map<String, PropertyDescriptor> _pdMap;
     protected QuerySchema _schema;
     protected boolean _parentIsObjectId = false;
-
-    private List<PropertyColumnDecorator> _decorators = new ArrayList<>();
+    private final List<PropertyColumnDecorator> _decorators = new ArrayList<>();
 
     public PropertyForeignKey(QuerySchema schema, ContainerFilter cf, Map<String, PropertyDescriptor> pds)
     {
@@ -63,7 +62,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         _pdMap = pds;
         _schema = schema;
     }
-
 
     /**
      * Creates a virtual table with columns for each of the property descriptors.
@@ -85,8 +83,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         this(schema, cf, listProperties(domain));
     }
 
-
-    
     private static List<PropertyDescriptor> listProperties(Domain domain)
     {
         List<PropertyDescriptor> result = new ArrayList<>();
@@ -97,13 +93,10 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return result;
     }
 
-
     public void setParentIsObjectId(boolean id)
     {
         _parentIsObjectId = id;
     }
-
-
 
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -128,18 +121,15 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return constructColumnInfo(parent, decideColumnName(parent, displayField, pd), pd);
     }
 
-
     protected @NotNull FieldKey decideColumnName(@NotNull ColumnInfo parent, @NotNull String displayField, @NotNull PropertyDescriptor pd)
     {
         return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
     }
 
-
     static public SQLFragment getMvIndicatorSQL()
     {
         return new SQLFragment("exp.ObjectProperty.MvIndicator");
     }
-
 
     protected BaseColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
@@ -160,7 +150,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return ret;
     }
 
-
     @Override
     public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
     {
@@ -170,7 +159,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
     }
 
-    
     @Override
     public TableInfo getLookupTableInfo()
     {
@@ -194,19 +182,16 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return ret;
     }
 
-
     public void addDecorator(PropertyColumnDecorator decorator)
     {
         _decorators.add(decorator);
     }
-
 
     @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         return null;
     }
-
 
     /**
      * Override this method to allow properties which might not have been
@@ -223,7 +208,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
         return null;
     }
-
 
     private void initColumn(User user, BaseColumnInfo column, PropertyDescriptor pd)
     {

@@ -101,6 +101,18 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
         return ContainerFilter.current(getContainer());
     }
 
+    default ContainerFilter getDefaultLookupContainerFilter()
+    {
+        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        {
+            ContainerFilter.Type cfType = QueryService.get().getContainerFilterTypeForLookups(getContainer());
+            if (cfType != null)
+                return cfType.create(this);
+        }
+
+        return this.getDefaultContainerFilter();
+    }
+
     Set<String> getTableNames();
 
     Collection<TableInfo> getTables();

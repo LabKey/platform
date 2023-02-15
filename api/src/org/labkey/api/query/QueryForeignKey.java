@@ -57,7 +57,6 @@ public class QueryForeignKey extends AbstractForeignKey
     LookupColumn.JoinType _joinType = LookupColumn.JoinType.leftOuter;
     DetailsURL _url;
 
-    /* There are (were) way too many QueryForeignKey constructors, that's a sign we need a builder */
     public static class Builder implements org.labkey.api.data.Builder<ForeignKey>
     {
         QuerySchema sourceSchema;
@@ -90,8 +89,8 @@ public class QueryForeignKey extends AbstractForeignKey
         {
             sourceSchema = schema;
             containerFilter = cf;
-            if (schema instanceof UserSchema)
-                schema((UserSchema) schema);
+            if (schema instanceof UserSchema userSchema)
+                schema(userSchema);
             effectiveContainer = schema.getContainer();
             user = sourceSchema.getUser();
         }
@@ -111,7 +110,6 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-
         public Builder schema(String schemaName)
         {
             lookupSchemaKey = SchemaKey.fromString(schemaName);
@@ -119,7 +117,6 @@ public class QueryForeignKey extends AbstractForeignKey
             targetSchema = null;
             return this;
         }
-
 
         // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
         public Builder schema(String schemaName, Container effectiveContainer)
@@ -158,12 +155,6 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-//        public Builder setTableName(String tableName)
-//        {
-//            this.lookupTableName = tableName;
-//            return this;
-//        }
-
         public Builder key(String name)
         {
             this.lookupKey = name;
@@ -181,18 +172,6 @@ public class QueryForeignKey extends AbstractForeignKey
             this.url = url;
             return this;
         }
-
-//        public Builder setLookupKey(String name)
-//        {
-//            this.lookupKey = name;
-//            return this;
-//        }
-
-//        public Builder setDisplayField(String field)
-//        {
-//            this.displayField = field;
-//            return this;
-//        }
 
         public Builder display(String field)
         {
@@ -358,15 +337,6 @@ public class QueryForeignKey extends AbstractForeignKey
         return _lookupContainer;
     }
 
-    private Container getEffectiveContainer()
-    {
-        if (null != _table)
-            return _table.getUserSchema().getContainer();
-        if (null != _schema)
-            return _schema.getContainer();
-        return _effectiveContainer;
-    }
-
     @Override
     protected User getLookupUser()
     {
@@ -394,9 +364,9 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         if (_schema == null && _user != null && _lookupSchemaKey != null)
         {
-            DefaultSchema resolver = null;
-            if (null==_sourceSchema || !_effectiveContainer.equals(_sourceSchema.getContainer()))
-                resolver = DefaultSchema.get(_user,_effectiveContainer);
+            DefaultSchema resolver;
+            if (null == _sourceSchema || !_effectiveContainer.equals(_sourceSchema.getContainer()))
+                resolver = DefaultSchema.get(_user, _effectiveContainer);
             else
                 resolver = _sourceSchema.getDefaultSchema();
             _schema = DefaultSchema.resolve(resolver, _lookupSchemaKey);

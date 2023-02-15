@@ -89,12 +89,4 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
     {
         _containerFilter = filter;
     }
-
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        if (null != _userSchema)
-            return _userSchema.getDefaultContainerFilter();
-        return super.getDefaultContainerFilter();
-    }
 }
