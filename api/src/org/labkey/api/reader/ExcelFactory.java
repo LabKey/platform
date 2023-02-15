@@ -48,9 +48,9 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
@@ -315,7 +315,8 @@ public class ExcelFactory
 
                 for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
                 {
-                    Object value = rowArray.get(colIndex);
+                    // NOTE: if the value is null, it is stored as JSONObject.NULL. check for this:
+                    Object value = rowArray.isNull(colIndex) ? null : rowArray.get(colIndex);
                     JSONObject metadataObject = null;
                     CellStyle cellStyle = defaultStyle;
                     if (value instanceof JSONObject)
@@ -332,7 +333,7 @@ public class ExcelFactory
                     }
 
                     Cell cell = row.createCell(colIndex);
-                    if (value instanceof java.lang.Number)
+                    if (value instanceof Number)
                     {
                         cell.setCellValue(((Number)value).doubleValue());
                         if (metadataObject != null && metadataObject.has("formatString"))
@@ -969,7 +970,7 @@ public class ExcelFactory
             assertEquals("StringColumn", sheet1Rows.getJSONArray(0).getJSONObject(0).getString("value"));
             assertEquals("Hello", sheet1Rows.getJSONArray(1).getJSONObject(0).getString("value"));
             assertEquals("world", sheet1Rows.getJSONArray(2).getJSONObject(0).getString("value"));
-            assertEquals(null, sheet1Rows.getJSONArray(3).getJSONObject(0).getString("value"));
+            assertNull(sheet1Rows.getJSONArray(3).getJSONObject(0).optString("value", null));
 
             assertEquals("DateColumn", sheet1Rows.getJSONArray(0).getJSONObject(1).getString("value"));
             assertEquals("May 17, 2009", sheet1Rows.getJSONArray(1).getJSONObject(1).getString("formattedValue"));
@@ -978,7 +979,7 @@ public class ExcelFactory
             assertEquals("M/d/yy h:mm a", sheet1Rows.getJSONArray(2).getJSONObject(1).getString("formatString"));
             assertEquals("8:45 AM", sheet1Rows.getJSONArray(3).getJSONObject(1).getString("formattedValue"));
             assertEquals("h:mm a", sheet1Rows.getJSONArray(3).getJSONObject(1).getString("formatString"));
-            
+
             JSONObject sheet2 = jsonArray.getJSONObject(1);
             assertEquals("Sheet name", "Other Sheet", sheet2.getString("name"));
             JSONArray sheet2Rows = sheet2.getJSONArray("data");
