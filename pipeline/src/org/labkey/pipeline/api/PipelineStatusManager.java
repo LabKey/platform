@@ -380,6 +380,11 @@ public class PipelineStatusManager
      */
     public static void updateStatusFile(PipelineStatusFileImpl sf, StatusFileField ... fields)
     {
+        if (sf.getFilePath() == null)
+        {
+            throw new IllegalArgumentException("Status file paths cannot be null, but was for entry with RowId " + sf.getRowId() + " and GUID " + sf.getJobId());
+        }
+
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
