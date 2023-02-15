@@ -323,6 +323,12 @@
           <shownInInsertView>false</shownInInsertView>
           <shownInUpdateView>false</shownInUpdateView>
       </column>
+      <column columnName="MaterialExpDate">
+          <isUserEditable>true</isUserEditable>
+          <shownInDetailsView>true</shownInDetailsView>
+          <shownInInsertView>true</shownInInsertView>
+          <shownInUpdateView>true</shownInUpdateView>
+      </column>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
@@ -988,6 +994,7 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="MaterialExpDate"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
