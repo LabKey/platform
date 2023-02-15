@@ -158,12 +158,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
         finally
         {
-            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
-            // This results in the done event being slightly out of order, but better than where it was.
-            if (PipelineService.get().isEnterprisePipeline())
-            {
-                done(null);
-            }
+            PipelineService.get().getPipelineQueue().almostDone(this);
         }
     }
 

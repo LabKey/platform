@@ -105,4 +105,9 @@ public interface PipelineQueue
     /** @return the position of each job in the queue, keyed by the job's GUID of the status file */
     @NotNull
     Map<String, Integer> getQueuePositions();
+
+    /**
+     * Queue event that should be called just prior to finishing a job
+     */
+    void almostDone(PipelineJob pipelineJob);
 }
