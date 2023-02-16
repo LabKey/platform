@@ -1,4 +1,4 @@
-package org.labkey.api.util;
+package org.json.old;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
