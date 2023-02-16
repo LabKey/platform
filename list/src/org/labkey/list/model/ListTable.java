@@ -96,6 +96,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     static
     {
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Name"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "MaterialExpDate"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "LabelColor"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Folder"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet"));
