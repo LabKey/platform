@@ -31,7 +31,6 @@ public class CPUTimer
 {
     private static final Logger _log = LogManager.getLogger(CPUTimer.class);
 
-
 	//
 	// cumulative timers
 	//
@@ -42,9 +41,11 @@ public class CPUTimer
 	private long _cumulative = 0;
     private long _min = Long.MAX_VALUE;
     private long _max = Long.MIN_VALUE;
+    private long _first = 0;
+    private long _last = 0;
 	private long _start = 0;
+    private long _stop = 0;
 	private int _calls = 0;
-
 
 	public CPUTimer(String name)
     {
@@ -57,9 +58,9 @@ public class CPUTimer
         }
     }
 
-
 	public boolean start()
     {
+        _stop = 0;
 		_start = System.nanoTime();
 		return true;
     }
@@ -74,22 +75,59 @@ public class CPUTimer
         return _start > 0;
     }
 
+    /**
+     * Will stop the timer and save all accumulated data (duration, max, min etc...).
+     *
+     * @return Always returns true.
+     */
 	public boolean stop()
     {
-		long stop = System.nanoTime();
-		if (stop > _start)
-        {
-            long elapsed = (stop - _start);
-			_cumulative += elapsed;
-			_min = Math.min(_min, elapsed);
-			_max = Math.max(_max, elapsed);
-			_calls++;
-        }
-		_start = 0;
+		_stop = System.nanoTime();
+        save();
 		return true;
     }
 
+    /**
+     * Will stop the timer but will not save any information (duration, min, max, etx...). The information is persisted
+     * can can be saved by calling the save method. If the timer is stopped by this method and then start is called again
+     * before the save method is called, the old information will be lost.
+     *
+     * @return Always returns true.
+     */
+    public boolean stopWithoutSave()
+    {
+        _stop = System.nanoTime();
+        return true;
+    }
 
+    /**
+     * Will save the various information (duration, max, min, etc...) if not already saved. Should be called if
+     * stopWithoutSave is called.
+     *
+     * @return Always returns true.
+     */
+    public boolean save()
+    {
+        if (_stop > _start)
+        {
+            long elapsed = (_stop - _start);
+            _cumulative += elapsed;
+            _min = Math.min(_min, elapsed);
+            _max = Math.max(_max, elapsed);
+            _first = _first == 0 ? elapsed : _first;
+            _last = elapsed;
+            _calls++;
+        }
+        _start = 0;
+        _stop = 0;
+        return true;
+    }
+
+    /**
+     * Sets cumulative and average time to 0. Does not reset max, min, first or last.
+     *
+     * @return Always returns true.
+     */
 	public boolean clear()
     {
 		_cumulative = 0;
@@ -101,33 +139,99 @@ public class CPUTimer
         return _name;
     }
 
+    /**
+     * @return Total amount of time, all start/stops, in nanoTime.
+     */
 	public long getTotal()
     {
         return _cumulative;
     }
 
+    /**
+     * @return Shortest start/stop call in nanoTime.
+     */
     public long getMin()
     {
         return _min;
     }
 
+    public long getMinMilliseconds()
+    {
+        return (long)(_min * msFactor);
+    }
+
+    /**
+     * @return Longest start/stop call in nanoTime.
+     */
     public long getMax()
     {
         return _max;
     }
 
+    public long getMaxMilliseconds()
+    {
+        return (long)(_max * msFactor);
+    }
 
+    /**
+     * Get the elapsed time of the first start/stop call. Returns nanoTime.
+     *
+     * @return Duration in nanoTime of first start/stop call.
+     */
+    public long getFirst()
+    {
+        return _first;
+    }
+
+    /**
+     * Get the elapsed time of the first start/stop call. Returns milliseconds.
+     *
+     * @return Duration in milliseconds of first start/stop call.
+     */
+    public long getFirstMilliseconds()
+    {
+        return (long)(_first * msFactor);
+    }
+
+    /**
+     * Get the elapsed time of the last start/stop call. Returns nanoTime.
+     *
+     * @return Duration in nanoTime of last start/stop call.
+     */
+    public long getLast()
+    {
+        return _last;
+    }
+
+    /**
+     * Get the elapsed time of the last start/stop call. Returns milliseconds.
+     *
+     * @return Duration in milliseconds of last start/stop call.
+     */
+    public long getLastMilliseconds()
+    {
+        return (long)(_last * msFactor);
+    }
+
+    /**
+     * Get the total amount of time, including all start and stops, in milliseconds.
+     *
+     * @return Total amount of time in milliseconds.
+     */
     public long getTotalMilliseconds()
     {
         return (long)(_cumulative * msFactor);
     }
 
-
+    /**
+     * Get the total amount of milliseconds, including all start and stops, in a formatted string.
+     *
+     * @return Formatted amount of time in milliseconds.
+     */
     public String getDuration()
     {
         return DateUtil.formatDuration(getTotalMilliseconds());
     }
-    
 
     public float getAverage()
     {
@@ -161,7 +265,7 @@ public class CPUTimer
         }
     }
 
-
+    // Converts a nanoTime into milliseconds.
     private static final double msFactor = 1.0e-6;
 
     public static String header()
@@ -182,13 +286,11 @@ public class CPUTimer
                 t._calls);
     }
 
-
 	@Override
 	public String toString()
     {
         return format(this);
     }
-
 
 	private static void format(Object l, int width, StringBuilder sb)
     {
@@ -198,12 +300,10 @@ public class CPUTimer
 		sb.append(s);
     }
 
-
     private static void logDebug(CharSequence s)
     {
         _log.debug(s);
     }
-
 
     public static void main(String[] args)
     {
@@ -225,4 +325,5 @@ public class CPUTimer
         System.err.println(f);
         assert msFactor*.999 < f && f < msFactor * 1.001;
     }
+
 }
