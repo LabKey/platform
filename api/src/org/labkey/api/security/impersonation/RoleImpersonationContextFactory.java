@@ -32,7 +32,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -141,10 +140,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private String getRolesDisplayString(Set<String> roleNames)
     {
         Set<String> roleDisplayNames = roleNames.stream()
-                .map(RoleManager::getRole)
-                .filter(Objects::nonNull)
-                .map(Role::getName)
-                .collect(Collectors.toSet());
+            .map(RoleManager::getRole)
+            .filter(Objects::nonNull)
+            .map(Role::getName)
+            .collect(Collectors.toSet());
 
         if (roleDisplayNames.isEmpty())
             return "";
@@ -153,7 +152,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         if (roleDisplayNames.size() > 1)
             builder.append("s");
         builder.append(": ");
-        builder.append(StringUtils.collectionToCommaDelimitedString(roleDisplayNames));
+        builder.append(String.join(", ", roleDisplayNames));
         builder.append(".");
         return builder.toString();
     }
