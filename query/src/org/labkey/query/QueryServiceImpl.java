@@ -2659,8 +2659,106 @@ public class QueryServiceImpl implements QueryService
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
     {
         var query = new Query(table.getUserSchema());
-        var selectView = QuerySelectView.create(query, table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging);
+        var selectView = QuerySelectView.create(query, table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging, false);
         return selectView.getSql();
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(TableInfo table)
+    {
+        return new SelectBuilderImpl(table);
+    }
+
+
+    class SelectBuilderImpl implements SelectBuilder
+    {
+        final TableInfo table;
+        Collection<ColumnInfo> columns;
+        Filter filter;
+        Sort sort;
+        int maxRows = Table.ALL_ROWS;
+        long offset = Table.NO_OFFSET;
+        boolean forceSort = false;
+        QueryLogging queryLogging = new QueryLogging();
+        boolean distinct = false;
+
+        SelectBuilderImpl(TableInfo table)
+        {
+            this.table = table;
+        }
+
+        @Override
+        public SelectBuilder columns(Collection<ColumnInfo> columns)
+        {
+            this.columns = columns;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder filter(Filter filter)
+        {
+            this.filter = filter;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder sort(Sort sort)
+        {
+            this.sort = sort;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder maxRows(int maxRows)
+        {
+            this.maxRows = maxRows;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder offset(long offset)
+        {
+            this.offset = offset;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder forceSort(boolean b)
+        {
+            this.forceSort = b;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder queryLogging(QueryLogging queryLogging)
+        {
+            this.queryLogging = queryLogging;
+            return this;
+        }
+
+        @Override
+        public SelectBuilder distinct(boolean b)
+        {
+            this.distinct = b;
+            return this;
+        }
+
+        @Override
+        public SQLFragment build()
+        {
+            if (null == queryLogging)
+                queryLogging = QueryLogging.emptyQueryLogging();
+
+            var query = new Query(table.getUserSchema());
+            var selectView = QuerySelectView.create(query, this.table, this.columns, this.filter, this.sort, this.maxRows, this.offset, this.forceSort, this.queryLogging, this.distinct);
+            return selectView.getSql();
+        }
+
+        @Override
+        public QueryLogging getQueryLogging()
+        {
+            return queryLogging;
+        }
     }
 
 

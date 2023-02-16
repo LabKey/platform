@@ -259,6 +259,7 @@ public interface QueryService
      */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
+    SelectBuilder getSelectBuilder(TableInfo table);
 
     void addCompareType(CompareType type);
 
@@ -625,4 +626,19 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
+
+    interface SelectBuilder
+    {
+        SelectBuilder columns(Collection<ColumnInfo> columns);
+        SelectBuilder filter(Filter filter);
+        SelectBuilder sort(Sort sort);
+        SelectBuilder maxRows(int maxRows);
+        SelectBuilder offset(long offset);
+        SelectBuilder forceSort(boolean b);
+        SelectBuilder queryLogging(QueryLogging queryLogging);
+        SelectBuilder distinct(boolean b);
+        SQLFragment build();
+
+        QueryLogging getQueryLogging();
+    }
 }
