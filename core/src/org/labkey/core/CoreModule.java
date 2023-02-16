@@ -58,6 +58,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
@@ -266,6 +267,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -1127,6 +1129,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         TempTableTracker.init();
+    }
+
+    @Override
+    public List<Summary> getDetailedSummary(Container c)
+    {
+        int childContainerCount = ContainerManager.getChildren(c).size();
+        return childContainerCount > 0
+                ? List.of(new Summary(childContainerCount, "subfolder", "subfolders"))
+                : new ArrayList<>();
     }
 
     @Override

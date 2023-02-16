@@ -388,6 +388,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptyList();
     }
 
+    @Override
+    public List<Summary> getDetailedSummary(Container c)
+    {
+        return new ArrayList<>();
+    }
 
     @Override
     public final Map<String, Class<? extends Controller>> getControllerNameToClass()

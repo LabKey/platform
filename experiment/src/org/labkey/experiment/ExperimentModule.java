@@ -25,6 +25,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -55,6 +56,7 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -62,9 +64,13 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
@@ -702,6 +708,46 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
         return list;
+    }
+
+    @Override
+    public ArrayList<Summary> getDetailedSummary(Container c)
+    {
+        ArrayList<Summary> summaries = new ArrayList<>();
+        User user = HttpView.currentContext().getUser();
+
+        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, true);
+        int dataClassCount = dataClasses.size();
+        if (dataClassCount > 0)
+            summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
+
+        // Non-final. Pretty inefficient.
+        for (ExpDataClass dataClass : dataClasses)
+        {
+            String dataClassName = dataClass.getName();
+            List<? extends ExpData> data = dataClass.getDatas();
+            int dataCount = 0;
+
+            for (ExpData d : data)
+            {
+                if (d.getContainer().equals(c))
+                    dataCount++;
+            }
+            if (dataCount > 0)
+                summaries.add(new Summary(dataCount, dataClassName, dataClassName + "s"));
+        }
+
+
+//        Sample Type scribbles
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        if (sampleTypeCount > 0)
+            summaries.add(new Summary(sampleTypeCount, "Sample Type", "Sample Types"));
+
+        UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
+        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.Current.create(c, user));
+        sampleTypeTable.populate();
+
+        return new ArrayList<>();
     }
 
     @Override

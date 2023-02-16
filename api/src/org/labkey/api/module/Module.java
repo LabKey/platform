@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -204,6 +205,12 @@ public interface Module
      * @return description of the objects that this module has stored in the container
      */
     @NotNull Collection<String> getSummary(Container c);
+
+    /**
+     * @param c container in which the items would be stored
+     * @return description of the objects that this module has stored in the container. More detailed than above
+     */
+    List<Summary> getDetailedSummary(Container c);
 
     /**
      * Returns a map of pageflow name to controller class (for example, "wiki" -> WikiController) whose

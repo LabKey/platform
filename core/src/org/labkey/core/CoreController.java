@@ -82,6 +82,7 @@ import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.module.Summary;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
@@ -198,10 +199,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -1625,6 +1628,24 @@ public class CoreController extends SpringActionController
         public void setIncludePropertyValues(boolean includePropertyValues)
         {
             _includePropertyValues = includePropertyValues;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class GetModuleSummaryAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ArrayList<Summary> allSummaries = new ArrayList<>();
+
+            for (Module m : ModuleLoader.getInstance().getModules())
+            {
+                List<Summary> summaries = m.getDetailedSummary(getContainer());
+                allSummaries.addAll(summaries);
+            }
+
+            return new ApiSimpleResponse("moduleSummary", allSummaries.stream().map(Summary::toJSON).collect(Collectors.toList()));
         }
     }
 
