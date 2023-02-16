@@ -2770,7 +2770,7 @@ public class DavController extends SpringActionController
         {
             json.object();
             json.key("id").value(resource.getPath());
-            String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
+            String displayName = resource.getPath().isEmpty() ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
             if (resource.getNioPath() != null)
                 json.key("dataFileUrl").value(FileUtil.pathToString(resource.getNioPath()));
