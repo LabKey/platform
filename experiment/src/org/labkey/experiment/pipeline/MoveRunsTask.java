@@ -151,8 +151,8 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         private final String _uploadTime;
 
         private String _experimentName;
-        private String _root;
-        private Container _sourceContainer;
+        private final String _root;
+        private final Container _sourceContainer;
 
         public MoveRunsXarSource(String xml, Path root, MoveRunsPipelineJob job) throws ExperimentException
         {
