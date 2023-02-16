@@ -767,7 +767,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull String parameterValue,
         @Nullable Container c,
         @Nullable User user,
-        boolean includeProjectAndShared
+        @Nullable ContainerFilter cf
     );
 
     void registerRunEditor(ExpRunEditor editor);

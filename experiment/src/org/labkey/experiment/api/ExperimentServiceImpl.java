@@ -7628,7 +7628,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @NotNull String parameterValue,
         @Nullable Container c,
         @Nullable User user,
-        boolean includeProjectAndShared
+        @Nullable ContainerFilter cf
     )
     {
         SimpleFilter parameterFilter = new SimpleFilter()
@@ -7644,10 +7644,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
         else
         {
-            if (user != null && includeProjectAndShared)
+            if (user != null && cf != null)
             {
                 protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
-                ContainerFilter cf = ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user);
                 protocolFilter.addCondition(cf.createFilterClause(getTinfoProtocol().getSchema(), FieldKey.fromParts("Container")));
             }
             else
