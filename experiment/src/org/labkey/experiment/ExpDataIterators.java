@@ -262,54 +262,6 @@ public class ExpDataIterators
         }
     }
 
-    public static class ExpMaterialAmountDataIteratorBuilder implements DataIteratorBuilder
-    {
-        private final DataIteratorBuilder _in;
-        private final Container _container;
-        private final User _user;
-        private final ExpSampleType _sampleType;
-
-        public ExpMaterialAmountDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container container, @NotNull User user)
-        {
-            _in = in;
-            _container = container;
-            _user = user;
-            _sampleType = ((ExpMaterialTableImpl) target).getSampleType();
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new ExpMaterialAmountDataIterator(pre, context, _sampleType));
-        }
-    }
-
-    public static class ExpMaterialAmountDataIterator extends WrapperDataIterator
-    {
-        List<String> _errorMsgs = new ArrayList<>();
-        private final SampleMeasurementUnit _metricUnit;
-        final Integer _storedAmountCol;
-        final Integer _storedUnitsCol;
-        final DataIteratorContext _context;
-
-        protected ExpMaterialAmountDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
-        {
-            super(di);
-            _context = context;
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _storedAmountCol = map.get("StoredAmount");
-            _storedUnitsCol = map.get("Units");
-            _metricUnit = sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(sampleType.getMetricUnit()) : null;
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
-        }
-
-    }
-
     public static class ExpMaterialDataIteratorBuilder extends StandardDataIteratorBuilder
     {
         public ExpMaterialDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
