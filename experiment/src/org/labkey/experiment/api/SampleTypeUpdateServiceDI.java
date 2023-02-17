@@ -1509,28 +1509,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object amountObj)
             {
-                Double amount;
                 if (amountObj == null)
                     return null;
-                else if (amountObj instanceof Integer)
-                {
-                    amount = Double.valueOf((int) amountObj);
-                }
-                else if (amountObj instanceof Double)
-                {
-                    amount =  (Double) amountObj;
-                }
-                else if (amountObj instanceof String)
-                    try
-                    {
-                        amount =  Double.valueOf((String) amountObj);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        throw new ConversionException("Amount (" + amountObj + ") must be a number.");
-                    }
-                else
-                   throw new ConversionException("Amount (" + amountObj + ") must be a number.");
+                Double amount = ExpMaterial.convertToAmount(amountObj);
 
                 String sampleTypeUnitStr = _sampleType.getMetricUnit();
                 try

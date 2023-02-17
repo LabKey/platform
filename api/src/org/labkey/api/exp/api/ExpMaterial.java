@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -78,4 +79,29 @@ public interface ExpMaterial extends ExpRunItem
     void setSampleStateId(Integer stateId);
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
+
+    static Double convertToAmount(Object amountObj)
+    {
+        if (amountObj == null)
+            return null;
+        else if (amountObj instanceof Integer)
+        {
+            return Double.valueOf((int) amountObj);
+        }
+        else if (amountObj instanceof Double)
+        {
+            return (Double) amountObj;
+        }
+        else if (amountObj instanceof String)
+            try
+            {
+                return Double.valueOf((String) amountObj);
+            }
+            catch (NumberFormatException e)
+            {
+                throw new ConversionException("Amount (" + amountObj + ") must be a number.");
+            }
+        else
+            throw new ConversionException("Amount (" + amountObj + ") must be a number.");
+    }
 }
