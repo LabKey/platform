@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -430,9 +431,13 @@ public class XarExporter
             }
             else
             {
-                dataLSID.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
-                if (data.getCpasType() != null && !ExpData.DEFAULT_CPAS_TYPE.equalsIgnoreCase(data.getCpasType()))
+                if (isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE))
                 {
+                    dataLSID.setCpasType(ExpData.DEFAULT_CPAS_TYPE);
+                }
+                else
+                {
+                    dataLSID.setCpasType(_relativizedLSIDs.relativize(data.getCpasType()));
                     ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(data.getCpasType());
                     if (dataClass != null)
                     {
@@ -574,12 +579,17 @@ public class XarExporter
         }
     }
 
+    private boolean isDefaultCpasType(String cpasType, @NotNull String defaultType)
+    {
+        return cpasType == null || defaultType.equals(cpasType);
+    }
+
     private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
         logProgress("Adding material " + material.getLSID());
         addSampleType(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
-        xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
+        xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
         if (material.getRootMaterialLSID() != null)
             xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(material.getRootMaterialLSID()));
@@ -932,7 +942,7 @@ public class XarExporter
         logProgress("Adding data " + data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
-        xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
+        xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
         Path path = data.getFilePath();
         if (path != null)
