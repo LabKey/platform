@@ -2,6 +2,7 @@ package org.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.old.JSONArray;
+import org.json.old.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.JsonUtil;
@@ -26,9 +27,9 @@ public class OldJsonTest extends Assert
 
         final Date d = new GregorianCalendar(2011, Calendar.DECEMBER, 3).getTime();
 
-        org.json.old.JSONObject obj = new org.json.old.JSONObject();
+        JSONObject obj = new JSONObject();
         obj.put("str", "hello");
-        obj.put("arr", new JSONArray(Arrays.asList("one", null, 3, new org.json.old.JSONObject(Collections.singletonMap("four", 4)))));
+        obj.put("arr", new JSONArray(Arrays.asList("one", null, 3, new JSONObject(Collections.singletonMap("four", 4)))));
         obj.put("nul", (Object)null);
         obj.put("d", d);
 
@@ -39,8 +40,8 @@ public class OldJsonTest extends Assert
 
         // Verify deserializing org.json.old.JSONObject via Jackson is equivalent
         // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
-        org.json.old.JSONObject jsonOrgRoundTrip =  new org.json.old.JSONObject(jacksonToString);
-        org.json.old.JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, org.json.old.JSONObject.class);
+        JSONObject jsonOrgRoundTrip =  new JSONObject(jacksonToString);
+        JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, JSONObject.class);
         assertEquals(jsonOrgRoundTrip, jacksonRoundTrip);
     }
 
@@ -49,7 +50,7 @@ public class OldJsonTest extends Assert
     {
         ActionURL url = HttpView.currentContext().getActionURL();
         Map<String, Object> map = Map.of("url", url);
-        assertEquals(new org.json.old.JSONObject(map).toString(), new org.json.JSONObject(map).toString());
+        assertEquals(new JSONObject(map).toString(), new org.json.JSONObject(map).toString());
         assertEquals("{\"url\":\"" + url + "\"}", new org.json.JSONObject(map).toString());
     }
 }

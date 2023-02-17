@@ -19,14 +19,20 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +87,32 @@ public class JsonTest extends Assert
             // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void jsonOrgViaJackson() throws IOException
+    {
+        // Test serializing org.json.* classes via Jackson
+        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER;
+
+        final Date d = new GregorianCalendar(2011, Calendar.DECEMBER, 3).getTime();
+
+        JSONObject obj = new JSONObject();
+        obj.put("str", "hello");
+        obj.put("arr", new JSONArray(Arrays.asList("one", null, 3, new JSONObject(Collections.singletonMap("four", 4)))));
+        obj.put("nul", (Object)null);
+//        obj.put("d", d);  //TODO: new JSONObject serializes date-times as ISO
+
+        // Verify serializing org.json.JSONObject via Jackson is equivalent
+        String jacksonToString = mapper.writeValueAsString(obj);
+        String jsonOrgToString = obj.toString();
+        assertEquals(jsonOrgToString, jacksonToString);
+
+        // Verify deserializing org.json.JSONObject via Jackson is equivalent
+        // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
+        JSONObject jsonOrgRoundTrip =  new JSONObject(jacksonToString);
+        JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, JSONObject.class);
+        assertTrue("Not equivalent: " + jsonOrgRoundTrip + " vs. " + jacksonRoundTrip, jsonOrgRoundTrip.similar(jacksonRoundTrip)); // Note: JSONObject.equals() doesn't work as expected
     }
 
     @Test
