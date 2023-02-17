@@ -250,7 +250,7 @@ public class CPUTimer
     }
 
     /**
-     * @return Out put the timer information in milliseconds.
+     * @return Output the timer information in milliseconds.
      */
     public static String dumpAllTimers()
     {
