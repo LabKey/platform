@@ -249,6 +249,9 @@ public class CPUTimer
         return _calls;
     }
 
+    /**
+     * @return Out put the timer information in milliseconds.
+     */
     public static String dumpAllTimers()
     {
 		synchronized(timers)
@@ -281,6 +284,9 @@ public class CPUTimer
             "", "cumulative", "min", "max", "first", "last", "average", "calls");
     }
 
+    /**
+     * @return Output the time in milliseconds.
+     */
     public static String format(CPUTimer t)
     {
         double ms = t._cumulative * msFactor;
