@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate;
@@ -724,8 +723,8 @@ public class QuerySettings
                 Object[] values = null;
                 if (o instanceof Object[])
                     values = (Object[])o;
-                else if (o instanceof JSONArray)
-                    values = ((JSONArray)o).toArray();
+                else if (o instanceof List<?> list)
+                    values = list.toArray();
 
                 if (values != null)
                     for (Object value : values)
