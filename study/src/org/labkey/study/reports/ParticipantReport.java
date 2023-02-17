@@ -17,8 +17,8 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -163,7 +164,6 @@ public class ParticipantReport extends AbstractReport
         String groupsConfig = getDescriptor().getProperty(GROUPS_PROP);
         if (groupsConfig != null)
         {
-            JSONArray groups = new JSONArray(groupsConfig);
             Map<String, CohortImpl> cohortMap = new HashMap<>();
             Map<String, ParticipantGroup> groupMap = new HashMap<>();
 
@@ -177,7 +177,8 @@ public class ParticipantReport extends AbstractReport
             }
 
             JSONArray newGroups = new JSONArray();
-            for (JSONObject group : groups.toJSONObjectArray())
+            JSONArray groups = new JSONArray(groupsConfig);
+            for (JSONObject group : JsonUtil.toJSONObjectList(groups))
             {
                 String type = group.getString("type");
                 String label = group.getString("label");

@@ -28,9 +28,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
-import org.json.old.JSONWriter;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONWriter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
@@ -2770,7 +2770,7 @@ public class DavController extends SpringActionController
         {
             json.object();
             json.key("id").value(resource.getPath());
-            String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
+            String displayName = resource.getPath().isEmpty() ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
             if (resource.getNioPath() != null)
                 json.key("dataFileUrl").value(FileUtil.pathToString(resource.getNioPath()));

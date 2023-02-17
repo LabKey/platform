@@ -1,5 +1,6 @@
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.TableInfo;
@@ -12,7 +13,6 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
