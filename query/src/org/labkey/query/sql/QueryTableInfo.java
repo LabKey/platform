@@ -135,57 +135,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
-/*
-    public void remapFieldKeys()
-    {
-        Query query = _relation._query;
-
-        initFieldKeyMap();
-        CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
-
-        for (var ci : getMutableColumns())
-        {
-            // Find if this column is associated with a QueryTable.
-            // If it is, use that tables "remap" map to fix up column using ColumnInfo.remapFieldKeys().
-            String uniqueName = ((AbstractQueryRelation.RelationColumnInfo) ci)._column.getUniqueName();
-            AbstractQueryRelation.RelationColumn sourceColumn = query._mapUniqueNamesToRelationColumn.get(uniqueName);
-            QueryRelation sourceRelation = null == sourceColumn ? null : sourceColumn.getTable();
-            Map<FieldKey, FieldKey> remap = sourceRelation instanceof QueryTable qt ? mapFieldKeyToSiblings.get(qt) : null;
-
-            if (null != remap)
-            {
-//                try
-                {
-                    ci.remapFieldKeys(null, remap, warnings, true);
-                    var queryWarnings = _relation._query.getParseWarnings();
-                    for (String w : warnings)
-                        queryWarnings.add(new QueryParseWarning(w, null, 0, 0));
-                }
-//                catch (MutableColumnInfo.RemapFieldKeysException fke)
-//                {
-//                    throw new QueryException(fke.getMessage(), fke);
-//                }
-            }
-
-            // handle QueryColumnLogging which need to be converted to a normal ColumnLogging
-            if (ci.getColumnLogging() instanceof QueryColumnLogging qcl)
-            {
-//                try
-                {
-                    ci.setColumnLogging(qcl.remapQueryFieldKeys(this, ci));
-                }
-//                catch (MutableColumnInfo.RemapFieldKeysException rfke)
-//                {
-//                    QueryParseWarning w = new QueryParseWarning(rfke.getMessage(), null, 0, 0);
-//                    _relation._query.getParseWarnings().add(w);
-//                    ci.setColumnLogging(ColumnLogging.error(w.getM));
-//                }
-            }
-            assert !(ci.getColumnLogging() instanceof QueryColumnLogging);
-        }
-    }
-*/
-
     /* helper method to fixup fieldkeys for columns in QueryTableInfo  */
     public void remapSelectFieldKeys(boolean skipColumnLogging)
     {
