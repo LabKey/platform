@@ -1561,10 +1561,18 @@ d,seven,twelve,day,month,date,duration,guid
     List<SqlTest> cteTests = List.of(
         new SqlTest("WITH peeps AS (SELECT * FROM R) SELECT * FROM peeps", -1, 84),
 
-        new SqlTest("WITH peepsSeed AS (SELECT * FROM R), peepsUnion AS (SELECT * FROM peepsSeed UNION ALL SELECT * FROM peepsUnion WHERE (1=0))\n" +
-                "SELECT * FROM peepsUnion", -1, 84),
+        new SqlTest("""
+                WITH
+                    peepsSeed AS (SELECT * FROM R),
+                    peepsUnion AS (SELECT * FROM peepsSeed UNION ALL SELECT * FROM peepsUnion WHERE (1=0))
+                SELECT * FROM peepsUnion""", -1, 84),
         // nested again
-        new SqlTest("WITH peepsSeed AS (SELECT * FROM R), peepsUnion AS (SELECT * FROM peepsSeed UNION ALL SELECT * FROM peepsUnion WHERE (1=0)), peeps2 AS (SELECT * FROM peepsUnion) SELECT * FROM peeps2", -1, 84),
+        new SqlTest("""
+                WITH
+                    peepsSeed AS (SELECT * FROM R),
+                    peepsUnion AS (SELECT * FROM peepsSeed UNION ALL SELECT * FROM peepsUnion WHERE (1=0)),
+                    peeps2 AS (SELECT * FROM peepsUnion)
+                SELECT * FROM peeps2""", -1, 84),
 
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM (SELECT * FROM peeps) q WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),

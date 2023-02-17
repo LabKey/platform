@@ -26,10 +26,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -238,30 +239,27 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
     }
 
 
+    /* ArrayList order please */
     @Override
     public Set<Entry<K, V>> entrySet()
     {
-        Set<Entry<K, V>> r = new HashSet<>(_row.size() * 2);
-        for (Entry<K, Integer> e : _findMap.entrySet())
+        // This is not particularly fast, but that's probably OK
+        ArrayList<Entry<K, V>> entryList = new ArrayList<>(_findMap.size());
+        for (var findEntry : _findMap.entrySet())
         {
-            int i = e.getValue();
-            if (i < _row.size())
+            K key = findEntry.getKey();
+            int i = findEntry.getValue();
+            Object v = i>=_row.size() ? DOES_NOT_CONTAINKEY : _row.get(i);
+            if (v != DOES_NOT_CONTAINKEY)
             {
-                if (_row.get(i) != DOES_NOT_CONTAINKEY)
-                    r.add(new Pair<>(e.getKey(), (V)_row.get(i)));
+                while (entryList.size() <= i)
+                    entryList.add(null);
+                entryList.set(i, new Pair<K, V>(key, (V) v));
             }
         }
-        return r;
-    }
-
-
-    @Override
-    public Set<K> keySet()
-    {
-        Set<K> ret = _findMap.keySet();
-        assert null != (ret = Collections.unmodifiableSet(ret));
+        var ret = new LinkedHashSet<Entry<K, V>>();
+        entryList.stream().filter(Objects::nonNull).forEach(e -> ret.add(e));
         return ret;
-
     }
 
 
@@ -404,20 +402,76 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         @Test
         public void test()
         {
-            ArrayListMap<String,String> a = new ArrayListMap<>(4);
-            a.put("A", "one");
+            ArrayListMap<String, String> a = new ArrayListMap<>(4);
+            a.put("Z", "one");
             a.put("B", "two");
             a.put("C", "three");
             a.put("D", "four");
 
+            {
+                assertEquals(a.get("Z"), "one");
+                assertEquals(a.get(0), "one");
+                assertEquals(a.get("B"), "two");
+                assertEquals(a.get(1), "two");
+                assertEquals(a.get("C"), "three");
+                assertEquals(a.get(2), "three");
+                assertEquals(a.get("D"), "four");
+                assertEquals(a.get(3), "four");
+            }
+
+            {
+                var it = a.iterator();
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "one");
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "two");
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "three");
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "four");
+                assertFalse(it.hasNext());
+            }
+
+            {
+                var it = a.entrySet().iterator();
+                assertTrue(it.hasNext());
+                assertEquals(it.next().getKey(), "Z");
+                assertEquals(it.next().getKey(), "B");
+                assertEquals(it.next().getKey(), "C");
+                assertEquals(it.next().getKey(), "D");
+                assertFalse(it.hasNext());
+            }
+
+            {
+                var it = a.keySet().iterator();
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "Z");
+                assertEquals(it.next(), "B");
+                assertEquals(it.next(), "C");
+                assertEquals(it.next(), "D");
+                assertFalse(it.hasNext());
+            }
+
+            {
+                var it = a.values().iterator();
+                assertTrue(it.hasNext());
+                assertEquals(it.next(), "one");
+                assertEquals(it.next(), "two");
+                assertEquals(it.next(), "three");
+                assertEquals(it.next(), "four");
+                assertFalse(it.hasNext());
+            }
+
+            var it = a.entrySet().iterator();
+
             ArrayListMap<String,String> b = new ArrayListMap<>(a, new ArrayList<String>());
-            b.put("A", "ONE");
+            b.put("Z", "ONE");
             b.put("E", "FIVE");
             a.put("F", "six");
             b.put("G", "SEVEN");
 
-            assertEquals(a.get("A"), "one");
-            assertEquals(b.get("A"), "ONE");
+            assertEquals(a.get("Z"), "one");
+            assertEquals(b.get("Z"), "ONE");
 
             assertTrue(a.containsKey("E"));
             assertNull(a.get("E"));

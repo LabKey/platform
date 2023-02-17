@@ -21,6 +21,11 @@ import java.util.Set;
 
 public interface QueryRelation
 {
+    default String getDebugName()
+    {
+        return getClass().getSimpleName() + "@" + System.identityHashCode(this) + " " + getAlias();
+    }
+
     void setQuery(Query q);
 
     void setParent(QueryRelation parent);

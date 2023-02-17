@@ -445,6 +445,11 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             return sql;
     }
 
+    @Override
+    public String getDebugName()
+    {
+        return super.getDebugName() + "(" +_tableInfo.getUserSchema().getName() + "." + _tableInfo.getName() + ")";
+    }
 
     @Override
     public String getQueryText()

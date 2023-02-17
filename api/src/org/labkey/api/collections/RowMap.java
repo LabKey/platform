@@ -23,7 +23,7 @@ import java.util.List;
  * Time: 11:48:46 PM
  */
 
-public class RowMap<V> extends ArrayListMap<String, V>     // TODO: Move ArrayListMap methods into here
+public class RowMap<V> extends ArrayListMap<String, V>
 {
     protected RowMap()
     {
@@ -39,4 +39,6 @@ public class RowMap<V> extends ArrayListMap<String, V>     // TODO: Move ArrayLi
     {
         super(findMap);
     }
+
+    /* CONSIDER: we can optimize RowMaps to behave as if it always contains all the Keys in the find map */
 }

@@ -395,16 +395,21 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                     // Postgres is stricter so we'll allow some cases that will yield errors when run.
                     // Also, this allows VARCHAR to INT, which will fail on SQL Server if the VARCHAR cannot be converted (and always, of course, on Postgres)
                     int i = 0;
-                    for (RelationColumn termColumn : term.relation.getAllColumns().values())
+                    for (UnionSourceColumn unionColumn : term.columns)
                     {
-                        JdbcType type = termColumn.getJdbcType();
-                        if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(columnTypes.get(i)))
-                            columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
+                        JdbcType calculatedUnionType = columnTypes.get(i);
+                        JdbcType type = unionColumn.source.getJdbcType();
 
-                        else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(columnTypes.get(i)) &&
-                                !type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
+                        if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(calculatedUnionType))
+                        {
+                            columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
+                        }
+                        else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(calculatedUnionType) &&
+                                !type.equals(calculatedUnionType) && JdbcType.OTHER.equals(JdbcType.promote(type, calculatedUnionType)))
+                        {
                             Query.parseError(_query.getParseErrors(), _query._debugName + ": Mismatched types in UNION (" +
-                                    type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
+                                    type.name() + ", " + calculatedUnionType.name() + ") for column position " + (i + 1), _qunion);
+                        }
                         i += 1;
                     }
                 }
