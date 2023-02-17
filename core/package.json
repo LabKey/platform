@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.18.0",
-    "@labkey/components": "2.292.0",
+    "@labkey/api": "1.18.3",
+    "@labkey/components": "2.293.5-fb-gridIncludeTotalCount.2",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
