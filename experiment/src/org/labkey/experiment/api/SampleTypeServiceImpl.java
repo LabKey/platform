@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +44,9 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -51,6 +55,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -63,6 +68,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -76,7 +82,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
@@ -1066,11 +1071,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 transaction.addCommitTask(() -> {
                     clearMaterialSourceCache(container);
 
-                    if (finalHasMetricUnitChanged && InventoryService.get() != null)
+                    if (finalHasMetricUnitChanged)
                     {
                         try
                         {
-                            InventoryService.get().recomputeSampleTypeRollup(st, container, true);
+                            recomputeSampleTypeRollup(st, container, true);
                         }
                         catch (SQLException e)
                         {
@@ -1289,13 +1294,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private Collection<Integer> getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
     {
         SQLFragment sql = new SQLFragment(
-                """
-                        SELECT parent.rowId
-                        FROM exp.material AS parent
-                        WHERE parent.container = ?
-                            AND parent.RecomputeRollup = ?
-                            AND parent.lsid NOT IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE rootMaterialLsid IS NOT NULL)
-                            AND parent.cpastype = ?"""
+        """
+            SELECT parent.rowId
+            FROM exp.material AS parent
+            WHERE parent.container = ?
+                AND parent.RecomputeRollup = ?
+                AND parent.lsid NOT IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE rootMaterialLsid IS NOT NULL)
+                AND parent.cpastype = ?"""
         );
 
         sql.add(container);
@@ -1335,7 +1340,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return parentIds.size();
     }
 
-    // volumne/unit update events might have marked sample that is not an aliquot parent as need re-calc, which should be cleaned up
+    // storedAmount/unit update events might have marked sample that is not an aliquot parent as need re-calc, which should be cleaned up
     @Override
     public int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
@@ -1352,6 +1357,389 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql.add(sampleType.getLSID());
         sql.add(container);
         return new SqlSelector(s, sql).getRowCount();
+    }
+
+    // TODO where is this supposed to be used?
+    @Override
+    public void recomputeRollup(Container container, User user) throws SQLException
+    {
+        SampleTypeService sampleTypeService = SampleTypeService.get();
+        List<? extends ExpSampleType> sampleTypes = sampleTypeService
+                .getSampleTypes(container, user, true);
+
+        for (ExpSampleType sampleType : sampleTypes)
+        {
+            sampleTypeService.resetRecomputeFlagForNonParents(sampleType, container);
+            recomputeSampleTypeRollup(sampleType, container);
+        }
+
+    }
+
+    private boolean isAliquotRollupRecomputeNeeded(ExpSampleType sampleType, Container container)
+    {
+        return getRecomputeRollupRowCount(sampleType, container) > 0;
+    }
+
+
+    private int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
+    {
+        return recomputeSampleTypeRollup(sampleType, container, false);
+    }
+
+    @Override
+    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws IllegalStateException, SQLException
+    {
+        if (!forceAll && !isAliquotRollupRecomputeNeeded(sampleType, container))
+            return 0;
+
+        Pair<Collection<Integer>, Collection<Integer>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container, forceAll);
+        Collection<Integer> withoutAmountsParents = parentsGroup.first;
+        Collection<Integer> withAmountsParents = parentsGroup.second;
+        Set<Integer> parents = new HashSet<>();
+        parents.addAll(withoutAmountsParents);
+        parents.addAll(withAmountsParents);
+
+        return recomputeSamplesRollup(parents, withAmountsParents, sampleType.getMetricUnit());
+    }
+
+    @Override
+    public void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs)
+    {
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID ";
+
+        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+        updateSQL.add(Boolean.TRUE);
+        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleLSIDs);
+
+        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+    }
+
+
+    // TODO where is this supposed to be used
+    @Override
+    public void setRecomputeFlagForSample(String sampleLSID)
+    {
+        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID = ? ";
+
+        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+        updateSQL.add(Boolean.TRUE);
+        updateSQL.add(sampleLSID);
+
+        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+    }
+
+    @Override
+    public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException
+    {
+        return recomputeSamplesRollup(sampleIds, sampleIds, sampleTypeMetricUnit);
+    }
+
+    public int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit) throws IllegalStateException, SQLException
+    {
+
+        Map<Integer, String> sampleUnits = new HashMap<>();
+        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+        DbScope scope = materialTable.getSchema().getScope();
+
+        if (!parents.isEmpty())
+        {
+            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents);
+            try (Connection c = scope.getConnection())
+            {
+                Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+                Parameter flag = new Parameter("recalcFlag", JdbcType.BOOLEAN);
+                Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
+                ParameterMapStatement pm = new ParameterMapStatement(scope, c,
+                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ?, AliquotCount = ? WHERE RowId = ?", flag, count, rowid), null);
+
+                List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
+
+                ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
+                {
+                    for (Map.Entry<Integer, Pair<Integer, String>> sampleAliquotCount: sublist)
+                    {
+                        Integer sampleId = sampleAliquotCount.getKey();
+                        Integer aliquotCount = sampleAliquotCount.getValue().first;
+                        String sampleUnit = sampleAliquotCount.getValue().second;
+                        sampleUnits.put(sampleId, sampleUnit);
+
+                        rowid.setValue(sampleId);
+                        flag.setValue(Boolean.FALSE);
+                        count.setValue(aliquotCount);
+
+                        pm.addBatch();
+                    }
+                    pm.executeBatch();
+                });
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+
+        if (!withAmountsParents.isEmpty())
+        {
+            Map<Integer, List<Pair<Double, String>>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents);
+
+            try (Connection c = scope.getConnection())
+            {
+                Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+                Parameter amount = new Parameter("amount", JdbcType.DOUBLE);
+                Parameter unit = new Parameter("unit", JdbcType.VARCHAR);
+
+                ParameterMapStatement pm = new ParameterMapStatement(scope, c,
+                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotVolume = ?, AliquotUnit = ? WHERE RowId = ? ", amount, unit, rowid), null);
+
+                List<Map.Entry<Integer, List<Pair<Double, String>>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
+
+                ListUtils.partition(sampleAliquotAmountsList, 1000).forEach(sublist ->
+                {
+                    for (Map.Entry<Integer, List<Pair<Double, String>>> sampleAliquotAmounts: sublist)
+                    {
+                        Integer sampleId = sampleAliquotAmounts.getKey();
+                        List<Pair<Double, String>> aliquotAmounts = sampleAliquotAmounts.getValue();
+
+                        Pair<Double, String> amountUnit = convertToDisplayUnits(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
+                        if (amountUnit == null)
+                            continue;
+
+                        rowid.setValue(sampleId);
+                        amount.setValue(amountUnit.first);
+                        unit.setValue(amountUnit.second);
+
+                        pm.addBatch();
+                    }
+                    pm.executeBatch();
+                });
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+
+        return parents.size();
+    }
+
+
+    private Pair<Double, String> convertToDisplayUnits(List<Pair<Double, String>> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
+    {
+        if (volumeUnits == null || volumeUnits.isEmpty())
+            return null;
+
+        String totalDisplayUnitStr = sampleTypeUnitsStr;
+        SampleMeasurementUnit totalDisplayUnit = null;
+
+        if (StringUtils.isEmpty(totalDisplayUnitStr) && (sampleItemUnit != null))
+        {
+            // if sample type lacks unit, but the sample has a unit, use sample's unit
+            totalDisplayUnitStr = sampleItemUnit;
+        }
+
+        // if sample unit is empty, use 1st aliquot unit
+        if (StringUtils.isEmpty(totalDisplayUnitStr))
+        {
+            String aliquotUnit = volumeUnits.get(0).second;
+            if (!StringUtils.isEmpty(aliquotUnit))
+                totalDisplayUnitStr = aliquotUnit;
+        }
+
+        if (!StringUtils.isEmpty(totalDisplayUnitStr))
+        {
+            try
+            {
+                totalDisplayUnit = SampleMeasurementUnit.valueOf(totalDisplayUnitStr);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // do nothing; leave unit as null;
+            }
+        }
+
+        Double totalVolume = 0.0;
+
+        for (Pair<Double, String> volumeUnit : volumeUnits)
+        {
+            SampleMeasurementUnit unit = null;
+            try
+            {
+                double storedAmount = volumeUnit.first;
+                String aliquotUnit = volumeUnit.second;
+
+                try
+                {
+                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : SampleMeasurementUnit.valueOf(aliquotUnit);
+                }
+                catch (IllegalArgumentException ignore)
+                {
+                }
+
+                // include in total volume only if aliquot unit is compatible
+                if (totalDisplayUnit != null && totalDisplayUnit.isCompatible(unit))
+                    totalVolume += unit.convertAmount(storedAmount, totalDisplayUnit);
+                else if (totalDisplayUnit == null) // sample (or 1st aliquot) unit is not a supported unit, or is blank
+                {
+                    if (StringUtils.isEmpty(totalDisplayUnitStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
+                        totalVolume += storedAmount;
+                    else if (totalDisplayUnitStr != null && totalDisplayUnitStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same no supported unit ('cc')
+                        totalVolume += storedAmount;
+                }
+            }
+            catch (IllegalArgumentException ignore) // invalid volume
+            {
+
+            }
+        }
+
+        return new Pair<>(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name());
+    }
+
+
+    public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container, boolean forceAll) throws SQLException
+    {
+        Collection<Integer> parents = getAliquotParents(sampleTypeLsid, forceAll, container);
+        Collection<Integer> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, forceAll, container);
+
+        Collection<Integer> withoutAmountsParents = new HashSet<>();
+        for (Integer parent : parents)
+        {
+            boolean hasAmount = withAmountsParents.contains(parent);
+            if (!hasAmount)
+                withoutAmountsParents.add(parent);
+        }
+
+        return new Pair<>(withoutAmountsParents, withAmountsParents);
+    }
+
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean forceAll, Container container) throws IllegalStateException, SQLException
+    {
+        return getAliquotParents(sampleTypeLsid, false, forceAll, container);
+    }
+
+    private Collection<Integer> getAliquotsWithAmountsParents(String sampleTypeLsid, boolean forceAll, Container container) throws IllegalStateException, SQLException
+    {
+        return getAliquotParents(sampleTypeLsid, true, forceAll, container);
+    }
+
+    private SQLFragment getParentsOfAliquotsWithAmountsSql()
+    {
+        return new SQLFragment(
+    """
+        SELECT distinct parent.rowId, parent.cpastype, parent.RecomputeRollup
+        FROM exp.material AS aliquot
+        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+        WHERE aliquot.storedAmount IS NOT NULL AND\s
+        """);
+    }
+
+    private SQLFragment getParentsOfAliquotsSql()
+    {
+        return new SQLFragment(
+    """
+        SELECT distinct parent.rowId, parent.cpastype, parent.RecomputeRollup
+        FROM exp.material AS aliquot
+        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+        WHERE
+        """);
+    }
+
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean withAmount, boolean forceAll, Container container) throws SQLException
+    {
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+
+        SQLFragment sql = withAmount ? getParentsOfAliquotsWithAmountsSql() : getParentsOfAliquotsSql();
+
+        if (!forceAll)
+        {
+            sql.append("parent.RecomputeRollup = ");
+            sql.append(dialect.getBooleanTRUE());
+            sql.append(" AND ");
+        }
+        sql.append("parent.cpastype = ?");
+        sql.add(sampleTypeLsid);
+        sql.append(" AND parent.container = ?");
+        sql.add(container.getId());
+
+        Set<Integer> parentIds = new HashSet<>();
+        try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+        {
+            while (rs.next())
+                parentIds.add(rs.getInt(1));
+        }
+
+        return parentIds;
+    }
+
+    private Map<Integer, Pair<Integer, String>> getSampleAliquotCounts(Collection<Integer> sampleIds) throws SQLException
+    {
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment(
+                """
+                        SELECT m.RowId as SampleId, m.Units,
+                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+                        FROM exp.material AS m
+                        LEFT JOIN(
+                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                        FROM exp.material m2 GROUP BY RootMaterialLSID
+                        ) AS c ON m.lsid = c.rootLsid
+                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+        dialect.appendInClauseSql(sql, sampleIds);
+
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+        {
+            while (rs.next())
+            {
+                int parentId = rs.getInt(1);
+                String sampleUnit = rs.getString(2);
+                int aliquotCount = rs.getInt(3);
+
+                sampleAliquotCounts.put(parentId, new Pair<>(aliquotCount, sampleUnit));
+            }
+        }
+
+        return sampleAliquotCounts;
+    }
+
+    private Map<Integer, List<Pair<Double, String>>> getSampleAliquotAmounts(Collection<Integer> sampleIds) throws SQLException
+    {
+        DbSchema inv = getExpSchema();
+        SqlDialect dialect = inv.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment(
+                """
+                        SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units
+                        FROM exp.material AS aliquot
+                        JOIN exp.material AS parent
+                        ON parent.lsid = aliquot.rootmateriallsid
+                        WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s""");
+        dialect.appendInClauseSql(sql, sampleIds);
+
+        Map<Integer, List<Pair<Double, String>>> sampleAliquotAmounts = new HashMap<>();
+
+        try (ResultSet rs = new SqlSelector(inv, sql).getResultSet())
+        {
+            while (rs.next())
+            {
+                int parentId = rs.getInt(1);
+                Double volume = rs.getDouble(2);
+                String unit = rs.getString(3);
+
+                if (!sampleAliquotAmounts.containsKey(parentId))
+                    sampleAliquotAmounts.put(parentId, new ArrayList<>());
+
+                sampleAliquotAmounts.get(parentId).add(new Pair<>(volume, unit));
+            }
+        }
+
+        return sampleAliquotAmounts;
     }
 
 }

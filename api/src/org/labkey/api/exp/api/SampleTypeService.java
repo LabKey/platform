@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public interface SampleTypeService
@@ -215,4 +216,14 @@ public interface SampleTypeService
     int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
 
     long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
+
+    void recomputeRollup(Container container, User user) throws SQLException;
+
+    void setRecomputeFlagForSample(String sampleLSID);
+
+    void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs);
+
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
+
+    int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException;
 }

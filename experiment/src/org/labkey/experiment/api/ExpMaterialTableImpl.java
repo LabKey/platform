@@ -268,6 +268,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
                 columnInfo.setLabel("Amount");
+                columnInfo.setImportAliasesSet(Set.of("Amount"));
                 return columnInfo;
             }
             case Units:

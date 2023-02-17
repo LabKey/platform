@@ -4582,9 +4582,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            boolean isAliquotRollupSupported = InventoryService.get() != null
-                    && container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Inventory"));
-
             Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
@@ -4625,7 +4622,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                if (!isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
                     sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
@@ -4734,7 +4731,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // recalculate rollup
-            if (!isTruncate && isAliquotRollupSupported)
+            if (!isTruncate)
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
@@ -4747,7 +4744,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         Set<Integer> parentSampleIds = new HashSet<>();
                         parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
 
-                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit(), container);
+                        SampleTypeService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit());
                     }
                 }
                 catch (SQLException e)

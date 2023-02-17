@@ -198,18 +198,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
+            try
             {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
             }
-
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -271,16 +267,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
-            if (InventoryService.get() != null)
+            try
             {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
             }
 
             onSamplesChanged();
@@ -296,16 +289,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
+            try
             {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
             }
 
             onSamplesChanged();
@@ -326,8 +316,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
 
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
@@ -355,14 +344,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DbScope scope = getSchema().getDbSchema().getScope();
             results = scope.executeWithRetry(transaction ->
                     super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext));
-
-            if (InventoryService.get() != null && results != null && results.size() > 0 && !errors.hasErrors())
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
         }
         else
         {
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
+            if (rows != null && (rows.get(0).containsKey("StoredAmount") || rows.get(0).containsKey("Amount") || rows.get(0).containsKey("Units")))
+            {
+                Set<String> ids = results.stream().map(row -> (String) row.get("AliquotedFromLSID")).collect(Collectors.toSet());
+                SampleTypeService.get().setRecomputeFlagForSampleLsids(ids);
+            }
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", results);
             ExpDataIterators.derive(user, container, di, true, _sampleType, true);
@@ -370,6 +361,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
+            SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
             onSamplesChanged();
             audit(QueryService.AuditAction.UPDATE);
         }
@@ -1129,7 +1121,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isStoredAmountHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.StoredAmount, name);
+            return isExpMaterialColumn(ExpMaterialTable.Column.StoredAmount, name) || "Amount".equalsIgnoreCase(name);
         }
 
         public static boolean isUnitsHeader(String name)
@@ -1326,11 +1318,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
+        private final SampleMeasurementUnit _metricUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
+            _metricUnit = _sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(_sampleType.getMetricUnit()) : null;
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases);
         }
@@ -1360,7 +1354,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         derivationDataColInd = i;
                     else if ("Units".equalsIgnoreCase(from.getName()))
                         unitDataColInd = i;
-                    else if ("StoredAmount".equalsIgnoreCase(from.getName()))
+                    else if ("StoredAmount".equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
                         amountDataColInd = i;
                 }
             }
@@ -1401,7 +1395,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (name.equalsIgnoreCase("Units"))
                     {
-                        addColumn(to, new SampleUnitsConvertColumn(name, i, amountDataColInd, to.getJdbcType()));
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
                     }
                     else if (name.equalsIgnoreCase("StoredAmount"))
                     {
@@ -1455,22 +1449,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            private final int _amountIndex;
-            private final SampleMeasurementUnit _metricUnit;
-            public SampleUnitsConvertColumn(String fieldName, int indexFrom, int amountIndex, @Nullable JdbcType to)
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
                 super(fieldName, indexFrom, to, true);
-                _amountIndex = amountIndex;
-                _metricUnit = _sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(_sampleType.getMetricUnit()) : null;
             }
 
             @Override
             protected Object convert(Object o)
             {
-                return getUnits((String) o);
+                return getUnits((String) o, _metricUnit);
             }
 
-            protected String getUnits(String sampleUnits)
+            static String getUnits(String sampleUnits, SampleMeasurementUnit metricUnit)
             {
                 if (!StringUtils.isEmpty(sampleUnits))
                 {
@@ -1478,8 +1468,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     try
                     {
                         SampleMeasurementUnit mUnit = SampleMeasurementUnit.valueOf(sampleUnits);
-                        if (_metricUnit != null && mUnit.getType() != _metricUnit.getType())
-                            throw new ConversionException("Units value (" + sampleUnits + ") cannot be converted to the default units (" + _metricUnit + ") for this sample type.");
+                        if (metricUnit != null && mUnit.getType() != metricUnit.getType())
+                            throw new ConversionException("Units value (" + sampleUnits + ") cannot be converted to the default units (" + metricUnit + ") for this sample type.");
                         return sampleUnits;
                     }
                     catch (IllegalArgumentException e)
@@ -1492,17 +1482,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                 }
 
-                return _metricUnit == null ? null : _metricUnit.name();
+                return metricUnit == null ? null : metricUnit.name();
             }
         }
 
-        protected class SampleAmountConvertColumn extends SampleUnitsConvertColumn
+        protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
             private final int _unitsIndex;
 
             public SampleAmountConvertColumn(String fieldName, int indexFrom, int unitsIndex, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, indexFrom, to);
+                super(fieldName, indexFrom, to, true);
                 _unitsIndex = unitsIndex;
             }
 
@@ -1519,7 +1509,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (_unitsIndex < 0)
                         return amount;
 
-                    String sampleUnitStr = getUnits((String) _data.get(_unitsIndex));
+                    String sampleUnitStr = SampleUnitsConvertColumn.getUnits((String) _data.get(_unitsIndex), _metricUnit);
                     if (!StringUtils.isEmpty(sampleTypeUnitStr) && !StringUtils.isEmpty(sampleUnitStr))
                     {
                         if (sampleTypeUnitStr.equals(sampleUnitStr))

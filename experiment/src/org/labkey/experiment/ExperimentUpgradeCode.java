@@ -302,12 +302,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         int cleanedUpCount = sampleTypeService.resetRecomputeFlagForNonParents(sampleType, container);
                         if (cleanedUpCount > 0)
                             LOG.info("*** cleaned up RecomputeRollup flag for " + cleanedUpCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                        if (inventoryService != null)
-                        {
-                            int syncedCount = inventoryService.recomputeSampleTypeRollup(sampleType, container, false);
-                            if (syncedCount > 0)
-                                LOG.info("*** recalculated aliquot roll-up for " + cleanedUpCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                        }
+
+                        int syncedCount = sampleTypeService.recomputeSampleTypeRollup(sampleType, container, false);
+                        if (syncedCount > 0)
+                            LOG.info("*** recalculated aliquot roll-up for " + cleanedUpCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
                     }
                 }
                 catch (SQLException e)

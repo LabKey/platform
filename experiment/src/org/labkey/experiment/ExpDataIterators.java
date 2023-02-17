@@ -46,6 +46,7 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
+import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -66,7 +67,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
@@ -275,6 +275,96 @@ public class ExpDataIterators
             ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
             validate.setDebugName("ExpMaterialDataIteratorBuilder validate");
             return validate;
+        }
+    }
+
+    public static class AliquotRollupDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final ExpSampleType _sampleType;
+
+        public AliquotRollupDataIteratorBuilder(@NotNull DataIteratorBuilder in, ExpSampleType sampleType)
+        {
+            _in = in;
+            _sampleType = sampleType;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType));
+        }
+    }
+
+    public static class AliquotRollupDataIterator extends WrapperDataIterator
+    {
+        private final DataIteratorContext _context;
+
+        private final Integer _storedAmountCol;
+        private final Integer _unitsCol;
+        private final ExpSampleType _sampleType;
+        private final Integer _aliquotedFromCol;
+        Set<String> updatedSampleLsids = new HashSet<>();
+
+        protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
+        {
+            super(di);
+            _context = context;
+            _sampleType = sampleType;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _storedAmountCol = map.get("StoredAmount");
+            _unitsCol = map.get("Units");
+            _aliquotedFromCol = map.get("AliquotedFrom");
+        }
+
+        private boolean hasAmountData()
+        {
+            return _storedAmountCol != null || _unitsCol != null;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            // skip processing if there are errors upstream
+            if (_context.getErrors().hasErrors() || !hasAmountData())
+                return hasNext;
+
+            if (hasNext)
+            {
+                Map<String, Object> existingMap = getExistingRecord();
+                Double existingAmount = null;
+                String existingUnits = null;
+                Set<String> aliquotParentLsids = new HashSet<>();
+                if (existingMap != null)
+                {
+                    existingAmount = (Double) existingMap.get("StoredAmount");
+                    existingUnits = (String) existingMap.get("Units");
+                    aliquotParentLsids.add((String) existingMap.get(SampleUpdateAliquotedFromDataIterator.ALIQUOTED_FROM_LSID_COLUMN_NAME));
+                }
+                if (existingUnits == null)
+                    existingUnits = _sampleType.getMetricUnit();
+                Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
+                String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
+                if (newUnits == null)
+                    newUnits = _sampleType.getMetricUnit();
+                if (_aliquotedFromCol != null)
+                    aliquotParentLsids.add((String) get(_aliquotedFromCol));
+
+                if (!aliquotParentLsids.isEmpty() && (!Objects.equals(existingAmount, newAmount) || !Objects.equals(existingUnits, newUnits)))
+                {
+                    updatedSampleLsids.addAll(aliquotParentLsids);
+                }
+                return true;
+            }
+            else
+            {
+                if (!updatedSampleLsids.isEmpty())
+                    SampleTypeService.get().setRecomputeFlagForSampleLsids(updatedSampleLsids);
+
+                return false;
+            }
         }
     }
 
@@ -2097,12 +2187,16 @@ public class ExpDataIterators
             // Wire up derived parent/child data and materials
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
-            // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step7 = step6;
-            if (null != _indexFunction)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
+            if (isSample)
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
 
-            return LoggingDataIterator.wrap(step7.getDataIterator(context));
+            // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
+            DataIteratorBuilder step8 = step7;
+            if (null != _indexFunction)
+                step8 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step7, _indexFunction)); // may need to add this after the aliases are set
+
+            return LoggingDataIterator.wrap(step8.getDataIterator(context));
         }
     }
 }
