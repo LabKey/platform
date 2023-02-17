@@ -61,9 +61,8 @@ public enum ModeratorReview
             if (All.isApproved(c, user, newThread))
                 return true;
 
-            // Approve if this is not a new thread AND the user has at least one approved message in the message board
-            return !newThread
-                    && InitialPost.isApproved(c, user, newThread);
+            // Approve if this is not a new thread
+            return !newThread;
         }
     },
     All
