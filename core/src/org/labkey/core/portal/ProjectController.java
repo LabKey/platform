@@ -35,8 +35,10 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
@@ -1219,7 +1221,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    private static CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<>();
+    private static final CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<>();
 
     static
     {
@@ -1232,28 +1234,12 @@ public class ProjectController extends SpringActionController
         _frameTypeMap.put("title", WebPartView.FrameType.TITLE);
     }
 
-    public static class GetWebPartForm implements CustomApiForm
-    {
-        private Map<String, Object> _extendedProperties;
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            _extendedProperties = props;
-        }
-
-        public Map<String, Object> getExtendedProperties()
-        {
-            return _extendedProperties;
-        }
-    }
-
     // Something to think about: This forces all web parts that want to use GetWebPartAction as the method of
     // being served up to be readable in the current container. Might be worth delegating permissions to the
     // webparts and defaulting to a state of ReadPermission.
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetWebPartAction extends ReadOnlyApiAction<GetWebPartForm>
+    public static class GetWebPartAction extends ReadOnlyApiAction<SimpleApiJsonForm>
     {
         public static final String PARAM_WEBPART = "webpart.name";
 
@@ -1263,7 +1249,7 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(GetWebPartForm form, BindException errors)
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
             String qs = request.getQueryString();
@@ -1292,7 +1278,7 @@ public class ProjectController extends SpringActionController
             }
 
             part.setProperties(qs);
-            part.setExtendedProperties(form.getExtendedProperties());
+            part.setExtendedProperties(form.getNewJsonObject());
 
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)

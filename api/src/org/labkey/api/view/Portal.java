@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
@@ -215,7 +216,7 @@ public class Portal implements ModuleChangeListener
         String location = HttpView.BODY;
         boolean permanent;
         Map<String, String> propertyMap = new HashMap<>();
-        Map<String, Object> extendedProperties = null;
+        JSONObject extendedProperties = null;
         String permission;
         Container permissionContainer;
 
@@ -250,9 +251,8 @@ public class Portal implements ModuleChangeListener
                 propertyMap = Collections.unmodifiableMap(propertyMap);
             if (null != copyFrom.extendedProperties)
             {
-                extendedProperties = new HashMap<>(copyFrom.extendedProperties);
-                if (readonly)
-                    extendedProperties = Collections.unmodifiableMap(extendedProperties);
+                extendedProperties = new JSONObject(copyFrom.extendedProperties);
+                // Note: There's no way to make a JSONObject read-only
             }
         }
 
@@ -343,12 +343,12 @@ public class Portal implements ModuleChangeListener
             return new MutablePropertyValues(getPropertyMap());
         }
 
-        public void setExtendedProperties(Map<String,Object> extendedProperties)
+        public void setExtendedProperties(JSONObject extendedProperties)
         {
             this.extendedProperties = extendedProperties;
         }
 
-        public Map<String,Object> getExtendedProperties()
+        public JSONObject getExtendedProperties()
         {
             return this.extendedProperties;
         }
@@ -515,7 +515,7 @@ public class Portal implements ModuleChangeListener
                 }
 
                 @Override
-                public void setExtendedProperties(Map<String, Object> extendedProperties)
+                public void setExtendedProperties(JSONObject extendedProperties)
                 {
                     throw new UnsupportedOperationException();
                 }

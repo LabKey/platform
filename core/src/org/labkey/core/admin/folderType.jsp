@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject"%>
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.FolderTypeManager" %>
@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.core.admin.AdminController.FolderTypeAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.FolderTypeForm" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
