@@ -3527,14 +3527,14 @@ public class QueryController extends SpringActionController
                 return null;
 
             ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-            writer.startResponse();
-
-            writer.writeProperty("schemaName", form.getSchemaName());
-            writer.writeProperty("queryName", form.getQueryName());
-            writer.startList("values");
 
             try (ResultSet rs = sqlSelector.getResultSet())
             {
+                writer.startResponse();
+                writer.writeProperty("schemaName", form.getSchemaName());
+                writer.writeProperty("queryName", form.getQueryName());
+                writer.startList("values");
+
                 while (rs.next())
                 {
                     writer.writeListEntry(rs.getObject(1));
@@ -3603,27 +3603,29 @@ public class QueryController extends SpringActionController
             // Strip out filters on columns that don't exist - issue 21669
             service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
             QueryLogging queryLogging = new QueryLogging();
-            SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+            QueryService.SelectBuilder builder = service.getSelectBuilder(table)
+                    .columns(columns.values())
+                    .filter(filter)
+                    .queryLogging(queryLogging)
+                    .distinct(true);
+            SQLFragment selectSql = builder.build();
 
-            if (queryLogging.isShouldAudit())
+            // TODO: queryLogging.isShouldAudit() is always false at this point.
+            // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()
+            if (queryLogging.isShouldAudit() && null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
             {
-                if (null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
-                {
-                    errors.reject(ERROR_MSG, queryLogging.getExceptionToThrowIfLoggingIsEnabled().getMessage());
-                    return null;
-                }
-                else if (queryLogging.getColumnLoggings().contains(col.getColumnLogging()))
-                {
-                    errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
-                    return null;
-                }
+                // this is probably a more helpful message
+                errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
+                return null;
             }
 
             // Regenerate the column since the alias may have changed after call to getSelectSQL()
             columns = service.getColumns(table, settings.getFieldKeys());
-            col = columns.get(settings.getFieldKeys().get(0));
+            var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+            // I don't believe the above comment, so here's an assert
+            assert(colGetAgain.getAlias().equals(col.getAlias()));
 
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
             sql.append(selectSql);
             sql.append(") S ORDER BY value");
 

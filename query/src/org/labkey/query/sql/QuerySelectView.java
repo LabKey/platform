@@ -70,19 +70,18 @@ public class QuerySelectView extends AbstractQueryRelation
     final long offset;
     final boolean forceSort;
     final QueryLogging queryLogging;
-
+    final boolean distinct;
 
     public static QuerySelectView create(Query query, TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                           int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
+                                         int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)
     {
         if (null == selectColumns)
             selectColumns = table.getColumns();
-        return new QuerySelectView(query, table.getUserSchema(), table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging);
+        return new QuerySelectView(query, table.getUserSchema(), table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging, distinct);
     }
 
-
     QuerySelectView(Query query, QuerySchema schema, TableInfo table, Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
+                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)
     {
         super(query, schema, "QueryView");
         this.aliasManager = new AliasManager(table, selectColumns);
@@ -96,6 +95,7 @@ public class QuerySelectView extends AbstractQueryRelation
         this.offset = offset;
         this.forceSort = forceSort;
         this.queryLogging = queryLogging;
+        this.distinct = distinct;
     }
 
 
@@ -160,7 +160,7 @@ public class QuerySelectView extends AbstractQueryRelation
     @Override
     public SQLFragment getSql()
     {
-        return getSelectSQL(table, selectColumns.values(), filter, sort, maxRows, offset, forceSort, queryLogging);
+        return getSelectSQL(table, selectColumns.values(), filter, sort, maxRows, offset, forceSort, queryLogging, true);
     }
 
     @Override
@@ -188,7 +188,7 @@ public class QuerySelectView extends AbstractQueryRelation
      * calls this implementation.
      */
     private SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
+                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean allowAddLoggingColumns)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
@@ -281,9 +281,9 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
-        if (requiresExtraColumns)
+        if (requiresExtraColumns || distinct)
         {
-            outerSelect = new SQLFragment("SELECT ");
+            outerSelect = distinct ?   new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
             strComma = "";
 
             for (ColumnInfo column : selectColumns)
@@ -292,11 +292,29 @@ public class QuerySelectView extends AbstractQueryRelation
                 outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
                 strComma = ", ";
             }
-            for (ColumnInfo column : extraSelectDataLoggingColumns)
+
+            // NOTE: I think extraSelectDataLoggingColumns won't contain columns that were added by ensureRequiredColumns()
+            // It is safer to recheck the entire list of columns in queryLogging.getDataLoggingColumns()
+            if (distinct)
             {
-                outerSelect.append(strComma);
-                outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                strComma = ", ";
+                if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+                {
+                    Set<FieldKey> select = selectColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+                    for (var required : queryLogging.getDataLoggingColumns())
+                    {
+                        if (!select.contains(required.getFieldKey()))
+                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
+                    }
+                }
+            }
+            else
+            {
+                for (ColumnInfo column : extraSelectDataLoggingColumns)
+                {
+                    outerSelect.append(strComma);
+                    outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
+                    strComma = ", ";
+                }
             }
         }
 
