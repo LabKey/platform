@@ -199,7 +199,7 @@
         LABKEY.Query.selectRows({
             schemaName : 'study',
             queryName : 'Datasets',
-            columns: 'Name, DataSetId',
+            columns: 'Name, Label, DataSetId',
             sort: 'Name',
             success : function(details){
                 var rows = details.rows;
@@ -207,8 +207,10 @@
                 this.numDatasets = rows.length;
                 for (var i = 0; i < rows.length; i++) {
                     var name = rows[i].Name;
+                    var label = rows[i].Label;
                     this.tables[name] = {
                         name: name,
+                        label: label,
                         htmlName: Ext4.util.Format.htmlEncode(name),
                         datasetId : rows[i].DataSetId,
                         oldIds : [],
@@ -310,6 +312,14 @@
                 success: function (data)
                 {
                     var table = this.tables[data.queryName];
+                    if (!table) {
+                        table = Object.values(this.tables).find(v => v.label === data.queryName);
+                    }
+                    if (!table) {
+                        console.error("Dataset: " + tableName + " not found.");
+                        return;
+                    }
+
                     gatherIds(table, data.rows, checkTable.oldId, checkTable.newId);
                     table.hasConflict = false;
                     // if table has old ids, we know there's work that could be done and allow a merge

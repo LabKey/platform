@@ -14,7 +14,9 @@ WHERE PortalPageId IN (SELECT pp1.RowId
                                 INNER JOIN prop.PropertySets ps
                                            on ps.ObjectId = pp1.Container and ps.Category = 'folderType'
                                 INNER JOIN prop.Properties p
-                                           on ps."set" = p."set" and p.Name = 'name' and p.Value != 'None');
+                                           on ps."set" = p."set" and p.Name = 'name' and p.Value != 'None')
+-- Menu bars are always stored in 'portal.default' regardless of the rest of the portal layout
+AND Location != 'menubar';
 
 -- And then the page itself
 DELETE FROM core.PortalPages
@@ -27,4 +29,5 @@ WHERE RowId IN (SELECT pp1.RowId
                          INNER JOIN prop.PropertySets ps
                                     on ps.ObjectId = pp1.Container and ps.Category = 'folderType'
                          INNER JOIN prop.Properties p
-                                    on ps."set" = p."set" and p.Name = 'name' and p.Value != 'None');
+                                    on ps."set" = p."set" and p.Name = 'name' and p.Value != 'None')
+AND RowId NOT IN (SELECT pwp.PortalPageId FROM core.PortalWebparts pwp);

@@ -111,7 +111,7 @@ public class SchemaTableInfoCache
 
     private static Cache<String, Wrapper<SchemaTableInfo>> createCache(DbScope scope, boolean provisioned)
     {
-        String comment = "SchemaTableInfos for " + (provisioned ? "provisioned" : "non-provisioned") + " schemas in scope \"" + scope.getDisplayName() + "\"";
+        String comment = "SchemaTableInfos for " + (provisioned ? "provisioned" : "non-provisioned") + " schemas in scope " + scope.getDisplayName();
 
         // We modify provisioned tables inside of transactions, so use a DatabaseCache to help with proper invalidation. See #46951.
         if (provisioned)
