@@ -413,20 +413,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 catch (Throwable t)
                 {
                     exceptionToRender = ExceptionUtil.unwrapException(t);
-
-                    //
-                    // issue:21209 - don't hide exceptions that we should be showing to the user (configuration, incorrect JSON, etc)
-                    // Render these now so that the user can at least know what is wrong instead of just getting a blank webpart. The one
-                    // difference is that we won't log the exception if it is deemed ignorable.
-                    //
-
-                    if (!ExceptionUtil.isIgnorable(exceptionToRender))
-                    {
-                        Logger log = LogManager.getLogger(WebPartView.class);
-                        ActionURL url = getViewContext().getActionURL();
-                        log.error("renderView() exception in " + getClass().getName() + (null != url ? " while responding to " + getViewContext().getActionURL().getLocalURIString() : ""), exceptionToRender);
-                        log.error("View creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
-                    }
+                    ExceptionUtil.logExceptionToMothership(request, t);
                 }
             }
 

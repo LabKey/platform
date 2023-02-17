@@ -18,8 +18,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.NullSafeBindException;
@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -43,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +52,7 @@ public class QueryWebPart extends VBox
 {
     private final ViewContext _context;
     private final Map<String, String> _properties;
-    private final Map<String, Object> _extendedProperties;
+    private final JSONObject _extendedProperties;
 
     private UserSchema _schema;
     private QuerySettings _settings;
@@ -83,15 +85,15 @@ public class QueryWebPart extends VBox
         }
 
         // check for any metadata overrides
-        if (_extendedProperties != null && _extendedProperties.get("metadata") instanceof JSONObject)
+        if (_extendedProperties != null)
         {
-            JSONObject metadata = (JSONObject)_extendedProperties.get("metadata");
+            JSONObject metadata = _extendedProperties.optJSONObject("metadata");
 
-            if (metadata.has("type") && metadata.has("value"))
+            if (null != metadata && metadata.has("type") && metadata.has("value"))
             {
-                if ("xml".equalsIgnoreCase((String)metadata.get("type")))
+                if ("xml".equalsIgnoreCase(metadata.getString("type")))
                 {
-                    _metadata = (String)metadata.get("value");
+                    _metadata = metadata.getString("value");
                 }
             }
         }
@@ -245,9 +247,11 @@ public class QueryWebPart extends VBox
         errorResponse.put("success", false);
 
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        ApiJsonWriter jsonOut = new ApiJsonWriter(response);
 
-        jsonOut.writeResponse(errorResponse);
+        try (ApiJsonWriter jsonOut = new ApiJsonWriter(response))
+        {
+            jsonOut.writeResponse(errorResponse);
+        }
     }
 
     protected void addViews()
@@ -350,23 +354,22 @@ public class QueryWebPart extends VBox
 
         if (null != _extendedProperties)
         {
-            if (_extendedProperties.get("buttonBar") instanceof JSONObject)
+            if (_extendedProperties.opt("buttonBar") instanceof JSONObject bbJson)
             {
-                ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
+                ButtonBarConfig bbarConfig = new ButtonBarConfig(bbJson);
                 queryView.setButtonBarConfig(bbarConfig);
             }
 
             // 10505 : add QueryWebPart filters to QuerySettings base sort/filter so they won't be changeable in the DataRegion UI.
-            if (_extendedProperties.get("filters") instanceof JSONObject)
+            if (_extendedProperties.opt("filters") instanceof JSONObject filters)
             {
-                JSONObject filters = (JSONObject)_extendedProperties.get("filters");
-                _settings.addSortFilters(filters);
+                _settings.addSortFilters(filters.toMap());
             }
         }
 
-
         if (null != _properties.get("showRecordSelectors"))
             queryView.setShowRecordSelectors(Boolean.parseBoolean(_properties.get("showRecordSelectors")));
+
         return queryView;
     }
 }
