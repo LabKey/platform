@@ -114,7 +114,10 @@ public class CPUTimer
             _cumulative += elapsed;
             _min = Math.min(_min, elapsed);
             _max = Math.max(_max, elapsed);
-            _first = _first == 0 ? elapsed : _first;
+            if (_first == 0)
+            {
+                _first = elapsed;
+            }
             _last = elapsed;
             _calls++;
         }
@@ -140,7 +143,7 @@ public class CPUTimer
     }
 
     /**
-     * @return Total amount of time, all start/stops, in nanoTime.
+     * @return Total amount of time, all start/stops, in nanoseconds.
      */
 	public long getTotal()
     {
@@ -148,7 +151,7 @@ public class CPUTimer
     }
 
     /**
-     * @return Shortest start/stop call in nanoTime.
+     * @return Shortest start/stop call in nanoseconds.
      */
     public long getMin()
     {
@@ -161,7 +164,7 @@ public class CPUTimer
     }
 
     /**
-     * @return Longest start/stop call in nanoTime.
+     * @return Longest start/stop call in nanoseconds.
      */
     public long getMax()
     {
@@ -174,9 +177,9 @@ public class CPUTimer
     }
 
     /**
-     * Get the elapsed time of the first start/stop call. Returns nanoTime.
+     * Get the elapsed time of the first start/stop call. Returns nanoseconds.
      *
-     * @return Duration in nanoTime of first start/stop call.
+     * @return Duration in nanoseconds of first start/stop call.
      */
     public long getFirst()
     {
@@ -194,9 +197,9 @@ public class CPUTimer
     }
 
     /**
-     * Get the elapsed time of the last start/stop call. Returns nanoTime.
+     * Get the elapsed time of the last start/stop call. Returns nanoseconds.
      *
-     * @return Duration in nanoTime of last start/stop call.
+     * @return Duration in nanoseconds of last start/stop call.
      */
     public long getLast()
     {
@@ -233,6 +236,9 @@ public class CPUTimer
         return DateUtil.formatDuration(getTotalMilliseconds());
     }
 
+    /**
+     * @return Get average in milliseconds.
+     */
     public float getAverage()
     {
         return _calls == 0 ? 0 : (float)getTotalMilliseconds() / _calls;
@@ -255,6 +261,7 @@ public class CPUTimer
             StringBuilder sb = new StringBuilder();
             sb.append("TIMER SUMMARY: ").append(new Date().toString()).append("\n");
             sb.append(header());
+            sb.append("\n");
             for (CPUTimer cpuTimer : a)
             {
                 sb.append(format(cpuTimer));
@@ -265,23 +272,25 @@ public class CPUTimer
         }
     }
 
-    // Converts a nanoTime into milliseconds.
+    // Converts nanoseconds into milliseconds.
     private static final double msFactor = 1.0e-6;
 
     public static String header()
     {
-        return String.format("%20s\t%12s\t%12s\t%12s\t%12s\t%12s",
-            "", "cumulative", "min", "max", "average", "calls");
+        return String.format("%20s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s",
+            "", "cumulative", "min", "max", "first", "last", "average", "calls");
     }
 
     public static String format(CPUTimer t)
     {
         double ms = t._cumulative * msFactor;
-        return String.format("%20s\t%12f\t%12f\t%12f\t%12f\t%12d",
+        return String.format("%20s\t%12f\t%12f\t%12f\t%12f\t%12f\t%12f\t%12d",
                 t._name,
                 ms,
                 t._min * msFactor,
                 t._max * msFactor,
+                t._first * msFactor,
+                t._last * msFactor,
                 t.getAverage(),
                 t._calls);
     }
