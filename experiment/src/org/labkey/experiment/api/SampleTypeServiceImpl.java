@@ -45,6 +45,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -68,7 +69,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
-import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -1532,7 +1532,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return null;
 
         String totalDisplayUnitStr = sampleTypeUnitsStr;
-        SampleMeasurementUnit totalDisplayUnit = null;
+        Measurement.Unit totalDisplayUnit = null;
 
         if (StringUtils.isEmpty(totalDisplayUnitStr) && (sampleItemUnit != null))
         {
@@ -1552,7 +1552,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             try
             {
-                totalDisplayUnit = SampleMeasurementUnit.valueOf(totalDisplayUnitStr);
+                totalDisplayUnit = Measurement.Unit.valueOf(totalDisplayUnitStr);
             }
             catch (IllegalArgumentException e)
             {
@@ -1564,7 +1564,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         for (Pair<Double, String> volumeUnit : volumeUnits)
         {
-            SampleMeasurementUnit unit = null;
+            Measurement.Unit unit = null;
             try
             {
                 double storedAmount = volumeUnit.first;
@@ -1572,7 +1572,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 try
                 {
-                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : SampleMeasurementUnit.valueOf(aliquotUnit);
+                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : Measurement.Unit.valueOf(aliquotUnit);
                 }
                 catch (IllegalArgumentException ignore)
                 {

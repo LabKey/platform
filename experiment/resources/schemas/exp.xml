@@ -300,18 +300,26 @@
           <columnTitle>Amount</columnTitle>
           <description>The amount of this sample currently on hand</description>
           <displayColumnFactory>
-              <className>org.labkey.api.data.StoredAmountDisplayFactory</className>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
           </displayColumnFactory>
       </column>
       <column columnName="Units">
           <description>The units associated with the StoredAmount for this sample</description>
           <displayColumnFactory>
-              <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
           </displayColumnFactory>
           <fk>
               <fkColumnName>Value</fkColumnName>
               <fkDbSchema>exp</fkDbSchema>
-              <fkTable>SampleMeasurementUnit</fkTable>
+              <fkTable>MeasurementUnit</fkTable>
               <fkDisplayColumnName>Value</fkDisplayColumnName>
           </fk>
       </column>
@@ -1009,12 +1017,20 @@
       <column columnName="AliquotUnit"/>
       <column columnName="StoredAmount">
           <displayColumnFactory>
-              <className>org.labkey.api.data.StoredAmountDisplayFactory</className>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
           </displayColumnFactory>
       </column>
       <column columnName="Units">
           <displayColumnFactory>
-              <className>org.labkey.api.data.StoredUnitsDisplayFactory</className>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
           </displayColumnFactory>
       </column>
     </columns>

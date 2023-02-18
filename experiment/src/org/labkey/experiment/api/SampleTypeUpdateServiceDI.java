@@ -40,6 +40,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SimpleFilter;
@@ -67,7 +68,6 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleMeasurementUnit;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -1318,13 +1318,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
-        private final SampleMeasurementUnit _metricUnit;
+        private final Measurement.Unit _metricUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
-            _metricUnit = _sampleType.getMetricUnit() != null ? SampleMeasurementUnit.valueOf(_sampleType.getMetricUnit()) : null;
+            _metricUnit = _sampleType.getMetricUnit() != null ? Measurement.Unit.valueOf(_sampleType.getMetricUnit()) : null;
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases);
         }
@@ -1457,33 +1457,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return getUnits((String) o, _metricUnit);
+                return Measurement.getUnits((String) o, _metricUnit);
             }
 
-            static String getUnits(String sampleUnits, SampleMeasurementUnit metricUnit)
-            {
-                if (!StringUtils.isEmpty(sampleUnits))
-                {
-                    sampleUnits = sampleUnits.trim();
-                    try
-                    {
-                        SampleMeasurementUnit mUnit = SampleMeasurementUnit.valueOf(sampleUnits);
-                        if (metricUnit != null && mUnit.getType() != metricUnit.getType())
-                            throw new ConversionException("Units value (" + sampleUnits + ") cannot be converted to the default units (" + metricUnit + ") for this sample type.");
-                        return sampleUnits;
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        SampleMeasurementUnit unit = SampleMeasurementUnit.getUnitFromLabel(sampleUnits);
-                        if (unit == null)
-                            throw new ConversionException("Unsupported Units value (" + sampleUnits + ").  Supported values are: " + StringUtils.join(SampleMeasurementUnit.values(), ", ") + ".");
-                        else
-                            return unit.toString();
-                    }
-                }
-
-                return metricUnit == null ? null : metricUnit.name();
-            }
         }
 
         protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
@@ -1501,7 +1477,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (amountObj == null)
                     return null;
-                Double amount = ExpMaterial.convertToAmount(amountObj);
+                Double amount = Measurement.convertToAmount(amountObj);
 
                 String sampleTypeUnitStr = _sampleType.getMetricUnit();
                 try
@@ -1509,14 +1485,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (_unitsIndex < 0)
                         return amount;
 
-                    String sampleUnitStr = SampleUnitsConvertColumn.getUnits((String) _data.get(_unitsIndex), _metricUnit);
+                    String sampleUnitStr = Measurement.getUnits((String) _data.get(_unitsIndex), _metricUnit);
                     if (!StringUtils.isEmpty(sampleTypeUnitStr) && !StringUtils.isEmpty(sampleUnitStr))
                     {
                         if (sampleTypeUnitStr.equals(sampleUnitStr))
                             return amount;
 
-                        SampleMeasurementUnit sampleTypeUnit = SampleMeasurementUnit.getUnit(sampleTypeUnitStr);
-                        SampleMeasurementUnit sampleUnit = SampleMeasurementUnit.getUnit(sampleUnitStr);
+                        Measurement.Unit sampleTypeUnit = Measurement.Unit.getUnit(sampleTypeUnitStr);
+                        Measurement.Unit sampleUnit = Measurement.Unit.getUnit(sampleUnitStr);
                         if (sampleTypeUnit != null && sampleUnit != null)
                         {
                             return sampleUnit.convertAmount(amount, sampleTypeUnit);
