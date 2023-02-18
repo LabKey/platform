@@ -316,12 +316,6 @@
                   <property name="alternateUnitsField">AliquotUnit</property>
               </properties>
           </displayColumnFactory>
-          <fk>
-              <fkColumnName>Value</fkColumnName>
-              <fkDbSchema>exp</fkDbSchema>
-              <fkTable>MeasurementUnit</fkTable>
-              <fkDisplayColumnName>Value</fkDisplayColumnName>
-          </fk>
       </column>
       <column columnName="RecomputeRollup">
           <isHidden>true</isHidden>

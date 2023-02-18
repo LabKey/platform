@@ -274,7 +274,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return columnInfo;
             }
             case Units:
-                return wrapColumn(alias, _rootTable.getColumn("Units"));
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Units"));
+                columnInfo.setFk(new LookupForeignKey("Value", "Value")
+                {
+                    @Override
+                    public @Nullable TableInfo getLookupTableInfo()
+                    {
+                        return getExpSchema().getTable(ExpSchema.MEASUREMENT_UNITS_TABLE);
+                    }
+                });
+                return columnInfo;
+            }
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case SampleSet:
