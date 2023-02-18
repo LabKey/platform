@@ -113,7 +113,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("SampleID");
         RESERVED_NAMES.add("Sample ID");
         RESERVED_NAMES.add("Status");
-        RESERVED_NAMES.add("Amount");
         RESERVED_NAMES.add(ExpMaterialTable.Column.StoredAmount.name());
         RESERVED_NAMES.add(ExpMaterialTable.Column.Units.name());
         RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
