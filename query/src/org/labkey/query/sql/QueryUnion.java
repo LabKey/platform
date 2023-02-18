@@ -308,6 +308,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "UNION")
         {
             @Override
+            @NotNull
             public SQLFragment getFromSQL() {throw new UnsupportedOperationException();}
 
             @Override

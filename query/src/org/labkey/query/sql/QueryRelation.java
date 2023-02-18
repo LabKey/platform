@@ -98,7 +98,7 @@ public interface QueryRelation
     void setContainerFilter(ContainerFilter containerFilter);
 
     //NOTE: column order is important when generating the suggested column list
-    //subclasses should implement _getSuggestedColumns() instead of overriding this
+    //subclasses should implement getSuggestedColumns() instead of overriding this
     Set<AbstractQueryRelation.RelationColumn> getOrderedSuggestedColumns(Set<AbstractQueryRelation.RelationColumn> selected);
 
     Set<AbstractQueryRelation.RelationColumn> getSuggestedColumns(Set<AbstractQueryRelation.RelationColumn> selected);

@@ -45,6 +45,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
@@ -1924,24 +1925,32 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     }
 
 
+    Set<String> keyColumns = null;
+
     @Override
     public Collection<String> getKeyColumns()
     {
+        if (null != keyColumns)
+            return keyColumns;
+        keyColumns = Set.of();
+
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
         if (_tables.size() != 1 || null != _distinct || null != _groupBy || this.isAggregate())
-            return Collections.emptyList();
+            return keyColumns;
         // get the single table
         QueryRelation in = _tables.values().iterator().next();
         Collection<String> keys = in.getKeyColumns();
         if (keys.size() != 1)
-            return Collections.emptyList();
+            return keyColumns;
         String pkName = keys.iterator().next();
         SelectColumn sc = findColumnInSelectList(in, pkName);
         // OK find this column in the output and mark it as a key
         if (null == sc)
-            return Collections.emptyList();
-        return Collections.singletonList(sc.getName());
+            return keyColumns;
+
+        keyColumns = Set.of(sc.getName());
+        return keyColumns;
     }
 
 
@@ -2236,7 +2245,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     try {text = expr.getSourceText();} catch (UnsupportedOperationException ignore) {/* pass */}
                     if (null == rc)
                         parseError("Can't resolve column: " + text, expr);
-                    _uniqueName = null==rc ? "--parseError" : rc.getUniqueName();
+                    _uniqueName = null==rc ? "--parseError--"+GUID.makeGUID() : rc.getUniqueName();
                 }
                 else
                 {

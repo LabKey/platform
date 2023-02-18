@@ -29,6 +29,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -494,6 +495,14 @@ public class QAggregate extends QExpr
             ret.setDisplayColumnFactory(colInfo -> new MultiValuedDisplayColumn(originalFactory.createRenderer(colInfo)));
         }
         return ret;
+    }
+
+    @Override
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
+    {
+        if (getType()._propagateColumnLogging)
+            super.gatherInvolvedSelectColumns(collect);
+        return collect;
     }
 
     public void setDistinct(boolean distinct)

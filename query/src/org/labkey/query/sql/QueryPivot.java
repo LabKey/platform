@@ -399,7 +399,8 @@ public class QueryPivot extends AbstractQueryRelation
     @Override
     public void resolveFields()
     {
-        _inQuery.resolveFields();
+        if (null != _inQuery)
+            _inQuery.resolveFields();
     }
 
 

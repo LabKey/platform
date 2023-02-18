@@ -99,6 +99,8 @@ public class QueryColumnLogging extends ColumnLogging
             ColumnLogging columnLogging = used.getColumnLogging();
             if (null == columnLogging)
                 continue;
+            if (null != columnLogging.getException())
+                return columnLogging;
 
             QueryRelation r = used.getTable();
             assert r instanceof QueryRelation.ColumnResolvingRelation;
