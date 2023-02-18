@@ -113,7 +113,7 @@ public interface AuthenticationProvider
     {
     }
 
-    static String getDescriptionDescription(String name)
+    static String getDescriptionDocumentation(String name)
     {
         return "Description of this " + name + " configuration. Providing a description is required to update an existing configuration and strongly recommended when creating a new configuration.";
     }
