@@ -16,31 +16,26 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.SecurityManager.PermissionTypes;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
 import org.labkey.data.xml.ButtonBarOptions;
 import org.labkey.data.xml.ButtonMenuItem;
-import org.labkey.data.xml.PermissionType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,14 +46,6 @@ import java.util.Set;
  */
 public class ButtonBarConfig
 {
-    private static final Map<PermissionType.Enum, Class<? extends Permission>> PERMISSION_MAP = Map.of(
-        PermissionType.READ, ReadPermission.class,
-        PermissionType.INSERT, InsertPermission.class,
-        PermissionType.UPDATE, UpdatePermission.class,
-        PermissionType.DELETE, DeletePermission.class,
-        PermissionType.ADMIN, AdminPermission.class
-    );
-
     private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
     private List<ButtonConfig> _items = new ArrayList<>();
     private boolean _includeStandardButtons = false;
@@ -105,11 +92,10 @@ public class ButtonBarConfig
 
                     if (null != permissionString)
                     {
-                        PermissionType.Enum type = PermissionType.Enum.forString(permissionString.toUpperCase());
-                        Class<? extends Permission> permClass = PERMISSION_MAP.get(type);
-
-                        if (null != permClass)
-                            button.setPermission(permClass);
+                        // PermissionTypes is an enum that maps permission name to Permission class
+                        PermissionTypes type = EnumUtils.getEnum(PermissionTypes.class, permissionString.toUpperCase());
+                        if (null != type)
+                            button.setPermission(type.getPermission());
                     }
 
                     // permission has precedence, but if it's not specified or invalid, look for permissionClass
@@ -283,9 +269,9 @@ public class ButtonBarConfig
 
     private Class<? extends Permission> getPermission(ButtonBarItem item)
     {
-        Class<? extends Permission> permClass = PERMISSION_MAP.get(item.getPermission());
-        if (null != permClass)
-            return permClass;
+        PermissionTypes type = EnumUtils.getEnum(PermissionTypes.class, item.getPermission().toString());
+        if (null != type)
+            return type.getPermission();
 
         // permission has precedence, but if permission is not specified or invalid look at permissionClass instead
         if (item.getPermissionClass() != null)
