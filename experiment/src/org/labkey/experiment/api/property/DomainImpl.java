@@ -534,7 +534,7 @@ public class DomainImpl implements Domain
             // or using LSID as the primary key on DomainDescriptor?
             if (scope.getSqlDialect().isSqlServer())
             {
-                String sql = " SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";
+                String sql = "SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";
                 new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
             }
 
