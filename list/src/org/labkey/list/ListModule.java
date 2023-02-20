@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -33,6 +34,7 @@ import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Summary;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -53,6 +55,7 @@ import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
+import org.labkey.list.model.ListManagerTable;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
@@ -173,6 +176,14 @@ public class ListModule extends SpringModule
             results.add(lists.size() + " lists");
         }
         return results;
+    }
+
+    @Override
+    public List<Summary> getDetailedSummary(Container c)
+    {
+
+
+        return super.getDetailedSummary(c);
     }
 
     @Override

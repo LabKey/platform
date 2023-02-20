@@ -31,6 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -67,7 +68,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -135,6 +135,7 @@ import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -145,6 +146,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
@@ -737,17 +739,21 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 summaries.add(new Summary(dataCount, dataClassName, dataClassName + "s"));
         }
 
-
-//        Sample Type scribbles
+        // Sample Types
         int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
         if (sampleTypeCount > 0)
             summaries.add(new Summary(sampleTypeCount, "Sample Type", "Sample Types"));
 
+        // Sample rows, including rows from other containers
         UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
-        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.Current.create(c, user));
+        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
         sampleTypeTable.populate();
+        TableSelector ts = new TableSelector(sampleTypeTable, Collections.singleton("SampleCount"), null, null);
+        int sampleRowCount = Arrays.stream(ts.getArray(Integer.class)).mapToInt(Integer::intValue).sum();
+        if (sampleRowCount > 0)
+            summaries.add(new Summary(sampleRowCount, "Sample", "Samples"));
 
-        return new ArrayList<>();
+        return summaries;
     }
 
     @Override

@@ -807,14 +807,29 @@ public class CoreController extends SpringActionController
         }
     }
 
+    public static class DeleteContainerForm
+    {
+        private String _comment;
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+    }
+
     // Requires at least delete permission. Will check for admin if needed
     @RequiresPermission(DeletePermission.class)
-    public class DeleteContainerAction extends MutatingApiAction<SimpleApiJsonForm>
+    public class DeleteContainerAction extends MutatingApiAction<DeleteContainerForm>
     {
         private Container target;
 
         @Override
-        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        public void validateForm(DeleteContainerForm form, Errors errors)
         {
             target = getContainer();
 
@@ -823,7 +838,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
+        public ApiResponse execute(DeleteContainerForm form, BindException errors)
         {
             Class<? extends Permission> permClass = getContainer().getPermissionNeededToDelete();
             if (!target.hasPermission(getUser(), permClass))
@@ -832,7 +847,7 @@ public class CoreController extends SpringActionController
                 throw new UnauthorizedException("Insufficient permissions to delete folder. " + perm.getName() + " permission required.");
             }
 
-            ContainerManager.deleteAll(target, getUser());
+            ContainerManager.deleteAll(target, getUser(), form.getComment());
 
             return new ApiSimpleResponse();
         }
