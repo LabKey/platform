@@ -16,6 +16,10 @@
 package org.labkey.api.mbean;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import javax.management.DynamicMBean;
 import javax.management.InstanceNotFoundException;
@@ -32,24 +36,40 @@ import java.util.Hashtable;
  */
 public class LabKeyManagement
 {
+
+    public static final Logger LOG = LogHelper.getLogger(LabKeyManagement.class, "Exports LabKey information via JMX");
+
     public static ObjectName createName(String type, String name) throws MalformedObjectNameException
     {
         Hashtable<String,String> t = new Hashtable<>();
-        t.put("type", type);
         name = name.replace(": ", "-").replace(':','-');
+
+        name = replaceSpecialObjectNameCharacters(name);
+        type = replaceSpecialObjectNameCharacters(type);
+
+        t.put("type", type);
         t.put("name", name);
-        try
-        {
-            return new ObjectName("LabKey", t);
-        }
-        catch (MalformedObjectNameException x)
-        {
-            t.put("type", ObjectName.quote(type));
-            t.put("name", ObjectName.quote(name));
-            return new ObjectName("LabKey", t);
-        }
+
+        return new ObjectName("LabKey", t);
     }
 
+    /** Issue 47330 - steer clear of potentially problematic object names.
+     * Special character lists compliments of ObjectName.quote(), plus comma, which may be separately problematic */
+    private static String replaceSpecialObjectNameCharacters(String s)
+    {
+        final StringBuilder buf = new StringBuilder();
+        final int len = s.length();
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt(i);
+            c = switch (c)
+            {
+                case '\n', '\\', '\"', '*', '?', ',' -> '_';
+                default -> c;
+            };
+            buf.append(c);
+        }
+        return buf.toString();
+    }
 
     public static void register(DynamicMBean bean, String type, String name)
     {
@@ -60,7 +80,7 @@ public class LabKeyManagement
         }
         catch (Exception x)
         {
-            LogManager.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
+            LOG.error("error registering mbean : " + name, x);
         }
         register(bean, oname);
     }
@@ -68,7 +88,7 @@ public class LabKeyManagement
 
     static final Object _lock = new Object();
 
-    public static void register(DynamicMBean bean, ObjectName name)
+    public static void register(DynamicMBean bean, @Nullable ObjectName name)
     {
         try
         {
@@ -88,7 +108,7 @@ public class LabKeyManagement
         }
         catch (Exception x)
         {
-            LogManager.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
+            LOG.error("error registering mbean : " + name, x);
         }
     }
 }
