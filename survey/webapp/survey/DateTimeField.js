@@ -122,9 +122,11 @@ Ext4.define('Ext.ux.form.field.DateTime', {
         }, me.dateConfig));
         me.items.push(me.dateField);
 
-        me.items.push({
-            xtype: 'splitter'
-        });
+        if (this.layout === 'hbox') {
+            me.items.push({
+                xtype: 'splitter'
+            });
+        }
 
         me.timeField = Ext4.create('Ext.form.field.Time', Ext4.apply({
             format  : me.timeFormat,
