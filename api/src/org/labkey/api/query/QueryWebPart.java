@@ -103,16 +103,15 @@ public class QueryWebPart extends VBox
 
             if (queryName == null)
             {
-                Object sql = null==_extendedProperties ? null : _extendedProperties.get("sql");
+                String sql = null==_extendedProperties ? null : _extendedProperties.optString("sql", null);
                 if (null == sql)
                     sql = _properties.get("sql");
 
                 // execute arbitrary sql
                 if (sql != null)
                 {
-                    String _sql = sql.toString();
                     _hasSql = true;
-                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, _sql, _metadata);
+                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql, _metadata);
 
                     _settings.setQueryName(def.getName());
                     queryName = _settings.getQueryName();

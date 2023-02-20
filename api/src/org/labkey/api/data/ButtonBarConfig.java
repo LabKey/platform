@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -27,6 +28,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,6 +51,14 @@ import java.util.Set;
  */
 public class ButtonBarConfig
 {
+    private static final Map<PermissionType.Enum, Class<? extends Permission>> PERMISSION_MAP = Map.of(
+        PermissionType.READ, ReadPermission.class,
+        PermissionType.INSERT, InsertPermission.class,
+        PermissionType.UPDATE, UpdatePermission.class,
+        PermissionType.DELETE, DeletePermission.class,
+        PermissionType.ADMIN, AdminPermission.class
+    );
+
     private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
     private List<ButtonConfig> _items = new ArrayList<>();
     private boolean _includeStandardButtons = false;
@@ -94,26 +105,11 @@ public class ButtonBarConfig
 
                     if (null != permissionString)
                     {
-                        if ("READ".equalsIgnoreCase(permissionString))
-                        {
-                            button.setPermission(ReadPermission.class);
-                        }
-                        else if ("INSERT".equalsIgnoreCase(permissionString))
-                        {
-                            button.setPermission(InsertPermission.class);
-                        }
-                        else if ("UPDATE".equalsIgnoreCase(permissionString))
-                        {
-                            button.setPermission(UpdatePermission.class);
-                        }
-                        else if ("DELETE".equalsIgnoreCase(permissionString))
-                        {
-                            button.setPermission(DeletePermission.class);
-                        }
-                        else if ("ADMIN".equalsIgnoreCase(permissionString))
-                        {
-                            button.setPermission(AdminPermission.class);
-                        }
+                        PermissionType.Enum type = PermissionType.Enum.forString(permissionString.toUpperCase());
+                        Class<? extends Permission> permClass = PERMISSION_MAP.get(type);
+
+                        if (null != permClass)
+                            button.setPermission(permClass);
                     }
 
                     // permission has precedence, but if it's not specified or invalid, look for permissionClass
@@ -287,55 +283,31 @@ public class ButtonBarConfig
 
     private Class<? extends Permission> getPermission(ButtonBarItem item)
     {
-        if (item.getPermission() == PermissionType.READ)
+        Class<? extends Permission> permClass = PERMISSION_MAP.get(item.getPermission());
+        if (null != permClass)
+            return permClass;
+
+        // permission has precedence, but if permission is not specified or invalid look at permissionClass instead
+        if (item.getPermissionClass() != null)
         {
-            return ReadPermission.class;
-        }
-        else if (item.getPermission() == PermissionType.INSERT)
-        {
-            return InsertPermission.class;
-        }
-        else if (item.getPermission() == PermissionType.UPDATE)
-        {
-            return UpdatePermission.class;
-        }
-        else if (item.getPermission() == PermissionType.DELETE)
-        {
-            return DeletePermission.class;
-        }
-        else if (item.getPermission() == PermissionType.ADMIN)
-        {
-            return AdminPermission.class;
-        }
-        else if (item.getPermissionClass() != null)
-        {
-            // permission has precedence, but if it's not specified look at permissionClass instead
             return getPermissionClass(item.getPermissionClass());
         }
         else
         {
             return null;
         }
-
     }
 
-    private Class<? extends Permission> getPermissionClass(String permissionClassName)
+    private @Nullable Class<? extends Permission> getPermissionClass(String permissionClassName)
     {
-        try
+        Permission perm = RoleManager.getPermission(permissionClassName);
+        if (null != perm)
         {
-            Class c = Class.forName(permissionClassName);
-            if (Permission.class.isAssignableFrom(c))
-            {
-                return (Class<? extends Permission>) c;
-            }
-            else
-            {
-                LOG.warn("Resolved class " + permissionClassName + " but it was not of the expected type, " + Permission.class);
-            }
+            return perm.getClass();
         }
-        catch (ClassNotFoundException e)
+        else
         {
-            LOG.warn("Could not find permission class " + permissionClassName);
+            LOG.warn("Specified permission class " + permissionClassName + " was not found");
         }
         return null;
     }
@@ -377,15 +349,13 @@ public class ButtonBarConfig
 
             //item can be a string (separator), or a map (menu item)
             // and the map may contain an items array of its own (fly-out menu)
-            if (item instanceof String)
+            if (item instanceof String sitem)
             {
-                String sitem = (String)item;
                 if (sitem.equals("-"))
                     root.addSeparator();
             }
-            else if (item instanceof JSONObject)
+            else if (item instanceof JSONObject obj)
             {
-                JSONObject obj = (JSONObject)item;
                 NavTree nt = new NavTree(obj.getString("text"));
                 if (obj.has("onClick"))
                     nt.setScript(obj.getString("onClick"));
