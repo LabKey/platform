@@ -198,13 +198,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            try
+            if (!_sampleType.isMedia())
             {
-                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
@@ -227,7 +230,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (userSchema != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            if (InventoryService.get() != null)
+            if (InventoryService.get() != null && !_sampleType.isMedia())
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
 
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null)
@@ -267,13 +270,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
-            try
+            if (!_sampleType.isMedia())
             {
-                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
 
             onSamplesChanged();
@@ -289,13 +295,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            try
+            if (!_sampleType.isMedia())
             {
-                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
 
             onSamplesChanged();
@@ -316,7 +325,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            if (!_sampleType.isMedia())
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
 
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
@@ -349,7 +359,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-            if (rows != null && (rows.get(0).containsKey("StoredAmount") || rows.get(0).containsKey("Amount") || rows.get(0).containsKey("Units")))
+            if (!_sampleType.isMedia() && rows != null && (rows.get(0).containsKey("StoredAmount") || rows.get(0).containsKey("Amount") || rows.get(0).containsKey("Units")))
             {
                 Set<String> ids = results.stream().map(row -> (String) row.get("AliquotedFromLSID")).collect(Collectors.toSet());
                 SampleTypeService.get().setRecomputeFlagForSampleLsids(ids);
@@ -361,7 +371,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            if (!_sampleType.isMedia())
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
             onSamplesChanged();
             audit(QueryService.AuditAction.UPDATE);
         }
