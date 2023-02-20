@@ -788,23 +788,10 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
                 }
             }
 
-            ColumnInfo column = getTableInfo().getColumn(tc.getFieldKey());
-            if (null != column)
-            {
-                ColumnLogging columnLogging = column.getColumnLogging();
-                for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
-                {
-                    addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
-                }
-            }
-
             ColumnLogging columnLogging = col.getColumnLogging();
             for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
             {
-                FieldKey fixedUp = fieldKey;
-                if (null != tc.getFieldKey().getParent())
-                    fixedUp = new FieldKey(tc.getFieldKey().getParent(), fieldKey.getName());
-                addSuggestedColumn(suggested, fixedUp, selectedColumnMap);
+                addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
             }
         }
         suggested.removeAll(selected);

@@ -32,12 +32,14 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -407,7 +409,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     return null;
 
                 DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
-                return table.getColumn(displayField);
+                ColumnInfo datasetColumn = table.getColumn(displayField);
+                MutableColumnInfo lookup = WrappedColumnInfo.wrap(datasetColumn);
+                lookup.setFieldKey(new FieldKey(parent.getFieldKey(), lookup.getName()));
+                return lookup;
             }
 
             @Override
