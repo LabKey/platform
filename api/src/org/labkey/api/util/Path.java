@@ -195,6 +195,8 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public boolean equals(Object other)
     {
+        if (null == other)
+            return false;
         if (this == other)
             return true;
         if (this.getClass() != other.getClass())
