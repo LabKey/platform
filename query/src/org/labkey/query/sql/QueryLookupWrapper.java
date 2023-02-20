@@ -400,6 +400,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         _source.getOrderedSuggestedColumns(unwrapped).stream()
                 .filter(sc -> sc.getFieldKey().getParent() == null)
                 .map(sc -> getColumn(sc.getFieldKey().getName())).filter(Objects::nonNull)
+                .peek(sc -> sc._suggestedColumn = true)
                 .peek(sc -> _selectedColumns.put(sc.getFieldKey(), sc))
                 .forEach(ret::add);
         return ret;

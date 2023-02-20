@@ -144,7 +144,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         try
         {
             List<QueryException> qerrors = new ArrayList<>();
-            tinfo = queryDef.getTable(qerrors, true);
+            tinfo = queryDef.getTable(schema, qerrors, true, !form.isIncludeSuggestedQueryColumns());
             if (!qerrors.isEmpty())
             {
                 resp.put("exception", qerrors.get(0).getMessage());
