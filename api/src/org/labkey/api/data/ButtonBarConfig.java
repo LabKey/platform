@@ -90,32 +90,39 @@ public class ButtonBarConfig
                     }
                     catch (Exception ignore) {}
 
-                    String permissionString = obj.getString("permission");
+                    String permissionString = obj.optString("permission", null);
 
-                    if ("READ".equalsIgnoreCase(permissionString))
+                    if (null != permissionString)
                     {
-                        button.setPermission(ReadPermission.class);
+                        if ("READ".equalsIgnoreCase(permissionString))
+                        {
+                            button.setPermission(ReadPermission.class);
+                        }
+                        else if ("INSERT".equalsIgnoreCase(permissionString))
+                        {
+                            button.setPermission(InsertPermission.class);
+                        }
+                        else if ("UPDATE".equalsIgnoreCase(permissionString))
+                        {
+                            button.setPermission(UpdatePermission.class);
+                        }
+                        else if ("DELETE".equalsIgnoreCase(permissionString))
+                        {
+                            button.setPermission(DeletePermission.class);
+                        }
+                        else if ("ADMIN".equalsIgnoreCase(permissionString))
+                        {
+                            button.setPermission(AdminPermission.class);
+                        }
                     }
-                    else if ("INSERT".equalsIgnoreCase(permissionString))
+
+                    // permission has precedence, but if it's not specified or invalid, look for permissionClass
+                    if (null == button.getPermission())
                     {
-                        button.setPermission(InsertPermission.class);
-                    }
-                    else if ("UPDATE".equalsIgnoreCase(permissionString))
-                    {
-                        button.setPermission(UpdatePermission.class);
-                    }
-                    else if ("DELETE".equalsIgnoreCase(permissionString))
-                    {
-                        button.setPermission(DeletePermission.class);
-                    }
-                    else if ("ADMIN".equalsIgnoreCase(permissionString))
-                    {
-                        button.setPermission(AdminPermission.class);
-                    }
-                    else if (json.getString("permissionClass") != null)
-                    {
-                        // permission has precedence, but if it's not specified look at permissionClass instead
-                        button.setPermission(getPermissionClass(json.getString("permissionClass")));
+                        String permissionClass = json.optString("permissionClass", null);
+
+                        if (null != permissionClass)
+                            button.setPermission(getPermissionClass(permissionClass));
                     }
 
                     //if the object has an "items" prop, load those as NavTree
