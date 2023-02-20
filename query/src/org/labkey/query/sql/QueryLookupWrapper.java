@@ -93,7 +93,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
         for (var col : relation.getAllColumns().values())
         {
-            PassThroughColumn pt = new PassThroughColumn(new FieldKey(null, col.getAlias()), col);
+            PassThroughColumn pt = new PassThroughColumn(col.getFieldKey(), col);
             _selectedColumns.put(pt.getFieldKey(), pt);
         }
 
@@ -232,8 +232,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     @Override
     public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
     {
-        var first =  _source.getFirstColumn();
-        return getColumn(first.getAlias());
+        return _selectedColumns.get(0);
     }
 
     @Override
