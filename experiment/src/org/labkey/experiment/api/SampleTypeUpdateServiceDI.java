@@ -1017,6 +1017,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isSampleStateHeader(name))
                         continue;
+                    if (isMaterialExpDateHeader(name))
+                        continue;
                     drop.add(name);
                 }
             }
@@ -1120,6 +1122,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliasHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.Alias, name);
+        }
+
+        private static boolean isMaterialExpDateHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.MaterialExpDate, name);
         }
     }
 

@@ -1230,7 +1230,8 @@ public class QueryServiceImpl implements QueryService
             return result;
         }
 
-        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
+        Collection<CustomView> allViews = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
+        return allViews.stream().filter(view -> !(view instanceof ModuleCustomView)).collect(Collectors.toList());
     }
 
     @Override

@@ -17,19 +17,16 @@ package org.labkey.query;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.FilterInfo;
-import org.labkey.api.data.Sort;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -175,86 +172,9 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 }
 
                 // update custom view column list based on fieldKey parts
-                boolean columnsUpdated = false;
-                List<FieldKey> updatedColumns = new ArrayList<>();
-                for (FieldKey origFieldKey : customView.getColumns())
-                {
-                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
-                    if (newFieldKey != null)
-                    {
-                        updatedColumns.add(newFieldKey);
-                        columnsUpdated = true;
-                    }
-                    else
-                    {
-                        updatedColumns.add(origFieldKey);
-                    }
-                }
-                if (columnsUpdated)
-                {
-                    customView.setColumns(updatedColumns);
-                    hasUpdates = true;
-                }
+                boolean hasFieldKeyChanged = CustomViewChangeListener.updateCustomViewFieldKeyChange(customView, queryNameChangeMap, null);
 
-                CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(customView.getFilterAndSort());
-                ActionURL updatedFilterAndSortUrl = new ActionURL();
-
-                // update filter info list based on fieldKey parts, and include them in the updated FilterAndSort URL
-                boolean filtersUpdated = false;
-                for (FilterInfo filterInfo : fas.getFilter())
-                {
-                    FieldKey origFieldKey = filterInfo.getField();
-                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
-                    if (newFieldKey != null)
-                    {
-                        filtersUpdated = true;
-                    }
-
-                    filterInfo.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
-                }
-
-                // update sort field list based on fieldKey parts, and include them in the updated FilterAndSort URL
-                boolean sortsUpdated = false;
-                Sort sort = new Sort();
-                for (Sort.SortField sortField : fas.getSort())
-                {
-                    FieldKey origFieldKey = sortField.getFieldKey();
-                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
-                    if (newFieldKey != null)
-                    {
-                        sortsUpdated = true;
-                    }
-
-                    sort.appendSortColumn(newFieldKey != null ? newFieldKey : origFieldKey, sortField.getSortDirection(), true);
-                }
-                sort.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, false);
-
-                // update analyticsProviders based on fieldKey parts, and include them in the updated FilterAndSort URL
-                boolean analyticsProvidersUpdated = false;
-                for (AnalyticsProviderItem analyticsProvider : fas.getAnalyticsProviders())
-                {
-                    FieldKey origFieldKey = analyticsProvider.getFieldKey();
-                    FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
-                    if (newFieldKey != null)
-                        analyticsProvidersUpdated = true;
-
-                    analyticsProvider.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
-                }
-
-                // add the container filters to the updated FilterAndSort URL
-                for (String containerFilterName : fas.getContainerFilterNames())
-                {
-                    if (containerFilterName != null)
-                        updatedFilterAndSortUrl.addParameter(CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME, containerFilterName);
-                }
-
-                if (filtersUpdated || sortsUpdated || analyticsProvidersUpdated)
-                {
-                    customView.setFilterAndSortFromURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX);
-                    hasUpdates = true;
-                }
-
-                if (hasUpdates)
+                if (hasUpdates || hasFieldKeyChanged)
                 {
                     HttpServletRequest request = new MockHttpServletRequest();
                     customView.save(customView.getModifiedBy(), request);
@@ -267,28 +187,4 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         }
     }
 
-    private FieldKey getUpdatedFieldKeyReference(FieldKey col, Map<String, String> queryNameChangeMap)
-    {
-        List<String> keyParts = new ArrayList<>();
-        keyParts.add(col.getName());
-
-        // we don't have to worry about field keys without parents (i.e. column/field names without lookup)
-        FieldKey currentParent = col.getParent();
-        while (currentParent != null)
-        {
-            // look through the parts of the field key in search of something that matches a query name change
-            // and has an expected parent (i.e. Datasets, ParticipantVisit, etc.)
-            FieldKey nextParent = currentParent.getParent();
-            if (null != nextParent && EXPECTED_PARENT_FKS.contains(nextParent.getName()) && queryNameChangeMap.containsKey(currentParent.getName()))
-            {
-                return FieldKey.fromParts(new FieldKey(nextParent, queryNameChangeMap.get(currentParent.getName())), FieldKey.fromParts(keyParts));
-            }
-            else
-            {
-                keyParts.add(0, currentParent.getName());
-            }
-            currentParent = nextParent;
-        }
-        return null;
-    }
 }
