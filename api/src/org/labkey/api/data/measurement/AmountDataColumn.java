@@ -68,7 +68,7 @@ class AmountDataColumn extends DataColumn
             }
             catch (IllegalArgumentException e)
             {
-                // do nothing; leave unit as null;
+                // do nothing, return unconverted amount
             }
         }
 

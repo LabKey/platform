@@ -6,6 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class Measurement
 {
+    private Unit _units;
+    private Double _amount;
+    private Unit _normalizingUnit;
+
     public enum Kind
     {
         Mass,
@@ -97,6 +101,9 @@ public class Measurement
             if (targetUnit == null || targetUnit == this)
                 return amount;
 
+            if (!this.isCompatible(targetUnit))
+                throw new IllegalArgumentException("The target unit (" + targetUnit + ") is not compatible with the given unit (" + this + ").");
+
             return amount * (this.getRatio() / targetUnit.getRatio());
         }
 
@@ -119,6 +126,102 @@ public class Measurement
 
             return unitA.getKind() == unitB.getKind();
         }
+    }
+
+    public Measurement(Object amountObj, String units, @Nullable String normalizingUnit)
+    {
+        _amount = convertToAmount(amountObj);
+        _normalizingUnit = Unit.getUnit(normalizingUnit);
+        _units = Unit.getUnit(units);
+    }
+
+    public Measurement(Object amountObj, String units)
+    {
+       this(amountObj, units, null);
+    }
+
+    public Double getNormalizedAmount()
+    {
+        // if there's no unit associated, the amount should already be in the normalizing unit
+        return _units == null ? getAmount() : _units.convertAmount(getAmount(), _normalizingUnit);
+    }
+
+    public Unit getNormalizedUnit()
+    {
+        return _normalizingUnit != null ? _normalizingUnit : _units;
+    }
+
+    public Unit getUnits()
+    {
+        return _units;
+    }
+
+    public void setUnits(Unit units)
+    {
+        _units = units;
+    }
+
+    public void setUnits(String unitsStr)
+    {
+        _units = Unit.getUnit(unitsStr);
+    }
+
+    public Double getAmount()
+    {
+        return _amount;
+    }
+
+    public void setAmount(Double amount)
+    {
+        _amount = amount;
+    }
+
+    public Unit getNormalizingUnit()
+    {
+        return _normalizingUnit;
+    }
+
+    public void setNormalizingUnit(Unit normalizingUnit)
+    {
+        _normalizingUnit = normalizingUnit;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof Measurement other))
+            return false;
+        try
+        {
+            Double thisNormalized = this.getNormalizedAmount();
+            Double otherNormalized = other.getNormalizedAmount();
+            if (thisNormalized == null)
+            {
+                return otherNormalized == null;
+            }
+            else
+            {
+                return thisNormalized.equals(otherNormalized);
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public String toString()
+    {
+        if (getUnits() == null)
+            return String.valueOf(getAmount());
+
+        return String.format("%f %s", getAmount(), getUnits());
+    }
+
+    public String toNormalizedString()
+    {
+        return String.format("%f %s", getNormalizedAmount(), getNormalizedUnit());
     }
 
     public static Double convertToAmount(Object amountObj)
