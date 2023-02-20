@@ -18,6 +18,7 @@ package org.labkey.api;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.json.OldJsonTest;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -194,6 +195,7 @@ public class ApiModule extends CodeOnlyModule
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
+            OldJsonTest.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,

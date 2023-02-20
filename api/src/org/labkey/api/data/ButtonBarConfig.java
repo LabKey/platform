@@ -19,8 +19,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -58,16 +58,12 @@ public class ButtonBarConfig
 
     private static final Logger LOG = LogManager.getLogger(ButtonBarConfig.class);
 
-    public ButtonBarConfig(org.json.JSONObject json)
-    {
-        this(JSONObject.toOldJSONObject(json));
-    }
-
-    @Deprecated
     public ButtonBarConfig(JSONObject json)
     {
-        if (json.has("position") && null != json.getString("position"))
-            _position = getPosition(json.getString("position"));
+        String position = json.optString("position", null);
+
+        if (null != position)
+            _position = getPosition(position);
 
         _includeStandardButtons = json.optBoolean("includeStandardButtons", false);
         boolean suppressWarnings = json.optBoolean("suppressWarnings", false);
@@ -90,7 +86,7 @@ public class ButtonBarConfig
                     UserDefinedButtonConfig button = new UserDefinedButtonConfig();
                     try
                     {
-                        BeanUtils.populate(button, obj);
+                        BeanUtils.populate(button, obj.toMap());
                     }
                     catch (Exception ignore) {}
 
@@ -121,7 +117,6 @@ public class ButtonBarConfig
                         // permission has precedence, but if it's not specified look at permissionClass instead
                         button.setPermission(getPermissionClass(json.getString("permissionClass")));
                     }
-
 
                     //if the object has an "items" prop, load those as NavTree
                     //items recursively (for menu buttons)
@@ -161,7 +156,7 @@ public class ButtonBarConfig
 
     public ButtonBarConfig(ButtonBarConfig cfg)
     {
-        this(new org.json.JSONObject());
+        this(new JSONObject());
         if (cfg.getPosition() != null)
             this.setPosition(cfg.getPosition());
 
@@ -345,7 +340,7 @@ public class ButtonBarConfig
             tree.setScript(item.getOnClick());
         if (item.getIcon() != null && item.getIcon().length() > 0)
             tree.setImageSrc(new ResourceURL(item.getIcon()));
-        if (item.getItemArray() != null && item.getItemArray().length > 0)
+        if (item.getItemArray() != null)
         {
             for (ButtonMenuItem child : item.getItemArray())
                 tree.addChild(loadNavTree(child));

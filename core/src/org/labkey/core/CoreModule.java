@@ -296,6 +296,7 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
+    public static final String PROJECTS_WEB_PART_NAME = "Projects";
 
     static
     {
@@ -311,7 +312,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private CoreWarningProvider _warningProvider;
-
     @Override
     public boolean hasScripts()
     {
@@ -614,7 +614,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return false;
                 }
             },
-            new AlwaysAvailableWebPartFactory("Projects", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
+            new AlwaysAvailableWebPartFactory(PROJECTS_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
             {
                 @Override
                 public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
@@ -787,7 +787,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Users & guests can read from /home
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
         home.setFolderType(collaborationType, null);
-        addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
 
@@ -845,6 +844,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
+
+        if (moduleContext.isNewInstall())
+        {
+            // In order to initialize the portal layout correctly, we need to add the web parts after the folder
+            // types have been registered. Thus, needs to be here in startupAfterSpringConfig() instead of grouped
+            // in bootstrap().
+            Container homeContainer = ContainerManager.getHomeContainer();
+            int count = Portal.getParts(homeContainer, homeContainer.getFolderType().getDefaultPageId(homeContainer)).size();
+            addWebPart(PROJECTS_WEB_PART_NAME, homeContainer, HttpView.BODY, count);
+        }
+
         EmailService.setInstance(new EmailServiceImpl());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)

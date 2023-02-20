@@ -1,9 +1,11 @@
-package org.labkey.api.util;
+package org.json;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsonorg.PackageVersion;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.old.JSONArrayDeserializer;
+import org.json.old.JSONArraySerializer;
+import org.json.old.JSONObjectDeserializer;
+import org.json.old.JSONObjectSerializer;
 
 // A temporary module to support serialization/deserialization of our deprecated JSONObject and JSONArray classes
 // TODO: Remove this once migration is complete
@@ -21,8 +23,8 @@ public class JsonOrgOldModule extends SimpleModule
     public JsonOrgOldModule()
     {
         super(PackageVersion.VERSION);
-        addDeserializer(JSONArray.class, JSONArrayDeserializer.instance);
-        addDeserializer(JSONObject.class, JSONObjectDeserializer.instance);
+        addDeserializer(org.json.old.JSONArray.class, JSONArrayDeserializer.instance);
+        addDeserializer(org.json.old.JSONObject.class, JSONObjectDeserializer.instance);
         addSerializer(JSONArraySerializer.instance);
         addSerializer(JSONObjectSerializer.instance);
 

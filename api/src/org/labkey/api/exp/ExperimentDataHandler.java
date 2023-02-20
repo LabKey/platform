@@ -19,8 +19,12 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
@@ -97,7 +101,11 @@ public interface ExperimentDataHandler extends Handler<ExpData>
 
     default void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
     {
-        // Do nothing
+        SQLFragment sql = new SQLFragment("UPDATE exp.object SET Container = ? WHERE Container = ? AND ObjectURI = ?");
+        sql.add(targetContainer);
+        sql.add(container);
+        sql.add(newData.getLSID());
+        new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
     void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException;
