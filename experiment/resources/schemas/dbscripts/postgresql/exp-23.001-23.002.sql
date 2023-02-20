@@ -1,0 +1,1 @@
+ALTER TABLE exp.Material ADD COLUMN MaterialExpDate TIMESTAMP NULL;
