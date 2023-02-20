@@ -15,6 +15,13 @@ public class Summary
         this.nounPlural = nounPlural;
     }
 
+    public Summary(final int count, final String nounSingular)
+    {
+        this.count = count;
+        this.nounSingular = nounSingular;
+        this.nounPlural = nounSingular + "s";
+    }
+
     public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();

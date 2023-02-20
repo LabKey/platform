@@ -91,25 +91,8 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.experiment.api.DataClassDomainKind;
-import org.labkey.experiment.api.ExpDataClassImpl;
-import org.labkey.experiment.api.ExpDataClassType;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpProtocolImpl;
-import org.labkey.experiment.api.ExpSampleTypeImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentStressTest;
-import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.LineagePerfTest;
-import org.labkey.experiment.api.LineageTest;
-import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.*;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
-import org.labkey.experiment.api.UniqueValueCounterTestCase;
-import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ChildOfMethod;
 import org.labkey.experiment.api.data.LineageCompareType;
@@ -718,6 +701,21 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ArrayList<Summary> summaries = new ArrayList<>();
         User user = HttpView.currentContext().getUser();
 
+        // Assay types
+        int assayTypeCount = 0;
+        for (ExpProtocol protocol : AssayService.get().getAssayProtocols(c))
+        {
+            if (protocol.getContainer().equals(c))
+                assayTypeCount++;
+        }
+        if (assayTypeCount > 0)
+            summaries.add(new Summary(assayTypeCount, "Assay Type"));
+
+        // Run count
+        int runGroupCount = ExperimentService.get().getExperiments(c, user, false, true).size();
+        if (runGroupCount > 0)
+            summaries.add(new Summary(runGroupCount, "Assay run"));
+
         // Number of Data Classes
         List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, true);
         int dataClassCount = dataClasses.size();
@@ -732,13 +730,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         {
             int count = ((Long) dataClassResults.get(k)).intValue();
             if (count != 0)
-                summaries.add(new Summary(count, k, k + "s"));
+                summaries.add(new Summary(count, k));
         }
 
         // Sample Types
         int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
         if (sampleTypeCount > 0)
-            summaries.add(new Summary(sampleTypeCount, "Sample Type", "Sample Types"));
+            summaries.add(new Summary(sampleTypeCount, "Sample Type"));
 
         // Sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
@@ -747,7 +745,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         TableSelector tsSamples = new TableSelector(sampleTypeTable, Collections.singleton("SampleCount"), null, null);
         int sampleRowCount = Arrays.stream(tsSamples.getArray(Integer.class)).mapToInt(Integer::intValue).sum();
         if (sampleRowCount > 0)
-            summaries.add(new Summary(sampleRowCount, "Sample", "Samples"));
+            summaries.add(new Summary(sampleRowCount, "Sample"));
 
         return summaries;
     }

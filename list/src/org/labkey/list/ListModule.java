@@ -182,7 +182,7 @@ public class ListModule extends SpringModule
         ArrayList<Summary> summary = new ArrayList<>();
         int picklistCount = ListManager.get().getPicklists(c).size();
         if (picklistCount > 0)
-            summary.add(new Summary(picklistCount, "Pick List", "Pick Lists"));
+            summary.add(new Summary(picklistCount, "Pick List"));
 
         return summary;
     }

@@ -1145,7 +1145,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         int childContainerCount = ContainerManager.getChildren(c).size();
         return childContainerCount > 0
-                ? List.of(new Summary(childContainerCount, "Subfolder", "Subfolders"))
+                ? List.of(new Summary(childContainerCount, "Subfolder"))
                 : new ArrayList<>();
     }
 
