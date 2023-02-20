@@ -181,9 +181,12 @@ public class ListModule extends SpringModule
     @Override
     public List<Summary> getDetailedSummary(Container c)
     {
+        ArrayList<Summary> summary = new ArrayList<>();
+        int picklistCount = ListManager.get().getPicklists(c).size();
+        if (picklistCount > 0)
+            summary.add(new Summary(picklistCount, "Pick List", "Pick Lists"));
 
-
-        return super.getDetailedSummary(c);
+        return summary;
     }
 
     @Override

@@ -28,9 +28,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
@@ -718,25 +720,21 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ArrayList<Summary> summaries = new ArrayList<>();
         User user = HttpView.currentContext().getUser();
 
+        // Number of Data Classes
         List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, true);
         int dataClassCount = dataClasses.size();
         if (dataClassCount > 0)
             summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
 
-        // Non-final. Pretty inefficient.
-        for (ExpDataClass dataClass : dataClasses)
+        // Individual Data Class row counts
+        ExpSchema expSchema = new ExpSchema(user, c);
+        TableInfo dataClassesTable = ExpSchema.TableType.DataClasses.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+        Map<String, Object> dataClassResults = new TableSelector(dataClassesTable, dataClassesTable.getColumns("Name,DataCount"), null, null).getValueMap();
+        for (String k : dataClassResults.keySet())
         {
-            String dataClassName = dataClass.getName();
-            List<? extends ExpData> data = dataClass.getDatas();
-            int dataCount = 0;
-
-            for (ExpData d : data)
-            {
-                if (d.getContainer().equals(c))
-                    dataCount++;
-            }
-            if (dataCount > 0)
-                summaries.add(new Summary(dataCount, dataClassName, dataClassName + "s"));
+            int count = ((Long) dataClassResults.get(k)).intValue();
+            if (count != 0)
+                summaries.add(new Summary(count, k, k + "s"));
         }
 
         // Sample Types
@@ -744,12 +742,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (sampleTypeCount > 0)
             summaries.add(new Summary(sampleTypeCount, "Sample Type", "Sample Types"));
 
-        // Sample rows, including rows from other containers
+        // Sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
         ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
         sampleTypeTable.populate();
-        TableSelector ts = new TableSelector(sampleTypeTable, Collections.singleton("SampleCount"), null, null);
-        int sampleRowCount = Arrays.stream(ts.getArray(Integer.class)).mapToInt(Integer::intValue).sum();
+        TableSelector tsSamples = new TableSelector(sampleTypeTable, Collections.singleton("SampleCount"), null, null);
+        int sampleRowCount = Arrays.stream(tsSamples.getArray(Integer.class)).mapToInt(Integer::intValue).sum();
         if (sampleRowCount > 0)
             summaries.add(new Summary(sampleRowCount, "Sample", "Samples"));
 
