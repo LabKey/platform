@@ -267,7 +267,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
