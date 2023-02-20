@@ -27,6 +27,7 @@ import org.labkey.api.data.HasResolvedTables;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -69,8 +70,15 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        SQLFragment f = new SQLFragment();
         SQLFragment sql = _relation.getSql();
+        if (null == sql)
+        {
+            if (!_relation._query.getParseErrors().isEmpty())
+                throw _relation._query.getParseErrors().get(0);
+            else
+                throw new QueryException("Error generating SQL");
+        }
+        SQLFragment f = new SQLFragment();
         f.append("(").append(sql).append(") ").append(alias);
         return f;
     }

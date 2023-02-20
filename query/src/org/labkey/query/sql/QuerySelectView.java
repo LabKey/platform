@@ -160,7 +160,7 @@ public class QuerySelectView extends AbstractQueryRelation
     @Override
     public SQLFragment getSql()
     {
-        return getSelectSQL(table, selectColumns.values(), filter, sort, maxRows, offset, forceSort, queryLogging, true);
+        return getSelectSQL(table, selectColumns.values(), filter, sort, maxRows, offset, forceSort, queryLogging, distinct);
     }
 
     @Override
@@ -188,7 +188,7 @@ public class QuerySelectView extends AbstractQueryRelation
      * calls this implementation.
      */
     private SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean allowAddLoggingColumns)
+                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
@@ -357,7 +357,7 @@ public class QuerySelectView extends AbstractQueryRelation
             orderBy = sort.getOrderByClause(dialect, columnMap);
         }
 
-        if ((filterFrag == null || filterFrag.getSQL().length() == 0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0)
+        if ((filterFrag == null || filterFrag.getSQL().length() == 0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
         {
             selectFrag.append("\n").append(fromFrag);
             return selectFrag;

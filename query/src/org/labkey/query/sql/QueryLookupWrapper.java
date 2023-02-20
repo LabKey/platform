@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
@@ -75,7 +76,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
     Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
     Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<>();
-    Map<FieldKey, QLWColumn> _selectedColumns = new HashMap<>();
+    ArrayListMap<FieldKey, QLWColumn> _selectedColumns = new ArrayListMap<>();
 
     // shim for creating lookup columns w/o a real TableInfo
     SQLTableInfo _sti = null;
@@ -98,7 +99,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
         // add ref to first column, this may be used in (SELECT) expression
         if (!_selectedColumns.isEmpty())
-            _selectedColumns.values().iterator().next().addRef(this);
+            _selectedColumns.get(0).addRef(this);
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)

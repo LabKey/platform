@@ -452,6 +452,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     }
                     while (fieldKeys.containsKey(uniqueKey));
                     column._key = uniqueKey;
+                    column._alias = uniqueKey.getName();
                     reportWarning("Automatically creating alias for duplicate column: " + name, column._node);
                 }
                 else
