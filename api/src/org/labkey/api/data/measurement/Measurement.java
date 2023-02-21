@@ -8,7 +8,7 @@ public class Measurement
 {
     private Unit _units;
     private Double _amount;
-    private Unit _normalizingUnit;
+    private Unit _normalizingUnits;
 
     public enum Kind
     {
@@ -128,10 +128,10 @@ public class Measurement
         }
     }
 
-    public Measurement(Object amountObj, String units, @Nullable String normalizingUnit)
+    public Measurement(Object amountObj, String units, @Nullable String normalizingUnits)
     {
         _amount = convertToAmount(amountObj);
-        _normalizingUnit = Unit.getUnit(normalizingUnit);
+        _normalizingUnits = Unit.getUnit(normalizingUnits);
         _units = Unit.getUnit(units);
     }
 
@@ -143,12 +143,12 @@ public class Measurement
     public Double getNormalizedAmount()
     {
         // if there's no unit associated, the amount should already be in the normalizing unit
-        return _units == null ? getAmount() : _units.convertAmount(getAmount(), _normalizingUnit);
+        return _units == null ? getAmount() : _units.convertAmount(getAmount(), _normalizingUnits);
     }
 
-    public Unit getNormalizedUnit()
+    public Unit getNormalizedUnits()
     {
-        return _normalizingUnit != null ? _normalizingUnit : _units;
+        return _normalizingUnits != null ? _normalizingUnits : _units;
     }
 
     public Unit getUnits()
@@ -176,14 +176,14 @@ public class Measurement
         _amount = amount;
     }
 
-    public Unit getNormalizingUnit()
+    public Unit getNormalizingUnits()
     {
-        return _normalizingUnit;
+        return _normalizingUnits;
     }
 
-    public void setNormalizingUnit(Unit normalizingUnit)
+    public void setNormalizingUnits(Unit normalizingUnits)
     {
-        _normalizingUnit = normalizingUnit;
+        _normalizingUnits = normalizingUnits;
     }
 
     @Override
@@ -221,7 +221,7 @@ public class Measurement
 
     public String toNormalizedString()
     {
-        return String.format("%f %s", getNormalizedAmount(), getNormalizedUnit());
+        return String.format("%f %s", getNormalizedAmount(), getNormalizedUnits());
     }
 
     public static Double convertToAmount(Object amountObj)
