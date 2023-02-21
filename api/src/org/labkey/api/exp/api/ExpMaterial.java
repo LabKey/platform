@@ -23,6 +23,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Date;
 import java.util.Map;
 
 /** Represents a physical object in the experiment data model - typically a sample or specimen */
@@ -68,6 +69,8 @@ public interface ExpMaterial extends ExpRunItem
     String getNameAndStatus();
 
     void setSampleStateId(Integer stateId);
+
+    Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
 }
