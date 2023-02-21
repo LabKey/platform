@@ -31,6 +31,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
 import org.labkey.data.xml.ButtonBarOptions;
 import org.labkey.data.xml.ButtonMenuItem;
+import org.labkey.data.xml.PermissionType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -269,9 +270,14 @@ public class ButtonBarConfig
 
     private Class<? extends Permission> getPermission(ButtonBarItem item)
     {
-        PermissionTypes type = EnumUtils.getEnum(PermissionTypes.class, item.getPermission().toString());
-        if (null != type)
-            return type.getPermission();
+        PermissionType.Enum permission = item.getPermission();
+
+        if (null != permission)
+        {
+            PermissionTypes type = EnumUtils.getEnum(PermissionTypes.class, permission.toString());
+            if (null != type)
+                return type.getPermission();
+        }
 
         // permission has precedence, but if permission is not specified or invalid look at permissionClass instead
         if (item.getPermissionClass() != null)
