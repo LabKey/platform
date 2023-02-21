@@ -75,6 +75,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -249,6 +250,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public String getAliquotUnit()
     {
         return _object.getAliquotUnit();
+    }
+
+    @Override
+    public Date getMaterialExpDate()
+    {
+        return _object.getMaterialExpDate();
     }
 
     @Override
