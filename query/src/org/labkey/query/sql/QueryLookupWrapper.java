@@ -183,6 +183,17 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             {
                 remapSelectFieldKeys(true);
             }
+
+            @Override
+            public String getTitleColumn()
+            {
+                RelationColumn titleColumn = null;
+                if (_source instanceof QuerySelect select)
+                    titleColumn = select.getTitleColumn();
+                if (null != titleColumn && titleColumn.getFieldKey().size() == 1)
+                    return titleColumn.getFieldKey().getName();
+                return super.getTitleColumn();
+            }
         };
         for (var col : _selectedColumns.values())
         {
