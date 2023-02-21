@@ -427,6 +427,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case AliquotUnit:
                 return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+            case MaterialExpDate:
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("MaterialExpDate"));
+                ret.setLabel("Expiration Date");
+                ret.setHidden(false); // TODO: true until system fields can be disabled
+                ret.setShownInDetailsView(true);
+                ret.setShownInInsertView(true);
+                ret.setShownInUpdateView(true);
+                return ret;
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -618,6 +628,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setUserEditable(false);
         typeColumnInfo.setShownInInsertView(false);
 
+        addColumn(Column.MaterialExpDate);
+
         var folderCol = addContainerColumn(ExpMaterialTable.Column.Folder, null);
         boolean hasProductProjects = getContainer().hasProductProjects();
         if (hasProductProjects)
@@ -660,6 +672,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
+        defaultCols.add(FieldKey.fromParts(Column.MaterialExpDate));
         if (hasProductProjects)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Folder));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
