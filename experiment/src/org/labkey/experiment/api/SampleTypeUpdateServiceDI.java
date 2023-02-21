@@ -211,6 +211,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     throw new RuntimeException(e);
                 }
             }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -361,11 +362,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-            if (!_sampleType.isMedia() && rows != null && (rows.get(0).containsKey("StoredAmount") || rows.get(0).containsKey("Amount") || rows.get(0).containsKey("Units")))
-            {
-                Set<String> ids = results.stream().map(row -> (String) row.get("AliquotedFromLSID")).collect(Collectors.toSet());
-                SampleTypeService.get().setRecomputeFlagForSampleLsids(ids);
-            }
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", results);
             ExpDataIterators.derive(user, container, di, true, _sampleType, true);
@@ -1032,6 +1028,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isSampleStateHeader(name))
                         continue;
+                    if (isMaterialExpDateHeader(name))
+                        continue;
                     if (isStoredAmountHeader(name))
                         continue;
                     if (isUnitsHeader(name))
@@ -1139,6 +1137,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliasHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.Alias, name);
+        }
+
+        private static boolean isMaterialExpDateHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.MaterialExpDate, name);
         }
 
         private static boolean isStoredAmountHeader(String name)

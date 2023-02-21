@@ -22,6 +22,8 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Date;
+
 /**
  * Bean class for the exp.material table.
  * User: migra
@@ -34,6 +36,7 @@ public class Material extends RunItem
     private String aliquotedFromLSID;
     private Integer sampleState;
 
+    private Date materialExpDate;
     private Double storedAmount;
     private String units;
 
@@ -146,6 +149,16 @@ public class Material extends RunItem
     public void setAliquotUnit(String aliquotUnit)
     {
         this.aliquotUnit = aliquotUnit;
+    }
+
+    public Date getMaterialExpDate()
+    {
+        return materialExpDate;
+    }
+
+    public void setMaterialExpDate(Date materialExpDate)
+    {
+        this.materialExpDate = materialExpDate;
     }
 
     @Override
