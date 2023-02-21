@@ -733,6 +733,16 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 summaries.add(new Summary(count, k));
         }
 
+        // Batches
+        ExpSampleType mixtureBatches = SampleTypeService.get().getSampleType(c.getProject(), "MixtureBatches");
+        if (mixtureBatches != null && mixtureBatches.getSamples(c).size() > 0)
+            summaries.add(new Summary(mixtureBatches.getSamples(c).size(), "Batch", "Batches"));
+
+        // Raw materials
+        ExpSampleType rawMaterials = SampleTypeService.get().getSampleType(c.getProject(), "RawMaterials");
+        if (rawMaterials != null && rawMaterials.getSamples(c).size() > 0)
+            summaries.add(new Summary(rawMaterials.getSamples(c).size(), "Raw material"));
+
         // Sample Types
         int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
         if (sampleTypeCount > 0)
