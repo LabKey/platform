@@ -171,6 +171,11 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         if (!getParseErrors().isEmpty())
             return null;
 
+        Collection<String> keys = getKeyColumns();
+        FieldKey key = null;
+        if (keys.size() == 1)
+            key = new FieldKey(null, keys.iterator().next());
+
         var ret = new QueryTableInfo(this, getAlias())
         {
             @Override
@@ -187,6 +192,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
                 columnLogging = new ColumnLogging(getSchema().getName(), ret.getName(), ci.getFieldKey(),
                         columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
             ci.setColumnLogging(columnLogging);
+            ci.setKeyField(ci.getFieldKey().equals(key));
             ret.addColumn(ci);
         }
 
