@@ -223,6 +223,8 @@ public interface SampleTypeService
 
     void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs);
 
+    void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames);
+
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
 
     int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException;

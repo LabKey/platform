@@ -35,6 +35,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -305,7 +306,9 @@ public class ExpDataIterators
         private final Integer _unitsCol;
         private final ExpSampleType _sampleType;
         private final Integer _aliquotedFromCol;
+        private final Integer _aliquotedFromLsidCol;
         Set<String> updatedSampleLsids = new HashSet<>();
+        Set<String> updatedSampleNames = new HashSet<>();
 
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
         {
@@ -316,6 +319,7 @@ public class ExpDataIterators
             _storedAmountCol = map.get("StoredAmount");
             _unitsCol = map.get("Units");
             _aliquotedFromCol = map.get("AliquotedFrom");
+            _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
         }
 
         private boolean hasAmountData()
@@ -337,31 +341,38 @@ public class ExpDataIterators
                 Double existingAmount = null;
                 String existingUnits = null;
                 Set<String> aliquotParentLsids = new HashSet<>();
+                Set<String> aliquotParentNames = new HashSet<>();
                 if (existingMap != null)
                 {
                     existingAmount = (Double) existingMap.get("StoredAmount");
                     existingUnits = (String) existingMap.get("Units");
                     aliquotParentLsids.add((String) existingMap.get(SampleUpdateAliquotedFromDataIterator.ALIQUOTED_FROM_LSID_COLUMN_NAME));
                 }
-                if (existingUnits == null)
-                    existingUnits = _sampleType.getMetricUnit();
+                Measurement existingMeasurement = new Measurement(existingAmount, existingUnits, _sampleType.getMetricUnit());
+
                 Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
                 String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
-                if (newUnits == null)
-                    newUnits = _sampleType.getMetricUnit();
-                if (_aliquotedFromCol != null)
-                    aliquotParentLsids.add((String) get(_aliquotedFromCol));
+                Measurement newMeasurement = new Measurement(newAmount, newUnits, _sampleType.getMetricUnit());
 
-                if (!aliquotParentLsids.isEmpty() && (!Objects.equals(existingAmount, newAmount) || !Objects.equals(existingUnits, newUnits)))
-                {
+                if (_aliquotedFromCol != null)
+                    aliquotParentNames.add((String) get(_aliquotedFromCol));
+                else if (_aliquotedFromLsidCol != null)
+                    aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
+
+                boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
+                if (!aliquotParentLsids.isEmpty() && amountMayHaveChanged)
                     updatedSampleLsids.addAll(aliquotParentLsids);
-                }
+
+                if (!aliquotParentNames.isEmpty() && amountMayHaveChanged)
+                    updatedSampleNames.addAll(aliquotParentNames);
                 return true;
             }
             else
             {
                 if (!updatedSampleLsids.isEmpty())
                     SampleTypeService.get().setRecomputeFlagForSampleLsids(updatedSampleLsids);
+                if (!updatedSampleNames.isEmpty())
+                    SampleTypeService.get().setRecomputeFlagForSampleNames(_sampleType, updatedSampleNames);
 
                 return false;
             }
@@ -2188,7 +2199,7 @@ public class ExpDataIterators
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             DataIteratorBuilder step7 = step6;
-            if (isSample)
+            if (isSample && context.getInsertOption().allowUpdate)
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
 
             // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator

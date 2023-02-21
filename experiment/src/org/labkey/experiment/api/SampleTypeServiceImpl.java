@@ -1416,6 +1416,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
     }
 
+    @Override
+    public void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames)
+    {
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND LSID ";
+
+        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+        updateSQL.add(Boolean.TRUE);
+        updateSQL.add(sampleType.getLSID());
+        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleNames);
+
+        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+    }
+
 
     // TODO where is this supposed to be used
     @Override

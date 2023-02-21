@@ -118,6 +118,8 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
 /**
  *
@@ -424,13 +426,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
 
-       String oldName = (String) oldRow.get(Name.name());
+        String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
             throw new ValidationException("User-specified sample name not allowed");
 
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
+
+        if (!_sampleType.isMedia() && isAliquot)
+        {
+            Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
+            Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
+            if (!oldAmount.equals(newAmount))
+                SampleTypeService.get().setRecomputeFlagForSample(oldAliquotedFromLSID);
+        }
+
         Set<String> aliquotFields = getAliquotSpecificFields();
         Set<String> sampleMetaFields = getSampleMetaFields();
 
