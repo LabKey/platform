@@ -44,7 +44,7 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
             }
             else {
                 const schemaQuery = new SchemaQuery(schemaName, queryName);
-                queryConfig = { id: `components-queryconfig-${schemaName}-${queryName}`, schemaQuery };
+                queryConfig = { id: `components-queryconfig-${schemaName}-${queryName}`, schemaQuery, includeTotalCount: true };
             }
 
             this.setState(() => ({queryConfig, error}));
