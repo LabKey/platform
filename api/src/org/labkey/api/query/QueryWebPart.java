@@ -28,7 +28,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -44,7 +43,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -105,16 +103,15 @@ public class QueryWebPart extends VBox
 
             if (queryName == null)
             {
-                Object sql = null==_extendedProperties ? null : _extendedProperties.get("sql");
+                String sql = null==_extendedProperties ? null : _extendedProperties.optString("sql", null);
                 if (null == sql)
                     sql = _properties.get("sql");
 
                 // execute arbitrary sql
                 if (sql != null)
                 {
-                    String _sql = sql.toString();
                     _hasSql = true;
-                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, _sql, _metadata);
+                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql, _metadata);
 
                     _settings.setQueryName(def.getName());
                     queryName = _settings.getQueryName();

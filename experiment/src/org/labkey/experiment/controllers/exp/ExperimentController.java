@@ -7206,6 +7206,7 @@ public class ExperimentController extends SpringActionController
             {
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
+                        "S.MaterialExpDate AS ExpirationDate",
                         "S.SampleSet as SampleType",
                         "S.SampleState",
                         "S.isAliquot",
@@ -7217,6 +7218,7 @@ public class ExperimentController extends SpringActionController
             {
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
+                        "S.MaterialExpDate AS ExpirationDate",
                         "S.LabelColor",
                         "S.SampleSet",
                         "S.SampleState",

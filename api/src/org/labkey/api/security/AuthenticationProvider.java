@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -32,6 +33,7 @@ import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,6 +50,8 @@ import java.util.stream.Collectors;
  */
 public interface AuthenticationProvider
 {
+    Logger LOG = LogHelper.getLogger(AuthenticationProvider.class, "Authentication startup property actions");
+
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationProvider>> ALL_PROVIDER_INTERFACES = Arrays.asList(
         AuthenticationProvider.class,
@@ -109,6 +113,11 @@ public interface AuthenticationProvider
     {
     }
 
+    static String getDescriptionDocumentation(String name)
+    {
+        return "Description of this " + name + " configuration. Providing a description is required to update an existing configuration and strongly recommended when creating a new configuration.";
+    }
+
     // Retrieves all the startup properties in the specified categories, populates them into a form, and saves the form
     default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
     {
@@ -130,18 +139,36 @@ public interface AuthenticationProvider
 
                     // If description is provided in the startup properties file and an existing configuration for this provider
                     // matches that description then update the existing configuration. If not, create a new configuration. #39474
-                    if (form.getDescription() != null)
+                    final String description;
+
+                    if (null != form.getDescription())
                     {
-                        AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
-                            .filter(ac -> ac.getDescription().equals(form.getDescription()))
-                            .map(AuthenticationConfiguration::getRowId)
-                            .findFirst()
-                            .ifPresent(form::setRowId);
+                        description = form.getDescription();
                     }
                     else
                     {
-                        form.setDescription(form.getProvider() + " Configuration");
+                        description = getName() + " Configuration";
+                        form.setDescription(description);
+                        LOG.info("No description property was provided for " + getName() + " configuration; using generic description \"" + description + "\".");
                     }
+
+                    List<String> existingDescriptions = AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                        .map(AuthenticationConfiguration::getDescription)
+                        .toList();
+
+                    if (!existingDescriptions.isEmpty())
+                        LOG.info("Descriptions of existing " + getName() + " configurations: " + existingDescriptions);
+
+                    AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                        .filter(ac -> ac.getDescription().equals(description))
+                        .map(AuthenticationConfiguration::getRowId)
+                        .findFirst()
+                        .ifPresentOrElse(rowId ->
+                        {
+                            form.setRowId(rowId);
+                            LOG.info("Updating existing " + getName() + " configuration with description \"" + description + "\"");
+                        }, () ->
+                            LOG.info("Did not find an existing " + getName() + " configuration with description \"" + description + "\". Creating a new configuration using the specified properties."));
 
                     AuthenticationConfiguration<?> configuration = SaveConfigurationAction.saveForm(form, null);
                     configuration.handleStartupProperties(map);
