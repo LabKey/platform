@@ -251,6 +251,12 @@ Ext4.define('Ext.ux.form.field.DateTime', {
                 }
             }
         }
+        // set the original value of the component items so the dirty state with and initial value is set correctly
+        if (value && !this.dateField.originalValue)
+            this.dateField.originalValue = value;
+        if (value && !this.timeField.originalValue)
+            this.timeField.originalValue = value;
+
         this.dateField.setValue(value);
         this.timeField.setValue(value);
     },
