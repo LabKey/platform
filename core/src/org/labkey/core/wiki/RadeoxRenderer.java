@@ -416,6 +416,67 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
     }
 
+    private static class VideoMacro extends BaseMacro
+    {
+        @Override
+        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
+        {
+            String vidLink = macroParameter.get("video");
+            String width = null;
+            String height = null;
+            if (vidLink == null)
+                vidLink = macroParameter.get(0);
+
+            if (vidLink != null)
+            {
+                for(Object parameter : macroParameter.getParams().values())
+                {
+                    String param = (String)parameter;
+                    if (param.contains("height:"))
+                    {
+                        height = param.split(":")[1];
+                    }
+                    else if (param.contains("width:"))
+                    {
+                        width = param.split(":")[1];
+                    }
+                }
+                StringBuilder buf = new StringBuilder();
+                buf.append("<iframe");
+                if (width != null)
+                    buf.append(" width=\"").append(width).append("\"");
+                if (height != null)
+                    buf.append(" height=\"").append(height).append("\"");
+                buf.append(" src=\"").append(vidLink).append("\"").append(" frameborder=\"0\"").append(" allow=\"autoplay; encrypted-media\"").append(" allowfullscreen").append("></iframe>");
+                writer.write(buf.toString());
+            }
+        }
+
+        @Override
+        public String getName()
+        {
+            return "video";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Embeds a video from a link.";
+        }
+
+        private final String[] PARAMS = new String[]
+                {
+                        "video: the video URL",
+                        "width: width of the video frame (optional)",
+                        "height: height of the video frame (optional)",
+                };
+
+        @Override
+        public String[] getParamDescription()
+        {
+            return PARAMS;
+        }
+    }
 
     private static class AnchorMacro extends BaseMacro
     {
@@ -478,6 +539,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         MacroRepository repository = MacroRepository.getInstance();
         repository.put("new-tab-link", new NewTabLinkMacro());
         repository.put("image", new ImageMacro());
+        repository.put("video", new VideoMacro());
         repository.put("div", new StylableMacro("div"));
         repository.put("span", new StylableMacro("span"));
         repository.put("labkey", new LabKeyMacro());
