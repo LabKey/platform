@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -44,6 +45,8 @@ import org.labkey.api.view.UnauthorizedException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
+
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
 /**
  * User: jeckels
@@ -155,7 +158,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
 
@@ -167,7 +170,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row, id " + oldRowMap.get("RowId"));
+        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row, id " + oldRowMap.get("RowId"), userComment);
 
         if (null != dataObjectMap)
         {
