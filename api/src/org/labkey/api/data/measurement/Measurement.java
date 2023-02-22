@@ -143,7 +143,13 @@ public class Measurement
     public Double getNormalizedAmount()
     {
         // if there's no unit associated, the amount should already be in the normalizing unit
-        return _units == null ? getAmount() : _units.convertAmount(getAmount(), _normalizingUnits);
+        if (_units == null)
+            return getAmount();
+
+        if (_units.isCompatible(_normalizingUnits))
+            return _units.convertAmount(getAmount(), _normalizingUnits);
+        else
+            return getAmount();
     }
 
     public Unit getNormalizedUnits()
