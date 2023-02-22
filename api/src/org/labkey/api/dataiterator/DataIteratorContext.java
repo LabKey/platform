@@ -50,7 +50,7 @@ public class DataIteratorContext
     boolean _allowImportLookupByAlternateKey = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
-    private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
+    private Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
 
     int _maxRowErrors = 1;
@@ -178,6 +178,11 @@ public class DataIteratorContext
     public Set<String> getAlternateKeys()
     {
         return _alternateKeys;
+    }
+
+    public void setAlternateKeys(Set<String> alternateKeys)
+    {
+        _alternateKeys = alternateKeys;
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */
