@@ -649,14 +649,7 @@ public class QueryServiceImpl implements QueryService
 
         return null;
     }
-
-    @Override
-    @Deprecated /* Use SchemaKey form instead. */
-    public QueryDefinition createQueryDef(User user, Container container, String schema, String name)
-    {
-        return new CustomQueryDefinitionImpl(user, container, SchemaKey.fromString(schema), name);
-    }
-
+    
     @Override
     public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)
     {
@@ -793,7 +786,7 @@ public class QueryServiceImpl implements QueryService
             HttpServletRequest request = HttpView.currentRequest();
             if (request != null && schemaName != null)
             {
-                for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
+                for (QueryDefinition qdef : getAllSessionQueries(request, user, container, SchemaKey.fromString(schemaName)))
                 {
                     Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
                     ret.put(key, qdef);
@@ -1301,7 +1294,7 @@ public class QueryServiceImpl implements QueryService
 
             CustomViewXmlReader reader = CustomViewXmlReader.loadDefinition(viewDir.getInputStream(viewFileName), viewDir.getRelativePath(viewFileName));
 
-            QueryDefinition qd = QueryService.get().createQueryDef(user, container, reader.getSchema(), reader.getQuery());
+            QueryDefinition qd = QueryService.get().createQueryDef(user, container, SchemaKey.fromString(reader.getSchema()), reader.getQuery());
             String viewName = reader.getName();
 
             if (null == viewName)
@@ -1401,10 +1394,12 @@ public class QueryServiceImpl implements QueryService
 
     private static class ContainerSchemaKey implements Serializable
     {
+        @NotNull
         private final Container _container;
-        private final String _schema;
+        @NotNull
+        private final SchemaKey _schema;
 
-        public ContainerSchemaKey(Container container, String schema)
+        public ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema)
         {
             _container = container;
             _schema = schema;
@@ -1419,9 +1414,7 @@ public class QueryServiceImpl implements QueryService
             ContainerSchemaKey that = (ContainerSchemaKey) o;
 
             if (!_container.equals(that._container)) return false;
-            if (!_schema.equals(that._schema)) return false;
-
-            return true;
+            return _schema.equals(that._schema);
         }
 
         @Override
@@ -1446,7 +1439,8 @@ public class QueryServiceImpl implements QueryService
     {
         if (session == null)
             throw new IllegalStateException();
-        Map<String, SessionQuery> queries = getSessionQueryMap(session, container, schemaName);
+        SchemaKey schemaKey = SchemaKey.fromString(schemaName);
+        Map<String, SessionQuery> queries = getSessionQueryMap(session, container, schemaKey);
         String queryName = null;
         SessionQuery sq = new SessionQuery(sql, metadataXml);
         for (Entry<String, SessionQuery> query : queries.entrySet())
@@ -1462,7 +1456,7 @@ public class QueryServiceImpl implements QueryService
             queryName = schemaName + "_temp_" + UniqueID.getServerSessionScopedUID();
             queries.put(queryName, sq);
         }
-        return getSessionQuery(session, container, user, schemaName, queryName);
+        return getSessionQuery(session, container, user, schemaKey, queryName);
     }
 
 
@@ -1514,16 +1508,23 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, String schemaName)
+    private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, SchemaKey schemaName)
     {
         if (session == null)
             throw new IllegalStateException("No HTTP session");
-        Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
-        if (containerQueries == null)
+
+        Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries;
+
+        synchronized (PERSISTED_TEMP_QUERIES_KEY)
         {
-            containerQueries = new ConcurrentHashMap<>();
-            session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
+            containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
+            if (containerQueries == null)
+            {
+                containerQueries = new ConcurrentHashMap<>();
+                session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
+            }
         }
+
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
         Map<String, SessionQuery> queries = containerQueries.get(key);
         if (queries == null)
@@ -1534,7 +1535,7 @@ public class QueryServiceImpl implements QueryService
         return queries;
     }
 
-    private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, String schemaName)
+    private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, SchemaKey schemaName)
     {
         List<QueryDefinition> ret = new ArrayList<>();
         HttpSession session = request.getSession(true);
@@ -1550,21 +1551,25 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
+    public QueryDefinition getSessionQuery(ViewContext context, Container container, SchemaKey schemaName, String queryName)
     {
         return getSessionQuery(context.getSession(), container, context.getUser(), schemaName, queryName);
     }
 
-    public QueryDefinition getSessionQuery(HttpSession session, Container container, User user, String schemaName, String queryName)
+    public QueryDefinition getSessionQuery(HttpSession session, Container container, User user, SchemaKey schemaName, String queryName)
     {
         SessionQuery query = getSessionQueryMap(session, container, schemaName).get(queryName);
+        if (query == null)
+        {
+            throw new IllegalStateException("Could not find query: " + queryName);
+        }
         return createTempQueryDefinition(user, container, schemaName, queryName, query);
     }
 
 
-    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, @NotNull SessionQuery query)
+    private QueryDefinition createTempQueryDefinition(User user, Container container, SchemaKey schemaName, String queryName, @NotNull SessionQuery query)
     {
-        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, schemaName, queryName);
+        QueryDefinition qdef = createQueryDef(user, container, schemaName, queryName);
         if (null == query || null == qdef)
             throw new IllegalStateException("Expected a QueryDefinition object.");
 

@@ -326,7 +326,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             catch (Exception x)
             {
-                Assert.fail(x.toString() + "\n" + _sql);
+                Assert.fail(x + "\n" + _sql);
             }
         }
 
@@ -1443,8 +1443,10 @@ d,seven,twelve,day,month,date,duration,guid
         //    exists (subquery)
         //
 
+        SchemaKey schemaKey = SchemaKey.fromString("issues");
+
         // Query.setContainerFilter()
-        QueryDefinition q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
+        QueryDefinition q = QueryService.get().createQueryDef(user, c, schemaKey, "testquery");
         q.setContainerFilter(custom);
         q.setSql("SELECT DISTINCT label, container.name\n" +
                 "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
@@ -1460,7 +1462,7 @@ d,seven,twelve,day,month,date,duration,guid
         assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
 
         // TableInfo.setContainerFilter()
-        q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
+        q = QueryService.get().createQueryDef(user, c, schemaKey, "testquery");
         q.setSql("SELECT DISTINCT label, container.name\n" +
                 "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
         errors = new ArrayList<>();
