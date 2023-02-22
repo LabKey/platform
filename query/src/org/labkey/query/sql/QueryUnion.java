@@ -278,7 +278,8 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
     }
 
 
-    /* Hopefully we can evantually avoid doing all this work when column logging is not enabled, so do this as late as possible.
+    /* Hopefully we can eventually avoid doing all this work when column logging is not enabled, so do this as late as possible.
+
      * copyAttributes() calls getColumnLogging(), so it's not trivial to avoid calling this.
      */
     void computeColumnLogging()
