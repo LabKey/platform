@@ -346,7 +346,9 @@ public class ExpDataIterators
                 {
                     existingAmount = (Double) existingMap.get("StoredAmount");
                     existingUnits = (String) existingMap.get("Units");
-                    aliquotParentLsids.add((String) existingMap.get(SampleUpdateAliquotedFromDataIterator.ALIQUOTED_FROM_LSID_COLUMN_NAME));
+                    String aliquotedFrom = (String) existingMap.get(SampleUpdateAliquotedFromDataIterator.ALIQUOTED_FROM_LSID_COLUMN_NAME);
+                    if (aliquotedFrom != null)
+                        aliquotParentLsids.add(aliquotedFrom);
                 }
                 Measurement existingMeasurement = new Measurement(existingAmount, existingUnits, _sampleType.getMetricUnit());
 
@@ -354,9 +356,9 @@ public class ExpDataIterators
                 String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
                 Measurement newMeasurement = new Measurement(newAmount, newUnits, _sampleType.getMetricUnit());
 
-                if (_aliquotedFromCol != null)
+                if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null)
                     aliquotParentNames.add((String) get(_aliquotedFromCol));
-                else if (_aliquotedFromLsidCol != null)
+                else if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null)
                     aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
 
                 boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
