@@ -3161,9 +3161,9 @@ if (!LABKEY.DataRegions) {
                             $.each(skipPrefixSet, function (j, skipPrefix) {
                                 if (LABKEY.Utils.isString(skipPrefix)) {
 
-                                    // Special prefix that should remove all filters, but no other parameters
+                                    // Special prefix that should remove all filters, but no other parameters for the current grid
                                     if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
-                                        if (key.indexOf('~') > 0) {
+                                        if (key.indexOf(region.name) >= 0 && key.indexOf('~') > 0) {
                                             stop = true;
                                             return false;
                                         }
@@ -3176,11 +3176,12 @@ if (!LABKEY.DataRegions) {
                                             }
                                         }
                                         else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
-                                            // only skip filters, parameters, and sorts
-                                            if (key === skipPrefix ||
+                                            // only skip filters, parameters, and sorts for the current grid
+                                            if (key.indexOf(region.name) >= 0 &&
+                                                    (key === skipPrefix ||
                                                     key.indexOf('~') > 0 ||
                                                     key.indexOf(PARAM_PREFIX) > 0 ||
-                                                    key === (skipPrefix + 'sort')) {
+                                                    key === (skipPrefix + 'sort'))) {
                                                 stop = true;
                                                 return false;
                                             }
