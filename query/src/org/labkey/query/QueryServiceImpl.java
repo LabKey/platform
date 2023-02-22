@@ -1515,6 +1515,7 @@ public class QueryServiceImpl implements QueryService
 
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries;
 
+        // Synchronize to avoid problems with multiple concurrent HTTP requests trying to create the query map
         synchronized (PERSISTED_TEMP_QUERIES_KEY)
         {
             containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
