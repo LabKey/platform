@@ -10,7 +10,6 @@ public class DomainKindDesign<T>
     private String _domainKindName;
     private GWTDomain _domainDesign;
     private T _options; //domain kind specific properties, this should be the same <T> object as DomainKind<T> implementations.
-    private String[] _previewNames;
 
     public GWTDomain getDomainDesign()
     {
@@ -41,16 +40,6 @@ public class DomainKindDesign<T>
     public void setDomainKindName(String domainKindName)
     {
         _domainKindName = domainKindName;
-    }
-
-    public String[] getPreviewNames()
-    {
-        return _previewNames;
-    }
-
-    public void setPreviewNames(String[] previewNames)
-    {
-        _previewNames = previewNames;
     }
 
 }

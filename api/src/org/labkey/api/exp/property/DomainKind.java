@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
@@ -45,6 +46,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -311,6 +313,32 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowSampleSubjectProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
+
+    public List<String> getDisabledSystemFields(List<String> disabledSystemFields)
+    {
+        if (disabledSystemFields == null || disabledSystemFields.isEmpty())
+            return disabledSystemFields;
+
+        Set<String> disallowedFields = getNonDisablebleFields();
+        if (disallowedFields == null || disabledSystemFields.isEmpty())
+            return disabledSystemFields;
+
+        disallowedFields = new CaseInsensitiveHashSet(disallowedFields);
+
+        List<String> allowedDisabledFields = new ArrayList<>();
+        for (String field : disabledSystemFields)
+        {
+            if (!disallowedFields.contains(field))
+                allowedDisabledFields.add(field);
+        }
+
+        return allowedDisabledFields;
+    }
+
+    protected Set<String> getNonDisablebleFields()
+    {
+        return null;
+    }
 
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {

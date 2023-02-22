@@ -67,11 +67,14 @@ public final class DomainDescriptor
     private final String _storageTableName;
     private final String _storageSchemaName;
 
+    private final String _systemFieldConfig;
+
     private DomainDescriptor(
             String domainURI, Container c, Container p, String name,
             int domainId, String description, String storageTableName, String storageSchemaName,
             int titlePropertyId, Object ts,
-            @Nullable TemplateInfo templateInfo
+            @Nullable TemplateInfo templateInfo,
+            @Nullable String systemFieldConfig
     )
     {
         MemTracker.getInstance().put(this);
@@ -117,6 +120,7 @@ public final class DomainDescriptor
         _storageTableName = storageTableName;
         _storageSchemaName = storageSchemaName;
         _titlePropertyId = titlePropertyId;
+        _systemFieldConfig = systemFieldConfig;
     }
 
     /**
@@ -146,6 +150,11 @@ public final class DomainDescriptor
             _titlePropertyId = (Integer) map.get("titlePropertyId");
         else
             _titlePropertyId = 0;
+
+        if (map.containsKey("systemFieldConfig"))
+            _systemFieldConfig = (String) map.get("systemFieldConfig");
+        else
+            _systemFieldConfig = null;
 
         _templateInfo = null;
     }
@@ -219,6 +228,12 @@ public final class DomainDescriptor
         return _templateInfo;
     }
 
+    @Nullable
+    public String getSystemFieldConfig()
+    {
+        return _systemFieldConfig;
+    }
+
     public Object get_Ts()
     {
         return _ts;
@@ -275,7 +290,8 @@ public final class DomainDescriptor
                 Objects.equals(getTitlePropertyId(), d.getTitlePropertyId()) &&
                 Objects.equals(getDomainURI(), d.getDomainURI()) &&
                 Objects.equals(getDescription(), d.getDescription()) &&
-                Objects.equals(getContainer(), d.getContainer());
+                Objects.equals(getContainer(), d.getContainer()) &&
+                Objects.equals(getSystemFieldConfig(), d.getSystemFieldConfig());
 
     }
 
@@ -296,6 +312,7 @@ public final class DomainDescriptor
         private int titlePropertyId=0;
         private String storageTableName;
         private String storageSchemaName;
+        private String systemFieldConfig;
         private TemplateInfo templateInfo;
 
         public Builder()
@@ -326,15 +343,17 @@ public final class DomainDescriptor
             setStorageTableName(dd.getStorageTableName());
             setStorageSchemaName(dd.getStorageSchemaName());
             setTemplateInfoObject(dd.getTemplateInfo());
+
+            setSystemFieldConfig(dd.getSystemFieldConfig());
         }
 
         @Override
         public DomainDescriptor build()
         {
             return new DomainDescriptor(
-                    domainURI, container, project, name,
-                    domainId, description, storageTableName, storageSchemaName,
-                    titlePropertyId, _ts, templateInfo
+                    domainURI, container, project, name, domainId,
+                    description, storageTableName, storageSchemaName,
+                    titlePropertyId, _ts, templateInfo, systemFieldConfig
             );
         }
 
@@ -404,6 +423,12 @@ public final class DomainDescriptor
         public Builder setTemplateInfoObject(TemplateInfo templateInfo)
         {
             this.templateInfo = templateInfo;
+            return this;
+        }
+
+        public Builder setSystemFieldConfig(@Nullable String systemFieldConfig)
+        {
+            this.systemFieldConfig = systemFieldConfig;
             return this;
         }
 

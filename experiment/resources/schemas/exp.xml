@@ -518,6 +518,13 @@
       <column columnName="ModifiedBy"/>
       <column columnName="_ts"/>
       <column columnName="TemplateInfo"/>
+      <column columnName="SystemFieldConfig">
+          <isUserEditable>false</isUserEditable>
+          <isHidden>true</isHidden>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
     </columns>
   </table>
   <table tableName="PropertyDomain" tableDbType="TABLE">

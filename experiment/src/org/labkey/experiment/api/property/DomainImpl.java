@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -92,6 +94,8 @@ import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_S
 
 public class DomainImpl implements Domain
 {
+    public static final String DISABLED_SYSTEM_FIELDS_KEY = "disabledFields";
+
     boolean _new;
     boolean _enforceStorageProperties = true;
     DomainDescriptor _dd;
@@ -1389,6 +1393,66 @@ public class DomainImpl implements Domain
     {
         DomainKind<?> domainKind = getDomainKind();
         return getStorageTableName() != null && domainKind != null && domainKind.getStorageSchemaName() != null;
+    }
+
+    public String getSystemFieldConfig()
+    {
+        return _dd.getSystemFieldConfig();
+    }
+
+    public void setSystemFieldConfig(String systemFieldConfig)
+    {
+        _dd = _dd.edit().setSystemFieldConfig(systemFieldConfig).build();
+    }
+
+    @Override
+    public List<String> getDisabledSystemFields()
+    {
+        List<String> disabledSystemFields = new ArrayList<>();
+
+        String systemFieldConfigStr = getSystemFieldConfig();
+        if (StringUtils.isEmpty(systemFieldConfigStr))
+            return disabledSystemFields;
+
+        JSONObject configJson = new JSONObject(systemFieldConfigStr);
+        JSONArray disabledFields = configJson.optJSONArray(DISABLED_SYSTEM_FIELDS_KEY);
+        if (disabledFields == null)
+            return disabledSystemFields;
+
+        for (int i = 0; i < disabledFields.length(); i++)
+            disabledSystemFields.add(disabledFields.optString(i));
+
+        DomainKind domainKind = getDomainKind();
+        if (domainKind != null)
+            return domainKind.getDisabledSystemFields(disabledSystemFields);
+
+        return disabledSystemFields;
+    }
+
+    @Override
+    public void setDisabledSystemFields(@Nullable List<String> disabledSystemFields)
+    {
+        boolean emptyFields = disabledSystemFields == null || disabledSystemFields.isEmpty();
+        String systemFieldConfigStr = getSystemFieldConfig();
+
+        JSONObject configJson;
+        if (StringUtils.isEmpty(systemFieldConfigStr))
+        {
+            if (emptyFields)
+                return;
+            configJson = new JSONObject();
+        }
+        else
+            configJson = new JSONObject(systemFieldConfigStr);
+
+        JSONArray existingDisabled = configJson.optJSONArray(DISABLED_SYSTEM_FIELDS_KEY);
+        if (emptyFields && existingDisabled == null)
+            return;
+
+        JSONArray fields = new JSONArray(disabledSystemFields);
+        configJson.put(DISABLED_SYSTEM_FIELDS_KEY, fields);
+
+        setSystemFieldConfig(configJson.toString());
     }
 
     @Override

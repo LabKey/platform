@@ -89,6 +89,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     private static final Set<String> RESERVED_NAMES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
+    private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
+
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
@@ -110,6 +112,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
                 new PropertyStorageSpec.Index(true, "name", "classid"))));
+
+        FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name")));
     }
 
     public DataClassDomainKind()
@@ -277,6 +281,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public Set<String> getNonDisablebleFields()
+    {
+        return FORCE_ENABLED_SYSTEM_FIELDS;
     }
 
     @Override
