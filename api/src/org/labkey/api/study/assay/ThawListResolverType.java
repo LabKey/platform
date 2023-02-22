@@ -85,7 +85,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     public static final String THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME = "ThawListList-SchemaName";
     public static final String THAW_LIST_LIST_QUERY_NAME_INPUT_NAME = "ThawListList-QueryName";
     public static final String INDEX_COLUMN_NAME = "Index";
-    public static final Set<String> REQUIRED_COLUMNS = new HashSet(Arrays.asList(
+    public static final Set<String> REQUIRED_COLUMNS = new HashSet<>(Arrays.asList(
             AbstractAssayProvider.SPECIMENID_PROPERTY_NAME,
             AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME,
             AbstractAssayProvider.VISITID_PROPERTY_NAME,
@@ -256,7 +256,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     {
         String type = context.getRequest() == null ? null : context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
         JSONObject batchProperty = null;
-        if(type == null)
+        if (type == null)
         {
             for (Map.Entry<DomainProperty, String> entry : context.getBatchProperties().entrySet())
             {
@@ -308,9 +308,9 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         {
             String containerName, schemaName, queryName;
 
-            if(batchProperty != null)
+            if (batchProperty != null)
             {
-                containerName = batchProperty.getString(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+                containerName = batchProperty.optString(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
                 schemaName = batchProperty.getString(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
                 queryName = batchProperty.getString(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
             }
@@ -332,10 +332,12 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             String validationErrMsg;
-            if(batchProperty != null)
+
+            if (batchProperty != null)
                 validationErrMsg = validateThawList(containerName, schemaName, queryName, container, context.getUser());
             else
                 validationErrMsg = validateThawList(context.getRequest(), container, context.getUser());
+
             if (StringUtils.isNotEmpty(validationErrMsg))
             {
                 throw new ExperimentException(validationErrMsg);
