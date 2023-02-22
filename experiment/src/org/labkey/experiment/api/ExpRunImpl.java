@@ -536,7 +536,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void deleteProtocolApplications(List<ExpDataImpl> datasToDelete, User user)
     {
-        if (user == null || !getContainer().hasPermission(user, DeletePermission.class))
+        if (user == null || !canDelete(user))
         {
             throw new UnauthorizedException("Attempting to delete an ExperimentRun without having delete permissions for its container");
         }
