@@ -203,9 +203,9 @@ public class MockModule implements Module
     }
 
     @Override
-    public ArrayList<Summary> getDetailedSummary(Container c)
+    public List<Summary> getDetailedSummary(Container c)
     {
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     @Override

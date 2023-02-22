@@ -717,7 +717,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             summaries.add(new Summary(runGroupCount, "Assay run"));
 
         // Number of Data Classes
-        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, true);
+        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, false);
         int dataClassCount = dataClasses.size();
         if (dataClassCount > 0)
             summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
@@ -733,29 +733,27 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 summaries.add(new Summary(count, k));
         }
 
-        // Batches
-        ExpSampleType mixtureBatches = SampleTypeService.get().getSampleType(c.getProject(), "MixtureBatches");
-        if (mixtureBatches != null && mixtureBatches.getSamples(c).size() > 0)
-            summaries.add(new Summary(mixtureBatches.getSamples(c).size(), "Batch", "Batches"));
-
-        // Raw materials
-        ExpSampleType rawMaterials = SampleTypeService.get().getSampleType(c.getProject(), "RawMaterials");
-        if (rawMaterials != null && rawMaterials.getSamples(c).size() > 0)
-            summaries.add(new Summary(rawMaterials.getSamples(c).size(), "Raw material"));
-
         // Sample Types
         int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
         if (sampleTypeCount > 0)
             summaries.add(new Summary(sampleTypeCount, "Sample Type"));
 
-        // Sample rows
+        // Individual Sample Type row counts
         UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
         ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
         sampleTypeTable.populate();
-        TableSelector tsSamples = new TableSelector(sampleTypeTable, Collections.singleton("SampleCount"), null, null);
-        int sampleRowCount = Arrays.stream(tsSamples.getArray(Integer.class)).mapToInt(Integer::intValue).sum();
-        if (sampleRowCount > 0)
-            summaries.add(new Summary(sampleRowCount, "Sample"));
+        Map<String, Object> tsSamplesResults = new TableSelector(sampleTypeTable, sampleTypeTable.getColumns("Name,SampleCount"), null, null).getValueMap();
+        for (String k : tsSamplesResults.keySet())
+        {
+            int count = ((Long) tsSamplesResults.get(k)).intValue();
+            if (count != 0)
+            {
+                Summary s = k.equals("MixtureBatches")
+                        ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
+                        : new Summary(count, k);
+                summaries.add(s);
+            }
+        }
 
         return summaries;
     }

@@ -1726,7 +1726,7 @@ public class ContainerManager
     }
 
     // Delete a container from the database
-    public static boolean delete(final Container c, User user, String comment)
+    public static boolean delete(final Container c, User user, @Nullable String comment)
     {
         if (!isDeletable(c))
         {
@@ -1838,7 +1838,7 @@ public class ContainerManager
         return null != getForId(c.getEntityId()) && !isDeleting(c);
     }
 
-    public static void deleteAll(Container root, User user, String comment) throws UnauthorizedException
+    public static void deleteAll(Container root, User user, @Nullable String comment) throws UnauthorizedException
     {
         if (!hasTreePermission(root, user, DeletePermission.class))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
