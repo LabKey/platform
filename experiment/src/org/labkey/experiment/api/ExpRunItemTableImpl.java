@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
@@ -30,7 +29,6 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -282,19 +280,5 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         }
         super.setDefaultVisibleColumns(allowed);
     }
-
-//    @Override
-//    @NotNull
-//    public Set<String> getTableDisabledSystemFields()
-//    {
-//        Set<String> fields = new CaseInsensitiveHashSet();
-//        if (getDomain() != null)
-//        {
-//            List<String> disabledFields = getDomain().getDisabledSystemFields();
-//            if (disabledFields != null)
-//                fields.addAll(disabledFields);
-//        }
-//        return fields;
-//    }
 
 }
