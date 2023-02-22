@@ -35,6 +35,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConversionExceptionWithMessage;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
@@ -163,12 +164,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
         String msg;
-        if (null != x && x.getMessage() != null)
+        if (x instanceof ConversionExceptionWithMessage)
             msg = x.getMessage();
         else if (null != value && null != target)
             msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         else if (null != x)
-            msg = x.toString();
+            msg = StringUtils.defaultString(x.getMessage(), x.toString());
         else
             msg = "Could not convert value";
         addFieldError(fieldName, msg);

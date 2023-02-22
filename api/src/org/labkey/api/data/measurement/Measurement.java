@@ -1,8 +1,8 @@
 package org.labkey.api.data.measurement;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ConversionExceptionWithMessage;
 
 public class Measurement
 {
@@ -249,10 +249,10 @@ public class Measurement
             }
             catch (NumberFormatException e)
             {
-                throw new ConversionException("Amount (" + amountObj + ") must be a number.");
+                throw new ConversionExceptionWithMessage("Amount (" + amountObj + ") must be a number.");
             }
         else
-            throw new ConversionException("Amount (" + amountObj + ") must be a number.");
+            throw new ConversionExceptionWithMessage("Amount (" + amountObj + ") must be a number.");
     }
 
     public static String getUnits(String rawUnits, Unit defaultUnits)
@@ -264,14 +264,14 @@ public class Measurement
             {
                 Unit mUnit = Unit.valueOf(rawUnits);
                 if (defaultUnits != null && mUnit.getKind() != defaultUnits.getKind())
-                    throw new ConversionException("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
+                    throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
                 return rawUnits;
             }
             catch (IllegalArgumentException e)
             {
                 Unit unit = Unit.getUnitFromLabel(rawUnits);
                 if (unit == null)
-                    throw new ConversionException("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
+                    throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
                 else
                     return unit.toString();
             }
