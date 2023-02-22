@@ -13,7 +13,7 @@ import org.labkey.api.util.HtmlString;
 
 import java.util.Set;
 
-class UnitsDataColumn extends DataColumn
+public class UnitsDataColumn extends DataColumn
 {
     public static final String UNITS_FIELD_PROPERTY_NAME = "unitsField";
     public static final String DEFAULT_UNITS_FIELD_PROPERTY_NAME = "defaultUnitsField";

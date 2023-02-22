@@ -16,9 +16,9 @@ import java.util.Set;
 import static org.labkey.api.data.measurement.UnitsDataColumn.DEFAULT_UNITS_FIELD_PROPERTY_NAME;
 import static org.labkey.api.data.measurement.UnitsDataColumn.UNITS_FIELD_PROPERTY_NAME;
 
-class AmountDataColumn extends DataColumn
+public class AmountDataColumn extends DataColumn
 {
-    private static final String AMOUNT_FIELD_PROPERTY_NAME = "amountField";
+    public static final String AMOUNT_FIELD_PROPERTY_NAME = "amountField";
 
     private final MultiValuedMap<String, String> _properties;
     private final String _unitsField;
@@ -94,7 +94,7 @@ class AmountDataColumn extends DataColumn
     {
         super.addQueryFieldKeys(keys);
         keys.add(FieldKey.fromParts(_unitsField));
-        keys.add(FieldKey.fromParts(_defaultUnitsField));
+        keys.add(FieldKey.fromParts(_defaultUnitsField.split("/")));
     }
 
     @Override
