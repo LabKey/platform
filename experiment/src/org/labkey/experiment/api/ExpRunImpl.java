@@ -58,7 +58,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
@@ -566,7 +566,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public boolean canDelete(User user)
     {
         boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(getProtocol().getLSID());
-        if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowJobPermission.class))
+        if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowDeletePermission.class))
             return true;
         return !isWorkflow && getContainer().hasPermission(user, DeletePermission.class);
     }
