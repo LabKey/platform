@@ -627,7 +627,7 @@ public interface QueryService
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
     /**
-     * Resolves the ContainerFilter.Type to be used for lookups during insert/update of data in product projects.
+     * Resolves the ContainerFilter.Type to be used for lookups of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.
      */
     @Nullable
