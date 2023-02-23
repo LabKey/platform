@@ -1424,7 +1424,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                     else if (name.equalsIgnoreCase("StoredAmount"))
                     {
-                        addColumn(to, new SampleAmountConvertColumn(name, i, unitDataColInd, to.getJdbcType()));
+                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType()));
                     }
                     else
                     {
@@ -1489,47 +1489,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
         {
-            private final int _unitsIndex;
-
-            public SampleAmountConvertColumn(String fieldName, int indexFrom, int unitsIndex, @Nullable JdbcType to)
+            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
                 super(fieldName, indexFrom, to, true);
-                _unitsIndex = unitsIndex;
             }
 
             @Override
             protected Object convert(Object amountObj)
             {
-                if (amountObj == null)
-                    return null;
-                Double amount = Measurement.convertToAmount(amountObj);
-
-                String sampleTypeUnitStr = _sampleType.getMetricUnit();
-                try
-                {
-                    if (_unitsIndex < 0)
-                        return amount;
-
-                    String sampleUnitStr = Measurement.getUnits((String) _data.get(_unitsIndex), _metricUnit);
-                    if (!StringUtils.isEmpty(sampleTypeUnitStr) && !StringUtils.isEmpty(sampleUnitStr))
-                    {
-                        if (sampleTypeUnitStr.equals(sampleUnitStr))
-                            return amount;
-
-                        Measurement.Unit sampleTypeUnit = Measurement.Unit.getUnit(sampleTypeUnitStr);
-                        Measurement.Unit sampleUnit = Measurement.Unit.getUnit(sampleUnitStr);
-                        if (sampleTypeUnit != null && sampleUnit != null)
-                        {
-                            return sampleUnit.convertAmount(amount, sampleTypeUnit);
-                        }
-                    }
-                }
-                catch (ConversionException ignored)
-                {
-                    // this exception is better associated with the units field.
-                }
-
-                return amount;
+                return Measurement.convertToAmount(amountObj);
             }
         }
     }
