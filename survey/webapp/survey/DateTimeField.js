@@ -74,6 +74,7 @@ Ext4.define('Ext.ux.form.field.DateTime', {
             format  : me.dateFormat,
             name    : this.name + '-date',
             bubbleEvents: ['change', 'dirtychange'],
+            readOnly: this.readOnly,        // respect read only prop on container
             flex:1,
             isFormField:false, //exclude from field query's
             submitValue:false,
@@ -131,6 +132,7 @@ Ext4.define('Ext.ux.form.field.DateTime', {
         me.timeField = Ext4.create('Ext.form.field.Time', Ext4.apply({
             format  : me.timeFormat,
             name    : this.name + '-time',
+            readOnly: this.readOnly,        // respect read only prop on container
             bubbleEvents: ['change', 'dirtychange'],
             flex:1,
             isFormField:false, //exclude from field query's
