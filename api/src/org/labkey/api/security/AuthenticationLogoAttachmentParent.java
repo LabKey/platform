@@ -22,6 +22,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 
 // Used for attaching SSO authentication logos to the root container
+// TODO: Previous comment is a lie... SSO logos are now attached to each authentication configuration. (We can have
+//  multiple SAML configurations and multiple CAS configurations, each with their own logo.) Anyway, this is no longer
+//  used, except for a junit test. Delete or rename to TestAttachmentParent?
 public class AuthenticationLogoAttachmentParent extends ContainerParent
 {
     private AuthenticationLogoAttachmentParent(Container c)

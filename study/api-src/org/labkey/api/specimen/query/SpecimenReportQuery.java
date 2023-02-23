@@ -181,7 +181,7 @@ public class SpecimenReportQuery
 
         String query = String.format(sql_pivotRequestedByLocation, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
 
-        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), container, schema.getName(), PIVOT_BY_REQUESTING_LOCATION);
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), container, schema.getSchemaPath(), PIVOT_BY_REQUESTING_LOCATION);
         qdef.setSql(query);
         qdef.setIsHidden(true);
 

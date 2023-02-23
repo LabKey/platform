@@ -297,6 +297,12 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _schemaName == null ? "" : _schemaName.toString();
     }
 
+    @Nullable
+    public SchemaKey getSchemaKey()
+    {
+        return _schemaName;
+    }
+
     public final @Nullable UserSchema getSchema()
     {
         init();
