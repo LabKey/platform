@@ -135,7 +135,7 @@ import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -3088,7 +3088,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowDeletePermission.class})
     public class DeleteSelectedExpRunsAction extends AbstractDeleteAction
     {
         @Override
@@ -3205,7 +3205,7 @@ public class ExperimentController extends SpringActionController
     /**
      * Separate delete action from the client API
      */
-    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowDeletePermission.class})
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
         @Override
@@ -3226,7 +3226,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowDeletePermission.class})
     public class DeleteRunsAction extends AbstractDeleteAPIAction
     {
         @Override
