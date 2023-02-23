@@ -3163,7 +3163,8 @@ if (!LABKEY.DataRegions) {
 
                                     // Special prefix that should remove all filters, but no other parameters for the current grid
                                     if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
-                                        if (key.indexOf(region.name) >= 0 && key.indexOf('~') > 0) {
+                                        if (key.indexOf(region.name + '.') == 0 && key.indexOf('~') > 0) {
+
                                             stop = true;
                                             return false;
                                         }
