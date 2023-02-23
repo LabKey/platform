@@ -727,21 +727,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
-        addColumn(Column.AliquotCount);
-        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotCount));
-        addColumn(Column.AliquotVolume);
-        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotVolume));
-        addColumn(Column.AliquotUnit);
-        addColumn(Column.RecomputeRollup);
-
-        addColumn(Column.StoredAmount);
-        defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
-        addColumn(Column.Units);
-        defaultCols.add(FieldKey.fromParts(Column.Units));
-        if (st != null)
+        if (st == null || !st.isMedia())
         {
-            if (InventoryService.get() != null && !st.isMedia())
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+            addColumn(Column.AliquotCount);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotCount));
+            addColumn(Column.AliquotVolume);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotVolume));
+            addColumn(Column.AliquotUnit);
+            addColumn(Column.RecomputeRollup);
+
+            addColumn(Column.StoredAmount);
+            defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+            addColumn(Column.Units);
+            defaultCols.add(FieldKey.fromParts(Column.Units));
+
+            if (InventoryService.get() != null)
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
         }
 
         addVocabularyDomains();
