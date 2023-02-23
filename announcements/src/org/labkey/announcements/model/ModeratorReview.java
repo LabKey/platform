@@ -31,7 +31,7 @@ public enum ModeratorReview
     None
     {
         @Override
-        public boolean isApproved(Container c, User user, boolean newUser)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             return true;
         }
@@ -39,10 +39,10 @@ public enum ModeratorReview
     InitialPost
     {
         @Override
-        public boolean isApproved(Container c, User user, boolean newUser)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             // Users approved by All setting are automatically approved here
-            if (All.isApproved(c, user, newUser))
+            if (All.isApproved(c, user, newThread))
                 return true;
 
             // Does this user have at least one approved announcement in this message board?
