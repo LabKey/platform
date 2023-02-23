@@ -131,6 +131,11 @@ public class ListManager implements SearchService.DocumentProvider
         return getLists(container, true).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
     }
 
+    public Collection<ListDef> getPicklists(Container container, boolean includeProjectAndShared)
+    {
+        return getLists(container, includeProjectAndShared).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
+    }
+
     public Collection<ListDef> getLists(Container container)
     {
         return getLists(container, false);
