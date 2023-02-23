@@ -83,4 +83,14 @@ public enum ModeratorReview
 
         return null != mr ? mr : None;
     }
+
+    public boolean sameAs(String reviewType)
+    {
+        return name().equals(reviewType);
+    }
+
+    public static boolean requiresReview(String reviewType)
+    {
+        return InitialPost.sameAs(reviewType) || NewThread.sameAs(reviewType) || All.sameAs(reviewType);
+    }
 }
