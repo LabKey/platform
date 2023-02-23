@@ -806,6 +806,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        return deleteRow(user, container, oldRow);
+    }
     
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
@@ -837,7 +843,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
 
                 getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.DELETE, true, i, null, oldRow, extraScriptContext);
-                Map<String, Object> updatedRow = deleteRow(user, container, oldRow);
+                Map<String, Object> updatedRow = deleteRow(user, container, oldRow, configParameters, extraScriptContext);
                 if (!streaming && updatedRow == null)
                     continue;
 
