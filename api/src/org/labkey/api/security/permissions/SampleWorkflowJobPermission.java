@@ -4,6 +4,6 @@ public class SampleWorkflowJobPermission extends AbstractPermission
 {
     public SampleWorkflowJobPermission()
     {
-        super("Sample Workflow Job", "Can read, create, update, and delete sample workflow jobs.");
+        super("Sample Workflow Job", "Can read, create, and update sample workflow jobs, tasks, and attachments.");
     }
 }
