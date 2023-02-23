@@ -120,12 +120,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         Ext4.applyIf(config, {
             updateUrl   : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
-            getResponsesUrl : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api')
+            getResponsesUrl : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api'),
+            width: 870
         });
 
         Ext4.apply(config, {
             border: true,
-            width: 870,
             minHeight: 25,
             layout: {
                 type: 'hbox',
