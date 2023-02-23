@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.18.3",
-    "@labkey/components": "2.295.0",
+    "@labkey/api": "1.18.4-fb-deleteprojectsinapp.0",
+    "@labkey/components": "2.296.1-fb-deleteprojectsinapp.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {

@@ -14,9 +14,26 @@ public class Summary
     private final String nounPlural;
 
     private String replaceNounTitles(String nounSingular) {
-        String[] search = new String[]{"NucSequence", "ProtSequence", "Moleculeset", "RawMaterials", "Ingredients", "Mixtures"};
-        String[] replacements = new String[]{"Nucleotide sequence", "Protein sequence", "Molecule set", "Raw material", "Ingredient", "Mixture"};
-
+        String[] search = new String[] {
+                "ExpressionSystem",
+                "Ingredients",
+                "Mixtures",
+                "MolecularSpecies",
+                "MoleculeSet",
+                "NucSequence",
+                "ProtSequence",
+                "RawMaterials"
+        };
+        String[] replacements = new String[] {
+                "Expression system",
+                "Ingredient",
+                "Mixture",
+                "Molecular species",
+                "Molecule set",
+                "Nucleotide sequence",
+                "Protein sequence",
+                "Raw material"
+        };
         return StringUtils.replaceEach(nounSingular, search, replacements);
     }
 
