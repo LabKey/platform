@@ -3178,7 +3178,8 @@ if (!LABKEY.DataRegions) {
                                         }
                                         else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
                                             // only skip filters, parameters, and sorts for the current grid
-                                            if (key.indexOf(region.name) >= 0 &&
+                                            if (key.indexOf(region.name + '.') == 0 &&
+
                                                     (key === skipPrefix ||
                                                     key.indexOf('~') > 0 ||
                                                     key.indexOf(PARAM_PREFIX) > 0 ||
