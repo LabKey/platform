@@ -886,7 +886,7 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists as a table");
                     return false;
                 }
-                QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaName(), form.ff_newQueryName);
+                QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaKey(), form.ff_newQueryName);
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
                 String sql = query.getQueryText();

@@ -100,7 +100,6 @@ public interface QueryService
 
     QueryDefinition getQueryDef(User user, Container container, String schema, String name);
 
-    @Deprecated /** Use SchemaKey form instead. */ QueryDefinition createQueryDef(User user, Container container, String schema, String name);
     QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
     QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
@@ -113,7 +112,7 @@ public interface QueryService
     QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
     QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
     QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
-    QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
+    QueryDefinition getSessionQuery(ViewContext context, Container container, SchemaKey schema, String queryName);
 
     ActionURL urlQueryDesigner(User user, Container container, String schema);
     ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
