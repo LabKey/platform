@@ -298,7 +298,6 @@ class LineageForeignKey extends AbstractForeignKey
 
         void addLineageColumn(String name, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, String runProtocolLsid, String lookupColumnName)
         {
-//            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
             col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid, getContainerFilter()));
@@ -314,12 +313,14 @@ class LineageForeignKey extends AbstractForeignKey
         final ExpLineageOptions.LineageExpType expType;
         final String cpasType;
 
-        public _MultiValuedForeignKey(Path cacheKeyPrefix,
-                                      Integer depth,
-                                      ExpLineageOptions.LineageExpType expType,
-                                      String cpasType,
-                                      String runProtocolLsid,
-                                      @Nullable ContainerFilter cf)
+        public _MultiValuedForeignKey(
+            Path cacheKeyPrefix,
+            Integer depth,
+            ExpLineageOptions.LineageExpType expType,
+            String cpasType,
+            String runProtocolLsid,
+            @Nullable ContainerFilter cf
+        )
         {
             super(new LookupForeignKey(cf, "self", "Name")
             {
@@ -418,10 +419,8 @@ class LineageForeignKey extends AbstractForeignKey
                     return false;
                 }
             };
-
         }
     }
-
 
     private class ByTypeLineageForeignKey extends AbstractForeignKey
     {
@@ -467,7 +466,6 @@ class LineageForeignKey extends AbstractForeignKey
         }
     }
 
-
     private class ByTypeLineageForeignKeyLookupTable extends LineageForeignKeyLookupTable
     {
         private final @NotNull ExpLineageOptions.LineageExpType _expType;
@@ -511,7 +509,7 @@ class LineageForeignKey extends AbstractForeignKey
     // same as AliasedColumn, but avoids getDisplayField() noise
     public class _AliasedParentColumn extends AliasedColumn
     {
-        // lookupColumnName is for explictly selected lookup to column in target table (vs internal virtual column)
+        // lookupColumnName is for explicitly selected lookup to column in target table (vs internal virtual column)
         public _AliasedParentColumn(ColumnInfo parent, FieldKey key, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, @Nullable String lookupColumnName)
         {
             super(parent.getParentTable(), key, parent, false);

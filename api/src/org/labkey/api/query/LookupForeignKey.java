@@ -57,7 +57,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String schemaName, String tableName, String pkColumnName, String titleColumn)
     {
-        this(null, baseURL, (Object)paramName, schemaName, tableName, pkColumnName, titleColumn);
+        this(null, baseURL, paramName, schemaName, tableName, pkColumnName, titleColumn);
     }
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
@@ -90,7 +90,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         this(null, null, null, null, pkColumnName, null);
     }
 
-    public LookupForeignKey(ContainerFilter cf, @Nullable String pkColumnName, @Nullable String titleColumn)
+    public LookupForeignKey(@Nullable ContainerFilter cf, @Nullable String pkColumnName, @Nullable String titleColumn)
     {
         this(cf, null, null, null, null, pkColumnName, titleColumn);
     }
@@ -158,14 +158,14 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         return table.getColumn(getLookupColumnName());
     }
 
-
     @Override
+    @Nullable
     public StringExpression getURL(ColumnInfo parent)
     {
         return getURL(parent, false);
     }
 
-
+    @Nullable
     protected StringExpression getURL(ColumnInfo parent, boolean useDetailsURL)
     {
         if (null != _baseURL)
@@ -186,19 +186,18 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         return getDetailsURL(parent, lookupTable, getLookupColumnName());
     }
 
-
+    @Nullable
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
         StringExpression expr = lookupTable.getDetailsURL(null, null);
         if (expr == AbstractTableInfo.LINK_DISABLER)
             return AbstractTableInfo.LINK_DISABLER;
 
-        if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
+        if (expr instanceof StringExpressionFactory.FieldKeyStringExpression f)
         {
-            StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
             StringExpressionFactory.FieldKeyStringExpression rewrite;
 
-            FieldKey columnKey = new FieldKey(null,columnName);
+            FieldKey columnKey = new FieldKey(null, columnName);
             Set<FieldKey> keys = Collections.singleton(columnKey);
 
             // If the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
@@ -210,8 +209,8 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
 
             // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
-            if (rewrite instanceof DetailsURL)
-                setURLContainerContext((DetailsURL)rewrite, lookupTable, parent);
+            if (rewrite instanceof DetailsURL rewriteDetailsURL)
+                setURLContainerContext(rewriteDetailsURL, lookupTable, parent);
 
             return rewrite;
         }
@@ -228,10 +227,9 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             // from the lookupTable and its FieldKeyContext has been fixed up.
             //if (!url.hasContainerContext())
             //    _log.warn("Table's DetailURL does not have a container context. Table: " + lookupTable.getPublicSchemaName() + "." + lookupTable.getName() + ", column: " + parent.getName());
-            if (null != parent && cc instanceof ContainerContext.FieldKeyContext)
+            if (null != parent && cc instanceof ContainerContext.FieldKeyContext fkc)
             {
-                ContainerContext.FieldKeyContext fkc = (ContainerContext.FieldKeyContext)cc;
-                cc = new ContainerContext.FieldKeyContext(FieldKey.fromParts(parent.getFieldKey(),fkc.getFieldKey()));
+                cc = new ContainerContext.FieldKeyContext(FieldKey.fromParts(parent.getFieldKey(), fkc.getFieldKey()));
             }
             url.setContainerContext(cc, false);
         }

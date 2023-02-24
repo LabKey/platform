@@ -45,20 +45,23 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
     {
         switch (column)
         {
-            case Material:
+            case Material ->
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
-                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null, getContainerFilter()));
+                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null, getLookupContainerFilter()));
                 return result;
             }
-            case Role:
+            case Role ->
+            {
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
-            case TargetProtocolApplication:
+            }
+            case TargetProtocolApplication ->
+            {
                 var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
-                result.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
+                result.setFk(getExpSchema().getProtocolApplicationForeignKey(getLookupContainerFilter()));
                 return result;
-
-            case LSID:
+            }
+            case LSID ->
             {
                 final SqlDialect dialect = getSqlDialect();
                 SQLFragment sql = new SQLFragment("" +
@@ -75,17 +78,14 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
                 col.setReadOnly(true);
                 return col;
             }
-
-            case ProtocolInput:
+            case ProtocolInput ->
             {
                 var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
-                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey(getContainerFilter()));
+                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey(getLookupContainerFilter()));
                 col.setHidden(true);
                 return col;
             }
-
-            default:
-                throw new IllegalArgumentException("Unsupported column: " + column);
+            default -> throw new IllegalArgumentException("Unsupported column: " + column);
         }
     }
 

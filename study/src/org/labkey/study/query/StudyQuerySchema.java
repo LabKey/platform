@@ -1147,14 +1147,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return true;
     }
 
-    /** for tables that support container filter, the default container filter in this study */
-    @Override
-    @NotNull
-    public ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.current(getContainer());
-    }
-
     protected void initSessionParticipantGroup(StudyImpl study, User user)
     {
         if (study == null)

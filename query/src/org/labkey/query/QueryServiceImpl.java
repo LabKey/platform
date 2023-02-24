@@ -3203,9 +3203,39 @@ public class QueryServiceImpl implements QueryService
     public ContainerFilter getContainerFilterForLookups(Container container, User user)
     {
         // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
+        ContainerFilter.Type type = getContainerFilterTypeForLookups(container);
+
+        if (type == null)
+            return null;
+
+        return type.create(container, user);
+    }
+
+    @Override
+    @Nullable
+    public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
+    {
         if (container != null && container.isProductProjectsEnabled())
-            return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+        {
+            if (isProductProjectsAllFolderScopeEnabled())
+                return ContainerFilter.Type.AllInProjectPlusShared;
+
+            return ContainerFilter.Type.CurrentPlusProjectAndShared;
+        }
+
         return null;
+    }
+
+    @Override
+    public boolean isProductProjectsAllFolderScopeEnabled()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
+    }
+
+    @Override
+    public boolean isProductProjectsDataListingScopedToProject()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
     public static class TestCase extends Assert

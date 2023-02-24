@@ -191,8 +191,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     List<? extends ExpData> getExpDatas(ExpDataClass dataClass);
 
+    @Nullable
     ExpData getExpData(ExpDataClass dataClass, String name);
 
+    @Nullable
     ExpData getExpData(ExpDataClass dataClass, int rowId);
 
     /**
@@ -765,7 +767,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull String parameterValue,
         @Nullable Container c,
         @Nullable User user,
-        boolean includeProjectAndShared
+        @Nullable ContainerFilter cf
     );
 
     void registerRunEditor(ExpRunEditor editor);
