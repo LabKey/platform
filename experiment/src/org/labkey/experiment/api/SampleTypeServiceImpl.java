@@ -1359,22 +1359,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new SqlSelector(s, sql).getRowCount();
     }
 
-    // TODO where is this supposed to be used?
-    @Override
-    public void recomputeRollup(Container container, User user) throws SQLException
-    {
-        SampleTypeService sampleTypeService = SampleTypeService.get();
-        List<? extends ExpSampleType> sampleTypes = sampleTypeService
-                .getSampleTypes(container, user, true);
-
-        for (ExpSampleType sampleType : sampleTypes)
-        {
-            sampleTypeService.resetRecomputeFlagForNonParents(sampleType, container);
-            recomputeSampleTypeRollup(sampleType, container);
-        }
-
-    }
-
     private boolean isAliquotRollupRecomputeNeeded(ExpSampleType sampleType, Container container)
     {
         return getRecomputeRollupRowCount(sampleType, container) > 0;
@@ -1432,7 +1416,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
 
-    // TODO where is this supposed to be used
     @Override
     public void setRecomputeFlagForSample(String sampleLSID)
     {

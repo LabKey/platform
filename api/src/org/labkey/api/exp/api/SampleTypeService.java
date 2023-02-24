@@ -217,8 +217,6 @@ public interface SampleTypeService
 
     long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
 
-    void recomputeRollup(Container container, User user) throws SQLException;
-
     void setRecomputeFlagForSample(String sampleLSID);
 
     void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs);
