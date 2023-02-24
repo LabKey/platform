@@ -616,7 +616,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Object value = getSourceValue();
             try
             {
-                return convert(value);
+                Object val = convert(value);
+                if (val instanceof String)
+                    return ((String) val).trim();
+                return val;
             }
             catch (ConversionException x)
             {
