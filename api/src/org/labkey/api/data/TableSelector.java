@@ -169,6 +169,8 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         for (ColumnInfo column : arrColumns)
         {
+            if (column.isAdditionalQueryColumn())
+                continue;
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
                 columns.putIfAbsent(displayColumn.getFieldKey(), displayColumn);
