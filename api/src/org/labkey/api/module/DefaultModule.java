@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.PermissionCheckable;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -92,8 +91,6 @@ import java.util.function.Supplier;
 
 /**
  * Standard base class for modules, supplies no-op implementations for many optional methods.
- * User: migra
- * Date: Jul 14, 2005
  */
 public abstract class DefaultModule implements Module, ApplicationContextAware
 {

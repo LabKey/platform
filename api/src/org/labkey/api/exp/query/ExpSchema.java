@@ -517,6 +517,12 @@ public class ExpSchema extends AbstractExpSchema
             {
                 return getTable(TableType.Materials.toString(), cf);
             }
+
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return getURL(parent, true);
+            }
         };
     }
 

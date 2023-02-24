@@ -69,6 +69,8 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
+    String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
@@ -100,7 +102,6 @@ public interface QueryService
 
     QueryDefinition getQueryDef(User user, Container container, String schema, String name);
 
-    @Deprecated /** Use SchemaKey form instead. */ QueryDefinition createQueryDef(User user, Container container, String schema, String name);
     QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
     QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
@@ -113,7 +114,7 @@ public interface QueryService
     QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
     QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
     QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
-    QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
+    QueryDefinition getSessionQuery(ViewContext context, Container container, SchemaKey schema, String queryName);
 
     ActionURL urlQueryDesigner(User user, Container container, String schema);
     ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
@@ -620,7 +621,7 @@ public interface QueryService
     }
 
     /**
-     * Resolves the ContainerFilter to be used for lookups during insert/update of data in product projects.
+     * Resolves the ContainerFilter to be used for lookups of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.
      */
     @Nullable
@@ -641,4 +642,20 @@ public interface QueryService
 
         QueryLogging getQueryLogging();
     }
+    /**
+     * Resolves the ContainerFilter.Type to be used for lookups of data in product projects.
+     * Defaults to null if product projects are not enabled in container scope.
+     */
+    @Nullable
+    ContainerFilter.Type getContainerFilterTypeForLookups(Container container);
+
+    /**
+     * Returns true if the "Less restrictive product project lookups" experimental feature is enabled.
+     */
+    boolean isProductProjectsAllFolderScopeEnabled();
+
+    /**
+     * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
+     */
+    boolean isProductProjectsDataListingScopedToProject();
 }

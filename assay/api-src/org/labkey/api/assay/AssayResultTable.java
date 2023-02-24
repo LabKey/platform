@@ -56,6 +56,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -151,9 +152,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
                     ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
                     if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
-                    {
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, cf));
-                    }
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
                 }
                 addColumn(col);
 
