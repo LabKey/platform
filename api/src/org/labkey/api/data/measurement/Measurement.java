@@ -251,6 +251,8 @@ public class Measurement
         else if (amountObj instanceof String)
             try
             {
+                if (StringUtils.isBlank((String) amountObj))
+                    return null;
                 return Double.valueOf((String) amountObj);
             }
             catch (NumberFormatException e)
