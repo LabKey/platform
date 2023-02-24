@@ -71,6 +71,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         final RelationColumn source;
         final int ordinal;
         ColumnLogging columnLogging;
+        PHI phi;
     }
     record UnionTerm(QueryRelation relation, ArrayListMap<String, UnionSourceColumn> columns, Map<String,FieldKey> uniqueNameMap)
     {
@@ -328,6 +329,10 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 col.source.gatherInvolvedSelectColumns(involved);
                 QueryColumnLogging qcl = QueryColumnLogging.create(fakeTableInfo, col.source.getFieldKey(), involved);
                 col.columnLogging = qcl.remapQueryFieldKeys(fakeTableInfo, col.source.getFieldKey(), term.uniqueNameMap);
+                PHI phi = PHI.NotPHI;
+                for (var rc : involved)
+                    phi = PHI.max(phi, rc.getPHI());
+                col.phi = phi;
             }
         }
 
