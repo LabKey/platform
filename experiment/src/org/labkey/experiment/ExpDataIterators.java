@@ -331,8 +331,8 @@ public class ExpDataIterators
         public boolean next() throws BatchValidationException
         {
             boolean hasNext = super.next();
-            // skip processing if there are errors upstream
-            if (_context.getErrors().hasErrors() || !hasAmountData())
+            // skip processing if there are errors upstream or we've not yet processed aliquot runs
+            if (_context.getErrors().hasErrors() || !hasAmountData() || _context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 return hasNext;
 
             if (hasNext)

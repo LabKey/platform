@@ -11,6 +11,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
@@ -182,6 +183,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
                     }
+                    // handle aliquot rollup calculation for all sample types
+                    for (ExpSampleType sampleType : typesReader.getSampleTypes())
+                        SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer(), true);
                 }
                 else
                     log.info("No types XAR file to process.");
@@ -319,6 +323,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     new HashMap<>();
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, extraContext);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
+
                                     if (context.getErrors().hasErrors())
                                     {
                                         for (ValidationException error : context.getErrors().getRowErrors())
