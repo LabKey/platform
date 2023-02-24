@@ -69,6 +69,8 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
+    String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
@@ -618,10 +620,26 @@ public interface QueryService
     }
 
     /**
-     * Resolves the ContainerFilter to be used for lookups during insert/update of data in product projects.
+     * Resolves the ContainerFilter to be used for lookups of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.
      */
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
+    /**
+     * Resolves the ContainerFilter.Type to be used for lookups of data in product projects.
+     * Defaults to null if product projects are not enabled in container scope.
+     */
+    @Nullable
+    ContainerFilter.Type getContainerFilterTypeForLookups(Container container);
+
+    /**
+     * Returns true if the "Less restrictive product project lookups" experimental feature is enabled.
+     */
+    boolean isProductProjectsAllFolderScopeEnabled();
+
+    /**
+     * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
+     */
+    boolean isProductProjectsDataListingScopedToProject();
 }
