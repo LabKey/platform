@@ -2203,7 +2203,7 @@ public class ExpDataIterators
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             DataIteratorBuilder step7 = step6;
-            if (isSample && context.getInsertOption().allowUpdate)
+            if (isSample && context.getInsertOption().allowUpdate && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
 
             // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
