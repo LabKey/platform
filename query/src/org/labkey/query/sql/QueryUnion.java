@@ -22,6 +22,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.Sort;
@@ -282,7 +283,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 
      * copyAttributes() calls getColumnLogging(), so it's not trivial to avoid calling this.
      */
-    void computeColumnLogging()
+    void computeColumnLoggingAndPHI()
     {
         if (computeColumnLoggingCalled)
             return;
@@ -336,14 +337,17 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             SelectQueryAuditProvider sqap = null;
             Exception ex = null;
             Set<FieldKey> dataLoggingColumns = new HashSet<>();
+            PHI phi = PHI.NotPHI;
             for (UnionSourceColumn source : col._sourceColumns)
             {
                 shouldLog |= source.columnLogging.shouldLogName();
                 sqap = null != sqap ? sqap : source.columnLogging.getSelectQueryAuditProvider();
+                phi = PHI.max(phi, source.phi);
                 ex = null != ex ? ex : source.columnLogging.getException();
                 if (null == ex)
                     dataLoggingColumns.addAll(source.columnLogging.getDataLoggingColumns());
             }
+            col._phi = phi;
             if (null != ex)
                 col._columnLogging = ColumnLogging.error(shouldLog, sqap, ex.getMessage());
             else
@@ -704,6 +708,8 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 
         ColumnLogging _columnLogging;
 
+        PHI _phi;
+
         UnionColumn(String name, RelationColumn col, int ordinal)
         {
             _name = new FieldKey(null, name);
@@ -733,8 +739,19 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         @Override
         ColumnLogging getColumnLogging()
         {
-            computeColumnLogging();
+            computeColumnLoggingAndPHI();
             return _columnLogging;
+        }
+
+        @Override
+        PHI getPHI()
+        {
+            computeColumnLoggingAndPHI();
+            // For a recursive query, we can have null here
+            // computeColumnLoggingCalled is set to true during the first call,
+            // the recursive invocation sees the flag set, but the _phi has not yet been computed.
+            // this is OK
+            return null==_phi ? PHI.NotPHI : _phi;
         }
 
         @Override

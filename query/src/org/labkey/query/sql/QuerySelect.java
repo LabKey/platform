@@ -2446,12 +2446,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         }
 
         @Override
-        ColumnLogging getColumnLogging()
-        {
-            return super.getColumnLogging();
-        }
-
-        @Override
         public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
         {
             return getResolvedField().gatherInvolvedSelectColumns(collect);

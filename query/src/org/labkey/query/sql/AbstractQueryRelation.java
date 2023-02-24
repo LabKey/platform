@@ -271,13 +271,15 @@ public abstract class AbstractQueryRelation implements QueryRelation
             return null;
         }
 
-        /** See QNode.gatherInvolvedSelectColumns() and interface QueryRelation.ColumnResolvingRelation*/
-        abstract public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect);
 
         PHI getPHI()
         {
+            assert !(getTable() instanceof ColumnResolvingRelation);
             return null;
         }
+
+        /** See QNode.gatherInvolvedSelectColumns() and interface QueryRelation.ColumnResolvingRelation*/
+        abstract public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect);
 
         // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()

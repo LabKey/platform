@@ -29,6 +29,7 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -437,6 +438,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         final String _alias;
         final String _uniqueName;
         ColumnLogging _columnLogging = null;
+        PHI _phi;
         
         QLWColumn(AbstractQueryRelation table, FieldKey key, String alias)
         {
@@ -473,8 +475,15 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         @Override
         ColumnLogging getColumnLogging()
         {
-            computeColumnLoggings();
+            computeColumnLoggingsAndPHI();
             return _columnLogging;
+        }
+
+        @Override
+        PHI getPHI()
+        {
+            computeColumnLoggingsAndPHI();
+            return _phi;
         }
     }
 
@@ -730,7 +739,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
     boolean computeColumnLoggingsCalled = false;
 
-    void computeColumnLoggings()
+    void computeColumnLoggingsAndPHI()
     {
         if (computeColumnLoggingsCalled)
             return;
@@ -757,21 +766,26 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         for (var qlwColumn : _selectedColumns.values())
         {
             ColumnLogging cl;
+            PHI phi = PHI.NotPHI;
             if (qlwColumn instanceof PassThroughColumn ptColumn)
             {
                 var columnsUsed = ptColumn._wrapped.gatherInvolvedSelectColumns(new ArrayList<>());
                 QueryColumnLogging qcl = QueryColumnLogging.create(fakeTableInfo, qlwColumn.getFieldKey(), columnsUsed);
                 cl = qcl.remapQueryFieldKeys(fakeTableInfo, qlwColumn.getFieldKey(), outerMap);
+                for (var columnUsed : columnsUsed)
+                    phi = PHI.max(phi, columnUsed.getPHI());
             }
             else if (qlwColumn instanceof QueryLookupColumn qlColumn)
             {
                 cl = qlColumn._lkCol.getColumnLogging();
                 cl = cl.remapFieldKeys(qlColumn._key.getParent(), null, warnings);
+                phi = qlColumn._lkCol.getPHI();
             }
             else
                 throw new IllegalStateException();
 
             qlwColumn._columnLogging = cl;
+            qlwColumn._phi = phi;
         }
 
         for (String w : warnings)
