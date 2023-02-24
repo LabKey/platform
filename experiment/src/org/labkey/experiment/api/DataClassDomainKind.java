@@ -352,7 +352,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
         try
         {
-            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo, domain.getDisabledSystemFields());
             return dataClass.getDomain();
         }
         catch (ExperimentException e)

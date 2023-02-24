@@ -223,11 +223,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
                                  @Nullable TemplateInfo templateInfo, @Nullable String category)
             throws ExperimentException;
 
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException;
+
     /**
      * Create a new DataClass with the provided domain properties and top level options.
      */
     ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
             throws ExperimentException;
 
     /**
