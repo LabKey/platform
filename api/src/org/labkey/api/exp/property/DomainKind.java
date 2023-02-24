@@ -46,12 +46,12 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 abstract public class DomainKind<T>  implements Handler<String>
 {
@@ -319,20 +319,13 @@ abstract public class DomainKind<T>  implements Handler<String>
         if (disabledSystemFields == null || disabledSystemFields.isEmpty())
             return disabledSystemFields;
 
-        Set<String> disallowedFields = getNonDisablebleFields();
-        if (disallowedFields == null || disabledSystemFields.isEmpty())
+        Set<String> nonDisablebleFields = getNonDisablebleFields();
+        if (nonDisablebleFields == null || nonDisablebleFields.isEmpty())
             return disabledSystemFields;
 
-        disallowedFields = new CaseInsensitiveHashSet(disallowedFields);
+        final Set<String> disallowedFields = new CaseInsensitiveHashSet(nonDisablebleFields);
 
-        List<String> allowedDisabledFields = new ArrayList<>();
-        for (String field : disabledSystemFields)
-        {
-            if (!disallowedFields.contains(field))
-                allowedDisabledFields.add(field);
-        }
-
-        return allowedDisabledFields;
+        return disabledSystemFields.stream().filter(f -> !disallowedFields.contains(f)).collect(Collectors.toList());
     }
 
     protected Set<String> getNonDisablebleFields()

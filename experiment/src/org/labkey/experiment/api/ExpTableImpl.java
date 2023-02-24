@@ -100,7 +100,7 @@ abstract public class ExpTableImpl<C extends Enum>
                 _disabledSystemFields = new CaseInsensitiveHashSet();
 
                 List<String> disabledFields = domain.getDisabledSystemFields();
-                if (disabledFields != null && !disabledFields.isEmpty())
+                if (disabledFields != null)
                     _disabledSystemFields.addAll(disabledFields);
             }
         }

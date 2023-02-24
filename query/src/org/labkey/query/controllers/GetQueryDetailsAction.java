@@ -292,8 +292,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             if (!tinfo.getAltKeysForUpdate().isEmpty())
                 resp.put("altUpdateKeys", tinfo.getAltKeysForUpdate());
 
-            if (tinfo.getDisabledSystemFields() != null && !tinfo.getDisabledSystemFields().isEmpty())
-                resp.put("disabledSystemFields", tinfo.getDisabledSystemFields());
+            Set<String> disabledSystemFields = tinfo.getDisabledSystemFields();
+            if (disabledSystemFields != null && !disabledSystemFields.isEmpty())
+                resp.put("disabledSystemFields", disabledSystemFields);
         }
         catch (QueryParseException e)
         {

@@ -621,7 +621,7 @@ public class DomainUtil
         if (updateDomainName)
             d.setName(update.getName());
 
-        d.setDisabledSystemFields(update.getDisabledSystemFields());
+        d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
