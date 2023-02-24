@@ -128,16 +128,22 @@ public class Measurement
         }
     }
 
-    public Measurement(Object amountObj, String units, @Nullable String normalizingUnits)
+    public Measurement(Object amountObj, String units, @Nullable String normalizingUnits) throws ConversionExceptionWithMessage
     {
         _amount = convertToAmount(amountObj);
         _normalizingUnits = Unit.getUnit(normalizingUnits);
+        validateUnits(units);
         _units = Unit.getUnit(units);
     }
 
     public Measurement(Object amountObj, String units)
     {
        this(amountObj, units, null);
+    }
+
+    public void validateUnits(String unitsStr) throws ConversionExceptionWithMessage
+    {
+        getUnits(unitsStr, _normalizingUnits);
     }
 
     public Double getNormalizedAmount()
