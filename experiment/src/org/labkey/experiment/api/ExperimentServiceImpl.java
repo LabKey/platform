@@ -745,25 +745,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
         // SampleType may live in different container
-        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+        ContainerFilter containerFilter = getContainerFilterTypeForFind(container).create(container, user);
         SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
         filter.addClause(clause);
 
-        return new TableSelector(getTinfoMaterial(), TableSelector.ALL_COLUMNS, filter, null)
-                .getArrayList(Material.class)
-                .stream()
-                .map(ExpMaterialImpl::new)
-                .collect(toList());
-    }
-
-    public List<ExpMaterialImpl> getExpMaterialsByNames(Container container, User user, Collection<String> names, @Nullable ExpSampleType sampleType)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("Name"), names);
-        if (sampleType != null)
-            filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
-
-        return new TableSelector(getTinfoMaterial(), TableSelector.ALL_COLUMNS, filter, null)
+        return new TableSelector(getTinfoMaterial(), filter, null)
                 .getArrayList(Material.class)
                 .stream()
                 .map(ExpMaterialImpl::new)
@@ -1521,6 +1507,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, String name)
     {
         Domain d = dataClass.getDomain();
@@ -1544,6 +1531,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @Nullable
     public ExpDataImpl getExpData(ExpDataClass dataClass, int rowId)
     {
         Domain d = dataClass.getDomain();
@@ -1592,20 +1580,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return null;
     }
 
+    @NotNull
+    private ContainerFilter.Type getContainerFilterTypeForFind(Container container)
+    {
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(container);
+        return type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
+    }
+
     @Override
     @Nullable
-    public ExpData findExpData(Container c, User user,
-                            @NotNull ExpDataClass dataClass,
-                            @NotNull String dataClassName, String dataName,
-                            RemapCache cache, Map<Integer, ExpData> dataCache)
-            throws ValidationException
+    public ExpData findExpData(
+        Container c,
+        User user,
+        @NotNull ExpDataClass dataClass,
+        @NotNull String dataClassName,
+        String dataName,
+        RemapCache cache,
+        Map<Integer, ExpData> dataCache
+    ) throws ValidationException
     {
         StringBuilder errors = new StringBuilder();
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // Attempt to resolve by name first.
         try
         {
-            Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+            Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, getContainerFilterTypeForFind(c), dataName);
             if (rowId != null)
                 return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
         }
@@ -1634,8 +1633,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
-            throws ValidationException
+    public @Nullable ExpMaterial findExpMaterial(
+        Container c,
+        User user,
+        ExpSampleType sampleType,
+        String sampleTypeName,
+        String sampleName,
+        RemapCache cache,
+        Map<Integer, ExpMaterial> materialCache
+    ) throws ValidationException
     {
         StringBuilder errors = new StringBuilder();
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
@@ -1645,8 +1651,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
             Integer rowId = (sampleTypeName == null) ?
-                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName) :
-                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, getContainerFilterTypeForFind(c), sampleName) :
+                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, getContainerFilterTypeForFind(c), sampleName);
 
             if (rowId != null)
                 return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
@@ -7619,7 +7625,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @NotNull String parameterValue,
         @Nullable Container c,
         @Nullable User user,
-        boolean includeProjectAndShared
+        @Nullable ContainerFilter cf
     )
     {
         SimpleFilter parameterFilter = new SimpleFilter()
@@ -7635,10 +7641,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
         else
         {
-            if (user != null && includeProjectAndShared)
+            if (user != null && cf != null)
             {
                 protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
-                ContainerFilter cf = ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user);
                 protocolFilter.addCondition(cf.createFilterClause(getTinfoProtocol().getSchema(), FieldKey.fromParts("Container")));
             }
             else

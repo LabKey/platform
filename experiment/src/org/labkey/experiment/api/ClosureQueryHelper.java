@@ -7,6 +7,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -26,6 +27,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -213,7 +215,13 @@ public class ClosureQueryHelper
         ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
         ret.setLabel(target.getName());
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
-        var builder = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
+
+        // Determine the container scope of the lookup
+        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(schema.getContainer(), schema.getUser());
+        if (cf == null)
+            cf = parentTable.getContainerFilter();
+
+        var builder = new QueryForeignKey.Builder(schema, cf).table(target.getName()).key("rowid");
         builder.schema(targetType.schemaKey);
         var qfk = new QueryForeignKey(builder) {
             @Override

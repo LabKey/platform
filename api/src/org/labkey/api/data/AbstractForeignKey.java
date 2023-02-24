@@ -49,10 +49,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _displayColumnName;
     private boolean _showAsPublicDependency = false;
 
-
-    // foreignKey lazily creates the target tableinfo, in order to do that it needs to know the container filter to use
-    // Some tables may chose to ignore/modify this container filter, but this indicates what the parent table/query/schema
-    // is using, and the lookup tableinfo may want to use it as well.
+    // foreignKey lazily creates the target TableInfo, in order to do that it needs to know the container filter to use
+    // Some tables may choose to ignore/modify this container filter, but this indicates what the parent table/query/schema
+    // is using, and the lookup TableInfo may want to use it as well.
     protected @Nullable ContainerFilter _containerFilter;
 
     // We will also want a DefaultSchema to use to construct the target schema/table (and check permissions)
@@ -72,13 +71,13 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         _containerFilter = cf;
     }
     
-    protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, String tableName, String columnName)
+    protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf, String tableName, String columnName)
     {
         this(sourceSchema, cf, (SchemaKey)null, tableName, columnName, null);
     }
 
     @Deprecated
-    protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName)
+    protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName)
     {
         this(sourceSchema, cf, null==lookupSchemaName?null:SchemaKey.fromString(lookupSchemaName), tableName, columnName, null);
     }
@@ -99,13 +98,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         _displayColumnName = displayColumnName;
     }
 
-    /* this builder-ish method is used to help convert old anonymous subclasses */
-    public AbstractForeignKey setContainerFilter(ContainerFilter cf)
-    {
-        _containerFilter = cf;
-        return this;
-    }
-
+    @Nullable
     protected User getLookupUser()
     {
         if (null != _sourceSchema)
@@ -125,8 +118,8 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         ContainerFilter cf = null;
         if (null != _containerFilter)
             cf = _containerFilter;
-        else if (_sourceSchema instanceof UserSchema)
-            cf = ((UserSchema)_sourceSchema).getDefaultContainerFilter();
+        else if (_sourceSchema instanceof UserSchema userSchema)
+            cf = userSchema.getDefaultLookupContainerFilter();
 
         if (null != _sourceSchema && _sourceSchema.getContainer().isWorkbook())
         {
@@ -312,6 +305,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     }
 
     @Override
+    @Nullable
     public Set<FieldKey> getSuggestedColumns()
     {
         if (_suggestedFields == null)

@@ -1612,20 +1612,22 @@ public class ExpDataIterators
      *                will be incorporated into the resolved inputs and outputs
      * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate the parent should be removed.
-     * @throws ExperimentException
+     * @throws ValidationException
      */
     @NotNull
-    private static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, @Nullable ExpRunItem runItem,
-                                                                                       Set<Pair<String, String>> entityNamePairs,
-                                                                                       RemapCache cache,
-                                                                                       Map<Integer, ExpMaterial> materialMap,
-                                                                                       Map<Integer, ExpData> dataMap,
-                                                                                       Map<String, ExpSampleType> sampleTypes,
-                                                                                       Map<String, ExpDataClass> dataClasses,
-                                                                                       @Nullable String aliquotedFrom,
-                                                                                       String dataType /*sample type or source type name*/,
-                                                                                       boolean updateOnly)
-            throws ValidationException, ExperimentException
+    private static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(
+        User user, Container c,
+        @Nullable ExpRunItem runItem,
+        Set<Pair<String, String>> entityNamePairs,
+        RemapCache cache,
+        Map<Integer, ExpMaterial> materialMap,
+        Map<Integer, ExpData> dataMap,
+        Map<String, ExpSampleType> sampleTypes,
+        Map<String, ExpDataClass> dataClasses,
+        @Nullable String aliquotedFrom,
+        String dataType /*sample type or source type name*/,
+        boolean updateOnly
+    ) throws ValidationException
     {
         Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
         Map<ExpData, String> parentData = new LinkedHashMap<>();
@@ -1668,7 +1670,7 @@ public class ExpDataIterators
             String[] parts = entityColName.split("[./]");
             if (parts.length == 1)
             {
-                if (parts[0].equalsIgnoreCase("parent"))
+                if ("parent".equalsIgnoreCase(parts[0]))
                 {
                     if (!isEmptyEntity)
                     {
@@ -1679,7 +1681,7 @@ public class ExpDataIterators
                         }
 
                         if (skipExistingAliquotParents)
-                            continue;;
+                            continue;
 
                         ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
                         if (sample != null)
@@ -1692,10 +1694,10 @@ public class ExpDataIterators
                     }
                 }
             }
-            if (parts.length == 2)
+            else if (parts.length == 2)
             {
                 String namePart = QueryKey.decodePart(parts[1]);
-                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                if (ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -1728,7 +1730,7 @@ public class ExpDataIterators
 
                     }
                 }
-                else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
+                else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
                 {
                     ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
                     if (sampleType == null)
@@ -1751,7 +1753,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                else if (ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -1786,7 +1788,7 @@ public class ExpDataIterators
                         }
                     }
                 }
-                else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
+                else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
                 {
                     ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
                     if (dataClass == null)

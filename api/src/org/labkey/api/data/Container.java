@@ -37,6 +37,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.HasPermission;
@@ -1696,9 +1697,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (!isProductProjectsEnabled())
             return ContainerFilter.current(this);
 
+        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        {
+            if (isProject() || getProject() != null)
+                return new ContainerFilter.AllInProjectPlusShared(this, user);
+            return ContainerFilter.current(this);
+        }
+
         if (isProject())
             return new ContainerFilter.CurrentAndSubfoldersPlusShared(this, user);
-        else if (!isProject() && getProject() != null)
+
+        if (getProject() != null)
             return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
 
         return ContainerFilter.current(this);

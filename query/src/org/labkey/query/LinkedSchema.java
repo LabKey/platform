@@ -317,14 +317,6 @@ public class LinkedSchema extends ExternalSchema
     }
 
     @Override
-    public @NotNull ContainerFilter getDefaultContainerFilter()
-    {
-        return super.getDefaultContainerFilter();
-        // NOTE: The source table ContainerFilter is already set by _sourceSchema.getTable()
-//        return new ContainerFilter.InternalNoContainerFilter(getUser());
-    }
-
-    @Override
     protected LinkedTableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
         TableType metaData = getXbTable(name);

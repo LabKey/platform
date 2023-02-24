@@ -148,16 +148,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             throw new UnauthorizedException("User cannot execute MDX against this schema: " + getName());
     }
 
-
     public ContainerFilter getOlapContainerFilter()
     {
         return null;
-    }
-
-    @Override
-    public @NotNull ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.current(getContainer());
     }
 
     @Nullable
