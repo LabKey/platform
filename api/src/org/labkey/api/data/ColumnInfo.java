@@ -181,7 +181,6 @@ public interface ColumnInfo extends ColumnRenderProperties
     Object getDefaultValue();
 
     // TODO return a FieldKey instead of a ColumnInfo
-    // And... this is probably mostly redundant.  DisplayColumn.addQueryColumns() is a more useful and general mechanism.
     @Nullable ColumnInfo getDisplayField();
 
     // TODO return a FieldKey instead of a ColumnInfo

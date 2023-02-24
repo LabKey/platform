@@ -24,34 +24,79 @@ public class WrappedColumnInfo
         return new MutableColumnInfoWrapper(delegate);
     }
 
-    public static MutableColumnInfo wrapAdditionalQueryColumn(ColumnInfo delegate)
+    /* create a delegating columnInfo wrapper, the returned columnInfo is Mutable, but if you want to set a LOT of properties
+     * use wrapCopy() instead (e.g. for PropertyColumn.copyAttributes())
+     *
+     * NOTE: BaseColumnInfo.copyAttributesFrom() does not copy displayField/filterField, here we drop it if the parentTables don't match
+    public static MutableColumnInfo wrapDelegating(TableInfo parent_, FieldKey fieldKey_, ColumnInfo delegate_, String label_, String alias_)
     {
-        return new MutableColumnInfoWrapper(delegate)
+        AbstractWrappedColumnInfo inner = new AbstractWrappedColumnInfo(delegate_)
         {
+            final FieldKey fieldKey = fieldKey_;
+            final TableInfo parent = parent_;
+            final String label = label_;
+            final String alias = alias_;
+
             @Override
-            public boolean isAdditionalQueryColumn()
+            public FieldKey getFieldKey()
             {
-                return true;
+                return fieldKey;
             }
 
             @Override
-            public ForeignKey getFk()
+            public TableInfo getParentTable()
             {
-                return null;
+                return parent;
             }
 
+            @Override
+            public String getLabelValue()
+            {
+                return label;
+            }
+
+            @Override
+            public String getLabel()
+            {
+                return super.getLabel();
+            }
+
+            @Override
+            public String getAlias()
+            {
+                return alias;
+            }
+
+            @Override
+            public boolean isAliasSet()
+            {
+                return null != alias;
+            }
+
+            @Override
             public @Nullable ColumnInfo getDisplayField()
             {
-                return null;
+                // don't return displayField if it's from a different table, that would probably be wrong...
+                return parent == delegate.getParentTable() ? delegate.getDisplayField() : null;
             }
 
             @Override
-            public DisplayColumnFactory getDisplayColumnFactory()
+            public ColumnInfo getFilterField()
             {
-                return ColumnInfo.NOLOOKUP_FACTORY;
+                // don't return filterField if it's from a different table, that would probably be wrong...
+                return parent == delegate.getParentTable() ? delegate.getFilterField() : null;
+            }
+
+            @Override
+            public TableDescription getFkTableDescription()
+            {
+                return delegate.getFkTableDescription();
             }
         };
+        return new MutableColumnInfoWrapper(inner);
     }
+     */
+
 
     /*
      * Instead of delegating all getters(), use an ExprColumn, this is useful when you want to set a LOT of properties

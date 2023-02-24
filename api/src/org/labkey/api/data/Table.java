@@ -1100,20 +1100,15 @@ public class Table
         {
             if (cols.containsKey(column.getFieldKey()))
                 continue;
-            boolean addColumn = false;
             if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
-                addColumn = true;
+                cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
-                addColumn = true;
+                cols.put(column.getFieldKey(), column);
             else if (column.isVersionColumn())
-                addColumn = true;
-            if (addColumn)
-            {
-                var wrapped = WrappedColumnInfo.wrapAdditionalQueryColumn(column);
-                cols.put(wrapped.getFieldKey(), wrapped);
-            }
+                cols.put(column.getFieldKey(), column);
         }
     }
+
 
     public static void snapshot(TableInfo tinfo, String tableName)
     {
