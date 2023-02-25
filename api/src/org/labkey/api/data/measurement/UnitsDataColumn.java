@@ -76,10 +76,11 @@ public class UnitsDataColumn extends DataColumn
             displayUnitStr = defaultUnitsStr;
         else
         {
+            String unitsStr = units.toString().trim();
             try
             {
                 // if units is compatible with default unit, use default units otherwise, use unit
-                Measurement.Unit storedUnit = Measurement.Unit.valueOf(units.toString());
+                Measurement.Unit storedUnit = Measurement.Unit.valueOf(unitsStr);
                 if (!storedUnit.isCompatible(unit))
                     return units;
                 else
@@ -87,11 +88,11 @@ public class UnitsDataColumn extends DataColumn
             }
             catch (IllegalArgumentException e)
             {
-                displayUnitStr = units.toString();
+                displayUnitStr = unitsStr;
             }
         }
 
-        // if neither defaut unit nor item unit is available, use alternate unit for display
+        // if neither default unit nor item unit is available, use alternate unit for display
         if (StringUtils.isEmpty(displayUnitStr) && _alternateUnitsField != null)
         {
             String alternateUnitStr = (String) ctx.get(_alternateUnitsField);
