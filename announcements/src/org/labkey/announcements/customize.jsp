@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.announcements.DiscussionService.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -90,22 +91,29 @@
         </td>
     </tr>
     <%
-        boolean moderatorReview = "InitialPost".equals(settings.getModeratorReview()) || "All".equals(settings.getModeratorReview());
+        boolean moderatorReview = ModeratorReview.requiresReview(settings.getModeratorReview());
     %>
     <tr>
         <td class="labkey-form-label" valign="middle">Moderator review</td>
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="moderatorReview" value="None"<%=checked(!moderatorReview)%>></td>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="<%=h(ModeratorReview.None.toString())%>" <%=checked(!moderatorReview)%>></td>
                     <td><b>None</b> - New messages never require moderator review.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="moderatorReview" value="InitialPost"<%=checked("InitialPost".equals(settings.getModeratorReview()))%>></td>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="<%=h(ModeratorReview.InitialPost.toString())%>"
+                            <%=checked(ModeratorReview.InitialPost.sameAs(settings.getModeratorReview()))%>></td>
                     <td><b>Initial Post</b> - Authors must have their initial message(s) approved by a moderator. Subsequent messages are approved automatically.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="moderatorReview" value="All"<%=checked("All".equals(settings.getModeratorReview()))%>></td>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="<%=h(ModeratorReview.NewThread.toString())%>"
+                            <%=checked(ModeratorReview.NewThread.sameAs(settings.getModeratorReview()))%>></td>
+                    <td><b>New Thread</b> - New message threads started by an Author must be approved by a moderator.</td>
+                </tr>
+                <tr>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="<%=h(ModeratorReview.All.toString())%>"
+                            <%=checked(ModeratorReview.All.sameAs(settings.getModeratorReview()))%>></td>
                     <td><b>All</b> - Every new message by an Author must be approved by a moderator.</td>
                 </tr>
                 <%

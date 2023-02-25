@@ -69,7 +69,7 @@
 <%
 
 ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
-if (!mr.isApproved(c, user))
+if (!mr.isApproved(c, user, false /* Not a new thread */))
 {
     %><tr><td colspan="3"><span class="labkey-message">Note: This response will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
 }
