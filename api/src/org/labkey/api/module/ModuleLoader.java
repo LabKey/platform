@@ -526,26 +526,37 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            // Refuse to upgrade if any managed module has a schema version that's too old. Issue 46922.
+            // Refuse to upgrade if any LabKey-managed module has a schema version that's too old. Issue 46922.
 
-            // Module contexts with non-null schema versions
-            Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
-                .filter(ctx -> ctx.getSchemaVersion() != null)
-                .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
-
-            // Names of managed modules with schemas where the installed version is less than "earliest upgrade version"
-            var tooOld = _modules.stream()
+            // Modules that are designated as "managed" and reside in LabKey-managed repositories
+            var labkeyModules = _modules.stream()
                 .filter(Module::shouldManageVersion)
-                .map(m -> moduleContextMap.get(m.getName()))
-                .filter(Objects::nonNull)
-                .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                .map(ModuleContext::getName)
+                .filter(this::isFromLabKeyRepository) // Do the check only for modules in LabKey repositories, Issue 47369
                 .toList();
 
-            if (!tooOld.isEmpty())
+            // Likely empty if running in dev mode... no need to log or do other work
+            if (!labkeyModules.isEmpty())
             {
-                String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
-                throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading from schema version " + Constants.getEarliestUpgradeVersion() + " and greater.");
+                _log.info("Checking " + StringUtilsLabKey.pluralize(labkeyModules.size(), "LabKey-managed module") + " to ensure " + (labkeyModules.size() > 1? "they're" : "it's") + " recent enough to upgrade");
+
+                // Module contexts with non-null schema versions
+                Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
+                    .filter(ctx -> ctx.getSchemaVersion() != null)
+                    .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
+
+                // Names of LabKey-managed modules with schemas where the installed version is less than "earliest upgrade version"
+                var tooOld = labkeyModules.stream()
+                    .map(m -> moduleContextMap.get(m.getName()))
+                    .filter(Objects::nonNull)
+                    .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
+                    .map(ModuleContext::getName)
+                    .toList();
+
+                if (!tooOld.isEmpty())
+                {
+                    String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
+                    throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading modules from schema version " + Constants.getEarliestUpgradeVersion() + " and greater.");
+                }
             }
         }
 
@@ -670,6 +681,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(execution, coreRequiredUpgrade, lockFile);
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    /**
+     * Does this module live in a repository that's managed by LabKey Corporation?
+     * @param module a Module
+     * @return true if the module's VCS URL is non-null and starts with one of the GitHub organizations that LabKey manages
+     */
+    private boolean isFromLabKeyRepository(Module module)
+    {
+        return StringUtils.startsWithAny(module.getVcsUrl(), "https://github.com/LabKey/", "https://github.com/FDA-MyStudies/");
     }
 
     private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);

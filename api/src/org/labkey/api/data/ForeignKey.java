@@ -64,7 +64,7 @@ public interface ForeignKey
      * Return an URL expression for what the hyperlink for this column should be.  The hyperlink must be able to be
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.
      */
-    StringExpression getURL(ColumnInfo parent);
+    @Nullable StringExpression getURL(ColumnInfo parent);
 
     /**
      * Convenience for getLookupTableInfo.getSelectList(getLookupColumnName())

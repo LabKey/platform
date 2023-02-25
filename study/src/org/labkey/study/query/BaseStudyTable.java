@@ -904,16 +904,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return super.supportsContainerFilter();
     }
 
-
-    @Override
-    @NotNull
-    public ContainerFilter getDefaultContainerFilter()
-    {
-        return getUserSchema().getDefaultContainerFilter();
-    }
-
-
-
     // for testing/breakpoints
 
     @Override

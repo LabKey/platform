@@ -146,12 +146,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _rules = canApplyTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
     }
 
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return _userSchema.getDefaultContainerFilter();
-    }
-
     /**
      * Allow {@link TableRules} to be applied to this table.
      */

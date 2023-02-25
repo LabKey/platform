@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
@@ -39,7 +40,6 @@ import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 /*
 * User: Dave
@@ -67,7 +67,7 @@ public class EditorRole extends AbstractRole
 
     public EditorRole()
     {
-        this("Editor", "Editors may read, add, update and delete information.", BASE_EDITOR_PERMISSIONS, Collections.singleton(DeletePermission.class));
+        this("Editor", "Editors may read, add, update and delete information.", BASE_EDITOR_PERMISSIONS, Arrays.asList(DeletePermission.class, SampleWorkflowDeletePermission.class));
     }
 
     public EditorRole(String name, String description, Collection<Class<? extends Permission>>... permCollections)
