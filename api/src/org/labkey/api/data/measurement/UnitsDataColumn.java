@@ -20,9 +20,9 @@ public class UnitsDataColumn extends DataColumn
     public static final String ALTERNATE_UNITS_FIELD_PROPERTY_NAME = "alternateUnitsField";
 
     private final MultiValuedMap<String, String> _properties;
-    private final String _unitsField;
-    private final String _defaultUnitsField;
-    private final String _alternateUnitsField;
+    private final FieldKey _unitsField;
+    private final FieldKey _defaultUnitsField;
+    private final FieldKey _alternateUnitsField;
 
     public static class Factory implements DisplayColumnFactory
     {
@@ -49,13 +49,16 @@ public class UnitsDataColumn extends DataColumn
 
         if (_properties != null)
         {
-            _unitsField = _properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units");
-            _defaultUnitsField = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-            _alternateUnitsField = _properties.get(ALTERNATE_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+            String fieldName = _properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units");
+            _unitsField = FieldKey.fromParts(fieldName.split("/"));
+            fieldName = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+            _defaultUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
+            fieldName = _properties.get(ALTERNATE_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+            _alternateUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
         }
         else
         {
-            _unitsField = "Units";
+            _unitsField = FieldKey.fromParts("Units");
             _defaultUnitsField = null;
             _alternateUnitsField = null;
         }
@@ -106,9 +109,9 @@ public class UnitsDataColumn extends DataColumn
     {
         super.addQueryFieldKeys(keys);
         if (_defaultUnitsField != null)
-            keys.add(FieldKey.fromParts(_defaultUnitsField));
+            keys.add(_defaultUnitsField);
         if (_alternateUnitsField != null)
-            keys.add(FieldKey.fromParts(_alternateUnitsField));
+            keys.add(_alternateUnitsField);
     }
 
     @Override

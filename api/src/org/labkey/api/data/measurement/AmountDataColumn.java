@@ -21,9 +21,9 @@ public class AmountDataColumn extends DataColumn
     public static final String AMOUNT_FIELD_PROPERTY_NAME = "amountField";
 
     private final MultiValuedMap<String, String> _properties;
-    private final String _unitsField;
-    private final String _defaultUnitsField;
-    private final String _amountField;
+    private final FieldKey _unitsField;
+    private final FieldKey _defaultUnitsField;
+    private final FieldKey _amountField;
 
     public static class Factory implements DisplayColumnFactory
     {
@@ -50,9 +50,11 @@ public class AmountDataColumn extends DataColumn
     {
         super(col, false);
         _properties = properties;
-        _unitsField = _properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units");
-        _defaultUnitsField = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-        _amountField = _properties.get(AMOUNT_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+        _unitsField = FieldKey.fromParts(_properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units").split("/"));
+        String fieldName = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+        _defaultUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
+        fieldName = _properties.get(AMOUNT_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
+        _amountField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
     }
 
     private Object convertToDisplayUnits(RenderContext ctx)
@@ -93,8 +95,9 @@ public class AmountDataColumn extends DataColumn
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
-        keys.add(FieldKey.fromParts(_unitsField));
-        keys.add(FieldKey.fromParts(_defaultUnitsField.split("/")));
+        keys.add(_unitsField);
+        if (_defaultUnitsField != null)
+            keys.add(_defaultUnitsField);
     }
 
     @Override
