@@ -324,10 +324,7 @@
           <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="MaterialExpDate">
-          <isUserEditable>true</isUserEditable>
-          <shownInDetailsView>true</shownInDetailsView>
-          <shownInInsertView>true</shownInInsertView>
-          <shownInUpdateView>true</shownInUpdateView>
+          <description>The expiration date of the sample</description>
       </column>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
@@ -518,6 +515,13 @@
       <column columnName="ModifiedBy"/>
       <column columnName="_ts"/>
       <column columnName="TemplateInfo"/>
+      <column columnName="SystemFieldConfig">
+          <isUserEditable>false</isUserEditable>
+          <isHidden>true</isHidden>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
     </columns>
   </table>
   <table tableName="PropertyDomain" tableDbType="TABLE">

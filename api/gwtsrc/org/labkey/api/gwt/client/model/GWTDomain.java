@@ -62,6 +62,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
     private boolean provisioned = false;
 
+    private List<String> disabledSystemFields;
+
     // schema,query,template are not part of the domain, but it's handy to pass
     // these values to the PropertiedEditor along with the GWTDomain.
     // NOTE queryName is not necessarily == name
@@ -84,6 +86,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.domainURI = src.domainURI;
         this.domainKindName = src.domainKindName;
         this.description = src.description;
+        this.disabledSystemFields = src.disabledSystemFields;
         this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
@@ -472,6 +475,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     {
         this.defaultDefaultValueType = defaultDefault;
         this.defaultValueOptions = defaultOptions;
+    }
+
+    public List<String> getDisabledSystemFields()
+    {
+        return disabledSystemFields;
+    }
+
+    public void setDisabledSystemFields(List<String> disabledSystemFields)
+    {
+        this.disabledSystemFields = disabledSystemFields;
     }
 
     public String getDefaultValuesURL()

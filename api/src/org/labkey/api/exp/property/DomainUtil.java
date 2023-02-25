@@ -287,6 +287,8 @@ public class DomainUtil
             d.setQueryName(tableInfo.getPublicName());
         }
 
+        d.setDisabledSystemFields(domain.getDisabledSystemFields());
+
         return d;
     }
 
@@ -301,6 +303,7 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
+        gwtDomain.setDisabledSystemFields(dd.getDisabledSystemFields());
         DomainKind<?> kind = dd.getDomainKind();
         if (kind != null)
         {
@@ -617,6 +620,8 @@ public class DomainUtil
 
         if (updateDomainName)
             d.setName(update.getName());
+
+        d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
