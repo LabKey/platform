@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
 import org.json.old.JSONObject;
@@ -729,29 +730,34 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setInsertOption(insertOption);
+        context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        if (auditBehaviorType != null)
+        {
+            Map<Enum, Object> configParameters = new HashMap<>();
+            configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
+            context.setConfigParameters(configParameters);
+        }
+        if (importIdentity)
+        {
+            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
+            context.setSupportAutoIncrementKey(true);
+        }
+
+        return importData(dl, target, updateService, context, auditEvent, user, container);
+    }
+
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    {
         if (target != null)
         {
-            DataIteratorContext context = new DataIteratorContext(errors);
-            context.setInsertOption(insertOption);
-            context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
-            if (auditBehaviorType != null)
-            {
-                Map<Enum, Object> configParameters = new HashMap<>();
-                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-                context.setConfigParameters(configParameters);
-            }
-            if (importIdentity)
-            {
-                context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
-                context.setSupportAutoIncrementKey(true);
-            }
-
             try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
             {
                 if (auditEvent != null)
                     addTransactionAuditEvent(transaction,  user, auditEvent);
                 int count = updateService.loadRows(user, container, dl, context, new HashMap<>());
-                if (errors.hasErrors())
+                if (context.getErrors().hasErrors())
                     return 0;
                 if (auditEvent != null)
                     auditEvent.setRowCount(count);
@@ -780,14 +786,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             {
                 boolean isConstraint = RuntimeSQLException.isConstraintException(x);
                 if (isConstraint)
-                    errors.addRowError(new ValidationException(x.getMessage()));
+                    context.getErrors().addRowError(new ValidationException(x.getMessage()));
                 else
                     throw new RuntimeSQLException(x);
             }
         }
         else
         {
-            errors.addRowError(new ValidationException("Table not specified"));
+            context.getErrors().addRowError(new ValidationException("Table not specified"));
         }
 
         return 0;

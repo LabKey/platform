@@ -228,12 +228,6 @@ public class PipelineStatusManager
         {
             // Count this error on the job.
             job.setErrors(job.getErrors() + 1);
-
-            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
-            if (PipelineService.get().isEnterprisePipeline())
-            {
-                job.done(null);
-            }
         }
         else if (PipelineJob.TaskStatus.complete.matches(status))
         {
@@ -244,12 +238,6 @@ public class PipelineStatusManager
             // Notify if this is not a split job
             if (job.getParentGUID() == null)
                 PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
-
-            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
-            if (PipelineService.get().isEnterprisePipeline())
-            {
-                job.done(null);
-            }
         }
         return true;
     }
