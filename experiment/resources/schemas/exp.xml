@@ -302,7 +302,7 @@
           <displayColumnFactory>
               <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
               <properties>
-                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
                   <property name="amountField">StoredAmount</property>
               </properties>
           </displayColumnFactory>
@@ -312,7 +312,7 @@
           <displayColumnFactory>
               <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
               <properties>
-                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
                   <property name="alternateUnitsField">AliquotUnit</property>
               </properties>
           </displayColumnFactory>
