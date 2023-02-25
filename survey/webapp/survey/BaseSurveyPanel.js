@@ -977,11 +977,11 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         form.setValues(values);
     },
 
-    getFormDirtyValues : function() {
-        return this.getDirtyValues(this.getForm());
+    getFormDirtyValues : function(toSubmit) {
+        return this.getDirtyValues(this.getForm(), toSubmit);
     },
 
-    getDirtyValues : function(form) {
+    getDirtyValues : function(form, toSubmit) {
         var values = {};
         Ext4.each(form.getFields().items, function(field){
             if (field.submitValue && (field.isHidden() || field.isValid()))
@@ -1048,7 +1048,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (!this.savingSurvey){
             this.savingSurvey = true;
             // get the dirty form values which are also valid and to be submitted
-            this.submitValues = this.getFormDirtyValues();
+            this.submitValues = this.getFormDirtyValues(toSubmit);
             this.updateSurveyResponse(btn, evt, toSubmit, successUrl, idParamName, false);
         }
     },
