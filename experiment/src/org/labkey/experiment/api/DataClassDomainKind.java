@@ -89,6 +89,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     private static final Set<String> RESERVED_NAMES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
+    private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
+
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
@@ -110,6 +112,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
                 new PropertyStorageSpec.Index(true, "name", "classid"))));
+
+        FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name")));
     }
 
     public DataClassDomainKind()
@@ -280,6 +284,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public Set<String> getNonDisablebleFields()
+    {
+        return FORCE_ENABLED_SYSTEM_FIELDS;
+    }
+
+    @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
@@ -342,7 +352,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
         try
         {
-            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo, domain.getDisabledSystemFields());
             return dataClass.getDomain();
         }
         catch (ExperimentException e)

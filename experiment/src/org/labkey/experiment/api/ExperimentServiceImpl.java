@@ -7400,7 +7400,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException
+    {
+        return createDataClass(c, u, name, options, properties, indices, templateInfo, null);
+    }
+
+    @Override
+    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
             throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
@@ -7410,6 +7418,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Lsid lsid = getDataClassLsid(c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
+
+        if (kind != null)
+            domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
 
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());

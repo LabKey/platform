@@ -196,6 +196,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
        return Collections.emptySet();
     }
 
+    @Nullable default Set<String> getDisabledSystemFields()
+    {
+        return Collections.emptySet();
+    }
+
     ColumnInfo getVersionColumn();
 
     String getVersionColumnName();

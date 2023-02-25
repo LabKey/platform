@@ -74,6 +74,7 @@ Ext4.define('Ext.ux.form.field.DateTime', {
             format  : me.dateFormat,
             name    : this.name + '-date',
             bubbleEvents: ['change', 'dirtychange'],
+            readOnly: this.readOnly,        // respect read only prop on container
             flex:1,
             isFormField:false, //exclude from field query's
             submitValue:false,
@@ -122,13 +123,16 @@ Ext4.define('Ext.ux.form.field.DateTime', {
         }, me.dateConfig));
         me.items.push(me.dateField);
 
-        me.items.push({
-            xtype: 'splitter'
-        });
+        if (this.layout === 'hbox') {
+            me.items.push({
+                xtype: 'splitter'
+            });
+        }
 
         me.timeField = Ext4.create('Ext.form.field.Time', Ext4.apply({
             format  : me.timeFormat,
             name    : this.name + '-time',
+            readOnly: this.readOnly,        // respect read only prop on container
             bubbleEvents: ['change', 'dirtychange'],
             flex:1,
             isFormField:false, //exclude from field query's
@@ -249,6 +253,12 @@ Ext4.define('Ext.ux.form.field.DateTime', {
                 }
             }
         }
+        // set the original value of the component items so the dirty state with and initial value is set correctly
+        if (value && !this.dateField.originalValue)
+            this.dateField.originalValue = value;
+        if (value && !this.timeField.originalValue)
+            this.timeField.originalValue = value;
+
         this.dateField.setValue(value);
         this.timeField.setValue(value);
     },

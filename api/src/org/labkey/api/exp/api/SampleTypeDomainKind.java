@@ -88,6 +88,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     private static final Set<String> RESERVED_NAMES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
+    private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
+
     static
     {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -130,6 +132,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 new PropertyStorageSpec.Index(true, "lsid"),
                 new PropertyStorageSpec.Index(true, "name")
         )));
+
+        FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name", "SampleState")));
 
         logger = LogManager.getLogger(SampleTypeDomainKind.class);
     }
@@ -318,6 +322,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public DefaultValueType getDefaultDefaultType(Domain domain)
     {
         return null;
+    }
+
+    @Override
+    public Set<String> getNonDisablebleFields()
+    {
+        return FORCE_ENABLED_SYSTEM_FIELDS;
     }
 
     @Override
@@ -553,7 +563,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression,
+                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields());
         }
         catch (SQLException e)
         {

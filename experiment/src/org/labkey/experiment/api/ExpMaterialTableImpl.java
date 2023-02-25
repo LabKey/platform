@@ -597,6 +597,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 setDescription("Contains one row per sample in the " + st.getName() + " sample type");
             }
+
+            if (!"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
+                setSampleType(st, filter);
         }
 
         var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
@@ -739,7 +742,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
-            setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
 
             setName(_ss.getName());

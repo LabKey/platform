@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -260,4 +261,24 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     {
         return true;
     }
+
+    @Override
+    public void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> list)
+    {
+        Set<String> disabledSystemFields = getDisabledSystemFields();
+        if (disabledSystemFields == null || disabledSystemFields.isEmpty() || list == null)
+        {
+            super.setDefaultVisibleColumns(list);
+            return;
+        }
+
+        List<FieldKey> allowed = new ArrayList<>();
+        for (FieldKey key : list)
+        {
+            if (!disabledSystemFields.contains(key.getName()))
+                allowed.add(key);
+        }
+        super.setDefaultVisibleColumns(allowed);
+    }
+
 }
