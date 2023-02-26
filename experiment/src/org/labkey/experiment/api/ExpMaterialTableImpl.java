@@ -775,9 +775,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             var rawAmountColumn = addColumn(Column.RawAmount);
             rawAmountColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+            rawAmountColumn.setHidden(true);
+            rawAmountColumn.setShownInDetailsView(false);
+            rawAmountColumn.setShownInInsertView(false);
+            rawAmountColumn.setShownInUpdateView(false);
 
             var rawUnitsColumn = addColumn(Column.RawUnits);
             rawUnitsColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+            rawUnitsColumn.setHidden(true);
+            rawUnitsColumn.setShownInDetailsView(false);
+            rawUnitsColumn.setShownInInsertView(false);
+            rawUnitsColumn.setShownInUpdateView(false);
 
             if (InventoryService.get() != null)
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
