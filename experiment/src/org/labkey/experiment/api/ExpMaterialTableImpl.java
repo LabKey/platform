@@ -270,12 +270,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 return nameCol;
             }
+            case RawAmount ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+            }
             case StoredAmount ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
                 columnInfo.setLabel("Amount");
                 columnInfo.setImportAliasesSet(Set.of("Amount"));
                 return columnInfo;
+            }
+            case RawUnits ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("Units"));
             }
             case Units ->
             {
@@ -761,8 +769,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             addColumn(Column.StoredAmount);
             defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+
             addColumn(Column.Units);
             defaultCols.add(FieldKey.fromParts(Column.Units));
+
+            var rawAmountColumn = addColumn(Column.RawAmount);
+            rawAmountColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+
+            var rawUnitsColumn = addColumn(Column.RawUnits);
+            rawUnitsColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
 
             if (InventoryService.get() != null)
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
