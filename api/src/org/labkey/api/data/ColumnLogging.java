@@ -197,7 +197,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
 
 
     /* We need a way for Query to report an error in generating a ColumnLogging object.  It does not know ahead of
-     * time if column logging is enabled.  I don't particularly like this pattern.  I would be better to maybe
+     * time if column logging is enabled.  I don't particularly like this pattern.  It would be better to maybe
      * pass in a QueryLogging object into query compile?
      */
     public UnauthorizedException getException()
