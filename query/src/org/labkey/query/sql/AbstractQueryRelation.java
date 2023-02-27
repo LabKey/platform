@@ -54,7 +54,7 @@ import java.util.TreeSet;
  */
 public abstract class AbstractQueryRelation implements QueryRelation
 {
-    private static final Logger _log = LogManager.getLogger(QuerySelect.class);
+    private static final Logger _log = LogManager.getLogger(AbstractQueryRelation.class);
 
     protected String _savedName = null;
     protected Query _query;
