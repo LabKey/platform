@@ -362,7 +362,8 @@ public class ExpDataIterators
                 if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null)
                     aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
                 else if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null)
-                    aliquotParentNames.add((String) get(_aliquotedFromCol));
+                    aliquotParentNames.add(String.valueOf(get(_aliquotedFromCol)));
+
 
                 boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
                 if (!aliquotParentLsids.isEmpty() && amountMayHaveChanged)
