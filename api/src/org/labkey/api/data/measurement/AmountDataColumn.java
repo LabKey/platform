@@ -15,6 +15,7 @@ import java.util.Set;
 
 import static org.labkey.api.data.measurement.UnitsDataColumn.DEFAULT_UNITS_FIELD_PROPERTY_NAME;
 import static org.labkey.api.data.measurement.UnitsDataColumn.UNITS_FIELD_PROPERTY_NAME;
+import static org.labkey.api.data.measurement.UnitsDataColumn.getFieldKey;
 
 public class AmountDataColumn extends DataColumn
 {
@@ -27,13 +28,12 @@ public class AmountDataColumn extends DataColumn
 
     public static class Factory implements DisplayColumnFactory
     {
-        private MultiValuedMap _properties;             // metadata XML column properties
+        private final MultiValuedMap _properties;             // metadata XML column properties
 
         // factory for metadata XML loading
         public Factory(MultiValuedMap properties)
         {
-            if (properties != null)
-                _properties = properties;
+            _properties = properties;
         }
 
         @Override
@@ -50,11 +50,10 @@ public class AmountDataColumn extends DataColumn
     {
         super(col, false);
         _properties = properties;
-        _unitsField = FieldKey.fromParts(_properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units").split("/"));
-        String fieldName = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-        _defaultUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
-        fieldName = _properties.get(AMOUNT_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-        _amountField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
+        FieldKey fieldKeyParent = getBoundColumn().getFieldKey().getParent();
+        _unitsField = getFieldKey(fieldKeyParent, _properties, UNITS_FIELD_PROPERTY_NAME, "Units");
+        _defaultUnitsField = getFieldKey(fieldKeyParent, _properties, DEFAULT_UNITS_FIELD_PROPERTY_NAME, null);
+        _amountField = getFieldKey(fieldKeyParent, _properties, AMOUNT_FIELD_PROPERTY_NAME, null);
     }
 
     private Object convertToDisplayUnits(RenderContext ctx)

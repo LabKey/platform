@@ -11,6 +11,9 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 public class UnitsDataColumn extends DataColumn
@@ -26,13 +29,12 @@ public class UnitsDataColumn extends DataColumn
 
     public static class Factory implements DisplayColumnFactory
     {
-        private MultiValuedMap _properties;             // metadata XML column properties
+        private final MultiValuedMap _properties;             // metadata XML column properties
 
         // factory for metadata XML loading
         public Factory(MultiValuedMap properties)
         {
-            if (properties != null)
-                _properties = properties;
+            _properties = properties;
         }
 
         @Override
@@ -47,21 +49,27 @@ public class UnitsDataColumn extends DataColumn
         super(colInfo, false);
         _properties = properties;
 
-        if (_properties != null)
+        FieldKey fieldKeyParent = getBoundColumn().getFieldKey().getParent();
+        _unitsField = getFieldKey(fieldKeyParent, _properties, UNITS_FIELD_PROPERTY_NAME, "Units");
+        _defaultUnitsField = getFieldKey(fieldKeyParent, _properties, DEFAULT_UNITS_FIELD_PROPERTY_NAME, null);
+        _alternateUnitsField = getFieldKey(fieldKeyParent, _properties, ALTERNATE_UNITS_FIELD_PROPERTY_NAME, null);
+    }
+
+    static FieldKey getFieldKey(FieldKey fieldKeyParent, MultiValuedMap<String, String> properties, String propertyName, String defaultValue)
+    {
+        List<String> keyParts = new ArrayList<>();
+        if (fieldKeyParent != null)
+            keyParts.addAll(fieldKeyParent.getParts());
+        int parentPartsSize = keyParts.size();
+        if (properties != null)
         {
-            String fieldName = _properties.get(UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse("Units");
-            _unitsField = FieldKey.fromParts(fieldName.split("/"));
-            fieldName = _properties.get(DEFAULT_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-            _defaultUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
-            fieldName = _properties.get(ALTERNATE_UNITS_FIELD_PROPERTY_NAME).stream().findFirst().orElse(null);
-            _alternateUnitsField = fieldName == null ? null : FieldKey.fromParts(fieldName.split("/"));
+            String fieldName = properties.get(propertyName).stream().findFirst().orElse(defaultValue);
+            if (fieldName != null)
+                keyParts.addAll(Arrays.asList(fieldName.split("/")));
         }
-        else
-        {
-            _unitsField = FieldKey.fromParts("Units");
-            _defaultUnitsField = null;
-            _alternateUnitsField = null;
-        }
+        else if (defaultValue != null)
+            keyParts.add(defaultValue);
+        return parentPartsSize == keyParts.size() ? null : FieldKey.fromParts(keyParts);
     }
 
     // Display the units of the converted value
