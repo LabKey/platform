@@ -16,10 +16,8 @@
 package org.labkey.api.data;
 
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.Collections;
