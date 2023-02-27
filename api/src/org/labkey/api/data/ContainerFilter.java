@@ -490,6 +490,14 @@ public abstract class ContainerFilter
                     {
                         return new AllInProject(container, user);
                     }
+                },
+        AllInProjectPlusShared("Current project, Shared project, and all folders in the current project")
+                {
+                    @Override
+                    public ContainerFilter create(Container container, User user)
+                    {
+                        return new AllInProjectPlusShared(container, user);
+                    }
                 };
 
 
@@ -1193,6 +1201,32 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.AllInProject;
+        }
+    }
+
+    public static class AllInProjectPlusShared extends AllInProject
+    {
+        public AllInProjectPlusShared(Container c, User user)
+        {
+            super(c, user);
+        }
+
+        @Override
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        {
+            Collection<GUID> containers = super.generateIds(currentContainer, perm, roles);
+            var shared = ContainerManager.getSharedContainer();
+
+            if (shared.hasPermission(_user, perm, roles))
+                containers.add(shared.getEntityId());
+
+            return containers;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.AllInProjectPlusShared;
         }
     }
 

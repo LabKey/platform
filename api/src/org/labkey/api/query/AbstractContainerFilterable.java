@@ -65,14 +65,26 @@ public abstract class AbstractContainerFilterable extends AbstractTableInfo
     @NotNull
     public ContainerFilter getContainerFilter()
     {
-        if (_containerFilter == null)
-            return getDefaultContainerFilter();
-        return _containerFilter;
+        if (_containerFilter != null)
+            return _containerFilter;
+        return getDefaultContainerFilter();
     }
 
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.current(getUserSchema().getContainer());
+        assert null != getUserSchema();
+        return getUserSchema().getDefaultContainerFilter();
+    }
+
+    protected ContainerFilter getLookupContainerFilter()
+    {
+        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        {
+            assert null != getUserSchema();
+            return getUserSchema().getDefaultLookupContainerFilter();
+        }
+
+        return getContainerFilter();
     }
 
     /**

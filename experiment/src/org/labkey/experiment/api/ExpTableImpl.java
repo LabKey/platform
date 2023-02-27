@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -77,12 +78,33 @@ abstract public class ExpTableImpl<C extends Enum>
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
 
+    private Set<String> _disabledSystemFields;
+
     protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
         super(rootTable, schema, cf);
         setName(name);
         _allowablePermissions.add(DeletePermission.class);
         _allowablePermissions.add(ReadPermission.class);
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getDisabledSystemFields()
+    {
+        if (_disabledSystemFields == null)
+        {
+            Domain domain = getDomain();
+            if (domain != null)
+            {
+                _disabledSystemFields = new CaseInsensitiveHashSet();
+
+                List<String> disabledFields = domain.getDisabledSystemFields();
+                if (disabledFields != null)
+                    _disabledSystemFields.addAll(disabledFields);
+            }
+        }
+        return _disabledSystemFields;
     }
 
     @Override
@@ -186,7 +208,19 @@ abstract public class ExpTableImpl<C extends Enum>
     final public MutableColumnInfo addColumn(String alias, C column)
     {
         var ret = createColumn(alias, column);
+
         assert ret.getParentTable() == this;
+
+        Set<String> disabledSystemFields = getDisabledSystemFields();
+        if (disabledSystemFields != null && disabledSystemFields.contains(column.name()))
+        {
+            ret.setHidden(true);
+            ret.setUserEditable(false);
+            ret.setShownInUpdateView(false);
+            ret.setShownInInsertView(false);
+            ret.setShownInDetailsView(false);
+        }
+
         addColumn(ret);
         return ret;
     }

@@ -121,6 +121,9 @@ public interface Domain extends IPropertyType
     boolean isShouldDeleteAllData();
     boolean isProvisioned();
 
+    List<String> getDisabledSystemFields();
+    void setDisabledSystemFields(@Nullable List<String> disabledSystemFields);
+
     @Nullable
     TemplateInfo getTemplateInfo();
 }

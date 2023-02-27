@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React, { ReactNode } from 'react';
-import { ActionURL, getServerContext, PermissionTypes, Security } from '@labkey/api';
+import { ActionURL, PermissionTypes, Security } from '@labkey/api';
 import {
     Alert,
     LoadingSpinner,
@@ -35,44 +35,37 @@ interface State {
     isLoadingModel: boolean;
     message?: string;
     model?: ListModel;
-};
+}
 
 export class App extends React.Component<Props, State> {
     private _dirty = false;
 
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            isLoadingModel: true,
-        };
-    }
+    readonly state: State = { isLoadingModel: true };
 
     componentDidMount(): void {
         const listId = ActionURL.getParameter('listId');
 
         Security.getUserPermissions({
-            containerPath: getServerContext().container.path,
             success: data => {
-                this.setState(() => ({
+                this.setState({
                     hasDesignListPermission:
                         data.container.effectivePermissions.indexOf(PermissionTypes.DesignList) > -1,
-                }));
+                });
             },
             failure: error => {
-                this.setState(() => ({
+                this.setState({
                     message: error.exception,
                     hasDesignListPermission: false,
-                }));
+                });
             },
         });
 
         fetchListDesign(listId)
-            .then((model: ListModel) => {
-                this.setState(() => ({ model, isLoadingModel: false }));
+            .then(model => {
+                this.setState({ model, isLoadingModel: false });
             })
             .catch(error => {
-                this.setState(() => ({ message: error.exception, isLoadingModel: false }));
+                this.setState({ message: error.exception, isLoadingModel: false });
             });
     }
 
@@ -83,40 +76,52 @@ export class App extends React.Component<Props, State> {
     };
 
     onCancel = (): void => {
-        this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
+        this.navigate(() => Promise.resolve(ActionURL.buildURL('list', 'begin')));
     };
 
     onComplete = (model: ListModel): void => {
-        this.navigateOnComplete(model);
-    };
+        this.navigate(async () => {
+            if (model.listId > 0) {
+                return ActionURL.buildURL('list', 'grid', undefined, { listId: model.listId });
+            }
 
-    navigateOnComplete(model: ListModel): void {
-        // if the model comes back to here without the newly saved listId, query to get it
-        if (model.listId && model.listId > 0) {
-            this.navigate(
-                ActionURL.buildURL('list', 'grid', getServerContext().container.path, { listId: model.listId })
-            );
-        } else {
-            getListIdFromDomainId(model.domain.domainId)
-                .then(listId => {
-                    this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, { listId }));
-                })
-                .catch(error => {
-                    // bail out and go to the list-begin page
-                    this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
-                });
-        }
-    }
+            try {
+                // If the model comes back without the newly saved listId, query to get it
+                const listId = await getListIdFromDomainId(model.domain.domainId);
+                return ActionURL.buildURL('list', 'grid', undefined, { listId });
+            } catch (e) {
+                // Bail out and go to the list-begin page
+            }
+
+            return ActionURL.buildURL('list', 'begin');
+        }, model);
+    };
 
     onChange = (): void => {
         this._dirty = true;
     };
 
-    navigate = (defaultUrl: string): void => {
+    navigate = async (returnUrlProvider: () => Promise<string>, model?: ListModel): Promise<void> => {
         this._dirty = false;
 
+        window.location.href = this.getReturnUrl(model) ?? (await returnUrlProvider());
+    };
+
+    getReturnUrl = (model?: ListModel): string => {
         const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        if (!returnUrl || !model) return returnUrl;
+
+        // Issue 47356: Rewrite returnURL in the event of a list name change
+        const { action, containerPath, controller } = ActionURL.getPathFromLocation(returnUrl);
+        if (controller?.toLowerCase() === 'list' && action?.toLowerCase() === 'grid') {
+            const parameters = ActionURL.getParameters(returnUrl);
+            if (parameters.hasOwnProperty('name') && model.name && parameters.name !== model.name) {
+                parameters.name = model.name;
+                return ActionURL.buildURL(controller, action, containerPath, parameters);
+            }
+        }
+
+        return returnUrl;
     };
 
     render(): ReactNode {
