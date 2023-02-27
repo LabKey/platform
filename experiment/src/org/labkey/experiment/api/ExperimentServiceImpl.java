@@ -4588,7 +4588,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
             Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
@@ -4634,11 +4633,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     ExpSampleType sampleType = material.getSampleType();
                     sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
                             .add(material.getRootMaterialLSID());
-                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
-                            .add(material.getAliquotedFromLSID());
                 }
 
             }
+
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
             {
@@ -4744,17 +4742,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
-                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
+                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeRoots: sampleTypeAliquotRoots.entrySet())
                     {
-                        ExpSampleType parentSampleType = sampleTypeParents.getKey();
+                        ExpSampleType parentSampleType = sampleTypeRoots.getKey();
                         SampleTypeService.get().setRecomputeFlagForSampleLsids(sampleTypeAliquotRoots.get(parentSampleType));
 
-                        Set<String> parentLsids = sampleTypeParents.getValue();
-                        List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
-                        Set<Integer> parentSampleIds = new HashSet<>();
-                        parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
+                        Set<String> rootLsids = sampleTypeRoots.getValue();
+                        List<ExpMaterialImpl> rootSamples = getExpMaterialsByLsid(rootLsids);
+                        Set<Integer> rootSampleIds = new HashSet<>();
+                        rootSamples.forEach(p -> rootSampleIds.add(p.getRowId()));
 
-                        SampleTypeService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit());
+                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit());
                     }
                 }
                 catch (SQLException e)

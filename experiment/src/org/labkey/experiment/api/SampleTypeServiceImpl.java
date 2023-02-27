@@ -1448,7 +1448,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit) throws IllegalStateException, SQLException
     {
-
         Map<Integer, String> sampleUnits = new HashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
         DbScope scope = materialTable.getSchema().getScope();
@@ -1718,21 +1717,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private Map<Integer, List<Pair<Double, String>>> getSampleAliquotAmounts(Collection<Integer> sampleIds) throws SQLException
     {
-        DbSchema inv = getExpSchema();
-        SqlDialect dialect = inv.getSqlDialect();
+        DbSchema exp = getExpSchema();
+        SqlDialect dialect = exp.getSqlDialect();
 
         SQLFragment sql = new SQLFragment(
                 """
-                        SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units
-                        FROM exp.material AS aliquot
-                        JOIN exp.material AS parent
-                        ON parent.lsid = aliquot.rootmateriallsid
-                        WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s""");
+                    SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units
+                    FROM exp.material AS aliquot
+                    JOIN exp.material AS parent
+                    ON parent.lsid = aliquot.rootmateriallsid
+                    WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s
+                    """);
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, List<Pair<Double, String>>> sampleAliquotAmounts = new HashMap<>();
 
-        try (ResultSet rs = new SqlSelector(inv, sql).getResultSet())
+        try (ResultSet rs = new SqlSelector(exp, sql).getResultSet())
         {
             while (rs.next())
             {
@@ -1744,6 +1744,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     sampleAliquotAmounts.put(parentId, new ArrayList<>());
 
                 sampleAliquotAmounts.get(parentId).add(new Pair<>(volume, unit));
+            }
+        }
+        // for any parents with no remaining aliquots, set the amounts to 0
+        for (Integer parentId : sampleIds)
+        {
+            if (!sampleAliquotAmounts.containsKey(parentId))
+            {
+                List<Pair<Double, String>> aliquotAmounts = new ArrayList<>();
+                aliquotAmounts.add(new Pair<>(0.0, null));
+                sampleAliquotAmounts.put(parentId, aliquotAmounts);
             }
         }
 
