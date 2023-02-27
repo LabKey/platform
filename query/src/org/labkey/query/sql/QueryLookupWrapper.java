@@ -431,6 +431,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     }
 
 
+    /* These are the lookup columns that are resolved by this QueryLookupWrapper.  QLW is responsible for joining in these columns. */
     private abstract class QLWColumn extends RelationColumn
     {
         final AbstractQueryRelation _table;
@@ -488,6 +489,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     }
 
 
+    /* These are the columns that are generated from the _source relation, usually QuerySelect */
     class PassThroughColumn extends QLWColumn
     {
         AbstractQueryRelation.RelationColumn _wrapped;
