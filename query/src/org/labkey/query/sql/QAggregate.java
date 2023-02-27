@@ -143,7 +143,8 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        REGR_INTERCEPT(false, false)            // TODO: Should this be true?
+        REGR_INTERCEPT(false, false)
+
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
