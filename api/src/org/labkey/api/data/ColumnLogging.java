@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * Tracks columns that should be logged when a query is executed as part of PHI access or similar.
  */
-public class ColumnLogging implements Comparable<ColumnLogging>
+public class ColumnLogging
 {
     // These fields are used to for generating error messages
     protected final String _originalSchemaName;
@@ -160,13 +160,6 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     public String getOriginalTableName()
     {
         return _originalTableName;
-    }
-
-    @Override
-    public int compareTo(@NotNull ColumnLogging o)
-    {
-        throw new UnsupportedOperationException();
-//        return _uniqueColumnKey.compareTo(o._uniqueColumnKey);
     }
 
     @Override
