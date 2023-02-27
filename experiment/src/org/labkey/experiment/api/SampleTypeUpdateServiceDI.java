@@ -435,7 +435,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
             Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
             if (!oldAmount.equals(newAmount))
-                SampleTypeService.get().setRecomputeFlagForSample(oldAliquotedFromLSID);
+            {
+                String aliquotRoot = (String) oldRow.get(RootMaterialLSID.name());
+                if (StringUtils.isNotEmpty(aliquotRoot))
+                    SampleTypeService.get().setRecomputeFlagForSample(aliquotRoot);
+            }
         }
 
         Set<String> aliquotFields = getAliquotSpecificFields();
@@ -535,6 +539,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ret.put("lsid", lsid);
         ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
         return ret;
+    }
+
+    private void setRecomputeRollup(int sampleId, boolean skipRootSample, ValidationException errors)
+    {
+        if (errors.hasErrors())
+            return;
+
+        ExpMaterial sample = ExperimentService.get().getExpMaterial(sampleId);
+        if (sample == null)
+            return;
+
+        String targetRootLsid = sample.getRootMaterialLSID();
+
+        if (StringUtils.isEmpty(targetRootLsid))
+        {
+            if (skipRootSample)
+                return;
+
+            // if the sample is not an aliquot, then recalculate rollup for self
+            // on update, the parent sample's item VolumeUnit is going to impact aliquot rollup volume
+            SampleTypeService.get().setRecomputeFlagForSample(sample.getLSID());
+            return;
+        }
+
+        SampleTypeService.get().setRecomputeFlagForSample(targetRootLsid);
     }
 
     @Override

@@ -121,6 +121,7 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
 
 public class ExpDataIterators
@@ -322,9 +323,9 @@ public class ExpDataIterators
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
         }
 
-        private boolean hasAmountData()
+        private boolean hasAliquotData()
         {
-            return _storedAmountCol != null || _unitsCol != null;
+            return _aliquotedFromCol != null || _aliquotedFromLsidCol != null || _storedAmountCol != null || _unitsCol != null;
         }
 
         @Override
@@ -332,7 +333,7 @@ public class ExpDataIterators
         {
             boolean hasNext = super.next();
             // skip processing if there are errors upstream or we've not yet processed aliquot runs
-            if (_context.getErrors().hasErrors() || !hasAmountData() || _context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+            if (_context.getErrors().hasErrors() || !hasAliquotData() || _context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 return hasNext;
 
             if (hasNext)
@@ -346,9 +347,9 @@ public class ExpDataIterators
                 {
                     existingAmount = (Double) existingMap.get("StoredAmount");
                     existingUnits = (String) existingMap.get("Units");
-                    String aliquotedFrom = (String) existingMap.get(SampleUpdateAliquotedFromDataIterator.ALIQUOTED_FROM_LSID_COLUMN_NAME);
-                    if (aliquotedFrom != null)
-                        aliquotParentLsids.add(aliquotedFrom);
+                    String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
+                    if (rootAliquot != null)
+                        aliquotParentLsids.add(rootAliquot);
                 }
                 Measurement existingMeasurement = new Measurement(existingAmount, existingUnits, _sampleType.getMetricUnit());
 
@@ -357,7 +358,7 @@ public class ExpDataIterators
                 Measurement newMeasurement = new Measurement(newAmount, newUnits, _sampleType.getMetricUnit());
 
                 // check for aliquotedFromLsidCol first since, for updateOnly cases, we prefer data in this
-                // column over aliquotedFrom since we ignore any user-supplied value in aliquotedFrom
+                // column over aliquotedFrom; we ignore any user-supplied value in aliquotedFrom
                 if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null)
                     aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
                 else if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null)
@@ -2152,7 +2153,7 @@ public class ExpDataIterators
                 }
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
+                dontUpdate.add(RootMaterialLSID.toString());
                 dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
             }
             else if (isMergeOrUpdate)
@@ -2205,7 +2206,7 @@ public class ExpDataIterators
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             DataIteratorBuilder step7 = step6;
-            if (isSample && context.getInsertOption().allowUpdate && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
 
             // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator

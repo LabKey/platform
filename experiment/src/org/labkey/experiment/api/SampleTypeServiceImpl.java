@@ -1607,7 +1607,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new Pair<>(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name());
     }
 
-
     public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container, boolean forceAll) throws SQLException
     {
         Collection<Integer> parents = getAliquotParents(sampleTypeLsid, forceAll, container);

@@ -4589,6 +4589,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
+            Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
@@ -4631,8 +4632,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 if (!isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
-                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                    sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
                             .add(material.getRootMaterialLSID());
+                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                            .add(material.getAliquotedFromLSID());
                 }
 
             }
@@ -4744,8 +4747,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
                     {
                         ExpSampleType parentSampleType = sampleTypeParents.getKey();
-                        Set<String> parentLsids = sampleTypeParents.getValue();
+                        SampleTypeService.get().setRecomputeFlagForSampleLsids(sampleTypeAliquotRoots.get(parentSampleType));
 
+                        Set<String> parentLsids = sampleTypeParents.getValue();
                         List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
                         Set<Integer> parentSampleIds = new HashSet<>();
                         parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
