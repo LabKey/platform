@@ -31,7 +31,6 @@ public class QueryColumnLogging extends ColumnLogging
                        boolean shouldLogName, String loggingComment, SelectQueryAuditProvider sqap)
     {
         super(parentTable.getSchema().getName(), parentTable.getName(), column,
-//            makeUniqueKey(parentTable, column), null,
                 shouldLogName, Set.of(), loggingComment, sqap);
         this.columnsUsed = columnsUsed;
     }
@@ -115,10 +114,8 @@ public class QueryColumnLogging extends ColumnLogging
             }
         }
 
-//        String unique = makeUniqueKey(table, column.getFieldKey());
         return new ColumnLogging(
             table.getUserSchema().getSchemaName(), table.getName(), column,
-//            unique, null,
             _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
     }
 }

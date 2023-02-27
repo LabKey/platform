@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -244,6 +245,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
     public Set<Entry<K, V>> entrySet()
     {
         // This is not particularly fast, but that's probably OK
+        // CONSIDER: use a LinkedHashMap to implement FindMap and skip this alignment step
         ArrayList<Entry<K, V>> entryList = new ArrayList<>(_findMap.size());
         for (var findEntry : _findMap.entrySet())
         {
@@ -323,7 +325,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
             @Override
             public V next()
             {
+                if (_i >= _row.size())
+                    throw new NoSuchElementException();
                 var ret = _row.get(_i++);
+                assert ret != DOES_NOT_CONTAINKEY;
                 while (_i < _row.size() && _row.get(_i) == DOES_NOT_CONTAINKEY)
                     _i++;
                 return (V)ret;

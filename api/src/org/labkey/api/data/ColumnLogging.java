@@ -39,33 +39,10 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     protected final FieldKey _originalColumnFieldKey;
 
     protected final UnauthorizedException _exception;
-
-    // QuerySelectView.getRequiredDataLoggingColumns() previously used ColumnLogging.equals() to detect
-    // that a column in "allInvolvedColumns" is the same as a column used in a CustomView.
-    //
-    // I don't like this complexity, maybe we can update getRequiredDataLoggingColumns() to not rely on isFromSameColumn().
-    // For now, we can improve how we identify that two ColumnLogging columns represent the same logical underlying column.
-    // E.g. SELECT A.x, B.x FROM Table as A, Table as B     A.x and B.x are not the same even though they come from the same schema/table/column
-    //      SELECT A.createdBy.UserId, B.createdBy.UserId   A.UserId and B.UserId are not the same even though they come from the same schema/table/column
-//    @NotNull protected final String _uniqueColumnKey;
-    @Nullable
-//    protected final FieldKey _columnScopeKey;
-
     protected final boolean _shouldLogName;
     protected final Set<FieldKey> _dataLoggingColumns;
     protected final String _loggingComment;
     protected final SelectQueryAuditProvider _selectQueryAuditProvider;
-
-
-    public static String makeUniqueKey(TableInfo table, FieldKey columnFieldKey)
-    {
-        UserSchema userSchema = table.getUserSchema();
-        if (null != userSchema)
-            return userSchema.getContainer().getId() + ":" + userSchema.getSchemaPath() + "/!/" + table.getName() + "/!/" + columnFieldKey;
-        // I don't know that it makes sense to create ColumnLogging for SchemaTableInfo, but it's going to be a refactor to unwind this, see BaseColumnInfo
-        DbSchema dbschema = table.getSchema();
-        return  dbschema.getScope().getDataSourceName() + ":" + dbschema.getName() + "/!/" + table.getName() + "/!/" + columnFieldKey;
-    }
 
 
     public static ColumnLogging defaultLogging(ColumnInfo col)
@@ -79,9 +56,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
         Objects.requireNonNull(parent);
         var tableName  = parent.getName();
         var schemaName = null != parent.getUserSchema() ? parent.getUserSchema().getName() : parent.getSchema().getName();
-        var uniqueColumnKey = makeUniqueKey(parent, col);
         return new ColumnLogging(schemaName, tableName, col,
-//                uniqueColumnKey, null,
                 false, Set.of(), "", null);
     }
 
@@ -117,21 +92,12 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     // we don't usually want to change the original table, but if we do here you go.  See ListTable
     public ColumnLogging reparent(TableInfo table)
     {
-        String uniqueColumnKey = makeUniqueKey(table, _originalColumnFieldKey);
         return new ColumnLogging(table.getUserSchema().getSchemaName(), table.getName(), _originalColumnFieldKey,
-//                uniqueColumnKey, _columnScopeKey,
                 _shouldLogName, _dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
     }
 
-    public ColumnLogging addScope(String scope)
-    {
-        return new ColumnLogging(_originalSchemaName, _originalTableName, _originalColumnFieldKey,
-//                _uniqueColumnKey, new FieldKey(_columnScopeKey, scope),
-                _shouldLogName, _dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
-    }
 
     public ColumnLogging(String schemaName, String tableName, FieldKey originalColumnFieldKey,
-//                         @NotNull String uniqueColumnKey, @Nullable FieldKey scope,
                          boolean shouldLogName, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
     {
         _originalSchemaName = schemaName;
@@ -141,8 +107,6 @@ public class ColumnLogging implements Comparable<ColumnLogging>
         _dataLoggingColumns = Collections.unmodifiableSet(dataLoggingColumns);
         _loggingComment = loggingComment;
         _selectQueryAuditProvider = selectQueryAuditProvider;
-//        _uniqueColumnKey = uniqueColumnKey;
-//        _columnScopeKey = scope;
         _exception = null;
     }
 
@@ -151,7 +115,6 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
     {
         this(parentTable.getUserSchema().getSchemaName(), parentTable.getName(), columnFieldKey,
-//                makeUniqueKey(parentTable, columnFieldKey), null,
                 shouldLogName, dataLoggingColumns, loggingComment, selectQueryAuditProvider);
     }
 

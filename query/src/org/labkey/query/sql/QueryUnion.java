@@ -44,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class QueryUnion extends AbstractQueryRelation implements ColumnResolvingRelation
@@ -355,8 +356,18 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             col._phi = phi;
             if (null != ex)
                 col._columnLogging = ColumnLogging.error(shouldLog, sqap, ex.getMessage());
+            else if (dataLoggingColumns.isEmpty())
+            {
+                col._columnLogging = ColumnLogging.defaultLogging(fakeTableInfo, col.getFieldKey());
+            }
             else
-                col._columnLogging = new ColumnLogging(this.getSchema().getSchemaName(), "UNION", col.getFieldKey(), shouldLog, dataLoggingColumns, "TODO", sqap);
+            {
+                // It's hard to create a good comment here. (see also FilteredTable.getPHILoggingComment())
+                // To improve this, we need to work to preserve original table names of the dataLoggingColumns for logging.
+                String loggingComment = "PHI accessed in UNION query in schema " + _query.getSchema().getName() + ". Data shows columns: ";
+                loggingComment += dataLoggingColumns.stream().map(FieldKey::toString).collect(Collectors.joining(", "));
+                col._columnLogging = new ColumnLogging(this.getSchema().getSchemaName(), "UNION", col.getFieldKey(), shouldLog, dataLoggingColumns, loggingComment, sqap);
+            }
         }
     }
 
@@ -529,12 +540,6 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 columnLogging = new ColumnLogging(getSchema().getName(), getParentTable().getName(), getFieldKey(),
                         columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
             setColumnLogging(columnLogging);
-        }
-
-        @Override
-        public ColumnLogging getColumnLogging()
-        {
-            return super.getColumnLogging();
         }
     }
 

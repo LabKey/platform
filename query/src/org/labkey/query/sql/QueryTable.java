@@ -583,13 +583,11 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
-            to.setColumnLogging(_col.getColumnLogging().addScope(_guid));
+            to.setColumnLogging(_col.getColumnLogging());
             if (_suggestedColumn)
             {
                 to.setHidden(true);
-//                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
             }
-//            assert _query.hasQueryTable(QueryTable.this);
         }
 
 
