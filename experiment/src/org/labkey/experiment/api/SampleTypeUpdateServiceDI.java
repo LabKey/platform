@@ -1511,7 +1511,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             @Override
             protected Object convert(Object o)
             {
-                return Measurement.getUnits((String) o, _metricUnit);
+                Measurement.validateUnits((String) o, _metricUnit);
+                return o;
             }
 
         }

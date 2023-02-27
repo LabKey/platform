@@ -774,14 +774,46 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(Column.Units));
 
             var rawAmountColumn = addColumn(Column.RawAmount);
-            rawAmountColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+            rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        @Override
+                        public void addQueryFieldKeys(Set<FieldKey> keys)
+                        {
+                            super.addQueryFieldKeys(keys);
+                            keys.add(FieldKey.fromParts(Column.StoredAmount));
+
+                        }
+                    };
+                }
+            });
             rawAmountColumn.setHidden(true);
             rawAmountColumn.setShownInDetailsView(false);
             rawAmountColumn.setShownInInsertView(false);
             rawAmountColumn.setShownInUpdateView(false);
 
             var rawUnitsColumn = addColumn(Column.RawUnits);
-            rawUnitsColumn.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+            rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        @Override
+                        public void addQueryFieldKeys(Set<FieldKey> keys)
+                        {
+                            super.addQueryFieldKeys(keys);
+                            keys.add(FieldKey.fromParts(Column.Units));
+
+                        }
+                    };
+                }
+            });
             rawUnitsColumn.setHidden(true);
             rawUnitsColumn.setShownInDetailsView(false);
             rawUnitsColumn.setShownInInsertView(false);

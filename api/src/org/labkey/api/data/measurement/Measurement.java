@@ -132,18 +132,13 @@ public class Measurement
     {
         _amount = convertToAmount(amountObj);
         _normalizingUnits = Unit.getUnit(normalizingUnits);
-        validateUnits(units);
+        validateUnits(units, _normalizingUnits);
         _units = Unit.getUnit(units);
     }
 
     public Measurement(Object amountObj, String units)
     {
        this(amountObj, units, null);
-    }
-
-    public void validateUnits(String unitsStr) throws ConversionExceptionWithMessage
-    {
-        getUnits(unitsStr, _normalizingUnits);
     }
 
     public Double getNormalizedAmount()
@@ -263,7 +258,7 @@ public class Measurement
             throw new ConversionExceptionWithMessage("Amount (" + amountObj + ") must be a number.");
     }
 
-    public static String getUnits(String rawUnits, Unit defaultUnits)
+    public static void validateUnits(String rawUnits, Unit defaultUnits)
     {
         if (!StringUtils.isEmpty(rawUnits))
         {
@@ -273,19 +268,16 @@ public class Measurement
                 Unit mUnit = Unit.valueOf(rawUnits);
                 if (defaultUnits != null && mUnit.getKind() != defaultUnits.getKind())
                     throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
-                return rawUnits;
+
             }
             catch (IllegalArgumentException e)
             {
                 Unit unit = Unit.getUnitFromLabel(rawUnits);
                 if (unit == null)
                     throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
-                else
-                    return unit.toString();
             }
         }
-
-        return defaultUnits == null ? null : defaultUnits.name();
     }
+
 
 }
