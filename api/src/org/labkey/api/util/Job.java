@@ -63,8 +63,7 @@ public abstract class Job implements Future, Runnable
     @Override
     public boolean isCancelled()
     {
-        if (_task == null) throw new IllegalStateException("job has not been submitted");
-        return _task.isCancelled();
+        return _task != null && _task.isCancelled();
     }
 
     @Override
