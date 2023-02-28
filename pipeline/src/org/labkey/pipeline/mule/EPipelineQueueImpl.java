@@ -267,6 +267,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         {
             try
             {
+                job.setSubmitted();  // Enterprise Pipeline jobs don't get submitted in the same fashion as the standard pipeline, so set the flag here
                 dispatchJob(job);
             }
             catch (UMOException e)
@@ -368,5 +369,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             }
         }
         return result;
+    }
+
+    @Override
+    public void almostDone(PipelineJob pipelineJob)
+    {
+        // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
+        // Calling this here results in the done event being slightly out of order, but better than where it was.
+        pipelineJob.done(null);
     }
 }

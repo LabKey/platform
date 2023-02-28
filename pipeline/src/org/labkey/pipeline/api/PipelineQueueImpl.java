@@ -402,4 +402,10 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             assertEquals(jobs.length, counter.get());
         }
     }
+
+    @Override
+    public void almostDone(PipelineJob pipelineJob)
+    {
+        // Do nothing this should be handled by the Job's afterExecute event handlers
+    }
 }
