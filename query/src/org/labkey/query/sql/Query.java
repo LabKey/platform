@@ -70,11 +70,7 @@ import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 
 /**
  * Query is the "interface" to the SQL->SQL transformation code
- *
- * This class manages the state transitions from
- *
- * parse, resolve, generateSQL
- *
+ * This class manages the state transitions from parse, resolve, generateSQL
  */
 
 public class Query
@@ -82,7 +78,6 @@ public class Query
     private final QuerySchema _schema;
     private final String _queryName;
     private final IdentityHashMap<QuerySchema, HashMap<FieldKey, Pair<QuerySchema, TableInfo>>> _resolveCache = new IdentityHashMap<>();
-    private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
 
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
@@ -92,7 +87,7 @@ public class Query
 
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
-    private QueryRelation _queryRoot;
+    private AbstractQueryRelation _queryRoot;
     private Query _parent; // only used to avoid recursion for now
     private int _aliasCounter = 0;
 
@@ -105,13 +100,20 @@ public class Query
     // for displaying dependency graph in UI
     private final HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
 
-    final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
-
     final private Map<String, QueryRelation> _cteTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
     private boolean _hasRecursiveWith = false;
     private Map<String, TableType> _metadataTableMap = null;
     private boolean _parsingWith = false;
     private boolean _allowDuplicateColumns = true;
+
+
+/*    // Caches for helping track columns through the query, see also RelationColumn.getUniqueName()
+    final IdentityHashMap<QueryTable, Boolean> _qtables = new IdentityHashMap<>();
+    public Map<String,FieldKey> _mapQueryUniqueNamesToSelectAlias = null;
+    final public Map<String,QueryRelation> _mapUniqueNamesToQueryRelation = new HashMap<>();
+*/
+    /* Whenever a RelationColumn with a new unique name is created, add it should be added to this map */
+    final public Map<String, AbstractQueryRelation.RelationColumn> _mapUniqueNamesToRelationColumn = new HashMap<>();
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -160,6 +162,23 @@ public class Query
 	{
 		return _schema;
 	}
+
+//    void addQueryTable(QueryTable t)
+//    {
+//        _qtables.put(t, Boolean.TRUE);
+//    }
+
+//    boolean hasQueryTable(QueryTable t)
+//    {
+//        return _qtables.containsKey(t);
+//    }
+
+
+    public void addUniqueRelationColumn(AbstractQueryRelation.RelationColumn rc)
+    {
+        var prev = _mapUniqueNamesToRelationColumn.put(rc.getUniqueName(), rc);
+        assert null == prev;
+    }
 
 
     public final int incrementAliasCounter()
@@ -247,7 +266,7 @@ public class Query
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
-            QueryRelation relation = createQueryRelation(this, root, false, skipSuggestedColumns);
+            AbstractQueryRelation relation = createQueryRelation(this, root, false, skipSuggestedColumns);
 
             if (relation == null)
                 return;
@@ -274,12 +293,12 @@ public class Query
 		}
     }
 
-    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
+    public static AbstractQueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
     {
         return createQueryRelation(query, root, inFromClause, false);
     }
 
-    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause, boolean skipSuggestedColumns)
+    public static AbstractQueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause, boolean skipSuggestedColumns)
     {
         CommonTableExpressions queryCTEs = null;
         if (root instanceof QWithQuery qwith)
@@ -289,7 +308,7 @@ public class Query
             root = qwith.getExpr();
         }
 
-        QueryRelation relation = null;
+        AbstractQueryRelation relation = null;
         if (root instanceof QUnion)
         {
             relation = new QueryUnion(query, (QUnion) root);
@@ -611,14 +630,14 @@ public class Query
         return new QueryInternalException(ex, sql);
     }
 
-    public void addInvolvedTableColumn(QueryTable.TableColumn column)
-    {
-        _involvedTableColumns.add(column);
-    }
 
     public Set<QueryTable.TableColumn> getInvolvedTableColumns()
     {
-        return _involvedTableColumns;
+        var ret = new HashSet<QueryTable.TableColumn>();
+        _mapUniqueNamesToRelationColumn.values().stream()
+                .filter(rc -> rc instanceof QueryTable.TableColumn)
+                .forEach(rc -> ret.add((QueryTable.TableColumn)rc));
+        return ret;
     }
 
 
@@ -682,12 +701,12 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias, @Nullable ContainerFilter.Type cfType) throws QueryNotFoundException
+    AbstractQueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias, @Nullable ContainerFilter.Type cfType) throws QueryNotFoundException
     {
         // to simplify the logic a bit, break out the error translation from the _resolveTable()
         List<QueryException> resolveExceptions = new ArrayList<>();
         QueryDefinition[] queryDefOUT = new QueryDefinition[1];
-        QueryRelation ret;
+        AbstractQueryRelation ret;
 
         try
         {
@@ -781,7 +800,7 @@ public class Query
     }
 
 
-    private QueryRelation _resolveTable(
+    private AbstractQueryRelation _resolveTable(
             QuerySchema currentSchema, QNode node, FieldKey key, String alias,
             // OUT parameters
             List<QueryException> resolveExceptions,
@@ -929,6 +948,10 @@ public class Query
                 return null;
             }
 
+            // merge list of QueryTable objects
+            //_qtables.putAll(query._qtables);
+            _mapUniqueNamesToRelationColumn.putAll(query._mapUniqueNamesToRelationColumn);
+
             // merge parameter lists
             mergeParameters(query);
 
@@ -972,7 +995,7 @@ public class Query
             // move relation to new outer query
             // NOTE: setting _inFromClause == true enables some optimizations
             s._inFromClause = true;
-            QueryRelation ret = query._queryRoot;
+            AbstractQueryRelation ret = query._queryRoot;
             ret.setQuery(this);
             resolveExceptions.addAll(query.getParseErrors());
 

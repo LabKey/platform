@@ -16,27 +16,38 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.query.sql.QueryRelation.ColumnResolvingRelation;
 import org.labkey.query.sql.antlr.SqlBaseParser;
-import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class QueryUnion extends QueryRelation
+
+public class QueryUnion extends AbstractQueryRelation implements ColumnResolvingRelation
 {
 	QUnion _qunion;
 	QOrder _qorderBy;
@@ -45,9 +56,35 @@ public class QueryUnion extends QueryRelation
     // if this union is a direct child of a recurisive CTE, set that here so we know
     CommonTableExpressions.QueryTableWith _queryTableWith;
 
-    List<QueryRelation> _termList = new ArrayList<>();
-    LinkedCaseInsensitiveMap<UnionColumn> _unionColumns = new LinkedCaseInsensitiveMap<>();
-    List<UnionColumn> _allColumns = new ArrayList<>();
+    /* NOTE: because of how UNION works, I need to reference columns by ordinal position as well as by name.
+     * That is why we use ArrayListMap all over this class.
+     */
+
+    // For the column logging computation (and other uses) we track the matrix of source columns using
+    // UnionSourceColumn and UnionTerm.
+    static class UnionSourceColumn
+    {
+        UnionSourceColumn(RelationColumn src, int ordinal)
+        {
+            this.source = src;
+            this.ordinal = ordinal;
+        }
+        final RelationColumn source;
+        final int ordinal;
+        ColumnLogging columnLogging;
+        PHI phi;
+    }
+    record UnionTerm(QueryRelation relation, ArrayListMap<String, UnionSourceColumn> columns, Map<String,FieldKey> uniqueNameMap)
+    {
+    };
+
+    List<UnionTerm> _termList = new ArrayList<>();
+    ArrayListMap<String, UnionColumn> _unionColumns = new ArrayListMap<>();
+
+    final HashMap<FieldKey, String> _uniqueNameToAliasMap = new HashMap<>();
+    final HashMap<String, FieldKey> _aliasToUniqueNameMap = new HashMap<>();
+
+
 
     // This constructor is used by CommonTableExpressions so that the QueryUnion object
     // can be registered in the global namespace before it is fully constructed
@@ -69,7 +106,7 @@ public class QueryUnion extends QueryRelation
         setQUnion(qunion);
     }
 
-    QueryUnion(QueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
+    QueryUnion(AbstractQueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
     {
         this(parent._query, qunion);
         assert inFromClause == (alias != null);
@@ -88,21 +125,39 @@ public class QueryUnion extends QueryRelation
     }
 
     @Override
-    void setQuery(Query query)
+    public void setQuery(Query query)
     {
         // UNION within a CTE can be recursive, need to guard against that.
         if (query != _query)
         {
             super.setQuery(query);
-            for (QueryRelation r : _termList)
-                r.setQuery(query);
+            for (UnionTerm t : _termList)
+                t.relation.setQuery(query);
         }
     }
+
+
+    private void addTerm(QueryRelation term)
+    {
+
+        ArrayListMap<String, UnionSourceColumn> sourceColumns = new ArrayListMap<>();
+        for (RelationColumn col : term.getAllColumns().values())
+        {
+            UnionSourceColumn sourceColumn = new UnionSourceColumn(col, sourceColumns.size());
+            sourceColumns.put(col.getAlias(), sourceColumn);
+        }
+
+        /* NOTE can't init the uniqueNameMap here.  Doing this before declareFields()/resolveFields() doesn't work for QuerySelect */
+        _termList.add(new UnionTerm(term, sourceColumns, new HashMap<>()));
+    }
+
 
     void collectUnionTerms(QUnion qunion)
     {
         for (QNode n : qunion.children())
         {
+            QueryRelation termToAdd = null;
+
             assert n instanceof QQuery || n instanceof QUnion || n instanceof QOrder || n instanceof QLimit;
 
 			if (n instanceof QLimit)
@@ -115,7 +170,7 @@ public class QueryUnion extends QueryRelation
                 QuerySelect select = new QuerySelect(_query, (QQuery)n, this, true);
                 select._queryText = null; // see issue 23918, we don't want to repeat the source sql for each term in devMode
                 select.markAllSelected(qunion);
-                _termList.add(select);
+                termToAdd = select;
             }
             else if (n instanceof QUnion && canFlatten(_qunion.getTokenType(),n.getTokenType()))
 			{
@@ -124,7 +179,7 @@ public class QueryUnion extends QueryRelation
 			else if (n instanceof QUnion)
 			{
 				QueryUnion union = new QueryUnion(_query, (QUnion)n);
-				_termList.add(union);
+                termToAdd = union;
 			}
 			if (!getParseErrors().isEmpty())
 			    break;
@@ -133,7 +188,8 @@ public class QueryUnion extends QueryRelation
             // The first term should not be the recursive one.
             if (_unionColumns.isEmpty())
             {
-                Map<String,RelationColumn> all = _termList.get(0).getAllColumns();
+                assert null != termToAdd;
+                Map<String,RelationColumn> all = termToAdd.getAllColumns();
                 // If all is empty, it is probably because the first term has illegal recursion.
                 if (all.isEmpty() && null != _queryTableWith && _queryTableWith.isSeenRecursiveReference())
                 {
@@ -143,11 +199,29 @@ public class QueryUnion extends QueryRelation
                 }
                 for (Map.Entry<String,RelationColumn> e : all.entrySet())
                 {
-                    _unionColumns.put(e.getKey(), new UnionColumn(e.getKey(), e.getValue()));
+                    String name = e.getKey();
+                    RelationColumn col = e.getValue();
+                    UnionColumn unionCol = new UnionColumn(name, col, _unionColumns.size());
+                    _unionColumns.put(e.getKey(), unionCol);
+                    _uniqueNameToAliasMap.put(unionCol.getFieldKey(), unionCol.getUniqueName());
+                    _aliasToUniqueNameMap.put(unionCol.getUniqueName(), unionCol.getFieldKey());
+                    _query.addUniqueRelationColumn(unionCol);
                 }
             }
+
+            // _unionColumns.isEmpty() check before adding first term, so that we can reference those names in addTerm()
+            if (null != termToAdd)
+                addTerm(termToAdd);
         }
     }
+
+
+    @Override
+    public Map<FieldKey, FieldKey> getRemapMap(Map<String, FieldKey> outerMap)
+    {
+        return QueryRelation.generateRemapMap(_uniqueNameToAliasMap, outerMap);
+    }
+
 
     private boolean canFlatten(int parent, int child)
     {
@@ -166,13 +240,13 @@ public class QueryUnion extends QueryRelation
     @Override
     public void declareFields()
     {
-        for (QueryRelation term : _termList)
+        for (UnionTerm term : _termList)
         {
-            term.declareFields();
+            term.relation.declareFields();
         }
 
         initColumns();
-        
+
         if (null != _qorderBy)
         {
             for (var entry : _qorderBy.getSort())
@@ -184,21 +258,115 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
-        for (QueryRelation r : _termList)
-            r.resolveFields();
+        for (UnionTerm term : _termList)
+            term.relation.resolveFields();
     }
 
 
+    boolean initColumnCalled = false;
+    boolean computeColumnLoggingCalled = false;
+
     void initColumns()
     {
-        if (_allColumns.isEmpty())
+        if (initColumnCalled)
+            return;
+        initColumnCalled = true;
+
+        // attach all sourceColumns to the corresponding UnionColumn
+        for (UnionColumn col : _unionColumns)
+            for (UnionTerm term : _termList)
+                col.addSourceColumn(term.columns.get( col._ordinal));
+    }
+
+
+    /* Hopefully we can eventually avoid doing all this work when column logging is not enabled, so do this as late as possible.
+
+     * copyAttributes() calls getColumnLogging(), so it's not trivial to avoid calling this.
+     */
+    void computeColumnLoggingAndPHI()
+    {
+        if (computeColumnLoggingCalled)
+            return;
+        computeColumnLoggingCalled = true;
+
+        // Initialize uniqueNameMap for each term.  This is a composed map from src.uniqueName -> src.fieldkey -> unionColumn.fieldKey.
+        // This is the "outerMap" used by getRemapMap() to translate ColumnLogging objects into the namespace
+        // of the UNION query.
+        for (var term : _termList)
         {
-            for (QueryRelation relation : _termList)
+            for (var sourceColumn : term.columns)
             {
-                for (Map.Entry<String,RelationColumn> e  : relation.getAllColumns().entrySet())
-                    _allColumns.add(new UnionColumn(e.getKey(), e.getValue()));
+                var unionColumnName = _unionColumns.get(sourceColumn.ordinal).getFieldKey();
+                term.uniqueNameMap.put(sourceColumn.source.getUniqueName(), unionColumnName);
+            }
+        }
+
+
+        // generate a ColumnLogging object for each UnionColumn
+        // step 1) For each source column create a ColumnLogging object that would
+        //  make sense in the context of the UNION query.
+        // step 2) for each output column derive a ColumnLogging from all its source columns
+
+        QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "UNION")
+        {
+            @Override
+            @NotNull
+            public SQLFragment getFromSQL() {throw new UnsupportedOperationException();}
+
+            @Override
+            public @Nullable UserSchema getUserSchema()
+            {
+                return (UserSchema)QueryUnion.this.getSchema();
+            }
+        };
+
+        for (var term : _termList)
+        {
+            for (var col : term.columns)
+            {
+                List<RelationColumn> involved = new ArrayList<>();
+                col.source.gatherInvolvedSelectColumns(involved);
+                QueryColumnLogging qcl = QueryColumnLogging.create(fakeTableInfo, col.source.getFieldKey(), involved);
+                col.columnLogging = qcl.remapQueryFieldKeys(fakeTableInfo, col.source.getFieldKey(), term.uniqueNameMap);
+                PHI phi = PHI.NotPHI;
+                for (var rc : involved)
+                    phi = PHI.max(phi, rc.getPHI());
+                col.phi = phi;
+            }
+        }
+
+        for (var col : _unionColumns)
+        {
+            boolean shouldLog = false;
+            SelectQueryAuditProvider sqap = null;
+            Exception ex = null;
+            Set<FieldKey> dataLoggingColumns = new HashSet<>();
+            PHI phi = PHI.NotPHI;
+            for (UnionSourceColumn source : col._sourceColumns)
+            {
+                shouldLog |= source.columnLogging.shouldLogName();
+                sqap = null != sqap ? sqap : source.columnLogging.getSelectQueryAuditProvider();
+                phi = PHI.max(phi, source.phi);
+                ex = null != ex ? ex : source.columnLogging.getException();
+                if (null == ex)
+                    dataLoggingColumns.addAll(source.columnLogging.getDataLoggingColumns());
+            }
+            col._phi = phi;
+            if (null != ex)
+                col._columnLogging = ColumnLogging.error(shouldLog, sqap, ex.getMessage());
+            else if (dataLoggingColumns.isEmpty())
+            {
+                col._columnLogging = ColumnLogging.defaultLogging(fakeTableInfo, col.getFieldKey());
+            }
+            else
+            {
+                // It's hard to create a good comment here. (see also FilteredTable.getPHILoggingComment())
+                // To improve this, we need to work to preserve original table names of the dataLoggingColumns for logging.
+                String loggingComment = "PHI accessed in UNION query in schema " + _query.getSchema().getName() + ". Data shows columns: ";
+                loggingComment += dataLoggingColumns.stream().map(FieldKey::toString).collect(Collectors.joining(", "));
+                col._columnLogging = new ColumnLogging(this.getSchema().getSchemaName(), "UNION", col.getFieldKey(), shouldLog, dataLoggingColumns, loggingComment, sqap);
             }
         }
     }
@@ -219,15 +387,14 @@ public class QueryUnion extends QueryRelation
         SqlBuilder unionSql = new SqlBuilder(dialect);
 
         assert unionSql.appendComment("<QueryUnion>", dialect);
-        if (null != _query._querySource)
-            assert QuerySelect.appendLongComment(unionSql, _query._querySource);
+        assert null == _query._querySource || QuerySelect.appendLongComment(unionSql, _query._querySource);
 
         List<JdbcType> columnTypes = null;
-		for (QueryRelation term : _termList)
+		for (UnionTerm term : _termList)
 		{
-			SQLFragment sql = term.getSql();
+			SQLFragment sql = term.relation.getSql();
 
-            if (term.getSelectedColumnCount() != _unionColumns.size())
+            if (term.relation.getSelectedColumnCount() != _unionColumns.size())
             {
                 _query.getParseErrors().add(new QueryParseException("All subqueries in a UNION must have the same number of columns", null, _qunion.getLine(), _qunion.getColumn()));
                 return null;
@@ -239,7 +406,7 @@ public class QueryUnion extends QueryRelation
                 {
                     // First Union clause; remember types. Columns are ordered
                     columnTypes = new ArrayList<>();
-                    for (RelationColumn termColumn : term.getAllColumns().values())
+                    for (RelationColumn termColumn : term.relation.getAllColumns().values())
                     {
                         columnTypes.add(termColumn.getJdbcType());
                     }
@@ -250,16 +417,21 @@ public class QueryUnion extends QueryRelation
                     // Postgres is stricter so we'll allow some cases that will yield errors when run.
                     // Also, this allows VARCHAR to INT, which will fail on SQL Server if the VARCHAR cannot be converted (and always, of course, on Postgres)
                     int i = 0;
-                    for (RelationColumn termColumn : term.getAllColumns().values())
+                    for (UnionSourceColumn unionColumn : term.columns)
                     {
-                        JdbcType type = termColumn.getJdbcType();
-                        if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(columnTypes.get(i)))
-                            columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
+                        JdbcType calculatedUnionType = columnTypes.get(i);
+                        JdbcType type = unionColumn.source.getJdbcType();
 
-                        else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(columnTypes.get(i)) &&
-                                !type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
+                        if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(calculatedUnionType))
+                        {
+                            columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
+                        }
+                        else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(calculatedUnionType) &&
+                                !type.equals(calculatedUnionType) && JdbcType.OTHER.equals(JdbcType.promote(type, calculatedUnionType)))
+                        {
                             Query.parseError(_query.getParseErrors(), _query._debugName + ": Mismatched types in UNION (" +
-                                    type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
+                                    type.name() + ", " + calculatedUnionType.name() + ") for column position " + (i + 1), _qunion);
+                        }
                         i += 1;
                     }
                 }
@@ -271,11 +443,11 @@ public class QueryUnion extends QueryRelation
                     return null;
                 String src = "";
                 int line = 0, col=0;
-                if (term instanceof QuerySelect && null != ((QuerySelect)term)._root)
+                if (term.relation instanceof QuerySelect qselect && null != qselect._root)
                 {
-                    src=((QuerySelect)term)._root.getSourceText();
-                    line = ((QuerySelect)term)._root.getLine();
-                    col  = ((QuerySelect)term)._root.getColumn();
+                    src  = qselect._root.getSourceText();
+                    line = qselect._root.getLine();
+                    col  = qselect._root.getColumn();
                 }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
@@ -290,7 +462,7 @@ public class QueryUnion extends QueryRelation
 		}
 
         List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
-        
+
         if (null != sort && sort.size() > 0 || null != _limit)
         {
             SqlBuilder wrap = new SqlBuilder(dialect);
@@ -331,19 +503,44 @@ public class QueryUnion extends QueryRelation
                 f.append("(").append(getSql()).append(") ").append(alias);
                 return f;
             }
+
+            @Override
+            protected void afterInitializeColumns()
+            {
+                remapSelectFieldKeys(true);
+            }
         };
 
-        for (UnionColumn unioncol : _unionColumns.values())
-        {
-            var ucol = new RelationColumnInfo(ret, unioncol);
-            ret.addColumn(ucol);
-        }
-        for (UnionColumn unioncol : _allColumns)
-            ret.addUnionColumn(new RelationColumnInfo(ret, unioncol));
-        
+        for (UnionColumn unioncol : _unionColumns)
+            ret.addColumn(new UnionColumnInfo(ret, unioncol));
+
+        // Not sure how getUnionColumns() relates to getAllInvolvedColumns()
+        // comment???
+        for (UnionTerm term : _termList)
+            for (UnionSourceColumn sourceCol : term.columns)
+                ret.addUnionColumn(new RelationColumnInfo(ret, sourceCol.source));
+
+        ret.afterInitializeColumns();
+
         assert unionSql.appendComment("</QueryUnion>", _schema.getDbSchema().getSqlDialect());
 		_unionSql = unionSql;
         return ret;
+    }
+
+
+    private class UnionColumnInfo extends RelationColumnInfo
+    {
+        UnionColumnInfo(UnionTableInfoImpl table, UnionColumn unionColumn)
+        {
+            super(table, unionColumn);
+            // unionColumn.getColumnLogging() is created using a fake table, we're just renaming it here to look like it belongs to this QueryTableInfo
+
+            ColumnLogging columnLogging = unionColumn.getColumnLogging();
+            if (null == columnLogging.getException())
+                columnLogging = new ColumnLogging(getSchema().getName(), getParentTable().getName(), getFieldKey(),
+                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
+            setColumnLogging(columnLogging);
+        }
     }
 
 
@@ -365,9 +562,9 @@ public class QueryUnion extends QueryRelation
             {
                 double d = qNum.getValue().doubleValue();
                 int position = qNum.getValue().intValue();
-                if (d == (double)position && position >= 1 && position <= _allColumns.size())
+                if (d == (double)position && position >= 1 && position <= _unionColumns.size())
                 {
-                    String alias = _allColumns.get(position-1).getAlias();
+                    String alias = _unionColumns.get(position-1).getAlias();
                     ret.add(new Sort.SortField(new FieldKey(null,alias), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
                 }
             }
@@ -418,22 +615,29 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _unionColumns.size();
     }
-    
+
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public RelationColumn getColumn(@NotNull String name)
     {
         initColumns();
         return _unionColumns.get(name);
     }
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        if (_unionColumns.isEmpty())
+            return null;
+        return _unionColumns.values().iterator().next();
+    }
 
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public LinkedHashMap<String,RelationColumn> getAllColumns()
     {
         initColumns();
         return new LinkedHashMap<>(_unionColumns);
@@ -441,14 +645,14 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
         return null;
     }
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         return null;
     }
@@ -489,9 +693,9 @@ public class QueryUnion extends QueryRelation
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        for (QueryRelation queryRelation : _termList)
+        for (UnionTerm term : _termList)
         {
-            queryRelation.setContainerFilter(containerFilter);
+            term.relation.setContainerFilter(containerFilter);
         }
         // Uncache the SQL that was generated since it's likely changed
         _unionSql = null;
@@ -499,7 +703,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         return Collections.emptySet();
     }
@@ -507,15 +711,59 @@ public class QueryUnion extends QueryRelation
 
     class UnionColumn extends RelationColumn
     {
-        FieldKey _name;
-        RelationColumn _first;
+        final FieldKey _name;
+        final RelationColumn _first;
+        final int _ordinal;
+        final ArrayList<UnionSourceColumn> _sourceColumns = new ArrayList<>();
 
-        UnionColumn(String name, RelationColumn col)
+        ColumnLogging _columnLogging;
+
+        PHI _phi;
+
+        UnionColumn(String name, RelationColumn col, int ordinal)
         {
             _name = new FieldKey(null, name);
             _first = col;
+            _ordinal = ordinal;
         }
-        
+
+        @Override
+        public String getUniqueName()
+        {
+            return super._defaultUniqueName(QueryUnion.this);
+        }
+
+        private void addSourceColumn(UnionSourceColumn col)
+        {
+            _sourceColumns.add(col);
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            // QueryUnion implements ColumnResolvingRelation, so we do not recurse through union to the union terms.
+            collect.add(this);
+            return collect;
+        }
+
+        @Override
+        ColumnLogging getColumnLogging()
+        {
+            computeColumnLoggingAndPHI();
+            return _columnLogging;
+        }
+
+        @Override
+        PHI getPHI()
+        {
+            computeColumnLoggingAndPHI();
+            // For a recursive query, we can have null here
+            // computeColumnLoggingCalled is set to true during the first call,
+            // the recursive invocation sees the flag set, but the _phi has not yet been computed.
+            // this is OK
+            return null==_phi ? PHI.NotPHI : _phi;
+        }
+
         @Override
         public FieldKey getFieldKey()
         {
@@ -529,7 +777,7 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return QueryUnion.this;
         }
@@ -559,7 +807,7 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);
             to.clearFk();

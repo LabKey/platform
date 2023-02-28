@@ -12,6 +12,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class QValuesTable extends QTable
     QValues values;
     int countOfColumns;
 
-    QueryRelation relation;
+    AbstractQueryRelation relation;
 
     QValuesTable(QuerySelect selectParent, QValues values, QIdentifier alias)
     {
@@ -47,7 +48,7 @@ public class QValuesTable extends QTable
     }
 
     @Override
-    public QueryRelation getQueryRelation()
+    public AbstractQueryRelation getQueryRelation()
     {
         return relation;
     }
@@ -64,7 +65,7 @@ public class QValuesTable extends QTable
         return ContainerFilter.EVERYTHING.getType();
     }
 
-    class _QueryRelation extends QueryRelation
+    class _QueryRelation extends AbstractQueryRelation
     {
         String generatedAlias;
         Map<String, RelationColumn> columns;
@@ -77,7 +78,7 @@ public class QValuesTable extends QTable
         }
 
         @Override
-        protected void setAlias(String alias)
+        public void setAlias(String alias)
         {
             generatedAlias = alias;
         }
@@ -89,7 +90,7 @@ public class QValuesTable extends QTable
         }
 
         @Override
-        protected void resolveFields()
+        public void resolveFields()
         {
             values = (QValues)_resolveFields(values, null, null);
         }
@@ -156,38 +157,53 @@ public class QValuesTable extends QTable
         {
         }
 
+        @Override
         public TableInfo getTableInfo()
         {
             throw new UnsupportedOperationException();
         }
 
-        String getQueryText()
+        @Override
+        public String getQueryText()
         {
             throw new UnsupportedOperationException();
         }
 
-        @Nullable RelationColumn getColumn(@NotNull String name)
+        @Override
+        @Nullable
+        public RelationColumn getColumn(@NotNull String name)
         {
             return columns.get(name);
         }
 
-        int getSelectedColumnCount()
+        @Override
+        public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+        {
+            return columns.isEmpty() ? null : columns.values().iterator().next();
+        }
+
+        @Override
+        public int getSelectedColumnCount()
         {
             return columns.size();
         }
 
-        @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
-        {
-            return null;
-        }
-
-        @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
+        @Override
+        @Nullable
+        public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
         {
             return null;
         }
 
         @Override
-        protected Map<String, RelationColumn> getAllColumns()
+        @Nullable
+        public RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
+        {
+            return null;
+        }
+
+        @Override
+        public Map<String, RelationColumn> getAllColumns()
         {
             return columns;
         }
@@ -203,6 +219,19 @@ public class QValuesTable extends QTable
                 RelationColumn rc = new RelationColumn()
                 {
                     @Override
+                    public String getUniqueName()
+                    {
+                        return super._defaultUniqueName(_QueryRelation.this);
+                    }
+
+                    @Override
+                    public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+                    {
+                        // VALUES columns don't need any fix-up.  Nothing to do here.
+                        return collect;
+                    }
+
+                    @Override
                     public FieldKey getFieldKey()
                     {
                         return new FieldKey(null, getAlias());
@@ -215,7 +244,7 @@ public class QValuesTable extends QTable
                     }
 
                     @Override
-                    QueryRelation getTable()
+                    AbstractQueryRelation getTable()
                     {
                         return _QueryRelation.this;
                     }
@@ -298,7 +327,7 @@ public class QValuesTable extends QTable
         }
 
         @Override
-        protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+        public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
         {
             return Set.of();
         }

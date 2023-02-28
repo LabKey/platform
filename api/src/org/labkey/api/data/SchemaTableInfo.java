@@ -1142,9 +1142,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
-        Set<ColumnInfo> allInvolvedColumns = new HashSet<>();
-        for (ColumnInfo column : selectColumns)
-            allInvolvedColumns.add(column);
-        return allInvolvedColumns;
+        return new HashSet<>(selectColumns);
     }
 }

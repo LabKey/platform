@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import java.util.Collection;
+
 public class QSelectFrom extends QNode
 {
     public QSelect getSelect()
@@ -33,5 +35,11 @@ public class QSelectFrom extends QNode
     {
         getSelect().appendSource(builder);
         getFrom().appendSource(builder);
+    }
+
+    @Override
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
+    {
+        throw new UnsupportedOperationException();
     }
 }
