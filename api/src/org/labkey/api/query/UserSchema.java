@@ -439,8 +439,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (qdef != null)
         {
             TableInfo tableInfo = qdef.getTable(this, new ArrayList<>(), true);
-            if (tableInfo instanceof CrosstabTableInfo)
-                return new CrosstabView(this, settings, errors);
+            assert tableInfo instanceof CrosstabTableInfo && ((CrosstabTableInfo) tableInfo).isCrosstab();
+            return new CrosstabView(this, settings, errors);
         }
 
         return new QueryView(this, settings, errors);
