@@ -31,7 +31,7 @@ public enum ModeratorReview
     None
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             return true;
         }
@@ -39,10 +39,10 @@ public enum ModeratorReview
     InitialPost
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             // Users approved by All setting are automatically approved here
-            if (All.isApproved(c, user))
+            if (All.isApproved(c, user, newThread))
                 return true;
 
             // Does this user have at least one approved announcement in this message board?
@@ -53,22 +53,44 @@ public enum ModeratorReview
             return new TableSelector(CommSchema.getInstance().getTableInfoAnnouncements(), filter, null).exists();
         }
     },
+    NewThread
+    {
+        @Override
+        public boolean isApproved(Container c, User user, boolean newThread)
+        {
+            if (All.isApproved(c, user, newThread))
+                return true;
+
+            // Approve if this is not a new thread
+            return !newThread;
+        }
+    },
     All
     {
         @Override
-        public boolean isApproved(Container c, User user)
+        public boolean isApproved(Container c, User user, boolean newThread)
         {
             // Editors and above don't require moderator review; check for Delete permission as a proxy
             return c.hasPermission(user, DeletePermission.class);
         }
     };
 
-    public abstract boolean isApproved(Container c, User user);
+    public abstract boolean isApproved(Container c, User user, boolean newThread);
 
     public static ModeratorReview get(String s)
     {
         ModeratorReview mr = EnumUtils.getEnum(ModeratorReview.class, s);
 
         return null != mr ? mr : None;
+    }
+
+    public boolean sameAs(String reviewType)
+    {
+        return name().equals(reviewType);
+    }
+
+    public static boolean requiresReview(String reviewType)
+    {
+        return InitialPost.sameAs(reviewType) || NewThread.sameAs(reviewType) || All.sameAs(reviewType);
     }
 }
