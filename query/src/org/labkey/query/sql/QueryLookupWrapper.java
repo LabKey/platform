@@ -19,30 +19,39 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -58,33 +67,40 @@ import java.util.stream.Collectors;
  * QueryLookupWrapper is actually very similar to QueryTable, the difference being that
  * the input to QueryLookupWrapper is a QueryRelation rather than a TableInfo
  */
-public class QueryLookupWrapper extends QueryRelation
+public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRelation.ColumnResolvingRelation
 {
     private static final Logger _log = LogManager.getLogger(QueryLookupWrapper.class);
 
     final AliasManager _aliasManager;
-    QueryRelation _source;
+    AbstractQueryRelation _source;
     boolean _hasLookups = false;
 
     Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
     Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<>();
-    Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<>();
+    ArrayListMap<FieldKey, QLWColumn> _selectedColumns = new ArrayListMap<>();
 
     // shim for creating lookup columns w/o a real TableInfo
     SQLTableInfo _sti = null;
 
 
-    QueryLookupWrapper(Query query, QueryRelation relation, @Nullable TableType md)
+    QueryLookupWrapper(Query query, AbstractQueryRelation relation, @Nullable TableType md)
     {
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
         _alias = "qlw" + relation.getAlias();
-        if (null != relation)
+        _source = relation;
+        _inFromClause = relation._inFromClause;
+        relation._parent = this;
+
+        for (var col : relation.getAllColumns().values())
         {
-            _source = relation;
-            _inFromClause = relation._inFromClause;
-            relation._parent = this;
+            PassThroughColumn pt = new PassThroughColumn(col.getFieldKey(), col);
+            _selectedColumns.put(pt.getFieldKey(), pt);
         }
+
+        // add ref to first column, this may be used in (SELECT) expression
+        if (!_selectedColumns.isEmpty())
+            _selectedColumns.get(0).addRef(this);
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
@@ -102,7 +118,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    void setQuery(Query query)
+    public void setQuery(Query query)
     {
         super.setQuery(query);
         _source.setQuery(query);
@@ -110,7 +126,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected void setAlias(String alias)
+    public void setAlias(String alias)
     {
         super.setAlias(alias);
         if (_hasLookups)
@@ -137,7 +153,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected void resolveFields()
+    public void resolveFields()
     {
         _source.resolveFields();
     }
@@ -146,14 +162,55 @@ public class QueryLookupWrapper extends QueryRelation
     @Override
     public TableInfo getTableInfo()
     {
-        if (!_hasLookups)
+        Set<RelationColumn> set = new LinkedHashSet<>(_selectedColumns.values());
+
+        getOrderedSuggestedColumns(set);
+        if (!getParseErrors().isEmpty())
+            return null;
+
+        resolveFields();
+        if (!getParseErrors().isEmpty())
+            return null;
+
+        Collection<String> keys = getKeyColumns();
+        FieldKey key = null;
+        if (keys.size() == 1)
+            key = new FieldKey(null, keys.iterator().next());
+
+        var ret = new QueryTableInfo(this, getAlias())
         {
-            return _source.getTableInfo();
-        }
-        else
+            @Override
+            protected void afterInitializeColumns()
+            {
+                remapSelectFieldKeys(true);
+            }
+
+            @Override
+            public String getTitleColumn()
+            {
+                RelationColumn titleColumn = null;
+                if (_source instanceof QuerySelect select)
+                    titleColumn = select.getTitleColumn();
+                if (null != titleColumn && titleColumn.getFieldKey().size() == 1)
+                    return titleColumn.getFieldKey().getName();
+                return super.getTitleColumn();
+            }
+        };
+        for (var col : _selectedColumns.values())
         {
-            throw new UnsupportedOperationException();
+            RelationColumnInfo ci = new RelationColumnInfo(ret, col);
+            ColumnLogging columnLogging = col.getColumnLogging();
+            if (null == columnLogging.getException())
+                columnLogging = new ColumnLogging(getSchema().getName(), ret.getName(), ci.getFieldKey(),
+                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
+            ci.setColumnLogging(columnLogging);
+            ci.setKeyField(ci.getFieldKey().equals(key));
+            ret.addColumn(ci);
         }
+
+        ret.afterInitializeColumns();
+        MemTracker.getInstance().put(ret);
+        return ret;
     }
 
 
@@ -165,17 +222,17 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    int getSelectedColumnCount()
+    public int getSelectedColumnCount()
     {
         return _selectedColumns.size();
     }
     
 
     @Override
-    RelationColumn getColumn(@NotNull String name)
+    public QLWColumn getColumn(@NotNull String name)
     {
         FieldKey k = new FieldKey(null, name);
-        RelationColumn ret = _selectedColumns.get(k);
+        var ret = _selectedColumns.get(k);
         if (null != ret)
         {
             ret.addRef(this);
@@ -190,9 +247,14 @@ public class QueryLookupWrapper extends QueryRelation
         return ret;
     }
 
+    @Override
+    public @Nullable AbstractQueryRelation.RelationColumn getFirstColumn()
+    {
+        return _selectedColumns.get(0);
+    }
 
     @Override
-    protected Map<String,RelationColumn> getAllColumns()
+    public Map<String,RelationColumn> getAllColumns()
     {
         Map<String,RelationColumn> all = _source.getAllColumns();
         Map<String,RelationColumn> ret = new LinkedHashMap<>(2*all.size());
@@ -207,12 +269,12 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
-        assert parentRelCol instanceof _WrapperColumn;
+        assert parentRelCol instanceof QLWColumn;
         assert parentRelCol.getTable() == this;
 
-        _WrapperColumn parent = (_WrapperColumn)parentRelCol;
+        QLWColumn parent = (QLWColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
         RelationColumn ret = _selectedColumns.get(k);
         if (null != ret)
@@ -229,9 +291,9 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
-        _WrapperColumn parent = (_WrapperColumn)parentRelCol;
+        QLWColumn parent = (QLWColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
 
         if (parent instanceof PassThroughColumn)
@@ -266,7 +328,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    Collection<String> getKeyColumns()
+    public Collection<String> getKeyColumns()
     {
         return _source.getKeyColumns();
     }
@@ -328,7 +390,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    String getQueryText()
+    public String getQueryText()
     {
         return _source.getQueryText();
     }
@@ -342,7 +404,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
-    protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         // TODO handle lookup columns
         HashSet<RelationColumn> unwrapped = new HashSet<>();
@@ -351,10 +413,14 @@ public class QueryLookupWrapper extends QueryRelation
             if (rc instanceof PassThroughColumn)
                 unwrapped.add(((PassThroughColumn)rc)._wrapped);
         }
-        return _source.getOrderedSuggestedColumns(unwrapped).stream()
+        var ret = new LinkedHashSet<RelationColumn>();
+        _source.getOrderedSuggestedColumns(unwrapped).stream()
                 .filter(sc -> sc.getFieldKey().getParent() == null)
-                .map(sc -> getColumn(sc.getFieldKey().getName()))
-                .collect(Collectors.toSet());
+                .map(sc -> getColumn(sc.getFieldKey().getName())).filter(Objects::nonNull)
+                .peek(sc -> sc._suggestedColumn = true)
+                .peek(sc -> _selectedColumns.put(sc.getFieldKey(), sc))
+                .forEach(ret::add);
+        return ret;
     }
 
     @Override
@@ -364,17 +430,23 @@ public class QueryLookupWrapper extends QueryRelation
         _source.setCommonTableExpressions(queryWith);
     }
 
-    private static abstract class _WrapperColumn extends RelationColumn
+
+    /* These are the lookup columns that are resolved by this QueryLookupWrapper.  QLW is responsible for joining in these columns. */
+    private abstract class QLWColumn extends RelationColumn
     {
-        final QueryRelation _table;
+        final AbstractQueryRelation _table;
         final FieldKey _key;
         final String _alias;
+        final String _uniqueName;
+        ColumnLogging _columnLogging = null;
+        PHI _phi;
         
-        _WrapperColumn(QueryRelation table, FieldKey key, String alias)
+        QLWColumn(AbstractQueryRelation table, FieldKey key, String alias)
         {
             _table = table;
             _key = key;
             _alias = alias;
+            _uniqueName = super._defaultUniqueName(QueryLookupWrapper.this);
         }
 
         @Override
@@ -384,9 +456,15 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
-        QueryRelation getTable()
+        AbstractQueryRelation getTable()
         {
             return _table;
+        }
+
+        @Override
+        final public String getUniqueName()
+        {
+            return _uniqueName;
         }
 
         @Override
@@ -394,12 +472,27 @@ public class QueryLookupWrapper extends QueryRelation
         {
             return _alias;
         }
+
+        @Override
+        ColumnLogging getColumnLogging()
+        {
+            computeColumnLoggingsAndPHI();
+            return _columnLogging;
+        }
+
+        @Override
+        PHI getPHI()
+        {
+            computeColumnLoggingsAndPHI();
+            return _phi;
+        }
     }
 
 
-    class PassThroughColumn extends _WrapperColumn
+    /* These are the columns that are generated from the _source relation, usually QuerySelect */
+    class PassThroughColumn extends QLWColumn
     {
-        QueryRelation.RelationColumn _wrapped;
+        AbstractQueryRelation.RelationColumn _wrapped;
         ColumnType.Fk _columnFK;
         ForeignKey _fk;
 
@@ -407,12 +500,24 @@ public class QueryLookupWrapper extends QueryRelation
         {
             super(QueryLookupWrapper.this, key, _aliasManager.decideAlias(c.getAlias()));
             _wrapped = c;
+            _query.addUniqueRelationColumn(this);
 
             // extra metadata only for selected columns
             if (key.getParent() != null)
                 return;
             _columnFK = _fkMap.get(key.getName());
         }
+
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            // NOTE we can't pass through some columns and not others, so that makes us responsible for
+            // creating new ColumnLogging objects
+            collect.add(this);
+            return collect;
+        }
+
 
         @Override
         public ForeignKey getFk()
@@ -534,7 +639,7 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     // almost the same as TableColumn
-    class QueryLookupColumn extends _WrapperColumn
+    class QueryLookupColumn extends QLWColumn
     {
         final RelationColumn _foreignKey;
         final ForeignKey _fk;
@@ -547,6 +652,15 @@ public class QueryLookupWrapper extends QueryRelation
             _foreignKey = parent;
             _fk = fk;
             _lkCol = lkCol;
+
+            _query.addUniqueRelationColumn(this);
+        }
+
+        @Override
+        public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
+        {
+            collect.add(this);
+            return collect;
         }
 
         @Override
@@ -604,6 +718,80 @@ public class QueryLookupWrapper extends QueryRelation
             _foreignKey.addRef(refer);
             return super.addRef(refer);
         }
+    }
+
+
+    @Override
+    public Map<FieldKey, FieldKey> getRemapMap(Map<String, FieldKey> outerMap)
+    {
+        Map<FieldKey,String> innerMap = new HashMap<>();
+        _selectedColumns.entrySet().forEach(e -> {
+            assert e.getKey().equals(e.getValue().getFieldKey());
+            innerMap.put(e.getKey(), e.getValue().getUniqueName());
+        });
+        return QueryRelation.generateRemapMap(innerMap , outerMap);
+    }
+
+
+    /* NOTE:
+     * The fact that QueryLookupWrapper needs to implements ColumnResolvingRelation suggests
+     * that it should participate in remapping of FieldKeys in other places besides ColumnLogging objects.
+     * There are may be some subtle (not new) bugs with StringExpression lurking to be fixed.
+     */
+
+    boolean computeColumnLoggingsCalled = false;
+
+    void computeColumnLoggingsAndPHI()
+    {
+        if (computeColumnLoggingsCalled)
+            return;
+        computeColumnLoggingsCalled = true;
+
+        Map<String,FieldKey> outerMap = new HashMap<>();
+        _selectedColumns.values().stream().filter(sc -> sc instanceof PassThroughColumn).map(sc -> (PassThroughColumn)sc)
+                .forEach(ptc -> outerMap.put(ptc._wrapped.getUniqueName(), ptc.getFieldKey()));
+
+        CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
+        QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "UNION")
+        {
+            @Override
+            @NotNull
+            public SQLFragment getFromSQL() {throw new UnsupportedOperationException();}
+
+            @Override
+            public @Nullable UserSchema getUserSchema()
+            {
+                return (UserSchema)QueryLookupWrapper.this.getSchema();
+            }
+        };
+
+        for (var qlwColumn : _selectedColumns.values())
+        {
+            ColumnLogging cl;
+            PHI phi = PHI.NotPHI;
+            if (qlwColumn instanceof PassThroughColumn ptColumn)
+            {
+                var columnsUsed = ptColumn._wrapped.gatherInvolvedSelectColumns(new ArrayList<>());
+                QueryColumnLogging qcl = QueryColumnLogging.create(fakeTableInfo, qlwColumn.getFieldKey(), columnsUsed);
+                cl = qcl.remapQueryFieldKeys(fakeTableInfo, qlwColumn.getFieldKey(), outerMap);
+                for (var columnUsed : columnsUsed)
+                    phi = PHI.max(phi, columnUsed.getPHI());
+            }
+            else if (qlwColumn instanceof QueryLookupColumn qlColumn)
+            {
+                cl = qlColumn._lkCol.getColumnLogging();
+                cl = cl.remapFieldKeys(qlColumn._key.getParent(), null, warnings);
+                phi = qlColumn._lkCol.getPHI();
+            }
+            else
+                throw new IllegalStateException();
+
+            qlwColumn._columnLogging = cl;
+            qlwColumn._phi = phi;
+        }
+
+        for (String w : warnings)
+            _query.getParseWarnings().add(new QueryParseWarning(w, null, 0, 0));
     }
 
     public QueryRelation getSource()

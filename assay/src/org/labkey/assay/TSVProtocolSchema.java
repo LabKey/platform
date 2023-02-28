@@ -257,7 +257,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         public _FlagDisplayColumnFactory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
             _FlagDisplayColumnFactory remapped = this.clone();
-            remapped.rowId = FieldKey.remap(rowId, parent, remap);
+            var fk = FieldKey.remap(rowId, parent, remap);
+            if (null != fk)
+                remapped.rowId = fk;
             return remapped;
         }
 

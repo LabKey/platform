@@ -30,7 +30,7 @@ public class UnionTableInfoImpl extends QueryTableInfo implements UnionTableInfo
 {
     protected List<ColumnInfo> _unionColumns = new ArrayList<>();
 
-    public UnionTableInfoImpl(QueryRelation r, String name)
+    public UnionTableInfoImpl(AbstractQueryRelation r, String name)
     {
         super(r, name);
     }
