@@ -16,6 +16,8 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.pipeline.PipelineService;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -61,14 +63,20 @@ public abstract class Job implements Future, Runnable
     @Override
     public boolean isCancelled()
     {
-        if (_task == null) throw new IllegalStateException("job has not been submitted");
-        return _task.isCancelled();
+        return _task != null && _task.isCancelled();
     }
 
     @Override
     public boolean isDone()
     {
-        if (_task == null) throw new IllegalStateException("job has not been submitted");
+        if (_task == null)
+        {
+            // Override and return true for enterprise pipeline if there is no activeTaskId.
+            if (PipelineService.get().isEnterprisePipeline()) return true;
+
+            //Else throw an error.
+            throw new IllegalStateException("job has not been submitted");
+        }
         return _task.isDone();
     }
 
