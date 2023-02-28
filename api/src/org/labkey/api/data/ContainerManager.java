@@ -1726,7 +1726,7 @@ public class ContainerManager
     }
 
     // Delete a container from the database
-    public static boolean delete(final Container c, User user)
+    public static boolean delete(final Container c, User user, @Nullable String comment)
     {
         if (!isDeletable(c))
         {
@@ -1790,7 +1790,10 @@ public class ContainerManager
                     DATABASE_QUERY_LOCK.unlock();
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
-            addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
+            String auditComment = c.getContainerNoun(true) + " " + c.getPath() + " was deleted";
+            if (comment != null)
+                auditComment = auditComment.concat(". " + comment);
+            addAuditEvent(user, c, auditComment);
             return true;
         };
 
@@ -1807,6 +1810,11 @@ public class ContainerManager
         {
             deletingContainers.remove(c.getId());
         }
+    }
+
+    public static boolean delete(final Container c, User user)
+    {
+        return delete(c, user, null);
     }
 
     public static boolean isDeletable(Container c)
@@ -1830,7 +1838,7 @@ public class ContainerManager
         return null != getForId(c.getEntityId()) && !isDeleting(c);
     }
 
-    public static void deleteAll(Container root, User user) throws UnauthorizedException
+    public static void deleteAll(Container root, User user, @Nullable String comment) throws UnauthorizedException
     {
         if (!hasTreePermission(root, user, DeletePermission.class))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
@@ -1840,9 +1848,14 @@ public class ContainerManager
         depthFirst.add(root);
 
         for (Container c : depthFirst)
-            delete(c, user);
+            delete(c, user, comment);
 
         LOG.debug("Completed container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
+    }
+
+    public static void deleteAll(Container root, User user) throws UnauthorizedException
+    {
+        deleteAll(root, user, null);
     }
 
     private static void addAuditEvent(User user, Container c, String comment)

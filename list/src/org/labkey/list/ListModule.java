@@ -33,6 +33,7 @@ import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Summary;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -173,6 +174,17 @@ public class ListModule extends SpringModule
             results.add(lists.size() + " lists");
         }
         return results;
+    }
+
+    @Override
+    public List<Summary> getDetailedSummary(Container c)
+    {
+        ArrayList<Summary> summary = new ArrayList<>();
+        int picklistCount = ListManager.get().getPicklists(c, false).size();
+        if (picklistCount > 0)
+            summary.add(new Summary(picklistCount, "Picklist"));
+
+        return summary;
     }
 
     @Override

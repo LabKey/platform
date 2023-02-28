@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -197,6 +198,12 @@ public class MockModule implements Module
     @Override
     @NotNull
     public Collection<String> getSummary(Container c)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Summary> getDetailedSummary(Container c)
     {
         return Collections.emptyList();
     }

@@ -82,6 +82,7 @@ import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.module.Summary;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
@@ -125,7 +126,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -202,6 +202,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -804,14 +805,29 @@ public class CoreController extends SpringActionController
         }
     }
 
+    public static class DeleteContainerForm
+    {
+        private String _comment;
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+    }
+
     // Requires at least delete permission. Will check for admin if needed
     @RequiresPermission(DeletePermission.class)
-    public class DeleteContainerAction extends MutatingApiAction<SimpleApiJsonForm>
+    public class DeleteContainerAction extends MutatingApiAction<DeleteContainerForm>
     {
         private Container target;
 
         @Override
-        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        public void validateForm(DeleteContainerForm form, Errors errors)
         {
             target = getContainer();
 
@@ -820,7 +836,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
+        public ApiResponse execute(DeleteContainerForm form, BindException errors)
         {
             Class<? extends Permission> permClass = getContainer().getPermissionNeededToDelete();
             if (!target.hasPermission(getUser(), permClass))
@@ -829,7 +845,7 @@ public class CoreController extends SpringActionController
                 throw new UnauthorizedException("Insufficient permissions to delete folder. " + perm.getName() + " permission required.");
             }
 
-            ContainerManager.deleteAll(target, getUser());
+            ContainerManager.deleteAll(target, getUser(), form.getComment());
 
             return new ApiSimpleResponse();
         }
@@ -1625,6 +1641,24 @@ public class CoreController extends SpringActionController
         public void setIncludePropertyValues(boolean includePropertyValues)
         {
             _includePropertyValues = includePropertyValues;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class GetModuleSummaryAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ArrayList<Summary> allSummaries = new ArrayList<>();
+
+            for (Module m : ModuleLoader.getInstance().getModules())
+            {
+                List<Summary> summaries = m.getDetailedSummary(getContainer());
+                allSummaries.addAll(summaries);
+            }
+
+            return new ApiSimpleResponse("moduleSummary", allSummaries.stream().map(Summary::toJSON).collect(Collectors.toList()));
         }
     }
 
