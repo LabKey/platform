@@ -59,7 +59,9 @@ public class PathDisplayColumn extends DataColumn
         public Factory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
             Factory remapped = this.clone();
-            remapped._pathParts = FieldKey.remap(_pathParts, parent, remap);
+            var fk = FieldKey.remap(_pathParts, parent, remap);
+            if (fk != null)
+                remapped._pathParts = fk;
             return remapped;
         }
 

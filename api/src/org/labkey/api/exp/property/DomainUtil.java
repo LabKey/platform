@@ -83,9 +83,11 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
+import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 /**
  * User: jgarms
@@ -1156,6 +1158,13 @@ public class DomainUtil
             if (null == name || name.trim().length() == 0)
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
+                continue;
+            }
+
+            Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
+            if (expMatcher.find())
+            {
+                exception.addFieldError(name, getDomainErrorMessage(updates, "The '${}' substitution token is reserved for system use."));
                 continue;
             }
 

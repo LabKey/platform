@@ -27,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 
 
@@ -37,7 +38,7 @@ public class QField extends QInternalExpr
 
     QueryRelation _table;
     String _name;
-    QueryRelation.RelationColumn _column;
+    AbstractQueryRelation.RelationColumn _column;
     private final ReferenceCount refCount = new ReferenceCount(_legalReferants);
 
 
@@ -56,7 +57,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public QField(QueryRelation.RelationColumn column, QNode orig)
+    public QField(AbstractQueryRelation.RelationColumn column, QNode orig)
     {
         this(orig);
         _table = column.getTable();
@@ -70,7 +71,7 @@ public class QField extends QInternalExpr
     {
         if (0 == refCount.count())
         {
-            QueryRelation.RelationColumn col = getRelationColumn();
+            AbstractQueryRelation.RelationColumn col = getRelationColumn();
             if (null != col)
                 col.addRef(this);
         }
@@ -86,14 +87,14 @@ public class QField extends QInternalExpr
         refCount.decrement(refer);
         if (0 == refCount.count())
         {
-            QueryRelation.RelationColumn col = getRelationColumn();
+            AbstractQueryRelation.RelationColumn col = getRelationColumn();
             if (null != col)
                 col.releaseRef(this);
         }
     }
 
 
-    public QueryRelation.RelationColumn getRelationColumn()
+    public AbstractQueryRelation.RelationColumn getRelationColumn()
     {
         if (null == _column)
         {
@@ -110,7 +111,7 @@ public class QField extends QInternalExpr
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        QueryRelation.RelationColumn col = getRelationColumn();
+        AbstractQueryRelation.RelationColumn col = getRelationColumn();
         if (null == col)
         {
             if (null != _table && _table.getParseErrors().size() > 0)
@@ -163,7 +164,7 @@ public class QField extends QInternalExpr
     {
         if (_column != null)
             return _column.getJdbcType();
-        QueryRelation.RelationColumn col = getTable().getColumn(getName());
+        AbstractQueryRelation.RelationColumn col = getTable().getColumn(getName());
         if (col == null)
             return JdbcType.OTHER;
         return col.getJdbcType();
@@ -173,7 +174,7 @@ public class QField extends QInternalExpr
     @Override
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
-        final QueryRelation.RelationColumn rcol = getRelationColumn();
+        final AbstractQueryRelation.RelationColumn rcol = getRelationColumn();
         // Delay call to getValueSql() avoid unnecessary work during getTable().
         ExprColumn ret = new ExprColumn(table, alias, null, getRelationColumn().getJdbcType())
         {
@@ -230,5 +231,15 @@ public class QField extends QInternalExpr
     public boolean isConstant()
     {
         return false;
+    }
+
+    @Override
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
+    {
+        if (null == _column)
+            return super.gatherInvolvedSelectColumns(collect);
+        this._column.gatherInvolvedSelectColumns(collect);
+        assert collect.stream().allMatch(c -> c.getTable() instanceof QueryRelation.ColumnResolvingRelation);
+        return collect;
     }
 }

@@ -25,7 +25,10 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 
 abstract public class QExpr extends QNode
@@ -40,7 +43,7 @@ abstract public class QExpr extends QNode
 		super(allowChildren ? QExpr.class : null);
 	}
 
-	public QExpr(Class validChildrenClass)
+	public QExpr(Class<? extends QNode> validChildrenClass)
 	{
 		super(validChildrenClass);
 	}
@@ -101,7 +104,7 @@ abstract public class QExpr extends QNode
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
     {
-        return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
+        ExprColumn expr = new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
@@ -109,6 +112,15 @@ abstract public class QExpr extends QNode
                 return getSqlFragment(getParentTable().getSchema().getSqlDialect(), query);
             }
         };
+
+        Set<AbstractQueryRelation.RelationColumn> columns = (Set<AbstractQueryRelation.RelationColumn>)gatherInvolvedSelectColumns(new HashSet<>());
+        if (!columns.isEmpty())
+        {
+            var columnLogging = QueryColumnLogging.create(table, expr.getFieldKey(), columns);
+            expr.setColumnLogging(columnLogging);
+            expr.setPHI(columnLogging.getPHI());
+        }
+        return expr;
     }
 
 

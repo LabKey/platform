@@ -340,6 +340,8 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         {
             FieldKey key = ((ContainerContext.FieldKeyContext)copy._containerContext).getFieldKey();
             FieldKey re = FieldKey.remap(key, parent, remap);
+            if (null == re)
+                re = key;
             copy._containerContext = new ContainerContext.FieldKeyContext(re);
         }
         // copy changes backwards

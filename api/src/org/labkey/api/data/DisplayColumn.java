@@ -1127,7 +1127,13 @@ public abstract class DisplayColumn extends RenderColumn
             return writer.toString();
         }
 
-        return _caption == null ? getName() : _caption.eval(ctx);
+        if (_caption == null)
+            return getName();
+
+        if (ctx != null || _caption instanceof StringExpressionFactory.ConstantStringExpression)
+            return _caption.eval(ctx);
+
+        return _caption.getSource();
     }
 
 
