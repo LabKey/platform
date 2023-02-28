@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
@@ -28,6 +29,8 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,8 +41,13 @@ public class QAggregate extends QExpr
 
     public enum Type
     {
-        COUNT, SUM(true), MIN(true), MAX(true), AVG(true), GROUP_CONCAT,
-        STDDEV(true)
+        COUNT(false, false),
+        SUM(true, true),
+        MIN(true, true),
+        MAX(true, true),
+        AVG(true, true),
+        GROUP_CONCAT(true, true),
+        STDDEV(true, false)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -47,7 +55,7 @@ public class QAggregate extends QExpr
                     return d.getStdDevFunction();
                 }
             },
-        STDERR
+        STDERR(false, false)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -55,8 +63,88 @@ public class QAggregate extends QExpr
                     return null;
                 }
             },
+        BOOL_AND(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BOOL_OR(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BIT_AND(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BIT_OR(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        CORR(false, false)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        COVAR_POP(false, false)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        COVAR_SAMP(false, false)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_AVGX(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_AVGY(false, true)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_COUNT(false, false)
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_INTERCEPT(false, false)
 
-        BOOL_AND
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -64,7 +152,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        BOOL_OR
+        REGR_SLOPE( false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -72,7 +160,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        BIT_AND
+        REGR_SXX( false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -80,7 +168,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        BIT_OR
+        REGR_R2( false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -88,7 +176,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        CORR
+        REGR_SXY( false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -96,7 +184,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        COVAR_POP
+        REGR_SYY( false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -104,7 +192,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        COVAR_SAMP
+        EVERY( false, true)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -112,87 +200,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        REGR_AVGX
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_AVGY
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_COUNT
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_INTERCEPT
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_SLOPE
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_SXX
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_R2
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_SXY
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        REGR_SYY
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        EVERY
-            {
-                @Override
-                boolean dialectSupports(@Nullable SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
-            },
-        MEDIAN               // Only Postgres so far
+        MEDIAN(false, true)               // Only Postgres so far
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -200,7 +208,7 @@ public class QAggregate extends QExpr
                     return d.getMedianFunction();
                 }
             },
-        MODE                // Only Postgres so far
+        MODE(false, true)                // Only Postgres so far
             {
                 @Override
                 boolean dialectSupports(SqlDialect d)
@@ -208,7 +216,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        STDDEV_POP
+        STDDEV_POP(false, false)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -216,7 +224,7 @@ public class QAggregate extends QExpr
                     return d.getStdDevPopFunction();
                 }
             },
-        STDDEV_SAMP
+        STDDEV_SAMP(false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -224,7 +232,7 @@ public class QAggregate extends QExpr
                     return null != d && d.isPostgreSQL();
                 }
             },
-        VARIANCE
+        VARIANCE(false, false)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -232,7 +240,7 @@ public class QAggregate extends QExpr
                     return d.getVarianceFunction();
                 }
             },
-        VAR_POP
+        VAR_POP(false, false)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -240,7 +248,7 @@ public class QAggregate extends QExpr
                     return d.getVarPopFunction();
                 }
             },
-        VAR_SAMP
+        VAR_SAMP(false, false)
             {
                 @Override
                 boolean dialectSupports(@Nullable SqlDialect d)
@@ -251,19 +259,35 @@ public class QAggregate extends QExpr
         ;
 
         private final boolean _propagateAttributes;
+        private final boolean _propagateColumnLogging;
 
-        Type()
-        {
-            this(false);
-        }
-        Type(boolean propagateAttributes)
+//        Type()
+//        {
+//            this(false, true);
+//        }
+//
+//        Type(boolean propagateAttributes)
+//        {
+//            this(propagateAttributes, propagateAttributes);
+//        }
+
+
+        /**
+         * @param propagateAttributes This indicates whether column properties should be inherited by the aggregate result.
+         *     This includes formats but not label, url, mvcolumnname, displaycolumnfactory and foreign key.
+         *     Setting this to true is probably  most useful for simple aggregates (SUM, MIN, MAX)
+         *
+         * @param propagateColumnLogging Should this column inherit the columnLogging property of the source column.
+         *      This should be set to TRUE for any column that __can__ return an unmodified value from the source column.
+         *      Consider the case where the input has only one row for instance.
+         * <p>
+         *      MIN, MAX, SUM should specify propagateColumnLogging=TRUE,
+         *      STDDEV, COUNT can specifiy propagateColumnLogging=FALSE
+         */
+        Type(boolean propagateAttributes, boolean propagateColumnLogging)
         {
             _propagateAttributes = propagateAttributes;
-        }
-
-        public boolean isPropagateAttributes()
-        {
-            return _propagateAttributes;
+            _propagateColumnLogging = propagateColumnLogging;
         }
 
         String getFunction(SqlDialect d)
@@ -440,12 +464,11 @@ public class QAggregate extends QExpr
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         var ret = (MutableColumnInfo)super.createColumnInfo(table, alias, query);
-        if (getType().isPropagateAttributes())
+        List<QNode> children = childList();
+        if (children.size() == 1 && children.get(0) instanceof QField field)
         {
-            List<QNode> children = childList();
-            if (children.size() == 1 && children.get(0) instanceof QField)
+            if (getType()._propagateAttributes)
             {
-                QField field = (QField) children.get(0);
                 field.getRelationColumn().copyColumnAttributesTo((BaseColumnInfo)ret);
                 // but not these attributes, maybe I should have a white-list instead of a black-list
                 ret.setLabel(null);
@@ -455,12 +478,32 @@ public class QAggregate extends QExpr
                 ret.clearFk();
             }
         }
+
+        if (getType()._propagateColumnLogging)
+        {
+            QueryColumnLogging qcl = QueryColumnLogging.create(table, ret.getFieldKey(), gatherInvolvedSelectColumns(new HashSet<>()));
+            ret.setColumnLogging(qcl);
+            ret.setPHI(qcl.getPHI());
+        }
+        else
+        {
+            ret.setColumnLogging(ColumnLogging.defaultLogging(ret));
+        }
+
         if (getType() == Type.GROUP_CONCAT)
         {
             final DisplayColumnFactory originalFactory = ret.getDisplayColumnFactory();
             ret.setDisplayColumnFactory(colInfo -> new MultiValuedDisplayColumn(originalFactory.createRenderer(colInfo)));
         }
         return ret;
+    }
+
+    @Override
+    public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
+    {
+        if (getType()._propagateColumnLogging)
+            super.gatherInvolvedSelectColumns(collect);
+        return collect;
     }
 
     public void setDistinct(boolean distinct)

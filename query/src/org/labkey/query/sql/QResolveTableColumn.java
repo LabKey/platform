@@ -18,7 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class QResolveTableColumn extends QIfDefined
 {
     FieldKey _fieldKey = null;
-    QueryRelation.RelationColumn _column = null;
+    AbstractQueryRelation.RelationColumn _column = null;
     CaseInsensitiveHashMap<Object> _namedParameters = new CaseInsensitiveHashMap<>();
 
     public QResolveTableColumn(CommonTree node)
@@ -40,15 +40,15 @@ public class QResolveTableColumn extends QIfDefined
     /**
      * Helper for finding a column in a particular Table
      */
-    private QueryRelation.RelationColumn resolveColumn(QueryRelation table, @Nullable String name, @Nullable String concept, @Nullable String conceptURI, QNode location)
+    private AbstractQueryRelation.RelationColumn resolveColumn(QueryRelation table, @Nullable String name, @Nullable String concept, @Nullable String conceptURI, QNode location)
     {
         if (isBlank(name) && isBlank(concept) && isBlank(conceptURI))
             return null;
 
-        List<QueryRelation.RelationColumn> list = null;
+        List<AbstractQueryRelation.RelationColumn> list = null;
         if (isNotBlank(name))
         {
-            QueryRelation.RelationColumn col = table.getColumn(name);
+            AbstractQueryRelation.RelationColumn col = table.getColumn(name);
             if (null == col)
                 return null;
             list = List.of(col);
@@ -144,7 +144,7 @@ public class QResolveTableColumn extends QIfDefined
             return null;
         }
 
-        QueryRelation.RelationColumn c = resolveColumn(table, columnName, concept, conceptURI, dot);
+        AbstractQueryRelation.RelationColumn c = resolveColumn(table, columnName, concept, conceptURI, dot);
         if (null == c)
         {
             isDefined = false;

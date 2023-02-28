@@ -1,380 +1,172 @@
-/*
- * Copyright (c) 2009-2019 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.labkey.query.sql;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.AbstractMap;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
-/**
- * User: matthewb
- * Date: Feb 17, 2009
- * Time: 2:18:05 PM
- *
- * A query relation represent a portion of a query with column list.  All columns exported by a relation
- * must have a one part name.  
- */
-public abstract class QueryRelation
+public interface QueryRelation
 {
-    private static final Logger _log = LogManager.getLogger(QuerySelect.class);
-
-    protected String _savedName = null;
-    protected Query _query;
-    protected QuerySchema _schema;
-    protected String _alias = null;
-    private CommonTableExpressions _commonTableExpressions = null;
-
-    // used to resolve column in outer scope
-    protected QueryRelation _parent;
-    protected boolean _inFromClause = true;
-
-
-    protected QueryRelation(Query query)
+    default String getDebugName()
     {
-        _query = query;
-        _schema = query.getSchema();
-        MemTracker.getInstance().put(this);
+        return getClass().getSimpleName() + "@" + System.identityHashCode(this) + " " + getAlias();
     }
 
+    void setQuery(Query q);
 
-    protected QueryRelation(Query query, QuerySchema schema, String alias)
-    {
-        _query = query;
-        _schema = schema;
-        _alias = alias;
-        MemTracker.getInstance().put(this);
-    }
+    void setParent(QueryRelation parent);
 
-    protected void setAlias(String alias)
-    {
-        _alias = alias;
-    }    
+    void setAlias(String alias);
 
-    /* for debugging */
-    protected void setSavedName(String name)
-    {
-        _savedName = name;
-    }
+    QuerySchema getSchema();
 
-    void setQuery(Query query) // reparent the relation
-    {
-        _query = query;
-    }
+    List<QueryException> getParseErrors();
 
-    public QuerySchema getSchema()
-    {
-        return _schema;
-    }
+    void reportWarning(String string, @Nullable QNode node);
 
-    public List<QueryException> getParseErrors()
-    {
-        return _query.getParseErrors();
-    }
+    void declareFields();
 
-    public void reportWarning(String string, @Nullable QNode node)
-    {
-        _query.reportWarning(string, null==node?0:node.getLine(), null==node?0:node.getColumn());
-    }
-
-
-    public abstract void declareFields();
-
-
-    /** actually bind all field references */
-    abstract protected void resolveFields();
-
+    /**
+     * actually bind all field references
+     */
+    void resolveFields();
 
     /* public for testing only */
-    abstract public TableInfo getTableInfo();
+    TableInfo getTableInfo();
 
     /**
      * Return a list all the columns it is possible to select from this relation, NOT including lookup columns
      * These are the columns that will be returned by SELECT *
+     *
      * @return
      */
-    abstract protected Map<String,RelationColumn> getAllColumns();
+    Map<String, AbstractQueryRelation.RelationColumn> getAllColumns();
 
-    abstract @Nullable RelationColumn getColumn(@NotNull String name);
+    @Nullable AbstractQueryRelation.RelationColumn getFirstColumn();
 
-    Collection<String> getKeyColumns()
-    {
-        return Collections.emptyList();
-    }
+    @Nullable AbstractQueryRelation.RelationColumn getColumn(@NotNull String name);
 
-    abstract int getSelectedColumnCount();
+    Collection<String> getKeyColumns();
 
-    /** In general we want to push lookups down as far as possible in the tree.  Sometimes this is not possible and
+    int getSelectedColumnCount();
+
+    /**
+     * In general we want to push lookups down as far as possible in the tree.  Sometimes this is not possible and
      * these methods may return null.  Then the caller should try parent.getLookupColumn()
      */
-    abstract @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name);
-    abstract @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name);
+    @Nullable AbstractQueryRelation.RelationColumn getLookupColumn(@NotNull AbstractQueryRelation.RelationColumn parent, @NotNull String name);
 
-    /** generate server SQL */
-    public abstract SQLFragment getSql();
+    @Nullable AbstractQueryRelation.RelationColumn getLookupColumn(@NotNull AbstractQueryRelation.RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name);
 
-    public SQLFragment getFromSql()
-    {
-        SQLFragment sql = getSql();
-        if (null == sql)
-            return null;
-        SQLFragment ret = new SQLFragment();
-        ret.append("(");
-        ret.append(sql);
-        ret.append(") ");
-        ret.append(getAlias());
-        return ret;
-    }
+    /**
+     * generate server SQL
+     */
+    SQLFragment getSql();
 
-    /** used w/ Query.setRootTable(), generate a labkey SQL */
-    abstract String getQueryText();
+    SQLFragment getFromSql();
 
+    /**
+     * used w/ Query.setRootTable(), generate a labkey SQL
+     */
+    String
+    getQueryText();
 
-    public String getAlias()
-    {
-        return _alias;
-    }
+    String getAlias();
 
+    AbstractQueryRelation.RelationColumn declareField(FieldKey key, QExpr location);
 
-    /** declare that this FieldKey is referenced somewhere in this query (or subquery) */
-    protected RelationColumn declareField(FieldKey key, QExpr location)
-    {
-        if (_parent != null && !_inFromClause)
-            return _parent.declareField(key, location);
-        return null;
-    }
+    QField getField(FieldKey key, QNode expr, Object referant);
 
+    MethodInfo getMethod(String name);
 
-    /** a QField wraps a reference to a QueryRelation and a field name */
-    protected QField getField(FieldKey key, QNode expr, Object referant)
-    {
-        if (_parent != null && !_inFromClause)
-            return _parent.getField(key, expr, referant);
-        return new QField(null, key.getName(), expr);
-    }
+    int getNestingLevel();
 
-    protected MethodInfo getMethod(String name)
-    {
-        return null;
-    }
-
-
-    protected int getNestingLevel()
-    {
-        if (_parent == null)
-            return 0;
-        return _parent.getNestingLevel() + 1;
-    }
-
-    public abstract void setContainerFilter(ContainerFilter containerFilter);
+    void setContainerFilter(ContainerFilter containerFilter);
 
     //NOTE: column order is important when generating the suggested column list
-    //subclasses should implement _getSuggestedColumns() instead of overriding this
-    public final Set<RelationColumn> getOrderedSuggestedColumns(Set<RelationColumn> selected)
-    {
-        Set<RelationColumn> suggested = getSuggestedColumns(selected);
-        TreeSet<RelationColumn> ret = new TreeSet<>(Comparator.comparing(RelationColumn::getAlias));
+    //subclasses should implement getSuggestedColumns() instead of overriding this
+    Set<AbstractQueryRelation.RelationColumn> getOrderedSuggestedColumns(Set<AbstractQueryRelation.RelationColumn> selected);
 
-        ret.addAll(suggested);
+    Set<AbstractQueryRelation.RelationColumn> getSuggestedColumns(Set<AbstractQueryRelation.RelationColumn> selected);
 
-        return ret;
-    }
+    FieldKey getContainerFieldKey();
 
-    protected abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
+    Set<SchemaKey> getResolvedTables();
 
-    public FieldKey getContainerFieldKey()
-    {
-        RelationColumn col = getColumn("container");
-        if (col == null)
-            col = getColumn("folder");
-        return col != null ? col.getFieldKey() : null;
-    }
+    CommonTableExpressions getCommonTableExpressions();
+
+    void setCommonTableExpressions(CommonTableExpressions queryWith);
+
+    String toStringDebug();
+
+    List<Sort.SortField> getSortFields();
+
+    void setSavedName(String name);
 
     /**
-     * Return the resolved tables for this query
+     * Some relations contribute new table columns to the query result.  For instance, QueryTable and QueryLookupWrapper both
+     * resolve column from tables in the UserSchema.
+     * <p>
+     * In addition, QueryUnion is a special case because none of the columns directly pass through to the underlying tables,
+     * they all are mashup of a group of columns/expressions.  So UNION queries bascically create a new "namespace" of columns
+     * and act like a leaf node or virtual table the relations above.
+     * <p>
+     * Relations that are marked with the ColumnResolverRelation interface participate in the "remapFieldKey()" process and in
+     * generating correct ColumnLogging objects.
+     * <p>
+     * All columns returned from gatherInvolvedSelectColumns() should be owned by a Relation that implements ColumnResolvingRelation.
      */
-    public Set<SchemaKey> getResolvedTables()
+    interface ColumnResolvingRelation
     {
-        return _query.getResolvedTables();
-    }
-
-    public CommonTableExpressions getCommonTableExpressions()
-    {
-        return _commonTableExpressions;
-    }
-
-    public void setCommonTableExpressions(CommonTableExpressions queryWith)
-    {
-        _commonTableExpressions = queryWith;
-    }
-
-    /**
-     * Why RelationColumn??
-     * yes, it is similar to ColumnInfo and I might have been able to make that work.  However,
-     * ColumnInfo's belong to TableInfo (not QueryRelation) and TableInfo's are not mutable,
-     * I suppose I could have created a mutable TableInfo subclass, and wrapped schema tableinfos
-     * with QueryTableInfo's etc... But I didn't. I have a light-weight class that wraps
-     * schema ColumnInfo's and represents internal uses of columns
-     */
-    public abstract static class RelationColumn
-    {
-        boolean _suggestedColumn = false;
-
-        public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
-        abstract String getAlias();
-        abstract QueryRelation getTable();
-        abstract boolean isHidden();
-        abstract String getPrincipalConceptCode();    // used to implement Table.column() method
-        abstract String getConceptURI();
-
-        @NotNull
-        public abstract JdbcType getJdbcType();
-
-        public SQLFragment getValueSql()
-        {
-            assert ref.count() > 0;
-            String tableName = getTable().getAlias();
-            String columnName = getDialect(this).makeLegalIdentifier(getAlias());
-            return new SQLFragment(tableName + "." + columnName);
-        }
-
-        abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
-
-        // the sql representing this column 'inside' its queryrelation (optional)
-        SQLFragment getInternalSql()
-        {
-            throw new UnsupportedOperationException();    
-        }
-
-        void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-        {
-        }
-
-        public ForeignKey getFk()
-        {
-            return null;
-        }
-
-        protected static SqlDialect getDialect(RelationColumn c)
-        {
-            return c.getTable()._schema.getDbSchema().getSqlDialect();
-        }
-
-        @Override
-        public String toString()
-        {
-            return (null == getFieldKey() ? "" : (getFieldKey().toDisplayString() + " ")) + super.toString();
-        }
-
-
-        protected ReferenceCount ref = new ReferenceCount(null);
-
-        public int addRef(@NotNull Object refer)
-        {
-            int i = ref.increment(refer);
-            _log.debug("addRef( " + this.getDebugString() + ", " + refer + " ) = " + i);
-            return i;
-        }
-
-        public int releaseRef(@NotNull Object refer)
-        {
-            return ref.decrement(refer);
-        }
-
-        public boolean isReferencedByOthers(Object refer)
-        {
-            int count = ref.count();
-            if (count == 1)
-                return !ref.isReferencedBy(refer);
-            return count != 0;
-        }
-
-
-        public String getDebugString()
-        {
-            QueryRelation r = getTable();
-            if (null == r)
-                return getAlias();
-            else
-                return r.toStringDebug() + "." + getAlias();
-        }
+        Map<FieldKey, FieldKey> getRemapMap(Map<String,FieldKey> outerMap);
     }
 
 
-    // like an AliasedColumnInfo
-    static public class RelationColumnInfo extends BaseColumnInfo
+    // This is a helper method to create a map from column names in one scope (e.g QueryTable) to those columns found in
+    // an outer scope (e.g. query output columns).  See QueryTableInfo.  The inner table provides a map from column FieldKeys to
+    // column unique names.  Another map from uniquename to String is also provided.  This method returns a virtual Map from one to the other.
+    static Map<FieldKey, FieldKey> generateRemapMap(Map<FieldKey, String> innerMap, Map<String, FieldKey> outerMap)
     {
-        RelationColumn _column;
-
-        public RelationColumnInfo(TableInfo parent, RelationColumn column)
+        return new AbstractMap<>()
         {
-            super(column.getFieldKey(), parent);
-            setAlias(column.getAlias());
-            column.copyColumnAttributesTo(this);
-            _column = column;
-        }
+            @NotNull
+            @Override
+            public Set<Entry<FieldKey, FieldKey>> entrySet()
+            {
+                throw new IllegalStateException();
+            }
 
-        @Override
-        public SQLFragment getValueSql(String tableAlias)
-        {
-            return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
-        }
+            @Override
+            public FieldKey get(Object key)
+            {
+                return outerMap.get(innerMap.get(key));
+            }
 
-        @Override
-        public boolean isAdditionalQueryColumn()
-        {
-            return _column._suggestedColumn;
-        }
-    }
+            @Override
+            public FieldKey put(FieldKey key, FieldKey value)
+            {
+                throw new IllegalStateException();
+            }
 
-
-    public String toStringDebug()
-    {
-        if (null == _parent)
-            return getClass().getSimpleName() + ":" +getAlias();
-        else
-            return _parent.toStringDebug() + "/" + getClass().getSimpleName() + ":" +getAlias();
-    }
-
-
-    public List<Sort.SortField> getSortFields()
-    {
-        return List.of();
+            @Override
+            public boolean isEmpty()
+            {
+                return innerMap.isEmpty() || outerMap.isEmpty();
+            }
+        };
     }
 }

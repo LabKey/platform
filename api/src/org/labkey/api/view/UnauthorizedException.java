@@ -48,6 +48,11 @@ public class UnauthorizedException extends HttpStatusException
         super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."), null, HttpServletResponse.SC_UNAUTHORIZED);
     }
 
+    public UnauthorizedException(String message, Throwable cause)
+    {
+        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."), cause, HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
     public void setType(Type type)
     {
         _type = type;

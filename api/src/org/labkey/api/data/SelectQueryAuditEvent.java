@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
     public void setDataLogging(QueryLogging queryLogging, Set<Object> dataLoggingValues)
     {
         List<ColumnLogging> sortedLoggings = new ArrayList<>(queryLogging.getColumnLoggings());
-        Collections.sort(sortedLoggings);
+        sortedLoggings.sort(Comparator.comparing(ColumnLogging::getOriginalTableName).thenComparing(ColumnLogging::getOriginalColumnFieldKey));
 
         StringBuilder loggedColumns = new StringBuilder();
         String sep = "";

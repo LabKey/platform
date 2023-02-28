@@ -17,14 +17,18 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.HasResolvedTables;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -35,17 +39,17 @@ import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable, HasResolvedTables
 {
-    QueryRelation _relation;
+    AbstractQueryRelation _relation;
 
 
-    public QueryTableInfo(QueryRelation relation, String name)
+    public QueryTableInfo(AbstractQueryRelation relation, String name)
     {
         super(relation._query.getSchema().getDbSchema(), name);
         _relation = relation;
@@ -66,8 +70,15 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        SQLFragment f = new SQLFragment();
         SQLFragment sql = _relation.getSql();
+        if (null == sql)
+        {
+            if (!_relation._query.getParseErrors().isEmpty())
+                throw _relation._query.getParseErrors().get(0);
+            else
+                throw new QueryException("Error generating SQL");
+        }
+        SQLFragment f = new SQLFragment();
         f.append("(").append(sql).append(") ").append(alias);
         return f;
     }
@@ -118,50 +129,70 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
+    void afterInitializeColumns()
+    {
+        remapSelectFieldKeys(false);
+    }
+
+
     @Override
     public void afterConstruct()
     {
         checkLocked();
         super.afterConstruct();
-        remapFieldKeys();
     }
 
-    public void remapFieldKeys()
+
+    /* helper method to fixup fieldkeys for columns in QueryTableInfo  */
+    public void remapSelectFieldKeys(boolean skipColumnLogging)
     {
-        initFieldKeyMap();
+        Query query = _relation._query;
+
+        Map<String,FieldKey> outerMap = getUniqueKeyMap();
+        CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
+
         for (var ci : getMutableColumns())
         {
-            Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
-            if (null == remap || remap.isEmpty())
-                continue;
-            ci.remapFieldKeys(null, remap);
-        }
-    }
+            // Find if this column is associated with a ColumnResolvingRelation (e.g. QueryTable).
+            // If it is, use that tables "remap" map to fix up column using ColumnInfo.remapFieldKeys().
+            String uniqueName = ((AbstractQueryRelation.RelationColumnInfo) ci)._column.getUniqueName();
+            AbstractQueryRelation.RelationColumn sourceColumn = query._mapUniqueNamesToRelationColumn.get(uniqueName);
+            QueryRelation sourceRelation = null == sourceColumn ? null : sourceColumn.getTable();
+            Map<FieldKey, FieldKey> remap = sourceRelation instanceof QueryRelation.ColumnResolvingRelation crr ? crr.getRemapMap(outerMap) : null;
 
-
-    // map output column to its related columns (grouped by source querytable)
-    private Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = null;
-
-    private void initFieldKeyMap()
-    {
-        if (mapFieldKeyToSiblings == null)
-        {
-            mapFieldKeyToSiblings = new TreeMap<>();
-            Query query = _relation._query;
-            for (Map.Entry<QueryTable,Map<FieldKey,QueryRelation.RelationColumn>> maps : query.qtableColumnMaps.entrySet())
+            if (null != remap)
             {
-                Map<FieldKey,QueryRelation.RelationColumn> map = maps.getValue();
-                Map<FieldKey,FieldKey> flippedMap = new TreeMap<>();
-                for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
-                {
-                    if (!e.getValue().getFieldKey().equals(e.getKey()))
-                        flippedMap.put(e.getValue().getFieldKey(), e.getKey());
-                    mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
-                }
+                // QueryUnion handles ColumnLogging, so don't try to remap again
+                ColumnLogging cl = ci.getColumnLogging();
+                if (skipColumnLogging)
+                    ci.setColumnLogging(null);
+                ci.remapFieldKeys(null, remap, warnings, true);
+                if (skipColumnLogging)
+                    ci.setColumnLogging(cl);
+                var queryWarnings = _relation._query.getParseWarnings();
+                for (String w : warnings)
+                    queryWarnings.add(new QueryParseWarning(w, null, 0, 0));
             }
-            mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
+
+            // handle QueryColumnLogging which need to be converted to a normal ColumnLogging
+            if (ci.getColumnLogging() instanceof QueryColumnLogging qcl)
+            {
+                ci.setColumnLogging(qcl.remapQueryFieldKeys(this, ci.getFieldKey(), outerMap));
+            }
+            assert !(ci.getColumnLogging() instanceof QueryColumnLogging);
         }
     }
+
+
+    private Map<String,FieldKey> getUniqueKeyMap()
+    {
+          // Create map of unique names to the SELECT output columns
+        Map<String,FieldKey> mapQueryUniqueNamesToAlias = new HashMap<>();
+        for (var e : _relation.getAllColumns().entrySet())
+            mapQueryUniqueNamesToAlias.put(e.getValue().getUniqueName(), new FieldKey(null, e.getKey()));
+        return mapQueryUniqueNamesToAlias;
+    }
+
 
     @Override
     public UserSchema getUserSchema()
