@@ -199,7 +199,8 @@ public class CrosstabView extends QueryView
     {
         DataView view = super.createDataView();
 
-        assert getTable() instanceof CrosstabTableInfo && ((CrosstabTableInfo) getTable()).isCrosstab();
+        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
+
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
         // set the default base sort (remove non-existent sort columns), merging with any existing base sort from the
