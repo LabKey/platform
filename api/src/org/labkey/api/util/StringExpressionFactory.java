@@ -53,6 +53,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
 
@@ -76,6 +78,8 @@ public class StringExpressionFactory
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
+    public static final String SUBSTITUTION_EXP_PREFIX = ".*\\$\\{.+}.*";
+    public static final Pattern SUBSTITUTION_EXP_PATTERN = Pattern.compile(SUBSTITUTION_EXP_PREFIX);
 
     public static StringExpression create(String str)
     {
@@ -98,7 +102,8 @@ public class StringExpressionFactory
         if (StringUtils.isEmpty(str))
             return EMPTY_STRING;
 
-        if (!str.contains("${"))
+        Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(str);
+        if (!expMatcher.find())
             return new ConstantStringExpression(str);
 
         String key = "simple:" + str + "(" + urlEncodeSubstitutions + ")";
