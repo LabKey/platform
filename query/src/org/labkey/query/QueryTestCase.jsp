@@ -341,6 +341,15 @@ d,seven,twelve,day,month,date,duration,guid
         private final JdbcType _type;
         private final Object _value;
         private final Callable<Object> _call;
+        private static final Object NOCHECK = new Object();
+
+        MethodSqlTest(String sql, JdbcType type)
+        {
+            super(sql, 1, 1);
+            _type = type;
+            _value = NOCHECK;
+            _call = null;
+        }
 
         MethodSqlTest(String sql, JdbcType type, Object value)
         {
@@ -364,6 +373,8 @@ d,seven,twelve,day,month,date,duration,guid
             assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
             assertFalse("Expected one row: " + _sql, rs.next());
+            if (NOCHECK == _value)
+                return;
             Object value = null == _call ? _value : _call.call();
             assertSqlEquals(value, o);
         }
@@ -687,6 +698,7 @@ d,seven,twelve,day,month,date,duration,guid
                     new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
                     new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
                     new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
+                    new MethodSqlTest("SELECT COUNT(R.twelve) as cnt FROM R", JdbcType.INTEGER),
                     // TODO: cos
                     // TODO: cot
                     // TODO: curdate
@@ -699,6 +711,7 @@ d,seven,twelve,day,month,date,duration,guid
                     new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getName()),
                     new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getPath()),
                     new MethodSqlTest("SELECT GREATEST(0, 2, 1)", JdbcType.INTEGER, 2),
+                    new MethodSqlTest("SELECT GROUP_CONCAT(R.twelve) as gc FROM R", JdbcType.VARCHAR),
                     // TODO: hour
                     new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
                     new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),

@@ -46,7 +46,7 @@ public class QAggregate extends QExpr
         MIN(true, true),
         MAX(true, true),
         AVG(true, true),
-        GROUP_CONCAT(true, true),
+        GROUP_CONCAT(false, true),
         STDDEV(true, false)
             {
                 @Override
