@@ -108,7 +108,8 @@ public class CrosstabView extends QueryView
     @Override
     public List<DisplayColumn> getDisplayColumns()
     {
-        assert getTable() instanceof CrosstabTableInfo && ((CrosstabTableInfo) getTable()).isCrosstab();
+        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
+
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
         List<FieldKey> selectedFieldKeys = null;
