@@ -235,7 +235,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         @Override
         public boolean isCrosstab()
         {
-            return _crosstabTableInfo.isCrosstab();
+            return null != _crosstabTableInfo && _crosstabTableInfo.isCrosstab();
         }
 
         @Override
