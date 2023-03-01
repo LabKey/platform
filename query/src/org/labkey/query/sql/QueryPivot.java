@@ -887,6 +887,12 @@ public class QueryPivot extends AbstractQueryRelation
         }
 
         @Override
+        public boolean isCrosstab()
+        {
+            return true;
+        }
+
+        @Override
         protected void initializeColumns()
         {
             for (RelationColumn col : getAllColumns().values())
