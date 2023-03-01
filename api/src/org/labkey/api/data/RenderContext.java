@@ -232,7 +232,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
         assert null != (displayColumns = Collections.unmodifiableList(displayColumns));
-        Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
+        assert Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
 
         Set<ColumnInfo> ret = new NullPreventingSet<>(new LinkedHashSet<ColumnInfo>());
         LinkedHashSet<FieldKey> keys = new LinkedHashSet<>();
@@ -256,7 +256,7 @@ public class RenderContext implements Map<String, Object>, Serializable
                 dc.addQueryFieldKeys(keys);
         }
 
-        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, after adding display columns");
+        assert Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, after adding display columns");
 
         Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
         ret.addAll(infoCollection);
@@ -272,7 +272,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             ret.add(col);
         }
 
-        Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, method end");
+        assert Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, method end");
 
         return new ArrayList<>(ret);
     }
@@ -326,7 +326,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        _results = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
+        _results = select(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
         return _results;
     }
 
@@ -537,14 +537,13 @@ public class RenderContext implements Map<String, Object>, Serializable
         filter.addClause(clause);
     }
 
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         TableSelector selector = new TableSelector(table, columns, filter, sort)
             .setJdbcCaching(getCache())  // #39888
             .setNamedParameters(parameters)
             .setMaxRows(maxRows)
-            .setOffset(offset)
-            .setForDisplay(true);
+            .setOffset(offset);
 
         if (async)
         {
