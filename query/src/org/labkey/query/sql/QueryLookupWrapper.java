@@ -800,6 +800,18 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             _foreignKey.addRef(refer);
             return super.addRef(refer);
         }
+
+        @Override
+        PHI getPHI()
+        {
+            return _lkCol.getPHI();
+        }
+
+        @Override
+        ColumnLogging getColumnLogging()
+        {
+            return _lkCol.getColumnLogging();
+        }
     }
 
 
