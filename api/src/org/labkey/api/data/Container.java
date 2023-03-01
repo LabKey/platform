@@ -1364,44 +1364,59 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Map<String, Object> toJSON(User user)
     {
-        return toJSON(user, true);
+        return toJSON(user, true, true);
     }
 
-    public Map<String, Object> toJSON(User user, boolean includePermissions)
+    public Map<String, Object> toJSON(User user, boolean includePermissions, boolean includeAssortedProps)
     {
         Map<String, Object> containerProps = new HashMap<>();
         Container parent = getParent();
         containerProps.put("name", getName());
         containerProps.put("path", getPath());
-        containerProps.put("parentPath", parent==null ? null : parent.getPath());
-        containerProps.put("title", getTitle());
+        if (includeAssortedProps)
+        {
+            containerProps.put("parentPath", parent == null ? null : parent.getPath());
+            containerProps.put("title", getTitle());
+
+            LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
+            Map<String, Object> formats = new HashMap<>();
+            formats.put("dateFormat", DateUtil.getDateFormatString(this));
+            formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
+            formats.put("numberFormat", props.getDefaultNumberFormat());
+            containerProps.put("formats", formats);
+        }
 
         if (this.hasPermission(user, ReadPermission.class))
         {
-            containerProps.put("startUrl", getStartURL(user).toString());
-            containerProps.put("iconHref", getIconHref());
             containerProps.put("id", getId());
-            containerProps.put("sortOrder", getSortOrder());
+
             if (includePermissions)
             {
                 containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
                 containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(getPolicy(), user));
             }
-            if (null != getDescription())
-                containerProps.put("description", getDescription());
-            containerProps.put("isWorkbook", isWorkbook());
-            containerProps.put("isContainerTab", isContainerTab());
-            containerProps.put("type", getContainerNoun());
-            List<String> activeModuleNames = new ArrayList<>();
-            Set<Module> activeModules = getActiveModules(user);
-            for (Module module : activeModules)
+
+            if (includeAssortedProps)
             {
-                activeModuleNames.add(module.getName());
+                containerProps.put("parentId", parent == null ? null : parent.getId());
+                containerProps.put("startUrl", getStartURL(user).toString());
+                containerProps.put("iconHref", getIconHref());
+                containerProps.put("sortOrder", getSortOrder());
+                if (null != getDescription())
+                    containerProps.put("description", getDescription());
+                containerProps.put("isWorkbook", isWorkbook());
+                containerProps.put("isContainerTab", isContainerTab());
+                containerProps.put("type", getContainerNoun());
+                List<String> activeModuleNames = new ArrayList<>();
+                Set<Module> activeModules = getActiveModules(user);
+                for (Module module : activeModules)
+                {
+                    activeModuleNames.add(module.getName());
+                }
+                containerProps.put("activeModules", activeModuleNames);
+                containerProps.put("folderType", getFolderType().getName());
+                containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
             }
-            containerProps.put("activeModules", activeModuleNames);
-            containerProps.put("folderType", getFolderType().getName());
-            containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
-            containerProps.put("parentId", parent==null ? null : parent.getId());
         }
         else
         {
@@ -1410,13 +1425,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("activeModules", new HashSet<Module>());
             containerProps.put("folderType", "");
         }
-
-        LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
-        Map<String, Object> formats = new HashMap<>();
-        formats.put("dateFormat", DateUtil.getDateFormatString(this));
-        formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
-        formats.put("numberFormat", props.getDefaultNumberFormat());
-        containerProps.put("formats", formats);
 
         return containerProps;
     }
