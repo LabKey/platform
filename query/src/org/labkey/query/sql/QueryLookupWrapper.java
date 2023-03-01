@@ -623,7 +623,33 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
+            computeColumnLoggingsAndPHI();
+
             _wrapped.copyColumnAttributesTo(to);
+            to.setColumnLogging(null);
+
+            // Because QLW implements ColumnResolvingRelation (and because we apply xml metadata),
+            // we have to do remapFieldKeys() here.
+            //
+            // This code started off in QueryTableInfo.remapSelectFieldKeys()
+            // We may be able to remove that similar/duplicate code if the root relation of QueryTableInfo always
+            // implements ColumnResolvingRelation.
+
+            AbstractQueryRelation.RelationColumn sourceColumn = _query._mapUniqueNamesToRelationColumn.get(_wrapped.getUniqueName());
+            QueryRelation sourceRelation = null == sourceColumn ? null : sourceColumn.getTable();
+            Map<FieldKey, FieldKey> remap = sourceRelation instanceof QueryRelation.ColumnResolvingRelation crr ? crr.getRemapMap(_mapSourceUniqueNameToFieldKey) : null;
+
+            if (null != remap)
+            {
+                var warnings = new CaseInsensitiveHashSet();
+                to.remapFieldKeys(null, remap, warnings, true);
+                for (String w : warnings)
+                    _query.getParseWarnings().add(new QueryParseWarning(w, null, 0, 0));
+            }
+
+            to.setColumnLogging(_columnLogging);
+            to.setPHI(_phi);
+
             if (to.getFieldKey().getParent() == null)
             {
                 ColumnType columnMetaData = _columnMetaDataMap.get(to.getName());
@@ -796,6 +822,8 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
      */
 
     boolean computeColumnLoggingsCalled = false;
+    Map<String,FieldKey> _mapSourceUniqueNameToFieldKey = null;
+
 
     void computeColumnLoggingsAndPHI()
     {
@@ -803,9 +831,9 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             return;
         computeColumnLoggingsCalled = true;
 
-        Map<String,FieldKey> outerMap = new HashMap<>();
+        _mapSourceUniqueNameToFieldKey = new HashMap<>();
         _selectedColumns.values().stream().filter(sc -> sc instanceof PassThroughColumn).map(sc -> (PassThroughColumn)sc)
-                .forEach(ptc -> outerMap.put(ptc._wrapped.getUniqueName(), ptc.getFieldKey()));
+                .forEach(ptc -> _mapSourceUniqueNameToFieldKey.put(ptc._wrapped.getUniqueName(), ptc.getFieldKey()));
 
         CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
         QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "UNION")
@@ -829,7 +857,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             {
                 var columnsUsed = ptColumn._wrapped.gatherInvolvedSelectColumns(new ArrayList<>());
                 QueryColumnLogging qcl = QueryColumnLogging.create(fakeTableInfo, qlwColumn.getFieldKey(), columnsUsed);
-                cl = qcl.remapQueryFieldKeys(fakeTableInfo, qlwColumn.getFieldKey(), outerMap);
+                cl = qcl.remapQueryFieldKeys(fakeTableInfo, qlwColumn.getFieldKey(), _mapSourceUniqueNameToFieldKey);
                 for (var columnUsed : columnsUsed)
                     phi = PHI.max(phi, columnUsed.getPHI());
             }
