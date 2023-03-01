@@ -15,6 +15,7 @@
  */
 package org.labkey.api.premium;
 
+import org.apache.commons.fileupload.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
@@ -43,7 +44,10 @@ public interface PremiumService
 
     default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
     {
-        return new CommonsMultipartResolver();
+        CommonsMultipartResolver result = new CommonsMultipartResolver();
+        // Issue 47362 - configure a limit for the number of files per request
+        result.getFileUpload().setFileCountMax(1_000);
+        return result;
     }
 
     void registerAntiVirusProvider(AntiVirusProvider avp);
