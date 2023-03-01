@@ -296,6 +296,27 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
+      <column columnName="StoredAmount">
+          <columnTitle>Amount</columnTitle>
+          <description>The amount of this sample currently on hand</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
+      <column columnName="Units">
+          <description>The units associated with the StoredAmount for this sample</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
       <column columnName="RecomputeRollup">
           <isHidden>true</isHidden>
           <isUserEditable>false</isUserEditable>
@@ -311,7 +332,7 @@
           <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="AliquotVolume">
-          <columnTitle>Aliquot Total Volume</columnTitle>
+          <columnTitle>Aliquot Total Amount</columnTitle>
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>
           <shownInInsertView>false</shownInInsertView>
@@ -998,6 +1019,24 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="StoredAmount">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
+      <column columnName="Units">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
       <column columnName="MaterialExpDate"/>
     </columns>
   </table>

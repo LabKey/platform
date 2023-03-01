@@ -62,6 +62,10 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         MaterialExpDate,
         AliquotUnit,
         QueryableInputs,
+        StoredAmount,
+        RawAmount,
+        Units,
+        RawUnits,
     }
 
     void populate(@Nullable ExpSampleType st, boolean filterSampleType);

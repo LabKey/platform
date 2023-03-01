@@ -53,8 +53,6 @@ public interface InventoryService
             "StorageLocation",
             "EnteredStorage",
             "StorageStatus",
-            "StoredAmount",
-            "Units",
             "StorageComment"
     );
 
@@ -76,10 +74,6 @@ public interface InventoryService
 
     @NotNull
     String getWellLabel(int boxId, int row, Integer col);
-
-    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
-
-    void recomputeSamplesRollup(Set<Integer> parentIds, String sampleTypeMetricUnit, Container container) throws SQLException;
 
     static boolean isFreezerManagementEnabled(Container c)
     {

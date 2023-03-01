@@ -4588,10 +4588,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            boolean isAliquotRollupSupported = InventoryService.get() != null
-                    && container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Inventory"));
-
-            Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
+            Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
@@ -4631,14 +4628,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                if (!isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
-                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                    sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
                             .add(material.getRootMaterialLSID());
                 }
 
             }
+
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
             {
@@ -4740,20 +4738,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // recalculate rollup
-            if (!isTruncate && isAliquotRollupSupported)
+            if (!isTruncate)
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
-                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
+                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeRoots: sampleTypeAliquotRoots.entrySet())
                     {
-                        ExpSampleType parentSampleType = sampleTypeParents.getKey();
-                        Set<String> parentLsids = sampleTypeParents.getValue();
+                        ExpSampleType parentSampleType = sampleTypeRoots.getKey();
+                        SampleTypeService.get().setRecomputeFlagForSampleLsids(sampleTypeAliquotRoots.get(parentSampleType));
 
-                        List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
-                        Set<Integer> parentSampleIds = new HashSet<>();
-                        parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
+                        Set<String> rootLsids = sampleTypeRoots.getValue();
+                        List<ExpMaterialImpl> rootSamples = getExpMaterialsByLsid(rootLsids);
+                        Set<Integer> rootSampleIds = new HashSet<>();
+                        rootSamples.forEach(p -> rootSampleIds.add(p.getRowId()));
 
-                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit(), container);
+                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit());
                     }
                 }
                 catch (SQLException e)
