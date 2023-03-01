@@ -103,6 +103,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                                             _settings.getMeasures());
     } //c-tor
 
+    @Override
+    public boolean isCrosstab()
+    {
+        return true;
+    }
+
     /**
      * Sets the aggregate filters. Aggregate filters are applied post-aggregation, but
      * pre-pivoting, so they can filter out rows with aggregates that do not match the filters.

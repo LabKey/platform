@@ -59,8 +59,9 @@ public class QueryColumnLogging extends ColumnLogging
     @Override
     public ColumnLogging remapFieldKeys(FieldKey baseFieldKey, Map<FieldKey, FieldKey> remap, Set<String> remapWarnings)
     {
-        // see QueryTableInfo.remapFieldKeys().
-        throw new UnsupportedOperationException();
+        // This call should be followed up by remapQueryFieldKeys()
+        // e.g. see QueryTableInfo.remapFieldKeys().
+        return this;
     }
 
 
