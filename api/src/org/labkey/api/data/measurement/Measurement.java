@@ -2,6 +2,8 @@ package org.labkey.api.data.measurement;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 
 public class Measurement
@@ -109,10 +111,10 @@ public class Measurement
 
         public static boolean isCompatible(String stringA, String stringB)
         {
-            if (StringUtils.isEmpty(stringA) && StringUtils.isEmpty(stringB))
+            if (StringUtils.isBlank(stringA) && StringUtils.isBlank(stringB))
                 return true;
 
-            if (StringUtils.isEmpty(stringA) || StringUtils.isEmpty(stringB))
+            if (StringUtils.isBlank(stringA) || StringUtils.isBlank(stringB))
                 return false;
 
             if (stringA.equals(stringB))
@@ -125,6 +127,50 @@ public class Measurement
                 return false;
 
             return unitA.getKind() == unitB.getKind();
+        }
+
+        public static class TestCase extends Assert
+        {
+            @Test
+            public void testIsCompatibleString()
+            {
+                assertTrue("empty string should be compatible with null", Unit.isCompatible(" ", null));
+                assertTrue("empty string should be compatible with null", Unit.isCompatible(null, ""));
+                assertTrue("null strings should be compatible", Unit.isCompatible(null, null));
+                assertTrue("empty string should be compatible with other empty string", Unit.isCompatible(" ", "     "));
+                assertFalse("empty string should be not be compatible with non-empty string", Unit.isCompatible("mg", "     "));
+                assertTrue("same string should be compatible", Unit.isCompatible("mL", "mL"));
+                assertTrue("units with same base should be compatible", Unit.isCompatible("mL", "L"));
+                assertTrue("units with same base should be compatible", Unit.isCompatible("kG", "g"));
+                assertFalse("units with different base should not be compatible", Unit.isCompatible("mg", "units"));
+                assertFalse("invalid unit should not be compatible with valid unit", Unit.isCompatible("xL", "mL"));
+                assertFalse("invalid units should not be compatible", Unit.isCompatible("xL", "tsp"));
+            }
+
+            @Test
+            public void testConvertAmount()
+            {
+                assertEquals("convert to same unit", (Double) 1.0, Unit.g.convertAmount(1.0, Unit.g));
+                assertEquals("convert to larger unit", (Double) 0.001, Unit.g.convertAmount(1.0, Unit.kg));
+                assertEquals("convert to smaller unit", (Double) 1000.0, Unit.g.convertAmount(1.0, Unit.mg));
+                assertNull("convert null amount", Unit.mL.convertAmount(null, Unit.L));
+                try {
+                    Unit.g.convertAmount(2.0, Unit.kL);
+                    fail("Conversion to incompatible unit should throw exception.");
+                } catch (IllegalArgumentException ignore)
+                {
+                    // do nothing
+                }
+            }
+
+            @Test
+            public void testGetUnit()
+            {
+                assertNull("invalid unit label should return null", getUnit("invalid"));
+                assertNull("invalid unit string should return null", getUnit("inv"));
+                assertEquals("valid unit should return object", Unit.g, getUnit("g"));
+                assertEquals("valid unit should return object", Unit.g, getUnit("grams"));
+            }
         }
     }
 
@@ -260,7 +306,7 @@ public class Measurement
 
     public static void validateUnits(String rawUnits, Unit defaultUnits)
     {
-        if (!StringUtils.isEmpty(rawUnits))
+        if (!StringUtils.isBlank(rawUnits))
         {
             rawUnits = rawUnits.trim();
             try
@@ -276,6 +322,92 @@ public class Measurement
                 if (unit == null)
                     throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
             }
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+
+        @Test
+        public void testValidateUnits()
+        {
+            try
+            {
+                Measurement.validateUnits("g", Unit.mg);
+                Measurement.validateUnits("g ", Unit.mg);
+                Measurement.validateUnits(" g ", Unit.mg);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("Compatible unit should not throw exception.");
+            }
+            try
+            {
+                Measurement.validateUnits(null, Unit.unit);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("null units should validate");
+            }
+            try
+            {
+                Measurement.validateUnits("", Unit.unit);
+            }
+            catch (ConversionExceptionWithMessage e)
+            {
+                fail("empty units should validate");
+            }
+            try
+            {
+                Measurement.validateUnits("g", Unit.unit);
+                fail("Units that are not comparable should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+            try
+            {
+                Measurement.validateUnits("nonesuch", Unit.unit);
+                fail("Invalid units should throw exception.");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+
+        }
+
+        @Test
+        public void testConvertToAmount()
+        {
+            assertNull("null value should convert to null", Measurement.convertToAmount(null));
+            assertNull("empty string conversion",  Measurement.convertToAmount(""));
+            assertNull("blank string conversion",  Measurement.convertToAmount("   "));
+            assertEquals("string conversion", (Double) 32.0, Measurement.convertToAmount("32.0"));
+            assertEquals("integer conversion", (Double) 18.0, Measurement.convertToAmount(18));
+            assertEquals("double conversion", (Double) 819.2, Measurement.convertToAmount(819.2));
+            try
+            {
+                Measurement.convertToAmount("not-a-number");
+                fail("conversion of non-number should throw exception");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+
+            }
+        }
+
+        @Test
+        public void testEquals()
+        {
+            Measurement measurement = new Measurement("43.2", "g", "milligrams");
+            assertNotEquals("non-unit object", "43.2 g", measurement);
+            assertNotEquals("different amounts",  measurement, new Measurement("23.4", "g", "milligrams"));
+            assertEquals("same units", measurement, new Measurement("43.2", "g", "mg"));
+            assertEquals("different units", measurement, new Measurement("43200", "mg", "mg"));
+            assertEquals("no normalizing unit", measurement, new Measurement("43200", "mg", null));
         }
     }
 
