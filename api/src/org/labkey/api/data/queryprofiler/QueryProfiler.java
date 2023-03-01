@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +89,7 @@ public class QueryProfiler
     private long _upTimeAtLastReset;
     private boolean _hasBeenReset = false;
 
-    private final List<DatabaseQueryListener<?>> _listeners = new CopyOnWriteArrayList<>();
+    private final List<DatabaseQueryListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static QueryProfiler getInstance()
     {
@@ -192,7 +191,7 @@ public class QueryProfiler
         thread.start();
     }
 
-    public void addListener(DatabaseQueryListener<?> listener)
+    public void addListener(DatabaseQueryListener listener)
     {
         _listeners.add(listener);
     }
@@ -208,26 +207,9 @@ public class QueryProfiler
         {
             if (listener.matches(scope, sql, queryLogging))
             {
-                Map<DatabaseQueryListener<?>, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
-                Object listenerEnvironment;
-                if (listenersEnvironment == null)
-                {
-                    listenerEnvironment = null;
-                    // To avoid getting this warning, the codepath should invoke
-                    // QueryProfiler.getInstance().ensureListenerEnvironment() before executing its DB call. We try
-                    // to do this in a few centralized choke points. While there's no harm in doing it more widely,
-                    // most codepaths shouldn't need to worry about this. You may also be able to refactor code
-                    // to go through an existing codepath that already handles this, such as
-                    // QueryService.get().getSelectSQL() when building up a SQLFragment that will run against the DB
-                    LOG.warn("No DatabaseQueryListener environment available", new Exception());
-                }
-                else
-                {
-                    listenerEnvironment = listenersEnvironment.get(listener);
-                }
                 listener.queryInvoked(scope, sql,
                         (User) QueryService.get().getEnvironment(QueryService.Environment.USER),
-                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment, queryLogging);
+                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), queryLogging);
             }
         }
 
@@ -472,24 +454,6 @@ public class QueryProfiler
         }
 
         return tracker;
-    }
-
-    /**
-     * Makes sure that the environment from each registered DatabaseQueryListener is available via
-     * QueryService.get().getEnvironment(). Will preserve the existing environment if it has already been registered.
-     */
-    public void ensureListenerEnvironment()
-    {
-        // The environment is stored in a ThreadLocal, so there's no need for synchronization on the get/set combination
-        if (QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS) == null)
-        {
-            Map<DatabaseQueryListener<?>, Object> listenerEnvironment = new HashMap<>();
-            QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);     // Set environment here to avoid stack overflow (Issue #22277)
-            for (DatabaseQueryListener<?> listener : _listeners)
-            {
-                listenerEnvironment.put(listener, listener.getEnvironment());
-            }
-        }
     }
 
     public Collection<QueryTrackerSet> getTrackerSets()
