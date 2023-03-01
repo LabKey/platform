@@ -23,6 +23,8 @@ import java.util.List;
  */
 public interface CrosstabTableInfo extends TableInfo
 {
+    boolean isCrosstab();
+
     /**
      * Returns the {@link org.labkey.api.data.CrosstabSettings} object passed to the constructor.
      *

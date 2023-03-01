@@ -27,6 +27,11 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
@@ -177,25 +182,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         if (keys.size() == 1)
             key = new FieldKey(null, keys.iterator().next());
 
-        var ret = new QueryTableInfo(this, getAlias())
-        {
-            @Override
-            protected void afterInitializeColumns()
-            {
-                remapSelectFieldKeys(true);
-            }
-
-            @Override
-            public String getTitleColumn()
-            {
-                RelationColumn titleColumn = null;
-                if (_source instanceof QuerySelect select)
-                    titleColumn = select.getTitleColumn();
-                if (null != titleColumn && titleColumn.getFieldKey().size() == 1)
-                    return titleColumn.getFieldKey().getName();
-                return super.getTitleColumn();
-            }
-        };
+        var ret = new QLWTableInfo();
         for (var col : _selectedColumns.values())
         {
             RelationColumnInfo ci = new RelationColumnInfo(ret, col);
@@ -211,6 +198,75 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         ret.afterInitializeColumns();
         MemTracker.getInstance().put(ret);
         return ret;
+    }
+
+
+    private class QLWTableInfo extends QueryTableInfo implements CrosstabTableInfo
+    {
+        CrosstabTableInfo _crosstabTableInfo;
+
+        QLWTableInfo()
+        {
+            super(QueryLookupWrapper.this, QueryLookupWrapper.this.getAlias());
+            if (_source instanceof QueryPivot)
+                _crosstabTableInfo = (CrosstabTableInfo)_source.getTableInfo();
+        }
+
+        @Override
+        protected void afterInitializeColumns()
+        {
+            remapSelectFieldKeys(true);
+        }
+
+        @Override
+        public String getTitleColumn()
+        {
+            RelationColumn titleColumn = null;
+            if (_source instanceof QuerySelect select)
+                titleColumn = select.getTitleColumn();
+            if (null != titleColumn && titleColumn.getFieldKey().size() == 1)
+                return titleColumn.getFieldKey().getName();
+            return super.getTitleColumn();
+        }
+
+        // CrosstabTableInfo
+
+
+        @Override
+        public boolean isCrosstab()
+        {
+            return null != _crosstabTableInfo && _crosstabTableInfo.isCrosstab();
+        }
+
+        @Override
+        public CrosstabSettings getSettings()
+        {
+            return _crosstabTableInfo.getSettings();
+        }
+
+        @Override
+        public List<CrosstabMember> getColMembers()
+        {
+            return _crosstabTableInfo.getColMembers();
+        }
+
+        @Override
+        public CrosstabMeasure getMeasureFromKey(String fieldKey)
+        {
+            return _crosstabTableInfo.getMeasureFromKey(fieldKey);
+        }
+
+        @Override
+        public void setAggregateFilter(Filter filter)
+        {
+            _crosstabTableInfo.setAggregateFilter(filter);
+        }
+
+        @Override
+        public Sort getDefaultSort()
+        {
+            return _crosstabTableInfo.getDefaultSort();
+        }
     }
 
 

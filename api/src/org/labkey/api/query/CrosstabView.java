@@ -89,10 +89,8 @@ public class CrosstabView extends QueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        if (getTable() instanceof CrosstabTableInfo)
+        if (getTable() instanceof CrosstabTableInfo table && table.isCrosstab())
         {
-            CrosstabTableInfo table = (CrosstabTableInfo)getTable();
-
             //get the display columns
             //this will also adjust _numRowAxisCols and _numMeasures based on
             //the selected display columns
@@ -110,7 +108,8 @@ public class CrosstabView extends QueryView
     @Override
     public List<DisplayColumn> getDisplayColumns()
     {
-        assert getTable() instanceof CrosstabTableInfo;
+        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
+
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
         List<FieldKey> selectedFieldKeys = null;
@@ -200,7 +199,8 @@ public class CrosstabView extends QueryView
     {
         DataView view = super.createDataView();
 
-        assert getTable() instanceof CrosstabTableInfo;
+        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
+
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
         // set the default base sort (remove non-existent sort columns), merging with any existing base sort from the
