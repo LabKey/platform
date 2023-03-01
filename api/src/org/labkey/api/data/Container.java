@@ -1367,13 +1367,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return toJSON(user, true, true);
     }
 
-    public Map<String, Object> toJSON(User user, boolean includePermissions, boolean includeAssortedProps)
+    public Map<String, Object> toJSON(User user, boolean includePermissions, boolean includeStandardProps)
     {
         Map<String, Object> containerProps = new HashMap<>();
         Container parent = getParent();
         containerProps.put("name", getName());
         containerProps.put("path", getPath());
-        if (includeAssortedProps)
+        if (includeStandardProps)
         {
             containerProps.put("parentPath", parent == null ? null : parent.getPath());
             containerProps.put("title", getTitle());
@@ -1396,7 +1396,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(getPolicy(), user));
             }
 
-            if (includeAssortedProps)
+            if (includeStandardProps)
             {
                 containerProps.put("parentId", parent == null ? null : parent.getId());
                 containerProps.put("startUrl", getStartURL(user).toString());
