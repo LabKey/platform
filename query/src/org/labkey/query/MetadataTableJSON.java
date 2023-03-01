@@ -56,6 +56,7 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -563,7 +564,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     public static MetadataTableJSON getMetadata(String schemaName, String tableName, User user, Container container) throws MetadataUnavailableException
     {
         Map<String, MetadataColumnJSON> columnInfos = new CaseInsensitiveHashMap<>();
-        List<MetadataColumnJSON> orderedPDs = new ArrayList<>();
+        List<String> orderedPDs = new ArrayList<>();
         Set<String> injectedColumnNames = new CaseInsensitiveHashSet();
         MetadataTableJSON metadataTableJSON = new MetadataTableJSON();
         metadataTableJSON.setSchemaName(schemaName);
@@ -598,7 +599,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setPropertyId(-1);
             metadataColumnJSON.setName(columnInfo.getName());
             columnInfos.put(metadataColumnJSON.getName(), metadataColumnJSON);
-            orderedPDs.add(metadataColumnJSON);
+            orderedPDs.add(metadataColumnJSON.getName());
 
             metadataColumnJSON.setLockExistingField(true);
             metadataColumnJSON.setRequired(!columnInfo.isNullable());
@@ -658,139 +659,146 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
         }
 
+        Map<String, MetadataColumnJSON> overrideMap = new HashMap<>();
         if (queryDefs != null && !queryDefs.isEmpty())
         {
-            // Use the last QueryDef's metadata -- this should be the user's metadata override in the database if it exists
-            QueryDef queryDef = queryDefs.get(queryDefs.size()-1);
-
-            if (!container.getId().equals(queryDef.getContainerId()))
+            // issue : 47355 apply all available queryDef metadata in order of application
+            for (QueryDef queryDef : queryDefs)
             {
-                Container c = ContainerManager.getForId(queryDef.getContainerId());
-                if (c != null)
+                if (!container.getId().equals(queryDef.getContainerId()))
                 {
-                    metadataTableJSON.setDefinitionFolder(c.getPath());
-                }
-            }
-            TablesDocument doc = null;
-            try
-            {
-                doc = parseDocument(queryDef.getMetaData());
-            }
-            catch (XmlException e)
-            {
-                // Just ignore the metadata override if it doesn't parse correctly
-            }
-            TableType tableType = getTableType(tableName, doc);
-            if (tableType != null)
-            {
-                if (tableType.getColumns() != null)
-                {
-                    for (ColumnType column : tableType.getColumns().getColumnArray())
+                    Container c = ContainerManager.getForId(queryDef.getContainerId());
+                    if (c != null)
                     {
-                        MetadataColumnJSON metadataColumnJSON = columnInfos.get(column.getColumnName());
-                        if (metadataColumnJSON == null)
+                        metadataTableJSON.setDefinitionFolder(c.getPath());
+                    }
+                }
+                TablesDocument doc = null;
+                try
+                {
+                    doc = parseDocument(queryDef.getMetaData());
+                }
+                catch (XmlException e)
+                {
+                    // Just ignore the metadata override if it doesn't parse correctly
+                }
+                TableType tableType = getTableType(tableName, doc);
+                if (tableType != null)
+                {
+                    if (tableType.getColumns() != null)
+                    {
+                        for (ColumnType column : tableType.getColumns().getColumnArray())
                         {
-                            // Omit columns that are in the XML but are no longer in the underlying table/query
-                            break;
-                        }
-                        if (column.isSetImportAliases())
-                        {
-                            String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
-                            metadataColumnJSON.setImportAliases(importAliases);
-                        }
-                        if (column.isSetColumnTitle())
-                        {
-                            metadataColumnJSON.setLabel(column.getColumnTitle());
-                        }
-                        if (column.isSetDescription())
-                        {
-                            metadataColumnJSON.setDescription(column.getDescription());
-                        }
-                        if (column.isSetFormatString())
-                        {
-                            metadataColumnJSON.setFormat(column.getFormatString());
-                        }
-                        if (column.isSetShownInDetailsView())
-                        {
-                            metadataColumnJSON.setShownInDetailsView(column.getShownInDetailsView());
-                        }
-                        if (column.isSetDimension())
-                        {
-                            metadataColumnJSON.setDimension(column.getDimension());
-                        }
-                        if (column.isSetMeasure())
-                        {
-                            metadataColumnJSON.setMeasure(column.getMeasure());
-                        }
-                        if (column.isSetRecommendedVariable())
-                        {
-                            metadataColumnJSON.setRecommendedVariable(column.getRecommendedVariable());
-                        }
-                        else if (column.isSetKeyVariable())
-                        {
-                            metadataColumnJSON.setRecommendedVariable(column.getKeyVariable());
-                        }
-                        if (column.isSetDefaultScale())
-                        {
-                            metadataColumnJSON.setDefaultScale(column.getDefaultScale().toString());
-                        }
+                            MetadataColumnJSON col = columnInfos.get(column.getColumnName());
+                            if (col == null)
+                            {
+                                // Omit columns that are in the XML but are no longer in the underlying table/query
+                                break;
+                            }
+
+                            // each metadata override should have a separate copy of the tableInfo column
+                            MetadataColumnJSON metadataColumnJSON = (MetadataColumnJSON) col.copy();
+                            overrideMap.put(metadataColumnJSON.getName(), metadataColumnJSON);
+
+                            if (column.isSetImportAliases())
+                            {
+                                String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
+                                metadataColumnJSON.setImportAliases(importAliases);
+                            }
+                            if (column.isSetColumnTitle())
+                            {
+                                metadataColumnJSON.setLabel(column.getColumnTitle());
+                            }
+                            if (column.isSetDescription())
+                            {
+                                metadataColumnJSON.setDescription(column.getDescription());
+                            }
+                            if (column.isSetFormatString())
+                            {
+                                metadataColumnJSON.setFormat(column.getFormatString());
+                            }
+                            if (column.isSetShownInDetailsView())
+                            {
+                                metadataColumnJSON.setShownInDetailsView(column.getShownInDetailsView());
+                            }
+                            if (column.isSetDimension())
+                            {
+                                metadataColumnJSON.setDimension(column.getDimension());
+                            }
+                            if (column.isSetMeasure())
+                            {
+                                metadataColumnJSON.setMeasure(column.getMeasure());
+                            }
+                            if (column.isSetRecommendedVariable())
+                            {
+                                metadataColumnJSON.setRecommendedVariable(column.getRecommendedVariable());
+                            }
+                            else if (column.isSetKeyVariable())
+                            {
+                                metadataColumnJSON.setRecommendedVariable(column.getKeyVariable());
+                            }
+                            if (column.isSetDefaultScale())
+                            {
+                                metadataColumnJSON.setDefaultScale(column.getDefaultScale().toString());
+                            }
                         /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
                         if (column.isSetPhi())
                         {
                             gwtColumnInfo.setPHI(column.getPhi().toString());
                         }*/
-                        if (column.isSetExcludeFromShifting())
-                        {
-                            metadataColumnJSON.setExcludeFromShifting(column.getExcludeFromShifting());
-                        }
-                        if (column.isSetIsHidden())
-                        {
-                            metadataColumnJSON.setHidden(column.getIsHidden());
-                        }
-                        if (column.isSetShownInInsertView())
-                        {
-                            metadataColumnJSON.setShownInInsertView(column.getShownInInsertView());
-                        }
-                        if (column.isSetShownInUpdateView())
-                        {
-                            metadataColumnJSON.setShownInUpdateView(column.getShownInUpdateView());
-                        }
-                        if (column.getFk() != null)
-                        {
-                            metadataColumnJSON.setLookupQuery(column.getFk().getFkTable());
-                            metadataColumnJSON.setLookupSchema(column.getFk().getFkDbSchema());
-                        }
-                        if (column.isSetConditionalFormats())
-                        {
-                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
-                            List<GWTConditionalFormat> gwtFormats = new ArrayList<>();
-                            for (ConditionalFormat serverFormat : serverFormats)
+                            if (column.isSetExcludeFromShifting())
                             {
-                                gwtFormats.add(new GWTConditionalFormat(serverFormat));
+                                metadataColumnJSON.setExcludeFromShifting(column.getExcludeFromShifting());
                             }
-                            metadataColumnJSON.setConditionalFormats(gwtFormats);
-                        }
-                        if (column.getWrappedColumnName() != null)
-                        {
-                            metadataColumnJSON.setLockExistingField(false);
-                            injectedColumnNames.add(column.getColumnName());
-                            metadataColumnJSON.setWrappedColumnName(column.getWrappedColumnName());
-                            ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
-                            if (tableColumn != null)
+                            if (column.isSetIsHidden())
                             {
-                                metadataColumnJSON.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                                metadataColumnJSON.setHidden(column.getIsHidden());
                             }
-                        }
-                        else
-                        {
-                            ColumnInfo tableColumn = table.getColumn(column.getColumnName());
-                            if (tableColumn != null)
+                            if (column.isSetShownInInsertView())
                             {
-                                metadataColumnJSON.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                                metadataColumnJSON.setShownInInsertView(column.getShownInInsertView());
+                            }
+                            if (column.isSetShownInUpdateView())
+                            {
+                                metadataColumnJSON.setShownInUpdateView(column.getShownInUpdateView());
+                            }
+                            if (column.getFk() != null)
+                            {
+                                metadataColumnJSON.setLookupQuery(column.getFk().getFkTable());
+                                metadataColumnJSON.setLookupSchema(column.getFk().getFkDbSchema());
+                            }
+                            if (column.isSetConditionalFormats())
+                            {
+                                List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
+                                List<GWTConditionalFormat> gwtFormats = new ArrayList<>();
+                                for (ConditionalFormat serverFormat : serverFormats)
+                                {
+                                    gwtFormats.add(new GWTConditionalFormat(serverFormat));
+                                }
+                                metadataColumnJSON.setConditionalFormats(gwtFormats);
+                            }
+                            if (column.getWrappedColumnName() != null)
+                            {
+                                metadataColumnJSON.setLockExistingField(false);
+                                injectedColumnNames.add(column.getColumnName());
+                                metadataColumnJSON.setWrappedColumnName(column.getWrappedColumnName());
+                                ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
+                                if (tableColumn != null)
+                                {
+                                    metadataColumnJSON.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                                }
                             }
                             else
                             {
-                                injectedColumnNames.add(column.getColumnName());
+                                ColumnInfo tableColumn = table.getColumn(column.getColumnName());
+                                if (tableColumn != null)
+                                {
+                                    metadataColumnJSON.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                                }
+                                else
+                                {
+                                    injectedColumnNames.add(column.getColumnName());
+                                }
                             }
                         }
                     }
@@ -798,9 +806,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
         }
 
+        columnInfos.putAll(overrideMap);
+        // return metadata fields in the same order as reported by the table
+        List<MetadataColumnJSON> orderedCols = new ArrayList<>();
+        orderedPDs.forEach(name -> {
+            orderedCols.add(columnInfos.get(name));
+        });
         Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
         builtInColumnNames.removeAll(injectedColumnNames);
-        metadataTableJSON.setFields(orderedPDs);
+        metadataTableJSON.setFields(orderedCols);
 
         // TODO: figure out something better for defaultValuesURL
         metadataTableJSON.setDefaultValuesURL(" ");
