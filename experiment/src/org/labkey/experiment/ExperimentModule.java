@@ -25,11 +25,14 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -55,6 +58,7 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -62,9 +66,12 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
@@ -84,25 +91,8 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.experiment.api.DataClassDomainKind;
-import org.labkey.experiment.api.ExpDataClassImpl;
-import org.labkey.experiment.api.ExpDataClassType;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpProtocolImpl;
-import org.labkey.experiment.api.ExpSampleTypeImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentStressTest;
-import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.LineagePerfTest;
-import org.labkey.experiment.api.LineageTest;
-import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.*;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
-import org.labkey.experiment.api.UniqueValueCounterTestCase;
-import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ChildOfMethod;
 import org.labkey.experiment.api.data.LineageCompareType;
@@ -129,6 +119,7 @@ import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -702,6 +693,69 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
         return list;
+    }
+
+    @Override
+    public ArrayList<Summary> getDetailedSummary(Container c)
+    {
+        ArrayList<Summary> summaries = new ArrayList<>();
+        User user = HttpView.currentContext().getUser();
+
+        // Assay types
+        int assayTypeCount = 0;
+        for (ExpProtocol protocol : AssayService.get().getAssayProtocols(c))
+        {
+            if (protocol.getContainer().equals(c))
+                assayTypeCount++;
+        }
+        if (assayTypeCount > 0)
+            summaries.add(new Summary(assayTypeCount, "Assay Type"));
+
+        // Run count
+        int runGroupCount = ExperimentService.get().getExperiments(c, user, false, true).size();
+        if (runGroupCount > 0)
+            summaries.add(new Summary(runGroupCount, "Assay run"));
+
+        // Number of Data Classes
+        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, false);
+        int dataClassCount = dataClasses.size();
+        if (dataClassCount > 0)
+            summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
+
+        // Individual Data Class row counts
+        ExpSchema expSchema = new ExpSchema(user, c);
+        TableInfo dataClassesTable = ExpSchema.TableType.DataClasses.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+        Map<String, Object> dataClassResults = new TableSelector(dataClassesTable, dataClassesTable.getColumns("Name,DataCount"), null, null).getValueMap();
+        for (String k : dataClassResults.keySet())
+        {
+            int count = ((Long) dataClassResults.get(k)).intValue();
+            if (count != 0)
+                summaries.add(new Summary(count, k));
+        }
+
+        // Sample Types
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        if (sampleTypeCount > 0)
+            summaries.add(new Summary(sampleTypeCount, "Sample Type"));
+
+        // Individual Sample Type row counts
+        UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
+        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+        sampleTypeTable.populate();
+        Map<String, Object> tsSamplesResults = new TableSelector(sampleTypeTable, sampleTypeTable.getColumns("Name,SampleCount"), null, null).getValueMap();
+        for (String k : tsSamplesResults.keySet())
+        {
+            int count = ((Long) tsSamplesResults.get(k)).intValue();
+            if (count != 0)
+            {
+                Summary s = k.equals("MixtureBatches")
+                        ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
+                        : new Summary(count, k);
+                summaries.add(s);
+            }
+        }
+
+        return summaries;
     }
 
     @Override

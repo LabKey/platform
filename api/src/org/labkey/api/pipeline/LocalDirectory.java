@@ -65,7 +65,7 @@ public class LocalDirectory implements Serializable
     {
         return !root.isCloudRoot() ?
                 new LocalDirectory(workingDir.toFile(), moduleName, baseLogFileName) :
-                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName, workingDir);
+                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
     }
 
     @JsonCreator

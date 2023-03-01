@@ -158,7 +158,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
         finally
         {
-            finallyCleanUpLocalDirectory();
+            PipelineService.get().getPipelineQueue().almostDone(this);
         }
     }
 
