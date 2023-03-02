@@ -3051,21 +3051,25 @@ public class DataRegion extends DisplayElement
             {
                 var dr = new DataRegion();
                 dr.setColumns(List.of(table.getColumn("Title"), table.getColumn("Container")));
-                Results rs = dr.getResults(new RenderContext(context));
-                assertEquals(4, rs.getFieldMap().size());
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container")));
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container", "DisplayName")));
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                try (Results rs = dr.getResults(new RenderContext(context)))
+                {
+                    assertEquals(4, rs.getFieldMap().size());
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container", "DisplayName")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                }
             }
 
             {
                 var dr = new DataRegion();
                 dr.setColumns(List.of(table.getColumn("Title")));
-                Results rs = dr.getResults(new RenderContext(context));
-                assertEquals(2, rs.getFieldMap().size());
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
-                assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                try (Results rs = dr.getResults(new RenderContext(context)))
+                {
+                    assertEquals(2, rs.getFieldMap().size());
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                }
             }
         }
     }
