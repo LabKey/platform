@@ -2313,7 +2313,7 @@ public class PageFlowUtil
 
         if (null != container)
         {
-            json.put("container", container.toJSON(user, config != null && config.isIncludePermissions()));
+            json.put("container", container.toJSON(user, config != null && config.isIncludePermissions(), true));
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
 
