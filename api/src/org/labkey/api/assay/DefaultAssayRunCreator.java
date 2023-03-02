@@ -121,6 +121,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DataTransformer<ProviderType> transformer = new DefaultDataTransformer<>();
         return transformer.transformAndValidate(context, run);
     }
+
     @Override
     public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
     {
@@ -135,7 +136,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
      */
     @Override
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId, boolean forceAsync) throws ExperimentException, ValidationException
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(
+        AssayRunUploadContext<ProviderType> context,
+        @Nullable Integer batchId,
+        boolean forceAsync
+    ) throws ExperimentException, ValidationException
     {
         ExpExperiment exp = null;
         if (batchId != null)
@@ -237,7 +242,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return the run and batch that were inserted
      */
     @Override
-    public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(
+        final AssayRunUploadContext<ProviderType> context,
+        @Nullable ExpExperiment batch,
+        @NotNull ExpRun run,
+        boolean forceSaveBatchProps
+    ) throws ExperimentException, ValidationException
     {
         final Container container = context.getContainer();
 
@@ -430,7 +440,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    private void resolveParticipantVisits(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<DomainProperty, String> allProperties, ParticipantVisitResolverType resolverType) throws ExperimentException
+    private void resolveParticipantVisits(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpMaterial, String> inputMaterials,
+        Map<ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        Map<DomainProperty, String> allProperties,
+        ParticipantVisitResolverType resolverType
+    ) throws ExperimentException
     {
         try
         {
@@ -467,7 +485,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void importStandardResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
+    protected void importStandardResultData(
+        AssayRunUploadContext<ProviderType> context,
+        ExpRun run,
+        Map<ExpData, String> inputDatas,
+        Map<ExpData, String> outputDatas,
+        ViewBackgroundInfo info,
+        XarContext xarContext,
+        TransformResult transformResult,
+        List<ExpData> insertedDatas
+    ) throws ExperimentException, ValidationException
     {
         List<Map<String, Object>> rawData = context.getRawData();
         if (rawData != null)
@@ -515,7 +542,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    private void importResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
+    private void importResultData(
+        AssayRunUploadContext<ProviderType> context,
+        ExpRun run,
+        Map<ExpData, String> inputDatas,
+        Map<ExpData, String> outputDatas,
+        ViewBackgroundInfo info,
+        XarContext xarContext,
+        TransformResult transformResult,
+        List<ExpData> insertedDatas
+    ) throws ExperimentException, ValidationException
     {
         if (transformResult.getTransformedData().isEmpty())
         {
@@ -772,7 +808,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return createData(c, null, name, dataType, false, false, log);
     }
 
-    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingData, boolean errorIfDataOwned, @Nullable Logger log) throws ValidationException
+    public static @NotNull ExpData createData(
+        Container c,
+        File file,
+        String name,
+        @Nullable DataType dataType,
+        boolean reuseExistingData,
+        boolean errorIfDataOwned,
+        @Nullable Logger log
+    ) throws ValidationException
     {
         if (log == null)
             log = LOG;
@@ -823,12 +867,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return data;
     }
 
-    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context,
-                                      Map<ExpMaterial, String> outputMaterials,
-                                      ParticipantVisitResolverType resolverType,
-                                      @NotNull RemapCache cache,
-                                      @NotNull Map<Integer, ExpMaterial> materialCache)
-            throws ExperimentException, ValidationException
+    protected void addOutputMaterials(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpMaterial, String> outputMaterials,
+        ParticipantVisitResolverType resolverType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
         addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers, cache, materialCache);
@@ -836,49 +881,50 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpMaterial objects
-    protected void addMaterials(AssayRunUploadContext<ProviderType> context,
-                                @NotNull Map<ExpMaterial, String> resolved,
-                                @NotNull Map<?, String> unresolved,
-                                @NotNull Set<Container> searchContainers,
-                                @NotNull RemapCache cache,
-                                @NotNull Map<Integer, ExpMaterial> materialCache)
-            throws ExperimentException, ValidationException
+    protected void addMaterials(
+        AssayRunUploadContext<ProviderType> context,
+        @NotNull Map<ExpMaterial, String> resolved,
+        @NotNull Map<?, String> unresolved,
+        @NotNull Set<Container> searchContainers,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ExperimentException, ValidationException
     {
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
             String role = entry.getValue();
 
-            if (o instanceof ExpMaterial)
+            if (o instanceof ExpMaterial m)
             {
-                ExpMaterial m = (ExpMaterial)o;
                 if (!resolved.containsKey(m) && searchContainers.contains(m.getContainer()))
                     resolved.put(m, role);
             }
-            else if (o instanceof Integer)
+            else if (o instanceof Integer sampleRowId)
             {
-                addMaterialById(context, resolved, (Integer)o, role, searchContainers, null, materialCache);
+                addMaterialById(context, resolved, sampleRowId, role, searchContainers, null, materialCache);
             }
-            else if (o instanceof String)
+            else if (o instanceof String sampleName)
             {
-                addMaterialByName(context, resolved, (String)o, role, searchContainers, null, cache, materialCache);
+                addMaterialByName(context, resolved, sampleName, role, searchContainers, null, cache, materialCache);
             }
             else
                 throw new ExperimentException("Unable to resolve sample: " + o);
         }
     }
 
-    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context,
-                                     Map<ExpMaterial, String> resolved,
-                                     String sampleName,
-                                     String role,
-                                     @NotNull Set<Container> searchContainers,
-                                     @Nullable ExpSampleType st,
-                                     @NotNull RemapCache cache,
-                                     @NotNull Map<Integer, ExpMaterial> materialCache)
-            throws ValidationException
+    protected void addMaterialByName(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpMaterial, String> resolved,
+        String sampleName,
+        String role,
+        @NotNull Set<Container> searchContainers,
+        @Nullable ExpSampleType st,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ValidationException
     {
-        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), null, null, sampleName, cache, materialCache);
+        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), st, st != null ? st.getName() : null, sampleName, cache, materialCache);
         if (material == null)
         {
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
@@ -892,13 +938,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addMaterialById(AssayRunUploadContext<ProviderType> context,
-                                   Map<ExpMaterial, String> resolved,
-                                   Integer sampleRowId,
-                                   String role,
-                                   @NotNull Set<Container> searchContainers,
-                                   @Nullable ExpSampleType st,
-                                   @NotNull Map<Integer, ExpMaterial> materialCache) throws ExperimentException
+    protected void addMaterialById(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpMaterial, String> resolved,
+        Integer sampleRowId,
+        String role,
+        @NotNull Set<Container> searchContainers,
+        @Nullable ExpSampleType st,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ExperimentException
     {
         final Container c = context.getContainer();
         final User user = context.getUser();
@@ -913,7 +961,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
+    protected void addOutputDatas(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpData, String> inputDatas,
+        Map<ExpData, String> outputDatas,
+        ParticipantVisitResolverType resolverType
+    ) throws ExperimentException, ValidationException
     {
         Logger log = context.getLogger() != null ? context.getLogger() : LOG;
 
@@ -986,7 +1039,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
      */
-    public void addRelatedOutputDatas(AssayRunUploadContext context, Set<File> inputFiles, Map<ExpData, String> outputDatas, final File primaryFile) throws ValidationException
+    public void addRelatedOutputDatas(
+        AssayRunUploadContext context,
+        Set<File> inputFiles,
+        Map<ExpData, String> outputDatas,
+        final File primaryFile
+    ) throws ValidationException
     {
         AssayDataType dataType = getProvider().getDataType();
         final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);
@@ -1012,14 +1070,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void resolveExtraRunData(ParticipantVisitResolver resolver,
-                                  AssayRunUploadContext context,
-                                  Map<ExpMaterial, String> inputMaterials,
-                                  Map<ExpData, String> inputDatas,
-                                  Map<ExpMaterial, String> outputMaterials,
-                                  Map<ExpData, String> outputDatas) throws ExperimentException
+    protected void resolveExtraRunData(
+        ParticipantVisitResolver resolver,
+        AssayRunUploadContext context,
+        Map<ExpMaterial, String> inputMaterials,
+        Map<ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas
+    ) throws ExperimentException
     {
-
     }
 
     /**
@@ -1077,9 +1136,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-
     // Disallow creating a run with inputs which are also outputs
-    protected void checkForCycles(AssayRunUploadContext<ProviderType> context, Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
+    protected void checkForCycles(
+        AssayRunUploadContext<ProviderType> context,
+        Map<? extends ExpRunItem, String> inputs,
+        Map<? extends ExpRunItem, String> outputs
+    ) throws ExperimentException
     {
         for (ExpRunItem input : inputs.keySet())
         {
@@ -1090,7 +1152,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
     }
-
 
     protected void savePropertyObject(ExpObject object, Container container, Map<DomainProperty, String> properties, User user) throws ExperimentException
     {
@@ -1176,9 +1237,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 dp.getLookup(), type.getJavaType(), cache, errors);
     }
 
-    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value,
-                                         String label, Boolean required, Lookup lookup, Class type, RemapCache cache,
-                                         List<ValidationError> errors)
+    private static void validateProperty(
+        ContainerUser context,
+        List<ColumnValidator> validators,
+        String value,
+        String label,
+        Boolean required,
+        Lookup lookup,
+        Class type,
+        RemapCache cache,
+        List<ValidationError> errors
+    )
     {
         boolean missing = (value == null || value.length() == 0);
         int rowNum = 0;
