@@ -197,7 +197,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     @Override
     public void setQuery(Query query)
     {
-//        assert getParseErrors().size() == 0;
         super.setQuery(query);
         for (QueryRelation r : _tables.values())
             r.setQuery(query);

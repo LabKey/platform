@@ -32,7 +32,7 @@ public class ReexecutableRenderContext extends RenderContext
     }
 
     @Override
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
     {
         Set<FieldKey> fieldKeys = columns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
 
@@ -41,8 +41,7 @@ public class ReexecutableRenderContext extends RenderContext
             TableSelector selector = new TableSelector(table, columns, filter, sort)
                     .setNamedParameters(null)       // leave named parameters in SQLFragment
                     .setMaxRows(maxRows)
-                    .setOffset(offset)
-                    .setForDisplay(true);
+                    .setOffset(offset);
             var sqlfWithCTE = selector.getSql();
             // flatten out CTEs
             SQLFragment sqlf = new SQLFragment(sqlfWithCTE.getSQL(), sqlfWithCTE.getParams());
