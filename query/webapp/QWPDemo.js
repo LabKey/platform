@@ -207,7 +207,7 @@
                         var result3 = results[2].lastChild.innerHTML;
 
                         var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
-                        if (tableHeader === 'tag') {
+                        if (tableHeader !== 'tag') {
                             alert('Failed test: Sort by Tag. Expected "tag" to be the rightmost column; Found ' + tableHeader);
                         }
                         else if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
