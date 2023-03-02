@@ -16,8 +16,8 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -45,10 +45,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * User: dave
- * Date: Sep 3, 2009
- * Time: 1:09:00 PM
- *
  * This class is used by the schema explorer query tree only
  */
 
@@ -72,12 +68,13 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
 
         if ("root".equals(form.getNode()))
         {
-            final Map<DbScope, JSONArray> map = new LinkedHashMap<>();
+            final Map<String, JSONArray> map = new LinkedHashMap<>();
 
-            // Initialize a JSONArray for each scope; later, we'll enumerate and skip the scopes that aren't actually
-            // used in this folder.  This approach ensures we order the scopes naturally (i.e., labkey scope first).
-            for (DbScope scope : DbScope.getDbScopes())
-                map.put(scope, new JSONArray());
+            // Initialize a JSONArray for each configured data source; later, we'll enumerate and skip the data sources
+            // that aren't available or used in this folder. This approach ensures we order the scopes naturally (i.e.,
+            // labkey scope first) and avoids connecting to data sources that aren't used in this folder.
+            for (String dsName : DbScope.getDataSourceNames())
+                map.put(dsName, new JSONArray());
 
             // return list of top-level schemas grouped by datasource
             for (String name : defSchema.getUserSchemaNames(true))
@@ -90,7 +87,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     continue;
 
                 DbScope scope = schema.getDbSchema().getScope();
-                JSONArray schemas = map.get(scope);
+                JSONArray schemas = map.get(scope.getDataSourceName());
 
                 SchemaKey schemaName = new SchemaKey(null, schema.getName());
                 JSONObject schemaProps = getSchemaProps(schemaName, schema);
@@ -98,23 +95,28 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                 schemas.put(schemaProps);
             }
 
-            for (Map.Entry<DbScope, JSONArray> entry : map.entrySet())
+            for (Map.Entry<String, JSONArray> entry : map.entrySet())
             {
-                DbScope scope = entry.getKey();
                 JSONArray schemas = entry.getValue();
 
                 if (schemas.length() > 0)
                 {
-                    String dsName = scope.getDataSourceName();
-                    JSONObject ds = new JSONObject();
-                    ds.put("text", "Schemas in " + scope.getDisplayName());
-                    ds.put("description", "Schemas in data source '" + dsName + "'");
-                    ds.put("expanded", true);
-                    ds.put("children", schemas);
-                    ds.put("name", dsName);
-                    ds.put("dataSourceName", dsName);
+                    DbScope scope = DbScope.getDbScope(entry.getKey());
 
-                    respArray.put(ds);
+                    // scope should never be null if we have associated schemas, but just in case...
+                    if (null != scope)
+                    {
+                        String dsName = scope.getDataSourceName();
+                        JSONObject ds = new JSONObject();
+                        ds.put("text", "Schemas in " + scope.getDisplayName());
+                        ds.put("description", "Schemas in data source '" + dsName + "'");
+                        ds.put("expanded", true);
+                        ds.put("children", schemas);
+                        ds.put("name", dsName);
+                        ds.put("dataSourceName", dsName);
+
+                        respArray.put(ds);
+                    }
                 }
             }
         }
