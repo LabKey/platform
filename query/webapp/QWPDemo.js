@@ -208,10 +208,9 @@
 
                         var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
                         if (tableHeader === 'tag') {
-                            alert('Failed test: Sort by Tag. "tag" is not the rightmost column');
+                            alert('Failed test: Sort by Tag. Expected "tag" to be the rightmost column; Found ' + tableHeader);
                         }
-
-                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
+                        else if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
                             alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
