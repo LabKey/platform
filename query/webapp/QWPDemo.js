@@ -142,7 +142,7 @@
                     }
                 },
                 failure: function() {
-                   alert('Failed test: List out all queries in schema');
+                    alert('Failed test: List out all queries in schema');
                 }
             });
         }
@@ -195,6 +195,7 @@
             new LABKEY.QueryWebPart({
                 title: 'Sort by Tag',
                 schemaName: 'Samples',
+                columns: ['Name', 'id', 'sort', 'tag'],
                 queryName: 'sampleDataTest1',
                 sort: 'tag',
                 renderTo: RENDERTO,
@@ -205,7 +206,7 @@
                         var result2 = results[1].lastChild.innerHTML;
                         var result3 = results[2].lastChild.innerHTML;
 
-                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
+                        if (result1.localeCompare(result2) >= 0 || result2.localeCompare(result3) >= 0) {
                             alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
@@ -769,6 +770,7 @@
                 title: 'Filter on "Sort" column (Regression #33536)',
                 schemaName: 'Samples',
                 queryName: 'sampleDataTest1',
+                columns: ['Name', 'id', 'sort', 'tag'],
                 renderTo: RENDERTO,
                 filterArray: [
                     LABKEY.Filter.create('Sort', '50;60;70', LABKEY.Filter.Types.EQUALS_ONE_OF)
