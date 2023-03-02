@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.18.7-fb-47202-getContainersAPIOptions.0",
-    "@labkey/components": "2.302.0-fb-47202-getContainersAPIOptions.0",
+    "@labkey/api": "1.18.8",
+    "@labkey/components": "2.302.1",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
