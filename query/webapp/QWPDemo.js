@@ -206,12 +206,20 @@
                         var result2 = results[1].lastChild.innerHTML;
                         var result3 = results[2].lastChild.innerHTML;
 
-                        if (result1.localeCompare(result2) >= 0 || result2.localeCompare(result3) >= 0) {
+                        var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                        if (tableHeader === 'tag') {
+                            alert('Failed test: Sort by Tag. "tag" is not the rightmost column');
+                        }
+
+                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
                             alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
                             LABKEY.Utils.signalWebDriverTest("testSort");
                         }
+                    }
+                    else {
+                        alert("Didn't find enough results row");
                     }
                 },
                 failure: function() {
