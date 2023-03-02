@@ -810,6 +810,11 @@
                                 return;
                             }
 
+                            var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                            if (tableHeader !== 'tag') {
+                                alert('Failed test: Filter on "Sort" column. Expected "tag" to be the rightmost column; Found ' + tableHeader);
+                            }
+
                             var tagRowValue = rowElements[0].lastChild.innerHTML;
 
                             if (tagRowValue !== 'white') {
