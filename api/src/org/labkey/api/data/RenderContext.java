@@ -543,7 +543,8 @@ public class RenderContext implements Map<String, Object>, Serializable
             .setJdbcCaching(getCache())  // #39888
             .setNamedParameters(parameters)
             .setMaxRows(maxRows)
-            .setOffset(offset);
+            .setOffset(offset)
+            .setForceSortForDisplay(true);
 
         if (async)
         {

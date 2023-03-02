@@ -59,6 +59,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private final boolean _stableColumnOrdering;
 
     private boolean _forDisplay = false;
+    private boolean _forceSortForDisplay = false;
 
     // Primary constructor
     private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
@@ -342,9 +343,26 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
     }
 
+    /**
+     * Setting this options asks the TableSelector add additional display columns to the generated SQL, as well
+     * as forcing the results to be sorted.
+     * @param forDisplay
+     * @return this
+     */
     public TableSelector setForDisplay(boolean forDisplay)
     {
         _forDisplay = forDisplay;
+        return this;
+    }
+
+    /**
+     * This forces the results to be sorted as they would be for setForDisplay(true)
+     * @param forceSort
+     * @return this
+     */
+    public TableSelector setForceSortForDisplay(boolean forceSort)
+    {
+        _forceSortForDisplay = true;
         return this;
     }
 
@@ -547,7 +565,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 _columns = map.values();
             }
 
-            boolean forceSort = _allowSort && (_forDisplay || _offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
+            boolean forceSort = _allowSort && (_forDisplay || _forceSortForDisplay || _offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
             long selectOffset;
 
             if (requiresManualScrolling())
