@@ -280,7 +280,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         // date
         //
 
-        if (!timetype.isVisitBased() && null == indexVisitDate && (_datasetDefinition.isDemographicData() || _datasetDefinition.isParticipantAliasDataset()))
+        if (!timetype.isVisitBased() && null == indexVisitDate && (!_datasetDefinition.isDemographicData() || _datasetDefinition.isParticipantAliasDataset()))
         {
             final Date start = _datasetDefinition.getStudy().getStartDate();
             indexVisitDate = it.addColumn(new BaseColumnInfo("Date", JdbcType.TIMESTAMP), new Callable()
@@ -402,9 +402,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         // don't bother going on if we don't have these required columns
         if (null == indexPTIDInput) // input
             setupError("Missing required field " + _datasetDefinition.getStudy().getSubjectColumnName());
-
-        if (!timetype.isVisitBased() && null == indexVisitDate)
-            setupError("Missing required field Date");
 
         if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
             setupError("Missing required field SequenceNum");
