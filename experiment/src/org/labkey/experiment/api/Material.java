@@ -37,13 +37,14 @@ public class Material extends RunItem
     private Integer sampleState;
 
     private Date materialExpDate;
+    private Double storedAmount;
+    private String units;
 
     // aliquot rollup columns
     private Boolean recomputeRollup;
     private Integer aliquotCount;
     private Double aliquotVolume;
     private String aliquotUnit;
-
 
     public Material()
     {
@@ -83,6 +84,26 @@ public class Material extends RunItem
     public Integer getSampleState()
     {
         return sampleState;
+    }
+
+    public Double getStoredAmount()
+    {
+        return storedAmount;
+    }
+
+    public void setStoredAmount(Double storedAmount)
+    {
+        this.storedAmount = storedAmount;
+    }
+
+    public String getUnits()
+    {
+        return units;
+    }
+
+    public void setUnits(String units)
+    {
+        this.units = units;
     }
 
     public void setSampleState(Integer sampleState)
