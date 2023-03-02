@@ -671,7 +671,6 @@ public class OlapController extends SpringActionController
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
-                QueryProfiler.getInstance().ensureListenerEnvironment();
                 OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
@@ -876,7 +875,6 @@ public class OlapController extends SpringActionController
                 if (errors.hasErrors())
                     return null;
 
-                QueryProfiler.getInstance().ensureListenerEnvironment();
                 long start = 0, end = 0;
                 try
                 {

@@ -23,11 +23,8 @@ import org.labkey.api.security.User;
 
 /**
  * Gets invoked when a query that matches its registered substring is run against the underlying database.
- *
- * User: jeckels
- * Date: 2/13/14
  */
-public interface DatabaseQueryListener<T>
+public interface DatabaseQueryListener
 {
     /**
      * @return whether this listener cares about the query based on sql string
@@ -62,11 +59,5 @@ public interface DatabaseQueryListener<T>
     }
 
     /** Called when a matching query is run against the database. */
-    void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment, QueryLogging queryLogging);
-
-    /** @return a custom context, which will be provided if and when the queryInvoked() method is called. This will be called
-     * from the originating thread (not an asychronous thread that might actually be running the query), so it can
-     * gather information from ThreadLocals if needed */
-    @Nullable
-    T getEnvironment();
+    void queryInvoked(DbScope scope, String sql, User user, Container container, QueryLogging queryLogging);
 }
