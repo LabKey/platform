@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
@@ -922,7 +921,6 @@ public class RolapTestCase extends Assert
             assertNotNull(conn);
             stmt = conn.createStatement();
             assertNotNull(stmt);
-            QueryProfiler.getInstance().ensureListenerEnvironment();
             //long ms = System.currentTimeMillis();
             cs = stmt.executeOlapQuery(mdx);
             //long d = System.currentTimeMillis() - ms;
