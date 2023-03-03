@@ -218,7 +218,7 @@
                         }
                     }
                     else {
-                        alert("Didn't find enough results row");
+                        alert("Didn't find enough results rows");
                     }
                 },
                 failure: function() {
