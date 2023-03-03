@@ -217,7 +217,7 @@ public class NestedRenderContext extends RenderContext
     }
 
     @Override
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (_nestingOption != null)
         {
