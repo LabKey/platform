@@ -1725,7 +1725,7 @@ public class DbScope
     {
         return getLoaders().stream()
             .map(DbScopeLoader::getDsName)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(LinkedHashSet::new)); // Keep them in labkey.xml order for schema browser, etc.
     }
 
     /**

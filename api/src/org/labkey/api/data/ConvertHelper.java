@@ -505,7 +505,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 long length = blob.length();
                 if (length > Integer.MAX_VALUE)
                 {
-                    throw new ConversionException("Blob length too long:" + blob.length());
+                    throw new ConversionExceptionWithMessage("Blob length too long:" + blob.length());
                 }
 
                 return blob.getBytes(1, (int) length);
@@ -883,7 +883,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value instanceof String)
                 return new JSONObject((String)value);
 
-            throw new ConversionException("Could not convert '" + value + "' to an JSONObject");
+            throw new ConversionExceptionWithMessage("Could not convert '" + value + "' to a JSONObject");
         }
     }
 

@@ -270,6 +270,34 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 return nameCol;
             }
+            case RawAmount ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+            }
+            case StoredAmount ->
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+                columnInfo.setLabel("Amount");
+                columnInfo.setImportAliasesSet(Set.of("Amount"));
+                return columnInfo;
+            }
+            case RawUnits ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("Units"));
+            }
+            case Units ->
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Units"));
+                columnInfo.setFk(new LookupForeignKey("Value", "Value")
+                {
+                    @Override
+                    public @Nullable TableInfo getLookupTableInfo()
+                    {
+                        return getExpSchema().getTable(ExpSchema.MEASUREMENT_UNITS_TABLE);
+                    }
+                });
+                return columnInfo;
+            }
             case Description ->
             {
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
@@ -442,7 +470,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case AliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
-                ret.setLabel("Aliquot Total Volume");
+                ret.setLabel("Aliquot Total Amount");
                 return ret;
             }
             case AliquotUnit ->
@@ -723,8 +751,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null && !st.isMedia())
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());
 
@@ -732,7 +758,70 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
+        if (st == null || !st.isMedia())
+        {
+            addColumn(Column.AliquotCount);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotCount));
+            addColumn(Column.AliquotVolume);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotVolume));
+            addColumn(Column.AliquotUnit);
+            addColumn(Column.RecomputeRollup);
 
+            addColumn(Column.StoredAmount);
+            defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+
+            addColumn(Column.Units);
+            defaultCols.add(FieldKey.fromParts(Column.Units));
+
+            var rawAmountColumn = addColumn(Column.RawAmount);
+            rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        @Override
+                        public void addQueryFieldKeys(Set<FieldKey> keys)
+                        {
+                            super.addQueryFieldKeys(keys);
+                            keys.add(FieldKey.fromParts(Column.StoredAmount));
+
+                        }
+                    };
+                }
+            });
+            rawAmountColumn.setHidden(true);
+            rawAmountColumn.setShownInDetailsView(false);
+            rawAmountColumn.setShownInInsertView(false);
+            rawAmountColumn.setShownInUpdateView(false);
+
+            var rawUnitsColumn = addColumn(Column.RawUnits);
+            rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        @Override
+                        public void addQueryFieldKeys(Set<FieldKey> keys)
+                        {
+                            super.addQueryFieldKeys(keys);
+                            keys.add(FieldKey.fromParts(Column.Units));
+
+                        }
+                    };
+                }
+            });
+            rawUnitsColumn.setHidden(true);
+            rawUnitsColumn.setShownInDetailsView(false);
+            rawUnitsColumn.setShownInInsertView(false);
+            rawUnitsColumn.setShownInUpdateView(false);
+
+            if (InventoryService.get() != null)
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+        }
 
         addVocabularyDomains();
         addColumn(Column.Properties);

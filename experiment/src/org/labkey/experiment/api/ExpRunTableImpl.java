@@ -87,7 +87,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, cf);
-        Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
+        assert Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
     }
 
     @Override

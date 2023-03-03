@@ -57,6 +57,14 @@ public interface ExpMaterial extends ExpRunItem
 
     String getStateLabel();
 
+    Double getStoredAmount();
+
+    void setStoredAmount(Double amount);
+
+    String getUnits();
+
+    void setUnits(String units);
+
     // rollup - begin
     boolean isRecomputeRollup();
     int getAliquotCount();
@@ -73,4 +81,5 @@ public interface ExpMaterial extends ExpRunItem
     Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
+
 }
