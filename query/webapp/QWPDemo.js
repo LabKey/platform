@@ -142,7 +142,7 @@
                     }
                 },
                 failure: function() {
-                   alert('Failed test: List out all queries in schema');
+                    alert('Failed test: List out all queries in schema');
                 }
             });
         }
@@ -195,6 +195,7 @@
             new LABKEY.QueryWebPart({
                 title: 'Sort by Tag',
                 schemaName: 'Samples',
+                columns: ['Name', 'id', 'sort', 'tag'],
                 queryName: 'sampleDataTest1',
                 sort: 'tag',
                 renderTo: RENDERTO,
@@ -205,12 +206,19 @@
                         var result2 = results[1].lastChild.innerHTML;
                         var result3 = results[2].lastChild.innerHTML;
 
-                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
+                        var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                        if (tableHeader !== 'tag') {
+                            alert('Failed test: Sort by Tag. Expected "tag" to be the rightmost column; Found ' + tableHeader);
+                        }
+                        else if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
                             alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
                             LABKEY.Utils.signalWebDriverTest("testSort");
                         }
+                    }
+                    else {
+                        alert("Didn't find enough results rows");
                     }
                 },
                 failure: function() {
@@ -769,6 +777,7 @@
                 title: 'Filter on "Sort" column (Regression #33536)',
                 schemaName: 'Samples',
                 queryName: 'sampleDataTest1',
+                columns: ['Name', 'id', 'sort', 'tag'],
                 renderTo: RENDERTO,
                 filterArray: [
                     LABKEY.Filter.create('Sort', '50;60;70', LABKEY.Filter.Types.EQUALS_ONE_OF)
@@ -799,6 +808,11 @@
                             if (rowElements.length !== 3) {
                                 alert('Failed test: Filter on "Sort" column. rowElements length not consistent with rows found (3).');
                                 return;
+                            }
+
+                            var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                            if (tableHeader !== 'tag') {
+                                alert('Failed test: Filter on "Sort" column. Expected "tag" to be the rightmost column; Found ' + tableHeader);
                             }
 
                             var tagRowValue = rowElements[0].lastChild.innerHTML;
