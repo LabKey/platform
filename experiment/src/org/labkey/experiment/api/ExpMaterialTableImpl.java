@@ -465,17 +465,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
                 ret.setLabel("Aliquots Created Count");
+                ret.setShownInDetailsView(false);
                 return ret;
             }
             case AliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
                 ret.setLabel("Aliquot Total Amount");
+                ret.setShownInDetailsView(false);
                 return ret;
             }
             case AliquotUnit ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                ret.setShownInDetailsView(false);
+                return ret;
             }
             case MaterialExpDate ->
             {
@@ -761,9 +765,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (st == null || !st.isMedia())
         {
             addColumn(Column.AliquotCount);
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotCount));
             addColumn(Column.AliquotVolume);
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.AliquotVolume));
             addColumn(Column.AliquotUnit);
             addColumn(Column.RecomputeRollup);
 
