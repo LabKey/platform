@@ -351,7 +351,7 @@ public class DataRegion extends DisplayElement
         /** NOTE - the cleaner thing to do here would be
          *         clearColumns();
          *         displayColumns.forEach(this::addDisplayColumn);
-         * however, this breaks MS2 which seems to funny things with nested RenderContexts
+         * however, this breaks MS2 which seems to do funny things with nested RenderContexts
          */
         _displayColumns = displayColumns;
         if (null != _inputPrefix)
