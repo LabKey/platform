@@ -348,8 +348,15 @@ public class DataRegion extends DisplayElement
 
     public void setDisplayColumns(List<DisplayColumn> displayColumns)
     {
-        clearColumns();
-        displayColumns.forEach(this::addDisplayColumn);
+        /** NOTE - the cleaner thing to do here would be
+         *         clearColumns();
+         *         displayColumns.forEach(this::addDisplayColumn);
+         * however, this breaks MS2 which seems to do funny things with nested RenderContexts
+         */
+        _displayColumns = displayColumns;
+        if (null != _inputPrefix)
+            for (DisplayColumn dc : _displayColumns)
+                dc.setInputPrefix(_inputPrefix);
     }
 
     public void removeColumns(String... columns)

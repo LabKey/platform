@@ -41,7 +41,8 @@ public class ReexecutableRenderContext extends RenderContext
             TableSelector selector = new TableSelector(table, columns, filter, sort)
                     .setNamedParameters(null)       // leave named parameters in SQLFragment
                     .setMaxRows(maxRows)
-                    .setOffset(offset);
+                    .setOffset(offset)
+                    .setForceSortForDisplay(true);
             var sqlfWithCTE = selector.getSql();
             // flatten out CTEs
             SQLFragment sqlf = new SQLFragment(sqlfWithCTE.getSQL(), sqlfWithCTE.getParams());
