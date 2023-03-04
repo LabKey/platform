@@ -70,6 +70,9 @@ public class DbSequenceManager
 
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
     static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
+
+    // DO NOT use both _sequences and _reclaimableSequences to handle the same sequence.
+    // ReclaimablePreallocate should only be used when the continuity of sequence is important and that the sequence is locally managed
     static final ConcurrentHashMap<String, DbSequence.ReclaimablePreallocate> _reclaimableSequences = new ConcurrentHashMap<>();
 
     static final ShutdownListener shutdownListener = new ShutdownListener()
@@ -118,7 +121,6 @@ public class DbSequenceManager
         _sequences.remove(key);
     }
 
-
     public static DbSequence getPreallocatingSequence(Container c, String name, int id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;
@@ -131,6 +133,8 @@ public class DbSequenceManager
         _reclaimableSequences.remove(key);
     }
 
+    // Do not use getReclaimablePreallocateSequence unless you absolutely have to...
+    // Use getPreallocatingSequence instead
     public static DbSequence getReclaimablePreallocateSequence(Container c, String name, int id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;

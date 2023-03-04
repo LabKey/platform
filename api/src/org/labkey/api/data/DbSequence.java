@@ -162,6 +162,8 @@ public class DbSequence
         }
     }
 
+    // For scenarios where continuity of sequence is important
+    // A sequence should either use Preallocate or ReclaimablePreallocate, but never both
     public static class ReclaimablePreallocate extends Preallocate
     {
         ReclaimablePreallocate(Container c, String name, int rowId, int batchSize)
