@@ -513,6 +513,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
             nameGen.generateNames(state, maps, parentDatas, parentSamples, List.of(extraPropsFn), skipDuplicates);
+            state.cleanUp();
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -568,7 +569,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                     map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
                 return map;
             };
-            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            String generatedName = nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            state.cleanUp();
+            return generatedName;
         }
         catch (NameGenerator.NameGenerationException e)
         {

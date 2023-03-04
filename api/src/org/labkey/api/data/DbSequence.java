@@ -81,6 +81,12 @@ public class DbSequence
         // pass
     }
 
+    // database sequence should perform action in its own operation
+    public boolean useCurrentTransaction()
+    {
+        return false;
+    }
+
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
      *      potentially each would not have to be thread safe, but I think this would tend to generate lots of missing values
@@ -88,7 +94,7 @@ public class DbSequence
      *      just have to be thread safe is all, but how do we enforce the "exactly one per" rule?
      * NOTE: going with B
      */
-    protected static class Preallocate extends DbSequence
+    public static class Preallocate extends DbSequence
     {
         private final int _batchSize;
         private Long _currentValue = null;
@@ -153,6 +159,20 @@ public class DbSequence
                 DbSequenceManager.setSequenceValue(this, _currentValue);
                 _lastReservedValue = _currentValue;
             }
+        }
+    }
+
+    public static class ReclaimablePreallocate extends Preallocate
+    {
+        ReclaimablePreallocate(Container c, String name, int rowId, int batchSize)
+        {
+            super(c, name, rowId, batchSize);
+        }
+
+        @Override
+        public boolean useCurrentTransaction()
+        {
+            return true;
         }
     }
 }

@@ -1329,6 +1329,8 @@ public class NameGenerator
         private final Map<String, ArrayList<Object>> _ancestorCache;
         private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
+        private boolean _prefixCounterSequencesCleaned = false;
+
         private State(boolean incrementSampleCounts)
         {
             _incrementSampleCounts = incrementSampleCounts;
@@ -1344,19 +1346,38 @@ public class NameGenerator
             _prefixCounterSequences = new HashMap<>();
         }
 
-        @Override
-        public void close()
+        public Map<String, Map<String, DbSequence>> getPrefixCounterSequences()
         {
-            _rowNumber = -1;
+            return _prefixCounterSequences;
+        }
+
+        public void cleanUp()
+        {
+            if (_prefixCounterSequencesCleaned)
+                return;
 
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
                 for (DbSequence seq: counterSequences.values())
                 {
-                    if (seq != null)
+                    if (seq instanceof DbSequence.ReclaimablePreallocate)
+                    {
+                        // force DBSequence update as part of the current transaction
                         seq.sync();
+                        // remove preallocate in case the transaction is rollback but preallocate still holds the incremented value
+                        DbSequenceManager.invalidateReclaimablePreallocateSequence(_container, seq.getName(), 0);
+                    }
                 }
             }
+
+            _prefixCounterSequencesCleaned = true;
+        }
+
+        @Override
+        public void close()
+        {
+            _rowNumber = -1;
+            cleanUp();
         }
 
         private String nextName(Map<String, Object> rowMap,
@@ -2164,27 +2185,24 @@ public class NameGenerator
                     return null;
 
                 DbSequence counterSeq = null;
-                if (counterSequences == null || !counterSequences.containsKey(prefix))
+                boolean noCache = counterSequences == null;
+                if (noCache || !counterSequences.containsKey(prefix))
                 {
                     long existingCount = -1;
 
                     if (_getNonConflictCountFn != null)
                         existingCount = _getNonConflictCountFn.apply(prefix);
-                    if (counterSequences == null) // no cache
-                        counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix);
-                    else
-                    {
-                        // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-                        // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
-                    }
+
+                    // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+                    // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+                    counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
 
                     long currentSeqMax = counterSeq.current();
 
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
 
-                    if (counterSequences != null)
+                    if (!noCache)
                         counterSequences.put(prefix, counterSeq);
                 }
                 else

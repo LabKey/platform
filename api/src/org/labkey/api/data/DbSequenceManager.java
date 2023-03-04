@@ -70,6 +70,7 @@ public class DbSequenceManager
 
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
     static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, DbSequence.ReclaimablePreallocate> _reclaimableSequences = new ConcurrentHashMap<>();
 
     static final ShutdownListener shutdownListener = new ShutdownListener()
     {
@@ -91,6 +92,11 @@ public class DbSequenceManager
             synchronized (_sequences)
             {
                 for (var seq : _sequences.values())
+                    seq.sync();
+            }
+            synchronized (_reclaimableSequences)
+            {
+                for (var seq : _reclaimableSequences.values())
                     seq.sync();
             }
         }
@@ -117,6 +123,18 @@ public class DbSequenceManager
     {
         String key = c.getId() + "/" + name + "/" + id;
         return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
+    }
+
+    public static void invalidateReclaimablePreallocateSequence(Container c, String name, int id)
+    {
+        String key = c.getId() + "/" + name + "/" + id;
+        _reclaimableSequences.remove(key);
+    }
+
+    public static DbSequence getReclaimablePreallocateSequence(Container c, String name, int id, int batchSize)
+    {
+        String key = c.getId() + "/" + name + "/" + id;
+        return _reclaimableSequences.computeIfAbsent(key, (k) -> new DbSequence.ReclaimablePreallocate(c, name, ensure(c, name, id), batchSize));
     }
 
     /* This is not a recommended, but if you get stuck and need to reserve a block at once */
@@ -298,7 +316,7 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        long last = executeAndReturnLong(tinfo, sql, Level.WARN);
+        long last = sequence.useCurrentTransaction() ? executeAndReturnLongInTraction(tinfo, sql) : executeAndReturnLong(tinfo, sql, Level.WARN);
         long first = last - count;
         return new Pair<>(first,last);
     }
@@ -344,7 +362,10 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        execute(tinfo, sql);
+        if (sequence.useCurrentTransaction())
+            new SqlExecutor(tinfo.getSchema()).execute(sql);
+        else
+            execute(tinfo, sql);
     }
 
     // Explicitly sets the sequence value, only used at shutdown!
@@ -360,9 +381,11 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        execute(tinfo, sql);
+        if (sequence.useCurrentTransaction())
+            new SqlExecutor(tinfo.getSchema()).execute(sql);
+        else
+            execute(tinfo, sql);
     }
-
 
     private static TableInfo getTableInfo()
     {
@@ -430,6 +453,11 @@ public class DbSequenceManager
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    private static long executeAndReturnLongInTraction(TableInfo tinfo, SQLFragment sql)
+    {
+        return new SqlExecutor(tinfo.getSchema()).executeWithResults(sql, LONG_RETURNING_RESULTSET_HANDLER);
     }
 
 
