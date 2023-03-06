@@ -47,6 +47,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -105,6 +106,8 @@ public class NameGenerator
      */
     public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
+
+    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter";
 
     /**
      * Examples:
@@ -1367,6 +1370,11 @@ public class NameGenerator
                         // remove preallocate in case the transaction is rollback but preallocate still holds the incremented value
                         DbSequenceManager.invalidateReclaimablePreallocateSequence(_container, seq.getName(), 0);
                     }
+                    else if (seq instanceof DbSequence.Preallocate)
+                    {
+                        seq.sync();
+                        DbSequenceManager.invalidatePreallocatingSequence(_container, seq.getName(), 0);
+                    }
                 }
             }
 
@@ -2193,9 +2201,16 @@ public class NameGenerator
                     if (_getNonConflictCountFn != null)
                         existingCount = _getNonConflictCountFn.apply(prefix);
 
-                    // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-                    // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-                    counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                    {
+                        // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+                        // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+                        counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                    }
+                    else
+                    {
+                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                    }
 
                     long currentSeqMax = counterSeq.current();
 
