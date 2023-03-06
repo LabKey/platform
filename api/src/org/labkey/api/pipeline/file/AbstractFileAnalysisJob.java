@@ -495,7 +495,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         {
             description.append(" (");
             //p.getFileName returns the full S3 path -- S3fs bug?
-            description.append(inputFiles.stream().map(p -> p.getName(p.getNameCount() - 1).toString()).collect(Collectors.joining(",")));
+            description.append(inputFiles.stream().map(FileUtil::getFileName).collect(Collectors.joining(",")));
             description.append(")");
         }
         return description.toString();
