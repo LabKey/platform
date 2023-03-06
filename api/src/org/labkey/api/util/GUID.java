@@ -247,7 +247,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
     public static String makeHash(String addl)
     {
-        return Crypt.MD5.digest(makeGUID() + rand.nextLong() + addl);
+        return Crypt.SHA256.digest(makeGUID() + rand.nextLong() + rand.nextLong() + rand.nextLong() + rand.nextLong() + addl);
     }
 
 
