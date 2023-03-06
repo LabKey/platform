@@ -247,6 +247,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
     public static String makeHash(String addl)
     {
+        // 256 bits of entropy (4 64-bit longs) to match the hash size
         return Crypt.SHA256.digest(makeGUID() + rand.nextLong() + rand.nextLong() + rand.nextLong() + rand.nextLong() + addl);
     }
 
