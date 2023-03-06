@@ -599,7 +599,8 @@ public class SecurityManager
     {
         String apiKey;
 
-        // Accept API keys via basic auth if the username is "apikey". Supported for backwards compatibility.
+        // Accept API keys via basic auth if the username is "apikey". Supported for backwards compatibility and clients that don't support custom headers.
+
         if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
         {
             apiKey = basicCredentials.getValue();
