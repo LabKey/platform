@@ -225,7 +225,7 @@ public interface QueryService
     }
 
     /* strictColumnList requires that query not add any addition columns to the query result */
-    ResultSet select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
+    Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
     /** superseded by getSelectBuilder() */
     Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
@@ -233,15 +233,17 @@ public interface QueryService
     /** superseded by getSelectBuilder() */
     default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
-        return select(table, columns, filter, sort, Collections.emptyMap(), true);
+        return getSelectBuilder(table).columns(columns).filter(filter).sort(sort).select();
     }
 
+    /** superseded by getSelectBuilder() */
     Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
 
     /** superseded by getSelectBuilder() */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
     /** superseded by getSelectBuilder() */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
+
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
 
@@ -636,6 +638,7 @@ public interface QueryService
         }
 
         QueryLogging getQueryLogging();
+        TableInfo getTableInfo();
     }
 
     /**

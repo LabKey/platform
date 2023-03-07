@@ -12,7 +12,6 @@
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.collections.RowMapFactory" %>
-<%@ page import="org.labkey.api.data.CachedResultSet" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
@@ -300,7 +299,7 @@ d,seven,twelve,day,month,date,duration,guid
             if (null == container)
                 container = JunitUtil.getTestContainer();
 
-            try (CachedResultSet rs = resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
+            try (var rs = resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
             {
                 ResultSetMetaData md = rs.getMetaData();
                 if (_countColumns >= 0)
@@ -330,7 +329,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
         }
 
-        protected void validateResults(CachedResultSet rs) throws Exception
+        protected void validateResults(ResultSet rs) throws Exception
         {
         }
     }
@@ -368,7 +367,7 @@ d,seven,twelve,day,month,date,duration,guid
         }
 
         @Override
-        protected void validateResults(CachedResultSet rs) throws Exception
+        protected void validateResults(ResultSet rs) throws Exception
         {
             assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
@@ -431,8 +430,7 @@ d,seven,twelve,day,month,date,duration,guid
         @Override
         void validate(@Nullable Container container)
         {
-            var select = QueryService.get().getSelectBuilder(lists, _sql);
-            try (Results ignored = select.select())
+            try (Results ignored = QueryService.get().getSelectBuilder(lists, _sql).select())
             {
                 Assert.fail("should fail: " + _sql);
             }
@@ -1221,7 +1219,7 @@ d,seven,twelve,day,month,date,duration,guid
 
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    CachedResultSet resultset(String sql, @Nullable Container container)
+    Results resultset(String sql, @Nullable Container container)
     {
         QuerySchema schema = lists;
         if (null != container)
@@ -1230,7 +1228,7 @@ d,seven,twelve,day,month,date,duration,guid
 
         try
         {
-            CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, null, true, true);
+            Results rs = QueryService.get().select(schema, sql, null, true, true);
             assertNotNull(sql, rs);
             return rs;
         }
@@ -1267,7 +1265,7 @@ d,seven,twelve,day,month,date,duration,guid
         SqlDialect dialect = lists.getDbSchema().getSqlDialect();
         String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
 
-        try (CachedResultSet rs = resultset(sql, null))
+        try (var rs = resultset(sql, null))
         {
             ResultSetMetaData md = rs.getMetaData();
             assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));

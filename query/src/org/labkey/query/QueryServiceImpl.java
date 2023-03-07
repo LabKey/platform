@@ -497,7 +497,7 @@ public class QueryServiceImpl implements QueryService
                 ColumnInfo c = columnMap.get(key);
                 if (null == c)
                 {
-                    query.getParseErrors().add(new QueryException("column not found: " + key.toString()));
+                    query.getParseErrors().add(new QueryException("column not found: " + key));
                     return null;
                 }
                 return new QColumnInfo(c);
@@ -649,7 +649,7 @@ public class QueryServiceImpl implements QueryService
 
         return null;
     }
-    
+
     @Override
     public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)
     {
@@ -2495,20 +2495,17 @@ public class QueryServiceImpl implements QueryService
     {
         public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
         {
-            super(QueryServiceImpl.get().createTable(schema, sql));
+            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo());
         }
 
         public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
         {
-            super(QueryServiceImpl.get().createTable(schema, sql), columnNames, filter, sort);
+            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo(), columnNames, filter, sort);
         }
     }
 
-    private TableInfo createTable(QuerySchema schema, String sql)
-    {
-        return createTable(schema, sql, null, false);
-    }
 
+    @Override
     public TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
     {
         Query q = new Query(schema);
@@ -2516,27 +2513,19 @@ public class QueryServiceImpl implements QueryService
         q.setTableMap(tableMap);
         q.parse(sql);
 
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        TableInfo table = q.getTableInfo();
-
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        return table;
+        return getSelectBuilder(q).getTableInfo();
     }
 
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
+    public Results select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
     {
-        TableInfo table = createTable(schema, sql, tableMap, strictColumnList);
+        Query q = new Query(schema);
+        q.setStrictColumnList(strictColumnList);
+        q.setTableMap(tableMap);
+        q.parse(sql);
 
-        QueryLogging queryLogging = new QueryLogging();
-        SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
-
-        return new SqlSelector(table.getSchema().getScope(), sqlf, queryLogging).getResultSet(cached);
+        return getSelectBuilder(q).select(Map.of(), cached);
     }
 
 
@@ -2548,12 +2537,7 @@ public class QueryServiceImpl implements QueryService
         q.setTableMap(tableMap);
         q.parse(sql);
 
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        TableInfo table = q.getTableInfo();
-
-        return select(table, table.getColumns(), null, null, parameters, cached);
+        return getSelectBuilder(q).select(parameters, cached);
     }
 
 
@@ -2775,8 +2759,11 @@ public class QueryServiceImpl implements QueryService
             if (null == queryLogging)
                 queryLogging = QueryLogging.emptyQueryLogging();
 
+            if (null == columns || columns.isEmpty())
+                columns = table.getColumns();
+
             var query = new Query(table.getUserSchema());
-            var selectView = QuerySelectView.create(query, this.table, this.columns, this.filter, this.sort, this.maxRows, this.offset, this.forceSort, this.queryLogging, this.distinct);
+            var selectView = QuerySelectView.create(query, table, columns, filter, sort, maxRows, offset, forceSort, queryLogging, distinct);
             return selectView.getSql();
         }
 
@@ -2823,6 +2810,12 @@ public class QueryServiceImpl implements QueryService
         public QueryLogging getQueryLogging()
         {
             return queryLogging;
+        }
+
+        @Override
+        public TableInfo getTableInfo()
+        {
+            return table;
         }
     }
 
