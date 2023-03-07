@@ -3608,7 +3608,7 @@ public class QueryController extends SpringActionController
                     .filter(filter)
                     .queryLogging(queryLogging)
                     .distinct(true);
-            SQLFragment selectSql = builder.build();
+            SQLFragment selectSql = builder.buildSqlFragment();
 
             // TODO: queryLogging.isShouldAudit() is always false at this point.
             // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()

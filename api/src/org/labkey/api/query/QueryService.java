@@ -23,25 +23,8 @@ import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.query.column.ColumnInfoTransformer;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MethodInfo;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.ParameterDescription;
-import org.labkey.api.data.ParameterDescriptionImpl;
-import org.labkey.api.data.QueryLogging;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
@@ -229,13 +212,13 @@ public interface QueryService
      * @param schema The query schema context used to parse the sql query in.
      * @param sql The LabKey query string.
      * @return a TableSelector
+     *
+     * superseded by getSelectBuilder()
      */
     @NotNull
     TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
 
-    @NotNull
-    TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort);
-
+    /** superseded by getSelectBuilder() */
 	default ResultSet select(QuerySchema schema, String sql)
     {
         return select(schema, sql, null, false, true);
@@ -244,8 +227,10 @@ public interface QueryService
     /* strictColumnList requires that query not add any addition columns to the query result */
     ResultSet select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
+    /** superseded by getSelectBuilder() */
     Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
 
+    /** superseded by getSelectBuilder() */
     default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return select(table, columns, filter, sort, Collections.emptyMap(), true);
@@ -253,14 +238,13 @@ public interface QueryService
 
     Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
 
-    /**
-     * @param forceSort always add a sort, even if the Sort parameter is null or empty. Do not pass true if the SQL will
-     * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
-     * clause 
-     */
+    /** superseded by getSelectBuilder() */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
+    /** superseded by getSelectBuilder() */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
     SelectBuilder getSelectBuilder(TableInfo table);
+    SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
+
 
     void addCompareType(CompareType type);
 
@@ -452,10 +436,10 @@ public interface QueryService
      *
      * @param comment Comment to log.
      */
-    AuditHandler getDefaultAuditHandler();
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
     List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId);
+    AuditHandler getDefaultAuditHandler();
 
     /**
      * Returns a URL for the audit history for the table.
@@ -631,6 +615,10 @@ public interface QueryService
     interface SelectBuilder
     {
         SelectBuilder columns(Collection<ColumnInfo> columns);
+        default SelectBuilder columns(ColumnInfo... cols)
+        {
+            return columns(List.of(cols));
+        }
         SelectBuilder filter(Filter filter);
         SelectBuilder sort(Sort sort);
         SelectBuilder maxRows(int maxRows);
@@ -638,10 +626,18 @@ public interface QueryService
         SelectBuilder forceSort(boolean b);
         SelectBuilder queryLogging(QueryLogging queryLogging);
         SelectBuilder distinct(boolean b);
-        SQLFragment build();
+
+        SQLFragment buildSqlFragment();
+        SqlSelector buildSqlSelector(Map<String, Object> parameters);
+        Results select(Map<String, Object> parameters, boolean cache);
+        default Results select()
+        {
+            return select(Map.of(), true);
+        }
 
         QueryLogging getQueryLogging();
     }
+
     /**
      * Resolves the ContainerFilter.Type to be used for lookups of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.

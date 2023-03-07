@@ -1810,7 +1810,10 @@ public class NameGenerator
                             Collection<FieldKey> fields = Collections.singleton(relativeFieldKey);
                             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(lookupTable, fields);
 
-                            try (Results results = QueryService.get().select(lookupTable, cols.values(), filter, null))
+                            var select = QueryService.get().getSelectBuilder(lookupTable)
+                                    .columns(cols.values())
+                                    .filter(filter);
+                            try (Results results = select.select())
                             {
                                 if (results.next())
                                 {

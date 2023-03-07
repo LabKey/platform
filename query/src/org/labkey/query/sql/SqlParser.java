@@ -2121,7 +2121,7 @@ public class SqlParser
             {
                 core = DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer()).getSchema("core");
             }
-            try (ResultSet rs = QueryServiceImpl.get().select(core, "SELECT " + expr + " AS expr"))
+            try (ResultSet rs = QueryServiceImpl.get().getSelectBuilder(core, "SELECT " + expr + " AS expr").select())
             {
                 rs.next();
                 return ((Number)rs.getObject(1)).intValue();

@@ -2491,13 +2491,6 @@ public class QueryServiceImpl implements QueryService
         return new LabKeyQuerySelector(schema, sql);
     }
 
-    @Override
-    @NotNull
-    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
-    {
-        return new LabKeyQuerySelector(schema, sql, columnNames, filter, sort);
-    }
-
     private static class LabKeyQuerySelector extends TableSelector
     {
         public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
@@ -2630,44 +2623,40 @@ public class QueryServiceImpl implements QueryService
     @Override
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
     {
-        QueryLogging queryLogging = new QueryLogging();
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
-        bindNamedParameters(sql, parameters);
-        validateNamedParameters(sql);
-        ResultSet rs = new SqlSelector(table.getSchema().getScope(), sql, queryLogging).getResultSet(cache, cache);
-
-        // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
-        // close the underlying ResultSet before returning since it won't be accessible anywhere else
-        boolean success = false;
-        try
-        {
-            ResultsImpl result = new ResultsImpl(rs, columns);
-            success = true;
-            return result;
-        }
-        finally
-        {
-            if (!success)
-            {
-                ResultSetUtil.close(rs);
-            }
-        }
+        return getSelectBuilder(table)
+                .columns(columns)
+                .filter(filter)
+                .sort(sort)
+                .select(parameters, cache);
     }
 
     @Override
     public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort)
     {
-        return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
+        return getSelectBuilder(table)
+                .columns(selectColumns)
+                .filter(filter)
+                .sort(sort)
+                .maxRows(maxRows)
+                .offset(offset)
+                .forceSort(forceSort)
+                .buildSqlFragment();
     }
 
     @Override
     public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
     {
-        var query = new Query(table.getUserSchema());
-        var selectView = QuerySelectView.create(query, table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging, false);
-        return selectView.getSql();
+        return getSelectBuilder(table)
+                .columns(selectColumns)
+                .filter(filter)
+                .sort(sort)
+                .maxRows(maxRows)
+                .offset(offset)
+                .forceSort(forceSort)
+                .queryLogging(queryLogging)
+                .buildSqlFragment();
     }
 
     @Override
@@ -2676,10 +2665,26 @@ public class QueryServiceImpl implements QueryService
         return new SelectBuilderImpl(table);
     }
 
+    public SelectBuilder getSelectBuilder(Query query)
+    {
+        return new SelectBuilderImpl(query);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql)
+    {
+        Query q = new Query(schema);
+        q.setStrictColumnList(false);
+        q.setTableMap(null);
+        q.parse(sql);
+        return getSelectBuilder(q);
+    }
+
 
     class SelectBuilderImpl implements SelectBuilder
     {
         final TableInfo table;
+        final Query query;
         Collection<ColumnInfo> columns;
         Filter filter;
         Sort sort;
@@ -2692,6 +2697,20 @@ public class QueryServiceImpl implements QueryService
         SelectBuilderImpl(TableInfo table)
         {
             this.table = table;
+            this.query = null;
+        }
+
+        SelectBuilderImpl(Query query)
+        {
+            this.query = query;
+
+            if (query.getParseErrors().size() > 0)
+                throw query.getParseErrors().get(0);
+
+            this.table = query.getTableInfo();
+
+            if (query.getParseErrors().size() > 0)
+                throw query.getParseErrors().get(0);
         }
 
         @Override
@@ -2751,7 +2770,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SQLFragment build()
+        public SQLFragment buildSqlFragment()
         {
             if (null == queryLogging)
                 queryLogging = QueryLogging.emptyQueryLogging();
@@ -2759,6 +2778,45 @@ public class QueryServiceImpl implements QueryService
             var query = new Query(table.getUserSchema());
             var selectView = QuerySelectView.create(query, this.table, this.columns, this.filter, this.sort, this.maxRows, this.offset, this.forceSort, this.queryLogging, this.distinct);
             return selectView.getSql();
+        }
+
+        @Override
+        public SqlSelector buildSqlSelector(Map<String, Object> parameters)
+        {
+            SQLFragment sql = buildSqlFragment();
+            bindNamedParameters(sql, parameters);
+            validateNamedParameters(sql);
+            QueryLogging queryLogging = getQueryLogging();
+            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+        }
+
+        @Override
+        public Results select(Map<String, Object> parameters, boolean cache)
+        {
+            SqlSelector selector = buildSqlSelector(parameters);
+            ResultSet rs = selector.getResultSet(cache, cache);
+
+            // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
+            // close the underlying ResultSet before returning since it won't be accessible anywhere else
+            boolean success = false;
+            try
+            {
+                ResultsImpl result = new ResultsImpl(rs, columns);
+                success = true;
+                return result;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    ResultSetUtil.close(rs);
+                }
+            }
+        }
+
+        public TableInfo getTable()
+        {
+            return table;
         }
 
         @Override
@@ -3353,7 +3411,7 @@ public class QueryServiceImpl implements QueryService
 					roleAssignments.getColumn("userid"),
 					roleAssignments.getColumn("role"));
 
-                try (ResultSet rs = qs.select(roleAssignments, l, null, null))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3366,7 +3424,7 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("role"));
 		        Sort sort = new Sort("+userid");
 
-                try (ResultSet rs = qs.select(roleAssignments, l, null, sort))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).sort(sort).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3379,7 +3437,7 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("role"));
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
 
-                try (ResultSet rs = qs.select(roleAssignments, l, f, null))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).filter(f).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3394,7 +3452,10 @@ public class QueryServiceImpl implements QueryService
 		        Sort sort = new Sort("+userid");
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
 
-                try (ResultSet rs = qs.select(roleAssignments, map.values(), f, sort))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments)
+                        .columns(map.values())
+                        .filter(f)
+                        .sort(sort).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 4);
                 }

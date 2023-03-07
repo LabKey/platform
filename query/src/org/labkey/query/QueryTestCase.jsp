@@ -431,7 +431,8 @@ d,seven,twelve,day,month,date,duration,guid
         @Override
         void validate(@Nullable Container container)
         {
-            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(lists, _sql))
+            var select = QueryService.get().getSelectBuilder(lists, _sql);
+            try (Results ignored = select.select())
             {
                 Assert.fail("should fail: " + _sql);
             }
@@ -1349,7 +1350,7 @@ d,seven,twelve,day,month,date,duration,guid
         }
         else
         {
-            try (Results rs = QueryService.get().select(t, t.getColumns(), null, null))
+            try (Results rs = QueryService.get().getSelectBuilder(t).select())
             {
                 assertNotNull(sql, rs);
                 assertEquals(sql, Rsize, rs.getSize());
