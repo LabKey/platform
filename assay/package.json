@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.305.0-fb-selectRowsIncludeTotalRows.1"
+    "@labkey/components": "2.307.0"
   },
   "devDependencies": {
     "@labkey/build": "6.9.0",
