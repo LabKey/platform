@@ -50,7 +50,7 @@ public abstract class SessionKeyManager<T>
 
     public String createKey(HttpSession session, T context)
     {
-        String key = GUID.makeHash();
+        String key = createKey();
         KEY_MAP.put(key, context);
 
         synchronized (SESSION_LOCK)
@@ -68,6 +68,11 @@ public abstract class SessionKeyManager<T>
         }
 
         return key;
+    }
+
+    protected String createKey()
+    {
+        return GUID.makeHash();
     }
 
     public @Nullable T getContext(String key)
