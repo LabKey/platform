@@ -295,6 +295,8 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (!context.getInsertOption().allowUpdate)
+                return pre; // recompute for new insert are already handled in ExperimentalServiceImpl.saveExpMaterialAliquotOutputs
             return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType));
         }
     }
