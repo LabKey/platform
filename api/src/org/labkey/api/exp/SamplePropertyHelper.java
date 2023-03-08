@@ -78,9 +78,9 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public abstract List<String> getSampleNames();
 
-    protected abstract ObjectType getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException;
+    protected abstract ObjectType getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException, ExperimentException;
 
-    protected Pair<ObjectType, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected Pair<ObjectType, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
         return new Pair<>(getObject(index, sampleProperties, parentMaterials), null);
     }
