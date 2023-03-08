@@ -443,7 +443,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName());
+        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName(), getInputFiles());
     }
 
     @Override
@@ -461,10 +461,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Deprecated //prefer Path version
     public static String getDataDescription(File dirData, String baseName, String joinedBaseName, String protocolName)
     {
-        return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName);
+        return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName, Collections.emptyList());
     }
 
-    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName)
+    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName, List<File> inputFiles)
     {
         String dataName = "";
         if (dirData != null)
@@ -489,6 +489,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             description.append(baseName);
         }
         description.append(" (").append(protocolName).append(")");
+
+        // input files
+        if (!inputFiles.isEmpty())
+        {
+            description.append(" (");
+            description.append(String.join(",", inputFiles.stream().map(f -> f.getName()).collect(Collectors.toList())));
+            description.append(")");
+        }
         return description.toString();
     }
 

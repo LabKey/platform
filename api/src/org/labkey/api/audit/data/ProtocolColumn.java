@@ -59,7 +59,7 @@ public class ProtocolColumn extends ExperimentAuditColumn<ExpProtocol>
                     protocol = ExperimentService.get().getExpProtocol(protocolId.toString());
 
                 AssayProvider provider = null;
-                if (protocol != null)
+                if (protocol != null && AssayService.get() != null)
                     provider = AssayService.get().getProvider(protocol);
 
                 ActionURL url = null;

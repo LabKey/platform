@@ -28,14 +28,12 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -1359,6 +1357,8 @@ public class ProjectController extends SpringActionController
         private boolean _includeEffectivePermissions = true;
         private String[] _moduleProperties;
         private ContainerFilter.Type _containerFilter = null;
+        private boolean _includeWorkbookChildren = true;
+        private boolean _includeStandardProperties = true;
 
         public boolean isMultipleContainers()
         {
@@ -1399,6 +1399,26 @@ public class ProjectController extends SpringActionController
         {
             _containerFilter = containerFilter;
         }
+
+        public boolean isIncludeWorkbookChildren()
+        {
+            return _includeWorkbookChildren;
+        }
+
+        public void setIncludeWorkbookChildren(boolean includeWorkbookChildren)
+        {
+            _includeWorkbookChildren = includeWorkbookChildren;
+        }
+
+        public boolean isIncludeStandardProperties()
+        {
+            return _includeStandardProperties;
+        }
+
+        public void setIncludeStandardProperties(boolean includeStandardProperties)
+        {
+            _includeStandardProperties = includeStandardProperties;
+        }
     }
 
     /**
@@ -1414,13 +1434,11 @@ public class ProjectController extends SpringActionController
     public class GetContainersAction extends ReadOnlyApiAction<GetContainersForm>
     {
         int _requestedDepth;
-        boolean _includeEffectivePermissions = true;
 
         @Override
         public ApiResponse execute(GetContainersForm form, BindException errors)
         {
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
-            _includeEffectivePermissions = form.isIncludeEffectivePermissions();
             ApiSimpleResponse response = new ApiSimpleResponse();
             User user = getUser();
 
@@ -1449,7 +1467,6 @@ public class ProjectController extends SpringActionController
                     {
                         propertiesToSerialize.addAll(module.getModuleProperties().values());
                     }
-
                 }
             }
 
@@ -1485,7 +1502,7 @@ public class ProjectController extends SpringActionController
                         return c;
                     return c1.getTitle().compareTo(c2.getTitle());
                 });
-                form.setContainers(list.toArray(new Container[list.size()]));
+                form.setContainers(list.toArray(new Container[0]));
             }
 
             Map<String, Object> resultMap;
@@ -1502,7 +1519,7 @@ public class ProjectController extends SpringActionController
                 for (Container c : containers)
                 {
                     if (c != null)
-                        containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
+                        containerJSON.add(getContainerJSON(c, user, propertiesToSerialize, form));
                 }
                 resultMap = Collections.singletonMap("containers", containerJSON);
             }
@@ -1512,7 +1529,7 @@ public class ProjectController extends SpringActionController
                 if (form.getContainers() != null && form.getContainers().length > 0)
                     c = form.getContainers()[0];
                 if (null != c) // 17166
-                    resultMap = getContainerJSON(c, user, propertiesToSerialize);
+                    resultMap = getContainerJSON(c, user, propertiesToSerialize, form);
                 else
                     resultMap = Collections.emptyMap();
             }
@@ -1521,18 +1538,18 @@ public class ProjectController extends SpringActionController
             return response;
         }
 
-        private Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
+        private Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize, GetContainersForm form)
         {
             Map<String, Object> resultMap = new HashMap<>();
             if (container.hasPermission(user, ReadPermission.class)) // 43853
             {
-                resultMap = container.toJSON(user, _includeEffectivePermissions);
+                resultMap = container.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
                 addModuleProperties(container, propertiesToSerialize, resultMap);
             }
 
             if (_requestedDepth > 0)
             {
-                List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0);
+                List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0, form);
                 resultMap.put("children", children);
 
                 if (children.size() > 0)
@@ -1565,7 +1582,7 @@ public class ProjectController extends SpringActionController
         }
 
         //return only those paths through the container tree leading to a container to which the user has permission
-        protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, List<ModuleProperty> propertiesToSerialize, int depth)
+        protected List<Map<String, Object>> getVisibleChildren(Container parent, User user, List<ModuleProperty> propertiesToSerialize, int depth, GetContainersForm form)
         {
             List<Map<String, Object>> visibleChildren = new ArrayList<>();
             if (depth == _requestedDepth)
@@ -1573,13 +1590,16 @@ public class ProjectController extends SpringActionController
 
             for (Container child : parent.getChildren())
             {
-                List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
-                if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
+                if (form.isIncludeWorkbookChildren() || !child.isWorkbook())
                 {
-                    Map<String, Object> visibleChild = child.toJSON(user, _includeEffectivePermissions);
-                    addModuleProperties(child, propertiesToSerialize, visibleChild);
-                    visibleChild.put("children", theseChildren);
-                    visibleChildren.add(visibleChild);
+                    List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1, form);
+                    if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
+                    {
+                        Map<String, Object> visibleChild = child.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
+                        addModuleProperties(child, propertiesToSerialize, visibleChild);
+                        visibleChild.put("children", theseChildren);
+                        visibleChildren.add(visibleChild);
+                    }
                 }
             }
 
