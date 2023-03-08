@@ -1416,7 +1416,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND LSID ";
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND Name ";
 
         SQLFragment updateSQL = new SQLFragment(updateSqlStr);
         updateSQL.add(Boolean.TRUE);
