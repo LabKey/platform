@@ -195,7 +195,7 @@
             new LABKEY.QueryWebPart({
                 title: 'Sort by Tag',
                 schemaName: 'Samples',
-                columns: ['Name', 'id', 'sort', 'tag'],
+                columns: 'Name,id,sort,tag',
                 queryName: 'sampleDataTest1',
                 sort: 'tag',
                 renderTo: RENDERTO,
