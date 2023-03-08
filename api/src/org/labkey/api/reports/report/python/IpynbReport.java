@@ -121,7 +121,7 @@ public class IpynbReport extends DockerScriptReport
 
     public static boolean isEnabled()
     {
-        if (PremiumService.get().isEnabled())
+        if (PremiumService.get().isEnabled() && ModuleLoader.getInstance().hasModule("professional"))
         {
             LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
             List<ExternalScriptEngineDefinition> defs = mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.Jupyter);

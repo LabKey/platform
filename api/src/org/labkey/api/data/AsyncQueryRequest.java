@@ -24,7 +24,6 @@ import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
@@ -99,8 +98,6 @@ public class AsyncQueryRequest<T>
     synchronized public T waitForResult(final Callable<T> callable) throws SQLException, IOException
     {
         final QueryService qs = QueryService.get();
-        QueryProfiler.getInstance().ensureListenerEnvironment();
-
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 

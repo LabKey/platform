@@ -38,7 +38,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -79,11 +78,7 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 
 /**
- * Handles the bookkeeping for some basic study tables based on inserts, updates, and deletes
- * on other tables.
- *
- * User: brittp
- * Created: Feb 29, 2008
+ * Handles the bookkeeping for some basic study tables based on inserts, updates, and deletes on other tables.
  */
 public abstract class VisitManager
 {
@@ -214,8 +209,6 @@ public abstract class VisitManager
 
     public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
-        QueryProfiler.getInstance().ensureListenerEnvironment();
-
         Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
         VisitMapKey key = null;
         VisitStatistics statistics = new VisitStatistics();

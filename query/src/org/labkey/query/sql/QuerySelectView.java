@@ -17,7 +17,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -191,8 +190,6 @@ public class QuerySelectView extends AbstractQueryRelation
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
-
-        QueryProfiler.getInstance().ensureListenerEnvironment();
 
         if (null == selectColumns)
             selectColumns = table.getColumns();

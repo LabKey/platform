@@ -21,19 +21,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
-            "Commons File Upload",
-            "Apache",
-            "http://jakarta.apache.org/commons/fileupload/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Parses HTTP multipart/form-data POSTs"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "org.apache.commons:commons-math3:${commonsMath3Version}",
             "Commons Math",
             "Apache",
