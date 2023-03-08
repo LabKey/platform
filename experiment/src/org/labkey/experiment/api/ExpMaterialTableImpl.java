@@ -1097,7 +1097,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sql;
     }
 
-    // if all selectedColumns are in the root table, no need to join to the provisioned table (i.e. example is the COUNT(*) case)
+    // if all selectedColumns are in the root table, no need to join to the provisioned table (e.g., in the COUNT(*) case)
     private boolean checkSelectedColumnsFromRootOnly(Set<FieldKey> selectedColumns, Set<String> rootColNames)
     {
         boolean selectedRootOnly = true;
