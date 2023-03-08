@@ -1097,32 +1097,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sql;
     }
 
-    // if all selectedColumns are in the root table, no need to join to the provisioned table (e.g., in the COUNT(*) case)
-    private boolean checkSelectedColumnsFromRootOnly(Set<FieldKey> selectedColumns, Set<String> rootColNames)
-    {
-        boolean selectedRootOnly = true;
-        if (selectedColumns != null)
-        {
-            for (FieldKey selectedColumn : selectedColumns)
-            {
-                String rootFKName = selectedColumn.getRootFieldKey().getName();
-                String selectedName = rootFKName.equalsIgnoreCase("folder") ? "container" : rootFKName;
-                boolean colNameFound = rootColNames.contains(selectedName);
-                if (!colNameFound)
-                {
-                    selectedRootOnly = false;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            selectedRootOnly = false;
-        }
-
-        return selectedRootOnly;
-    }
-
     private class IdColumnRendererFactory implements DisplayColumnFactory
     {
         @Override
