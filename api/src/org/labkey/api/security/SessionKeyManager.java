@@ -39,7 +39,6 @@ public abstract class SessionKeyManager<T>
     private final Object SESSION_LOCK = new Object();
 
     protected abstract @NotNull String getSessionAttributeName();
-    protected abstract @Nullable String getKeyPrefix();
     protected abstract T validateContext(T context, String key);
 
     // Generate a random key, associate it with the provided context, and track the key in session to support invalidation.
@@ -51,8 +50,7 @@ public abstract class SessionKeyManager<T>
 
     public String createKey(HttpSession session, T context)
     {
-        String prefix = getKeyPrefix();
-        String key = (null != prefix ? prefix : "") + GUID.makeHash();
+        String key = createKey();
         KEY_MAP.put(key, context);
 
         synchronized (SESSION_LOCK)
@@ -70,6 +68,11 @@ public abstract class SessionKeyManager<T>
         }
 
         return key;
+    }
+
+    protected String createKey()
+    {
+        return GUID.makeHash();
     }
 
     public @Nullable T getContext(String key)

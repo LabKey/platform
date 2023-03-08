@@ -496,7 +496,7 @@ public class SecurityManager
         @Nullable String apiKey = getApiKey(basicCredentials, request);
 
         // Handle session API key early, if present and valid
-        if (apiKey != null && apiKey.startsWith(SessionApiKeyManager.get().getKeyPrefix()))
+        if (apiKey != null)
         {
             HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
@@ -560,7 +560,7 @@ public class SecurityManager
             u = sessionUser;
         }
 
-        if (null == u && null != apiKey && apiKey.startsWith("apikey|"))
+        if (null == u && apiKey != null)
         {
             u = ApiKeyManager.get().authenticateFromApiKey(apiKey);
 
@@ -599,14 +599,16 @@ public class SecurityManager
     {
         String apiKey;
 
-        // Prefer Basic auth
+        // Accept API keys via basic auth if the username is "apikey". Supported for backwards compatibility and clients that don't support custom headers.
+
         if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
         {
             apiKey = basicCredentials.getValue();
         }
         else
         {
-            // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
+            // Passing via the "apikey" HTTP header is our preferred approach and used by most
+            // LabKey client API implementations
             apiKey = request.getHeader(API_KEY);
             if (null == apiKey)
             {
