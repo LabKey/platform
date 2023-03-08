@@ -483,7 +483,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("MaterialExpDate"));
                 ret.setLabel("Expiration Date");
-                ret.setHidden(false); // TODO: true until system fields can be disabled
                 ret.setShownInDetailsView(true);
                 ret.setShownInInsertView(true);
                 ret.setShownInUpdateView(true);
