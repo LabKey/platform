@@ -138,7 +138,7 @@ public class DbSequenceManager
     public static DbSequence getReclaimablePreallocateSequence(Container c, String name, int id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;
-        return _reclaimableSequences.computeIfAbsent(key, (k) -> new DbSequence.ReclaimablePreallocate(c, name, ensure(c, name, id), batchSize));
+        return _reclaimableSequences.computeIfAbsent(key, (k) -> new DbSequence.ReclaimablePreallocate(c, name, ensure(c, name, id, true), batchSize));
     }
 
     /* This is not a recommended, but if you get stuck and need to reserve a block at once */
@@ -149,19 +149,27 @@ public class DbSequenceManager
         return ((DbSequence.Preallocate)seq).reserveSequentialBlock(count);
     }
 
-
     private static int ensure(Container c, String name, int id)
     {
-        Integer rowId = getRowId(c, name, id);
+        return ensure(c, name, id, false);
+    }
+
+    private static int ensure(Container c, String name, int id, boolean withUpdateLock)
+    {
+        Integer rowId = getRowId(c, name, id, withUpdateLock);
 
         if (null != rowId)
             return rowId;
         else
-            return create(c, name, id);
+            return create(c, name, id, withUpdateLock);
     }
 
-
     public static @Nullable Integer getRowId(Container c, String name, int id)
+    {
+        return getRowId(c, name, id, false);
+    }
+
+    public static @Nullable Integer getRowId(Container c, String name, int id, boolean withUpdateLock)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
@@ -170,7 +178,18 @@ public class DbSequenceManager
         getRowIdSql.add(name);
         getRowIdSql.add(id);
 
-        return executeAndMaybeReturnInteger(tinfo, getRowIdSql);
+        Integer rowId = executeAndMaybeReturnInteger(tinfo, getRowIdSql);
+
+        if (withUpdateLock && tinfo.getSqlDialect().isPostgreSQL())
+        {
+            SQLFragment lockRowSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
+            lockRowSql.append(" WHERE RowId = ?");
+            lockRowSql.append(" FOR UPDATE");
+            lockRowSql.add(rowId);
+            new SqlExecutor(tinfo.getSchema()).execute(lockRowSql); // get lock for current transaction
+        }
+
+        return rowId;
     }
 
 
@@ -186,9 +205,13 @@ public class DbSequenceManager
         return executeAndReturnIntCollection(tinfo, getRowIdSql);
     }
 
+    private static int create(Container c, String name, int id)
+    {
+        return create(c, name, id, false);
+    }
 
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
-    private static int create(Container c, String name, int id)
+    private static int create(Container c, String name, int id, boolean withUpdateLock)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -210,7 +233,7 @@ public class DbSequenceManager
         catch (DataIntegrityViolationException e)
         {
             // Race condition... another thread already created the DbSequence, so just return the existing RowId.
-            Integer rowId = getRowId(c, name, id);
+            Integer rowId = getRowId(c, name, id, withUpdateLock);
 
             if (null == rowId)
                 throw new IllegalStateException("Can't create DbSequence");
