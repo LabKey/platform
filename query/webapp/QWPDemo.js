@@ -777,7 +777,7 @@
                 title: 'Filter on "Sort" column (Regression #33536)',
                 schemaName: 'Samples',
                 queryName: 'sampleDataTest1',
-                columns: ['Name', 'id', 'sort', 'tag'],
+                columns: 'Name, id, sort, tag',
                 renderTo: RENDERTO,
                 filterArray: [
                     LABKEY.Filter.create('Sort', '50;60;70', LABKEY.Filter.Types.EQUALS_ONE_OF)
