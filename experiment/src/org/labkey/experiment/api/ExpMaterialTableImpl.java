@@ -1026,10 +1026,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
 
-        selectedColumns = computeInnerSelectedColumns(selectedColumns);
-
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+
+        boolean skipProvisionedJoin = checkSelectedColumnsFromRootOnly(selectedColumns, dataCols);
+
+        selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
@@ -1081,7 +1083,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "m");
-        if (null != provisioned)
+        if (null != provisioned && !skipProvisionedJoin)
         {
             sql.append(" INNER JOIN ").append(provisioned, "self").append(" ON m.lsid = self.lsid")
                     .append(" LEFT JOIN ").append(provisioned, "root").append(" ON m.rootMaterialLsid = root.lsid");
@@ -1093,6 +1095,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         sql.appendComment("</ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
 
         return sql;
+    }
+
+    // if all selectedColumns are in the root table, no need to join to the provisioned table (e.g., in the COUNT(*) case)
+    private boolean checkSelectedColumnsFromRootOnly(Set<FieldKey> selectedColumns, Set<String> rootColNames)
+    {
+        boolean selectedRootOnly = true;
+        if (selectedColumns != null)
+        {
+            for (FieldKey selectedColumn : selectedColumns)
+            {
+                String rootFKName = selectedColumn.getRootFieldKey().getName();
+                String selectedName = rootFKName.equalsIgnoreCase("folder") ? "container" : rootFKName;
+                boolean colNameFound = rootColNames.contains(selectedName);
+                if (!colNameFound)
+                {
+                    selectedRootOnly = false;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            selectedRootOnly = false;
+        }
+
+        return selectedRootOnly;
     }
 
     private class IdColumnRendererFactory implements DisplayColumnFactory

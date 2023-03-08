@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
@@ -617,6 +618,14 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             metadataColumnJSON.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             metadataColumnJSON.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
+
+            if (columnInfo instanceof WrappedColumn wc)
+            {
+                ColumnInfo wrappedCol = wc.getWrappedColumn();
+                if (wrappedCol != null)
+                    metadataColumnJSON.setWrappedColumnName(wrappedCol.getColumnName());
+            }
+
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
