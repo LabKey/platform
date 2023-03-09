@@ -101,6 +101,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.DeferRollupCount;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -195,7 +196,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.INSERT, finalConfigParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(outputRows);
+            onSamplesChanged(outputRows, configParameters);
             audit(QueryService.AuditAction.INSERT);
         }
         return ret;
@@ -360,7 +361,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !context.getErrors().hasErrors())
         {
             boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null);
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters());
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -373,7 +374,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -391,7 +392,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(results);
+            onSamplesChanged(results, configParameters);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -429,7 +430,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -1007,7 +1008,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    private void onSamplesChanged(List<Map<String, Object>> results)
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         Pair<Set<String>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
@@ -1015,7 +1016,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (parentKeys != null)
         {
             int parentSize = parentKeys.first.size() + parentKeys.second.size();
-            useBackgroundRecalc = parentSize > 20;
+            int backgroundCutoff = 20;
+            if (params != null && params.containsKey(DeferRollupCount))
+                backgroundCutoff = (Integer) params.get(DeferRollupCount);
+            useBackgroundRecalc = parentSize > backgroundCutoff;
         }
         if (!useBackgroundRecalc && parentKeys != null)
             handleRecalc(parentKeys.first, parentKeys.second, false);

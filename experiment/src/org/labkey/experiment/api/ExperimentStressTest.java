@@ -103,6 +103,7 @@ public class ExperimentStressTest
             BatchValidationException errors = new BatchValidationException();
             Map<Enum, Object> options = new HashMap<>();
             options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+            options.put(SampleTypeService.ConfigParameters.DeferRollupCount, 1); // use background thread to recompute rollup
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;

@@ -48,7 +48,8 @@ public interface SampleTypeService
 
     enum ConfigParameters {
         DeferAliquotRuns, // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately,
-        SkipMaxSampleCounterFunction
+        SkipMaxSampleCounterFunction,
+        DeferRollupCount
     }
 
     enum SampleOperations {
