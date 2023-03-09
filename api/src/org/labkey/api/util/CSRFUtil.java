@@ -44,12 +44,12 @@ public class CSRFUtil
             return csrf;
 
         csrf = PageFlowUtil.getCookieValue(request.getCookies(), csrfCookie, null);
-        if (null == csrf || !GUID.looksLikeAValidSHA256Hash(csrf))
+        if (null == csrf || !GUID.looksLikeAValidLongHash(csrf))
             csrf = null;
 
         if (null == csrf)
         {
-            csrf = GUID.makeSHA256Hash();
+            csrf = GUID.makeLongHash();
             if (response != null)
             {
                 try

@@ -72,7 +72,7 @@ public abstract class SessionKeyManager<T>
 
     protected String createKey()
     {
-        return GUID.makeSHA256Hash();
+        return GUID.makeLongHash();
     }
 
     public @Nullable T getContext(String key)
