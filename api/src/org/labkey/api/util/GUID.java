@@ -239,7 +239,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
 
     /**
-     * return an unpredictable unique string, a 128 bit result encoded as hexadecimal characters
+     * return an unpredictable unique string, 32 characters in length
      */
     public static String makeHash()
     {
@@ -248,11 +248,11 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
    public static String makeHash(String addl)
     {
-        return Crypt.MD5.digest(makeGUID() + rand.nextLong() + addl);
+        return makeLongHash(addl).substring(0, 32);
     }
 
     /**
-     * Builds a 256-bit unique hash from random inputs, returned as hexadecimal characters
+     * return an unpredictable unique string, 64 characters in length
      */
     public static String makeLongHash()
     {
@@ -264,7 +264,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
      */
     public static String makeLongHash(String addl)
     {
-        // 256 bits of entropy (4 64-bit longs) to match the hash size
+        // 256 bits of entropy (4 64-bit longs)
         return Crypt.SHA256.digest(makeGUID() + rand.nextLong() + rand.nextLong() + rand.nextLong() + rand.nextLong() + addl);
     }
 
