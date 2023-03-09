@@ -339,7 +339,7 @@ public class ExpDataIterators
             {
                 if (_isInsert)
                 {
-                    if (i == _parentNameToRecomputeCol)
+                    if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
                         return get(_aliquotedFromCol); // recompute parent when new aliquot is created
                     return null;
                 }
