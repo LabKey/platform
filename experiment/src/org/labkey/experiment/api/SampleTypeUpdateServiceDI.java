@@ -121,7 +121,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
 
     public static final String PARENT_RECOMPUTE_LSID_COL = "ParentLsidToRecompute";
-    public static final String PARENT_RECOMPUTE_NANE_COL = "ParentNameToRecompute";
+    public static final String PARENT_RECOMPUTE_NAME_COL = "ParentNameToRecompute";
     public static final String PARENT_RECOMPUTE_LSID_SET = "ParentLsidToRecomputeSet";
     public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
 
@@ -197,7 +197,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             onSamplesChanged(outputRows);
             audit(QueryService.AuditAction.INSERT);
         }
-        // TODO handle outputRows
         return ret;
     }
 
@@ -211,15 +210,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (outputRows.size() == 1 && outputRows.get(0).containsKey(PARENT_RECOMPUTE_LSID_SET))
         {
             parentLsids.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_LSID_SET));
-            parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
+            if (outputRows.get(0).containsKey(PARENT_RECOMPUTE_NAME_SET))
+                parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
         }
         else
         {
             for (int i = 0 ; i < outputRows.size(); i++)
             {
                 Map<String,Object> result = outputRows.get(i);
+                if (!result.containsKey(PARENT_RECOMPUTE_LSID_COL))
+                    break;
                 Object lsidObj = result.get(PARENT_RECOMPUTE_LSID_COL);
-                Object nameObj = result.get(PARENT_RECOMPUTE_NANE_COL);
+                Object nameObj = result.get(PARENT_RECOMPUTE_NAME_COL);
                 if (lsidObj != null)
                     parentLsids.add((String) lsidObj);
                 if (nameObj != null)
@@ -239,42 +241,53 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (null != rows)
             {
-                Map<String, Object> recomputeRes = new CaseInsensitiveHashMap<>();
-                Set<String> lsidToRecompute = new HashSet<>();
-                Set<String> nameToRecompute = new HashSet<>();
-                if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
-                {
-                    recomputeRes.put(PARENT_RECOMPUTE_LSID_SET, lsidToRecompute);
-                    recomputeRes.put(PARENT_RECOMPUTE_NAME_SET, nameToRecompute);
-                    rows.add(recomputeRes);
-                }
+
                 MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
                 Map<String, Integer> columnMap = DataIteratorUtil.createColumnNameMap(it);
-                int parentLsidToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_LSID_COL);
-                int parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NANE_COL);
-                it = new WrapperDataIterator(maps)
+                Integer parentLsidToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_LSID_COL);
+                Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
+
+                boolean hasRollUpColumns = parentLsidToRecomputeCol != null && parentNameToRecomputeCol != null;
+                Set<String> lsidToRecompute = new HashSet<>();
+                Set<String> nameToRecompute = new HashSet<>();
+
+                if (hasRollUpColumns)
                 {
-                    @Override
-                    public boolean next() throws BatchValidationException
+                    Map<String, Object> recomputeRes = new CaseInsensitiveHashMap<>();
+                    if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
                     {
-                        boolean ret = super.next();
-                        if (ret)
-                        {
-                            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
-                            {
-                                Object lsidObj = (_delegate).get(parentLsidToRecomputeCol);
-                                if (lsidObj != null)
-                                    lsidToRecompute.add((String) lsidObj);
-                                Object nameObj = (_delegate).get(parentNameToRecomputeCol);
-                                if (nameObj != null)
-                                    nameToRecompute.add((String) nameObj);
-                            }
-                            else
-                                rows.add(((MapDataIterator)_delegate).getMap());
-                        }
-                        return ret;
+                        recomputeRes.put(PARENT_RECOMPUTE_LSID_SET, lsidToRecompute);
+                        recomputeRes.put(PARENT_RECOMPUTE_NAME_SET, nameToRecompute);
+                        rows.add(recomputeRes);
                     }
-                };
+                }
+
+                if (hasRollUpColumns || !context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
+                {
+                    it = new WrapperDataIterator(maps)
+                    {
+                        @Override
+                        public boolean next() throws BatchValidationException
+                        {
+                            boolean ret = super.next();
+                            if (ret)
+                            {
+                                if (hasRollUpColumns && context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
+                                {
+                                    Object lsidObj = (_delegate).get(parentLsidToRecomputeCol);
+                                    if (lsidObj != null)
+                                        lsidToRecompute.add((String) lsidObj);
+                                    Object nameObj = (_delegate).get(parentNameToRecomputeCol);
+                                    if (nameObj != null)
+                                        nameToRecompute.add((String) nameObj);
+                                }
+                                else
+                                    rows.add(((MapDataIterator)_delegate).getMap());
+                            }
+                            return ret;
+                        }
+                    };
+                }
             }
 
             Pump pump = new Pump(it, context);
@@ -1061,12 +1074,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _sampleType.onSamplesChanged(getUser(), null);
     }
 
-    private void fireSamplesRecalc(boolean needRecalc, Container recalcContainer)
-    {
-        if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null);
-    }
-
     void audit(QueryService.AuditAction auditAction)
     {
         assert _sampleType != null || auditAction == QueryService.AuditAction.DELETE : "SampleType required for insert/update, but not required for read/delete";
@@ -1148,17 +1155,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
             if (context.getInsertOption() == InsertOption.UPDATE)
             {
                 SimpleTranslator addAliquotedFrom = new SimpleTranslator(source, context);
 
-                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
                 if (!columnNameMap.containsKey("aliquotedfromlsid"))
                     addAliquotedFrom.addNullColumn("aliquotedfromlsid", JdbcType.VARCHAR);
                 addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
-                addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NANE_COL, JdbcType.VARCHAR);
+                addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
                 var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
@@ -1183,8 +1190,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             // only add when AliquotedFrom column is not null
-            addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
-            addGenId.addNullColumn(PARENT_RECOMPUTE_NANE_COL, JdbcType.VARCHAR);
+            if (columnNameMap.containsKey("AliquotedFrom"))
+            {
+                addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
+                addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
+            }
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters

@@ -121,7 +121,7 @@ import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
-import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NANE_COL;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 
 
 public class ExpDataIterators
@@ -328,7 +328,7 @@ public class ExpDataIterators
             _aliquotedFromCol = map.get("AliquotedFrom");
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
             _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
-            _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NANE_COL);
+            _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
 
         }
 
@@ -2216,7 +2216,8 @@ public class ExpDataIterators
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             DataIteratorBuilder step7 = step6;
-            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+            boolean hasRollUpColumns = colNameMap.containsKey(PARENT_RECOMPUTE_LSID_COL);
+            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && hasRollUpColumns)
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
 
             // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator

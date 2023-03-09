@@ -2168,8 +2168,6 @@ public class NameGenerator
                 {
                     long existingCount = -1;
 
-                    if (_getNonConflictCountFn != null)
-                        existingCount = _getNonConflictCountFn.apply(prefix);
                     if (counterSequences == null) // no cache
                         counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix);
                     else
@@ -2180,6 +2178,9 @@ public class NameGenerator
                     }
 
                     long currentSeqMax = counterSeq.current();
+
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
 
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
