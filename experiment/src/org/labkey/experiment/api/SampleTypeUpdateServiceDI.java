@@ -101,7 +101,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
-import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.DeferRollupCount;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -1016,10 +1015,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (parentKeys != null)
         {
             int parentSize = parentKeys.first.size() + parentKeys.second.size();
-            int backgroundCutoff = 20;
-            if (params != null && params.containsKey(DeferRollupCount))
-                backgroundCutoff = (Integer) params.get(DeferRollupCount);
-            useBackgroundRecalc = parentSize > backgroundCutoff;
+            useBackgroundRecalc = parentSize > 20;
         }
         if (!useBackgroundRecalc && parentKeys != null)
             handleRecalc(parentKeys.first, parentKeys.second, false);

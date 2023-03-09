@@ -61,10 +61,18 @@ public class ExperimentStressTest
         return random.nextInt(max);
     }
 
-    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount)
+    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount, boolean aliquot)
             throws Exception
     {
-        LOG.info("** inserting " + rowCount + " samples " + (existingNames != null ? "with lineage" : "without lineage") + "...");
+        String noun = "samples";
+        if (existingNames != null)
+        {
+            if (aliquot)
+                noun = "aliquots";
+            else
+                noun = "derived samples";
+        }
+        LOG.info("** inserting " + rowCount + " " + noun + " " + "...");
         int existingNameCount = existingNames != null ? existingNames.size() : 0;
 
         // generate some data
@@ -73,10 +81,8 @@ public class ExperimentStressTest
         {
             String parentName = null;
             boolean derived = existingNameCount > 0 && randomBool();
-            boolean aliquot = false;
             if (derived)
             {
-                aliquot = randomBool();
                 int parentId = randomInt(existingNameCount-1);
                 parentName = existingNames.get(parentId);
             }
@@ -103,34 +109,59 @@ public class ExperimentStressTest
             BatchValidationException errors = new BatchValidationException();
             Map<Enum, Object> options = new HashMap<>();
             options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
-            options.put(SampleTypeService.ConfigParameters.DeferRollupCount, 1); // use background thread to recompute rollup
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;
 
             tx.commit();
-            LOG.info("** inserted " + inserted.size() + " samples");
+            LOG.info("** inserted " + inserted.size() + " " + noun);
 
             // get the inserted names
             return inserted.stream().map(row -> (String)row.get("name")).collect(Collectors.toList());
         }
     }
 
+    enum RunMode
+    {
+        nolineage("without lineage", 5, 5, false),
+        withlineage("with lineage", 5, 5, true),
+        withaliquot("with aliquots", 2, 2, true);
+
+        public final String _description;
+        public final int _thread;
+        public final int _race;
+        public final boolean _needParents;
+
+        RunMode(String description, int thread, int race, boolean needParents)
+        {
+            _description = description;
+            _thread = thread;
+            _race = race;
+            _needParents = needParents;
+        }
+    }
+
     @Test
     public void sampleTypeInsertsWithoutLineage() throws Throwable
     {
-        _sampleTypeInserts(false);
+        _sampleTypeInserts(RunMode.nolineage);
     }
 
     @Test
     public void sampleTypeInsertsWithLineage() throws Throwable
     {
-        _sampleTypeInserts(true);
+        _sampleTypeInserts(RunMode.withlineage);
     }
 
-    private void _sampleTypeInserts(boolean withLineage) throws Throwable
+    @Test
+    public void sampleTypeInsertsWithAliquot() throws Throwable
     {
-        LOG.info("** starting sample type insert test " + (withLineage ? "with lineage" : "without lineage"));
+        _sampleTypeInserts(RunMode.withaliquot);
+    }
+
+    private void _sampleTypeInserts(RunMode mode) throws Throwable
+    {
+        LOG.info("** starting sample type insert test " + mode._description);
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
@@ -144,23 +175,23 @@ public class ExperimentStressTest
 
         // seed samples
         final int rowsToInsert = 50;
-        final List<String> firstInsertedNames = insertSamples(user, c, sampleTypeName, null, rowsToInsert);
+        final List<String> firstInsertedNames = insertSamples(user, c, sampleTypeName, null, rowsToInsert, false);
 
         // if we are inserting without lineage, just ignore the parent names
-        final List<String> parentNames = withLineage ? firstInsertedNames : null;
+        final List<String> parentNames = mode._needParents ? firstInsertedNames : null;
 
         // first level - ensures we have an objectId for the SampleType when inserting with lineage
-        insertSamples(user, c, sampleTypeName, parentNames, 5);
+        insertSamples(user, c, sampleTypeName, parentNames, 5, false);
 
-        final int threads = 5;
-        final int races = 5;
+        final int threads = mode._thread;
+        final int races = mode._race;
         LOG.info("** starting racy inserts (threads=" + threads + ", races=" + races + ", rows=" + rowsToInsert + ")");
         JunitUtil.createRaces(() -> {
 
             try
             {
                 Thread.sleep(randomInt(10) * 200);
-                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert);
+                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode == RunMode.withaliquot);
             }
             catch (Exception e)
             {
