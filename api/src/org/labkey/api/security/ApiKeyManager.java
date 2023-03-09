@@ -85,7 +85,7 @@ public class ApiKeyManager
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds)
     {
-        return createKey(user, expirationSeconds, GUID.makeHash());
+        return createKey(user, expirationSeconds, GUID.makeLongHash());
     }
 
     private @NotNull String createKey(@NotNull User user, int expirationSeconds, String apiKey)
