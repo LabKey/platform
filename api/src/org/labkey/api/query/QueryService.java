@@ -25,8 +25,28 @@ import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.query.column.ColumnInfoTransformer;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -306,10 +326,9 @@ public interface QueryService
     {
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
-        ACTION(JdbcType.OTHER),
-        LISTENER_ENVIRONMENTS(JdbcType.OTHER);
+        ACTION(JdbcType.OTHER);
 
-        public JdbcType type;
+        public final JdbcType type;
 
         Environment(JdbcType type)
         {
