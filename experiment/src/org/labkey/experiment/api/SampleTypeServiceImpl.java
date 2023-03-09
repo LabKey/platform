@@ -1402,10 +1402,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID ";
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE RecomputeRollup = ? AND LSID ";
 
         SQLFragment updateSQL = new SQLFragment(updateSqlStr);
         updateSQL.add(Boolean.TRUE);
+        updateSQL.add(Boolean.FALSE);
         scope.getSqlDialect().appendInClauseSql(updateSQL, sampleLSIDs);
 
         new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
@@ -1416,11 +1417,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND LSID ";
+        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND RecomputeRollup = ? AND Name ";
 
         SQLFragment updateSQL = new SQLFragment(updateSqlStr);
         updateSQL.add(Boolean.TRUE);
         updateSQL.add(sampleType.getLSID());
+        updateSQL.add(Boolean.FALSE);
         scope.getSqlDialect().appendInClauseSql(updateSQL, sampleNames);
 
         new SqlExecutor(materialTable.getSchema()).execute(updateSQL);

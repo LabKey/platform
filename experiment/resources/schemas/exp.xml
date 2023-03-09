@@ -247,7 +247,7 @@
           <column columnName="FileAttachmentIndex"/>
       </columns>
   </table>
-    <table tableName="Material" tableDbType="TABLE">
+  <table tableName="Material" tableDbType="TABLE">
     <columns>
       <column columnName="RowId">
           <description>Contains the unique identifier for this sample</description>
