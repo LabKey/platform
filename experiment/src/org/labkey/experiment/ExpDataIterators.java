@@ -35,7 +35,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -47,7 +46,6 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
-import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -122,6 +120,8 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NANE_COL;
 
 
 public class ExpDataIterators
@@ -295,10 +295,8 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-
-            if (!context.getInsertOption().allowUpdate)
-                return pre; // recompute for new insert are already handled in ExperimentalServiceImpl.saveExpMaterialAliquotOutputs
-
+//            if (!context.getInsertOption().allowUpdate)
+//                return pre; // recompute for new insert are already handled in ExperimentalServiceImpl.saveExpMaterialAliquotOutputs
             return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType));
         }
     }
@@ -312,76 +310,87 @@ public class ExpDataIterators
         private final ExpSampleType _sampleType;
         private final Integer _aliquotedFromCol;
         private final Integer _aliquotedFromLsidCol;
-        Set<String> updatedSampleLsids = new HashSet<>();
-        Set<String> updatedSampleNames = new HashSet<>();
+        private final Integer _parentLsidToRecomputeCol;
+        private final Integer _parentNameToRecomputeCol;
+        private final boolean _isInsert;
+        private final boolean _isUpdate;
 
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
         {
             super(di);
             _context = context;
+            _isInsert = !context.getInsertOption().allowUpdate;
+            _isUpdate = context.getInsertOption().updateOnly;
             _sampleType = sampleType;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _storedAmountCol = map.get("StoredAmount");
             _unitsCol = map.get("Units");
             _aliquotedFromCol = map.get("AliquotedFrom");
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
-        }
+            _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
+            _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NANE_COL);
 
-        private boolean hasAliquotData()
-        {
-            return _aliquotedFromCol != null || _aliquotedFromLsidCol != null || _storedAmountCol != null || _unitsCol != null;
         }
 
         @Override
-        public boolean next() throws BatchValidationException
+        public Object get(int i)
         {
-            boolean hasNext = super.next();
-            // skip processing if there are errors upstream or we've not yet processed aliquot runs
-            if (_context.getErrors().hasErrors() || !hasAliquotData() || _context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
-                return hasNext;
-
-            if (hasNext)
+            if (i == _parentLsidToRecomputeCol || i == _parentNameToRecomputeCol)
             {
+                if (_isInsert)
+                {
+                    if (i == _parentNameToRecomputeCol)
+                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                    return null;
+                }
+
+
+                if (_isUpdate)
+                {
+                    if (_storedAmountCol == null && _unitsCol == null)
+                        return null; // update will only trigger recompute if stored amount or unit is updated)
+                }
+
                 Map<String, Object> existingMap = getExistingRecord();
-                Double existingAmount = null;
-                String existingUnits = null;
-                Set<String> aliquotParentLsids = new HashSet<>();
                 if (existingMap != null)
                 {
-                    existingAmount = (Double) existingMap.get("StoredAmount");
-                    existingUnits = (String) existingMap.get("Units");
+                    if (_storedAmountCol == null && _unitsCol == null)
+                        return null; // update/merge existing will only trigger recompute if stored amount or unit is updated)
+
+                    if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
+                        return null;
+
                     String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
-                    if (rootAliquot != null)
-                        aliquotParentLsids.add(rootAliquot);
+                    Double existingAmount = (Double) existingMap.get("StoredAmount");
+                    String existingUnits = (String) existingMap.get("Units");
+
+                    Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
+                    String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
+
+                    boolean amountChanged = !(Objects.equals(existingAmount, newAmount) && Objects.equals(existingUnits, newUnits));
+                    if (!amountChanged && (_storedAmountCol == null || _unitsCol == null))
+                    {
+                        if (_storedAmountCol == null && !existingUnits.equals(newUnits))
+                            amountChanged = true;
+                        if (_unitsCol == null && !existingAmount.equals(newAmount))
+                            amountChanged = true;
+                    }
+
+                    //TODO for merge will existing map be empty for new record?
+                    return amountChanged ? rootAliquot : null;
                 }
-                Measurement existingMeasurement = new Measurement(existingAmount, existingUnits, _sampleType.getMetricUnit());
 
-                Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
-                String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
-                Measurement newMeasurement = new Measurement(newAmount, newUnits, _sampleType.getMetricUnit());
-                boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
+                // without existing record, we have to be conservative and assume this is a new aliquot, or a amount update
+                if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null && i == _parentLsidToRecomputeCol)
+                    return get(_aliquotedFromLsidCol);
 
-                // check for aliquotedFromLsidCol first since, for updateOnly cases, we prefer data in this
-                // column over aliquotedFrom; we ignore any user-supplied value in aliquotedFrom
-                if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null)
-                    aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
-                else if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null && amountMayHaveChanged)
-                    updatedSampleNames.add(String.valueOf(get(_aliquotedFromCol)));
+                if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null && i == _parentNameToRecomputeCol)
+                    return get(_aliquotedFromCol);
 
-                if (!aliquotParentLsids.isEmpty() && amountMayHaveChanged)
-                    updatedSampleLsids.addAll(aliquotParentLsids);
-
-                return true;
+                return null;
             }
-            else
-            {
-                if (!updatedSampleLsids.isEmpty())
-                    SampleTypeService.get().setRecomputeFlagForSampleLsids(updatedSampleLsids);
-                if (!updatedSampleNames.isEmpty())
-                    SampleTypeService.get().setRecomputeFlagForSampleNames(_sampleType, updatedSampleNames);
 
-                return false;
-            }
+            return super.get(i);
         }
     }
 

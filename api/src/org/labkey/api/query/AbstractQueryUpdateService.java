@@ -418,8 +418,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
+        return loadRows(user, container, rows, null, context, extraScriptContext);
+    }
+
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
         configureDataIteratorContext(context);
-        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, outputRows, context, extraScriptContext);
         afterInsertUpdate(count, context.getErrors());
         return count;
     }

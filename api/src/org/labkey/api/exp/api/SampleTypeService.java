@@ -223,13 +223,10 @@ public interface SampleTypeService
 
     long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
 
-    void setRecomputeFlagForSample(String sampleLSID);
-
-    void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs);
-
-    void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames);
-
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
 
     int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException;
+
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames) throws IllegalStateException, SQLException;
+
 }

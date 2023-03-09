@@ -1375,12 +1375,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getRecomputeRollupRowCount(sampleType, container) > 0;
     }
 
-
-    private int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
-    {
-        return recomputeSampleTypeRollup(sampleType, container, false);
-    }
-
     @Override
     public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws IllegalStateException, SQLException
     {
@@ -1397,50 +1391,49 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return recomputeSamplesRollup(parents, withAmountsParents, sampleType.getMetricUnit());
     }
 
-    @Override
-    public void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs)
-    {
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE RecomputeRollup = ? AND LSID ";
+//    @Override
+//    public void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs)
+//    {
+//        DbScope scope = ExperimentService.get().getSchema().getScope();
+//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID ";
+//
+//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+//        updateSQL.add(Boolean.TRUE);
+//        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleLSIDs);
+//
+//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+//    }
 
-        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-        updateSQL.add(Boolean.TRUE);
-        updateSQL.add(Boolean.FALSE);
-        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleLSIDs);
-
-        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-    }
-
-    @Override
-    public void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames)
-    {
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND RecomputeRollup = ? AND Name ";
-
-        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-        updateSQL.add(Boolean.TRUE);
-        updateSQL.add(sampleType.getLSID());
-        updateSQL.add(Boolean.FALSE);
-        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleNames);
-
-        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-    }
+//    @Override
+//    public void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames)
+//    {
+//        DbScope scope = ExperimentService.get().getSchema().getScope();
+//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND RecomputeRollup <> ? AND NAME ";
+//
+//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+//        updateSQL.add(Boolean.TRUE);
+//        updateSQL.add(sampleType.getLSID());
+//        updateSQL.add(Boolean.TRUE);
+//        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleNames);
+//
+//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+//    }
 
 
-    @Override
-    public void setRecomputeFlagForSample(String sampleLSID)
-    {
-        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID = ? ";
-
-        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-        updateSQL.add(Boolean.TRUE);
-        updateSQL.add(sampleLSID);
-
-        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-    }
+//    @Override
+//    public void setRecomputeFlagForSample(String sampleLSID)
+//    {
+//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID = ? ";
+//
+//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
+//        updateSQL.add(Boolean.TRUE);
+//        updateSQL.add(sampleLSID);
+//
+//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
+//    }
 
     @Override
     public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException
@@ -1535,6 +1528,59 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return parents.size();
     }
 
+    @Override
+    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames) throws SQLException
+    {
+        Set<Integer> rootSamplesToRecalc = getRootSampleIdsFromParents(sampleType.getLSID(), parentLsids, parentNames);
+        return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit());
+    }
+
+    private Set<Integer> getRootSampleIdsFromParents(String sampleTypeLsid, Set<String> parentLsids, Set<String> parentNames) throws SQLException
+    {
+        Set<Integer> rootIds = new HashSet<>();
+        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentLsids, true));
+        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentNames, false));
+        return rootIds;
+    }
+
+    private Set<Integer> getRootSampleIdsFromParentKeys(String sampleTypeLsid, Set<String> parentKeys, boolean isLsid) throws SQLException
+    {
+        if (parentKeys == null || parentKeys.isEmpty())
+            return Collections.emptySet();
+
+        DbSchema exp = getExpSchema();
+        SqlDialect dialect = exp.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
+        sql.append(" WHERE root.cpastype = ?");
+        sql.add(sampleTypeLsid);
+        sql.append(" AND root.lsid IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE ");
+        sql.append(isLsid ? "LSID" : "Name");
+        sql.appendInClause(parentKeys, dialect);
+        sql.append(" )");
+
+        Set<Integer> rootIds = new HashSet<>();
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+                rootIds.add(rs.getInt(1));
+        }
+
+        sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
+        sql.append(" WHERE root.cpastype = ? AND root.rootMaterialLsid IS NULL ");
+        sql.add(sampleTypeLsid);
+        sql.append(" AND root.");
+        sql.append(isLsid ? "LSID" : "Name");
+        sql.appendInClause(parentKeys, dialect);
+
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+                rootIds.add(rs.getInt(1));
+        }
+
+        return rootIds;
+    }
 
     private Pair<Double, String> convertToDisplayUnits(List<Pair<Double, String>> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
     {
