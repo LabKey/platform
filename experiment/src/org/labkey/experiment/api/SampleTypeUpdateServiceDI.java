@@ -101,6 +101,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
@@ -1311,8 +1312,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // do nothing
             }
-            nameGen = sampleType.getNameGenerator(dataContainer, user);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user);
+            boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
+            nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
+            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
             if (nameGen != null)
                 nameState = nameGen.createState(true);
             else

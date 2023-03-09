@@ -23,6 +23,7 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -91,7 +92,9 @@ public class ExperimentStressTest
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
-            List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, null, null);
+            Map<Enum, Object> options = new HashMap<>();
+            options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+            List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;
 

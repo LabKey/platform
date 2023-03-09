@@ -47,7 +47,8 @@ public interface SampleTypeService
     String MODULE_NAME = "Experiment";
 
     enum ConfigParameters {
-        DeferAliquotRuns // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately
+        DeferAliquotRuns, // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately,
+        SkipMaxSampleCounterFunction
     }
 
     enum SampleOperations {
