@@ -6,8 +6,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Measurement
 {
+    private static final String NUMBER_REGEX = "[+\\-]?\\d+(?:\\.\\d+)?(?:[Ee][+\\-]\\d+)?";
+    private static final Pattern AMOUNT_AND_UNITS_PATTERN = Pattern.compile("\\s*(?<amount>" + NUMBER_REGEX + ")?\\s*(?<units>\\w*)\\s*");
     private Unit _units;
     private Double _amount;
     private Unit _normalizingUnits;
@@ -304,24 +309,31 @@ public class Measurement
             throw new ConversionExceptionWithMessage("Amount (" + amountObj + ") must be a number.");
     }
 
+    public static Measurement parse(String stringValue)
+    {
+        if (StringUtils.isBlank(stringValue))
+            return null;
+        Matcher matcher = AMOUNT_AND_UNITS_PATTERN.matcher(stringValue);
+        if (!matcher.matches())
+            return null;
+        return new Measurement(convertToAmount(matcher.group("amount")), matcher.group("units"));
+    }
+
     public static void validateUnits(String rawUnits, Unit defaultUnits)
     {
         if (!StringUtils.isBlank(rawUnits))
         {
             rawUnits = rawUnits.trim();
-            try
-            {
-                Unit mUnit = Unit.valueOf(rawUnits);
-                if (defaultUnits != null && mUnit.getKind() != defaultUnits.getKind())
-                    throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
 
-            }
-            catch (IllegalArgumentException e)
+            Unit mUnit = Unit.getUnitFromName(rawUnits);
+            if (mUnit == null)
             {
-                Unit unit = Unit.getUnitFromLabel(rawUnits);
-                if (unit == null)
+                mUnit = Unit.getUnitFromLabel(rawUnits);
+                if (mUnit == null)
                     throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnits + ").  Supported values are: " + StringUtils.join(Unit.values(), ", ") + ".");
             }
+            if (defaultUnits != null && mUnit.getKind() != defaultUnits.getKind())
+                throw new ConversionExceptionWithMessage("Units value (" + rawUnits + ") cannot be converted to the default units (" + defaultUnits + ").");
         }
     }
 
@@ -408,6 +420,46 @@ public class Measurement
             assertEquals("same units", measurement, new Measurement("43.2", "g", "mg"));
             assertEquals("different units", measurement, new Measurement("43200", "mg", "mg"));
             assertEquals("no normalizing unit", measurement, new Measurement("43200", "mg", null));
+            assertEquals("case-insensitive", measurement, new Measurement("43200", "MilliGRAMS", null));
+        }
+
+        @Test
+        public void testParse()
+        {
+            assertNull("Empty string should result in null object", Measurement.parse(""));
+            assertNull("Null should result in null object", Measurement.parse(null));
+            assertNull("Blank string should result in null object", Measurement.parse(" "));
+            assertNull("Non-matching string should result in null object", Measurement.parse("?"));
+            try
+            {
+                Measurement.parse("71.9141x");
+                fail("Unsupported unit type 'x' not detected");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+                // expected
+            }
+            try
+            {
+                Measurement.parse("cups");
+                fail("Unsupported unit type 'cups' not detected");
+            }
+            catch (ConversionExceptionWithMessage ignore)
+            {
+                // expected
+            }
+            assertEquals("String with just a number did not parse", new Measurement(43.2431, null), Measurement.parse("43.2431"));
+            assertEquals("String with just units did not parse", new Measurement(null, "grams"), Measurement.parse("g"));
+            assertEquals("String with number and units did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2 g"));
+            assertEquals("String with integer and units did not parse", new Measurement(42, "g"), Measurement.parse("42 g"));
+            assertEquals("String with space padding before number did not parse", new Measurement(43.2, "g"), Measurement.parse(" 43.2 g"));
+            assertEquals("String with full unit name did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2 grams"));
+            assertEquals("String with full unit name and padding did not parse", new Measurement(43.2, "mg"), Measurement.parse("  43.2    milligrams   "));
+            assertEquals("String with complex number did not parse", new Measurement(-189140.0, "g"), Measurement.parse("-18.914e+4 g"));
+            assertEquals("String with leading plus did not parse", new Measurement(183.0, "mL"), Measurement.parse("+183 mL"));
+            assertEquals("Other complex number did not parse", new Measurement(1.83431, "mL"), Measurement.parse("+183431E-5 units"));
+            assertEquals("Parse of units not matching case failed", new Measurement(878.8, "g"), Measurement.parse("878.8 G"));
+            assertEquals("Parse of full unit name not matching case failed", new Measurement(878.8, "g"), Measurement.parse("878.8 GRaMS"));
         }
     }
 
