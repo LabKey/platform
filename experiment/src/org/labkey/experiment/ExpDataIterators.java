@@ -370,9 +370,9 @@ public class ExpDataIterators
                     boolean amountChanged = !(Objects.equals(existingAmount, newAmount) && Objects.equals(existingUnits, newUnits));
                     if (!amountChanged && (_storedAmountCol == null || _unitsCol == null))
                     {
-                        if (_storedAmountCol == null && !existingUnits.equals(newUnits))
+                        if (_storedAmountCol == null && !Objects.equals(existingUnits, newUnits))
                             amountChanged = true;
-                        if (_unitsCol == null && !existingAmount.equals(newAmount))
+                        if (_unitsCol == null && !Objects.equals(existingAmount, newAmount))
                             amountChanged = true;
                     }
 
