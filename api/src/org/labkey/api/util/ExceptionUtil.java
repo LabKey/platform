@@ -89,7 +89,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -103,7 +102,7 @@ public class ExceptionUtil
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
     /**
-     * Remember all of the exceptions we've seen since the server started up.
+     * Remember all the exceptions we've seen since the server started up.
      * Key is the exception's hash as calculated by {@link #hashStackTrace(String)}.
      */
     private static final Map<String, ExceptionTally> EXCEPTION_TALLIES = Collections.synchronizedMap(new HashMap<>());

@@ -21,7 +21,6 @@ import org.labkey.api.util.SessionHelper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.websocket.server.HandshakeRequest;
-import java.util.concurrent.Callable;
 
 /**
  * Session keys are bound to a single HTTP session, and offer a way to authenticate headless clients when they are
@@ -47,13 +46,6 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
     protected String getSessionAttributeName()
     {
         return "apikeys";
-    }
-
-    @Override
-    @NotNull
-    protected String getKeyPrefix()
-    {
-        return "session|";
     }
 
     @Override
