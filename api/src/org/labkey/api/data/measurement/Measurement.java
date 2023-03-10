@@ -464,6 +464,8 @@ public class Measurement
             assertEquals("String with just a number did not parse", new Measurement(43.2431, null), Measurement.parse("43.2431"));
             assertEquals("String with just units did not parse", new Measurement(null, "grams"), Measurement.parse("g"));
             assertEquals("String with number and units did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2 g"));
+            assertEquals("String with number and units without a space between did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2g"));
+            assertEquals("String with number and units without a space between did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2grams"));
             assertEquals("String with integer and units did not parse", new Measurement(42, "g"), Measurement.parse("42 g"));
             assertEquals("String with space padding before number did not parse", new Measurement(43.2, "g"), Measurement.parse(" 43.2 g"));
             assertEquals("String with full unit name did not parse", new Measurement(43.2, "g"), Measurement.parse("43.2 grams"));
