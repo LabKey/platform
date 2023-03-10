@@ -71,7 +71,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 else
                 {
                     // Remove the intermediate junction table from the FieldKey
-                    ((BaseColumnInfo) lookupCol).setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
+                    ((MutableColumnInfo) lookupCol).setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
                     _additionalFieldKeys.add(lookupCol.getFieldKey());
                 }
             }

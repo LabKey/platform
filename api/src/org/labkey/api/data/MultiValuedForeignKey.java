@@ -181,7 +181,7 @@ public class MultiValuedForeignKey implements ForeignKey
             // expose the junction table itself as part of the Query tree of tables and columns
             if (url != AbstractTableInfo.LINK_DISABLER)
                 url = url.dropParent(junctionKey.getName());
-            ((BaseColumnInfo) lookupColumn).setURL(url);
+            ((MutableColumnInfo) lookupColumn).setURL(url);
         }
 
         return createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
