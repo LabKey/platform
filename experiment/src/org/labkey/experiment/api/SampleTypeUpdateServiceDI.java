@@ -1049,6 +1049,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, long delay)
     {
+        if(delay > 0)
+            return; // TODO remove, test see if recalc cause deadlock
+
         if (useBackgroundThread)
         {
             JobRunner.getDefault().execute(() -> {

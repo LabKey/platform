@@ -109,7 +109,7 @@ public class ExperimentStressTest
             if (aliquot)
             {
                 options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
-                options.put(SampleTypeService.ConfigParameters.RollUpComputeDelay, 10*1000);
+                options.put(SampleTypeService.ConfigParameters.RollUpComputeDelay, 10*1000); // delay recompute since recompute of roots unavoidably cause deadlock on sql server
             }
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
@@ -167,7 +167,7 @@ public class ExperimentStressTest
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
-        final String sampleTypeName = "MySamples";
+        final String sampleTypeName = "MySamples" + mode.name();
 
         // create a target sampletype
         List<GWTPropertyDescriptor> props = new ArrayList<>();
