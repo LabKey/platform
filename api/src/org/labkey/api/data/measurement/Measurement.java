@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class Measurement
 {
     private static final String NUMBER_REGEX = "[+\\-]?\\d+(?:\\.\\d+)?(?:[Ee][+\\-]\\d+)?";
-    private static final Pattern AMOUNT_AND_UNITS_PATTERN = Pattern.compile("\\s*(?<amount>" + NUMBER_REGEX + ")?\\s*(?<units>\\w*)\\s*");
+    private static final Pattern AMOUNT_AND_UNITS_PATTERN = Pattern.compile("\\s*(?<amount>" + NUMBER_REGEX + ")?\\s*(?<units>\\S*)\\s*");
     private Unit _units;
     private Double _amount;
     private Unit _normalizingUnits;
@@ -30,7 +30,7 @@ public class Measurement
         mg("milligrams", Kind.Mass, 0.001),
         kg("kilograms", Kind.Mass, 1000),
         mL("milliliters", Kind.Volume, 1),
-        uL("microliters", Kind.Volume, 0.001),
+        uL("microliters", Kind.Volume, 0.001, "μL"),
         L("liters", Kind.Volume, 1000),
         kL("kiloliters", Kind.Volume, 100000),
         unit("units", Kind.Count, 1);
@@ -38,12 +38,19 @@ public class Measurement
         private final String _longLabel;
         private final Kind _kind;
         private final double _ratio;
+        private final String _alternateName;
 
         Unit(String longLabel, Kind kind, double ratio)
+        {
+           this(longLabel, kind, ratio, null);
+        }
+
+        Unit(String longLabel, Kind kind, double ratio, String alternateName)
         {
             _longLabel = longLabel;
             _kind = kind;
             _ratio = ratio;
+            _alternateName = alternateName;
         }
 
         public String getLongLabel()
@@ -59,6 +66,11 @@ public class Measurement
         public double getRatio()
         {
             return _ratio;
+        }
+
+        public String getAlternateName()
+        {
+            return _alternateName;
         }
 
         public boolean isCompatible(Unit otherUnit)
@@ -94,7 +106,7 @@ public class Measurement
 
             for (Unit unit : Unit.values())
             {
-                if (name.equalsIgnoreCase(unit.name()))
+                if (name.equalsIgnoreCase(unit.name()) || name.equalsIgnoreCase(unit.getAlternateName()))
                     return unit;
             }
             return null;
@@ -429,7 +441,8 @@ public class Measurement
             assertNull("Empty string should result in null object", Measurement.parse(""));
             assertNull("Null should result in null object", Measurement.parse(null));
             assertNull("Blank string should result in null object", Measurement.parse(" "));
-            assertNull("Non-matching string should result in null object", Measurement.parse("?"));
+            assertNull("Parse with multiple-word units failed", Measurement.parse("878.8 micro liters"));
+
             try
             {
                 Measurement.parse("71.9141x");
@@ -460,6 +473,7 @@ public class Measurement
             assertEquals("Other complex number did not parse", new Measurement(1.83431, "mL"), Measurement.parse("+183431E-5 units"));
             assertEquals("Parse of units not matching case failed", new Measurement(878.8, "g"), Measurement.parse("878.8 G"));
             assertEquals("Parse of full unit name not matching case failed", new Measurement(878.8, "g"), Measurement.parse("878.8 GRaMS"));
+            assertEquals("Parse with alternate name failed", new Measurement(878.8, "uL"), Measurement.parse("878.8 μL"));
         }
     }
 
