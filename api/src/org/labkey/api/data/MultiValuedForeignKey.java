@@ -45,13 +45,11 @@ public class MultiValuedForeignKey implements ForeignKey
      * @param junctionLookup the name of the column in the junction table that points to the table that has multiple
      * matches to this table
      */
-    // TODO ContainerFilter
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup)
     {
         this(fk, junctionLookup, null);
     }
 
-    // TODO ContainerFilter
     public MultiValuedForeignKey(Builder<ForeignKey> fk, String junctionLookup)
     {
         this(fk.build(), junctionLookup, null);
@@ -63,7 +61,6 @@ public class MultiValuedForeignKey implements ForeignKey
      * matches to this table
      * @param displayField the name of the column in the value table to use as the display field.
      */
-    // TODO ContainerFilter
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup, @Nullable String displayField)
     {
         _fk = fk;
@@ -71,9 +68,7 @@ public class MultiValuedForeignKey implements ForeignKey
         _displayField = displayField;
     }
 
-
     /* this is to help subclasses implement remapFieldKeys() */
-    // TODO ContainerFilter
     protected MultiValuedForeignKey(MultiValuedForeignKey source, FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
         _fk = source._fk.remapFieldKeys(parent, mapping);
@@ -81,7 +76,6 @@ public class MultiValuedForeignKey implements ForeignKey
         _displayField = source._displayField;
     }
 
-    //TODO ContainerFilter
     protected ContainerFilter getLookupContainerFilter()
     {
         return null;    // use default on target table
@@ -92,7 +86,6 @@ public class MultiValuedForeignKey implements ForeignKey
     {
         return _fk;
     }
-
 
     public String getJunctionLookup()
     {
@@ -158,38 +151,24 @@ public class MultiValuedForeignKey implements ForeignKey
             displayField = _displayField;
         }
 
-        BaseColumnInfo lookupColumn = (BaseColumnInfo)fk.createLookupColumn(junctionKey, displayField);
+        ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
 
         if (lookupColumn == null)
         {
             return null;
         }
 
-// TODO ContainerFilter _fk should already be holding onto it's ContainerFilter, verify this is the case
-//        // Pass the container filter through the lookup
-//        TableInfo lookupTable = lookupColumn.getParentTable();
-//        if (parent.getParentTable() != null && parent.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
-//        {
-//            ContainerFilterable table = (ContainerFilterable) lookupTable;
-//            if (table.hasDefaultContainerFilter())
-//            {
-//                table.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
-//            }
-//        }
-
-        if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression)
+        if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression url)
         {
             // We need to strip off the junction table's contribution to the FieldKey in the URL since we don't
             // expose the junction table itself as part of the Query tree of tables and columns
-            StringExpressionFactory.FieldKeyStringExpression url = (StringExpressionFactory.FieldKeyStringExpression)lookupColumn.getURL();
             if (url != AbstractTableInfo.LINK_DISABLER)
                 url = url.dropParent(junctionKey.getName());
-            lookupColumn.setURL(url);
+            ((BaseColumnInfo) lookupColumn).setURL(url);
         }
 
         return createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
     }
-
 
     // Give subclasses a chance to alter these parameters before MVLC construction
     protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
@@ -197,50 +176,43 @@ public class MultiValuedForeignKey implements ForeignKey
         return new MultiValuedLookupColumn(parent, childKey, junctionKey, fk, lookupColumn);
     }
 
+    @Nullable
+    private ForeignKey getJunctionFK()
+    {
+        ColumnInfo junctionColumn = getJunctionColumn();
+        if (junctionColumn == null)
+            return null;
+        return junctionColumn.getFk();
+    }
 
     @Override
+    @Nullable
     public TableInfo getLookupTableInfo()
     {
-        ColumnInfo junctionColumn = getJunctionColumn();
-        if (junctionColumn != null)
-        {
-            ForeignKey junctionFK = junctionColumn.getFk();
-            if (junctionFK != null)
-            {
-                return junctionFK.getLookupTableInfo();
-            }
-        }
-        return null;
+        ForeignKey junctionFK = getJunctionFK();
+        if (junctionFK == null)
+            return null;
+        return junctionFK.getLookupTableInfo();
     }
 
     @Override
+    @Nullable
     public StringExpression getURL(ColumnInfo parent)
     {
-        ColumnInfo junctionColumn = getJunctionColumn();
-        if (junctionColumn != null)
-        {
-            ForeignKey junctionFK = junctionColumn.getFk();
-            if (junctionFK != null)
-            {
-                return junctionFK.getURL(parent);
-            }
-        }
-        return null;
+        ForeignKey junctionFK = getJunctionFK();
+        if (junctionFK == null)
+            return null;
+        return junctionFK.getURL(parent);
     }
 
     @Override
+    @NotNull
     public NamedObjectList getSelectList(RenderContext ctx)
     {
-        ColumnInfo junctionColumn = getJunctionColumn();
-        if (junctionColumn != null)
-        {
-            ForeignKey junctionFK = junctionColumn.getFk();
-            if (junctionFK != null)
-            {
-                return junctionFK.getSelectList(ctx);
-            }
-        }
-        return new NamedObjectList();
+        ForeignKey junctionFK = getJunctionFK();
+        if (junctionFK == null)
+            return new NamedObjectList();
+        return junctionFK.getSelectList(ctx);
     }
 
     @Override

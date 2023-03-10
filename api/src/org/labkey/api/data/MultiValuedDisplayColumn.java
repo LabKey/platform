@@ -55,16 +55,15 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         super(dc);
 
         _boundCol = dc.getColumnInfo();
-        BaseColumnInfo lookupCol = null;
-        if (_boundCol.getFk() instanceof MultiValuedForeignKey)
+        ColumnInfo lookupCol = null;
+        if (_boundCol.getFk() instanceof MultiValuedForeignKey mvfk)
         {
             // Retrieve the value column so it can be used when rendering json or tsv values.
-            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)_boundCol.getFk();
             ColumnInfo childKey = mvfk.createJunctionLookupColumn(_boundCol);
             if (childKey != null && childKey.getFk() != null)
             {
                 ForeignKey childKeyFk = childKey.getFk();
-                lookupCol = (BaseColumnInfo)childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
+                lookupCol = childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
                 if (lookupCol == null)
                 {
                     LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaName() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
@@ -72,7 +71,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 else
                 {
                     // Remove the intermediate junction table from the FieldKey
-                    lookupCol.setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
+                    ((BaseColumnInfo) lookupCol).setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
                     _additionalFieldKeys.add(lookupCol.getFieldKey());
                 }
             }
@@ -101,8 +100,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         ArrayList<K> values = new ArrayList<>();
         try
         {
-            if (_lookupCol != null && _column instanceof DataColumn)
-                ((DataColumn)_column).setBoundColumn(_lookupCol);
+            if (_lookupCol != null && _column instanceof DataColumn dataColumn)
+                dataColumn.setBoundColumn(_lookupCol);
             MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
 
             while (mvCtx.next())
@@ -113,8 +112,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         }
         finally
         {
-            if (_lookupCol != null && _column instanceof DataColumn)
-                ((DataColumn)_column).setBoundColumn(_boundCol);
+            if (_lookupCol != null && _column instanceof DataColumn dataColumn)
+                dataColumn.setBoundColumn(_boundCol);
         }
     }
 
@@ -129,8 +128,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     {
         try
         {
-            if (_lookupCol != null && _column instanceof DataColumn)
-                ((DataColumn) _column).setBoundColumn(_lookupCol);
+            if (_lookupCol != null && _column instanceof DataColumn dataColumn)
+                dataColumn.setBoundColumn(_lookupCol);
             MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
             String sep = "";
 
@@ -143,8 +142,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         }
         finally
         {
-            if (_lookupCol != null && _column instanceof DataColumn)
-                ((DataColumn)_column).setBoundColumn(_boundCol);
+            if (_lookupCol != null && _column instanceof DataColumn dataColumn)
+                dataColumn.setBoundColumn(_boundCol);
         }
 
         // TODO: Call super in empty values case?
