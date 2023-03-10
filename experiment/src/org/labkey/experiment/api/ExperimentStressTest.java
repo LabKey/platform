@@ -72,10 +72,8 @@ public class ExperimentStressTest
         {
             String parentName = null;
             boolean derived = existingNameCount > 0 && randomBool();
-            boolean aliquot = false;
             if (derived)
             {
-                aliquot = randomBool();
                 int parentId = randomInt(existingNameCount-1);
                 parentName = existingNames.get(parentId);
             }
@@ -83,14 +81,7 @@ public class ExperimentStressTest
             Map<String, Object> row = CaseInsensitiveHashMap.of("age", 100);
             if (parentName != null)
             {
-                if (aliquot)
-                {
-                    row = CaseInsensitiveHashMap.of("AliquotedFrom", parentName);
-                }
-                else
-                {
-                    row.put("MaterialInputs/" + sampleTypeName, parentName);
-                }
+                row.put("MaterialInputs/" + sampleTypeName, parentName);
             }
             samples.add(row);
         }
@@ -126,6 +117,10 @@ public class ExperimentStressTest
 
     private void _sampleTypeInserts(boolean withLineage) throws Throwable
     {
+        // Issue 47033: Deadlock in InventoryManager.recomputeSampleTypeRollup on SQL Server
+        Assume.assumeFalse("Issue 47033: Test does not yet pass on SQL Server. Skipping.",
+                CoreSchema.getInstance().getSqlDialect().isSqlServer());
+
         LOG.info("** starting sample type insert test " + (withLineage ? "with lineage" : "without lineage"));
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();

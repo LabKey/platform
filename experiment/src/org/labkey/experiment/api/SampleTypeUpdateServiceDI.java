@@ -28,8 +28,26 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.measurement.Measurement;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -182,7 +200,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(true, container);
+            if (!_sampleType.isMedia())
+            {
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
         return ret;
@@ -243,8 +273,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
-            boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate, container);
+            if (!_sampleType.isMedia())
+            {
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            onSamplesChanged();
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -257,7 +298,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(true, container);
+            if (!_sampleType.isMedia())
+            {
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            onSamplesChanged();
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -275,7 +328,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(true, container);
+            if (!_sampleType.isMedia())
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+
+            onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -313,7 +369,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia(), container);
+            if (!_sampleType.isMedia())
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+            onSamplesChanged();
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -481,6 +539,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ret.put("lsid", lsid);
         ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
         return ret;
+    }
+
+    private void setRecomputeRollup(int sampleId, boolean skipRootSample, ValidationException errors)
+    {
+        if (errors.hasErrors())
+            return;
+
+        ExpMaterial sample = ExperimentService.get().getExpMaterial(sampleId);
+        if (sample == null)
+            return;
+
+        String targetRootLsid = sample.getRootMaterialLSID();
+
+        if (StringUtils.isEmpty(targetRootLsid))
+        {
+            if (skipRootSample)
+                return;
+
+            // if the sample is not an aliquot, then recalculate rollup for self
+            // on update, the parent sample's item VolumeUnit is going to impact aliquot rollup volume
+            SampleTypeService.get().setRecomputeFlagForSample(sample.getLSID());
+            return;
+        }
+
+        SampleTypeService.get().setRecomputeFlagForSample(targetRootLsid);
     }
 
     @Override
@@ -886,28 +969,26 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    private void onSamplesChanged(boolean needRecalc, Container recalcContainer)
+    private void onSamplesChanged()
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         if (tx != null)
         {
-            if (!tx.isAborted())
-                tx.addCommitTask(() -> {
-                    fireSamplesChanged(needRecalc, recalcContainer);
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
-            else
-                LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+             if (!tx.isAborted())
+                 tx.addCommitTask(this::fireSamplesChanged, DbScope.CommitTaskOption.POSTCOMMIT);
+             else
+                 LOG.info("Skipping onSamplesChanged callback; transaction aborted");
         }
         else
         {
-            fireSamplesChanged(needRecalc, recalcContainer);
+            fireSamplesChanged();
         }
     }
 
-    private void fireSamplesChanged(boolean needRecalc, Container recalcContainer)
+    private void fireSamplesChanged()
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, needRecalc, recalcContainer);
+            _sampleType.onSamplesChanged(getUser(), null);
     }
 
     void audit(QueryService.AuditAction auditAction)

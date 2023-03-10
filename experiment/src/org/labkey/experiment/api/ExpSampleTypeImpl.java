@@ -29,7 +29,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -64,7 +63,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -75,7 +73,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -772,25 +769,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public void onSamplesChanged(User user, List<Material> materials)
     {
-        onSamplesChanged(user, materials, false, null);
-    }
-
-    public void onSamplesChanged(User user, List<Material> materials, boolean needRecalc, Container recalcContainer)
-    {
-        if (needRecalc)
-        {
-            JobRunner.getDefault().execute(() -> {
-                try
-                {
-                    SampleTypeService.get().recomputeSampleTypeRollup(this, recalcContainer, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            });
-        }
-
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)
             return;
