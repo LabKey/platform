@@ -7430,39 +7430,47 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors) throws Exception
+        public Object execute(GenIdForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
 
-            if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            try
             {
-                if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
-                    throw new UnauthorizedException("Insufficient permissions.");
-
-
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                if (sampleType != null)
-                    sampleType.ensureMinGenId(form.getGenId());
-                else
+                if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
                 {
-                    resp.put("success", false);
-                    resp.put("error", "Sample type does not exist.");
+                    if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                        throw new UnauthorizedException("Insufficient permissions.");
+
+
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                    if (sampleType != null)
+                        sampleType.ensureMinGenId(form.getGenId());
+                    else
+                    {
+                        resp.put("success", false);
+                        resp.put("error", "Sample type does not exist.");
+                    }
+                }
+                else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+                {
+                    if (!getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
+                        throw new BadRequestException("Insufficient permissions.");
+
+                    ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
+                    if (dataClass != null)
+                        dataClass.ensureMinGenId(form.getGenId(), getContainer());
+                    else
+                    {
+                        resp.put("success", false);
+                        resp.put("error", "DataClass does not exist.");
+                    }
                 }
             }
-            else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            catch (ExperimentException e)
             {
-                if (!getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
-                    throw new BadRequestException("Insufficient permissions.");
-
-                ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
-                if (dataClass != null)
-                    dataClass.ensureMinGenId(form.getGenId(), getContainer());
-                else
-                {
-                    resp.put("success", false);
-                    resp.put("error", "DataClass does not exist.");
-                }
+                resp.put("success", false);
+                resp.put("error", e.getMessage());
             }
 
             return resp;
