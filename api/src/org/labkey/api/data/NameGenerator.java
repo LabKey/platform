@@ -1378,7 +1378,8 @@ public class NameGenerator
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
                 for (DbSequence seq: counterSequences.values())
-                    seq.sync();
+                    if (seq != null)
+                        seq.sync();
             }
 
             _prefixCounterSequencesCleaned = true;
@@ -2225,7 +2226,10 @@ public class NameGenerator
                     }
                     else
                     {
-                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                        if (noCache)
+                            counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
+                        else
+                            counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
                     }
 
                     long currentSeqMax = counterSeq.current();

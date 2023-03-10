@@ -87,7 +87,7 @@ public class DbSequence
         return false;
     }
 
-    public static class ReclaimableDbSequence extends DbSequence
+    protected static class ReclaimableDbSequence extends DbSequence
     {
         ReclaimableDbSequence(Container c, String name, int rowId)
         {
@@ -108,7 +108,7 @@ public class DbSequence
      *      just have to be thread safe is all, but how do we enforce the "exactly one per" rule?
      * NOTE: going with B
      */
-    public static class Preallocate extends DbSequence
+    protected static class Preallocate extends DbSequence
     {
         private final int _batchSize;
         private Long _currentValue = null;
@@ -179,7 +179,7 @@ public class DbSequence
 
     // For scenarios where continuity of sequence is important
     // A sequence should either use Preallocate or ReclaimablePreallocate, but never both
-    public static class ReclaimablePreallocate extends Preallocate
+    protected static class ReclaimablePreallocate extends Preallocate
     {
         ReclaimablePreallocate(Container c, String name, int rowId, int batchSize)
         {
