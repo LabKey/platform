@@ -101,6 +101,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.RollUpComputeDelay;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -1017,18 +1018,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             int parentSize = parentKeys.first.size() + parentKeys.second.size();
             useBackgroundRecalc = parentSize > 20;
         }
+
+        int delayRecalc = 0;
+        if (params != null && params.containsKey(RollUpComputeDelay))
+            delayRecalc = (Integer) params.get(RollUpComputeDelay);
+
         if (!useBackgroundRecalc && parentKeys != null)
-            handleRecalc(parentKeys.first, parentKeys.second, false);
+            handleRecalc(parentKeys.first, parentKeys.second, false, delayRecalc);
 
         if (tx != null)
         {
             if (!tx.isAborted())
             {
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
+                long finalDelayRecalc = delayRecalc;
                 tx.addCommitTask(() -> {
                     fireSamplesChanged();
                     if (finalUseBackgroundRecalc)
-                        handleRecalc(parentKeys.first, parentKeys.second, true);
+                        handleRecalc(parentKeys.first, parentKeys.second, true, finalDelayRecalc);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
@@ -1040,7 +1047,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread)
+    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, long delay)
     {
         if (useBackgroundThread)
         {
@@ -1053,7 +1060,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     throw new RuntimeSQLException(e);
                 }
-            });
+            }, delay > 0 ? delay: 0);
         }
         else
         {

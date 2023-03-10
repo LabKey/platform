@@ -2,13 +2,11 @@ package org.labkey.experiment.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -108,7 +106,11 @@ public class ExperimentStressTest
         {
             BatchValidationException errors = new BatchValidationException();
             Map<Enum, Object> options = new HashMap<>();
-            options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+            if (aliquot)
+            {
+                options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+                options.put(SampleTypeService.ConfigParameters.RollUpComputeDelay, 10*1000);
+            }
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;
