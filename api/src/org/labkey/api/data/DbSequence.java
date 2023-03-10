@@ -87,6 +87,20 @@ public class DbSequence
         return false;
     }
 
+    public static class ReclaimableDbSequence extends DbSequence
+    {
+        ReclaimableDbSequence(Container c, String name, int rowId)
+        {
+            super(c, name, rowId);
+        }
+
+        @Override
+        public boolean useCurrentTransaction()
+        {
+            return true;
+        }
+    }
+
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
      *      potentially each would not have to be thread safe, but I think this would tend to generate lots of missing values
@@ -157,8 +171,9 @@ public class DbSequence
             if (null != _lastReservedValue && !_lastReservedValue.equals(_currentValue))
             {
                 DbSequenceManager.setSequenceValue(this, _currentValue);
-                _lastReservedValue = _currentValue;
             }
+            _currentValue = null;
+            _lastReservedValue = null;
         }
     }
 

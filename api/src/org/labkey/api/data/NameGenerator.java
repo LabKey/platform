@@ -95,7 +95,7 @@ import static org.labkey.api.util.SubstitutionFormat.yearlySampleCount;
 public class NameGenerator
 {
     /**
-     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string, noGap?: string|bool)}
+     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string, extraparam: enum)}
      * use regex to match the content inside the outer ${}
      * Examples:
      *  ${AliquotedFrom}-:withCounter   : parentSample-1
@@ -103,11 +103,11 @@ public class NameGenerator
      *  ${AliquotedFrom}.:withCounter() : parentSample.1
      *  ${AliquotedFrom}-:withCounter(1000) : parentSample-1000
      *  ${AliquotedFrom}-:withCounter(1, '000') : parentSample-001
-     *  ${AliquotedFrom}-:withCounter(1, '000', 'true') : parentSample-001
-     *  ${AliquotedFrom}-:withCounter(1, '000', true) : parentSample-001
+     *  ${AliquotedFrom}-:withCounter(1, '000', NoGap) : parentSample-001
      */
-    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?,?\\s*'?(true|false)?'?\\)?";
+    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?,?\\s*'?([a-zA-Z]*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX, Pattern.CASE_INSENSITIVE);
+    public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
 
     public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter";
 
@@ -475,13 +475,13 @@ public class NameGenerator
             int secondCommaIndex = nameExpression.indexOf(",", commaIndex + 1);
             String startVal = null;
             String format = null;
-            String noGapBool = null;
+            String thirdParam = null;
             if (secondCommaIndex > -1)
             {
                 // 3 arguments
                 startVal = nameExpression.substring(startParen+1, commaIndex).trim();
                 format = nameExpression.substring(commaIndex + 1, secondCommaIndex).trim();
-                noGapBool = nameExpression.substring(secondCommaIndex + 1, endParen).trim().toLowerCase();
+                thirdParam = nameExpression.substring(secondCommaIndex + 1, endParen).trim();
             }
             else if (commaIndex > startParen && commaIndex < endParen)
             {
@@ -510,10 +510,10 @@ public class NameGenerator
                 if (format.charAt(0) != '\'' || format.charAt(format.length()-1) != '\'')
                     errorMessages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
             }
-            if (!StringUtils.isEmpty(noGapBool))
+            if (!StringUtils.isEmpty(thirdParam))
             {
-                if (!("true".equals(noGapBool) || "'true'".equals(noGapBool) || "false".equals(noGapBool) || "'false'".equals(noGapBool)))
-                    errorMessages.add(String.format("NoSkipping param at position %d for 'withCounter' substitution pattern should be either 'true' or 'false'.", commaIndex + 1));
+                if (!(WITH_COUNTER_NO_GAP_PARAM.equalsIgnoreCase(thirdParam)))
+                    errorMessages.add(String.format("Param at position %d for 'withCounter' substitution pattern is invalid. Supported params include: " + WITH_COUNTER_NO_GAP_PARAM + ".", commaIndex + 1));
             }
         }
         return new Pair<>(errorMessages, warningMessages);
@@ -1335,22 +1335,6 @@ public class NameGenerator
         return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
     }
 
-    private static void cleanSeq(DbSequence seq, Container container)
-    {
-        if (seq instanceof DbSequence.ReclaimablePreallocate)
-        {
-            // force DBSequence update as part of the current transaction
-            seq.sync();
-            // remove preallocate in case the transaction is rollback but preallocate still holds the incremented value
-            DbSequenceManager.invalidateReclaimablePreallocateSequence(container, seq.getName(), 0);
-        }
-        else if (seq instanceof DbSequence.Preallocate)
-        {
-            seq.sync();
-            DbSequenceManager.invalidatePreallocatingSequence(container, seq.getName(), 0);
-        }
-    }
-
     public class State implements AutoCloseable
     {
         private final boolean _incrementSampleCounts;
@@ -1394,9 +1378,7 @@ public class NameGenerator
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
                 for (DbSequence seq: counterSequences.values())
-                {
-                    cleanSeq(seq, _container);
-                }
+                    seq.sync();
             }
 
             _prefixCounterSequencesCleaned = true;
@@ -1994,8 +1976,8 @@ public class NameGenerator
                 int startInd = 0;
                 String startIndStr = counterMatcher.group(2);
                 String numberFormat = counterMatcher.group(3);
-                String skipCacheStr = counterMatcher.group(4);
-                boolean skipCache = false;
+                String param = counterMatcher.group(4);
+                boolean ensureNoGap = false;
                 if (!StringUtils.isEmpty(startIndStr))
                 {
                     try
@@ -2007,12 +1989,12 @@ public class NameGenerator
                         // ignore illegal startInd
                     }
                 }
-                if (!StringUtils.isEmpty(skipCacheStr))
+                if (!StringUtils.isEmpty(param))
                 {
-                    skipCache = skipCacheStr.equalsIgnoreCase("true") || skipCacheStr.equalsIgnoreCase("''true'");
+                    ensureNoGap = param.equalsIgnoreCase(WITH_COUNTER_NO_GAP_PARAM);
                 }
 
-                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, skipCache, _container, _getNonConflictCountFn, _counterSeqPrefix);
+                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, ensureNoGap, _container, _getNonConflictCountFn, _counterSeqPrefix);
             }
 
             // if contains ancestor expression, substitute ..[MaterialInputs/type1] with ..[MaterialInputs::type1] before parsing, to avoid splitting at /.
@@ -2165,19 +2147,19 @@ public class NameGenerator
 
         private final Function<String, Long> _getNonConflictCountFn;
 
-        private final boolean _noCache;
+        private final boolean _strictIncremental;
         private SubstitutionFormat _counterFormat;
 
         private final Container _container;
 
         private final String _counterSeqPrefix;
 
-        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean skipCache, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
             _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
             _startIndex = startIndex;
-            _noCache = skipCache;
+            _strictIncremental = strictIncremental;
             _container = container;
             _getNonConflictCountFn = getNonConflictCountFn;
             _counterSeqPrefix = StringUtils.isBlank(counterSeqPrefix) ? COUNTER_SEQ_PREFIX : counterSeqPrefix;
@@ -2222,19 +2204,24 @@ public class NameGenerator
                     return null;
 
                 DbSequence counterSeq = null;
-                boolean noCache = counterSequences == null || _noCache;
-                if (noCache || !counterSequences.containsKey(prefix))
+                boolean noCache = counterSequences == null;
+                if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
                 {
                     long existingCount = -1;
 
                     if (_getNonConflictCountFn != null)
                         existingCount = _getNonConflictCountFn.apply(prefix);
 
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                    if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
                     {
-                        // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-                        // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-                        counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                        if (_strictIncremental)
+                            counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
+                        else
+                        {
+                            // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+                            // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+                            counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+                        }
                     }
                     else
                     {
@@ -2255,9 +2242,7 @@ public class NameGenerator
                 count = counterSeq.next();
 
                 if (noCache)
-                {
-                    cleanSeq(counterSeq, _container);
-                }
+                    counterSeq.sync();
             }
 
 
@@ -2776,7 +2761,7 @@ public class NameGenerator
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
 
-            validateNameResult("${${AliquotedFrom}-:withCounter(100, '000', notBool)}", withErrors("NoSkipping param at position 36 for 'withCounter' substitution pattern should be either 'true' or 'false'."));
+            validateNameResult("${${AliquotedFrom}-:withCounter(100, '000', badparam)}", withErrors("Param at position 36 for 'withCounter' substitution pattern is invalid. Supported params include: NoGap."));
         }
 
         @Test
@@ -2820,9 +2805,7 @@ public class NameGenerator
             verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
             verifyPreview("${${AliquotedFrom}-:withCounter(123)}", "Sample112-123");
             verifyPreview("${${AliquotedFrom}-:withCounter(11, '000')}", "Sample112-011");
-            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', true)}", "Sample112-011");
-            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', 'true')}", "Sample112-011");
-            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', false)}", "Sample112-011");
+            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', NoGap)}", "Sample112-011");
 
             // with table columns
             GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");

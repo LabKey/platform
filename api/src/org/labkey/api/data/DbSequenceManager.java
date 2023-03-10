@@ -68,6 +68,11 @@ public class DbSequenceManager
         return new DbSequence(c, name, ensure(c, name, id));
     }
 
+    public static DbSequence.ReclaimableDbSequence getReclaimable(Container c, String name, int id)
+    {
+        return new DbSequence.ReclaimableDbSequence(c, name, ensure(c, name, id, true));
+    }
+
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
     static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
 
@@ -127,14 +132,6 @@ public class DbSequenceManager
         return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
     }
 
-    public static void invalidateReclaimablePreallocateSequence(Container c, String name, int id)
-    {
-        String key = c.getId() + "/" + name + "/" + id;
-        _reclaimableSequences.remove(key);
-    }
-
-    // Do not use getReclaimablePreallocateSequence unless you absolutely have to...
-    // Use getPreallocatingSequence instead
     public static DbSequence getReclaimablePreallocateSequence(Container c, String name, int id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;
@@ -180,7 +177,7 @@ public class DbSequenceManager
 
         Integer rowId = executeAndMaybeReturnInteger(tinfo, getRowIdSql);
 
-        if (withUpdateLock && tinfo.getSqlDialect().isPostgreSQL())
+        if (rowId != null && rowId > 0 && withUpdateLock && tinfo.getSqlDialect().isPostgreSQL())
         {
             SQLFragment lockRowSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
             lockRowSql.append(" WHERE RowId = ?");
@@ -300,8 +297,7 @@ public class DbSequenceManager
     static int current(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ? AND RowId = ?");
-        sql.add(sequence.getContainer());
+        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
         sql.add(sequence.getRowId());
 
         Integer currentValue = executeAndMaybeReturnInteger(tinfo, sql);
