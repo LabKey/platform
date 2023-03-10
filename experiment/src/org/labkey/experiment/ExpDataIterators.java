@@ -295,6 +295,10 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+
+            if (!context.getInsertOption().allowUpdate)
+                return pre; // recompute for new insert are already handled in ExperimentalServiceImpl.saveExpMaterialAliquotOutputs
+
             return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType));
         }
     }
@@ -342,7 +346,6 @@ public class ExpDataIterators
                 Double existingAmount = null;
                 String existingUnits = null;
                 Set<String> aliquotParentLsids = new HashSet<>();
-                Set<String> aliquotParentNames = new HashSet<>();
                 if (existingMap != null)
                 {
                     existingAmount = (Double) existingMap.get("StoredAmount");
@@ -356,21 +359,18 @@ public class ExpDataIterators
                 Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
                 String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
                 Measurement newMeasurement = new Measurement(newAmount, newUnits, _sampleType.getMetricUnit());
+                boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
 
                 // check for aliquotedFromLsidCol first since, for updateOnly cases, we prefer data in this
                 // column over aliquotedFrom; we ignore any user-supplied value in aliquotedFrom
                 if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null)
                     aliquotParentLsids.add((String) get(_aliquotedFromLsidCol));
-                else if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null)
-                    aliquotParentNames.add(String.valueOf(get(_aliquotedFromCol)));
+                else if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null && amountMayHaveChanged)
+                    updatedSampleNames.add(String.valueOf(get(_aliquotedFromCol)));
 
-
-                boolean amountMayHaveChanged = (existingMap == null || !newMeasurement.equals(existingMeasurement));
                 if (!aliquotParentLsids.isEmpty() && amountMayHaveChanged)
                     updatedSampleLsids.addAll(aliquotParentLsids);
 
-                if (!aliquotParentNames.isEmpty() && amountMayHaveChanged)
-                    updatedSampleNames.addAll(aliquotParentNames);
                 return true;
             }
             else
