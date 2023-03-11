@@ -128,7 +128,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     enum QueryOptions
     {
         UseLsidForUpdate,
-        GetSampleRecomputeCol
+        GetSampleRecomputeCol,
+        SkipBulkRemapCache
     }
 
     @Nullable

@@ -101,7 +101,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
-import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.RollUpComputeDelay;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
@@ -1019,23 +1019,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             useBackgroundRecalc = parentSize > 20;
         }
 
-        int delayRecalc = 0;
-        if (params != null && params.containsKey(RollUpComputeDelay))
-            delayRecalc = (Integer) params.get(RollUpComputeDelay);
+        boolean skipRecalc = false;
+        if (params != null && params.containsKey(SkipAliquotRollup)) // used by ExperimentStressTest only to avoid deadlock in test
+            skipRecalc = Boolean.TRUE == params.get(SkipAliquotRollup);
 
-        if (!useBackgroundRecalc && parentKeys != null)
-            handleRecalc(parentKeys.first, parentKeys.second, false, delayRecalc);
+        if (!useBackgroundRecalc && parentKeys != null && !skipRecalc)
+            handleRecalc(parentKeys.first, parentKeys.second, false);
 
         if (tx != null)
         {
             if (!tx.isAborted())
             {
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
-                long finalDelayRecalc = delayRecalc;
+                boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
                     fireSamplesChanged();
-                    if (finalUseBackgroundRecalc)
-                        handleRecalc(parentKeys.first, parentKeys.second, true, finalDelayRecalc);
+                    if (finalUseBackgroundRecalc && !finalSkipRecalc)
+                        handleRecalc(parentKeys.first, parentKeys.second, true);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
@@ -1047,11 +1047,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, long delay)
+    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread)
     {
-        if(delay > 0)
-            return; // TODO remove, test see if recalc cause deadlock
-
         if (useBackgroundThread)
         {
             JobRunner.getDefault().execute(() -> {
@@ -1063,7 +1060,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     throw new RuntimeSQLException(e);
                 }
-            }, delay > 0 ? delay: 0);
+            });
         }
         else
         {

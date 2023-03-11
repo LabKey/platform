@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+
 public class ExperimentStressTest
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentStressTest.class);
@@ -109,7 +111,8 @@ public class ExperimentStressTest
             if (aliquot)
             {
                 options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
-                options.put(SampleTypeService.ConfigParameters.RollUpComputeDelay, 10*1000); // delay recompute since recompute of roots unavoidably cause deadlock on sql server
+                options.put(SampleTypeService.ConfigParameters.SkipAliquotRollup, true); // skip recompute since recompute of roots unavoidably cause deadlock on sql server
+                options.put(SkipBulkRemapCache, true);
             }
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())

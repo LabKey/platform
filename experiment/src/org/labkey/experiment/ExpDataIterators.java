@@ -119,6 +119,7 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
+import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
@@ -1120,7 +1121,11 @@ public class ExpDataIterators
             {
                 try
                 {
-                    RemapCache cache = new RemapCache(true);
+                    boolean allowBulkLoadRemapCache = true;
+                    if (_context.getConfigParameterBoolean(SkipBulkRemapCache))
+                        allowBulkLoadRemapCache = false;
+
+                    RemapCache cache = new RemapCache(allowBulkLoadRemapCache);
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
