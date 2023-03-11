@@ -420,7 +420,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         TableInfo parentTable = QueryService.get().getUserSchema(user_, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
 
-        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, skipMaxSampleCounterFunction ? null : getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, skipMaxSampleCounterFunction ? null : getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-", false, null, null, !skipMaxSampleCounterFunction);
     }
 
     @Nullable

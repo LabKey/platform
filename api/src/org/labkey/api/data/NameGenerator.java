@@ -226,7 +226,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache = new RemapCache(true);
+    private RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -240,7 +240,7 @@ public class NameGenerator
 
     private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName, boolean allBulkRemapCache)
     {
         _parentTable = parentTable;
         _container = container;
@@ -248,12 +248,18 @@ public class NameGenerator
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
         _currentDataTypeName = currentDataTypeName;
+        renameCache = new RemapCache(allBulkRemapCache);
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, currentDataTypeName, false);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
-        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -274,6 +280,7 @@ public class NameGenerator
         _validateSyntax = false;
         _domainProperties = null;
         _currentDataTypeName = null;
+        renameCache = new RemapCache(true);
         initialize(null);
     }
 

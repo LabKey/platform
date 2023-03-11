@@ -108,12 +108,9 @@ public class ExperimentStressTest
         {
             BatchValidationException errors = new BatchValidationException();
             Map<Enum, Object> options = new HashMap<>();
-            if (aliquot)
-            {
-                options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
-                options.put(SampleTypeService.ConfigParameters.SkipAliquotRollup, true); // skip recompute since recompute of roots unavoidably cause deadlock on sql server
-                options.put(SkipBulkRemapCache, true);
-            }
+            options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+            options.put(SampleTypeService.ConfigParameters.SkipAliquotRollup, true); // skip recompute since recompute of roots unavoidably cause deadlock on sql server
+            options.put(SkipBulkRemapCache, true);
             List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;
