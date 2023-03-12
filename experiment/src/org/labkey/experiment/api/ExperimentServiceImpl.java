@@ -6941,14 +6941,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
-//            Set<String> parentLsids = new HashSet<>();
             TableInfo tableInfo = getTinfoMaterial();
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
-//                    parentLsids.add(StringUtils.isEmpty(parent.getRootMaterialLSID()) ?  parent.getLSID() : parent.getRootMaterialLSID());
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
                     // Use cache to double check detemine subaliquots's root
@@ -6976,16 +6974,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
-            // mark aliquot parents RecomputeRollup=true
-//            if (!parentLsids.isEmpty())
-//            {
-//                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-//                        append(" SET RecomputeRollup = ? WHERE RecomputeRollup <> ? AND LSID ");
-//                sql.add(true);
-//                sql.add(true);
-//                sql.appendInClause(parentLsids, tableInfo.getSqlDialect());
-//                new SqlExecutor(tableInfo.getSchema()).execute(sql);
-//            }
         }
         
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
