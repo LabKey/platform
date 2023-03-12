@@ -183,7 +183,7 @@ public class ExperimentStressTest
         final List<String> parentNames = mode._needParents ? firstInsertedNames : null;
 
         // first level - ensures we have an objectId for the SampleType when inserting with lineage
-        insertSamples(user, c, sampleTypeName, parentNames, 5, mode == RunMode.withaliquot);
+        insertSamples(user, c, sampleTypeName, parentNames, 5, false);
 
         final int threads = mode._thread;
         final int races = mode._race;
