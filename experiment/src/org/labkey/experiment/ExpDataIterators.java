@@ -382,11 +382,16 @@ public class ExpDataIterators
                 }
 
                 // without existing record, we have to be conservative and assume this is a new aliquot, or a amount update
+                // merge: either a new record, or detailed audit disabled
+                if (!_isUpdate)
+                {
+                    if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
+                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                    return null;
+                }
+                // update only, return lsid
                 if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null && i == _parentLsidToRecomputeCol)
                     return get(_aliquotedFromLsidCol);
-
-                if (_aliquotedFromCol != null && get(_aliquotedFromCol) != null && i == _parentNameToRecomputeCol)
-                    return get(_aliquotedFromCol);
 
                 return null;
             }
