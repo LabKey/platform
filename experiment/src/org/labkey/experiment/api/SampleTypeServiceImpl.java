@@ -1525,6 +1525,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
+        if (Double.compare(totalVolume, 0.0) == 0)
+        {
+            totalVolume = null;
+            totalDisplayUnit = null;
+        }
+
         return new Pair<>(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name());
     }
 
