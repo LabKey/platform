@@ -1329,10 +1329,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             try (Connection c = scope.getConnection())
             {
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
-                Parameter flag = new Parameter("recalcFlag", JdbcType.BOOLEAN);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotCount = ? WHERE RowId = ?", flag, count, rowid), null);
+                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotCount = ? WHERE RowId = ?", count, rowid), null);
 
                 List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
