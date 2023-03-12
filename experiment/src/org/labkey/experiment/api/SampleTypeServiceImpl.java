@@ -1086,7 +1086,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     {
                         try
                         {
-                            recomputeSampleTypeRollup(st, container, true);
+                            recomputeSampleTypeRollup(st, container);
                         }
                         catch (SQLException e)
                         {
@@ -1302,138 +1302,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
-    private Collection<Integer> getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
-    {
-        SQLFragment sql = new SQLFragment(
-        """
-            SELECT parent.rowId
-            FROM exp.material AS parent
-            WHERE parent.container = ?
-                AND parent.RecomputeRollup = ?
-                AND parent.lsid NOT IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE rootMaterialLsid IS NOT NULL)
-                AND parent.cpastype = ?"""
-        );
-
-        sql.add(container);
-        sql.add(true);
-        sql.add(sampleTypeLsid);
-
-        Set<Integer> parentIds = new HashSet<>();
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                parentIds.add(rs.getInt(1));
-        }
-
-        return parentIds;
-    }
-
-    private int resetRecomputeFlagForNonParents(Collection<Integer> parentIds)
-    {
-        if (!parentIds.isEmpty())
-        {
-            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-            DbScope scope = tableInfo.getSchema().getScope();
-
-            try (Connection c = scope.getConnection())
-            {
-                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-                        append(" SET RecomputeRollup = ? WHERE RowId ");
-                sql.add(false);
-                sql.appendInClause(parentIds, tableInfo.getSqlDialect());
-                new SqlExecutor(tableInfo.getSchema()).execute(sql);
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
-        return parentIds.size();
-    }
-
-    // storedAmount/unit update events might have marked sample that is not an aliquot parent as need re-calc, which should be cleaned up
     @Override
-    public int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
+    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
-        Collection<Integer> parentIds = getNonAliquotParentsWithRecalcSql(sampleType.getLSID(), container);
-        return resetRecomputeFlagForNonParents(parentIds);
-    }
-
-    @Override
-    public long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container)
-    {
-        var s = DbSchema.get("exp", DbSchemaType.Module);
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT rowId FROM exp.material WHERE RecomputeRollup=" + s.getSqlDialect().getBooleanTRUE());
-        sql.append(" AND cpastype = ? AND container = ?");
-        sql.add(sampleType.getLSID());
-        sql.add(container);
-        return new SqlSelector(s, sql).getRowCount();
-    }
-
-    private boolean isAliquotRollupRecomputeNeeded(ExpSampleType sampleType, Container container)
-    {
-        return getRecomputeRollupRowCount(sampleType, container) > 0;
-    }
-
-    @Override
-    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws IllegalStateException, SQLException
-    {
-        if (!forceAll && !isAliquotRollupRecomputeNeeded(sampleType, container))
-            return 0;
-
-        Pair<Collection<Integer>, Collection<Integer>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container, forceAll);
-        Collection<Integer> withoutAmountsParents = parentsGroup.first;
+        Pair<Collection<Integer>, Collection<Integer>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container);
+        Collection<Integer> allParents = parentsGroup.first;
         Collection<Integer> withAmountsParents = parentsGroup.second;
-        Set<Integer> parents = new HashSet<>();
-        parents.addAll(withoutAmountsParents);
-        parents.addAll(withAmountsParents);
-
-        return recomputeSamplesRollup(parents, withAmountsParents, sampleType.getMetricUnit());
+        return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit());
     }
-
-//    @Override
-//    public void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs)
-//    {
-//        DbScope scope = ExperimentService.get().getSchema().getScope();
-//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID ";
-//
-//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-//        updateSQL.add(Boolean.TRUE);
-//        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleLSIDs);
-//
-//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-//    }
-
-//    @Override
-//    public void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames)
-//    {
-//        DbScope scope = ExperimentService.get().getSchema().getScope();
-//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE CpasType = ? AND RecomputeRollup <> ? AND NAME ";
-//
-//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-//        updateSQL.add(Boolean.TRUE);
-//        updateSQL.add(sampleType.getLSID());
-//        updateSQL.add(Boolean.TRUE);
-//        scope.getSqlDialect().appendInClauseSql(updateSQL, sampleNames);
-//
-//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-//    }
-
-
-//    @Override
-//    public void setRecomputeFlagForSample(String sampleLSID)
-//    {
-//        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
-//        String updateSqlStr = "UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ? WHERE LSID = ? ";
-//
-//        SQLFragment updateSQL = new SQLFragment(updateSqlStr);
-//        updateSQL.add(Boolean.TRUE);
-//        updateSQL.add(sampleLSID);
-//
-//        new SqlExecutor(materialTable.getSchema()).execute(updateSQL);
-//    }
 
     @Override
     public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException
@@ -1456,7 +1332,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter flag = new Parameter("recalcFlag", JdbcType.BOOLEAN);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET RecomputeRollup = ?, AliquotCount = ? WHERE RowId = ?", flag, count, rowid), null);
+                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotCount = ? WHERE RowId = ?", flag, count, rowid), null);
 
                 List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1470,7 +1346,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         sampleUnits.put(sampleId, sampleUnit);
 
                         rowid.setValue(sampleId);
-                        flag.setValue(Boolean.FALSE);
                         count.setValue(aliquotCount);
 
                         pm.addBatch();
@@ -1654,37 +1529,28 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new Pair<>(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name());
     }
 
-    public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container, boolean forceAll) throws SQLException
+    public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
     {
-        Collection<Integer> parents = getAliquotParents(sampleTypeLsid, forceAll, container);
-        Collection<Integer> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, forceAll, container);
-
-        Collection<Integer> withoutAmountsParents = new HashSet<>();
-        for (Integer parent : parents)
-        {
-            boolean hasAmount = withAmountsParents.contains(parent);
-            if (!hasAmount)
-                withoutAmountsParents.add(parent);
-        }
-
-        return new Pair<>(withoutAmountsParents, withAmountsParents);
+        Collection<Integer> parents = getAliquotParents(sampleTypeLsid, container);
+        Collection<Integer> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, container);
+        return new Pair<>(parents, withAmountsParents);
     }
 
-    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean forceAll, Container container) throws IllegalStateException, SQLException
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
     {
-        return getAliquotParents(sampleTypeLsid, false, forceAll, container);
+        return getAliquotParents(sampleTypeLsid, false, container);
     }
 
-    private Collection<Integer> getAliquotsWithAmountsParents(String sampleTypeLsid, boolean forceAll, Container container) throws IllegalStateException, SQLException
+    private Collection<Integer> getAliquotsWithAmountsParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
     {
-        return getAliquotParents(sampleTypeLsid, true, forceAll, container);
+        return getAliquotParents(sampleTypeLsid, true, container);
     }
 
     private SQLFragment getParentsOfAliquotsWithAmountsSql()
     {
         return new SQLFragment(
     """
-        SELECT distinct parent.rowId, parent.cpastype, parent.RecomputeRollup
+        SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
         JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
         WHERE aliquot.storedAmount IS NOT NULL AND\s
@@ -1695,26 +1561,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         return new SQLFragment(
     """
-        SELECT distinct parent.rowId, parent.cpastype, parent.RecomputeRollup
+        SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
         JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
         WHERE
         """);
     }
 
-    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean withAmount, boolean forceAll, Container container) throws SQLException
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
         SQLFragment sql = withAmount ? getParentsOfAliquotsWithAmountsSql() : getParentsOfAliquotsSql();
 
-        if (!forceAll)
-        {
-            sql.append("parent.RecomputeRollup = ");
-            sql.append(dialect.getBooleanTRUE());
-            sql.append(" AND ");
-        }
         sql.append("parent.cpastype = ?");
         sql.add(sampleTypeLsid);
         sql.append(" AND parent.container = ?");

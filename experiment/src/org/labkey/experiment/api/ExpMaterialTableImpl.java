@@ -455,12 +455,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
-            case RecomputeRollup ->
-            {
-                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
-                ret.setHidden(true);
-                return ret;
-            }
             case AliquotCount ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
@@ -764,7 +758,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             addColumn(Column.AliquotCount);
             addColumn(Column.AliquotVolume);
             addColumn(Column.AliquotUnit);
-            addColumn(Column.RecomputeRollup);
 
             addColumn(Column.StoredAmount);
             defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
