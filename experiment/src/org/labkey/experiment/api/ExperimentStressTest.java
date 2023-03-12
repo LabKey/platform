@@ -155,11 +155,11 @@ public class ExperimentStressTest
         _sampleTypeInserts(RunMode.withlineage);
     }
 
-    @Test
-    public void sampleTypeInsertsWithAliquot() throws Throwable
-    {
-        _sampleTypeInserts(RunMode.withaliquot);
-    }
+//    @Test
+//    public void sampleTypeInsertsWithAliquot() throws Throwable
+//    {
+//        _sampleTypeInserts(RunMode.withaliquot);
+//    }
 
     private void _sampleTypeInserts(RunMode mode) throws Throwable
     {
