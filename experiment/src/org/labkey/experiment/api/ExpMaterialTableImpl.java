@@ -993,6 +993,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             new FieldKey(null, "objectid"),
             new FieldKey(null, "RowId"),
             new FieldKey(null, "LSID"),                 // Flag
+            new FieldKey(null, "SourceApplicationId"),  // SourceProtocolApplication
+            new FieldKey(null, "runId"),                // Run, RunApplication
             new FieldKey(null, "CpasType"));            // SampleSet
     static final Set<FieldKey> ALL_COLUMNS = Set.of();
 
@@ -1006,10 +1008,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             selectedColumns.add(new FieldKey(null, "aliquotedfromlsid"));
         if (selectedColumns.contains(new FieldKey(null, "IsAliquot")))
             selectedColumns.add(new FieldKey(null, "rootMaterialLsid"));
-        if (selectedColumns.contains(new FieldKey(null, "SourceProtocolApplication")))
-            selectedColumns.add(new FieldKey(null, "SourceApplicationId"));
-        if (selectedColumns.contains(new FieldKey(null, "Run")) || selectedColumns.contains(new FieldKey(null, "RunApplication")))
-            selectedColumns.add(new FieldKey(null, "runId"));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
