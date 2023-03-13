@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.DuplicateMaterialException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.SamplePropertyHelper;
@@ -120,13 +121,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     }
 
     @Override
-    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
         return getObjectWithName(index, sampleProperties, parentMaterials).first;
     }
 
     @Override
-    protected Pair<Lsid, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected Pair<Lsid, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
         Pair<Lsid, String> lsidName = _lsids.get(index);
         Lsid lsid;
@@ -173,7 +174,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         return lsidName;
     }
 
-    public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
+    public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples) throws ExperimentException
     {
         if (_sampleType != null)
         {
@@ -210,7 +211,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             catch (NameGenerator.NameGenerationException e)
             {
-                throw new RuntimeException(e);
+                throw new ExperimentException(e);
             }
         }
         else
