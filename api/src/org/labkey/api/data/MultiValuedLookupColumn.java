@@ -43,6 +43,10 @@ public class MultiValuedLookupColumn extends LookupColumn
         _display = display;
         _rightFk = fk;
         _junctionKey = junctionKey;
+
+        // Issue 47311: Rewrite the lookup FieldKey to remove the intermediate table/query
+        setFieldKey(parentPkColumn.getFieldKey().append(display.getFieldKey().getName()));
+
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
         // NOTE: Changing the type to a VARCHAR causes MultiValueRenderContext.get() type conversion to be skipped and we don't want that.
@@ -75,13 +79,11 @@ public class MultiValuedLookupColumn extends LookupColumn
         return new SQLFragment(getTableAlias(tableAliasName) + "." + _display.getAlias());
     }
 
-
     @Override
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
         strJoin.append(getLookupSql(lookupTable, alias));
     }
-
 
     protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
     {
@@ -193,7 +195,6 @@ public class MultiValuedLookupColumn extends LookupColumn
         return strJoin;
     }
     
-
     @Override
     // The multivalued column joins take place within the aggregate function sub-select; we don't want super class
     // including these columns as top-level joins.
@@ -209,5 +210,4 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
         return getSqlDialect().getGroupConcat(sql, false, false, "'" + MultiValuedRenderContext.VALUE_DELIMITER + "'");
     }
-
 }
