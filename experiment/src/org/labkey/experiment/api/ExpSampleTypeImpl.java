@@ -396,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction/* used by ExperimentStressTest only to avoid deadlock */)
     {
         Map<String, String> importAliasMap = null;
         try
