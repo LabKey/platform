@@ -28,6 +28,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.exp.PropertyType;
@@ -185,7 +186,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     {
                         continue;
                     }
-                    ((BaseColumnInfo)rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
+                    ((MutableColumnInfo) rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
                 }
                 else
                 {
@@ -389,7 +390,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             // Set the FK
             if (!metadataColumnJSON.isLookupCustom() && metadataColumnJSON.getLookupQuery() != null && metadataColumnJSON.getLookupSchema() != null)
             {
-                Pair<Lookup, Boolean> lookup = createLookup(rawColumnInfo.getFk(), container);
+                ForeignKey rawForeignKey = rawColumnInfo.getFk();
+                Pair<Lookup, Boolean> lookup = createLookup(rawForeignKey, container);
 
                 // Check if it's the same FK, based on schema, query, and container
                 if (lookup == null ||
@@ -405,7 +407,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (fkTableInfo != null)
                         {
                             List<String> pkCols = fkTableInfo.getPkColumnNames();
-                            if (pkCols.size() == 1)
+                            String rawLookupColumnName = rawForeignKey.getLookupColumnName();
+                            if (pkCols.size() == 1 || rawLookupColumnName != null)
                             {
                                 ColumnType.Fk fk = xmlColumn.getFk();
                                 if (fk == null)
@@ -414,7 +417,12 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                                 }
                                 fk.setFkDbSchema(metadataColumnJSON.getLookupSchema());
                                 fk.setFkTable(metadataColumnJSON.getLookupQuery());
-                                fk.setFkColumnName(pkCols.get(0));
+
+                                // Issue 47495: respect lookup column provided by established foreign key
+                                if (rawLookupColumnName != null)
+                                    fk.setFkColumnName(rawForeignKey.getLookupColumnName());
+                                else
+                                    fk.setFkColumnName(pkCols.get(0));
                                 if (targetContainer != null)
                                 {
                                     fk.setFkFolderPath(targetContainer.getPath());
