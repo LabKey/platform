@@ -32,6 +32,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -172,6 +173,17 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p)
+    {
+        Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForId(p.getLookupContainer());
+        TableInfo ti = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema()).getTable(p.getLookupQuery(), null);
+
+        if (null == ti)
+            return false;
+
+        return true;
+    }
+
     @Nullable
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*skip querying for tableInfo for sample type and dataclass name previews*/)
     {
@@ -240,6 +252,11 @@ public class DomainUtil
             String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
             p.setDefaultDisplayValue(formattedDefaultValue);
             p.setDefaultValue(ConvertUtils.convert(defaultValue));
+
+            if (prop.getLookup() != null)
+            {
+                p.setLookupIsValid(isValidPdLookup(user, container, p));
+            }
 
             //set property as PK
             if (pkColMap.containsKey(p.getName()))

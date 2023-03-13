@@ -51,6 +51,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
+    private BooleanProperty lookupIsValid = new BooleanProperty();
     private String defaultValueType = null;
     private StringProperty defaultValue = new StringProperty();
     private StringProperty defaultDisplayValue = new StringProperty("[none]");
@@ -200,6 +201,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setLookupQuery(String lookupQuery)
     {
         this.lookupQuery.set(lookupQuery);
+    }
+
+    public Boolean getLookupIsValid()
+    {
+        return lookupIsValid.getBoolean();
+    }
+
+    public void setLookupIsValid(Boolean lookupIsValid)
+    {
+        this.lookupIsValid.set(lookupIsValid);
     }
 
     public int getPropertyId()
