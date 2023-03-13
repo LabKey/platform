@@ -619,12 +619,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             metadataColumnJSON.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
 
-            if (columnInfo instanceof WrappedColumn wc)
-            {
-                ColumnInfo wrappedCol = wc.getWrappedColumn();
-                if (wrappedCol != null)
-                    metadataColumnJSON.setWrappedColumnName(wrappedCol.getColumnName());
-            }
+            if (columnInfo.getWrappedColumnName() != null)
+                metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
 
             if (columnInfo.getFk() != null)
             {
