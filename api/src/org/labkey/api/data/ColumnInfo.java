@@ -292,6 +292,9 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     String getColumnName();
 
+    @Nullable
+    String getWrappedColumnName();
+
     Object getValue(ResultSet rs) throws SQLException;
 
     int getIntValue(ResultSet rs) throws SQLException;
