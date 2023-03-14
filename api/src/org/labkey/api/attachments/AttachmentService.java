@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -75,6 +76,13 @@ public interface AttachmentService
     void deleteAttachments(Collection<AttachmentParent> parents);
 
     /**
+     * Deletes the attachments with the given names from the given AttachmentParent.
+     * @param parent: The AttachmentParent to delete files from
+     * @param names: The file names to delete from the AttachmentParent
+     */
+    void deleteAttachments(AttachmentParent parent, Collection<String> names, @Nullable User auditUser);
+
+    /**
      * @param auditUser set to null to skip audit
      */
     void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
@@ -84,6 +92,12 @@ public interface AttachmentService
     void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
 
     void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+
+    /**
+     * You should not use this method. It only exists so an upgrade script that manually touches the attachment table
+     * can reset the caches of what it touched.
+     */
+    void clearCaches(Collection<String> containerIds);
 
     @NotNull
     List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
@@ -100,6 +114,15 @@ public interface AttachmentService
 
     @Nullable
     Attachment getAttachment(AttachmentParent parent, String name);
+
+    /**
+     * Gets attachments from the given parent that match the given names. This method intentionally skips hitting the
+     * AttachmentCache in order to prevent very large AttachmentParents that would explode the cache with tens of
+     * thousands of items when we are only interested in a few.
+     * @param parent: The AttachmentParent to fetch attachments from
+     * @param names: The list of attachment names to fetch
+     */
+    Map<String, Attachment> getAttachments(AttachmentParent parent, Collection<String> names);
 
     void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
 
