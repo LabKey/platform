@@ -45,6 +45,17 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public @Nullable String getWrappedColumnName()
+    {
+        if (delegate != null)
+        {
+            if (!getName().equalsIgnoreCase(delegate.getName()))
+                return delegate.getName();
+        }
+        return null;
+    }
+
+    @Override
     public FieldKey getFieldKey()
     {
         return delegate.getFieldKey();

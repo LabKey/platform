@@ -124,6 +124,17 @@ public class WrappedColumnInfo
             {
                 sourceColumnInfo.declareJoins(parentAlias, map);
             }
+
+            @Override
+            public @Nullable String getWrappedColumnName()
+            {
+                if (sourceColumnInfo != null)
+                {
+                    if (!getName().equalsIgnoreCase(sourceColumnInfo.getName()))
+                        return sourceColumnInfo.getName();
+                }
+                return null;
+            }
         };
         ret.copyAttributesFrom(sourceColumnInfo);
         ret.copyURLFrom(sourceColumnInfo, null, null);
