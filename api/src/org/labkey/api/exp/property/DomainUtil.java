@@ -46,6 +46,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -71,7 +72,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
-import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -180,12 +180,13 @@ public class DomainUtil
         if (null == lookupContainer)
             return false;
 
-        TableInfo ti = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema()).getTable(p.getLookupQuery(), null);
+        // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
+        Set<String> tableNames = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema()).getTableNames();
 
-        if (null == ti)
-            return false;
+        if (tableNames.stream().anyMatch(p.getLookupQuery()::equalsIgnoreCase))
+            return true;
 
-        return true;
+        return false;
     }
 
     @Nullable
@@ -257,6 +258,7 @@ public class DomainUtil
             p.setDefaultDisplayValue(formattedDefaultValue);
             p.setDefaultValue(ConvertUtils.convert(defaultValue));
 
+            // Set valid lookup flag for display in UI
             if (prop.getLookup() != null)
             {
                 p.setLookupIsValid(isValidPdLookup(user, container, p));
