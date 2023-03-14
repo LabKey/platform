@@ -56,7 +56,6 @@ public interface ColumnInfo extends ColumnRenderProperties
                 return new AttachmentDisplayColumn(colInfo);
             }
 
-
             DataColumn dataColumn = new DataColumn(colInfo);
             if (colInfo.getPropertyType() == PropertyType.MULTI_LINE)
                 dataColumn.setPreserveNewlines(true);
@@ -72,9 +71,8 @@ public interface ColumnInfo extends ColumnRenderProperties
         {
             if (col.getJdbcType() != JdbcType.INTEGER)
                 return false;
-            if (col.getFk() instanceof PdLookupForeignKey)
+            if (col.getFk() instanceof PdLookupForeignKey lfk)
             {
-                PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
                 if ("core".equalsIgnoreCase(lfk.getLookupSchemaName()) && ("siteusers".equalsIgnoreCase(lfk.getLookupTableName()) || "users".equalsIgnoreCase(lfk.getLookupTableName())))
                     return true;
             }
@@ -293,6 +291,9 @@ public interface ColumnInfo extends ColumnRenderProperties
     TableInfo getParentTable();
 
     String getColumnName();
+
+    @Nullable
+    String getWrappedColumnName();
 
     Object getValue(ResultSet rs) throws SQLException;
 
