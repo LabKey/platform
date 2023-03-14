@@ -221,10 +221,11 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
     },
 
     createOptionStore: function(options) {
-        options.unshift({"display":"\xa0", "value":null});
+        let select = Ext4.Array.clone(options);
+        select.unshift({"display":"\xa0", "value":null});
         return Ext4.create('Ext.data.Store', {
             fields: ['display', 'value'],
-            data: options
+            data: select
         })
     },
 

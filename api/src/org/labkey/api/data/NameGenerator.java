@@ -334,6 +334,8 @@ public class NameGenerator
         if (properties != null)
             properties.forEach(field -> substitutionFields.add(field.getName()));
 
+        substitutionFields.remove(null);
+
         if (substitutionFields.isEmpty())
             return Collections.emptyList();
 

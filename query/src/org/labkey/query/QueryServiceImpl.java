@@ -309,7 +309,6 @@ public class QueryServiceImpl implements QueryService
      *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_IN_FILTER_TYPE)
      * </code>
      */
-
     public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
     {
         @Override
@@ -332,7 +331,6 @@ public class QueryServiceImpl implements QueryService
      *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_NOT_IN_FILTER_TYPE)
      * </code>
      */
-
     public static final CompareType COLUMN_NOT_IN = new CompareType("COLUMN NOT IN", "columnnotin", "COLUMN_NOT_IN", true /* dataValueRequired */, "sql", null)
     {
         @Override
@@ -525,9 +523,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     private static final FieldKey expObjectIdFieldKey = new FieldKey(null, BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
-
 
     /* It would be nice to put with class ChildOfMethod and class ParentOfMethod, but our build dependencies mean this goes here for now */
     private static class InLineageOfClause extends WhereClause
@@ -568,7 +564,6 @@ public class QueryServiceImpl implements QueryService
             return super.toSQLFragment(columnMap, dialect);
         }
     }
-
 
     public static class QColumnInfo extends QInternalExpr
     {
@@ -629,13 +624,12 @@ public class QueryServiceImpl implements QueryService
         _metadataLastModified.set(new Date().getTime());
     }
 
-
     @Override
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
-            return (UserSchema) schema;
+        if (schema instanceof UserSchema userSchema && !userSchema.isFolder())
+            return userSchema;
 
         return null;
     }
@@ -644,8 +638,8 @@ public class QueryServiceImpl implements QueryService
     public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
-            return (UserSchema) schema;
+        if (schema instanceof UserSchema userSchema && !userSchema.isFolder())
+            return userSchema;
 
         return null;
     }
@@ -860,10 +854,6 @@ public class QueryServiceImpl implements QueryService
             QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true)
                     .forEach(addQueryDefToMap);
         }
-        if (includeMetadataOverride)
-        {
-
-        }
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
             addCustomQueryDefToMap(user, container, ret, queryDef);
@@ -900,7 +890,6 @@ public class QueryServiceImpl implements QueryService
         MODULE_CUSTOM_VIEW_CACHE.onModuleChanged(module);
         INVALIDATE_QUERY_METADATA_HANDLER.moduleChanged(module);
     }
-
 
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
     {
@@ -1426,13 +1415,11 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
         return saveSessionQuery(context.getRequest().getSession(true), container, context.getUser(), schemaName, sql, metadataXml);
     }
-
 
     @Override
     public QueryDefinition saveSessionQuery(@NotNull HttpSession session, Container container, User user, String schemaName, String sql, String metadataXml)
@@ -1459,13 +1446,11 @@ public class QueryServiceImpl implements QueryService
         return getSessionQuery(session, container, user, schemaKey, queryName);
     }
 
-
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
     {
         return saveSessionQuery(context, container, schemaName, sql, null);
     }
-
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
 
@@ -1492,9 +1477,8 @@ public class QueryServiceImpl implements QueryService
         @Override
         public boolean equals(Object obj)
         {
-            if (obj instanceof SessionQuery)
+            if (obj instanceof SessionQuery sq)
             {
-                SessionQuery sq = (SessionQuery) obj;
                 if (!_sql.equals(sq._sql))
                     return false;
                 if (_metadata == null && sq._metadata != null)
@@ -1567,7 +1551,6 @@ public class QueryServiceImpl implements QueryService
         return createTempQueryDefinition(user, container, schemaName, queryName, query);
     }
 
-
     private QueryDefinition createTempQueryDefinition(User user, Container container, SchemaKey schemaName, String queryName, @NotNull SessionQuery query)
     {
         QueryDefinition qdef = createQueryDef(user, container, schemaName, queryName);
@@ -1615,9 +1598,8 @@ public class QueryServiceImpl implements QueryService
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Set<FieldKey> pkColumnMap = new HashSet<>();
                 ContainerContext cc = table.getContainerContext();
-                if (cc instanceof ContainerContext.FieldKeyContext)
+                if (cc instanceof ContainerContext.FieldKeyContext fko)
                 {
-                    ContainerContext.FieldKeyContext fko = (ContainerContext.FieldKeyContext) cc;
                     pkColumnMap.add(fko.getFieldKey());
                 }
 
@@ -1712,7 +1694,6 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-
     @Override
     public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
@@ -1743,16 +1724,12 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-
     @Override
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns,
                                                         @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
-        HashMap<FieldKey, ColumnInfo> hm = new HashMap<>();
-        Set<ColumnInfo> involvedColumns = new HashSet<>();
-        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm);
+        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, new HashMap<>());
     }
-
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
     public List<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
@@ -1846,9 +1823,8 @@ public class QueryServiceImpl implements QueryService
 
             for (FieldKey field : unresolvedColumns)
             {
-                if (filter instanceof SimpleFilter)
+                if (filter instanceof SimpleFilter simpleFilter)
                 {
-                    SimpleFilter simpleFilter = (SimpleFilter) filter;
                     simpleFilter.deleteConditions(field);
                 }
 
@@ -1859,7 +1835,6 @@ public class QueryServiceImpl implements QueryService
 
         return new ArrayList<>(ret.values());
     }
-
 
     private void resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
                                                      LinkedHashMap<FieldKey,ColumnInfo> ret, boolean addSortKeysOnly)
@@ -1907,10 +1882,9 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
-        if (fieldKey == null)
+        if (fieldKey == null) // TODO: Can this resolve "selectionMethods/selectionMethodId$Sname"?
             return null;
 
         // This could be made more general, but I don't think there's a need.  To reduce testing
@@ -1954,7 +1928,6 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
-
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
         Map<String, UserSchema> ret = new HashMap<>();
@@ -1969,7 +1942,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -1988,7 +1961,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -2010,7 +1983,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -2030,7 +2003,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -2062,7 +2035,7 @@ public class QueryServiceImpl implements QueryService
         }
         catch (Exception e)
         {
-            LogManager.getLogger(QueryServiceImpl.class).error("Error deleting linked schema " + name, e);
+            LOG.error("Error deleting linked schema " + name, e);
         }
     }
 
@@ -2612,20 +2585,16 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     // verify that named parameters have been bound
     @Override
     public void validateNamedParameters(SQLFragment frag)
     {
         for (Object o : frag.getParams())
         {
-            if (!(o instanceof ParameterDecl))
-                continue;
-            ParameterDecl p = (ParameterDecl) o;
-            throw new NamedParameterNotProvided(p.getName());
+            if (o instanceof ParameterDecl p)
+                throw new NamedParameterNotProvided(p.getName());
         }
     }
-
 
     @Override
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
@@ -2675,7 +2644,6 @@ public class QueryServiceImpl implements QueryService
     {
         return new SelectBuilderImpl(table);
     }
-
 
     class SelectBuilderImpl implements SelectBuilder
     {
@@ -2907,7 +2875,6 @@ public class QueryServiceImpl implements QueryService
         env.putAll((HashMap<Environment, Object>) o);
     }
 
-
     @Override
     public void clearEnvironment()
     {
@@ -2999,7 +2966,6 @@ public class QueryServiceImpl implements QueryService
 
         AuditLogService.get().addEvent(user, event);
     }
-
 
     @Override
     public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
@@ -3144,24 +3110,6 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(def.getHierarchies());
     }
 
-    /*
-    public Set<ColumnInfo> getIncomingLookups(User user, Container c, TableInfo targetTable, Set<SchemaKey> schemaKeys)
-    {
-        Set<ColumnInfo> lookups = new HashSet<>();
-
-        Set<UserSchema> schemas = schemaKeys.stream().map(key -> getUserSchema(user, c, key)).collect(Collectors.toSet());
-        UserSchema schema = getUserSchema(user, c, schemaKey);
-        SchemaTreeWalker walk = new SchemaTreeWalker<ColumnInfo, Void>(true) {
-            @Override
-            public ColumnInfo visitTable(TableInfo table, Path path, Void param)
-            {
-                return super.visitTable(table, path, param);
-            }
-        };
-        Set<ColumnInfo> lookups = walk.visitTop(schemas, null);
-    }
-    */
-
     @Override
     public TableInfo analyzeQuery(
             UserSchema userSchema, String queryName,
@@ -3208,7 +3156,6 @@ public class QueryServiceImpl implements QueryService
         return _analyzeTableInfo(from, t, dependencyGraph);
     }
 
-
     private TableInfo _analyzeTableInfo(DependencyObject from, TableInfo source, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph)
     {
         if (null == source)
@@ -3244,7 +3191,6 @@ public class QueryServiceImpl implements QueryService
         return source;
     }
 
-
     final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
 
     private boolean _includeLookupDependency(TableInfo from, TableInfo to)
@@ -3265,7 +3211,6 @@ public class QueryServiceImpl implements QueryService
         return false;
     }
 
-
     @Override
     public void registerQueryAnalysisProvider(QueryAnalysisService provider)
     {
@@ -3277,9 +3222,6 @@ public class QueryServiceImpl implements QueryService
     {
         return _queryAnalysisService;
     }
-
-
-
 
     /* registry of ColumnInfoTransformer use to build common columns */
     Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
@@ -3400,7 +3342,6 @@ public class QueryServiceImpl implements QueryService
                 }
 	        }
         }
-
 
         @Test
         public void testParameters() throws SQLException
