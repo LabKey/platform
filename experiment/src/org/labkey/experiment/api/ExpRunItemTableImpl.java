@@ -297,6 +297,11 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
                 }
             }
         }
+        else
+        {
+            // if we don't know the selectedColumns, assume we do need to include provisioned columns
+            hasProvisionedCol = true;
+        }
 
         return hasProvisionedCol;
     }
