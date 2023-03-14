@@ -175,7 +175,11 @@ public class DomainUtil
 
     private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p)
     {
-        Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForId(p.getLookupContainer());
+        Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
+
+        if (null == lookupContainer)
+            return false;
+
         TableInfo ti = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema()).getTable(p.getLookupQuery(), null);
 
         if (null == ti)
