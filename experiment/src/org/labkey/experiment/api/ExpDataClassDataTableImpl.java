@@ -671,7 +671,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         pCols.remove("name");
         pCols.remove("classid");
 
-        boolean skipProvisionedJoin = checkSelectedColumnsFromRootOnly(selectedColumns, dataCols);
+        boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM\n");
@@ -684,7 +684,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             comma = ", ";
         }
 
-        if (!skipProvisionedJoin)
+        if (hasProvisionedColumns)
         {
             for (String pCol : pCols)
             {
@@ -694,7 +694,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "d");
-        if (!skipProvisionedJoin)
+        if (hasProvisionedColumns)
             sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
         String subAlias = alias + "_dc_sub";
         sql.append(") ").append(subAlias);
