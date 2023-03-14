@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -395,7 +396,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
                 // Check if it's the same FK, based on schema, query, and container
                 if (lookup == null ||
-                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaKey()) ||
+                        // Note, getLookupSchema() is a String so it must be compared against a String here hence the use of getSchemaName()
+                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaName()) ||
                         !metadataColumnJSON.getLookupQuery().equals(lookup.first.getQueryName()) ||
                         !Objects.equals(metadataColumnJSON.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
                 {
@@ -498,7 +500,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
                 // May be empty, or may have empty text between the start and end tags
                 if (childNodes.getLength() == 0 ||
-                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text && ((Text)childNodes.item(0)).getData().trim().length() == 0))
+                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text txt && txt.getData().trim().length() == 0))
                 {
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
@@ -536,6 +538,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         aliasesSet.forEach(importAliasesXml::addImportAlias);
     }
 
+    @Nullable
     private static TableType getTableType(String name, TablesDocument doc)
     {
         if (doc != null && doc.getTables() != null)
@@ -569,6 +572,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         }
     }
 
+    @Nullable
     public static MetadataTableJSON getMetadata(String schemaName, String tableName, User user, Container container) throws MetadataUnavailableException
     {
         Map<String, MetadataColumnJSON> columnInfos = new CaseInsensitiveHashMap<>();
@@ -834,6 +838,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return result;
     }
 
+    @Nullable
     private static Pair<Lookup, Boolean> createLookup(ForeignKey fk, Container currentContainer)
     {
         if (fk == null)
@@ -879,6 +884,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return Pair.of(lookup, custom);
     }
 
+    @Nullable
     private static TablesDocument parseDocument(String xml) throws XmlException
     {
         if (xml == null)
