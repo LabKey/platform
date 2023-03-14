@@ -74,10 +74,6 @@ public class ReportingWriter
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
         props.put("defaultValue", cinfo == null ? null : cinfo.getDefaultValue());
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Begin properties moved from columnModel section
-
-        // see  Ext.grid.ColumnModel Ext.grid.Column
         if (cinfo != null)
         {
             props.put("scale", cinfo.getScale());
@@ -92,25 +88,12 @@ public class ReportingWriter
                 //try to parse as integer (which is what Ext wants)
                props.put("width", Integer.parseInt(dc.getWidth()));
             }
-            catch(NumberFormatException e)
+            catch (NumberFormatException e)
             {
                 //include it as a string
                 props.put("width", dc.getWidth());
             }
         }
-
-        /* TODO: The remainder of these former columnModel properties seem to duplicate keys in the field object,
-            but the logic defining their values is slightly different. Which is correct?
-         */
-//        extGridColumn.put("editable", isEditable(dc));
-//        extGridColumn.put("hidden", colInfo != null && (colInfo.isHidden() || colInfo.isAutoIncrement())); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
-//        /** These are not part of Ext.Grid.Column, don't know why they are hear (MAB) */
-//        extGridColumn.put("required", colInfo != null && !colInfo.isNullable());
-//        if (colInfo != null && isEditable(dc) && null != colInfo.getDefaultValue())
-//            extGridColumn.put("defaultValue", colInfo.getDefaultValue());
-
-        // End propertiess moved from columnModel section
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
 
         if (includeDomainFormat)
         {
@@ -159,7 +142,6 @@ public class ReportingWriter
 
         if (cinfo != null)
         {
-
             if (!cinfo.getImportAliasSet().isEmpty())
             {
                 props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));
@@ -199,14 +181,14 @@ public class ReportingWriter
 
             String inputType = cinfo.getInputType();
             props.put("inputType", inputType);
-            if ( ("textarea".equals(inputType) || "text".equals(inputType) ) && dc instanceof DataColumn)
+            if (("textarea".equals(inputType) || "text".equals(inputType)) && dc instanceof DataColumn dataColumn)
             {
-                int cols = ((DataColumn)dc).getInputLength();
+                int cols = dataColumn.getInputLength();
                 if (cols > 0)
                     props.put("cols", Math.min(1000,cols));
                 if ("textarea".equals(inputType))
                 {
-                    int rows = ((DataColumn)dc).getInputRows();
+                    int rows = dataColumn.getInputRows();
                     if (rows > 0)
                         props.put("rows", Math.min(1000,rows));
                 }
@@ -329,9 +311,8 @@ public class ReportingWriter
                 key = pks.get(1);
             lookupInfo.put("keyColumn", key);
 
-            if (fk instanceof MultiValuedForeignKey)
+            if (fk instanceof MultiValuedForeignKey mvfk)
             {
-                MultiValuedForeignKey mvfk = (MultiValuedForeignKey)fk;
                 String junctionLookup = mvfk.getJunctionLookup();
                 lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
                 if (junctionLookup != null)
@@ -343,6 +324,4 @@ public class ReportingWriter
 
         return null;
     }
-
-
 }
