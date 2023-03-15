@@ -409,7 +409,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (fkTableInfo != null)
                         {
                             List<String> pkCols = fkTableInfo.getPkColumnNames();
-                            String rawLookupColumnName = rawForeignKey.getLookupColumnName();
+                            String rawLookupColumnName = rawForeignKey != null ? rawForeignKey.getLookupColumnName() : null;
                             if (pkCols.size() == 1 || rawLookupColumnName != null)
                             {
                                 ColumnType.Fk fk = xmlColumn.getFk();
