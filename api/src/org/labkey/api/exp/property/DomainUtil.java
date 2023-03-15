@@ -179,16 +179,16 @@ public class DomainUtil
 
         if (null == lookupContainer)
             return false;
-        
+
         UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema());
 
         if (null == schema)
             return false;
 
         // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
-        Set<String> tableNames = schema.getTableNames();
+        CaseInsensitiveHashSet tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
 
-        if (tableNames.stream().anyMatch(p.getLookupQuery()::equalsIgnoreCase))
+        if (tableNames.contains(p.getLookupQuery()))
             return true;
 
         return false;
