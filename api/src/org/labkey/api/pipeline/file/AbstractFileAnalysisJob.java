@@ -443,7 +443,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName(), getInputFiles());
+        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName(), getInputFilePaths());
     }
 
     @Override
@@ -464,7 +464,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName, Collections.emptyList());
     }
 
-    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName, List<File> inputFiles)
+    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName, List<Path> inputFiles)
     {
         String dataName = "";
         if (dirData != null)
@@ -494,7 +494,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (!inputFiles.isEmpty())
         {
             description.append(" (");
-            description.append(String.join(",", inputFiles.stream().map(f -> f.getName()).collect(Collectors.toList())));
+            //p.getFileName returns the full S3 path -- S3fs bug?
+            description.append(inputFiles.stream().map(FileUtil::getFileName).collect(Collectors.joining(",")));
             description.append(")");
         }
         return description.toString();
