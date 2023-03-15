@@ -2073,6 +2073,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
+    public @Nullable String getWrappedColumnName()
+    {
+        return null;
+    }
+
+    @Override
     public Object getValue(ResultSet rs) throws SQLException
     {
         if (rs == null)
