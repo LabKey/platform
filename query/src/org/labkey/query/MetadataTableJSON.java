@@ -422,7 +422,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
                                 // Issue 47495: respect lookup column provided by established foreign key
                                 if (rawLookupColumnName != null)
-                                    fk.setFkColumnName(rawForeignKey.getLookupColumnName());
+                                    fk.setFkColumnName(rawLookupColumnName);
                                 else
                                     fk.setFkColumnName(pkCols.get(0));
                                 if (targetContainer != null)
