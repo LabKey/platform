@@ -655,6 +655,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return domainFields;
     }
 
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        return getFromSQL(alias, null);
+    }
+
     @Override
     public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
     {
