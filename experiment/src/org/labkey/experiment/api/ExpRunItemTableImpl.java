@@ -284,7 +284,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     protected boolean containsProvisionedColumns(Set<FieldKey> selectedColumns, Set<String> tableColumnNames)
     {
         boolean hasProvisionedCol = false;
-        if (selectedColumns != null)
+        if (selectedColumns != null && !selectedColumns.isEmpty())
         {
             for (FieldKey selectedColumn : selectedColumns)
             {
