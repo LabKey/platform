@@ -29,9 +29,6 @@ import javax.servlet.jsp.PageContext;
 
 /**
  * Anti-cross-site request forgery utility methods
- * User: matthewb
- * Date: May 10, 2010
- * Time: 1:53:33 PM
  */
 public class CSRFUtil
 {
@@ -47,12 +44,12 @@ public class CSRFUtil
             return csrf;
 
         csrf = PageFlowUtil.getCookieValue(request.getCookies(), csrfCookie, null);
-        if (null == csrf || csrf.length() != 32 || !StringUtils.containsOnly(csrf,"0123456789abcdef"))
+        if (null == csrf || !GUID.looksLikeAValidLongHash(csrf))
             csrf = null;
 
         if (null == csrf)
         {
-            csrf = GUID.makeHash();
+            csrf = GUID.makeLongHash();
             if (response != null)
             {
                 try
