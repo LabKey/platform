@@ -338,11 +338,13 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (filter != null)
         {
-            if (filter instanceof SimpleFilter)
+            if (filter instanceof SimpleFilter simpleFilter)
             {
-                for (var c : ((SimpleFilter) filter).getClauses())
+                for (var c : simpleFilter.getClauses())
+                {
                     if (c instanceof QueryServiceImpl.QueryCompareClause qcc)
                         qcc.setQuery(_query);
+                }
             }
             filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
         }
