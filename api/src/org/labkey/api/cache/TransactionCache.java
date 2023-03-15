@@ -18,8 +18,12 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.util.Filter;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -27,8 +31,6 @@ import java.util.Set;
  * (put or remove) occurs on that entry, at which point only the private cache is consulted for this entry for the
  * remainder of the transaction. This should provide good performance while avoiding pollution of the shared cache
  * during the transaction and in the case of a rollback.
- * User: adam
- * Date: Nov 9, 2009
  */
 public class TransactionCache<K, V> implements Cache<K, V>
 {
@@ -40,6 +42,8 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
     /** Cache shared by other threads */
     private final Cache<K, V> _sharedCache;
+    private final DatabaseCache<K, V> _databaseCache;
+    private final Transaction _transaction;
 
     /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
@@ -47,10 +51,12 @@ public class TransactionCache<K, V> implements Cache<K, V>
     /** Whether the cache has been cleared. Once clear() is invoked, the shared cache is ignored. */
     private boolean _hasBeenCleared = false;
 
-    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
+    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache, DatabaseCache<K, V> databaseCache, Transaction transaction)
     {
         _privateCache = privateCache;
         _sharedCache = sharedCache;
+        _databaseCache = databaseCache;
+        _transaction = transaction;
     }
 
     @Override
@@ -117,12 +123,14 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public void remove(@NotNull K key)
     {
+        _transaction.addCommitTask(new CacheKeyRemovalCommitTask(key), DbScope.CommitTaskOption.POSTCOMMIT);
         _privateCache.put(key, REMOVED_MARKER);
     }
 
     @Override
     public int removeUsingFilter(Filter<K> filter)
     {
+        _transaction.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
         return (int)(
             _privateCache.getKeys().stream().filter(filter::accept).peek(this::remove).count() +
             _sharedCache.getKeys().stream().filter(filter::accept).peek(this::remove).count()
@@ -138,6 +146,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public void clear()
     {
+        _transaction.addCommitTask(new CacheClearingCommitTask(), DbScope.CommitTaskOption.POSTCOMMIT);
         _hasBeenCleared = true;
         _privateCache.clear();
     }
@@ -158,6 +167,147 @@ public class TransactionCache<K, V> implements Cache<K, V>
     public Cache<K, V> createTemporaryCache()
     {
         throw new UnsupportedOperationException();
+    }
+
+    private class CacheClearingCommitTask implements Runnable
+    {
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CacheClearingCommitTask that = (CacheClearingCommitTask) o;
+
+            return getCache().equals(that.getCache());
+        }
+
+        private Cache<K, V> getCache()
+        {
+            return _databaseCache.getCache();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return getCache().hashCode();
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().clear();
+        }
+    }
+
+    private abstract class AbstractCacheRemovalCommitTask<ObjectType> implements Runnable
+    {
+        protected final ObjectType object;
+
+        public AbstractCacheRemovalCommitTask(ObjectType object)
+        {
+            this.object = object;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AbstractCacheRemovalCommitTask<ObjectType> that = (AbstractCacheRemovalCommitTask<ObjectType>) o;
+
+            if (!getCache().equals(that.getCache())) return false;
+            return Objects.equals(object, that.object);
+        }
+
+        protected Cache<K, V> getCache()
+        {
+            return _databaseCache.getCache();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = getCache().hashCode();
+            result = 31 * result + (object != null ? object.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<K>
+    {
+        public CacheKeyRemovalCommitTask(K key)
+        {
+            super(key);
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().remove(object);
+        }
+    }
+
+    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Filter<K>>
+    {
+        public CachePrefixRemovalCommitTask(Filter<K> filter)
+        {
+            super(filter);
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().removeUsingFilter(object);
+        }
+    }
+
+    // Not currently used... consider adding this on every put to proactively populate shared cache after commit
+    private class CacheReloadCommitTask implements Runnable
+    {
+        private final K _key;
+        private final Object _arg;
+        private final CacheLoader<K, V> _loader;
+
+        public CacheReloadCommitTask(K key, Object arg, CacheLoader<K, V> loader)
+        {
+            _key = key;
+            _arg = arg;
+            _loader = loader;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CacheReloadCommitTask that = (CacheReloadCommitTask) o;
+
+            if (!getCache().equals(that.getCache())) return false;
+            return Objects.equals(_key, that._key);
+        }
+
+        protected Cache<K, V> getCache()
+        {
+            return _databaseCache.getCache();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = getCache().hashCode();
+            result = 31 * result + (_key != null ? _key.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public void run()
+        {
+            V value = _loader.load(_key, _arg);
+            getCache().put(_key, value);
+        }
     }
 
     private static class MissingCacheEntryException extends RuntimeException
