@@ -18,11 +18,8 @@ package org.labkey.api.util;
 
 /**
  * Starts a thread that can be used as a place to set a breakpoint when other "normal" threads are all blocked
- * or otherwise occupied. This is useful because some debugger functionality, such as a invoking methods through the
+ * or otherwise occupied. This is useful because some debugger functionality, such as invoking methods through the
  * watch window, is not available when the VM is paused separately from a breakpoint or step operation.
- *
- * User: jeckels
- * Date: Oct 27, 2006
  */
 public class BreakpointThread extends Thread implements ShutdownListener
 {

@@ -84,12 +84,10 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,16 +103,11 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private final boolean _canSeeDetails;
     private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
     private static final String SYSTEM = "System";
-    private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
-
-    static
-    {
-        ALWAYS_AVAILABLE_FIELDS = new HashSet<>();
-        ALWAYS_AVAILABLE_FIELDS.addAll(Arrays.asList(
-                FieldKey.fromParts("EntityId"),
-                FieldKey.fromParts("UserId"),
-                FieldKey.fromParts("DisplayName")));
-    }
+    private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS = Set.of(
+        FieldKey.fromParts("EntityId"),
+        FieldKey.fromParts("UserId"),
+        FieldKey.fromParts("DisplayName")
+    );
 
     private final static Logger LOG = LogManager.getLogger(UsersTable.class);
 
@@ -159,7 +152,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 if (ALWAYS_AVAILABLE_FIELDS.contains(col.getFieldKey()))
                     wrapColumn(col);
                 else
-                    addUserDetailColumn( (BaseColumnInfo)col, isCanSeeDetails(), true);
+                    addUserDetailColumn((BaseColumnInfo)col, isCanSeeDetails(), true);
             }
         }
 
@@ -170,6 +163,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultColumns.add(FieldKey.fromParts("Active"));
         defaultColumns.add(FieldKey.fromParts("HasPassword"));
         defaultColumns.add(FieldKey.fromParts("LastLogin"));
+        defaultColumns.add(FieldKey.fromParts("LastActivity"));
         defaultColumns.add(FieldKey.fromParts("Created"));
 
         if (null != PropertyService.get())

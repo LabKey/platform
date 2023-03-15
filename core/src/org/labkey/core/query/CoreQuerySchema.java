@@ -106,7 +106,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
         {
@@ -194,7 +194,7 @@ public class CoreQuerySchema extends UserSchema
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
         // We apply a special filter for containers below, so don't filter here too
-        FilteredTable groups = new FilteredTable<>(principalsBase, this)
+        FilteredTable<CoreQuerySchema> groups = new FilteredTable<>(principalsBase, this)
         {
             @Override
             public boolean supportsContainerFilter()
@@ -286,7 +286,7 @@ public class CoreQuerySchema extends UserSchema
         return users;
     }
 
-    private void toggleExpirationDateColumn(FilteredTable users)
+    private void toggleExpirationDateColumn(FilteredTable<UserSchema> users)
     {
         var expirationDateCol = users.getMutableColumn(FieldKey.fromParts("ExpirationDate"));
         if (expirationDateCol != null)
@@ -309,7 +309,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getPrincipals()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable principals = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
+        FilteredTable<CoreQuerySchema> principals = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
 
         //we expose userid, name and type via query
         var col = principals.wrapColumn(principalsBase.getColumn("UserId"));
@@ -360,7 +360,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getMembers()
     {
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
-        FilteredTable members = new FilteredTable<>(membersBase, this);
+        FilteredTable<CoreQuerySchema> members = new FilteredTable<>(membersBase, this);
 
         var col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
@@ -454,7 +454,7 @@ public class CoreQuerySchema extends UserSchema
                     SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
                         .stream()
                         .map(UserPrincipal::getUserId)
-                        .collect(Collectors.toList())
+                        .toList()
                 );
 
                 // add all user with root container ApplicationAdminRole or SiteAdminRole assignments
@@ -462,15 +462,15 @@ public class CoreQuerySchema extends UserSchema
                 {
                     SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
                     List<RoleAssignment> assignments = rootContainerPolicy.getAssignments().stream()
-                            .filter(assignment -> adminRole.equals(assignment.getRole())).collect(Collectors.toList());
+                            .filter(assignment -> adminRole.equals(assignment.getRole())).toList();
                     assignments.forEach(assignment -> {
                         Group assignedGroup = SecurityManager.getGroup(assignment.getUserId());
                         if (assignedGroup != null)
                             _projectUserIds.addAll(
-                                    SecurityManager.getAllGroupMembers(assignedGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
-                                            .stream()
-                                            .map(UserPrincipal::getUserId)
-                                            .collect(Collectors.toList())
+                                SecurityManager.getAllGroupMembers(assignedGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
+                                    .stream()
+                                    .map(UserPrincipal::getUserId)
+                                    .toList()
                             );
 
                         _projectUserIds.add(assignment.getUserId());
@@ -539,7 +539,7 @@ public class CoreQuerySchema extends UserSchema
     protected TableInfo getMembersTable()
     {
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
-        FilteredTable result = new FilteredTable<>(membersBase, this);
+        FilteredTable<CoreQuerySchema> result = new FilteredTable<>(membersBase, this);
 
         var userColumn = result.wrapColumn("User", membersBase.getColumn("UserId"));
         result.addColumn(userColumn);
