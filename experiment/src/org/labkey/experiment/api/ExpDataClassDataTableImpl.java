@@ -669,13 +669,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         TableInfo provisioned = _dataClassTableInfo.get();
         SqlDialect dialect = _rootTable.getSqlDialect();
 
-        // all columns from exp.data except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
-        dataCols.remove("lsid");
 
-        // all columns from dataclass property table except name and classid
+        // all columns from dataclass property table except name, lsid, and classid
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
+        pCols.remove("lsid");
         pCols.remove("classid");
 
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
