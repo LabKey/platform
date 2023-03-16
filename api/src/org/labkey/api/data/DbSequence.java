@@ -81,6 +81,26 @@ public class DbSequence
         // pass
     }
 
+    // database sequence should perform action in its own operation
+    public boolean useCurrentTransaction()
+    {
+        return false;
+    }
+
+    protected static class ReclaimableDbSequence extends DbSequence
+    {
+        ReclaimableDbSequence(Container c, String name, int rowId)
+        {
+            super(c, name, rowId);
+        }
+
+        @Override
+        public boolean useCurrentTransaction()
+        {
+            return true;
+        }
+    }
+
     /** there are two ways we could write this
      * a) Support multiple DbSequence.Preallocate for the same sequence instance (e.g. rowid)
      *      potentially each would not have to be thread safe, but I think this would tend to generate lots of missing values
@@ -151,8 +171,25 @@ public class DbSequence
             if (null != _lastReservedValue && !_lastReservedValue.equals(_currentValue))
             {
                 DbSequenceManager.setSequenceValue(this, _currentValue);
-                _lastReservedValue = _currentValue;
             }
+            _currentValue = null;
+            _lastReservedValue = null;
+        }
+    }
+
+    // For scenarios where continuity of sequence is important
+    // A sequence should either use Preallocate or ReclaimablePreallocate, but never both
+    protected static class ReclaimablePreallocate extends Preallocate
+    {
+        ReclaimablePreallocate(Container c, String name, int rowId, int batchSize)
+        {
+            super(c, name, rowId, batchSize);
+        }
+
+        @Override
+        public boolean useCurrentTransaction()
+        {
+            return true;
         }
     }
 }

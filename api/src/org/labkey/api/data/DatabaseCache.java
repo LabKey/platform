@@ -75,7 +75,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
-    private Cache<K, V> getCache()
+    public Cache<K, V> getCache()
     {
         DbScope.TransactionImpl t = _scope.getCurrentTransactionImpl();
 
@@ -85,7 +85,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
+                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()), this, t);
                 t.addCache(this, transactionCache);
             }
 
@@ -124,120 +124,18 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     @Override
     public void remove(@NotNull final K key)
     {
-        DbScope.Transaction t = _scope.getCurrentTransaction();
-
-        if (null != t)
-        {
-            t.addCommitTask(new CacheKeyRemovalCommitTask(key), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
-
         getCache().remove(key);
-    }
-
-    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<K>
-    {
-        public CacheKeyRemovalCommitTask(K key)
-        {
-            super(key);
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().remove(object);
-        }
-    }
-
-    private abstract class AbstractCacheRemovalCommitTask<ObjectType> implements Runnable
-    {
-        protected final ObjectType object;
-
-        public AbstractCacheRemovalCommitTask(ObjectType object)
-        {
-            this.object = object;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            AbstractCacheRemovalCommitTask that = (AbstractCacheRemovalCommitTask) o;
-
-            if (!getCache().equals(that.getCache())) return false;
-            return !(object != null ? !object.equals(that.object) : that.object != null);
-        }
-
-        private Cache<K, V> getCache()
-        {
-            return DatabaseCache.this.getCache();
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getCache().hashCode();
-            result = 31 * result + (object != null ? object.hashCode() : 0);
-            return result;
-        }
     }
 
     @Override
     public void clear()
     {
-        DbScope.Transaction t = _scope.getCurrentTransaction();
-
-        if (null != t)
-        {
-            t.addCommitTask(new CacheClearingCommitTask(), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
-
         getCache().clear();
     }
-
-    private class CacheClearingCommitTask implements Runnable
-    {
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CacheClearingCommitTask that = (CacheClearingCommitTask) o;
-
-            return getCache().equals(that.getCache());
-        }
-
-        private Cache<K, V> getCache()
-        {
-            return DatabaseCache.this.getCache();
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return getCache().hashCode();
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().clear();
-        }
-    }
-
 
     @Override
     public int removeUsingFilter(Filter<K> filter)
     {
-        DbScope.Transaction t = _scope.getCurrentTransaction();
-
-        if (null != t)
-        {
-            t.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
-
         return getCache().removeUsingFilter(filter);
     }
 
@@ -456,20 +354,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     overrideTransaction = new TransactionImpl(null, DbScope.NORMAL_TRANSACTION_KIND);
                 }
             }
-        }
-    }
-
-    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Filter>
-    {
-        public CachePrefixRemovalCommitTask(Filter<K> filter)
-        {
-            super(filter);
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().removeUsingFilter(object);
         }
     }
 }
