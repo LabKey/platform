@@ -25,6 +25,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.CoreModule;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -150,5 +151,11 @@ public class WarningServiceImpl implements WarningService
                 html.endTag("ul");
             }
         }
+    }
+
+    @Override
+    public void rerunSchemaCheck()
+    {
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).rerunSchemaCheck();
     }
 }
