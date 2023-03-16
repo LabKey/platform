@@ -57,9 +57,12 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -173,14 +176,22 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
-    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p)
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
     {
         Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
 
         if (null == lookupContainer)
             return false;
 
-        UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, p.getLookupSchema());
+        // Saving default schema for use again if there are multiple lookups from the same schema
+        DefaultSchema defaultSchema = defaultSchemaMap.get(lookupContainer);
+        if (null == defaultSchema)
+        {
+            defaultSchema = DefaultSchema.get(user, lookupContainer);
+            defaultSchemaMap.put(lookupContainer, defaultSchema);
+        }
+
+        QuerySchema schema = DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
 
         if (null == schema)
             return false;
@@ -254,6 +265,9 @@ public class DomainUtil
             }
         }
 
+        // Reuse defaultSchemas
+        Map<Container, DefaultSchema> lookupDefaultSchemaMap = null;
+
         for (DomainProperty prop : properties)
         {
             GWTPropertyDescriptor p = getPropertyDescriptor(prop);
@@ -266,7 +280,10 @@ public class DomainUtil
             // Set valid lookup flag for display in UI
             if (prop.getLookup() != null)
             {
-                p.setLookupIsValid(isValidPdLookup(user, container, p));
+                if (null == lookupDefaultSchemaMap)
+                    lookupDefaultSchemaMap = new HashMap<>();
+
+                p.setLookupIsValid(isValidPdLookup(user, container, p, lookupDefaultSchemaMap));
             }
 
             //set property as PK
