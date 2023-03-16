@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 
 /**
@@ -55,4 +56,9 @@ public class WrappedColumn extends ExprColumn
         return _col.getValueSql(tableAlias);
     }
 
+    @Override
+    public @Nullable String getWrappedColumnName()
+    {
+        return _col != null ? _col.getName() : null;
+    }
 }

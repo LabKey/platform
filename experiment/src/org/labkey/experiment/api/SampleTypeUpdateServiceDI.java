@@ -1442,7 +1442,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 onFirst();
 
             // calls processNextInput()
-            return super.next();
+            boolean next = super.next();
+            if (!next)
+            {
+                if (null != nameState)
+                    nameState.cleanUp();
+            }
+            return next;
         }
 
         @Override

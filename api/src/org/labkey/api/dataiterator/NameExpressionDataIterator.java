@@ -97,7 +97,19 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     {
         // Clear cache of generated names
         _newNames.clear();
-        return super.next();
+        boolean next = super.next();
+        if (!next)
+            syncCounterSeqs();
+        return next;
+    }
+
+    public void syncCounterSeqs()
+    {
+        for (Map.Entry<String, Pair<NameGenerator, NameGenerator.State>> nameGenerator: _nameGeneratorMap.entrySet())
+        {
+            NameGenerator.State state = nameGenerator.getValue().second;
+            state.cleanUp(); // explictly call state.cleanUp so DB sequence gets cleaned up in transaction
+        }
     }
 
     @Override
