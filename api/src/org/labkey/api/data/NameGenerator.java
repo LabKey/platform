@@ -475,7 +475,7 @@ public class NameGenerator
             String startVal = null;
             String format = null;
             String thirdParam = null;
-            if (secondCommaIndex > -1)
+            if (secondCommaIndex > -1 && secondCommaIndex < endParen)
             {
                 // 3 arguments
                 startVal = nameExpression.substring(startParen+1, commaIndex).trim();
