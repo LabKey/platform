@@ -281,7 +281,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                         lsidToRecompute.add((String) lsidObj);
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
-                                        nameToRecompute.add((String) nameObj);
+                                    {
+                                        if (nameObj instanceof String)
+                                        {
+                                            nameToRecompute.add((String) nameObj);
+                                        }
+                                        else if (nameObj instanceof Number)
+                                        {
+                                            nameToRecompute.add(nameObj.toString());
+                                        }
+                                    }
                                 }
                                 else
                                     rows.add(((MapDataIterator)_delegate).getMap());
