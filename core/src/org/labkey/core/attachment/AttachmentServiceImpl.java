@@ -525,15 +525,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-    @Override
-    public void clearCaches(Collection<String> containerIds)
-    {
-        for (String containerId : containerIds)
-        {
-            AttachmentCache.removeAttachments(Objects.requireNonNull(ContainerService.get().getForId(containerId)));
-        }
-    }
-
     /** may return fewer AttachmentFile than Attachment, if there have been deletions */
     @Override
     public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
