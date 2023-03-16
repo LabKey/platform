@@ -129,7 +129,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 {
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
-    private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
+    private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
 
     public AttachmentServiceImpl()
     {

@@ -93,12 +93,6 @@ public interface AttachmentService
 
     void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 
-    /**
-     * You should not use this method. It only exists so an upgrade script that manually touches the attachment table
-     * can reset the caches of what it touched.
-     */
-    void clearCaches(Collection<String> containerIds);
-
     @NotNull
     List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
 
