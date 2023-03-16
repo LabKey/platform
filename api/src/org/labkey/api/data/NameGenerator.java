@@ -470,9 +470,8 @@ public class NameGenerator
             errorMessages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
         else
         {
-
             int commaIndex = nameExpression.indexOf(",", start);
-            int secondCommaIndex = nameExpression.indexOf(",", commaIndex + 1);
+            int secondCommaIndex = commaIndex >= 0 ? nameExpression.indexOf(",", commaIndex + 1) : -1;
             String startVal = null;
             String format = null;
             String thirdParam = null;
