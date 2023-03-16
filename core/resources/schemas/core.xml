@@ -182,6 +182,7 @@
       <column columnName="IM"/>
       <column columnName="Description"/>
       <column columnName="LastLogin"/>
+      <column columnName="LastActivity"/>
       <column columnName="DisplayName"/>
       <column columnName="ExpirationDate">
         <description>The expiration date for the account. If applicable compliance setting is enabled, account will be disabled after this date by nightly maintenance task.</description>
@@ -336,6 +337,11 @@
         <inputLength>23</inputLength>
         <isReadOnly>true</isReadOnly>
         <description>The date and time this user last logged in to the system.</description>
+      </column>
+      <column columnName="LastActivity">
+        <formatString>DateTime</formatString>
+        <isReadOnly>true</isReadOnly>
+        <description>The date and time for the most recent activity other than login, e.g., reactivation by an administrator.</description>
       </column>
       <column columnName="HasPassword">
         <description>True if this user has the ability to login via a hashed password stored in the database. If false, the user can login only via an external authentication mechanism that has been configured, such as an LDAP server, Active Directory, or a single-sign-on protocol like SAML or CAS. A site administrator can give a user the ability to create a database password by clicking the "Create Password" button on that user's details page.</description>
@@ -497,6 +503,7 @@
         <inputLength>23</inputLength>
       </column>
       <column columnName="System"/>
+      <column columnName="LastActivity"/>
     </columns>
     <tableTitle>Active Users</tableTitle>
     <pkColumnName>UserId</pkColumnName>

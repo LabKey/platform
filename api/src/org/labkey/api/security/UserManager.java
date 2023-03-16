@@ -942,9 +942,16 @@ public class UserManager
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
 
-            // update the modified bit on the users table
             Map<String, Object> map = new HashMap<>();
-            map.put("Modified", new Timestamp(System.currentTimeMillis()));
+
+            // Treat re-activation as an activity for the purpose of inactivity tracking, Issue 47471
+            if (active)
+            {
+                Timestamp now = new Timestamp(System.currentTimeMillis());
+                map.put("LastActivity", now);
+            }
+
+            // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
             removeRecentUser(userToAdjust);

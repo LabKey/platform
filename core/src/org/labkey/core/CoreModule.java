@@ -1121,7 +1121,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         SystemMaintenance.setTimer();
         ThumbnailServiceImpl.startThread();
-        _warningProvider.startSchemaCheck();
+        // Launch in the background, but delay by 10 seconds to reduce impact on other startup tasks
+        _warningProvider.startSchemaCheck(10);
 
         // Start up the default Quartz scheduler, used in many places
         try
@@ -1475,5 +1476,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         return null;
+    }
+
+    public void rerunSchemaCheck()
+    {
+        // Queue a job without delay. This avoids executing multiple overlapping schema checks. Not bothering with a
+        // more surgical approach since this variant is likely being called during development.
+        _warningProvider.startSchemaCheck(0);
     }
 }
