@@ -604,14 +604,15 @@ public class NameGenerator
             return Stream.empty();
 
         Stream<String> values;
-        if (value instanceof String)
+        if (value instanceof String || value instanceof Number)
         {
-            if (StringUtils.isEmpty(((String) value).trim()))
+            String valueStr = value instanceof String ? (String) value : value.toString();
+            if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader((String) value))
+            try (TabLoader tabLoader = new TabLoader(valueStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
@@ -622,7 +623,7 @@ public class NameGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
                 }
             }
         }
