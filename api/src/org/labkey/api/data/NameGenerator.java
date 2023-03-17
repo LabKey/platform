@@ -472,28 +472,41 @@ public class NameGenerator
             errorMessages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
         else
         {
-
             int commaIndex = nameExpression.indexOf(",", start);
-            int secondCommaIndex = nameExpression.indexOf(",", commaIndex + 1);
+            int firstQuoteIndex = nameExpression.indexOf("'", commaIndex + 1);
+            int secondQuoteIndex = firstQuoteIndex == -1 ? -1 : nameExpression.indexOf("'", firstQuoteIndex + 1);
+            int secondCommaIndex = -1;
+            if (secondQuoteIndex > -1)
+                secondCommaIndex = nameExpression.indexOf(",", secondQuoteIndex + 1);
+            else if (commaIndex > -1)
+                secondCommaIndex = nameExpression.indexOf(",", commaIndex + 1);
             String startVal = null;
             String format = null;
             String thirdParam = null;
-            if (secondCommaIndex > -1)
+            try
             {
-                // 3 arguments
-                startVal = nameExpression.substring(startParen+1, commaIndex).trim();
-                format = nameExpression.substring(commaIndex + 1, secondCommaIndex).trim();
-                thirdParam = nameExpression.substring(secondCommaIndex + 1, endParen).trim();
+                if (secondCommaIndex > -1 && secondCommaIndex < endParen)
+                {
+                    // 3 arguments
+                    startVal = nameExpression.substring(startParen + 1, commaIndex).trim();
+                    if (firstQuoteIndex > -1 && secondQuoteIndex > firstQuoteIndex)
+                        format = nameExpression.substring(firstQuoteIndex, secondQuoteIndex + 1).trim();
+                    thirdParam = nameExpression.substring(secondCommaIndex + 1, endParen).trim();
+                }
+                else if (commaIndex > startParen && commaIndex < endParen)
+                {
+                    // two arguments
+                    startVal = nameExpression.substring(startParen + 1, commaIndex).trim();
+                    format = nameExpression.substring(commaIndex + 1, endParen).trim();
+                }
+                else
+                {
+                    startVal = nameExpression.substring(startParen + 1, endParen).trim();
+                }
             }
-            else if (commaIndex > startParen && commaIndex < endParen)
+            catch (StringIndexOutOfBoundsException e)
             {
-                // two arguments
-                startVal = nameExpression.substring(startParen+1, commaIndex).trim();
-                format = nameExpression.substring(commaIndex + 1, endParen).trim();
-            }
-            else
-            {
-                startVal = nameExpression.substring(startParen+1, endParen).trim();
+                errorMessages.add(String.format("Invalid 'withCounter' expression starting at position %d", index));
             }
             // find the value of the first argument, if any, and validate it is an integer
             if (!StringUtils.isEmpty(startVal))
@@ -2515,6 +2528,32 @@ public class NameGenerator
         }
 
         @Test
+        public void testWithCounterAndCommas()
+        {
+            Pair<List<String>, List<String>> messages;
+            String testPattern = "${${AliquotedFrom},:withCounter(100)}";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma before withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma before withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE_:withCounter(200)}_${randomId}-${genId:number('000,000')}_${now:date('yy-MM-dd')}_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma after withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma after withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE_:withCounter(200,'000,000')}_${randomId}-${genId:number('000,000')}_${now:date('yy-MM-dd')}_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma after withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma after withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE:withCounter(200,'000,000',NoGap)},${randomId},${AliquotedFrom},_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with three-argument withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with three-argument withCounter", messages.second.isEmpty());
+        }
+
+
+        @Test
         public void testWithCounter()
         {
 
@@ -2814,6 +2853,9 @@ public class NameGenerator
             verifyPreview("${${AliquotedFrom}-:withCounter(123)}", "Sample112-123");
             verifyPreview("${${AliquotedFrom}-:withCounter(11, '000')}", "Sample112-011");
             verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', NoGap)}", "Sample112-011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000', NoGap)}", "Sample112,011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000,000', NoGap)}", "Sample112,011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000,000', NoGap)}_Some,String", "Sample112,011_Some,String");
 
             // with table columns
             GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");

@@ -72,6 +72,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private String _displayName = null;
     protected int[] _groups = null;
     private Date _lastLogin = null;
+    private Date _lastActivity = null;
     private boolean _active = false;
     private Date _expirationDate = null;
     private String _phone;
@@ -442,6 +443,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setLastLogin(Date lastLogin)
     {
         _lastLogin = lastLogin;
+    }
+
+    public Date getLastActivity()
+    {
+        return _lastActivity;
+    }
+
+    public void setLastActivity(Date lastActivity)
+    {
+        _lastActivity = lastActivity;
     }
 
     public void setImpersonationContext(ImpersonationContext impersonationContext)

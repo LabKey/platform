@@ -26,6 +26,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.template.WarningService;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
@@ -33,13 +34,10 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Manages caching for module XML-based schema-scoped metadata.
- * User: adam
- * Date: 5/10/2014
  */
 public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<String, TablesDocument>>
 {
@@ -68,7 +66,7 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         return null == schemas ? Collections.emptyList() : schemas.list().stream()
             .map(Resource::getName)
             .filter(SchemaXmlCacheHandler::isSchemaXmlFile)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
     }
 
     private static boolean isSchemaXmlFile(String filename)
@@ -171,6 +169,8 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
             // Invalidate all schemas with a type that uses XML metadata
             for (DbSchemaType type : DbSchemaType.getXmlMetaDataTypes())
                 scope.invalidateSchema(schemaName, type);
+
+            WarningService.get().rerunSchemaCheck();
         }
     };
 }
