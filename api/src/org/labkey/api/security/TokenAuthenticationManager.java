@@ -42,13 +42,6 @@ public class TokenAuthenticationManager extends SessionKeyManager<User>
     }
 
     @Override
-    @Nullable
-    protected String getKeyPrefix()
-    {
-        return null;
-    }
-
-    @Override
     protected User validateContext(User user, String key)
     {
         return user;

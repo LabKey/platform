@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -205,6 +206,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+        AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter expression",
+                "When withCounter is used in name expression, make sure the count increments one-by-one and does not jump.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 

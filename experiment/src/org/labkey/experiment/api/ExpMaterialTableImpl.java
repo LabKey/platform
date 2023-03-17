@@ -759,68 +759,67 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
-        if (st == null || !st.isMedia())
+
+        addColumn(Column.AliquotCount);
+        addColumn(Column.AliquotVolume);
+        addColumn(Column.AliquotUnit);
+        addColumn(Column.RecomputeRollup);
+
+        addColumn(Column.StoredAmount);
+        defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+
+        addColumn(Column.Units);
+        defaultCols.add(FieldKey.fromParts(Column.Units));
+
+        var rawAmountColumn = addColumn(Column.RawAmount);
+        rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
-            addColumn(Column.AliquotCount);
-            addColumn(Column.AliquotVolume);
-            addColumn(Column.AliquotUnit);
-            addColumn(Column.RecomputeRollup);
-
-            addColumn(Column.StoredAmount);
-            defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
-
-            addColumn(Column.Units);
-            defaultCols.add(FieldKey.fromParts(Column.Units));
-
-            var rawAmountColumn = addColumn(Column.RawAmount);
-            rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                return new DataColumn(colInfo)
                 {
-                    return new DataColumn(colInfo)
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
-                        @Override
-                        public void addQueryFieldKeys(Set<FieldKey> keys)
-                        {
-                            super.addQueryFieldKeys(keys);
-                            keys.add(FieldKey.fromParts(Column.StoredAmount));
+                        super.addQueryFieldKeys(keys);
+                        keys.add(FieldKey.fromParts(Column.StoredAmount));
 
-                        }
-                    };
-                }
-            });
-            rawAmountColumn.setHidden(true);
-            rawAmountColumn.setShownInDetailsView(false);
-            rawAmountColumn.setShownInInsertView(false);
-            rawAmountColumn.setShownInUpdateView(false);
+                    }
+                };
+            }
+        });
+        rawAmountColumn.setHidden(true);
+        rawAmountColumn.setShownInDetailsView(false);
+        rawAmountColumn.setShownInInsertView(false);
+        rawAmountColumn.setShownInUpdateView(false);
 
-            var rawUnitsColumn = addColumn(Column.RawUnits);
-            rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        var rawUnitsColumn = addColumn(Column.RawUnits);
+        rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                return new DataColumn(colInfo)
                 {
-                    return new DataColumn(colInfo)
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
-                        @Override
-                        public void addQueryFieldKeys(Set<FieldKey> keys)
-                        {
-                            super.addQueryFieldKeys(keys);
-                            keys.add(FieldKey.fromParts(Column.Units));
+                        super.addQueryFieldKeys(keys);
+                        keys.add(FieldKey.fromParts(Column.Units));
 
-                        }
-                    };
-                }
-            });
-            rawUnitsColumn.setHidden(true);
-            rawUnitsColumn.setShownInDetailsView(false);
-            rawUnitsColumn.setShownInInsertView(false);
-            rawUnitsColumn.setShownInUpdateView(false);
+                    }
+                };
+            }
+        });
+        rawUnitsColumn.setHidden(true);
+        rawUnitsColumn.setShownInDetailsView(false);
+        rawUnitsColumn.setShownInInsertView(false);
+        rawUnitsColumn.setShownInUpdateView(false);
 
-            if (InventoryService.get() != null)
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
-        }
+        if (InventoryService.get() != null && (st == null || !st.isMedia()))
+            defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+
 
         addVocabularyDomains();
         addColumn(Column.Properties);

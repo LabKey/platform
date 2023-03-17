@@ -116,7 +116,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             {
                 UserSchema schema = getUserSchema();
                 ExpSchema expSchema = new ExpSchema(schema.getUser(), schema.getContainer());
-                return expSchema.getTable(lookupTable);
+                return expSchema.getTable(lookupTable, ExpRunItemTableImpl.this.getLookupContainerFilter());
             }
         };
         fk.addJoin(FieldKey.fromParts(protocolAppColumn.name()), ExpMaterialInputTable.Column.TargetProtocolApplication.name(), false);
