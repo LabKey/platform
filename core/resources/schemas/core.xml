@@ -341,6 +341,7 @@
       <column columnName="LastActivity">
         <formatString>DateTime</formatString>
         <isReadOnly>true</isReadOnly>
+        <isUserEditable>false</isUserEditable>
         <description>The date and time for the most recent activity other than login, e.g., reactivation by an administrator.</description>
       </column>
       <column columnName="HasPassword">
