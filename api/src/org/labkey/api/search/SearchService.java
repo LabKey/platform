@@ -17,7 +17,6 @@ package org.labkey.api.search;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,8 +40,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.xml.sax.ContentHandler;
@@ -85,6 +86,13 @@ public interface SearchService
     default long getFileSizeLimit()
     {
         return DEFAULT_FILE_SIZE_LIMIT * (1024*1024);
+    }
+
+    // If "_docid" parameter is present, strip it and redirect as a convenience in the "result was found" case
+    static void stripDocIdParameterAndRedirect(@NotNull ActionURL url)
+    {
+        if (null != url.getParameter("_docid"))
+            throw new RedirectException(url.clone().deleteParameter("_docid"));
     }
 
     SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
