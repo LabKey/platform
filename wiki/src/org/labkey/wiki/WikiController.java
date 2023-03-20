@@ -58,7 +58,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.wiki.DiffMatchPatch.Diff;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -85,6 +84,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.wiki.DiffMatchPatch.Diff;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -1152,8 +1152,7 @@ public class WikiController extends SpringActionController
             else
             {
                 // Result was found; strip the "_docid" parameter and redirect as a convenience
-                if (null != getViewContext().getActionURL().getParameter("_docid"))
-                    throw new RedirectException(getViewContext().cloneActionURL().deleteParameter("_docid"));
+                SearchService.stripDocIdParameterAndRedirect(getViewContext().getActionURL());
 
                 int version = form.getVersion();
 

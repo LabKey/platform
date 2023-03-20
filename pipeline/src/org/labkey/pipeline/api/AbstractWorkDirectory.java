@@ -245,7 +245,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             baseNames = _support.getSplitBaseNames();
         else
         {
-            // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
+            // CONSIDER: More flexible input/output file naming -- perhaps a string expression with protocol, task, job-id available.
             // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
             String baseName = _support.getBaseName();
             if (tp.isUseProtocolNameAsBaseName())
