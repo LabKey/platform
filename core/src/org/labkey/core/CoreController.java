@@ -442,7 +442,10 @@ public class CoreController extends SpringActionController
                 {
                     Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
                     SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                    try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                    var select = QueryService.get().getSelectBuilder(table)
+                            .columns(col)
+                            .filter(filter);
+                    try (Results results = select.select())
                     {
                         if (results.getSize() != 1 || !results.next())
                             throw new NotFoundException("Row not found for primary key");

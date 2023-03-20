@@ -212,7 +212,11 @@ public class QueryHelper
         // TODO: add container filter
         //getViewContainerFilter();
 
-        return new ResultsImpl(qs.select(ti, cols, filter, sort), map);
+        var select = qs.getSelectBuilder(ti)
+                .columns(cols)
+                .filter(filter)
+                .sort(sort);
+        return select.select();
     }
 
     public Results select(SimpleFilter filter)
