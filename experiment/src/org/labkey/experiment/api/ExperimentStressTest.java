@@ -23,10 +23,13 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 
 public class ExperimentStressTest
 {
@@ -60,10 +63,18 @@ public class ExperimentStressTest
         return random.nextInt(max);
     }
 
-    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount)
+    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount, boolean aliquot)
             throws Exception
     {
-        LOG.info("** inserting " + rowCount + " samples " + (existingNames != null ? "with lineage" : "without lineage") + "...");
+        String noun = "samples";
+        if (existingNames != null)
+        {
+            if (aliquot)
+                noun = "aliquots";
+            else
+                noun = "derived samples";
+        }
+        LOG.info("** inserting " + rowCount + " " + noun + " " + "...");
         int existingNameCount = existingNames != null ? existingNames.size() : 0;
 
         // generate some data
@@ -81,7 +92,14 @@ public class ExperimentStressTest
             Map<String, Object> row = CaseInsensitiveHashMap.of("age", 100);
             if (parentName != null)
             {
-                row.put("MaterialInputs/" + sampleTypeName, parentName);
+                if (aliquot)
+                {
+                    row = CaseInsensitiveHashMap.of("AliquotedFrom", parentName);
+                }
+                else
+                {
+                    row.put("MaterialInputs/" + sampleTypeName, parentName);
+                }
             }
             samples.add(row);
         }
@@ -91,41 +109,75 @@ public class ExperimentStressTest
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
-            List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, null, null);
+            Map<Enum, Object> options = new HashMap<>();
+            options.put(SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction, true);
+            options.put(SampleTypeService.ConfigParameters.SkipAliquotRollup, true); // skip recompute since recompute of roots unavoidably cause deadlock on sql server
+            options.put(SkipBulkRemapCache, true);
+            List<Map<String,Object>> inserted = ssTable.getUpdateService().insertRows(user, c, samples, errors, options, null);
             if (errors.hasErrors())
                 throw errors;
 
             tx.commit();
-            LOG.info("** inserted " + inserted.size() + " samples");
+            LOG.info("** inserted " + inserted.size() + " " + noun);
 
             // get the inserted names
             return inserted.stream().map(row -> (String)row.get("name")).collect(Collectors.toList());
         }
     }
 
+    enum RunMode
+    {
+        nolineage("without lineage", 5, 5, false),
+        withlineage("with lineage", 5, 5, true),
+        withaliquot("with aliquots", 2, 2, true);
+
+        public final String _description;
+        public final int _thread;
+        public final int _race;
+        public final boolean _needParents;
+
+        RunMode(String description, int thread, int race, boolean needParents)
+        {
+            _description = description;
+            _thread = thread;
+            _race = race;
+            _needParents = needParents;
+        }
+    }
+
     @Test
     public void sampleTypeInsertsWithoutLineage() throws Throwable
     {
-        _sampleTypeInserts(false);
+        _sampleTypeInserts(RunMode.nolineage);
     }
 
     @Test
     public void sampleTypeInsertsWithLineage() throws Throwable
     {
-        _sampleTypeInserts(true);
+        _sampleTypeInserts(RunMode.withlineage);
     }
 
-    private void _sampleTypeInserts(boolean withLineage) throws Throwable
+    @Test
+    public void sampleTypeInsertsWithAliquot() throws Throwable
     {
-        // Issue 47033: Deadlock in InventoryManager.recomputeSampleTypeRollup on SQL Server
+        _sampleTypeInserts(RunMode.withaliquot);
+    }
+
+    private void _sampleTypeInserts(RunMode mode) throws Throwable
+    {
+        /*
+         * Deadlock on recompute introduced by Issue 47033 has been fixed by Issue 47246.
+         * The tests are currently passing when run locally using sql server.
+         * However, there are more deadlocks with sql server when run on TC, now on ExperimentRun table.
+         */
         Assume.assumeFalse("Issue 47033: Test does not yet pass on SQL Server. Skipping.",
                 CoreSchema.getInstance().getSqlDialect().isSqlServer());
 
-        LOG.info("** starting sample type insert test " + (withLineage ? "with lineage" : "without lineage"));
+        LOG.info("** starting sample type insert test " + mode._description);
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
-        final String sampleTypeName = "MySamples";
+        final String sampleTypeName = "MySamples" + mode.name();
 
         // create a target sampletype
         List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -135,23 +187,23 @@ public class ExperimentStressTest
 
         // seed samples
         final int rowsToInsert = 50;
-        final List<String> firstInsertedNames = insertSamples(user, c, sampleTypeName, null, rowsToInsert);
+        final List<String> firstInsertedNames = insertSamples(user, c, sampleTypeName, null, rowsToInsert, false);
 
         // if we are inserting without lineage, just ignore the parent names
-        final List<String> parentNames = withLineage ? firstInsertedNames : null;
+        final List<String> parentNames = mode._needParents ? firstInsertedNames : null;
 
         // first level - ensures we have an objectId for the SampleType when inserting with lineage
-        insertSamples(user, c, sampleTypeName, parentNames, 5);
+        insertSamples(user, c, sampleTypeName, parentNames, 5, false);
 
-        final int threads = 5;
-        final int races = 5;
+        final int threads = mode._thread;
+        final int races = mode._race;
         LOG.info("** starting racy inserts (threads=" + threads + ", races=" + races + ", rows=" + rowsToInsert + ")");
         JunitUtil.createRaces(() -> {
 
             try
             {
                 Thread.sleep(randomInt(10) * 200);
-                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert);
+                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode == RunMode.withaliquot);
             }
             catch (Exception e)
             {

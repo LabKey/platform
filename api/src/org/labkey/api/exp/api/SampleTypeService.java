@@ -47,7 +47,9 @@ public interface SampleTypeService
     String MODULE_NAME = "Experiment";
 
     enum ConfigParameters {
-        DeferAliquotRuns // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately
+        DeferAliquotRuns, // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately,
+        SkipMaxSampleCounterFunction,
+        SkipAliquotRollup
     }
 
     enum SampleOperations {
@@ -219,17 +221,10 @@ public interface SampleTypeService
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
-    int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
-
-    long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
-
-    void setRecomputeFlagForSample(String sampleLSID);
-
-    void setRecomputeFlagForSampleLsids(Set<String> sampleLSIDs);
-
-    void setRecomputeFlagForSampleNames(ExpSampleType sampleType, Set<String> sampleNames);
-
-    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 
     int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit) throws IllegalStateException, SQLException;
+
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames) throws IllegalStateException, SQLException;
+
 }

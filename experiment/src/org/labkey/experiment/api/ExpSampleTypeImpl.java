@@ -396,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction/* used by ExperimentStressTest only to avoid deadlock */)
     {
         Map<String, String> importAliasMap = null;
         try
@@ -420,11 +420,17 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         TableInfo parentTable = QueryService.get().getUserSchema(user_, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
 
-        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, skipMaxSampleCounterFunction ? null : getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-", false, null, null, !skipMaxSampleCounterFunction);
     }
 
     @Nullable
     public NameGenerator getNameGenerator(Container dataContainer, @Nullable User user)
+    {
+        return getNameGenerator(dataContainer, user, false);
+    }
+
+    @Nullable
+    public NameGenerator getNameGenerator(Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction)
     {
         if (_nameGen == null)
         {
@@ -451,7 +457,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
 
             if (s != null)
-                _nameGen = createNameGenerator(s, dataContainer, user);
+                _nameGen = createNameGenerator(s, dataContainer, user, skipMaxSampleCounterFunction);
         }
 
         return _nameGen;
@@ -459,6 +465,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     @NotNull
     public NameGenerator getAliquotNameGenerator(Container dataContainer, @Nullable User user)
+    {
+        return getAliquotNameGenerator(dataContainer, user, false);
+    }
+
+    @NotNull
+    public NameGenerator getAliquotNameGenerator(Container dataContainer, @Nullable User user, boolean skipDuplicateCheck)
     {
         if (_aliquotNameGen == null)
         {
@@ -468,7 +480,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             else
                 s = ALIQUOT_NAME_EXPRESSION;
 
-            _aliquotNameGen = createNameGenerator(s, dataContainer, user);
+            _aliquotNameGen = createNameGenerator(s, dataContainer, user, skipDuplicateCheck);
         }
 
         return _aliquotNameGen;

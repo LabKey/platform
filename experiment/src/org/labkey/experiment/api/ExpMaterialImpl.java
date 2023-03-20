@@ -253,12 +253,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public boolean isRecomputeRollup()
-    {
-        return _object.isRecomputeRollup();
-    }
-
-    @Override
     public int getAliquotCount()
     {
         return _object.getAliquotCount();

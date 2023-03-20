@@ -455,12 +455,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
-            case RecomputeRollup ->
-            {
-                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
-                ret.setHidden(true);
-                return ret;
-            }
             case AliquotCount ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
@@ -763,7 +757,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
         addColumn(Column.AliquotUnit);
-        addColumn(Column.RecomputeRollup);
 
         addColumn(Column.StoredAmount);
         defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
@@ -999,8 +992,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             new FieldKey(null, "objectid"),
             new FieldKey(null, "RowId"),
             new FieldKey(null, "LSID"),                 // Flag
-            new FieldKey(null, "rootMaterialLsid"),     // IsAliquot
-            new FieldKey(null, "aliquotedfromlsid"),    // AliquotedFrom
             new FieldKey(null, "SourceApplicationId"),  // SourceProtocolApplication
             new FieldKey(null, "runId"),                // Run, RunApplication
             new FieldKey(null, "CpasType"));            // SampleSet
@@ -1012,6 +1003,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (null == selectedColumns)
             return ALL_COLUMNS;
         selectedColumns = new TreeSet<>(selectedColumns);
+        if (selectedColumns.contains(new FieldKey(null, "AliquotedFrom")))
+            selectedColumns.add(new FieldKey(null, "aliquotedfromlsid"));
+        if (selectedColumns.contains(new FieldKey(null, "IsAliquot")))
+            selectedColumns.add(new FieldKey(null, "rootMaterialLsid"));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());

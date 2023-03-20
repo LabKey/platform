@@ -231,7 +231,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache = new RemapCache(true);
+    private RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -245,7 +245,7 @@ public class NameGenerator
 
     private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName, boolean allBulkRemapCache)
     {
         _parentTable = parentTable;
         _container = container;
@@ -253,12 +253,18 @@ public class NameGenerator
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
         _currentDataTypeName = currentDataTypeName;
+        renameCache = new RemapCache(allBulkRemapCache);
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, currentDataTypeName, false);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
-        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -279,6 +285,7 @@ public class NameGenerator
         _validateSyntax = false;
         _domainProperties = null;
         _currentDataTypeName = null;
+        renameCache = new RemapCache(true);
         initialize(null);
     }
 
@@ -610,14 +617,15 @@ public class NameGenerator
             return Stream.empty();
 
         Stream<String> values;
-        if (value instanceof String)
+        if (value instanceof String || value instanceof Number)
         {
-            if (StringUtils.isEmpty(((String) value).trim()))
+            String valueStr = value instanceof String ? (String) value : value.toString();
+            if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader((String) value))
+            try (TabLoader tabLoader = new TabLoader(valueStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
@@ -628,7 +636,7 @@ public class NameGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
                 }
             }
         }
@@ -2225,9 +2233,6 @@ public class NameGenerator
                 {
                     long existingCount = -1;
 
-                    if (_getNonConflictCountFn != null)
-                        existingCount = _getNonConflictCountFn.apply(prefix);
-
                     if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
                     {
                         // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
@@ -2250,6 +2255,9 @@ public class NameGenerator
                     }
 
                     long currentSeqMax = counterSeq.current();
+
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
 
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
