@@ -317,13 +317,6 @@
               </properties>
           </displayColumnFactory>
       </column>
-      <column columnName="RecomputeRollup">
-          <isHidden>true</isHidden>
-          <isUserEditable>false</isUserEditable>
-          <shownInDetailsView>false</shownInDetailsView>
-          <shownInInsertView>false</shownInInsertView>
-          <shownInUpdateView>false</shownInUpdateView>
-      </column>
       <column columnName="AliquotCount">
           <columnTitle>Aliquots Created Count</columnTitle>
           <isUserEditable>false</isUserEditable>
@@ -1015,7 +1008,6 @@
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
-      <column columnName="RecomputeRollup"/>
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>

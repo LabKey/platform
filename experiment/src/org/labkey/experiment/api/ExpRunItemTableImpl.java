@@ -43,6 +43,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -116,7 +117,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             {
                 UserSchema schema = getUserSchema();
                 ExpSchema expSchema = new ExpSchema(schema.getUser(), schema.getContainer());
-                return expSchema.getTable(lookupTable);
+                return expSchema.getTable(lookupTable, ExpRunItemTableImpl.this.getLookupContainerFilter());
             }
         };
         fk.addJoin(FieldKey.fromParts(protocolAppColumn.name()), ExpMaterialInputTable.Column.TargetProtocolApplication.name(), false);
@@ -281,4 +282,28 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         super.setDefaultVisibleColumns(allowed);
     }
 
+    protected boolean containsProvisionedColumns(Set<FieldKey> selectedColumns, Set<String> provColumnNames)
+    {
+        // if no selectedColumns were requested, we have to assume that the provisioned columns are needed
+        if (null == selectedColumns || selectedColumns.isEmpty())
+            return true;
+
+        // add any filter fieldKeys to the selectedColumns before we check for hasProvisionedColumns
+        Set<FieldKey> selectAndFilterColumns = new HashSet<>(selectedColumns);
+        if (null != getFilter()) selectAndFilterColumns.addAll(getFilter().getAllFieldKeys());
+
+        boolean hasProvisionedCol = false;
+        for (FieldKey selectedColumn : selectAndFilterColumns)
+        {
+            String selectedColName = selectedColumn.getRootFieldKey().getName();
+            boolean provColNameFound = provColumnNames.contains(selectedColName);
+            if (provColNameFound)
+            {
+                hasProvisionedCol = true;
+                break;
+            }
+        }
+
+        return hasProvisionedCol;
+    }
 }

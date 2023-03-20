@@ -47,6 +47,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -94,7 +95,7 @@ import static org.labkey.api.util.SubstitutionFormat.yearlySampleCount;
 public class NameGenerator
 {
     /**
-     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string)}
+     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string, extraparam: enum)}
      * use regex to match the content inside the outer ${}
      * Examples:
      *  ${AliquotedFrom}-:withCounter   : parentSample-1
@@ -102,9 +103,13 @@ public class NameGenerator
      *  ${AliquotedFrom}.:withCounter() : parentSample.1
      *  ${AliquotedFrom}-:withCounter(1000) : parentSample-1000
      *  ${AliquotedFrom}-:withCounter(1, '000') : parentSample-001
+     *  ${AliquotedFrom}-:withCounter(1, '000', NoGap) : parentSample-001
      */
-    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
-    public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
+    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?,?\\s*'?([a-zA-Z]*)?'?\\)?";
+    public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX, Pattern.CASE_INSENSITIVE);
+    public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
+
+    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter";
 
     /**
      * Examples:
@@ -226,7 +231,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache = new RemapCache(true);
+    private RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -240,7 +245,7 @@ public class NameGenerator
 
     private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName, boolean allBulkRemapCache)
     {
         _parentTable = parentTable;
         _container = container;
@@ -248,12 +253,18 @@ public class NameGenerator
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
         _currentDataTypeName = currentDataTypeName;
+        renameCache = new RemapCache(allBulkRemapCache);
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, currentDataTypeName, false);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
-        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -274,6 +285,7 @@ public class NameGenerator
         _validateSyntax = false;
         _domainProperties = null;
         _currentDataTypeName = null;
+        renameCache = new RemapCache(true);
         initialize(null);
     }
 
@@ -333,6 +345,8 @@ public class NameGenerator
 
         if (properties != null)
             properties.forEach(field -> substitutionFields.add(field.getName()));
+
+        substitutionFields.remove(null);
 
         if (substitutionFields.isEmpty())
             return Collections.emptyList();
@@ -465,19 +479,41 @@ public class NameGenerator
             errorMessages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
         else
         {
-
             int commaIndex = nameExpression.indexOf(",", start);
+            int firstQuoteIndex = nameExpression.indexOf("'", commaIndex + 1);
+            int secondQuoteIndex = firstQuoteIndex == -1 ? -1 : nameExpression.indexOf("'", firstQuoteIndex + 1);
+            int secondCommaIndex = -1;
+            if (secondQuoteIndex > -1)
+                secondCommaIndex = nameExpression.indexOf(",", secondQuoteIndex + 1);
+            else if (commaIndex > -1)
+                secondCommaIndex = nameExpression.indexOf(",", commaIndex + 1);
             String startVal = null;
             String format = null;
-            if (commaIndex > startParen && commaIndex < endParen)
+            String thirdParam = null;
+            try
             {
-                // two arguments
-                startVal = nameExpression.substring(startParen+1, commaIndex).trim();
-                format = nameExpression.substring(commaIndex + 1, endParen).trim();
+                if (secondCommaIndex > -1 && secondCommaIndex < endParen)
+                {
+                    // 3 arguments
+                    startVal = nameExpression.substring(startParen + 1, commaIndex).trim();
+                    if (firstQuoteIndex > -1 && secondQuoteIndex > firstQuoteIndex)
+                        format = nameExpression.substring(firstQuoteIndex, secondQuoteIndex + 1).trim();
+                    thirdParam = nameExpression.substring(secondCommaIndex + 1, endParen).trim();
+                }
+                else if (commaIndex > startParen && commaIndex < endParen)
+                {
+                    // two arguments
+                    startVal = nameExpression.substring(startParen + 1, commaIndex).trim();
+                    format = nameExpression.substring(commaIndex + 1, endParen).trim();
+                }
+                else
+                {
+                    startVal = nameExpression.substring(startParen + 1, endParen).trim();
+                }
             }
-            else
+            catch (StringIndexOutOfBoundsException e)
             {
-                startVal = nameExpression.substring(startParen+1, endParen).trim();
+                errorMessages.add(String.format("Invalid 'withCounter' expression starting at position %d", index));
             }
             // find the value of the first argument, if any, and validate it is an integer
             if (!StringUtils.isEmpty(startVal))
@@ -495,6 +531,11 @@ public class NameGenerator
             {
                 if (format.charAt(0) != '\'' || format.charAt(format.length()-1) != '\'')
                     errorMessages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
+            }
+            if (!StringUtils.isEmpty(thirdParam))
+            {
+                if (!(WITH_COUNTER_NO_GAP_PARAM.equalsIgnoreCase(thirdParam)))
+                    errorMessages.add(String.format("Param at position %d for 'withCounter' substitution pattern is invalid. Supported params include: " + WITH_COUNTER_NO_GAP_PARAM + ".", commaIndex + 1));
             }
         }
         return new Pair<>(errorMessages, warningMessages);
@@ -576,14 +617,15 @@ public class NameGenerator
             return Stream.empty();
 
         Stream<String> values;
-        if (value instanceof String)
+        if (value instanceof String || value instanceof Number)
         {
-            if (StringUtils.isEmpty(((String) value).trim()))
+            String valueStr = value instanceof String ? (String) value : value.toString();
+            if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader((String) value))
+            try (TabLoader tabLoader = new TabLoader(valueStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
@@ -594,7 +636,7 @@ public class NameGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
                 }
             }
         }
@@ -1329,6 +1371,8 @@ public class NameGenerator
         private final Map<String, ArrayList<Object>> _ancestorCache;
         private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
+        private boolean _prefixCounterSequencesCleaned = false;
+
         private State(boolean incrementSampleCounts)
         {
             _incrementSampleCounts = incrementSampleCounts;
@@ -1344,19 +1388,31 @@ public class NameGenerator
             _prefixCounterSequences = new HashMap<>();
         }
 
-        @Override
-        public void close()
+        public Map<String, Map<String, DbSequence>> getPrefixCounterSequences()
         {
-            _rowNumber = -1;
+            return _prefixCounterSequences;
+        }
+
+        public void cleanUp()
+        {
+            if (_prefixCounterSequencesCleaned)
+                return;
 
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
                 for (DbSequence seq: counterSequences.values())
-                {
                     if (seq != null)
                         seq.sync();
-                }
             }
+
+            _prefixCounterSequencesCleaned = true;
+        }
+
+        @Override
+        public void close()
+        {
+            _rowNumber = -1;
+            cleanUp();
         }
 
         private String nextName(Map<String, Object> rowMap,
@@ -1947,6 +2003,8 @@ public class NameGenerator
                 int startInd = 0;
                 String startIndStr = counterMatcher.group(2);
                 String numberFormat = counterMatcher.group(3);
+                String param = counterMatcher.group(4);
+                boolean ensureNoGap = false;
                 if (!StringUtils.isEmpty(startIndStr))
                 {
                     try
@@ -1958,8 +2016,12 @@ public class NameGenerator
                         // ignore illegal startInd
                     }
                 }
+                if (!StringUtils.isEmpty(param))
+                {
+                    ensureNoGap = param.equalsIgnoreCase(WITH_COUNTER_NO_GAP_PARAM);
+                }
 
-                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn, _counterSeqPrefix);
+                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, ensureNoGap, _container, _getNonConflictCountFn, _counterSeqPrefix);
             }
 
             // if contains ancestor expression, substitute ..[MaterialInputs/type1] with ..[MaterialInputs::type1] before parsing, to avoid splitting at /.
@@ -2112,17 +2174,19 @@ public class NameGenerator
 
         private final Function<String, Long> _getNonConflictCountFn;
 
+        private final boolean _strictIncremental;
         private SubstitutionFormat _counterFormat;
 
         private final Container _container;
 
         private final String _counterSeqPrefix;
 
-        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
             _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
             _startIndex = startIndex;
+            _strictIncremental = strictIncremental;
             _container = container;
             _getNonConflictCountFn = getNonConflictCountFn;
             _counterSeqPrefix = StringUtils.isBlank(counterSeqPrefix) ? COUNTER_SEQ_PREFIX : counterSeqPrefix;
@@ -2167,33 +2231,50 @@ public class NameGenerator
                     return null;
 
                 DbSequence counterSeq = null;
-                if (counterSequences == null || !counterSequences.containsKey(prefix))
+                boolean noCache = counterSequences == null;
+                if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
                 {
                     long existingCount = -1;
 
-                    if (_getNonConflictCountFn != null)
-                        existingCount = _getNonConflictCountFn.apply(prefix);
-                    if (counterSequences == null) // no cache
-                        counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix);
+                    if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                    {
+                        // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
+                        counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
+//                        if (_strictIncremental)
+//                            counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
+//                        else
+//                        {
+//                            // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+//                            // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+//                            counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+//                        }
+                    }
                     else
                     {
-                        // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-                        // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
+                        if (noCache)
+                            counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
+                        else
+                            counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
                     }
 
                     long currentSeqMax = counterSeq.current();
 
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
+
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
 
-                    if (counterSequences != null)
+                    if (!noCache)
                         counterSequences.put(prefix, counterSeq);
                 }
                 else
                     counterSeq = counterSequences.get(prefix);
 
                 count = counterSeq.next();
+
+                if (noCache)
+                    counterSeq.sync();
             }
 
 
@@ -2458,6 +2539,32 @@ public class NameGenerator
         }
 
         @Test
+        public void testWithCounterAndCommas()
+        {
+            Pair<List<String>, List<String>> messages;
+            String testPattern = "${${AliquotedFrom},:withCounter(100)}";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma before withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma before withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE_:withCounter(200)}_${randomId}-${genId:number('000,000')}_${now:date('yy-MM-dd')}_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma after withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma after withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE_:withCounter(200,'000,000')}_${randomId}-${genId:number('000,000')}_${now:date('yy-MM-dd')}_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with comma after withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with comma after withCounter", messages.second.isEmpty());
+
+            testPattern = "${NE:withCounter(200,'000,000',NoGap)},${randomId},${AliquotedFrom},_Some,String";
+            messages = NameGenerator.validateWithCounterSyntax(testPattern, testPattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Should have no error messages with three-argument withCounter", messages.first.isEmpty());
+            assertTrue("Should have no warning messages with three-argument withCounter", messages.second.isEmpty());
+        }
+
+
+        @Test
         public void testWithCounter()
         {
 
@@ -2712,6 +2819,7 @@ public class NameGenerator
 
             validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
 
+            validateNameResult("${${AliquotedFrom}-:withCounter(100, '000', badparam)}", withErrors("Param at position 36 for 'withCounter' substitution pattern is invalid. Supported params include: NoGap."));
         }
 
         @Test
@@ -2755,6 +2863,10 @@ public class NameGenerator
             verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
             verifyPreview("${${AliquotedFrom}-:withCounter(123)}", "Sample112-123");
             verifyPreview("${${AliquotedFrom}-:withCounter(11, '000')}", "Sample112-011");
+            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000', NoGap)}", "Sample112-011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000', NoGap)}", "Sample112,011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000,000', NoGap)}", "Sample112,011");
+            verifyPreview("${${AliquotedFrom},:withCounter(11, '000,000', NoGap)}_Some,String", "Sample112,011_Some,String");
 
             // with table columns
             GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");

@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
@@ -64,7 +63,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -398,7 +396,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @NotNull
-    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user)
+    private NameGenerator createNameGenerator(@NotNull String expr, @Nullable Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction/* used by ExperimentStressTest only to avoid deadlock */)
     {
         Map<String, String> importAliasMap = null;
         try
@@ -422,11 +420,17 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         TableInfo parentTable = QueryService.get().getUserSchema(user_, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);
 
-        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, skipMaxSampleCounterFunction ? null : getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-", false, null, null, !skipMaxSampleCounterFunction);
     }
 
     @Nullable
     public NameGenerator getNameGenerator(Container dataContainer, @Nullable User user)
+    {
+        return getNameGenerator(dataContainer, user, false);
+    }
+
+    @Nullable
+    public NameGenerator getNameGenerator(Container dataContainer, @Nullable User user, boolean skipMaxSampleCounterFunction)
     {
         if (_nameGen == null)
         {
@@ -453,7 +457,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
 
             if (s != null)
-                _nameGen = createNameGenerator(s, dataContainer, user);
+                _nameGen = createNameGenerator(s, dataContainer, user, skipMaxSampleCounterFunction);
         }
 
         return _nameGen;
@@ -461,6 +465,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     @NotNull
     public NameGenerator getAliquotNameGenerator(Container dataContainer, @Nullable User user)
+    {
+        return getAliquotNameGenerator(dataContainer, user, false);
+    }
+
+    @NotNull
+    public NameGenerator getAliquotNameGenerator(Container dataContainer, @Nullable User user, boolean skipDuplicateCheck)
     {
         if (_aliquotNameGen == null)
         {
@@ -470,7 +480,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             else
                 s = ALIQUOT_NAME_EXPRESSION;
 
-            _aliquotNameGen = createNameGenerator(s, dataContainer, user);
+            _aliquotNameGen = createNameGenerator(s, dataContainer, user, skipDuplicateCheck);
         }
 
         return _aliquotNameGen;
@@ -513,6 +523,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
             nameGen.generateNames(state, maps, parentDatas, parentSamples, List.of(extraPropsFn), skipDuplicates);
+            state.cleanUp();
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -568,7 +579,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                     map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
                 return map;
             };
-            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            String generatedName = nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            state.cleanUp();
+            return generatedName;
         }
         catch (NameGenerator.NameGenerationException e)
         {

@@ -185,7 +185,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     }
                     // handle aliquot rollup calculation for all sample types
                     for (ExpSampleType sampleType : typesReader.getSampleTypes())
-                        SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer(), true);
+                        SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
                 }
                 else
                     log.info("No types XAR file to process.");

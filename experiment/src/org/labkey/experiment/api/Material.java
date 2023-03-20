@@ -41,7 +41,6 @@ public class Material extends RunItem
     private String units;
 
     // aliquot rollup columns
-    private Boolean recomputeRollup;
     private Integer aliquotCount;
     private Double aliquotVolume;
     private String aliquotUnit;
@@ -111,11 +110,6 @@ public class Material extends RunItem
         this.sampleState = sampleState;
     }
 
-    public Boolean isRecomputeRollup()
-    {
-        return recomputeRollup;
-    }
-
     public Integer getAliquotCount()
     {
         return aliquotCount;
@@ -129,11 +123,6 @@ public class Material extends RunItem
     public String getAliquotUnit()
     {
         return aliquotUnit;
-    }
-
-    public void setRecomputeRollup(Boolean recomputeRollup)
-    {
-        this.recomputeRollup = recomputeRollup;
     }
 
     public void setAliquotCount(Integer aliquotCount)
