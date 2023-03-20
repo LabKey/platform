@@ -68,7 +68,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
-        insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
+        insertPage.insertExpectingError(kvp, "Duplicates were found in the database or imported data");
     }
 
     //Ensure additional key column cannot be changed back to none from time if rows exist that differ only in time
@@ -85,7 +85,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
                 .clickManageDataset()
                 .clickViewData()
                 .insertDatasetRow();
-        insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
+        insertPage.insertExpectingError(kvp,"Duplicates were found in the database or imported data");
     }
 
     //Ensure that when time is set as an additional key it is possible to insert a row that differs only in the time portion of the timestamp
@@ -98,7 +98,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
-        insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
+        insertPage.insert(kvp);
     }
 
     //Ensure inserting an exact duplicate row is disallowed when time is specified as an additional key
@@ -182,7 +182,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         Map<String,String> kvp = new HashMap<>();
         kvp.put(SUBJECT_COL_NAME,"999320016");
         kvp.put("date", "02/01/05 10:15");
-        insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
+        insertPage.insert(kvp);
         dataPage = goToDataset(folder,dataset);
         propertiesPage = dataPage.clickManageDataset();
         datasetDesignerPage = propertiesPage.clickEditDefinition();

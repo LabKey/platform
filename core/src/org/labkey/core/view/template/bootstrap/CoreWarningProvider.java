@@ -71,12 +71,13 @@ public class CoreWarningProvider implements WarningProvider
         AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
     }
 
-    public void startSchemaCheck()
+    public void startSchemaCheck(int delaySeconds)
     {
         // Issue 46264 - proactively check all DB schemas against the schema XML
-        // Launch this in the background, but delay by 10 seconds to reduce impact on other startup tasks
-        JobRunner.getDefault().execute(TimeUnit.SECONDS.toMillis(10), () ->
+        JobRunner.getDefault().execute(TimeUnit.SECONDS.toMillis(delaySeconds), () ->
         {
+            _dbSchemaWarnings.clear();
+
             for (DbSchema schema : DbSchema.getAllSchemasToTest())
             {
                 var schemaWarnings = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
