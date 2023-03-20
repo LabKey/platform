@@ -465,7 +465,12 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
-        final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
+        // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
+        // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
+        // the join between the exp schema base table and the materialized table for the given table.
+        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.get(0).isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+
+        final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
         return resultSetFactory.handleResultSet((rs, conn) -> {
