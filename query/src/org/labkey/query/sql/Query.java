@@ -698,6 +698,32 @@ public class Query
     }
 
 
+    /**
+     * resolveTable() catches most cases of recursion.  However, some indirect forms of recursion will show themselves in getSql().
+     * This can happen if a Filter tries to compile a query. For instance, see the custom Filter code in {@link DatasetTableCustomizer.addRestrictedReadFilter()}
+     */
+    QueryRecursionReturn queryRecursionCheck(String message, @Nullable QNode node) throws QueryParseException
+    {
+        if (resolveDepth.get().incrementAndGet() > MAX_RESOLVE_DEPTH)
+        {
+            ArrayList<QueryException> list = new ArrayList<>();
+            parseError(list, message, node);
+            throw list.get(0);
+        }
+        return new QueryRecursionReturn();
+    }
+
+    /** We use explicit class to have a close() w/o "throws Exception" */
+    public static class QueryRecursionReturn implements AutoCloseable
+    {
+        @Override
+        public void close()
+        {
+            resolveDepth.get().decrementAndGet();
+        }
+    }
+
+
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
@@ -708,14 +734,8 @@ public class Query
         QueryDefinition[] queryDefOUT = new QueryDefinition[1];
         AbstractQueryRelation ret;
 
-        try
+        try (var recursion = queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", node))
         {
-            if (resolveDepth.get().incrementAndGet() > MAX_RESOLVE_DEPTH)
-            {
-                parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
-                return null;
-            }
-
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT, cfType);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
@@ -724,14 +744,10 @@ public class Query
                     _resolvedTables.add(SchemaKey.fromParts(tinfo.getSchema().getName(), tinfo.getName()));
             }
         }
-        catch (QueryNotFoundException qnfe)
+        catch (QueryParseException qpe)
         {
-            _parseErrors.add(qnfe);
+            _parseErrors.add(qpe);
             return null;
-        }
-        finally
-        {
-            resolveDepth.get().decrementAndGet();
         }
 
         QueryDefinition def = queryDefOUT[0];
