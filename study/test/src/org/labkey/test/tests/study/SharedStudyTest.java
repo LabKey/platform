@@ -471,7 +471,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementNotPresent(Locator.linkWithText(overlappingParticipant));
 
         new DataRegionTable("Dataset", getDriver()).clickInsertNewRow();
-        new DatasetInsertPage(this.getDriver(), SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", overlappingParticipant));
+        new DatasetInsertPage(this.getDriver(), SHARED_DEMOGRAPHICS).insertExpectingError(Maps.of("PandaId", overlappingParticipant));
 
         assertElementPresent(Locators.labkeyError.containing("Duplicate: Panda = " + overlappingParticipant));
     }

@@ -45,4 +45,5 @@ public interface WarningService
     void forEachProvider(Consumer<WarningProvider> consumer);
     Warnings getWarnings(ViewContext context);
     HtmlString getWarningsHtml(Warnings warnings, ViewContext context);
+    void rerunSchemaCheck(); // Doesn't really fit on this service, but there's no better existing service
 }
