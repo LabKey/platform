@@ -233,12 +233,12 @@ public interface QueryService
      * @param sql The LabKey query string.
      * @return a TableSelector
      *
-     * superseded by getSelectBuilder()
+     * superseded by {@link QueryService#getSelectBuilder}
      */
     @NotNull
     TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
 
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
 	default ResultSet select(QuerySchema schema, String sql)
     {
         return select(schema, sql, null, false, true);
@@ -247,21 +247,21 @@ public interface QueryService
     /* strictColumnList requires that query not add any addition columns to the query result */
     Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
     Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
 
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
     default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return getSelectBuilder(table).columns(columns).filter(filter).sort(sort).select();
     }
 
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
     Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
 
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
-    /** superseded by getSelectBuilder() */
+    /** superseded by {@link QueryService#getSelectBuilder}  */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
 
     SelectBuilder getSelectBuilder(TableInfo table);
