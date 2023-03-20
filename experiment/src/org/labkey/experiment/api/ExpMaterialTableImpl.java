@@ -1024,12 +1024,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
-
-        // add any filter fieldKeys to the selectedCount before we check for hasProvisionedColumns
-        Set<FieldKey> selectAndFilterColumns = new HashSet<>();
-        if (null != selectedColumns) selectAndFilterColumns.addAll(selectedColumns);
-        if (null != getFilter()) selectAndFilterColumns.addAll(getFilter().getAllFieldKeys());
-        boolean hasProvisionedColumns = containsProvisionedColumns(selectAndFilterColumns, provisionedCols);
+        boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());

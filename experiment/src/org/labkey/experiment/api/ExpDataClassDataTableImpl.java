@@ -677,11 +677,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         pCols.remove("lsid");
         pCols.remove("classid");
 
-        // add any filter fieldKeys to the selectedCount before we check for hasProvisionedColumns
-        Set<FieldKey> selectAndFilterColumns = new HashSet<>();
-        if (null != selectedColumns) selectAndFilterColumns.addAll(selectedColumns);
-        if (null != getFilter()) selectAndFilterColumns.addAll(getFilter().getAllFieldKeys());
-        boolean hasProvisionedColumns = containsProvisionedColumns(selectAndFilterColumns, pCols);
+        boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM\n");
