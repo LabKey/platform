@@ -22,12 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -132,10 +132,9 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
         if (null != p)
         {
-            try (InputStream str = p.getInputStream())
+            try (InputStream str = p.getInputStream(); BufferedReader in = Readers.getReader(str))
             {
                 Pattern pattern = Pattern.compile(".*(\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}).*");
-                BufferedReader in = new BufferedReader(new InputStreamReader(str));
                 String line;
                 while (null != (line = in.readLine()))
                 {

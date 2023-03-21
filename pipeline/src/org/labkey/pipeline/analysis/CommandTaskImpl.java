@@ -222,7 +222,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
                 else
                 {
-                    // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
+                    // CONSIDER: More flexible input/output file naming -- perhaps a string expression with protocol, task, job-id available.
                     // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
                     String baseName = support.getBaseName();
                     if (tp.isUseProtocolNameAsBaseName())
@@ -606,7 +606,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return replacements;
     }
 
-    // CONDISER: Use PipelineJobService.get().getPathMapper() when translating paths
+    // CONSIDER: Use PipelineJobService.get().getPathMapper() when translating paths
     protected String rewritePath(String path)
     {
         return path;

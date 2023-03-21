@@ -102,10 +102,6 @@ import java.util.stream.Collectors;
  *
  * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically by JDK 7's try {}
  * resource handling.
- *
- * User: migra
- * Date: Nov 16, 2005
- * Time: 10:20:54 AM
  */
 public class DbScope
 {
@@ -121,7 +117,7 @@ public class DbScope
     private static volatile DbScope _labkeyScope = null;
 
     private final DbScopeLoader _dbScopeLoader;
-    private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
+    private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS data sources
     private final String _databaseProductName;
     private final String _databaseProductVersion;
     private final String _driverName;
@@ -1181,9 +1177,13 @@ public class DbScope
 
     private static List<String> getSchemaNames(Module module, boolean useCache)
     {
-        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+        return
+        (
+            useCache ?
+                SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream() :
+                SchemaXmlCacheHandler.getSchemaFilenames(module)
+        )
             .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .sorted()
             .toList();
     }
 

@@ -157,7 +157,8 @@ public class DatasetDataWriter implements InternalStudyWriter
 
             if (ctx.isDataspaceProject())
                 DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
-            ResultsFactory factory = ()->QueryService.get().select(ti, columns, filter, sort, null, false);
+            var select = QueryService.get().getSelectBuilder(ti).columns(columns).filter(filter).sort(sort);
+            ResultsFactory factory = ()->select.select(Map.of(),false);
             writeResultsToTSV(factory, vf, def.getFileName());
         }
     }

@@ -7615,23 +7615,17 @@ public class ExperimentController extends SpringActionController
                         .getSampleTypes(container, user, true);
 
                 StringBuilder builder = new StringBuilder();
-                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th><th>#Cleaned</th><th>#Needs Further Recalc</th></tr>");
+                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
 
                 SampleTypeService service = SampleTypeService.get();
                 for (ExpSampleType sampleType : sampleTypes)
                 {
                     int updatedCount;
-                    updatedCount = service.recomputeSampleTypeRollup(sampleType, container, true);
-                    int cleanedCount = SampleTypeServiceImpl.get().resetRecomputeFlagForNonParents(sampleType, container);
-                    long remainingCount = SampleTypeServiceImpl.get().getRecomputeRollupRowCount(sampleType, container);
+                    updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
                     builder.append("<tr><td>")
                             .append(sampleType.getName())
                             .append("</td><td>")
                             .append(updatedCount)
-                            .append("</td><td>")
-                            .append(cleanedCount)
-                            .append("</td><td>")
-                            .append(remainingCount)
                             .append("</td></tr>");
                 }
 

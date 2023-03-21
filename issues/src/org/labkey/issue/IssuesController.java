@@ -88,6 +88,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -442,6 +443,9 @@ public class IssuesController extends SpringActionController
             {
                 throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
             }
+
+            // Issue was found; strip _docId parameter and redirect
+            SearchService.stripDocIdParameterAndRedirect(getViewContext().getActionURL());
 
             IssuePage page = new IssuePage(getContainer(), getUser());
             page.setMode(DataRegion.MODE_DETAILS);

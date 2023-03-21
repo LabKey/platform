@@ -39,6 +39,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.data.DataRegion.MessagePart.filter;
+
 /**
  * User: matthew
  * Date: 5/11/13
@@ -161,7 +163,8 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         try
         {
-            ResultSet rs = qs.select(t, selectCols, _filter, null, _parameters, false);
+            var select = qs.getSelectBuilder(t).columns(selectCols).filter(_filter);
+            ResultSet rs = select.select(_parameters, false);
             return new ResultSetDataIterator(rs, context);
         }
         catch (QueryParseException x)

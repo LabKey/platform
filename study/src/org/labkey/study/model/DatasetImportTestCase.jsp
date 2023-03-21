@@ -892,7 +892,8 @@ private void  _testDatasetTransformExport(Study study) throws Throwable
     DatasetDataWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
     DatasetDataWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
 
-    try (ResultSet rs = QueryService.get().select(datasetTI, datasetCols, null, null))
+    var select = QueryService.get().getSelectBuilder(datasetTI).columns(datasetCols);
+    try (ResultSet rs = select.select())
     {
         // verify values from the transformed dataset
         assertTrue(rs.next());

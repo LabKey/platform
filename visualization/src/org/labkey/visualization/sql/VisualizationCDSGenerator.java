@@ -470,7 +470,8 @@ public class VisualizationCDSGenerator
         if (_log.isDebugEnabled())
         {
             _log.debug("----------------------\nunion sql\n\n" + fullSQL.toString() + "\n\n");
-            try (ResultSet rs = QueryService.get().select(schema.getSchema("study"), fullSQL.toString()))
+            var select = QueryService.get().getSelectBuilder(schema.getSchema("study"), fullSQL.toString());
+            try (ResultSet rs = select.select())
             {
                 ResultSetUtil.logData(rs, _log);
                 _log.debug("\n\n");

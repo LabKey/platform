@@ -284,7 +284,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         _log.debug("ModuleLoader init");
 
-
         // CONSIDER: could optimize more by not
 
         setJavaVersion();
@@ -315,9 +314,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     // Proxy to teleport ExplodedModuleService from outer ClassLoader to inner
-    static class _Proxy implements InvocationHandler
+    private static class _Proxy implements InvocationHandler
     {
-        private final Object delegate;
+        private final Object _delegate;
         private final Map<String,Method> _methods = new HashMap<>();
 
         public static ExplodedModuleService newInstance(Object obj)
@@ -334,24 +333,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         private _Proxy(Object obj)
         {
             Set<String> methodNames = Set.of("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory", "getDeletedModulesDirectory", "newModule");
-            this.delegate = obj;
+            _delegate = obj;
             Arrays.stream(obj.getClass().getMethods()).forEach(method -> {
                 if (methodNames.contains(method.getName()))
-                        _methods.put(method.getName(), method);
+                    _methods.put(method.getName(), method);
             });
             methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment.  Could not find method: " + name); });
         }
 
         @Override
-        public Object invoke(Object proxy, Method m, Object[] args)
-                throws Throwable
+        public Object invoke(Object proxy, Method m, Object[] args) throws Throwable
         {
             try
             {
                 Method delegate_method = _methods.get(m.getName());
                 if (null == delegate_method)
                     throw new IllegalArgumentException(m.getName());
-                return delegate_method.invoke(delegate, args);
+                return delegate_method.invoke(_delegate, args);
             }
             catch (InvocationTargetException e)
             {
@@ -526,7 +524,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            // Refuse to upgrade if any LabKey-managed module has a schema version that's too old. Issue 46922.
+            // Refuse to start up if any LabKey-managed module has a schema version that's too old. Issue 46922.
 
             // Modules that are designated as "managed" and reside in LabKey-managed repositories
             var labkeyModules = _modules.stream()
@@ -703,8 +701,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .ifPresent(module -> {
                 String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
                     AppProps.getInstance().getProjectRoot() == null
-                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
-                        : " please update your enlistment." // Likely dev environment
+                        ? "please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : "please update your enlistment." // Likely dev environment
                 );
 
                 throw new IllegalStateException(msg);

@@ -659,17 +659,25 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        return getFromSQL(alias, null);
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    {
         checkReadBeforeExecute();
         TableInfo provisioned = _dataClassTableInfo.get();
+        SqlDialect dialect = _rootTable.getSqlDialect();
 
-        // all columns from exp.data except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
-        dataCols.remove("lsid");
 
-        // all columns from dataclass property table except name and classid
+        // all columns from dataclass property table except name, lsid, and classid
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
+        pCols.remove("lsid");
         pCols.remove("classid");
+
+        boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM\n");
@@ -682,17 +690,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             comma = ", ";
         }
 
-        SqlDialect dialect = _rootTable.getSqlDialect();
-        for (String pCol : pCols)
+        if (hasProvisionedColumns)
         {
-            sql.append(comma);
-            sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
+            for (String pCol : pCols)
+            {
+                sql.append(comma);
+                sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
+            }
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "d");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid) ");
+        if (hasProvisionedColumns)
+            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
         String subAlias = alias + "_dc_sub";
-        sql.append(subAlias);
+        sql.append(") ").append(subAlias);
         sql.append("\n");
 
         // WHERE

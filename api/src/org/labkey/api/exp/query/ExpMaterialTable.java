@@ -56,7 +56,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Outputs,
         Properties,
         SampleState,
-        RecomputeRollup,
         AliquotCount,
         AliquotVolume,
         MaterialExpDate,

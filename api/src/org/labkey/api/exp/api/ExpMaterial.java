@@ -66,7 +66,6 @@ public interface ExpMaterial extends ExpRunItem
     void setUnits(String units);
 
     // rollup - begin
-    boolean isRecomputeRollup();
     int getAliquotCount();
     double getAliquotVolume();
     String getAliquotUnit();

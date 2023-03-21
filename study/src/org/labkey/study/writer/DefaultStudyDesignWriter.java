@@ -70,7 +70,8 @@ public abstract class DefaultStudyDesignWriter
         // Write each table as a separate .tsv
         if (table != null)
         {
-            ResultsFactory factory = ()->QueryService.get().select(table, columns, null, null, null, false);
+            var select = QueryService.get().getSelectBuilder(table).columns(columns);
+            ResultsFactory factory = ()->select.select(Map.of(),false);
             writeResultsToTSV(factory, vf, getFileName(table));
         }
     }
