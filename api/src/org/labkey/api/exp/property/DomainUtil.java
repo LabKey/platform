@@ -32,6 +32,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -45,6 +46,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -55,9 +57,12 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -70,7 +75,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
-import org.labkey.api.exp.api.SampleTypeDomainKind;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -172,6 +176,35 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
+    {
+        Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
+
+        if (null == lookupContainer)
+            return false;
+
+        // Saving default schema for use again if there are multiple lookups from the same schema
+        DefaultSchema defaultSchema = defaultSchemaMap.get(lookupContainer);
+        if (null == defaultSchema)
+        {
+            defaultSchema = DefaultSchema.get(user, lookupContainer);
+            defaultSchemaMap.put(lookupContainer, defaultSchema);
+        }
+
+        QuerySchema schema = DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+
+        if (null == schema)
+            return false;
+
+        // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
+        CaseInsensitiveHashSet tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
+
+        if (tableNames.contains(p.getLookupQuery()))
+            return true;
+
+        return false;
+    }
+
     @Nullable
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*skip querying for tableInfo for sample type and dataclass name previews*/)
     {
@@ -232,6 +265,9 @@ public class DomainUtil
             }
         }
 
+        // Reuse defaultSchemas
+        Map<Container, DefaultSchema> lookupDefaultSchemaMap = null;
+
         for (DomainProperty prop : properties)
         {
             GWTPropertyDescriptor p = getPropertyDescriptor(prop);
@@ -240,6 +276,15 @@ public class DomainUtil
             String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
             p.setDefaultDisplayValue(formattedDefaultValue);
             p.setDefaultValue(ConvertUtils.convert(defaultValue));
+
+            // Set valid lookup flag for display in UI
+            if (prop.getLookup() != null)
+            {
+                if (null == lookupDefaultSchemaMap)
+                    lookupDefaultSchemaMap = new HashMap<>();
+
+                p.setLookupIsValid(isValidPdLookup(user, container, p, lookupDefaultSchemaMap));
+            }
 
             //set property as PK
             if (pkColMap.containsKey(p.getName()))
