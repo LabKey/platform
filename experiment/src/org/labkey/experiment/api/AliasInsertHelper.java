@@ -65,10 +65,12 @@ public class AliasInsertHelper
 
         // remove wrapping quotes
         if (input.length() >= 2 && input.charAt(0) == '\"' && input.charAt(input.length() - 1) == '\"')
+        {
             input = input.substring(1, input.length() - 1);
 
-        // trim again after removing wrapping quotes
-        input = input.trim();
+            // trim again after removing wrapping quotes
+            input = input.trim();
+        }
 
         if (!input.isEmpty())
             aliasNames.add(input);
