@@ -365,23 +365,25 @@ public class ClosureQueryHelper
         if (null == type)
             throw new IllegalStateException();
 
-        closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
-                {
-                    SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
-                    SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
 
-                    var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
+        synchronized (lruQueryHelpers)
+        {
+            // SynchronizedMap.computeIfAbsent appear not be to synchronized
+            closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
+            {
+                SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
+                SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
+
+                var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
                         .setIsSelectInto(true)
                         .addIndex("CREATE UNIQUE INDEX uq_${NAME} ON temp.${NAME} (targetId,Start_)")
                         .maxTimeToCache(CACHE_INVALIDATION_INTERVAL)
                         .addInvalidCheck(() -> getInvalidationCounterString(sourceLSID))
                         .build();
-                    return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
-                });
+                return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
+            });
 
-        // update LRU
-        synchronized (lruQueryHelpers)
-        {
+            // update LRU
             lruQueryHelpers.put(sourceLSID, HeartBeat.currentTimeMillis());
             checkStaleEntries();
         }
