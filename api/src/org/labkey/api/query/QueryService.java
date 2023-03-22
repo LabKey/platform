@@ -650,7 +650,7 @@ public interface QueryService
 
         SQLFragment buildSqlFragment();
         SqlSelector buildSqlSelector(Map<String, Object> parameters);
-        Results select(Map<String, Object> parameters, boolean cache);
+        Results select(@Nullable Map<String, Object> parameters, boolean cache);
         default Results select()
         {
             return select(Map.of(), true);

@@ -148,6 +148,20 @@ public class ResultsImpl implements Results, DataIterator
         }
     }
 
+
+    @Override
+    public <T> T getWrapped(Class<T> clz)
+    {
+        if (clz.isAssignableFrom(this.getClass()))
+            return (T)this;
+        if (clz.isAssignableFrom(_rs.getClass()))
+            return (T)_rs;
+        if (_rs instanceof TableResultSet trs)
+            return trs.getWrapped(clz);
+        return null;
+    }
+
+
     @Override
     public @NotNull Connection getConnection()
     {
