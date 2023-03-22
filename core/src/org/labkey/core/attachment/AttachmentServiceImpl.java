@@ -135,9 +135,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         ContainerManager.addContainerListener(this);
     }
 
-
-    @Override
-    public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
         {
@@ -150,7 +148,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         boolean asAttachment = !canInline || !inlineIfPossible;
 
         response.reset();
-        writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
+        writeDocument(new ResponseWriter(response), parent, filename, alias, asAttachment);
 
         User user = null;
         try
@@ -168,6 +166,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
+    }
+
+
+    @Override
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
+    {
+        download(response, parent, filename, null, inlineIfPossible);
     }
 
 
@@ -972,15 +977,16 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return Collections.emptyList();
     }
 
-    // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
-    @Override
-    public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
+    private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
     {
         checkSecurityPolicy(parent);
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
         DbSchema schema = coreTables().getSchema();
+
+        if (alias == null)
+            alias = name;
 
         try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
@@ -1000,13 +1006,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             {
                 File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
                 if (!parentDir.exists())
-                    throw new NotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
+                    throw new NotFoundException("No parent directory for downloaded file " + alias + ". Please contact an administrator.");
                 File file = new File(parentDir, name);
                 if (!file.exists())
-                    throw new NotFoundException("Could not find file " + name);
+                    throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + name + "\"");
+                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
                 s = new FileInputStream(file);
             }
             else
@@ -1018,9 +1024,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + name + "\"");
+                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
                 else
-                    writer.setContentDisposition("inline; filename=\"" + name + "\"");
+                    writer.setContentDisposition("inline; filename=\"" + alias + "\"");
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
@@ -1055,6 +1061,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 schema.getScope().releaseConnection(conn);
             }
         }
+    }
+
+    // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
+    @Override
+    public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
+    {
+        writeDocument(writer, parent, name, null, asAttachment);
     }
 
 

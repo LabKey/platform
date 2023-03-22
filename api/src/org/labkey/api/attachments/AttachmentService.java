@@ -63,6 +63,8 @@ public interface AttachmentService
         return ServiceRegistry.get().getService(AttachmentService.class);
     }
 
+    void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException;
+
     void download(HttpServletResponse response, AttachmentParent parent, String name, boolean inlineIfPossible) throws ServletException, IOException;
 
     HttpView getHistoryView(ViewContext context, AttachmentParent parent);
