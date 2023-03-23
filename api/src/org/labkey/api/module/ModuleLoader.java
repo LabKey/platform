@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -608,6 +609,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             for (ModuleContext context : getAllModuleContexts())
                 _moduleContextMap.putIfAbsent(context.getName(), context); // Don't replace the "Core" context otherwise we'll overwrite its _newInstall and _originalVersion properties
 
+            warnAboutDuplicateSchemas(_moduleContextMap.values());
+
             // Refresh our list of modules as some may have been filtered out based on dependencies or DB platform
             modules = getModules();
             for (Module module : modules)
@@ -683,6 +686,27 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(execution, coreRequiredUpgrade, lockFile);
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    // Check for multiple modules claiming the same schema. Inspired by Issue 47547.
+    private void warnAboutDuplicateSchemas(Collection<ModuleContext> values)
+    {
+        Map<String, String> schemaToModule = CaseInsensitiveHashMap.of();
+        for (ModuleContext ctx : values)
+        {
+            String schemas = ctx.getSchemas();
+            if (null != schemas)
+            {
+                for (String schema : schemas.split(","))
+                {
+                    String previousModule = schemaToModule.get(schema);
+                    if (previousModule != null)
+                        _log.error("Schema " + schema + " is claimed by more than one module: " + previousModule + " and " + ctx.getName());
+                    else
+                        schemaToModule.put(schema, ctx.getName());
+                }
+            }
+        }
     }
 
     /**
@@ -1673,18 +1697,30 @@ public class ModuleLoader implements Filter, MemTrackerListener
         SqlDialect dialect = _core.getSqlDialect();
 
         String moduleName = context.getName();
-        Module m = getModule(moduleName);
 
         _log.info("Deleting module " + moduleName);
         String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
 
+        // If we're deleting an "unknown module" then avoid deleting any schema that's owned by a known module, Issue 47547
+        Module m = getModule(moduleName);
+        Set<String> inUseSchemas = null == m ?
+            getModules().stream().flatMap(mod -> mod.getSchemaNames().stream()).collect(LabKeyCollectors.toCaseInsensitiveHashSet()) :
+            Collections.emptySet();
+
         for (String schema : context.getSchemaList())
         {
-            _log.info("Dropping schema " + schema);
-            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
-            scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
-            scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
-            SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
+            if (inUseSchemas.contains(schema))
+            {
+                _log.info("Skipping drop of schema " + schema + " because it's in use by a known module");
+            }
+            else
+            {
+                _log.info("Dropping schema " + schema);
+                new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
+                scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
+                scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
+                SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
+            }
         }
 
         Table.delete(getTableInfoModules(), context.getName());
