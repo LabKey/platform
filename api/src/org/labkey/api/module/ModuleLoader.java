@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -964,12 +965,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         //check for simple .properties file
         File modulePropsFile = new File(moduleDir, "config/module.properties");
-        Properties props = new Properties();
+        Map<String, String> props = Collections.emptyMap();
         if (modulePropsFile.exists())
         {
             try (FileInputStream in = new FileInputStream(modulePropsFile))
             {
-                props.load(in);
+                Properties p = new Properties();
+                p.load(in);
+                props = Maps.fromProperties(p);
             }
             catch (IOException e)
             {
@@ -980,7 +983,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         //assume that module name is directory name
         String moduleName = moduleDir.getName();
         if (props.containsKey("name"))
-            moduleName = props.getProperty("name");
+            moduleName = props.get("name");
 
         if (moduleName == null || moduleName.length() == 0)
             throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
@@ -989,7 +992,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         DefaultModule simpleModule;
         if (props.containsKey("ModuleClass"))
         {
-            String moduleClassName = props.getProperty("ModuleClass");
+            String moduleClassName = props.get("ModuleClass");
             Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
             simpleModule = moduleClass.newInstance();
         }
@@ -1001,7 +1004,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         simpleModule.setName(moduleName);
 
         //get SourcePath property if there is one
-        String srcPath = (String)props.get("SourcePath");
+        String srcPath = props.get("SourcePath");
 
         if (StringUtils.isNotBlank(srcPath))
             simpleModule.setSourcePath(srcPath);

@@ -658,7 +658,7 @@ public class AnalysisController extends SpringActionController
             TaskFactory factory = null;
             TaskPipeline pipeline = null;
 
-            Map<String, Object> map = Collections.emptyMap();
+            Map<String, String> map = Collections.emptyMap();
             TaskId taskId = TaskId.valueOf(id);
             if (taskId.getType() == TaskId.Type.task || taskId.getType() == null)
             {
