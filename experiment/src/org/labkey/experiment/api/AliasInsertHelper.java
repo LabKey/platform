@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.labkey.api.util.StringUtilsLabKey.unquoteString;
 
 public class AliasInsertHelper
 {
@@ -63,14 +64,7 @@ public class AliasInsertHelper
         if (input.isEmpty())
             return;
 
-        // remove wrapping quotes
-        if (input.length() >= 2 && input.charAt(0) == '\"' && input.charAt(input.length() - 1) == '\"')
-        {
-            input = input.substring(1, input.length() - 1);
-
-            // trim again after removing wrapping quotes
-            input = input.trim();
-        }
+        input = unquoteString(input).trim();
 
         if (!input.isEmpty())
             aliasNames.add(input);
@@ -109,7 +103,7 @@ public class AliasInsertHelper
                 // Generic query insert form and Excel/tsv import passes an ArrayList with a single String element
                 // containing the comma-separated list of values: "abc,def"
                 // LABKEY.Query.insertRows passes an ArrayList containing individual alias names.
-                parseValue(col.stream().findFirst().get(), aliasNames, aliasIds);
+                parseValue(col.iterator().next(), aliasNames, aliasIds);
             }
             else
             {
@@ -141,9 +135,11 @@ public class AliasInsertHelper
         if (aliases.isEmpty())
             return Collections.emptySet();
 
-        Set<String> aliasNames = new HashSet<>();
+        // Split around a comma only if there are no double quotes or if there is an even number of double quotes ahead
+        // of the comma. From: https://www.baeldung.com/java-split-string-commas#1-string-split-method
         String[] tokens = aliases.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
+        Set<String> aliasNames = new HashSet<>();
         for (String token : tokens)
             cleanValueAndAdd(token, aliasNames);
 
