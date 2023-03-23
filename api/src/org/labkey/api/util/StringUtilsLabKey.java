@@ -391,7 +391,6 @@ public class StringUtilsLabKey
 
         return original.replaceAll("[\\u2018\\u2019]", "'")
                         .replaceAll("[\\u201C\\u201D]", "\"");
-
     }
 
     public static String unquoteString(@Nullable String original)
@@ -399,11 +398,12 @@ public class StringUtilsLabKey
         if (original == null)
             return null;
 
-        if (original.startsWith("\"") && original.endsWith("\""))
+        if (original.length() > 1 && original.startsWith("\"") && original.endsWith("\""))
         {
-            String stripped = original.replaceAll("\"\"", "\"");
-            return stripped.substring(1, stripped.length()-1);
+            String stripped = original.substring(1, original.length() - 1);
+            return stripped.replaceAll("\"\"", "\"");
         }
+
         return original;
     }
 
@@ -639,6 +639,7 @@ public class StringUtilsLabKey
         {
             assertNull(unquoteString(null));
             assertEquals("", unquoteString(""));
+            assertEquals("\"", unquoteString("\""));
             assertEquals("abc", unquoteString("abc"));
             assertEquals("abc", unquoteString("\"abc\""));
             assertEquals("ab\"c", unquoteString("ab\"c"));
