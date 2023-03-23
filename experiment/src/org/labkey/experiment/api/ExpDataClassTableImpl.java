@@ -220,7 +220,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             try
             {
-                return new CaseInsensitiveHashMap((Map<String,Object>) BeanUtils.describe(dc));
+                return new CaseInsensitiveHashMap(BeanUtils.describe(dc));
             }
             catch (ReflectiveOperationException e)
             {
@@ -245,7 +245,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, description,
                         Collections.emptyList(), Collections.emptyList(),
                         materialSourceId, nameExpression, null, category);
-                return new CaseInsensitiveHashMap((Map<String,Object>) BeanUtils.describe(dc));
+                return new CaseInsensitiveHashMap(BeanUtils.describe(dc));
             }
             catch (ExperimentException | ReflectiveOperationException e)
             {
