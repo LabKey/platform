@@ -53,4 +53,11 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
      * more context. */
     @Nullable
     Connection getConnection() throws SQLException;
+
+    default <T> T getWrapped(Class<T> clz)
+    {
+        if (clz.isAssignableFrom(this.getClass()))
+            return (T)this;
+        return null;
+    };
 }
