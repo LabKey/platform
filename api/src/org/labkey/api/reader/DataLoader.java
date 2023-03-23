@@ -510,8 +510,25 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public abstract void close();
 
 
-    public static final Converter noopConverter = (type, value) -> value;
+    public static final Converter noopConverter = new Converter()
+    {
+        @Override
+        public <T> T convert(Class<T> type, Object value)
+        {
+            return (T)value;
+        }
+    };
     public static final Converter StringConverter = ConvertUtils.lookup(String.class);
+    /** Always throws UnsupportedOperationException */
+    public static final Converter FAIL_CONVERTER = new Converter()
+    {
+        @Override
+        public <T> T convert(Class<T> type, Object value)
+        {
+            throw new UnsupportedOperationException();
+        }
+    };
+
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {

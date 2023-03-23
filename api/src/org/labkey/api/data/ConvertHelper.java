@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConvertUtilsBean;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.PropertyUtilsBean;
+import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.beanutils.converters.BigDecimalConverter;
 import org.apache.commons.beanutils.converters.BigIntegerConverter;
 import org.apache.commons.beanutils.converters.BooleanArrayConverter;
@@ -103,7 +104,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     private ConvertHelper()
     {
-        BeanUtilsBean.setInstance(new BeanUtilsBean(new EnumAwareConvertUtilsBean(), new PropertyUtilsBean()));
+        BeanUtilsBean bub = new BeanUtilsBean(new EnumAwareConvertUtilsBean(), new PropertyUtilsBean());
+        bub.getPropertyUtils().addBeanIntrospector(SuppressPropertiesBeanIntrospector.SUPPRESS_CLASS);
+        BeanUtilsBean.setInstance(bub);
         register();
     }
 
