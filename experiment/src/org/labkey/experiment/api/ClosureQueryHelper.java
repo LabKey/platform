@@ -368,7 +368,6 @@ public class ClosureQueryHelper
 
         synchronized (lruQueryHelpers)
         {
-            // SynchronizedMap.computeIfAbsent appear not be to synchronized
             closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
             {
                 SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
