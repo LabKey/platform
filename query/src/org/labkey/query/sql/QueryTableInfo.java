@@ -70,17 +70,20 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        SQLFragment sql = _relation.getSql();
-        if (null == sql)
+        try (var recursion = _relation._query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
         {
-            if (!_relation._query.getParseErrors().isEmpty())
-                throw _relation._query.getParseErrors().get(0);
-            else
-                throw new QueryException("Error generating SQL");
+            SQLFragment sql = _relation.getSql();
+            if (null == sql)
+            {
+                if (!_relation._query.getParseErrors().isEmpty())
+                    throw _relation._query.getParseErrors().get(0);
+                else
+                    throw new QueryException("Error generating SQL");
+            }
+            SQLFragment f = new SQLFragment();
+            f.append("(").append(sql).append(") ").append(alias);
+            return f;
         }
-        SQLFragment f = new SQLFragment();
-        f.append("(").append(sql).append(") ").append(alias);
-        return f;
     }
 
 
