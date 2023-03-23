@@ -250,7 +250,7 @@ public class ClosureQueryHelper
 
 
     /**
-     * Note this is not a fully constructed TableInfo, it is just a wrapper for MaterializedQueryuHelper.getFromSql().
+     * Note this is not a fully constructed TableInfo; it is just a wrapper for MaterializedQueryHelper.getFromSql().
      * We do this so that we can use the handy method UserSchema.getCachedLookupTableInfo() to reuse the same temp table
      * for multiple lookups in the same query.
      */
