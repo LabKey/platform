@@ -46,6 +46,11 @@ public interface PlateTypeHandler
     List<WellGroup.Type> getWellGroupTypes();
 
     /**
+     * Issue 47210 : some assays don't support changing or adding new well groups
+     */
+    boolean canCreateNewGroups(WellGroup.Type type);
+
+    /**
      * Validate a new or edited plate template for handler specific errors.
      * @throws ValidationException
      */

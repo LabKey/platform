@@ -41,7 +41,6 @@ import org.labkey.api.gwt.client.util.StringProperty;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -56,6 +55,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
     private String _newGroupFieldValue;
     private ImageButton _createButton;
     private ImageButton _multiCreateButton;
+    private boolean _allowNewGroups;
 
     public GroupTypePanel(TemplateView view, String type)
     {
@@ -74,14 +74,21 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         if (wellgroups != null)
         {
             int i=0;
+            _allowNewGroups = wellgroups.isEmpty();
             for (GWTWellGroup group : wellgroups)
             {
+                if (!_allowNewGroups && group.isAllowNewGroups())
+                    _allowNewGroups = true;
+
                 GroupTypePanelRow row = new GroupTypePanelRow(_view, group);
                 row.attach(groupList, i++);
             }
         }
         else
+        {
+            _allowNewGroups = true;
             groupList.setWidget(0, 1, new Label("No groups defined."));
+        }
         add(groupList);
 
         KeyDownHandler fieldKeyDownListener = new KeyDownHandler()
@@ -179,10 +186,13 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             newGroupField = selector;
         }
 
-        groupList.setWidget(groupList.getRowCount(), 0, new Label("New:"));
-        groupList.setWidget(groupList.getRowCount() - 1, 1, newGroupField);
-        groupList.setWidget(groupList.getRowCount() - 1, 2, _createButton);
-        groupList.setWidget(groupList.getRowCount() - 1, 3, _multiCreateButton);
+        if (_allowNewGroups)
+        {
+            groupList.setWidget(groupList.getRowCount(), 0, new Label("New:"));
+            groupList.setWidget(groupList.getRowCount() - 1, 1, newGroupField);
+            groupList.setWidget(groupList.getRowCount() - 1, 2, _createButton);
+            groupList.setWidget(groupList.getRowCount() - 1, 3, _multiCreateButton);
+        }
     }
 
     private static class MultiCreatePopupPanel extends DialogBox

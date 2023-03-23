@@ -32,6 +32,7 @@ public class GWTWellGroup implements IsSerializable
     private String _type;
     private String _name;
     private List<GWTPosition> _positions;
+    private boolean _allowNewGroups = true;         // issue 47210 : disallow creating/editing of well groups for specific types
 
     /**
      * This field is a Map that must always contain Strings.
@@ -96,6 +97,16 @@ public class GWTWellGroup implements IsSerializable
     public void setProperties(Map<String, Object> properties)
     {
         _properties = properties;
+    }
+
+    public boolean isAllowNewGroups()
+    {
+        return _allowNewGroups;
+    }
+
+    public void setAllowNewGroups(boolean allowNewGroups)
+    {
+        _allowNewGroups = allowNewGroups;
     }
 
     @Override
