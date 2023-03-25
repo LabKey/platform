@@ -87,11 +87,4 @@ public interface WebPartFactory
     Map<String, String> serializePropertyMap(FolderExportContext ctx, Map<String, String> propertyMap);
 
     Map<String, String> deserializePropertyMap(FolderImportContext ctx, Map<String, String> propertyMap);
-
-    /*
-     * This method is used to determine if the given web part should be included in folder
-     * export (e.g. in PageWriterFactory.addWebPartsToPage())
-     * It was added to fix Issue 22261: Incorrect links in the "Wiki Table of Contents" web part.
-     */
-    boolean includeInExport(FolderExportContext ctx, Portal.WebPart webPart);
 }
