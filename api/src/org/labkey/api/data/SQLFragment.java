@@ -381,12 +381,6 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-/*  Leave this until we find all usages in all modules
-//    public SQLFragment append(Object o)
-//    {
-//        throw new UnsupportedOperationException("Use appendValue() instead");
-//    }
-*/
     /** Adds the container's ID as an in-line string constant to the SQL */
     public final SQLFragment appendValue(@NotNull Container c)
     {
@@ -417,15 +411,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     public SQLFragment appendValue(Integer I)
-    {
-        if (null == I)
-            return appendNull();
-        getStringBuilder().append((int)I);
-        return this;
-    }
-
-    @Deprecated
-    public SQLFragment append(Integer I)
     {
         if (null == I)
             return appendNull();
@@ -1098,4 +1083,21 @@ public class SQLFragment implements Appendable, CharSequence
 
         return new SQLFragment(sql, params);
     }
+
+
+
+    /* REMOVE THIS These methods are going away, but this allows us to merge w/o doing 100 modules at the same time */
+    public SQLFragment append(@NotNull Container c)
+    {
+        return appendValue(c);
+    }
+    public SQLFragment append(Integer i)
+    {
+        return appendValue(i);
+    }
+    public SQLFragment append(Object o)
+    {
+        return append(String.valueOf(o));
+    }
+    /* END OF REMOVE THIS */
 }
