@@ -240,7 +240,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.ow2.asm:asm:9.5",
+            "org.ow2.asm:asm:${asmVersion}",
             "ASM",
             "ASM",
             "https://asm.ow2.io",
