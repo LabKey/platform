@@ -243,7 +243,7 @@ public class ClosureQueryHelper
         return new SQLFragment()
                 .append("(SELECT rowId FROM ")
                 .append(closureTableInfo.getFromSQL("CLOS"))
-                .append(" WHERE targetId='").append(targetId).append("'")
+                .append(" WHERE targetId=").appendValue(targetId)
                 .append(" AND Start_=").append(objectId)
                 .append(")");
     }
@@ -355,9 +355,9 @@ public class ClosureQueryHelper
                 .append("FROM (SELECT m.RowId, m.ObjectId FROM exp.material m\n")
                 .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId = ").append(runId)
+                .append("WHERE pa.RunId = ").appendValue(runId)
                 .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
-                .append(" AND pa.CpasType = '").append(ExperimentRunOutput.name()).append("') _seed_ ");
+                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
         incrementalRecompute(sourceTypeLsid, seedFrom);
     }
 

@@ -261,7 +261,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         if (applicationType != null)
         {
             sql.append("\nAND exp.ProtocolApplication.CpasType = ");
-            sql.appendStringLiteral(applicationType.toString());
+            sql.appendValue(applicationType.toString());
         }
         sql.append(")");
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Data.class));

@@ -422,8 +422,8 @@ public class StatementUtils
         sqlfObjectProperty.append(propertyType.getValueTypeColumn());
         sqlfObjectProperty.append(") VALUES (");
         sqlfObjectProperty.append(objectIdVar);
-        sqlfObjectProperty.append(",").append(dp.getPropertyId());
-        sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
+        sqlfObjectProperty.append(",").appendValue(dp.getPropertyId());
+        sqlfObjectProperty.append(",").appendValue(String.valueOf(propertyType.getStorageType()));
         sqlfObjectProperty.append(",");
         if (dp.isMvEnabled())
             appendParameterOrVariable(sqlfObjectProperty, mv);
@@ -447,7 +447,7 @@ public class StatementUtils
         {
             sqlfDelete.append(separator);
             separator = ", ";
-            sqlfDelete.append(property.getPropertyId());
+            sqlfDelete.appendValue(property.getPropertyId());
         }
         sqlfDelete.append(");\n");
     }
@@ -692,14 +692,14 @@ public class StatementUtils
             if (null != col && null != user)
             {
                 cols.add(col);
-                values.add(new SQLFragment().append(user.getUserId()));
+                values.add(new SQLFragment().appendValue(user.getUserId()));
                 done.add("Owner");
             }
             col = table.getColumn("CreatedBy");
             if (null != col && null != user)
             {
                 cols.add(col);
-                values.add(new SQLFragment().append(user.getUserId()));
+                values.add(new SQLFragment().appendValue(user.getUserId()));
                 done.add("CreatedBy");
             }
             col = table.getColumn("Created");
@@ -715,7 +715,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
             cols.add(colModifiedBy);
-            values.add(new SQLFragment().append(user.getUserId()));
+            values.add(new SQLFragment().appendValue(user.getUserId()));
             done.add("ModifiedBy");
         }
 
@@ -1023,7 +1023,7 @@ public class StatementUtils
                 fn.append(type);
                 // For PG (29687) we need the length for CHAR type
                 if (_dialect.isPostgreSQL() && JdbcType.CHAR.equals(ph.p.getType()))
-                    fn.append("(").append(ph.getScale()).append(")");
+                    fn.append("(").appendValue(ph.getScale()).append(")");
                 call.append(comma).append("?");
                 call.add(ph.p);
                 comma = ",";

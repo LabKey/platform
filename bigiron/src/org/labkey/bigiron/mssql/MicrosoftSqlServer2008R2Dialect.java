@@ -42,14 +42,14 @@ public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDiale
 
         if (maxRows == Table.ALL_ROWS)
         {
-            sql.append("> ").append(offset);
+            sql.append("> ").appendValue(offset);
         }
         else
         {
             sql.append("BETWEEN ");
-            sql.append(offset + 1);
+            sql.appendValue(offset + 1);
             sql.append(" AND ");
-            sql.append(offset + maxRows);
+            sql.appendValue(offset + maxRows);
         }
 
         return sql;

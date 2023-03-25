@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -353,9 +354,22 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     @Override
-    public SQLFragment append(CharSequence s)
+    public SQLFragment append(CharSequence charseq)
     {
-        getStringBuilder().append(s);
+        if (null == charseq)
+            return this;
+/* Leave this until we convert all usages in all modules * /
+{
+        // We only support appending string literals via appendValue()
+        // We only allow appending comments via appendComment()
+        // Therefore there should never be an odd number of "'" in this string
+        String s = charseq.toString();
+        int count = StringUtils.countMatches(s, "'");
+        if (count % 2 != 0)
+            throw new IllegalArgumentException("Odd number of single quotes in SQLFragment.append(CharSequence): " + s + ". Use SQLFragment.appendValue().");
+}
+/* */
+        getStringBuilder().append(charseq);
         return this;
     }
 
@@ -367,27 +381,130 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+/*  Leave this until we find all usages in all modules
+//    public SQLFragment append(Object o)
+//    {
+//        throw new UnsupportedOperationException("Use appendValue() instead");
+//    }
+*/
     /** Adds the container's ID as an in-line string constant to the SQL */
-    public SQLFragment append(@NotNull Container c)
+    public final SQLFragment appendValue(@NotNull Container c)
     {
-        String id = c.getId();
+        return appendValue(c, null);
+    }
+
+    public  SQLFragment appendValue(@NotNull Container c, SqlDialect dialect)
+    {
+        appendValue(c.getEntityId(), dialect);
         String name = c.getName();
-
-        if (StringUtils.containsAny(id,"*/'\"?"))
-            throw new IllegalStateException();
-
-        append("'").append(id).append("'");
-        if (!StringUtils.containsAny(name,"*/'\"?"))
-            append("/* ").append(c.getName()).append(" */");
+        if (!StringUtils.containsAny(name,"*/\\'\"?"))
+            append("/* ").append(name).append(" */");
         return this;
     }
 
-    /** Adds the object's toString() to the SQL */
-    public SQLFragment append(Object o)
+    public SQLFragment appendNull()
     {
-        getStringBuilder().append(o);
+        getStringBuilder().append("NULL");
         return this;
     }
+
+    public SQLFragment appendValue(Boolean B, SqlDialect dialect)
+    {
+        if (null == B)
+            return appendNull();
+        getStringBuilder().append(B ? dialect.getBooleanTRUE() : dialect.getBooleanFALSE());
+        return this;
+    }
+
+    public SQLFragment appendValue(Integer I)
+    {
+        if (null == I)
+            return appendNull();
+        getStringBuilder().append((int)I);
+        return this;
+    }
+
+    @Deprecated
+    public SQLFragment append(Integer I)
+    {
+        if (null == I)
+            return appendNull();
+        getStringBuilder().append((int)I);
+        return this;
+    }
+
+    public SQLFragment appendValue(Long L)
+    {
+        if (null == L)
+            return appendNull();
+        getStringBuilder().append((long)L);
+        return this;
+    }
+
+    public SQLFragment appendValue(Float F)
+    {
+        if (null == F)
+            return appendNull();
+        getStringBuilder().append((float)F);
+        return this;
+    }
+
+    public SQLFragment appendValue(Number N)
+    {
+        if (null == N)
+            return appendNull();
+        // Do we know that default java toString() for all numbers creates a valid SQL literal?
+        getStringBuilder().append(String.valueOf(N));
+        return this;
+    }
+
+    public final SQLFragment appendValue(GUID g)
+    {
+        return appendValue(g, null);
+    }
+
+    public SQLFragment appendValue(GUID g, SqlDialect d)
+    {
+        if (null == g)
+            return appendNull();
+        // doesn't need StringHandler, just hex and hyphen
+        String sqlGUID = "'" + g + "'";
+        // I'm testing dialect type, because some dialects do not support getGuidType(), and postgers uses VARCHAR anyway
+        if (null != d && d.isSqlServer())
+            getStringBuilder().append("CAST(").append(sqlGUID).append(" AS UNIQUEIDENTIFIER)");
+        else
+            getStringBuilder().append(sqlGUID);
+        return this;
+    }
+
+    public SQLFragment appendValue(Enum<?> e)
+    {
+        {
+            StringBuilder sb = getStringBuilder();
+            if (sb.length() > 0)
+            {
+                char last = sb.charAt(sb.length() - 1);
+                if (last == '\'')
+                    throw new IllegalStateException();
+            }
+        }
+        if (null == e)
+            return appendNull();
+        String name = e.name();
+        if (name.contains("'"))
+            throw new IllegalStateException();
+        getStringBuilder().append("'").append(name).append("'");
+        return this;
+    }
+
+    public SQLFragment append(FieldKey fk)
+    {
+        if (null == fk)
+            return appendNull();
+        append(String.valueOf(fk));
+        return this;
+    }
+
 
     /** Adds the object as a JDBC parameter value */
     public SQLFragment add(Object p)
@@ -472,8 +589,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    /** use append(TableInfo, String alias) */
-    @Deprecated
+    /** see also append(TableInfo, String alias) */
     public SQLFragment append(TableInfo table)
     {
         String s = table.getSelectName();
@@ -497,18 +613,33 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
-    public SQLFragment appendStringLiteral(@NotNull CharSequence s)
+    /* for consisteency I renamed this appendValue(CharSequence s) */
+    @Deprecated
+    public final SQLFragment appendStringLiteral(CharSequence s)
     {
-        if (StringUtils.contains(s,"'") || StringUtils.contains(s,"\\"))
+        return appendValue(s);
+    }
+
+    /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
+    public SQLFragment appendValue(CharSequence s)
+    {
+        if (null == s)
+            return appendNull();
+        // Don't inline w/o a dialect.  Won't handle unicode correctly in all cases (e.g. SQL Server)
+        append("?");
+        add(s.toString());
+        return this;
+    }
+
+    public SQLFragment appendValue(@NotNull CharSequence s, SqlDialect d)
+    {
+        if (s.length() > 200)
         {
             append("?");
             add(s.toString());
             return this;
         }
-        append("'");
-        append(s);
-        append("'");
+        getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
         return this;
     }
 

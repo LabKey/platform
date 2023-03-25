@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
@@ -45,7 +44,7 @@ public class QMethodCall extends QExpr
         MethodInfo method = getMethod(builder.getDialect());
         if (method == null)
         {
-            builder.appendStringLiteral("Unrecognized method " + getField().getFieldKey());
+            builder.appendValue("Unrecognized method " + getField().getFieldKey());
             return;
         }
         ArrayList<Pair<SQLFragment,Boolean>> argumentsEx = new ArrayList<>();

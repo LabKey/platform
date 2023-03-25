@@ -361,7 +361,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
                         .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
+                        .append(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
@@ -568,7 +568,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 sql.append(separator);
                 separator = ", ";
-                sql.append(material.getRowId());
+                sql.appendValue(material.getRowId());
             }
             sql.append(")");
             addCondition(sql);

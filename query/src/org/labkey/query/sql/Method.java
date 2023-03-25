@@ -45,7 +45,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -724,11 +723,25 @@ public abstract class Method
             ret.append(")");                            
             return ret;
         }
+
+        /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
             String typeName = StringUtils.trimToEmpty(typeSqlFragment.getSQL());
-            if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
-                typeName = typeName.substring(1,typeName.length()-1);
+            if ("?".equals(typeName))
+            {
+                var params = typeSqlFragment.getParams();
+                if (params.size() != 1 || !(params.get(0) instanceof String))
+                    throw new QueryParseException("Problem parseing type", null, -1, -1);
+                typeName = (String)params.get(0);
+            }
+            else
+            {
+                if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
+                    typeName = typeName.substring(1,typeName.length()-1);
+                else if (typeName.length() >= 3 && typeName.startsWith("N'") && typeName.endsWith("'"))
+                    typeName = typeName.substring(2,typeName.length()-2);
+            }
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
             return typeName;
@@ -848,10 +861,10 @@ public abstract class Method
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
-            scaled.append(")*").append(Math.pow(10,i));
+            scaled.append(")*").appendValue(Math.pow(10,i));
             SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
             ret.append("/");
-            ret.append(Math.pow(10,i));
+            ret.appendValue(Math.pow(10,i));
             return ret;
 		}
 	}
