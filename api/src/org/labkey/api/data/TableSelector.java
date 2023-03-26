@@ -363,7 +363,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
      */
     public TableSelector setForceSortForDisplay(boolean forceSort)
     {
-        _forceSortForDisplay = true;
+        _forceSortForDisplay = forceSort;
         return this;
     }
 

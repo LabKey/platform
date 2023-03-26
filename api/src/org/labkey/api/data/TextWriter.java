@@ -30,8 +30,6 @@ import java.io.PrintWriter;
 
 /**
  * Base class for exports that generate text-based representations of their content, such as TSV, CSV, or FASTA.
- * User: adam
- * Date: Dec 30, 2010
  */
 public abstract class TextWriter implements AutoCloseable
 {

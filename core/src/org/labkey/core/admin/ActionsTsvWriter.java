@@ -24,11 +24,6 @@ import org.labkey.api.data.TSVWriter;
 import java.util.Arrays;
 import java.util.Map;
 
-/*
-* User: adam
-* Date: Oct 21, 2009
-* Time: 8:24:21 PM
-*/
 public class ActionsTsvWriter extends TSVWriter
 {
     @Override
