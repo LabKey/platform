@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -440,6 +441,21 @@ public class SQLFragment implements Appendable, CharSequence
             return appendNull();
         // Do we know that default java toString() for all numbers creates a valid SQL literal?
         getStringBuilder().append(String.valueOf(N));
+        return this;
+    }
+
+    public final SQLFragment appendValue(java.util.Date d)
+    {
+        if (null == d)
+            return appendNull();
+        if (d.getClass() == java.util.Date.class)
+            getStringBuilder().append("{ts '").append(DateUtil.formatDateTimeISO8601(d)).append("'}");
+        else if (d.getClass() == java.sql.Timestamp.class)
+            getStringBuilder().append("{ts '").append(d).append("'}");
+        else if (d.getClass() == java.sql.Date.class)
+            getStringBuilder().append("{d '").append(d).append("'}");
+        else
+            throw new IllegalStateException("Unexpected date type: " + d.getClass().getName());
         return this;
     }
 
@@ -1094,6 +1110,10 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment append(Integer i)
     {
         return appendValue(i);
+    }
+    public SQLFragment append(java.util.Date date)
+    {
+        return appendValue(date);
     }
     public SQLFragment append(Object o)
     {

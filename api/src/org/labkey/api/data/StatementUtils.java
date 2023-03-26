@@ -69,7 +69,6 @@ public class StatementUtils
     private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");
 
     public enum Operation {insert, update, merge}
-    public static String OWNEROBJECTID = "exp$object$ownerobjectid";
 
     // configuration parameters
     private Operation _operation = Operation.insert;
@@ -215,10 +214,10 @@ public class StatementUtils
     /**
      * Create a reusable SQL Statement for updating rows into an labkey relationship.  The relationship
      * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
-     *
+     * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
-     *
+     * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
@@ -585,7 +584,7 @@ public class StatementUtils
         SQLFragment sqlfDelete = new SQLFragment();
 
         Domain domain = updatable.getDomain();
-        DomainKind domainKind = updatable.getDomainKind();
+        DomainKind<?> domainKind = updatable.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
@@ -1189,6 +1188,9 @@ public class StatementUtils
     }
 
 
+    /* We could use SQLFragment.appendValue() for most of these.  However, here it important to force
+     * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
+     */
     private void toLiteral(SQLFragment f, Object value)
     {
         if (null == value)
@@ -1217,8 +1219,7 @@ public class StatementUtils
             return;
         }
         assert value instanceof String;
-        value = String.valueOf(value);
-        f.append(_dialect.getStringHandler().quoteStringLiteral((String) value));
+        f.append(_dialect.getStringHandler().quoteStringLiteral(String.valueOf(value)));
     }
 
 
