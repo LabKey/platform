@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.iterator.MarkableIterator;
@@ -78,31 +76,31 @@ public class TSVMapWriter extends TSVWriter
 
     // Make public
     @Override
-    public void write()
+    public int write()
     {
-        super.write();
+        return super.write();
     }
 
     @Override
-    protected void writeBody()
+    protected int writeBody()
     {
+        int rowCount = 0;
+
         while (_rows.hasNext())
         {
             writeRow(_rows.next());
+            rowCount++;
         }
+
+        return rowCount;
     }
 
     protected void writeRow(final Map<String, Object> row)
     {
-        Iterable<String> values = Iterables.transform(_columns, new Function<String, String>()
-        {
-            @Override
-            public String apply(String col)
-            {
-                Object o = row.get(col);
-                return o == null ? "" : String.valueOf(o);
-            }
-        });
+        Iterable<String> values = _columns.stream().map(col -> {
+            Object o = row.get(col);
+            return o == null ? "" : String.valueOf(o);
+        }).toList();
 
         writeLine(values);
     }

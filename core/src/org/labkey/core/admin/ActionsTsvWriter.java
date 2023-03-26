@@ -33,8 +33,10 @@ public class ActionsTsvWriter extends TSVWriter
     }
 
     @Override
-    protected void writeBody()
+    protected int writeBody()
     {
+        int ret = 0;
+
         try
         {
             Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
@@ -70,6 +72,8 @@ public class ActionsTsvWriter extends TSVWriter
                         _pw.print(0 == stats.getCount() ? 0 : stats.getElapsedTime() / stats.getCount());
                         _pw.print('\t');
                         _pw.println(stats.getMaxTime());
+
+                        ret++;
                     }
                 }
             }
@@ -78,5 +82,7 @@ public class ActionsTsvWriter extends TSVWriter
         {
             throw new RuntimeException(e);
         }
+
+        return ret;
     }
 }

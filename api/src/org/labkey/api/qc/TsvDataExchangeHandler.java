@@ -740,7 +740,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return new TSVWriter()
         {
             @Override
-            protected void write()
+            protected int write()
             {
                 throw new UnsupportedOperationException();
             }
