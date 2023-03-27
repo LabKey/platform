@@ -143,8 +143,12 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
         if (_group == currentlyActive)
         {
             _radioButton.setChecked(true);
-            _deleteButton.setVisible(true);
-            _renameButton.setVisible(true);
+            // if this group is effectively not editable never show delete and rename buttons
+            if (_group.isAllowNewGroups())
+            {
+                _deleteButton.setVisible(true);
+                _renameButton.setVisible(true);
+            }
             DOM.setStyleAttribute(_tableRowElement, "backgroundColor", "#DDDDDD");
             DOM.setStyleAttribute(_tableRowElement, "border", "1px solid black");
         }
