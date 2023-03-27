@@ -297,55 +297,56 @@
                     <tr><%=bean.renderLabel(bean.getLabel("Resolved", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=h(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
                     <%=bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution"))%>
                     <%
-                        if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
-                        {%>
-                    <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
+                    if (bean.isVisible("duplicate"))
+                    {%>
+                        <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
                         if (bean.isVisible("duplicate"))
                         {
-                            if("Duplicate".equals(issue.getResolution()))
+                            if("Duplicate".equals(issue.getResolution()) && !bean.isReadOnly("duplicate"))
                             {
                                 //Enabled duplicate field.%>
-                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
-                        }
-                        else
-                        {
-                            //Disabled duplicate field.%>
-                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
+                                <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
                             }
-                        %>
-                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-                            var duplicateInput = document.getElementsByName('duplicate')[0];
-                            var duplicateOrig = duplicateInput.value;
-                            var resolutionSelect = document.getElementsByName('resolution')[0];
-                            function updateDuplicateInput()
+                            else
                             {
-                                // The options don't have an explicit value set, so look for the display text instead of
-                                // the value
-                                if (resolutionSelect.selectedIndex >= 0 &&
-                                        resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                                //Disabled duplicate field.%>
+                                <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
+                            }%>
+                            <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+                                var duplicateInput = document.getElementsByName('duplicate')[0];
+                                var duplicateOrig = duplicateInput.value;
+                                var resolutionSelect = document.getElementsByName('resolution')[0];
+                                function updateDuplicateInput()
                                 {
-                                    duplicateInput.disabled = false;
+                                    // The options don't have an explicit value set, so look for the display text instead of
+                                    // the value
+                                    if (resolutionSelect.selectedIndex >= 0 &&
+                                            resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                                    {
+                                        duplicateInput.disabled = false;
+                                    }
+                                    else
+                                    {
+                                        duplicateInput.disabled = true;
+                                        duplicateInput.value = duplicateOrig;
+                                    }
+                                    LABKEY.setDirty(true);
                                 }
-                                else
-                                {
-                                    duplicateInput.disabled = true;
-                                    duplicateInput.value = duplicateOrig;
+                                if (resolutionSelect){
+                                    if (window.addEventListener)
+                                        resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                                    else if (window.attachEvent)
+                                        resolutionSelect.attachEvent('onchange', updateDuplicateInput);
                                 }
-                                LABKEY.setDirty(true);
-                            }
-                            if (window.addEventListener)
-                                resolutionSelect.addEventListener('change', updateDuplicateInput, false);
-                            else if (window.attachEvent)
-                                resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                        </script><%
+                            </script><%
                         }
                         else
                         {
                             if(issue.getDuplicate() != null)
                             {%>
-                        <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
-                                }
-                            }%>
+                                <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
+                            }
+                        }%>
                     </td></tr><%
                     }%>
                     <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
