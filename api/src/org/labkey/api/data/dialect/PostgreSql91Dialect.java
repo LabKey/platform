@@ -91,12 +91,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
     // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
     // when we prepare a new DbScope and use this when we escape and parse string literals.
-    private boolean _standardConformingStrings = true;
+    private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
 
     public boolean getStandardConformingStrings()
     {
-        return _standardConformingStrings;
+        // make sure we're not calling this before finishing instance init
+        assert _standardConformingStrings != null;
+        return _standardConformingStrings == null || _standardConformingStrings;
     }
 
     public void setStandardConformingStrings(boolean standardConformingStrings)
