@@ -50,7 +50,7 @@ public class QString extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.appendValue(getValue());
+        builder.appendStringLiteral(getValue());
     }
 
     @Override

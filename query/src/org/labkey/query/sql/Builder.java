@@ -17,7 +17,11 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,4 +120,71 @@ public class Builder extends SQLFragment
         super.append("\n");
         _fNewLine = true;
     }
+
+
+
+
+    /** CONSIDER merge Builder and SqlBuilder, so we don't have all these intermediate overloads, maybe even merge with SqlFragment */
+    @Override
+    public SQLFragment appendValue(CharSequence s)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(s);
+    }
+
+    @Override
+    public SQLFragment appendStringLiteral(CharSequence s)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendStringLiteral(s);
+    }
+
+    @Override
+    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendStringLiteral(s, d);
+    }
+
+    @Override
+    public SQLFragment appendValue(CharSequence s, SqlDialect d)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(s, d);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(g);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g, SqlDialect d)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(g, d);
+    }
+
+    public SQLFragment appendValue(@NotNull Container c)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(c);
+    }
+
+    @Override
+    public SQLFragment appendValue(@NotNull Container c, SqlDialect d)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(c, d);
+    }
+
+    @Override
+    public SQLFragment appendValue(Boolean B, SqlDialect d)
+    {
+        appendPrefix(); appendIndent();
+        return super.appendValue(B, d);
+    }
+    /** /CONSIDER  */
 }

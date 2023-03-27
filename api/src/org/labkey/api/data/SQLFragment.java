@@ -383,7 +383,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /** Adds the container's ID as an in-line string constant to the SQL */
-    public final SQLFragment appendValue(@NotNull Container c)
+    public SQLFragment appendValue(@NotNull Container c)
     {
         return appendValue(c, null);
     }
@@ -459,7 +459,7 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    public final SQLFragment appendValue(GUID g)
+    public SQLFragment appendValue(GUID g)
     {
         return appendValue(g, null);
     }
@@ -614,32 +614,27 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    /* for consisteency I renamed this appendValue(CharSequence s) */
-    @Deprecated
-    public final SQLFragment appendStringLiteral(CharSequence s)
+    /* like appendValue(CharSequence s), but force use of literal syntax */
+    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
     {
-        return appendValue(s);
+        if (null==s)
+            return appendNull();
+        getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+        return this;
     }
 
     /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
     public SQLFragment appendValue(CharSequence s)
     {
-        if (null == s)
-            return appendNull();
-        // Don't inline w/o a dialect.  Won't handle unicode correctly in all cases (e.g. SQL Server)
-        append("?");
-        add(s.toString());
-        return this;
+        return appendValue(s, null);
     }
 
-    public SQLFragment appendValue(@NotNull CharSequence s, SqlDialect d)
+    public SQLFragment appendValue(CharSequence s, SqlDialect d)
     {
-        if (s.length() > 200)
-        {
-            append("?");
-            add(s.toString());
-            return this;
-        }
+        if (null==s)
+            return appendNull();
+        if (null==d || s.length() > 200)
+            return append("?").add(s.toString());
         getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
         return this;
     }
@@ -1118,6 +1113,11 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment append(Object o)
     {
         return append(String.valueOf(o));
+    }
+    @Deprecated
+    public SQLFragment appendStringLiteral(CharSequence s)
+    {
+        return appendValue(s);
     }
     /* END OF REMOVE THIS */
 }
