@@ -475,16 +475,16 @@ public class QueryServiceImpl implements QueryService
 
         private QExpr bind(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            if (expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
+            if (expr instanceof QRowStar || expr instanceof QIfDefined)
             {
                 query.getParseErrors().add(new QueryException("Expression is not supported in where filter"));
                 return null;
             }
 
             /* See QuerySelect.declareFields() */
-            if (expr instanceof QQuery qquery)
+            if (expr instanceof QQuery || expr instanceof QUnion)
             {
-                QueryRelation select = Query.createQueryRelation(query, qquery, true);
+                QueryRelation select = Query.createQueryRelation(query, expr, true);
                 select.declareFields();
                 return new QQuery(select);
             }
