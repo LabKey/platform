@@ -61,22 +61,24 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @throws QueryUpdateServiceException Thrown if there were problems converting
      */
     @SuppressWarnings("unchecked")
-    protected Map<String,Object> mapFromBean(T bean) throws QueryUpdateServiceException
+    protected Map<String, Object> mapFromBean(T bean) throws QueryUpdateServiceException
     {
         if(null == bean)
             return null;
 
-        Map<String,Object> map;
+        Map<String, String> map;
         try
         {
-            map = (Map<String,Object>)BeanUtils.describe(bean);
+            map = BeanUtils.describe(bean);
         }
         catch(Exception e)
         {
             throw new QueryUpdateServiceException(e);
         }
 
-        return new CaseInsensitiveHashMap<>(map);
+        Map<String, Object> result = new CaseInsensitiveHashMap<>();
+        result.putAll(map);
+        return result;
     }
 
     /**
