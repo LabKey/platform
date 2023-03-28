@@ -3240,7 +3240,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
                     .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                    .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput.name()).append(")");
+                    .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput).append(")");
 
             Set<String> toCpasTypes = new HashSet<>();
             Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
