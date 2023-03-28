@@ -243,10 +243,4 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     {
         return propertyMap;
     }
-
-    @Override
-    public boolean includeInExport(FolderExportContext ctx, WebPart webPart)
-    {
-        return true;
-    }
 }
