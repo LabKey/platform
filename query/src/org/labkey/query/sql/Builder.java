@@ -181,7 +181,7 @@ public class Builder extends SQLFragment
     }
 
     @Override
-    public SQLFragment appendValue(Boolean B, SqlDialect d)
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect d)
     {
         appendPrefix(); appendIndent();
         return super.appendValue(B, d);

@@ -140,7 +140,7 @@ public class SqlBuilder extends Builder
     }
 
     @Override
-    public SQLFragment appendValue(Boolean B, SqlDialect d)
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect d)
     {
         return super.appendValue(B, null==d?_dialect:d);
     }

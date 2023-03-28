@@ -403,7 +403,7 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    public SQLFragment appendValue(Boolean B, SqlDialect dialect)
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect dialect)
     {
         if (null == B)
             return appendNull();
@@ -480,18 +480,10 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment appendValue(Enum<?> e)
     {
-        {
-            StringBuilder sb = getStringBuilder();
-            if (sb.length() > 0)
-            {
-                char last = sb.charAt(sb.length() - 1);
-                if (last == '\'')
-                    throw new IllegalStateException();
-            }
-        }
         if (null == e)
             return appendNull();
         String name = e.name();
+        // Enum.name() usually returns a simple string (a legal java identifier), this is a paranoia check.
         if (name.contains("'"))
             throw new IllegalStateException();
         getStringBuilder().append("'").append(name).append("'");
@@ -635,7 +627,7 @@ public class SQLFragment implements Appendable, CharSequence
             return appendNull();
         if (null==d || s.length() > 200)
             return append("?").add(s.toString());
-        getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+        appendStringLiteral(s, d);
         return this;
     }
 
