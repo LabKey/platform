@@ -422,7 +422,7 @@ public class StatementUtils
         sqlfObjectProperty.append(") VALUES (");
         sqlfObjectProperty.append(objectIdVar);
         sqlfObjectProperty.append(",").appendValue(dp.getPropertyId());
-        sqlfObjectProperty.append(",").appendValue(String.valueOf(propertyType.getStorageType()));
+        sqlfObjectProperty.append(",").appendStringLiteral(String.valueOf(propertyType.getStorageType()), _dialect);
         sqlfObjectProperty.append(",");
         if (dp.isMvEnabled())
             appendParameterOrVariable(sqlfObjectProperty, mv);
