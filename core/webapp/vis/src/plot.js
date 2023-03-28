@@ -2254,7 +2254,7 @@ boxPlot.render();
                 var pathLayerConfig = {
                     geom: new LABKEY.vis.Geom.Path({
                         opacity: 1,
-                        size: 1,
+                        size: 1.5,
                         dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum,
                         color: config.properties.lineColor
                     }),
@@ -2308,8 +2308,8 @@ boxPlot.render();
                     }
                 };
                 if (config.properties.hoverTextFn) {
-                    pathLayerConfig.aes.hoverText = function() {
-                        return config.properties.hoverTextFn.call(this);
+                    pathLayerConfig.aes.hoverText = function(event, pathData, layerSel) {
+                        return config.properties.hoverTextFn.call(this, event, pathData, layerSel, valueName, config);
                     };
                 }
 
