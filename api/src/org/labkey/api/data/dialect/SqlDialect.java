@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -64,6 +65,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * User: arauch
  * Date: Dec 28, 2004
@@ -99,7 +102,7 @@ public abstract class SqlDialect
         Set<String> types = _tableTypeMap.keySet();
         _tableTypes = types.toArray(new String[0]);
         _reservedWordSet = getReservedWords();
-        _stringHandler = createStringHandler();
+        // NOTE: do not call createStringHandler() here, it may depend on child member fields being initialized (they are not initialized yet!)
 
         MemTracker.getInstance().put(this);
     }
@@ -417,6 +420,11 @@ public abstract class SqlDialect
     // during bootstrap or upgrade.
     public void prepare(DbScope scope)
     {
+        synchronized (this)
+        {
+            // prepare code may have changed state that requires a new stringHandler
+            _stringHandler = null;
+        }
     }
 
     public abstract void prepareConnection(Connection conn) throws SQLException;
@@ -427,8 +435,10 @@ public abstract class SqlDialect
         return new StandardDialectStringHandler();
     }
 
-    public DialectStringHandler getStringHandler()
+    public synchronized DialectStringHandler getStringHandler()
     {
+        if (null == _stringHandler)
+            _stringHandler = createStringHandler();
         return _stringHandler;
     }
 
@@ -1119,7 +1129,7 @@ public abstract class SqlDialect
     // guaranteed to be valid or safe SQL!
     public String substituteParameters(SQLFragment frag)
     {
-        return _stringHandler.substituteParameters(frag);
+        return getStringHandler().substituteParameters(frag);
     }
 
 
@@ -1661,5 +1671,47 @@ public abstract class SqlDialect
     public boolean shouldTest()
     {
         return true;
+    }
+
+
+    public static class DialectTestCase
+    {
+        DbScope s;
+        SqlDialect d;
+
+        @Test
+        public void testScopes()
+        {
+            DbScope.getDbScopesToTest().forEach(scope ->
+            {
+                this.s = scope;
+                this.d = scope.getSqlDialect();
+                testDialectStringHandler();
+            });
+        }
+
+        void testEquals(String expected, SQLFragment sqlf)
+        {
+            try
+            {
+                assertEquals(expected, new SqlSelector(s, sqlf).getObject(String.class));
+            }
+            catch (AssertionError|Exception ae)
+            {
+                throw new AssertionError("Expected [" + expected + "] Failed for dialect " + d.getClass().getName() + " on scope " + s.getDatabaseUrl() + ": " + sqlf.toDebugString(), ae);
+            }
+        }
+
+        void testDialectStringHandler()
+        {
+            // quotes backslashes etc
+            for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
+                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+
+            // test things that look like postgres escapes
+            //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
+            for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
+                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+        }
     }
 }
