@@ -1188,7 +1188,8 @@ public class StatementUtils
     }
 
 
-    /* We could use SQLFragment.appendValue() for most of these.  However, here it important to force
+    /* We could use SQLFragment.appendValue() for most of these.  However, here it is important to force
+
      * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
      */
     private void toLiteral(SQLFragment f, Object value)
