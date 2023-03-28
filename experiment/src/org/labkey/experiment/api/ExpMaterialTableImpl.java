@@ -444,7 +444,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case SampleState ->
             {
-                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
                 ret.setHidden(!statusEnabled);
@@ -731,7 +731,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(ExpMaterialTable.Column.Flag);
 
         var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
         statusColInfo.setShownInDetailsView(statusEnabled);
         statusColInfo.setShownInInsertView(statusEnabled);
         statusColInfo.setShownInUpdateView(statusEnabled);
