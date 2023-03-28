@@ -65,6 +65,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -861,6 +863,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private void addAvailableAliquotCountColumn()
     {
+        // SampleAvailableAliquotCount query is defined in experiment module, needs experiment enabled to add this column
+        Module expModule = ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME);
+        if (!getContainer().getActiveModules().contains(expModule))
+            return;
+
         FieldKey availableAliquotsKey = FieldKey.fromParts("AvailableAliquotCount");
         SQLFragment availableAliquots = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$AvailableAliquotCountJoin$.AvailableAliquotsCount");
         ExprColumn availableAliquotsColumnInfo = new ExprColumn(this, availableAliquotsKey, availableAliquots, JdbcType.INTEGER) {
