@@ -107,11 +107,6 @@ public class PageWriterFactory implements FolderWriterFactory
                     factory = Portal.getPortalPart(webPart.getName());
                 }
 
-                if (factory != null && !factory.includeInExport(ctx, webPart))
-                {
-                    return;
-                }
-
                 PagesDocument.Pages.Page.Webpart webpartXml = pageXml.addNewWebpart();
                 webpartXml.setName(webPart.getName());
                 webpartXml.setIndex(webPart.getIndex());
