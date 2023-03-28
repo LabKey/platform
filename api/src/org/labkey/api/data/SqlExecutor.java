@@ -157,14 +157,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
                 try (PreparedStatement stmt = conn.prepareStatement(sql);
                      Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
-                    try
-                    {
-                        Table.setParameters(stmt, parameters, jdbcParameters);
-                    }
-                    catch (Exception x)
-                    {
-                        x.printStackTrace();
-                    }
+                    Table.setParameters(stmt, parameters, jdbcParameters);
                     int result = stmt.execute() ? -1 : stmt.getUpdateCount();
 
                     // Issue 46004: Churn through results from all statements in case there are errors lurking
