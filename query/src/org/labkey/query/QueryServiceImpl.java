@@ -3526,6 +3526,15 @@ public class QueryServiceImpl implements QueryService
             WhereClause clause = new WhereClause("(SELECT RowId FROM containers WHERE RowId IN (1) UNION SELECT RowId FROM containers WHERE RowId IN (2))");
             SQLFragment sql = clause.toSQLFragment(containersTableInfo.getExtendedColumns(false), null);
             assertTrue(sql.toString().contains("UNION"));
+
+            try
+            {
+                new WhereClause("(Invalid1 UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            }
+            catch (Exception e)
+            {
+                assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
+            }
         }
     }
 }
