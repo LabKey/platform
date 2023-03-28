@@ -1405,9 +1405,8 @@ public abstract class Method
     }
 
 
-
-
-    public static SQLFragment escapeLikePattern(SqlDialect d, SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
+    /* passing in a non-null dialect allows for inlining strings literals */
+    public static SQLFragment escapeLikePattern(@Nullable SqlDialect d, SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {
         if (!isSimpleString(f))
             return null;
@@ -1432,15 +1431,24 @@ public abstract class Method
     }
 
 
+    /** NOTE: because of how our parser works, a bunch of randon SQL keywords end up as strings.
+     * isSimpleString() and toSimpleString() can be used to "extract" those sequences.
+     * For instance "SQL_TSI_DAY"
+     * It would be better to parse these into QSqlKeyword or something like that, but we'd still have the
+     * problem of propagating these via SQLFragment.
+     */
     public static boolean isSimpleString(SQLFragment f)
     {
         String s = f.getSQL();
+        // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size()==1)
             return f.getParams().get(0) instanceof String;
         if (f.getParams().size() > 0)
             return false;
+        // am I 'normal' SQL String with no embedded single-quotes?
         if (s.length() >= 2 && s.startsWith("'"))
             return s.length()-1 == s.indexOf('\'',1);
+        // am I a sqlserver N' string with no embedded single-quotes?
         if (s.length() >= 3 && s.startsWith("N'"))
             return s.length()-1 == s.indexOf('\'',2);
         return false;
