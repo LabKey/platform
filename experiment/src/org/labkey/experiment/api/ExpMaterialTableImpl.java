@@ -872,8 +872,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (map.containsKey(tableAlias))
                     return;
 
-                super.declareJoins(parentAlias, map);
-
                 UserSchema schema = getUserSchema();
                 TableInfo tableInfo = schema.getCachedLookupTableInfo(ExpMaterialTableImpl.class.getName() + "# $AvailableAliquotCountJoin$", () ->
                 {
@@ -881,10 +879,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     return expSchema.getTable("SampleAvailableAliquotCount");
                 });
 
+                if (tableInfo == null)
+                    return;
+
                 SQLFragment joinSql = new SQLFragment();
                 joinSql.append(" LEFT OUTER JOIN ").append(tableInfo.getFromSQL(tableAlias)
                         .append(" ON ").append(tableAlias).append(".lsid = ").append(parentAlias).append(".lsid"));
                 map.put(tableAlias, joinSql);
+
+                super.declareJoins(parentAlias, map);
             }
         };
         availableAliquotsColumnInfo.setLabel("Available Aliquot Count");
