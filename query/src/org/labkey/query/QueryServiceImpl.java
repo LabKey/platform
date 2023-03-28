@@ -3516,5 +3516,16 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("Query metadata overrides from the simpletest module", 3, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
             }
         }
+
+        @Test
+        public void testWhereClauseWithUnion()
+        {
+            TestContext ctx = TestContext.get();
+            UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ContainerManager.getRoot(), "core");
+            TableInfo containersTableInfo = schema.getTable("containers");
+            WhereClause clause = new WhereClause("(SELECT RowId FROM containers WHERE RowId IN (1) UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            SQLFragment sql = clause.toSQLFragment(containersTableInfo.getExtendedColumns(false), null);
+            assertTrue(sql.toString().contains("UNION"));
+        }
     }
 }
