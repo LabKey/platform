@@ -2737,7 +2737,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SqlSelector buildSqlSelector(Map<String, Object> parameters)
+        public SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters)
         {
             SQLFragment sql = buildSqlFragment();
             bindNamedParameters(sql, parameters);
@@ -2747,7 +2747,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public Results select(Map<String, Object> parameters, boolean cache)
+        public Results select(@Nullable Map<String, Object> parameters, boolean cache)
         {
             SqlSelector selector = buildSqlSelector(parameters);
             ResultSet rs = selector.getResultSet(cache, cache);
