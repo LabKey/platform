@@ -91,7 +91,7 @@ public class IndexInspector
         }
 
         @Override
-        protected void writeBody()
+        protected int writeBody()
         {
             try (Directory directory = WritableIndexManagerImpl.openDirectory(getIndexDirectory());
                  IndexReader reader = DirectoryReader.open(directory))
@@ -123,8 +123,10 @@ public class IndexInspector
                     }
                 }
 
+                int docCount = reader.maxDoc();
+
                 // The stored terms are much easier to get. For each document, output stored fields plus the statistics computed above
-                for (int i = 0; i < reader.maxDoc(); i++)
+                for (int i = 0; i < docCount; i++)
                 {
                     Document doc = reader.document(i);
                     String[] titles = doc.getValues("title");
@@ -149,6 +151,8 @@ public class IndexInspector
 
                     writeLine(Arrays.asList(titles[0], type, path, urls[0], navtrail, uniqueIds[0], String.valueOf(termCountPerDoc[i]), summary));
                 }
+
+                return docCount;
             }
             catch (IOException e)
             {

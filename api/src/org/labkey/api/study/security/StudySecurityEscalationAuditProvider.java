@@ -15,13 +15,12 @@
  */
 package org.labkey.api.study.security;
 
-import org.labkey.api.audit.query.AbstractAuditDomainKind;
-
 /**
  * @see SecurityEscalationAuditProvider
  */
-public class StudySecurityEscalationAuditProvider extends SecurityEscalationAuditProvider {
-    public static String EVENT_TYPE = StudySecurityEscalationEvent.class.getName();
+public class StudySecurityEscalationAuditProvider extends SecurityEscalationAuditProvider
+{
+    public static String EVENT_TYPE = StudySecurityEscalationEvent.class.getSimpleName();
     public static String AUDIT_LOG_TITLE = "Study Security Escalations";
 
     @Override
@@ -59,12 +58,7 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
 
     public static class StudySecurityEscalationDomain extends SecurityEscalationAuditDomainKind {
         public StudySecurityEscalationDomain() {
-            super(EVENT_TYPE);
-        }
-
-        @Override
-        public String getDomainName() {
-            return StudySecurityEscalationDomain.class.getName();
+            super(EVENT_TYPE, StudySecurityEscalationEvent.class.getName());
         }
     }
 }
