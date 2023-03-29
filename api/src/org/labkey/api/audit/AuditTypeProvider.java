@@ -25,10 +25,6 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
-/**
- * User: klum
- * Date: 7/8/13
- */
 public interface AuditTypeProvider
 {
     /**
@@ -58,4 +54,13 @@ public interface AuditTypeProvider
     Map<FieldKey, String> legacyNameMap();
 
     ActionURL getAuditUrl();
+
+    /**
+     * Does this provider let the retention time feature delete old rows? Most providers should return true, but when
+     * data from an audit table supports a product feature (e.g., sample timeline) consider returning false.
+     */
+    default boolean canDeleteOldRows()
+    {
+        return true;
+    }
 }

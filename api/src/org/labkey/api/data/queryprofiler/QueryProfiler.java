@@ -464,7 +464,7 @@ public class QueryProfiler
     public static class QueryStatTsvWriter extends TSVWriter
     {
         @Override
-        protected void write()
+        protected int write()
         {
             QueryTrackerSet export = new InvocationQueryTrackerSet() {
                 @Override
@@ -500,6 +500,8 @@ public class QueryProfiler
                 for (QueryTracker tracker : export.descendingSet())
                     tracker.exportRow(_pw);
             }
+
+            return export.size();
         }
     }
 
