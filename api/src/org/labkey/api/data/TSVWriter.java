@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
@@ -64,10 +65,10 @@ public abstract class TSVWriter extends TextWriter
             return this.text;
         }
 
-        public String text;
-        public char delim;
-        public String extension;
-        public String contentType;
+        public final String text;
+        public final char delim;
+        public final String extension;
+        public final String contentType;
     }
 
     public enum QUOTE
@@ -86,7 +87,7 @@ public abstract class TSVWriter extends TextWriter
             return Character.toString(this.quoteChar);
         }
 
-        public char quoteChar;
+        public final char quoteChar;
     }
 
     public TSVWriter()
@@ -99,7 +100,7 @@ public abstract class TSVWriter extends TextWriter
         return _filenamePrefix;
     }
 
-    private static final Pattern badChars = Pattern.compile("[\\\\:/\\[\\]\\?\\*\\|]");
+    private static final Pattern badChars = Pattern.compile("[\\\\:/\\[\\]?*|]");
 
     public void setFilenamePrefix(String filenamePrefix)
     {
@@ -178,7 +179,7 @@ public abstract class TSVWriter extends TextWriter
 
             while (-1 != (i = value.indexOf(_chQuote, lastMatch)))
             {
-                sb.append(value.substring(lastMatch, i));
+                sb.append(value, lastMatch, i);
                 sb.append(_chQuote).append(_chQuote);
                 lastMatch = i+1;
             }
@@ -276,13 +277,15 @@ public abstract class TSVWriter extends TextWriter
     }
 
     @Override
-    protected void write()
+    protected int write()
     {
         writeFileHeader();
         if (isHeaderRowVisible())
             writeColumnHeaders();
-        writeBody();
+        int ret = writeBody();
         writeFileFooter();
+
+        return ret;
     }
 
     public void writeFileHeader()
@@ -305,8 +308,9 @@ public abstract class TSVWriter extends TextWriter
     {
     }
 
-    protected void writeBody()
+    protected int writeBody()
     {
+        return 0;
     }
 
     protected void writeLine(Iterable<String> values)
@@ -331,85 +335,104 @@ public abstract class TSVWriter extends TextWriter
         private static class FakeTSVWriter extends TSVWriter
         {
             @Override
-            protected void write()
+            protected int write()
             {
-                // no-op
+                return 0;
             }
         }
 
         @Test
-        public void testBasic()
+        public void testBasic() throws IOException
         {
-            FakeTSVWriter w = new FakeTSVWriter();
-            assertEquals("", w.quoteValue(""));
-            assertEquals("a", w.quoteValue("a"));
-            assertEquals("", w.quoteValue(null));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                assertEquals("", w.quoteValue(""));
+                assertEquals("a", w.quoteValue("a"));
+                assertEquals("", w.quoteValue(null));
+            }
         }
 
         @Test
-        public void testWhitespace()
+        public void testWhitespace() throws IOException
         {
-            FakeTSVWriter w = new FakeTSVWriter();
-            assertEquals("a b", w.quoteValue("a b"));
-            assertEquals("\"  ab\"", w.quoteValue("  ab"));
-            assertEquals("\"ab  \"", w.quoteValue("ab  "));
-            assertEquals("\"a\nb\"", w.quoteValue("a\nb"));
-            assertEquals("\"a\n\rb\"", w.quoteValue("a\n\rb"));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                assertEquals("a b", w.quoteValue("a b"));
+                assertEquals("\"  ab\"", w.quoteValue("  ab"));
+                assertEquals("\"ab  \"", w.quoteValue("ab  "));
+                assertEquals("\"a\nb\"", w.quoteValue("a\nb"));
+                assertEquals("\"a\n\rb\"", w.quoteValue("a\n\rb"));
+            }
         }
 
         @Test
-        public void testDelimiterChar()
+        public void testDelimiterChar() throws IOException
         {
-            FakeTSVWriter w = new FakeTSVWriter();
-            assertEquals("\"one\t two\t three\"", w.quoteValue("one\t two\t three"));
-            //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
-            assertEquals("one; two; three", w.quoteValue("one; two; three"));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                assertEquals("\"one\t two\t three\"", w.quoteValue("one\t two\t three"));
+                //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
+                assertEquals("one; two; three", w.quoteValue("one; two; three"));
+            }
 
-            w = new FakeTSVWriter();
-            w.setDelimiterCharacter(';');
-            assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
-            //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
-            assertEquals("\"one; two; three\"", w.quoteValue("one; two; three"));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                w.setDelimiterCharacter(';');
+                assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
+                //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
+                assertEquals("\"one; two; three\"", w.quoteValue("one; two; three"));
+            }
 
-            w = new FakeTSVWriter();
-            w.setDelimiterCharacter('\\');
-            assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
-            assertEquals("\"one\\ two\\ three\"", w.quoteValue("one\\ two\\ three"));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                w.setDelimiterCharacter('\\');
+                assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
+                assertEquals("\"one\\ two\\ three\"", w.quoteValue("one\\ two\\ three"));
+            }
 
-            w = new FakeTSVWriter();
-            w.setDelimiterCharacter('(');
-            assertEquals("\"one( two( three\"", w.quoteValue("one( two( three"));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                w.setDelimiterCharacter('(');
+                assertEquals("\"one( two( three\"", w.quoteValue("one( two( three"));
+            }
         }
 
         @Test
-        public void testQuoteChar()
+        public void testQuoteChar() throws IOException
         {
-            FakeTSVWriter w = new FakeTSVWriter();
-            assertEquals("hello", w.quoteValue("hello"));
-            assertEquals("\"\"\"\"", w.quoteValue("\""));
-            assertEquals("\"bob says, \"\"hello\"\"\"", w.quoteValue("bob says, \"hello\""));
-            assertEquals("\"bob says; \"\"hello\"\"\"", w.quoteValue("bob says; \"hello\""));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                assertEquals("hello", w.quoteValue("hello"));
+                assertEquals("\"\"\"\"", w.quoteValue("\""));
+                assertEquals("\"bob says, \"\"hello\"\"\"", w.quoteValue("bob says, \"hello\""));
+                assertEquals("\"bob says; \"\"hello\"\"\"", w.quoteValue("bob says; \"hello\""));
+            }
 
-            w = new FakeTSVWriter();
-            w.setQuoteCharacter(':');
-            assertEquals(":bob says:: \"hello\":", w.quoteValue("bob says: \"hello\""));
-            //assertEquals(":bob says, \"hello\":", w.quoteValue("bob says, \"hello\"")); // commas should always be quoted
-            assertEquals("bob says; \"hello\"", w.quoteValue("bob says; \"hello\""));
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                w.setQuoteCharacter(':');
+                assertEquals(":bob says:: \"hello\":", w.quoteValue("bob says: \"hello\""));
+                //assertEquals(":bob says, \"hello\":", w.quoteValue("bob says, \"hello\"")); // commas should always be quoted
+                assertEquals("bob says; \"hello\"", w.quoteValue("bob says; \"hello\""));
+            }
         }
 
         @Test
-        public void testRowSeparator()
+        public void testRowSeparator() throws IOException
         {
-            FakeTSVWriter w = new FakeTSVWriter();
-            w.setRowSeparator("@@");
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                w.setRowSeparator("@@");
 
-            StringWriter sw = new StringWriter(100);
-            PrintWriter pw = new PrintWriter(sw);
-            w.setPrintWriter(pw);
+                StringWriter sw = new StringWriter(100);
+                PrintWriter pw = new PrintWriter(sw);
+                w.setPrintWriter(pw);
 
-            w.writeLine(Arrays.asList("one", "es@@caped", "two"));
-            w.writeLine(Arrays.asList("three", "es\"caped", "four"));
-            assertEquals("one\t\"es@@caped\"\ttwo@@three\t\"es\"\"caped\"\tfour@@", sw.getBuffer().toString());
+                w.writeLine(Arrays.asList("one", "es@@caped", "two"));
+                w.writeLine(Arrays.asList("three", "es\"caped", "four"));
+
+                assertEquals("one\t\"es@@caped\"\ttwo@@three\t\"es\"\"caped\"\tfour@@", sw.getBuffer().toString());
+            }
         }
     }
 }

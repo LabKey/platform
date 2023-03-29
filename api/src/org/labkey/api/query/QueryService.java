@@ -649,7 +649,7 @@ public interface QueryService
         SelectBuilder distinct(boolean b);
 
         SQLFragment buildSqlFragment();
-        SqlSelector buildSqlSelector(Map<String, Object> parameters);
+        SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters);
         Results select(@Nullable Map<String, Object> parameters, boolean cache);
         default Results select()
         {

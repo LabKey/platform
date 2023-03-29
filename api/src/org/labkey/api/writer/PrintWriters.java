@@ -26,12 +26,11 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
 /**
  * Factory methods to create PrintWriters, ensuring standard character sets and buffering by default.
- *
- * Created by adam on 6/6/2015.
  */
 public class PrintWriters
 {
@@ -52,9 +51,9 @@ public class PrintWriters
      * @param file File destination for the new PrintWriter
      * @return A standard, buffered PrintWriter targeting the File
      */
-    public static PrintWriter getPrintWriter(File file) throws FileNotFoundException
+    public static PrintWriter getPrintWriter(File file, OpenOption... options) throws FileNotFoundException
     {
-        return getPrintWriter(file.toPath());
+        return getPrintWriter(file.toPath(), options);
     }
 
     /**
@@ -63,11 +62,11 @@ public class PrintWriters
      * @param file Path destination for the new PrintWriter
      * @return A standard, buffered PrintWriter targeting the File
      */
-    public static PrintWriter getPrintWriter(Path file)
+    public static PrintWriter getPrintWriter(Path file, OpenOption... options)
     {
         try
         {
-            return new StandardPrintWriter(Files.newOutputStream(file));
+            return new StandardPrintWriter(Files.newOutputStream(file, options));
         }
         catch (IOException e)
         {
