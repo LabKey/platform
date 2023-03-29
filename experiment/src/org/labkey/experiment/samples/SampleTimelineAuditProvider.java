@@ -139,6 +139,11 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         return defaultVisibleColumns;
     }
 
+    @Override
+    public boolean canDeleteOldRows()
+    {
+        return false;
+    }
 
     public static class SampleTimelineAuditDomainKind extends AbstractAuditDomainKind
     {

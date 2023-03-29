@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -90,13 +91,16 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
     @Override
-    protected void write()
+    protected int write()
     {
+        MutableInt ret = new MutableInt();
         setResultsHandleAndClose(results -> {
             _results = results; // TODO: Change write() signature to take context and stop setting member variable
-            TSVGridWriter.super.write();
+            ret.setValue(TSVGridWriter.super.write());
             return null;
         });
+
+        return ret.getValue();
     }
 
     private interface ResultsHandler<T>
@@ -135,12 +139,12 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
     @Override
-    protected void writeBody()
+    protected int writeBody()
     {
-        writeBody(_results);
+        return writeBody(_results);
     }
 
-    private void writeBody(Results results)
+    private int writeBody(Results results)
     {
         try
         {
@@ -149,12 +153,16 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
             // Output all the data cells
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+            int rows = 0;
 
             while (results.next())
             {
                 ctx.setRow(factory.getRowMap(results));
                 writeRow(ctx, _displayColumns);
+                rows++;
             }
+
+            return rows;
         }
         catch (SQLException ex)
         {

@@ -42,21 +42,26 @@ public class FastaWriter<E extends FastaEntry> extends TextWriter
         return _filename;
     }
 
-    public void write(HttpServletResponse response, String filename) throws IOException
+    public int write(HttpServletResponse response, String filename) throws IOException
     {
         _filename = filename;
-        write(response);
+        return write(response);
     }
 
     // Always closes the PrintWriter
     @Override
-    public void write()
+    public int write()
     {
+        int entryCount = 0;
+
         while (_generator.hasNext())
         {
             E entry = _generator.next();
             writeEntry(_pw, entry);
+            entryCount++;
         }
+
+        return entryCount;
     }
 
     protected void writeEntry(PrintWriter pw, E entry)

@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.MutableColumnInfo;
@@ -31,6 +32,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -281,32 +283,29 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
      */
     public static abstract class SecurityEscalationAuditDomainKind extends AbstractAuditDomainKind
     {
-        private String eventType;
-        public static String NAMESPACE_PREFIX = "Audit-";
-
+        private static final String NAMESPACE_PREFIX = "Audit-";
         private static Set<PropertyDescriptor> _fields = null;
+
+        private final String _eventType;
+        private final String _tableName;
 
         /**
          * To be called by {@link AbstractAuditTypeProvider#getDomainKind()}.
          *
          * @param eventType This should match its parent's {@link SecurityEscalationAuditProvider#getEventType()}.
+         * @param tableName The table name to use when constructing the domain URI. We use this instead of the event
+         *                  type because we've switched to a more user-friendly event name but use the old, ugly name
+         *                  internally to stay backwards compatible.
          */
-        public SecurityEscalationAuditDomainKind(String eventType) {
+        public SecurityEscalationAuditDomainKind(String eventType, String tableName) {
             super(eventType);
-            this.eventType = eventType;
+            _eventType = eventType;
+            _tableName = tableName;
         }
-
-        /**
-         * Returns the domain name of this audit type.  This is generally this class's name without
-         * the "kind" at the end.
-         *
-         * @return The class's name without the "kind" ending.
-         */
-        public abstract String getDomainName();
 
         @Override
         public String getKindName() {
-            return eventType;
+            return _eventType;
         }
 
         @Override
@@ -332,6 +331,12 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
             }
 
             return _fields;
+        }
+
+        @Override
+        public String generateDomainURI(String schemaName, String tableName, Container c, User u)
+        {
+            return super.generateDomainURI(schemaName, _tableName, c, u);
         }
     }
 }
