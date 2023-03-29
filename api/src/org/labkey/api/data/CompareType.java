@@ -884,7 +884,7 @@ public abstract class CompareType
                     sep = " OR ";
                     sql.append(dialect.getColumnSelectName(column.getAlias()));
                     sql.append(" = ");
-                    sql.append(paramNum);
+                    sql.appendValue(paramNum);
                     continue;
                 }
 
@@ -2229,8 +2229,8 @@ public abstract class CompareType
         }
 
         ret.append(" UNION SELECT (").append(userIdSQL).append(")");
-        ret.append(" UNION SELECT ").append(Group.groupGuests);
-        ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
+        ret.append(" UNION SELECT ").appendValue(Group.groupGuests);
+        ret.append(" UNION SELECT ").appendValue(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
         ret.append(")");
         return ret;
     }

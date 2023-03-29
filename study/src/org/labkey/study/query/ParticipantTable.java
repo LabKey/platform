@@ -271,7 +271,7 @@ public class ParticipantTable extends BaseStudyTable
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g" );
                 sql.append(" JOIN ");
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
-                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=").append(c);
+                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=").appendValue(c);
                 sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
                 sql.add(_def.getRowId());
                 sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());

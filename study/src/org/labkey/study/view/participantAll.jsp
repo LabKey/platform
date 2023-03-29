@@ -156,7 +156,7 @@
             f.append(union).append("SELECT ")
                     .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
                     .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
-                    .append(dd.getDatasetId()).append(" as DatasetId,")
+                    .appendValue(dd.getDatasetId()).append(" as DatasetId,")
                     .append("COUNT(*) AS _RowCount");
             f.append("\nFROM ").append(t.getFromSQL(alias));
             f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
