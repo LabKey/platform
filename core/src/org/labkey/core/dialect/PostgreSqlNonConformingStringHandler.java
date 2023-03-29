@@ -28,8 +28,6 @@ import org.labkey.api.data.dialect.StandardDialectStringHandler;
 // Adds support for backslash escaping in string literals
 public class PostgreSqlNonConformingStringHandler extends StandardDialectStringHandler
 {
-    // TODO: I don't think this is necessary... non-conforming strings and backslash_quote settings still allow '' for quote escaping;
-    // they don't require \'
     @Override
     public String quoteStringLiteral(String str)
     {

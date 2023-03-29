@@ -45,7 +45,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -86,7 +85,10 @@ public abstract class Method
                     if (args.size() == 3)
                     {
                         QNode nodeInterval = args.get(2);
-                        TimestampDiffInterval i = TimestampDiffInterval.parse(nodeInterval.getTokenText());
+                        String text = nodeInterval.getTokenText();
+                        if (text.length() >= 2 && text.startsWith("'") && text.endsWith("'"))
+                            text = text.substring(1,text.length()-1);
+                        TimestampDiffInterval i = TimestampDiffInterval.parse(text);
                         if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
                         {
                             parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
@@ -597,7 +599,7 @@ public abstract class Method
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
             {
-                TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0].getSQL());
+                TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0]);
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
@@ -619,11 +621,14 @@ public abstract class Method
         SQL_TSI_YEAR;
 
 
+        static TimestampDiffInterval parse(SQLFragment sqlf)
+        {
+            return parse(toSimpleString(sqlf));
+        }
+
         static TimestampDiffInterval parse(String s)
         {
             String interval = StringUtils.trimToEmpty(s).toUpperCase();
-            if (interval.length() >= 2 && interval.startsWith("'") && interval.endsWith("'"))
-                interval = interval.substring(1,interval.length()-1);
             if (!interval.startsWith("SQL_TSI"))
                 interval = "SQL_TSI_" + interval;
             try
@@ -724,11 +729,11 @@ public abstract class Method
             ret.append(")");                            
             return ret;
         }
+
+        /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
-            String typeName = StringUtils.trimToEmpty(typeSqlFragment.getSQL());
-            if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
-                typeName = typeName.substring(1,typeName.length()-1);
+            String typeName = toSimpleString(typeSqlFragment);
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
             return typeName;
@@ -848,10 +853,10 @@ public abstract class Method
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
-            scaled.append(")*").append(Math.pow(10,i));
+            scaled.append(")*").appendValue(Math.pow(10,i));
             SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
             ret.append("/");
-            ret.append(Math.pow(10,i));
+            ret.appendValue(Math.pow(10,i));
             return ret;
 		}
 	}
@@ -869,7 +874,7 @@ public abstract class Method
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
-            TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2].getSQL());
+            TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2]);
             if (i == TimestampDiffInterval.SQL_TSI_YEAR)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
             if (i == TimestampDiffInterval.SQL_TSI_MONTH)
@@ -968,7 +973,7 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
-            SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
+            SQLFragment pattern = escapeLikePattern(dialect, arguments[1], '!', null, "%");
             if (null != pattern)
             {
                 String like = dialect.getCaseInsensitiveLikeOperator();
@@ -1400,21 +1405,19 @@ public abstract class Method
     }
 
 
-
-
-    public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
+    /* passing in a non-null dialect allows for inlining strings literals */
+    public static SQLFragment escapeLikePattern(@Nullable SqlDialect d, SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {
         if (!isSimpleString(f))
             return null;
-
+        String string = toSimpleString(f);
         String escapeChars = "_%[" + escapeChar;
-        SQLFragment esc = new SQLFragment();
+        StringBuilder esc = new StringBuilder();
 
-        esc.append("'");
         if (null != prepend)
             esc.append(prepend);
 
-        for (char c : f.getSQL().substring(1,f.length()-1).toCharArray())
+        for (char c : string.toCharArray())
         {
             if (-1 != escapeChars.indexOf(c))
                 esc.append(escapeChar);
@@ -1423,32 +1426,48 @@ public abstract class Method
 
         if (null != append)
             esc.append(append);
-        esc.append('\'');
 
-        return esc;
+        return new SQLFragment().appendValue(esc, d);
     }
 
 
+    /** NOTE: because of how our parser works, a bunch of randon SQL keywords end up as strings.
+     * isSimpleString() and toSimpleString() can be used to "extract" those sequences.
+     * For instance "SQL_TSI_DAY"
+     * It would be better to parse these into QSqlKeyword or something like that, but we'd still have the
+     * problem of propagating these via SQLFragment.
+     */
     public static boolean isSimpleString(SQLFragment f)
     {
+        String s = f.getSQL();
+        // am I a simple bound parameter?
+        if ("?".equals(s) && f.getParams().size()==1)
+            return f.getParams().get(0) instanceof String;
         if (f.getParams().size() > 0)
             return false;
-        String s = f.getSQL();
-        if (s.length() < 2 || !s.startsWith("'"))
-            return false;
-        return s.length()-1 == s.indexOf('\'',1);
+        // am I 'normal' SQL String with no embedded single-quotes?
+        if (s.length() >= 2 && s.startsWith("'"))
+            return s.length()-1 == s.indexOf('\'',1);
+        // am I a sqlserver N' string with no embedded single-quotes?
+        if (s.length() >= 3 && s.startsWith("N'"))
+            return s.length()-1 == s.indexOf('\'',2);
+        return false;
     }
 
 
     public static String toSimpleString(SQLFragment f)
     {
-        assert isSimpleString(f);
+        if (!isSimpleString(f))
+            throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
-        if (s.length() < 2 || !s.startsWith("'"))
-            return s;
-        s = s.substring(1,s.length()-1);
-        s = StringUtils.replace(s,"''","'");
-        return s;
+        if ("?".equals(s) && f.getParams().size()==1)
+            return (String)f.getParams().get(0);
+        assert(s.endsWith("'"));
+        if (s.startsWith("'"))
+            return s.substring(1,s.length()-1);
+        if (s.startsWith("N'"))
+            return s.substring(2,s.length()-1);
+        throw new IllegalArgumentException(f.toDebugString());
     }
 
 

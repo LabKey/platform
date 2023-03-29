@@ -1998,7 +1998,7 @@ public class StudyManager
                     "SET QCState = ");
             // do string concatenation, rather that using a parameter, for the new state id because Postgres null
             // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
-            sql.append(newState != null ? newState.getRowId() : "NULL");
+            sql.appendValue(newState != null ? newState.getRowId() : null);
             sql.append(", modified = ?");
             sql.add(new Date());
             sql.append("\nWHERE lsid ");
@@ -3099,7 +3099,7 @@ public class StudyManager
         SQLFragment filter = new SQLFragment();
         if (!study.getShareDatasetDefinitions())
         {
-            filter.append("Container=").append(study.getContainer());
+            filter.append("Container=").appendValue(study.getContainer());
         }
         else
         {
