@@ -613,6 +613,8 @@ public class SQLFragment implements Appendable, CharSequence
             append(d.getVarcharCast(new SQLFragment("NULL")));
         else
             getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+        // NOTE: I tried putting this into the StringHandler. That broke other code paths.
+        // NOTE: May still want to consider that in the future
         if (d.isPostgreSQL())
             getStringBuilder().append("::VARCHAR");
         return this;
