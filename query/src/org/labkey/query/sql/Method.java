@@ -1556,13 +1556,12 @@ public abstract class Method
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         SQLFragment rawOperator = arguments[1];
-                        String operatorRawString = rawOperator.getSQL();
-                        if (!rawOperator.getParams().isEmpty() || !operatorRawString.startsWith("'") || !operatorRawString.endsWith("'"))
+                        String strippedOperator = isSimpleString(rawOperator) ? toSimpleString(rawOperator) : null;
+                        if (StringUtils.isBlank(strippedOperator))
                         {
                             throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
                         }
 
-                        String strippedOperator = operatorRawString.substring(1, operatorRawString.length() - 1);
                         if (!ALLOWED_OPERATORS.contains(strippedOperator))
                         {
                             throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
