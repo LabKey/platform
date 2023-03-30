@@ -610,6 +610,8 @@ public class SQLFragment implements Appendable, CharSequence
      * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
      *    array_agg('string') fails array_agg('string'::VARCHAR) works
      *    json_object('{}) works json_object('string'::VARCHAR) fails
+     *
+     * In the case of json_object() it expects TEXT. Postgres  will promote 'json' to TEXT, but not 'json'::VARCHAR
      */
     public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {

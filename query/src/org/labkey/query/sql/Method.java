@@ -20,11 +20,14 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
@@ -58,6 +61,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
 
@@ -1755,6 +1759,47 @@ public abstract class Method
                     return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
                 }
             };
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        void assertIsSimpleString(String expected, SQLFragment s)
+        {
+            assertTrue(expected + " should be a simple string", isSimpleString(s));
+            assertEquals(expected, toSimpleString(s));
+        }
+        void assertNotSimpleString(SQLFragment s)
+        {
+            assertFalse(s.toDebugString() + " should not be a simple string", isSimpleString(s));
+        }
+
+        @Test
+        public void testSimpleStringIntended()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+
+            // These are the simple cases that isSimpleString is intended to handle
+            // e.g SQL keywords and oeprators
+            for (var s : List.of("->", "->>", "#>", "#>>", "@>", "<@", "?", "?|", "?&", "||", "-", "#-", SQL_TSI_FRAC_SECOND.name()))
+            {
+                assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s,d));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));
+                assertIsSimpleString(s, new SQLFragment("?").add(s));
+            }
+        }
+
+        @Test
+        public void testSimpleString()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+            assertNotSimpleString(new SQLFragment("test ?").add("param"));
+            assertNotSimpleString(new SQLFragment("?").add(5));
+            assertNotSimpleString(new SQLFragment("SELECT 'test'"));
+            assertNotSimpleString(new SQLFragment("'test''string'"));
         }
     }
 }
