@@ -508,18 +508,20 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     /** Adds the objects as JDBC parameter values */
-    public void addAll(Collection<?> l)
+    public SQLFragment addAll(Collection<?> l)
     {
         getMutableParams().addAll(l);
+        return this;
     }
 
 
     /** Adds the objects as JDBC parameter values */
-    public void addAll(Object... values)
+    public SQLFragment addAll(Object... values)
     {
         if (values == null)
-            return;
+            return this;
         addAll(Arrays.asList(values));
+        return this;
     }
 
 

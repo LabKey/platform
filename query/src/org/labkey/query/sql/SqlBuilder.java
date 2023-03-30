@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -25,11 +26,12 @@ import org.labkey.api.util.GUID;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 public class SqlBuilder extends Builder
 {
     private final DbSchema _schema;
-    private final SqlDialect _dialect;
+    private final @NotNull SqlDialect _dialect;
 
 
     public SqlBuilder(DbSchema schema)
@@ -38,8 +40,9 @@ public class SqlBuilder extends Builder
         _dialect = schema.getSqlDialect();
     }
 
-    public SqlBuilder(SqlDialect dialect)
+    public SqlBuilder(@NotNull SqlDialect dialect)
     {
+        Objects.requireNonNull(dialect);
         _schema = null;
         _dialect = dialect;
     }
@@ -60,16 +63,10 @@ public class SqlBuilder extends Builder
     }
 
     @Override
-    public void addAll(Collection<?> params)
+    public SqlBuilder addAll(Collection<?> params)
     {
         super.addAll(Arrays.asList(params.toArray()));
-    }
-
-    public void appendLiteral(String value)
-    {
-        if (value.indexOf("\\") >= 0 || value.indexOf("\'") >= 0)
-            throw new IllegalArgumentException("Illegal characters in '" + value + "'");
-        append("'" + value + "'");
+        return this;
     }
 
     public SqlDialect getDialect()
@@ -80,11 +77,6 @@ public class SqlBuilder extends Builder
     public DbSchema getDbSchema()
     {
         return _schema;
-    }
-
-    public void appendIdentifier(String str)
-    {
-        append("\"" + str + "\"");
     }
 
     public boolean allowUnsafeCode()
@@ -107,13 +99,15 @@ public class SqlBuilder extends Builder
     @Override
     public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
     {
-        return super.appendStringLiteral(s,  null==d?_dialect:d);
+        assert null==d || _dialect==d;
+        return super.appendStringLiteral(s,  _dialect);
     }
 
     @Override
     public SQLFragment appendValue(CharSequence s, SqlDialect d)
     {
-        return super.appendValue(s, null==d?_dialect:d);
+        assert null==d || _dialect==d;
+        return super.appendValue(s, _dialect);
     }
 
     @Override
@@ -125,9 +119,11 @@ public class SqlBuilder extends Builder
     @Override
     public SQLFragment appendValue(GUID g, SqlDialect d)
     {
-        return super.appendValue(g, null==d?_dialect:d);
+        assert null==d || _dialect==d;
+        return super.appendValue(g, _dialect);
     }
 
+    @Override
     public SQLFragment appendValue(@NotNull Container c)
     {
         return super.appendValue(c, _dialect);
@@ -136,12 +132,19 @@ public class SqlBuilder extends Builder
     @Override
     public SQLFragment appendValue(@NotNull Container c, SqlDialect d)
     {
-        return super.appendValue(c, null==d?_dialect:d);
+        assert null==d || _dialect==d;
+        return super.appendValue(c, _dialect);
+    }
+
+    public SQLFragment appendValue(Boolean B)
+    {
+        return super.appendValue(B, _dialect);
     }
 
     @Override
     public SQLFragment appendValue(Boolean B, @NotNull SqlDialect d)
     {
-        return super.appendValue(B, null==d?_dialect:d);
+        assert null==d || _dialect==d;
+        return super.appendValue(B, _dialect);
     }
 }

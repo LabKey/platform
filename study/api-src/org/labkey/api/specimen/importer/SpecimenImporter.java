@@ -748,15 +748,13 @@ public class SpecimenImporter extends SpecimenTableManager
     private void setLockedInRequestStatus()
     {
         TableInfo vialTable = getTableInfoVial();
+        SqlDialect dialect =  vialTable.getSqlDialect();
         String vialTableSelectName = vialTable.getSelectName();
         SQLFragment lockedInRequestSql = new SQLFragment("UPDATE ").append(vialTableSelectName).append(
-                " SET LockedInRequest = ? WHERE RowId IN (SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
+                " SET LockedInRequest = ").appendValue(Boolean.TRUE, dialect).append(" WHERE RowId IN (SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
                 .append(" FROM ").append(vialTableSelectName).append(", study.LockedSpecimens " +
-                "WHERE study.LockedSpecimens.Container = ? AND ")
+                "WHERE study.LockedSpecimens.Container = ").appendValue(getContainer(), dialect).append(" AND ")
                 .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = study.LockedSpecimens.GlobalUniqueId)");
-
-        lockedInRequestSql.add(Boolean.TRUE);
-        lockedInRequestSql.add(getContainer().getId());
 
         info("Setting Specimen Locked in Request status...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(lockedInRequestSql);
@@ -2666,30 +2664,29 @@ public class SpecimenImporter extends SpecimenTableManager
 
     public static void makeUpdateSpecimenHashSql(DbSchema schema, Container container, List<SpecimenColumn> loadedColumns, String innerTable, SQLFragment updateHashSql)
     {
-        ArrayList<String> hash = new ArrayList<>();
-        hash.add("?");
-        updateHashSql.add("Fld-" + container.getRowId());
-        String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
+        ArrayList<SQLFragment> hash = new ArrayList<>();
+        hash.add(new SQLFragment("?").add("Fld-" + container.getRowId()));
 
         Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
         loadedColumns.forEach(col -> loadedColumnMap.put(col.getPrimaryTsvColumnName(), col));
+        final String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
         SpecimenColumns.BASE_SPECIMEN_COLUMNS.forEach(col -> {
             if (col.getTargetTable().isSpecimens())
             {
                 if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
                 {
                     String columnName = innerTable + col.getLegalDbColumnName(schema.getSqlDialect());
-                    hash.add("'~'");
-                    hash.add(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END");
+                    hash.add(new SQLFragment("'~'"));
+                    hash.add(new SQLFragment(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END"));
                 }
                 else
                 {
-                    hash.add("'~'");
+                    hash.add(new SQLFragment("'~'"));
                 }
             }
         });
 
-        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new String[hash.size()])));
+        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new SQLFragment[0])));
     }
 
     private Object getValue(ImportableColumn col, Map tsvRow)
