@@ -320,7 +320,7 @@ public class StudyTest extends StudyBaseTest
     {
         clickFolder(getFolderName());
         portalHelper.addWebPart("Study Data Tools");
-        clickAndWait(Locator.linkWithImage("/labkey/study/tools/participant_report.png"));
+        clickAndWait(Locator.linkWithImage(WebTestHelper.getContextPath() + "/study/tools/participant_report.png"));
         clickButton("Choose Measures", 0);
         _extHelper.waitForExtDialog("Add Measure");
         _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT);
