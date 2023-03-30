@@ -475,16 +475,16 @@ public class QueryServiceImpl implements QueryService
 
         private QExpr bind(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            if (expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
+            if (expr instanceof QRowStar || expr instanceof QIfDefined)
             {
                 query.getParseErrors().add(new QueryException("Expression is not supported in where filter"));
                 return null;
             }
 
             /* See QuerySelect.declareFields() */
-            if (expr instanceof QQuery qquery)
+            if (expr instanceof QQuery || expr instanceof QUnion)
             {
-                QueryRelation select = Query.createQueryRelation(query, qquery, true);
+                QueryRelation select = Query.createQueryRelation(query, expr, true);
                 select.declareFields();
                 return new QQuery(select);
             }
@@ -3514,6 +3514,26 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("Custom views from the simpletest module", 10, MODULE_CUSTOM_VIEW_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Queries from the simpletest module", 5, MODULE_QUERY_DEF_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Query metadata overrides from the simpletest module", 3, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
+            }
+        }
+
+        @Test
+        public void testWhereClauseWithUnion()
+        {
+            TestContext ctx = TestContext.get();
+            UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ContainerManager.getRoot(), "core");
+            TableInfo containersTableInfo = schema.getTable("containers");
+            WhereClause clause = new WhereClause("(SELECT RowId FROM containers WHERE RowId IN (1) UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            SQLFragment sql = clause.toSQLFragment(containersTableInfo.getExtendedColumns(false), null);
+            assertTrue(sql.toString().contains("UNION"));
+
+            try
+            {
+                new WhereClause("(Invalid1 UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            }
+            catch (Exception e)
+            {
+                assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
             }
         }
     }
