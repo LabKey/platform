@@ -1445,6 +1445,8 @@ public abstract class Method
             return f.getParams().get(0) instanceof String;
         if (f.getParams().size() > 0)
             return false;
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
         // am I 'normal' SQL String with no embedded single-quotes?
         if (s.length() >= 2 && s.startsWith("'"))
             return s.length()-1 == s.indexOf('\'',1);
@@ -1454,7 +1456,7 @@ public abstract class Method
         return false;
     }
 
-
+    /** see {@link #isSimpleString(SQLFragment)} */
     public static String toSimpleString(SQLFragment f)
     {
         if (!isSimpleString(f))
@@ -1462,7 +1464,10 @@ public abstract class Method
         String s = f.getSQL();
         if ("?".equals(s) && f.getParams().size()==1)
             return (String)f.getParams().get(0);
-        assert(s.endsWith("'"));
+        assert(s.startsWith("'") || s.startsWith("N'"));
+        assert(s.endsWith("'") || s.endsWith("'::VARCHAR"));
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
         if (s.startsWith("'"))
             return s.substring(1,s.length()-1);
         if (s.startsWith("N'"))

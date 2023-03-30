@@ -607,11 +607,14 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /* like appendValue(CharSequence s), but force use of literal syntax */
-    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {
         if (null==s)
-            return append(d.getVarcharCast(new SQLFragment("NULL")));
-        getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+            append(d.getVarcharCast(new SQLFragment("NULL")));
+        else
+            getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+        if (d.isPostgreSQL())
+            getStringBuilder().append("::VARCHAR");
         return this;
     }
 
