@@ -468,7 +468,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             SqlBuilder wrap = new SqlBuilder(dialect);
             wrap.append("SELECT * FROM (");
             wrap.append(unionSql);
-            wrap.append(") u").append(unionSql.hashCode() & 0x7fffffff);
+            wrap.append(") u").appendValue(unionSql.hashCode() & 0x7fffffff);
             unionSql = wrap;
         }
 

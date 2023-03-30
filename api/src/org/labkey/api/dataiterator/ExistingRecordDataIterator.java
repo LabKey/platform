@@ -248,7 +248,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).append("(").append(lastPrefetchRowNumber);
+                sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
@@ -262,7 +262,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             sqlf.append("\n) AS _values_ (_row_number_");
             for (int p = 0; p < pkColumns.size(); p++)
-                sqlf.append(",").append("key").append(p);
+                sqlf.append(",").append("key").appendValue(p);
             sqlf.append("))\n");
 
             sqlf.append("SELECT _key_columns_._row_number_, _target_.* FROM ");
@@ -273,7 +273,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             for (int p = 0; p < pkColumns.size(); p++)
             {
                 sqlf.append(and);
-                sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
+                sqlf.append("(_key_columns_.key").appendValue(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
                 and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);
