@@ -683,6 +683,17 @@ public class XarReader extends AbstractXarImporter
                 getLog().warn("DataClass Sample Type : '" + dataClassType.getSampleType() + "' was not found.");
         }
 
+        DataClassType.ParentImportAlias parentImportAlias = dataClassType.getParentImportAlias();
+        if (parentImportAlias != null)
+        {
+            Map<String, String> aliasMap = new LinkedHashMap<>();
+            for (ImportAlias importAlias : parentImportAlias.getAliasArray())
+            {
+                aliasMap.put(importAlias.getName(), importAlias.getValue());
+            }
+            dataClass.setImportAliasMap(aliasMap);
+        }
+
         if (existingDataClass != null)
         {
             if (_strictValidateExistingSampleType)
