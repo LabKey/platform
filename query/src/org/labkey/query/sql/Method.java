@@ -20,11 +20,14 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
@@ -58,6 +61,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
 
@@ -1445,6 +1449,8 @@ public abstract class Method
             return f.getParams().get(0) instanceof String;
         if (f.getParams().size() > 0)
             return false;
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
         // am I 'normal' SQL String with no embedded single-quotes?
         if (s.length() >= 2 && s.startsWith("'"))
             return s.length()-1 == s.indexOf('\'',1);
@@ -1454,7 +1460,7 @@ public abstract class Method
         return false;
     }
 
-
+    /** see {@link #isSimpleString(SQLFragment)} */
     public static String toSimpleString(SQLFragment f)
     {
         if (!isSimpleString(f))
@@ -1462,7 +1468,10 @@ public abstract class Method
         String s = f.getSQL();
         if ("?".equals(s) && f.getParams().size()==1)
             return (String)f.getParams().get(0);
-        assert(s.endsWith("'"));
+        assert(s.startsWith("'") || s.startsWith("N'"));
+        assert(s.endsWith("'") || s.endsWith("'::VARCHAR"));
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
         if (s.startsWith("'"))
             return s.substring(1,s.length()-1);
         if (s.startsWith("N'"))
@@ -1551,13 +1560,12 @@ public abstract class Method
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         SQLFragment rawOperator = arguments[1];
-                        String operatorRawString = rawOperator.getSQL();
-                        if (!rawOperator.getParams().isEmpty() || !operatorRawString.startsWith("'") || !operatorRawString.endsWith("'"))
+                        String strippedOperator = isSimpleString(rawOperator) ? toSimpleString(rawOperator) : null;
+                        if (StringUtils.isBlank(strippedOperator))
                         {
                             throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
                         }
 
-                        String strippedOperator = operatorRawString.substring(1, operatorRawString.length() - 1);
                         if (!ALLOWED_OPERATORS.contains(strippedOperator))
                         {
                             throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
@@ -1751,6 +1759,47 @@ public abstract class Method
                     return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
                 }
             };
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        void assertIsSimpleString(String expected, SQLFragment s)
+        {
+            assertTrue(expected + " should be a simple string", isSimpleString(s));
+            assertEquals(expected, toSimpleString(s));
+        }
+        void assertNotSimpleString(SQLFragment s)
+        {
+            assertFalse(s.toDebugString() + " should not be a simple string", isSimpleString(s));
+        }
+
+        @Test
+        public void testSimpleStringIntended()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+
+            // These are the simple cases that isSimpleString is intended to handle
+            // e.g SQL keywords and oeprators
+            for (var s : List.of("->", "->>", "#>", "#>>", "@>", "<@", "?", "?|", "?&", "||", "-", "#-", SQL_TSI_FRAC_SECOND.name()))
+            {
+                assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s,d));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));
+                assertIsSimpleString(s, new SQLFragment("?").add(s));
+            }
+        }
+
+        @Test
+        public void testSimpleString()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+            assertNotSimpleString(new SQLFragment("test ?").add("param"));
+            assertNotSimpleString(new SQLFragment("?").add(5));
+            assertNotSimpleString(new SQLFragment("SELECT 'test'"));
+            assertNotSimpleString(new SQLFragment("'test''string'"));
         }
     }
 }
