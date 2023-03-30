@@ -593,7 +593,7 @@ public class SearchController extends SpringActionController
             final Path contextPath = Path.parse(getViewContext().getContextPath());
 
             final String query = form.getQueryString()
-                    .replaceAll("(?<!\\\\)[\\/]", "\\\\/"); //escape any '/' that aren't already escaped TODO add issue #
+                    .replaceAll("(?<!\\\\)[\\/]", "\\\\/"); //escape any '/' that aren't already escaped Issue 47325
             final JSONObject response = new JSONObject();
             Object[] arr = new Object[0];
             long totalHits = 0;
