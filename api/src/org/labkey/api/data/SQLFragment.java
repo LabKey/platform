@@ -606,11 +606,17 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    /* like appendValue(CharSequence s), but force use of literal syntax */
-    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    /** This is like appendValue(CharSequence s), but force use of literal syntax
+     * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
+     *    array_agg('string') fails array_agg('string'::VARCHAR) works
+     *    json_object('{}) works json_object('string'::VARCHAR) fails
+     *
+     * In the case of json_object() it expects TEXT. Postgres  will promote 'json' to TEXT, but not 'json'::VARCHAR
+     */
+    public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {
         if (null==s)
-            return append(d.getVarcharCast(new SQLFragment("NULL")));
+            return appendNull();
         getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
         return this;
     }

@@ -43,7 +43,7 @@ public abstract class BaseDownloadAction<FORM extends BaseDownloadAction.InlineD
         Pair<AttachmentParent, String> attachment = getAttachment(form);
 
         if (null != attachment)
-            AttachmentService.get().download(response, attachment.first, attachment.second, form.isInline());
+            AttachmentService.get().download(response, attachment.first, attachment.second, form.getAlias(), form.isInline());
     }
 
     public abstract @Nullable Pair<AttachmentParent, String> getAttachment(FORM form);
@@ -55,5 +55,10 @@ public abstract class BaseDownloadAction<FORM extends BaseDownloadAction.InlineD
     public interface InlineDownloader
     {
         default boolean isInline() { return true; }
+
+        default String getAlias()
+        {
+            return null;
+        }
     }
 }

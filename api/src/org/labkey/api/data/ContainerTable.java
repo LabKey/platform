@@ -145,7 +145,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             if (cType.equalsIgnoreCase(NormalContainerType.NAME))
                 continue;
             containerTypeSQL = containerTypeSQL.
-                    append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".Type = ").appendValue(cType,dialect).append(" THEN ").appendValue(cType,dialect);
+                    append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".Type = ").appendValue(cType,dialect).append(" THEN ").appendValue(cType,dialect).append(" ");
         }
         containerTypeSQL = containerTypeSQL.append(
                     "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
