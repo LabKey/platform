@@ -16,7 +16,7 @@ LABKEY.Utils.onReady(function()
             dr.text('no results');
             return;
         }
-        new LABKEY.QueryWebPart2({
+        new LABKEY.QueryWebPart({
             renderTo: 'testDataRegionDiv',
             title: 'results',
             schemaName: 'core',
