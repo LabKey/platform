@@ -217,9 +217,9 @@ public class ListController extends SpringActionController
             // users should see all lists without a category and public picklists and any lists they created.
             SimpleFilter filter = new SimpleFilter();
 
-            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = '")
-                    .append(ListDefinition.Category.PublicPicklist.toString())
-                    .append("' OR CreatedBy = ").append(getUser().getUserId());
+            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = ")
+                    .appendValue(ListDefinition.Category.PublicPicklist)
+                    .append(" OR CreatedBy = ").appendValue(getUser().getUserId());
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
 

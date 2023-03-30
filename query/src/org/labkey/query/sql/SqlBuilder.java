@@ -16,16 +16,20 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.GUID;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 public class SqlBuilder extends Builder
 {
-    private DbSchema _schema;
-    private SqlDialect _dialect;
+    private final DbSchema _schema;
+    private final SqlDialect _dialect;
 
 
     public SqlBuilder(DbSchema schema)
@@ -36,6 +40,7 @@ public class SqlBuilder extends Builder
 
     public SqlBuilder(SqlDialect dialect)
     {
+        _schema = null;
         _dialect = dialect;
     }
 
@@ -85,5 +90,58 @@ public class SqlBuilder extends Builder
     public boolean allowUnsafeCode()
     {
         return false;
+    }
+
+    @Override
+    public SQLFragment appendValue(CharSequence s)
+    {
+        return super.appendValue(s, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendStringLiteral(CharSequence s)
+    {
+        return super.appendStringLiteral(s, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    {
+        return super.appendStringLiteral(s,  null==d?_dialect:d);
+    }
+
+    @Override
+    public SQLFragment appendValue(CharSequence s, SqlDialect d)
+    {
+        return super.appendValue(s, null==d?_dialect:d);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g)
+    {
+        return super.appendValue(g, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g, SqlDialect d)
+    {
+        return super.appendValue(g, null==d?_dialect:d);
+    }
+
+    public SQLFragment appendValue(@NotNull Container c)
+    {
+        return super.appendValue(c, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(@NotNull Container c, SqlDialect d)
+    {
+        return super.appendValue(c, null==d?_dialect:d);
+    }
+
+    @Override
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect d)
+    {
+        return super.appendValue(B, null==d?_dialect:d);
     }
 }

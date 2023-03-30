@@ -247,7 +247,7 @@
         }
         if (hasGroups)
         {
-            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").append(container).append(")");
+            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).append(")");
             (new SqlSelector(dbschema, sqlGroups)).forEach(rs-> {
                 Integer igroup = groupMap.get(rs.getInt(1));
                 Integer iptid = ptidMap.get(rs.getString(2));

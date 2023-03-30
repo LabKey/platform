@@ -255,7 +255,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterialSource(), "ms")
-                .append(" WHERE ms.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND ms.LSID = ?").add(sampleType.getLSID())
                 .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
                 .add(sampleType.getModified());
@@ -273,7 +273,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterial(), "m")
-                .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
                 .add(sampleType.getModified());

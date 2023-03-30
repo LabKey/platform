@@ -809,7 +809,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             // and we are not at the container where the definition lives (see issue 28224)
             if (isShared() && !getContainer().getId().equals(getDefinitionContainer().getId()))
             {
-                studyDataFrag.append(and).append("container=").append(getContainer());
+                studyDataFrag.append(and).append("container=").appendValue(getContainer());
                 and = " AND ";
             }
 
@@ -1591,9 +1591,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 ret.append(_storage.getFromSQL("_"));
                 ret.append(" WHERE container="); //?) ");
                 if (getDataSharingEnum() == DataSharing.NONE)
-                    ret.append(getContainer());
+                    ret.appendValue(getContainer());
                 else
-                    ret.append(getDefinitionContainer());
+                    ret.appendValue(getDefinitionContainer());
                 ret.append(")");
                 ret.append(alias);
                 ret.appendComment("</DatasetDefinition>", d);

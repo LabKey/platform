@@ -25,6 +25,7 @@ import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ExprColumn;
@@ -35,6 +36,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +47,7 @@ import java.util.Set;
 * User: jeckels
 * Date: Oct 8, 2010
 */
-public class StudyUnionTableInfo extends VirtualTable
+public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 {
     StudyImpl _study;
 
@@ -68,7 +70,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     final Set<String> unionColumns = new HashSet<>(Arrays.asList(COLUMN_NAMES));
     SQLFragment unionSql;
-    private User _user;
+    final private User _user;
     boolean _crossContainer = false;
     Collection<DatasetDefinition> _defs;
 
@@ -93,6 +95,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     public void init(Collection<DatasetDefinition> defs)
     {
+        SqlDialect d = getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
         int count = 0;
         String unionAll = "";
@@ -106,7 +109,9 @@ public class StudyUnionTableInfo extends VirtualTable
                 continue;
             count++;
             sqlf.append(unionAll);
-            sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDatasetId() + " AS datasetid");
+            sqlf.append("SELECT ");
+            sqlf.appendValue(def.getEntityId(), d).append(" AS dataset, ");
+            sqlf.appendValue(def.getDatasetId()).append(" AS datasetid");
 
             String visitPropertyName = def.getVisitDateColumnName();
             ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);
@@ -136,9 +141,9 @@ public class StudyUnionTableInfo extends VirtualTable
                 ColumnInfo ci = ti.getColumn(column);
                 if (!_study.isDataspaceStudy() && "container".equalsIgnoreCase(column))
                 {
-                    SQLFragment containerSql = new SQLFragment(" CAST(");
-                    containerSql.append("'").append(def.getContainer().getId()).append("'");
-                    containerSql.append(" AS UNIQUEIDENTIFIER) AS container");
+                    SQLFragment containerSql = new SQLFragment();
+                    containerSql.appendValue(def.getContainer(), d);
+                    containerSql.append(" AS container");
                     ci = new ExprColumn(this, "container", containerSql, JdbcType.GUID);
                 }
 
@@ -191,12 +196,12 @@ public class StudyUnionTableInfo extends VirtualTable
             {
                 if (def.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
                 {
-                    sqlf.append(" WHERE container=").append(def.getContainer());
+                    sqlf.append(" WHERE container=").appendValue(def.getContainer());
                 }
                 else
                 {
-                    sqlf.append(" WHERE container=").append(def.getContainer().getProject()).append(" AND ");
-                    sqlf.append(" participantid IN (select participantid from study.participant where container=").append(def.getContainer()).append(")");
+                    sqlf.append(" WHERE container=").appendValue(def.getContainer().getProject()).append(" AND ");
+                    sqlf.append(" participantid IN (select participantid from study.participant where container=").appendValue(def.getContainer()).append(")");
                 }
             }
             unionAll = ") UNION ALL\n(";

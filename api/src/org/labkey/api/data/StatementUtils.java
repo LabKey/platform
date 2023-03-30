@@ -69,7 +69,6 @@ public class StatementUtils
     private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");
 
     public enum Operation {insert, update, merge}
-    public static String OWNEROBJECTID = "exp$object$ownerobjectid";
 
     // configuration parameters
     private Operation _operation = Operation.insert;
@@ -215,10 +214,10 @@ public class StatementUtils
     /**
      * Create a reusable SQL Statement for updating rows into an labkey relationship.  The relationship
      * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
-     *
+     * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
-     *
+     * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
@@ -422,8 +421,8 @@ public class StatementUtils
         sqlfObjectProperty.append(propertyType.getValueTypeColumn());
         sqlfObjectProperty.append(") VALUES (");
         sqlfObjectProperty.append(objectIdVar);
-        sqlfObjectProperty.append(",").append(dp.getPropertyId());
-        sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
+        sqlfObjectProperty.append(",").appendValue(dp.getPropertyId());
+        sqlfObjectProperty.append(",").appendStringLiteral(String.valueOf(propertyType.getStorageType()), _dialect);
         sqlfObjectProperty.append(",");
         if (dp.isMvEnabled())
             appendParameterOrVariable(sqlfObjectProperty, mv);
@@ -447,7 +446,7 @@ public class StatementUtils
         {
             sqlfDelete.append(separator);
             separator = ", ";
-            sqlfDelete.append(property.getPropertyId());
+            sqlfDelete.appendValue(property.getPropertyId());
         }
         sqlfDelete.append(");\n");
     }
@@ -585,7 +584,7 @@ public class StatementUtils
         SQLFragment sqlfDelete = new SQLFragment();
 
         Domain domain = updatable.getDomain();
-        DomainKind domainKind = updatable.getDomainKind();
+        DomainKind<?> domainKind = updatable.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
@@ -692,14 +691,14 @@ public class StatementUtils
             if (null != col && null != user)
             {
                 cols.add(col);
-                values.add(new SQLFragment().append(user.getUserId()));
+                values.add(new SQLFragment().appendValue(user.getUserId()));
                 done.add("Owner");
             }
             col = table.getColumn("CreatedBy");
             if (null != col && null != user)
             {
                 cols.add(col);
-                values.add(new SQLFragment().append(user.getUserId()));
+                values.add(new SQLFragment().appendValue(user.getUserId()));
                 done.add("CreatedBy");
             }
             col = table.getColumn("Created");
@@ -715,7 +714,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
             cols.add(colModifiedBy);
-            values.add(new SQLFragment().append(user.getUserId()));
+            values.add(new SQLFragment().appendValue(user.getUserId()));
             done.add("ModifiedBy");
         }
 
@@ -1023,7 +1022,7 @@ public class StatementUtils
                 fn.append(type);
                 // For PG (29687) we need the length for CHAR type
                 if (_dialect.isPostgreSQL() && JdbcType.CHAR.equals(ph.p.getType()))
-                    fn.append("(").append(ph.getScale()).append(")");
+                    fn.append("(").appendValue(ph.getScale()).append(")");
                 call.append(comma).append("?");
                 call.add(ph.p);
                 comma = ",";
@@ -1189,6 +1188,10 @@ public class StatementUtils
     }
 
 
+    /* We could use SQLFragment.appendValue() for most of these.  However, here it is important to force
+
+     * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
+     */
     private void toLiteral(SQLFragment f, Object value)
     {
         if (null == value)
@@ -1217,8 +1220,7 @@ public class StatementUtils
             return;
         }
         assert value instanceof String;
-        value = String.valueOf(value);
-        f.append(_dialect.getStringHandler().quoteStringLiteral((String) value));
+        f.append(_dialect.getStringHandler().quoteStringLiteral(String.valueOf(value)));
     }
 
 

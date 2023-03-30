@@ -55,7 +55,6 @@ import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
@@ -637,7 +636,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 + "join ");
         sql.append(tableInfoVial.getFromSQL("v")).append(" on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                + "where r.DestinationSiteId=").append(locationId).append(" AND status.SpecimensLocked=").append(tableInfoVial.getSqlDialect().getBooleanTRUE()).append(")");
+                + "where r.DestinationSiteId=").appendValue(locationId).append(" AND status.SpecimensLocked=").append(tableInfoVial.getSqlDialect().getBooleanTRUE()).append(")");
 
         assert(0 == sql.getParams().size());
 

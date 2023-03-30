@@ -705,7 +705,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 else
                 {
-                    sqlf.append(" AND __PV__.Container = '").append(getContainer().getId()).append("'");
+                    sqlf.append(" AND __PV__.Container = ").appendValue(getContainer());
                 }
                 sqlf.append(") ").append(innerAlias).append(" ");
 
