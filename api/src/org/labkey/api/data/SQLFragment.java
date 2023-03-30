@@ -610,7 +610,7 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
     {
         if (null==s)
-            return appendNull();
+            return append(d.getVarcharCast(new SQLFragment("NULL")));
         getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
         return this;
     }
