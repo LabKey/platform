@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
@@ -80,6 +81,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationException.SEVERITY;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -1733,5 +1735,55 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
         return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker)
+    {
+        SQLFragment sql = _generateSQL(container, user, protocol, checker);
+        if (sql != null)
+        {
+            return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getMapCollection();
+        }
+        return Collections.emptyList();
+    }
+
+    @Override
+    public @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker, Class<E> clazz)
+    {
+        SQLFragment sql = _generateSQL(container, user, protocol, checker);
+        if (sql != null)
+        {
+            return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getArrayList(clazz);
+        }
+        return Collections.emptyList();
+    }
+
+    private @Nullable SQLFragment _generateSQL(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker)
+    {
+        Logger log = checker.getLogger();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null)
+        {
+            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+            TableInfo assayDataTable = schema.createTable(AssayProtocolSchema.DATA_TABLE_NAME, null);
+            if (assayDataTable != null)
+            {
+                List<ValidationError> errors = checker.isValid(protocol, assayDataTable);
+                if (!errors.isEmpty())
+                {
+                    errors.forEach(ve -> log.error(ve.getMessage()));
+                    return null;
+                }
+
+                return checker.getValidationSql(container, user, protocol, assayDataTable);
+            }
+            else
+                log.error("Assay data table not found for protocol : " + protocol.getName());
+        }
+        else
+            log.error("Assay provider not found for protocol : " + protocol.getName());
+
+        return null;
     }
 }

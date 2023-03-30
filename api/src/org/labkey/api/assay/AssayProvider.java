@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,8 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -39,6 +42,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.PublishKey;
@@ -359,6 +363,32 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
+    interface AssayResultsChecker
+    {
+        /**
+         * Returns an optional logger, in the event the check is run in the context of a pipeline job.
+         */
+        @NotNull
+        Logger getLogger();
+
+        /**
+         * Checks whether the results table is valid, has the required fields etc. If errors are returned
+         * the validation will not run and the errors will be logged to either the passed logger or the log file
+         */
+        @NotNull
+        List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
+
+        /**
+         * The SQLFragment to execute to run the check, the SQL should return a list of rows which match
+         * the Class passed into the validateResults method.
+         */
+        SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
+    }
+
+    @NotNull
+    Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker);
+    @NotNull
+    <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker, Class<E> clazz);
 
     /* .xar.xml import/export helpers */
 
