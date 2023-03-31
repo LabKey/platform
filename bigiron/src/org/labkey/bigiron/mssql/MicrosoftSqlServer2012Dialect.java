@@ -32,9 +32,9 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
     {
         SQLFragment sql = LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
-        sql.append("\nOFFSET ").append(offset).append(" ROWS");
+        sql.append("\nOFFSET ").appendValue(offset).append(" ROWS");
         if (maxRows != Table.ALL_ROWS)
-            sql.append("\nFETCH NEXT ").append(maxRows).append(" ROWS ONLY");
+            sql.append("\nFETCH NEXT ").appendValue(maxRows).append(" ROWS ONLY");
 
         return sql;
     }

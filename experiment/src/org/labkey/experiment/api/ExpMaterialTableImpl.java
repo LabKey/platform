@@ -65,6 +65,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -73,6 +75,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -251,7 +254,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ").appendValue(false,getSqlDialect()).append(" ELSE ").appendValue(true,getSqlDialect()).append(" END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -361,7 +364,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
                         .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
+                        .append(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
@@ -568,7 +571,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 sql.append(separator);
                 separator = ", ";
-                sql.append(material.getRowId());
+                sql.appendValue(material.getRowId());
             }
             sql.append(")");
             addCondition(sql);
@@ -757,6 +760,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
         addColumn(Column.AliquotUnit);
+        addAvailableAliquotCountColumn();
 
         addColumn(Column.StoredAmount);
         defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
@@ -855,6 +859,53 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
         }
+    }
+
+    private void addAvailableAliquotCountColumn()
+    {
+        // SampleAvailableAliquotCount query is defined in experiment module, needs experiment enabled to add this column
+        Module expModule = ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME);
+        if (!getContainer().getActiveModules().contains(expModule))
+            return;
+
+        FieldKey availableAliquotsKey = FieldKey.fromParts("AvailableAliquotCount");
+        SQLFragment availableAliquots = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$AvailableAliquotCountJoin$.AvailableAliquotsCount");
+        ExprColumn availableAliquotsColumnInfo = new ExprColumn(this, availableAliquotsKey, availableAliquots, JdbcType.INTEGER) {
+
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                String tableAlias = parentAlias + "$AvailableAliquotCountJoin$";
+                if (map.containsKey(tableAlias))
+                    return;
+
+                UserSchema schema = getUserSchema();
+                TableInfo tableInfo = schema.getCachedLookupTableInfo(ExpMaterialTableImpl.class.getName() + "# $AvailableAliquotCountJoin$", () ->
+                {
+                    QuerySchema expSchema = schema.getDefaultSchema().getSchema("exp");
+                    return expSchema.getTable("SampleAvailableAliquotCount");
+                });
+
+                if (tableInfo == null)
+                    return;
+
+                SQLFragment joinSql = new SQLFragment();
+                joinSql.append(" LEFT OUTER JOIN ").append(tableInfo.getFromSQL(tableAlias)
+                        .append(" ON ").append(tableAlias).append(".lsid = ").append(parentAlias).append(".lsid"));
+                map.put(tableAlias, joinSql);
+
+                super.declareJoins(parentAlias, map);
+            }
+        };
+        availableAliquotsColumnInfo.setLabel("Available Aliquot Count");
+        availableAliquotsColumnInfo.setDescription("The number of aliquots with amount > 0");
+        availableAliquotsColumnInfo.setUserEditable(false);
+        availableAliquotsColumnInfo.setReadOnly(true);
+        availableAliquotsColumnInfo.setHidden(true);
+        availableAliquotsColumnInfo.setShownInDetailsView(false);
+        availableAliquotsColumnInfo.setShownInInsertView(false);
+        availableAliquotsColumnInfo.setShownInUpdateView(false);
+        addColumn(availableAliquotsColumnInfo);
     }
 
     @Override

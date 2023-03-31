@@ -44,7 +44,7 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
 
             // when masking, use generic label for clinics and remove the LabwareLabCode, Description, and Address fields for clinics
             if (ctx.isMaskClinic() && column.getDbColumnName().equalsIgnoreCase("label"))
-                sql.append("CASE WHEN Clinic = ").append(d.getBooleanTRUE()).append(" THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
+                sql.append("CASE WHEN Clinic = ").append(d.getBooleanTRUE()).append(" THEN ").appendValue("Clinic").append(" ELSE Label END AS Label");
             else if (ctx.isMaskClinic() && column.isMaskOnExport())
                 sql.append(getMaskClinicSql(d, column.getDbColumnName()));
             else

@@ -26,7 +26,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -2282,7 +2281,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 expr.appendSql(b, _query);
                 b.append(" AS VARCHAR");
                 if (len > 0)
-                    b.append("(").append(len).append(")");
+                    b.append("(").appendValue(len).append(")");
                 b.append(")");
                 return b;
             }

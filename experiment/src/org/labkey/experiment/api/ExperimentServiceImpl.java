@@ -82,11 +82,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -2550,7 +2548,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sqlf = new SQLFragment("VALUES ");
         for (Integer objectId : objectIds)
         {
-            sqlf.append(comma).append("(").append(objectId).append(")");
+            sqlf.append(comma).append("(").appendValue(objectId).append(")");
             comma = ",";
         }
         return generateExperimentTreeSQL(sqlf, options);
@@ -2701,7 +2699,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     int depth = options.getDepth();
                     if (depth > 0)
                         depth *= -1;
-                    parents.append(and).append("depth >= ").append(depth);
+                    parents.append(and).append("depth >= ").appendValue(depth);
                 }
 
                 if (options.isForLookup() && !options.isOnlySelectObjectId())
@@ -2772,7 +2770,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (options.getDepth() > 0)
                 {
-                    children.append(and).append("depth <= ").append(options.getDepth());
+                    children.append(and).append("depth <= ").appendValue(options.getDepth());
                 }
 
                 if (options.isForLookup() && !options.isOnlySelectObjectId())
@@ -3220,7 +3218,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append("SELECT d.Container, d.LSID, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
                     .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
+                    .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput).append(")");
 
             Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
             Collection<Map<String, Object>> toDataLsids = new ArrayList<>();
@@ -3242,7 +3240,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
                     .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
+                    .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput).append(")");
 
             Set<String> toCpasTypes = new HashSet<>();
             Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
@@ -4684,8 +4682,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             try (Timing ignored = MiniProfiler.step("MI exp.object"))
             {
                 SQLFragment inputObjects = new SQLFragment("SELECT ")
-                        .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                                "CAST(mi.materialId AS VARCHAR)", "'.'", "CAST(mi.targetApplicationId AS VARCHAR)"))
+                        .append(dialect.concatenate(
+                                new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                                new SQLFragment("CAST(mi.materialId AS VARCHAR)"),
+                                new SQLFragment("'.'"),
+                                new SQLFragment("CAST(mi.targetApplicationId AS VARCHAR)")))
                         .append(" FROM ").append(getTinfoMaterialInput(), "mi").append(" WHERE mi.materialId ");
                 dialect.appendInClauseSql(inputObjects, selectedMaterialIds);
                 OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
@@ -4996,8 +4997,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Delete DataInput exp.object and properties
             SQLFragment inputObjects = new SQLFragment("SELECT ")
-                    .append(dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
-                            "CAST(di.dataId AS VARCHAR)", "'.'", "CAST(di.targetApplicationId AS VARCHAR)"))
+                    .append(dialect.concatenate(
+                            new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
+                                new SQLFragment("CAST(di.dataId AS VARCHAR)"),
+                                new SQLFragment("'.'"),
+                                new SQLFragment("CAST(di.targetApplicationId AS VARCHAR)")))
                     .append(" FROM ").append(getTinfoDataInput(), "di").append(" WHERE di.DataId ");
             dialect.appendInClauseSql(inputObjects, selectedDataIds);
             OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);

@@ -434,7 +434,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     public static SQLFragment getContainerValueSql(Container c, SqlDialect d)
     {
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("CAST(").append(c).append(" AS ").append(d.getGuidType()).append(") AS Container");
+        sqlf.append("CAST(").appendValue(c).append(" AS ").append(d.getGuidType()).append(") AS Container");
         return sqlf;
     }
 

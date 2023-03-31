@@ -237,7 +237,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         SQLFragment sql = new SQLFragment("SELECT * FROM (\n");
         sql.append(frag);
         sql.append("\n)\n");
-        sql.append("WHERE rownum <= ").append(maxRows);
+        sql.append("WHERE rownum <= ").appendValue(maxRows);
 
         return sql;
     }
@@ -278,10 +278,10 @@ abstract class OracleDialect extends SimpleSqlDialect
         if (filter != null) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
         sql.append("\n) x\n)");
-        sql.append("WHERE rn__ > ").append(offset);
+        sql.append("WHERE rn__ > ").appendValue(offset);
 
         if (maxRows != Table.ALL_ROWS)
-            sql.append(" AND rn__ <= ").append(maxRows + offset);
+            sql.append(" AND rn__ <= ").appendValue(maxRows + offset);
 
         return sql;
     }

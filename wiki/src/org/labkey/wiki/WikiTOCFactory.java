@@ -108,18 +108,4 @@ public class WikiTOCFactory extends BaseWebPartFactory
 
         return deserializedPropertyMap;
     }
-
-    @Override
-    public boolean includeInExport(FolderExportContext ctx, Portal.WebPart webPart)
-    {
-        String containerId = webPart.getPropertyMap().get("webPartContainer");
-        if (containerId != null)
-        {
-            // Return true if the "webPartContainer" property is the same as the container in the ImportContext.
-            // Issue 22261: Incorrect links in the "Wiki Table of Contents" web part.
-            Container webPartContainer = ContainerManager.getForId(containerId);
-            return null == webPartContainer || webPartContainer.equals(ctx.getContainer());
-        }
-        return true;
-    }
 }

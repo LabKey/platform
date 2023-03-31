@@ -41,6 +41,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -1212,6 +1213,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
+            SqlDialect.DialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UserController.TestCase.class

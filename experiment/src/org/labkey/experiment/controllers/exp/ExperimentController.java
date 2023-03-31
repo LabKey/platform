@@ -7247,7 +7247,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
+                    sampleIdValuesSql.append(sampleIdComma).append("\t(").appendValue(index);
                     sampleIdValuesSql.append(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
                     sampleIdValuesSql.append(")");
@@ -7255,7 +7255,7 @@ public class ExperimentController extends SpringActionController
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
-                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
+                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
                     uniqueIdValuesSql.append(", ");
                     uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
                     uniqueIdValuesSql.append(")");

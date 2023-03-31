@@ -406,7 +406,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = CAST(");
-        frag.appendStringLiteral(container.getId());
+        frag.appendValue(container.getId());
         frag.append(" AS UniqueIdentifier)");
         addCondition(frag, col.getFieldKey());
     }
@@ -418,7 +418,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = ");
-        frag.appendStringLiteral(value);
+        frag.appendValue(value);
         addCondition(frag, col.getFieldKey());
     }
 

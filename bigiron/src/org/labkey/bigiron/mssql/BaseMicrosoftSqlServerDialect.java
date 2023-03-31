@@ -733,7 +733,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         ret.insert(0, "SUBSTRING ((");
         ret.append(" FOR XML PATH ('')), ");
         // Trim off the first delimiter
-        ret.append(delimiter.length() + 1);
+        ret.appendValue(delimiter.length() + 1);
         // We want all the characters, so use a ridiculously long value to ensure that we don't truncate
         ret.append(", 2147483647)");
 
