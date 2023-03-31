@@ -16,8 +16,8 @@
 
 package org.labkey.api.assay;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
@@ -335,6 +335,12 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     {
         AssayRunCreator runCreator = getProvider().getRunCreator();
         return runCreator.saveExperimentRun(context, batch, run, false);
+    }
+
+    @Override
+    public ExpData handleData(ViewContext context, org.json.JSONObject dataObject) throws ValidationException
+    {
+        return handleData(context, JSONObject.toOldJSONObject(dataObject));
     }
 
     @Override

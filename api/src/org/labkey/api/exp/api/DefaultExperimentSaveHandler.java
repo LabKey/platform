@@ -336,6 +336,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @NotNull
+    protected Map<ExpData, String> getInputData(ViewContext context, org.json.JSONArray inputDataArray) throws ValidationException
+    {
+        return getInputData(context, JSONArray.toOldJsonArray(inputDataArray));
+    }
+
+    @NotNull
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
@@ -388,8 +394,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     /**
-     * Enables the implementor to decide how to save the passed in ExpRun.  The default implementation deletes the
-     * run and recreates it.  A custom implementation could choose to enforce that only certain aspects of the
+     * Enables the implementor to decide how to save the passed in ExpRun. The default implementation deletes the
+     * run and recreates it. A custom implementation could choose to enforce that only certain aspects of the
      * protocol application change or choose not add its own data for saving.
      * Called from DefaultAssaySaveHandler.handleRun.
      */
@@ -464,6 +470,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         ExperimentService.get().saveSimpleExperimentRun(run, inputMaterial,inputData, outputMaterial, outputData, Collections.emptyMap(), info, null, false);
 
         return batch;
+    }
+
+    @Override
+    public ExpMaterial handleMaterial(ViewContext context, org.json.JSONObject materialObject) throws ValidationException
+    {
+        return handleMaterial(context, JSONObject.toOldJSONObject(materialObject));
     }
 
     @Override
@@ -545,7 +557,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 {
                     List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, context.getContainer(), context.getUser());
                     if (materials.size() > 1)
-                        throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleType to disambiguate the desired material.");
+                        throw new NotFoundException("More than one material matches name '" + materialName + "'. Provide name and sampleType to disambiguate the desired material.");
                     if (materials.size() == 1)
                         material = materials.get(0);
                 }
@@ -574,6 +586,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         return material;
+    }
+
+    @Override
+    public ExpData handleData(ViewContext context, org.json.JSONObject dataObject) throws ValidationException
+    {
+        return handleData(context, JSONObject.toOldJSONObject(dataObject));
     }
 
     @Override
