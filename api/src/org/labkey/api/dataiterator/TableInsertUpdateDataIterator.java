@@ -438,7 +438,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                     String colSelectName = autoIncCol.getSelectName();
                     SQLFragment resetSeq = new SQLFragment();
                     resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence('").append(selectName).append("', '").append(colSelectName).append("'),\n");
+                    resetSeq.append("  pg_get_serial_sequence(").appendValue(selectName).append(", ").appendValue(colSelectName).append("),\n");
                     resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(selectName).append("), 1),\n");
                     resetSeq.append("  false");
                     resetSeq.append(");\n");
