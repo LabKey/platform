@@ -111,8 +111,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicati
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
  * resource types within LabKey Server.
- *
- * Created by susanh on 1/19/17.
  */
 public class ApiModule extends CodeOnlyModule
 {
@@ -188,6 +186,7 @@ public class ApiModule extends CodeOnlyModule
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
             JsonTest.class,
+            JsonUtil.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,

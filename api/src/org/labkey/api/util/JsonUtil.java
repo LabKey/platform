@@ -18,13 +18,18 @@ package org.labkey.api.util;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JsonOrgOldModule;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -203,5 +208,89 @@ public class JsonUtil
         JSONObject json = new JSONObject();
         map.forEach((k, v) -> json.put(k, null == v ? JSONObject.NULL : v));
         return json;
+    }
+
+    // The JSON standard and JSONObject do not allow comments. However, many JSON documents include them. This method
+    // strips comments from JSON-formatted strings, making them compatible with JSONObject() and other strict parsers.
+    // See https://stackoverflow.com/questions/52394945/fastest-means-of-removing-comments-from-json-in-java
+    // See https://fasterxml.github.io/jackson-core/javadoc/2.8/com/fasterxml/jackson/core/JsonParser.Feature.html#ALLOW_COMMENTS
+    // See Issue 47618
+    public static String stripComments(String jsonWithComments) throws JsonProcessingException
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        return mapper.writeValueAsString(mapper.readTree(jsonWithComments));
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String JSON_WITH_COMMENTS = """
+            {
+                /*
+                   Comments are explicitly disallowed in JSON, but some documents still include them and some parsers
+                   allow them. In our case, the old org.json.JSONObject implementation tolerated comments but the
+                   newer one does not. This document is used to test that comments normally cause the new JSONObject
+                   parser to fail and stripComments() successfully strips Java-style block and single-line comments.
+                */
+                "widget": {  // widget is the top-level object
+                    "debug": "on",
+                    "window": {
+                        "title": "Sample Konfabulator Widget",
+                        "name": "main_window",
+                        "width": 500,
+                        "height": 500
+                    },
+                    "image": {
+                        "src": "Images/Sun.png", // image must exist
+                        "name": "sun1",
+                        "hOffset": 250,  // horizontal offset
+                        "vOffset": 250,  // vertical offset
+                        "alignment": "center"
+                    },
+                    "text": {
+                        "data": "Click Here",
+                        "size": 36,
+                        "style": "bold",
+                        "name": "text1",
+                        "hOffset": 250,
+                        "vOffset": 100,
+                        "alignment": "center",
+                        "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
+                    }
+                }
+            }
+            """;
+
+        private static final String JSON_ARRAY_WITH_COMMENTS = """
+            /* Here's a block comment */
+            // Here's a line comment
+            ["Ford", "BMW", "Fiat"]
+            """;
+
+        @Test
+        public void testStripComments() throws JsonProcessingException
+        {
+            // Test JSONObject
+            assertThrows(JSONException.class, () -> new JSONObject(JSON_WITH_COMMENTS));
+
+            Assert.assertTrue("Expected comments before stripping",
+                StringUtils.containsAny(JSON_WITH_COMMENTS, "//", "/*", "*/", "block", "horizontal"));
+            String strippedOfComments = stripComments(JSON_WITH_COMMENTS);
+            Assert.assertFalse("Expected no comments after stripping",
+                StringUtils.containsAny(strippedOfComments, "//", "/*", "*/", "block", "horizontal"));
+            JSONObject json = new JSONObject(strippedOfComments);
+            JSONObject widget = json.getJSONObject("widget");
+            Assert.assertEquals(4, widget.length());
+            JSONObject window = widget.getJSONObject("window");
+            Assert.assertEquals(4, window.length());
+            Assert.assertEquals("Sample Konfabulator Widget", window.get("title"));
+            Assert.assertEquals(500, window.get("height"));
+
+            // Test JSONArray
+            assertThrows(JSONException.class, () -> new JSONArray(JSON_ARRAY_WITH_COMMENTS));
+
+            Assert.assertFalse("Expected no comments after stripping",
+                StringUtils.containsAny(stripComments(JSON_ARRAY_WITH_COMMENTS), "//", "/*", "*/", "block", "line"));
+        }
     }
 }
