@@ -811,7 +811,7 @@ public class StatementUtils
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
-                    sqlfInsertInto.append(new SQLFragment(colInfo.getSelectName()));
+                    sqlfInsertInto.append(colInfo.getSelectName());
                 }
                 sqlfInsertInto.append(")");
 
