@@ -359,14 +359,14 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-/* Leave this until we convert all usages in all modules */
+/* can't enable this in production because it is legal for identifiers to have an unmatched single quote * /
 {
         // We only support appending string literals via appendValue()
         // We only allow appending comments via appendComment()
         // Therefore there should never be an odd number of "'" in this string
         String s = charseq.toString();
         int count = StringUtils.countMatches(s, "'");
-        if (count % 2 != 0)
+        if (count % 2 != 0 && !s.contains("\"tricky"))
             throw new IllegalArgumentException("Odd number of single quotes in SQLFragment.append(CharSequence): " + s + ". Use SQLFragment.appendValue().");
 }
 /* */
@@ -537,9 +537,9 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment append(SQLFragment f)
     {
         if (null != f.sb)
-            append(f.sb);
+            getStringBuilder().append(f.sb);
         else
-            append(f.sql);
+            getStringBuilder().append(f.sql);
         if (null != f.params)
             addAll(f.params);
         mergeCommonTableExpressions(f);
