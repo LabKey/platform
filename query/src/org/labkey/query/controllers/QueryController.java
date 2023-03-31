@@ -81,7 +81,6 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresAnyOf;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -7399,25 +7398,6 @@ public class QueryController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("schemas", sourcesAndSchemas);
             return response;
-        }
-    }
-
-
-    // could make this requires(ReadPermission), but it could be pretty easy to abuse, or maybe RequiresLogin && ReadPermission
-    @RequiresLogin
-    public static class TestSQLAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
-            getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
-            return new HtmlView("<script src='" + AppProps.getInstance().getContextPath() + "/query/testquery.js'></script><div id=testQueryDiv style='min-height:600px;min-width:800px;'></div>");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 
