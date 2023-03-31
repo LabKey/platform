@@ -359,17 +359,6 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-/* can't enable this in production because it is legal for identifiers to have an unmatched single quote * /
-{
-        // We only support appending string literals via appendValue()
-        // We only allow appending comments via appendComment()
-        // Therefore there should never be an odd number of "'" in this string
-        String s = charseq.toString();
-        int count = StringUtils.countMatches(s, "'");
-        if (count % 2 != 0 && !s.contains("\"tricky"))
-            throw new IllegalArgumentException("Odd number of single quotes in SQLFragment.append(CharSequence): " + s + ". Use SQLFragment.appendValue().");
-}
-/* */
         getStringBuilder().append(charseq);
         return this;
     }
