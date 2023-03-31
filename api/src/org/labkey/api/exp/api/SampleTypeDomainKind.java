@@ -445,58 +445,27 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             throw new IllegalArgumentException("Value for Category field may not exceed " + categoryMax + " characters.");
 
         Map<String, String> aliasMap = options.getImportAliases();
-        if (aliasMap == null || aliasMap.size() == 0)
-            return;
-
-        SampleTypeService ss = SampleTypeService.get();
-        ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
-        Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-        Set<String> existingAliases = new CaseInsensitiveHashSet();
-        Set<String> dupes = new CaseInsensitiveHashSet();
-
-        try
+        if (aliasMap != null && aliasMap.size() > 0)
         {
-            if (sampleType != null)
-                existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliasMap().keySet());
+            SampleTypeService ss = SampleTypeService.get();
+            ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
+            Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
+            Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
+            Set<String> existingAliases = new CaseInsensitiveHashSet();
+
+            try
+            {
+                if (sampleType != null)
+                    existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliasMap().keySet());
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+
+            final Set<String> finalExistingAliases = existingAliases;
+            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "sample type");
         }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-
-        final Set<String> finalExistingAliases = existingAliases;
-        aliasMap.forEach((key, value) -> {
-            String trimmedKey = StringUtils.trimToNull(key);
-            String trimmedValue = StringUtils.trimToNull(value);
-            if (trimmedKey == null)
-                throw new IllegalArgumentException("Import alias heading cannot be blank");
-
-            if (trimmedValue == null)
-            {
-                throw new IllegalArgumentException("You must specify a valid parent type for the import alias.");
-            }
-
-            if (reservedNames.contains(trimmedKey))
-            {
-                throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
-            }
-
-            if (updatedDomainDesign != null && !finalExistingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
-            {
-                throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
-            }
-
-            if (!dupes.add(trimmedKey))
-            {
-                throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
-            }
-
-            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_TYPE_ALIAS_VALUE
-            if (!ss.parentAliasHasCorrectFormat(trimmedValue))
-                throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
-        });
 
         List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
 

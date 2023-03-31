@@ -1058,16 +1058,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return errors;
     }
 
-    @Override
-    public boolean parentAliasHasCorrectFormat(String parentAlias)
-    {
-        //check if it is of the expected format or targeting the to be created sample type
-        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
-            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
-
-        return true;
-    }
-
     public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
         String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action, isUpdate);

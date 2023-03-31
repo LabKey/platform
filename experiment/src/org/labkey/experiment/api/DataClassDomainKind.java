@@ -64,6 +64,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -335,6 +336,28 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), null, container);
             if (errors.hasErrors())
                 throw new IllegalArgumentException(errors.getMessage());
+        }
+
+        Map<String, String> aliasMap = options.getImportAliases();
+        if (aliasMap != null && aliasMap.size() > 0)
+        {
+            ExpDataClass dataClass = options.getRowId() >= 0 ? ExperimentService.get().getDataClass(options.getRowId()) : null;
+            Domain stDomain = dataClass != null ? dataClass.getDomain() : null;
+            Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
+            Set<String> existingAliases = new CaseInsensitiveHashSet();
+
+            try
+            {
+                if (dataClass != null)
+                    existingAliases = new CaseInsensitiveHashSet(dataClass.getImportAliasMap().keySet());
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
+
+            final Set<String> finalExistingAliases = existingAliases;
+            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "data class");
         }
 
     }

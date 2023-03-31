@@ -208,8 +208,6 @@ public interface SampleTypeService
 
     ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
 
-    boolean parentAliasHasCorrectFormat(String parentAlias);
-
     void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata);
 
     void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
