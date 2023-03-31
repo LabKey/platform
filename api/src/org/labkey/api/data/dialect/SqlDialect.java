@@ -442,6 +442,11 @@ public abstract class SqlDialect
         return _stringHandler;
     }
 
+    public String quoteStringLiteral(String s)
+    {
+        return getStringHandler().quoteStringLiteral(s);
+    }
+
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
     protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
