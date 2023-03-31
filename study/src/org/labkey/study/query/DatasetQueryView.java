@@ -36,6 +36,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -411,13 +412,19 @@ public class DatasetQueryView extends StudyQueryView
 
         populateChartsReports(bar);
 
-        List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
-        bar.add(createExportButton(recordSelectorColumns));
-
-        // Duplicates logic from super.populateButtonBar(), but we need selectors
-        if ((recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty()))
+        if (showExportButtons())
         {
-            bar.setAlwaysShowRecordSelectors(true);
+            List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+
+            PanelButton exportButton = createExportButton(recordSelectorColumns);
+            if (exportButton.hasSubPanels())
+            {
+                if ((recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty()))
+                {
+                    bar.setAlwaysShowRecordSelectors(true);
+                }
+                bar.add(exportButton);
+            }
         }
 
         User user = getUser();
