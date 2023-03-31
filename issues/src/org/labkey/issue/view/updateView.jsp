@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
@@ -34,10 +33,10 @@
 <%@ page import="org.labkey.issue.IssuesController.DetailsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.ListAction" %>
-<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -300,54 +299,51 @@
                     if (bean.isVisible("duplicate"))
                     {%>
                         <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
-                        if (bean.isVisible("duplicate"))
+                        if("Duplicate".equals(issue.getResolution()) && !bean.isReadOnly("duplicate"))
                         {
-                            if("Duplicate".equals(issue.getResolution()) && !bean.isReadOnly("duplicate"))
-                            {
-                                //Enabled duplicate field.%>
-                                <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
-                            }
-                            else
-                            {
-                                //Disabled duplicate field.%>
-                                <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
-                            }%>
-                            <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-                                var duplicateInput = document.getElementsByName('duplicate')[0];
-                                var duplicateOrig = duplicateInput.value;
-                                var resolutionSelect = document.getElementsByName('resolution')[0];
-                                function updateDuplicateInput()
-                                {
-                                    // The options don't have an explicit value set, so look for the display text instead of
-                                    // the value
-                                    if (resolutionSelect.selectedIndex >= 0 &&
-                                            resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
-                                    {
-                                        duplicateInput.disabled = false;
-                                    }
-                                    else
-                                    {
-                                        duplicateInput.disabled = true;
-                                        duplicateInput.value = duplicateOrig;
-                                    }
-                                    LABKEY.setDirty(true);
-                                }
-                                if (resolutionSelect){
-                                    if (window.addEventListener)
-                                        resolutionSelect.addEventListener('change', updateDuplicateInput, false);
-                                    else if (window.attachEvent)
-                                        resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                                }
-                            </script><%
+                            //Enabled duplicate field.%>
+                            <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
                         }
                         else
                         {
-                            if(issue.getDuplicate() != null)
-                            {%>
-                                <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
-                            }
+                            //Disabled duplicate field.%>
+                            <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
                         }%>
+                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+                            var duplicateInput = document.getElementsByName('duplicate')[0];
+                            var duplicateOrig = duplicateInput.value;
+                            var resolutionSelect = document.getElementsByName('resolution')[0];
+                            function updateDuplicateInput()
+                            {
+                                // The options don't have an explicit value set, so look for the display text instead of
+                                // the value
+                                if (resolutionSelect.selectedIndex >= 0 &&
+                                        resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                                {
+                                    duplicateInput.disabled = false;
+                                }
+                                else
+                                {
+                                    duplicateInput.disabled = true;
+                                    duplicateInput.value = duplicateOrig;
+                                }
+                                LABKEY.setDirty(true);
+                            }
+                            if (resolutionSelect){
+                                if (window.addEventListener)
+                                    resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                                else if (window.attachEvent)
+                                    resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+                            }
+                        </script>
                     </td></tr><%
+                    }
+                    else
+                    {
+                        if (issue.getDuplicate() != null)
+                        {%>
+                            <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
+                        }
                     }%>
                     <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
                         <%=bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), builder->builder.id("related"))%>
