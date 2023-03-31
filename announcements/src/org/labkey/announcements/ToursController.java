@@ -179,7 +179,7 @@ public class ToursController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             response.put("mode", TourManager.getTourMode(getContainer(), json.getInt("id")));
