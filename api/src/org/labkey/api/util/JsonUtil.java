@@ -34,6 +34,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -263,9 +264,11 @@ public class JsonUtil
 
         private static final String JSON_ARRAY_WITH_COMMENTS = """
             /* Here's a block comment */
-            // Here's a line comment
+            // Here's a single-line comment
             ["Ford", "BMW", "Fiat"]
             """;
+
+        private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line"};
 
         @Test
         public void testStripComments() throws JsonProcessingException
@@ -273,12 +276,12 @@ public class JsonUtil
             // Test JSONObject
             assertThrows(JSONException.class, () -> new JSONObject(JSON_WITH_COMMENTS));
 
-            Assert.assertTrue("Expected comments before stripping",
-                StringUtils.containsAny(JSON_WITH_COMMENTS, "//", "/*", "*/", "block", "horizontal"));
-            String strippedOfComments = stripComments(JSON_WITH_COMMENTS);
-            Assert.assertFalse("Expected no comments after stripping",
-                StringUtils.containsAny(strippedOfComments, "//", "/*", "*/", "block", "horizontal"));
-            JSONObject json = new JSONObject(strippedOfComments);
+            Assert.assertTrue("Expected all comment words before stripping",
+                Arrays.stream(COMMENT_WORDS).allMatch(JSON_WITH_COMMENTS::contains));
+            String strippedObjectJson = stripComments(JSON_WITH_COMMENTS);
+            Assert.assertFalse("Expected no comment words after stripping",
+                StringUtils.containsAny(strippedObjectJson, COMMENT_WORDS));
+            JSONObject json = new JSONObject(strippedObjectJson);
             JSONObject widget = json.getJSONObject("widget");
             Assert.assertEquals(4, widget.length());
             JSONObject window = widget.getJSONObject("window");
@@ -289,8 +292,12 @@ public class JsonUtil
             // Test JSONArray
             assertThrows(JSONException.class, () -> new JSONArray(JSON_ARRAY_WITH_COMMENTS));
 
-            Assert.assertFalse("Expected no comments after stripping",
-                StringUtils.containsAny(stripComments(JSON_ARRAY_WITH_COMMENTS), "//", "/*", "*/", "block", "line"));
+            Assert.assertTrue("Expected all comment words before stripping",
+                Arrays.stream(COMMENT_WORDS).allMatch(JSON_ARRAY_WITH_COMMENTS::contains));
+            String strippedArrayJson = stripComments(JSON_ARRAY_WITH_COMMENTS);
+            Assert.assertFalse("Expected no comment words after stripping",
+                StringUtils.containsAny(strippedArrayJson, COMMENT_WORDS));
+            Assert.assertEquals(3, new JSONArray(strippedArrayJson).length());
         }
     }
 }
