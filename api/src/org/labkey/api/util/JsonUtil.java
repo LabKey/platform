@@ -220,6 +220,7 @@ public class JsonUtil
     {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        mapper.enable(JsonParser.Feature.ALLOW_TRAILING_COMMA); // NLP *.ctc.json files have trailing commas, so allow them
         return mapper.writeValueAsString(mapper.readTree(jsonWithComments));
     }
 
@@ -248,16 +249,7 @@ public class JsonUtil
                         "vOffset": 250,  // vertical offset
                         "alignment": "center"
                     },
-                    "text": {
-                        "data": "Click Here",
-                        "size": 36,
-                        "style": "bold",
-                        "name": "text1",
-                        "hOffset": 250,
-                        "vOffset": 100,
-                        "alignment": "center",
-                        "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
-                    }
+                    "text": ["also", "need", "to", "test", "trailing", "commas",],
                 }
             }
             """;
@@ -265,7 +257,7 @@ public class JsonUtil
         private static final String JSON_ARRAY_WITH_COMMENTS = """
             /* Here's a block comment */
             // Here's a single-line comment
-            ["Ford", "BMW", "Fiat"]
+            ["Ford", "BMW", "Fiat",] // Here's a trailing comma, which also need to be allowed
             """;
 
         private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line"};
