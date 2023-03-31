@@ -115,14 +115,17 @@ public class Builder extends SQLFragment
         return this;
     }
 
-    public void newLine()
+    @Override
+    public Builder append(SQLFragment f)
     {
-        super.append("\n");
-        _fNewLine = true;
+        if (!f.isEmpty())
+        {
+            appendPrefix();
+            appendIndent();
+        }
+        super.append(f);
+        return this;
     }
-
-
-
 
     /** CONSIDER merge Builder and SqlBuilder, so we don't have all these intermediate overloads, maybe even merge with SqlFragment */
     @Override
