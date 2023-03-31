@@ -716,17 +716,16 @@ public class DbSchema
             {
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
-                    sbSql.append( " INSERT INTO "+ tempTableName );
-                    sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, '" + t.getSelectName() + "' AS TableName, ");
+                    sbSql.append(" INSERT INTO "+ tempTableName );
+                    sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, ").appendValue(t.getSelectName()).append(" AS TableName, ");
                     List<ColumnInfo> pkColumns = t.getPkColumns();
 
                     if (pkColumns.size() == 1)
                     {
                         ColumnInfo pkColumn = pkColumns.get(0);
-                        sbSql.append(" '" + pkColumn.getSelectName());
-                        sbSql.append("' AS FirstPKColName, ");
-                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumn.getSelectName() + " AS VARCHAR(100)) "
-                                + " AS FirstPKValue ,");
+                        sbSql.appendValue(pkColumn.getSelectName());
+                        sbSql.append(" AS FirstPKColName, ");
+                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumn.getSelectName() + " AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -735,10 +734,10 @@ public class DbSchema
                             tmp = "multiCol PK ";
                         if(t.getName().equals("ACLs"))
                             tmp = "objectid ";
-                        sbSql.append(" '" + tmp + "' AS FirstPKColName, ");
-                        sbSql.append(" NULL AS FirstPKValue ,");
+                        sbSql.appendValue(tmp).append(" AS FirstPKColName, ");
+                        sbSql.append(" NULL AS FirstPKValue, ");
                     }
-                    sbSql.append(" '" + moduleName + "' AS ModuleName, ");
+                    sbSql.appendValue(moduleName).append(" AS ModuleName, ");
                     sbSql.append(" CAST( " + t.getSelectName() + "." + col.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
                     sbSql.append(" FROM " + t.getSelectName());
                     sbSql.append( " LEFT OUTER JOIN " + " core.Containers C ");
