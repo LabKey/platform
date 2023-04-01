@@ -1086,11 +1086,11 @@ public class SQLFragment implements Appendable, CharSequence
 
 
 
-    /* REMOVE THIS - These methods are going away, but this allows us to merge w/o doing 100 modules at the same time * /
+    /* REMOVE THIS - These methods are going away, but this allows us to merge w/o doing 100 modules at the same time */
     @Deprecated public SQLFragment append(@NotNull Container c) {return appendValue(c);}
     @Deprecated public SQLFragment append(Integer i) {return appendValue(i);}
     @Deprecated public SQLFragment append(java.util.Date date) {return appendValue(date);}
-    @Deprecated public SQLFragment append(Object o) {return append(String.valueOf(o));}
+//    @Deprecated public SQLFragment append(Object o) {return append(String.valueOf(o));}
     @Deprecated public SQLFragment appendStringLiteral(CharSequence s) {return appendValue(s);}
     /* END OF REMOVE THIS */
 }
