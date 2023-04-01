@@ -135,12 +135,12 @@ public class Builder extends SQLFragment
         return super.appendValue(s);
     }
 
-    @Override
-    public SQLFragment appendStringLiteral(CharSequence s)
-    {
-        appendPrefix(); appendIndent();
-        return super.appendStringLiteral(s);
-    }
+//    @Override
+//    public SQLFragment appendStringLiteral(CharSequence s)
+//    {
+//        appendPrefix(); appendIndent();
+//        return super.appendStringLiteral(s);
+//    }
 
     @Override
     public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
