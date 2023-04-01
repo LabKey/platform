@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -54,7 +53,6 @@ public class SqlBuilder extends Builder
 
     /**
      * Append a '?' to the generated SQL, and add the object to the list of the params.
-     * @param value
      */
     public void appendParam(Object value)
     {
@@ -69,7 +67,7 @@ public class SqlBuilder extends Builder
         return this;
     }
 
-    public SqlDialect getDialect()
+    public @NotNull SqlDialect getDialect()
     {
         return _dialect;
     }
