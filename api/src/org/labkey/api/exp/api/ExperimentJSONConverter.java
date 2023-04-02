@@ -16,6 +16,8 @@
 package org.labkey.api.exp.api;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -55,6 +57,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
+import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
+import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
+import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
 
 /**
  * Serializes and deserializes experiment objects to and from JSON.
@@ -856,4 +863,53 @@ public class ExperimentJSONConverter
             gen.writeObject(obj);
         }
     }
+
+    public static String getAliasJson(Map<String, String> importAliases, String currentAliasName)
+    {
+        if (importAliases == null || importAliases.size() == 0)
+            return null;
+
+        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writeValueAsString(aliases);
+        }
+        catch (JsonProcessingException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
+    {
+        Map<String, String> cleanAliases = new HashMap<>();
+        importAliases.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedVal = StringUtils.trimToNull(value);
+
+            //Sanity check this should be caught earlier
+            if (trimmedKey == null || trimmedVal == null)
+                throw new IllegalArgumentException("Parent aliases contain blanks");
+
+            //Substitute the currentAliasName for the placeholder value
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
+                    trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
+            {
+                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+            }
+            else if (trimmedVal.equalsIgnoreCase(NEW_DATA_CLASS_ALIAS_VALUE) ||
+                    trimmedVal.equalsIgnoreCase(DATA_INPUTS_PREFIX + NEW_DATA_CLASS_ALIAS_VALUE))
+            {
+                trimmedVal = DATA_INPUTS_PREFIX + currentAliasName;
+            }
+
+            cleanAliases.put(trimmedKey, trimmedVal);
+        });
+
+        return cleanAliases;
+    }
+
 }

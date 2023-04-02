@@ -105,11 +105,11 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return sampleCountColumnInfo;
             }
             case ImportAliases:
-                return createImportAliasColumn("ImportAliases", null);
+                return createImportAliasColumn("ImportAliases", null, "sample type");
             case MaterialInputImportAliases:
-                return createImportAliasColumn("MaterialInputImportAliases", MATERIAL_INPUTS_PREFIX);
+                return createImportAliasColumn("MaterialInputImportAliases", MATERIAL_INPUTS_PREFIX, "sample type");
             case DataInputImportAliases:
-                return createImportAliasColumn("DataInputImportAliases", DATA_INPUTS_PREFIX);
+                return createImportAliasColumn("DataInputImportAliases", DATA_INPUTS_PREFIX, "sample type");
             case Properties:
                 return createPropertiesColumn(alias);
             case Category:
@@ -124,25 +124,6 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
-    }
-
-    private AliasedColumn createImportAliasColumn(String name, String prefix)
-    {
-        AliasedColumn aliasedColumn = new AliasedColumn(this, name, _rootTable.getColumn("RowId"))
-        {
-            @Override
-            public boolean isNumericType()
-            {
-                // Issue 45374: don't apply number format to the RowId
-                return false;
-            }
-        };
-        aliasedColumn.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(prefix));
-        aliasedColumn.setDescription("Display column for sample type import alias key/value pairs.");
-        aliasedColumn.setKeyField(false);
-        aliasedColumn.setRequired(false);
-        aliasedColumn.setHidden(true);
-        return aliasedColumn;
     }
 
     @Override

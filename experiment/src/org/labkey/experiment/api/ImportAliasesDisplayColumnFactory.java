@@ -10,6 +10,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.util.HtmlString;
@@ -36,16 +37,35 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
         {
             private JSONObject getValueFromCtx(RenderContext ctx) throws IOException
             {
+                boolean isDataClass = getDescription() != null && getDescription().contains("data class");
                 JSONObject json = null;
                 Integer rowId = (Integer)getValue(ctx);
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
-                if (sampleType != null)
+                Map<String, String> aliasMap = null;
+                if (!isDataClass)
                 {
-                    Map<String, String> aliasMap = sampleType.getImportAliasMap();
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
+                    if (sampleType != null)
+                    {
+                        aliasMap = sampleType.getImportAliasMap();
+
+                    }
+                }
+                else
+                {
+                    ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(rowId);
+                    if (dataClass != null)
+                    {
+                        aliasMap = dataClass.getImportAliasMap();
+
+                    }
+                }
+
+                if (aliasMap != null)
+                {
+                    Map<String, String> finalAliasMap = aliasMap;
                     List<String> importKeys = aliasMap.keySet().stream()
-                            .filter(key -> _prefix == null || aliasMap.get(key).toLowerCase().startsWith(_prefix))
-                            .sorted()
-                            .collect(Collectors.toList());
+                            .filter(key -> _prefix == null || finalAliasMap.get(key).toLowerCase().startsWith(_prefix))
+                            .sorted().toList();
 
                     if (importKeys.size() > 0)
                     {

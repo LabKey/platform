@@ -15,8 +15,12 @@
  */
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
@@ -28,6 +32,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -51,6 +56,8 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -473,6 +480,41 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         else
             seq.ensureMinimum(newSeqValue);
 
+    }
+
+    private @NotNull Map<String, String> getImportAliases(DataClass ds) throws IOException
+    {
+        if (ds == null || StringUtils.isBlank(ds.getDataParentImportAliasMap()))
+            return Collections.emptyMap();
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
+
+            return mapper.readValue(ds.getDataParentImportAliasMap(), typeRef);
+        }
+        catch (IOException e)
+        {
+            throw new IOException(String.format("Failed to parse DataClass [%1$s] import alias json", ds.getRowId()), e);
+        }
+    }
+
+    public String getImportAliasJson()
+    {
+        return _object.getDataParentImportAliasMap();
+    }
+
+    @Override
+    public @NotNull Map<String, String> getImportAliasMap() throws IOException
+    {
+        return Collections.unmodifiableMap(getImportAliases(_object));
+    }
+
+    @Override
+    public void setImportAliasMap(Map<String, String> aliasMap)
+    {
+        _object.setDataParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
     }
 
 }
