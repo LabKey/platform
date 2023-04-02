@@ -391,6 +391,7 @@ export class App extends React.Component<any, State> {
                             summary={'Test search result summary text for the components page.'}
                             url={'#searchresultcard'}
                             iconUrl={'/labkey/_images/construct.svg'}
+                            isTopResult={true}
                         />
                     )
                 }
