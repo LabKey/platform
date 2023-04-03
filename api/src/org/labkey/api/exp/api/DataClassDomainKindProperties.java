@@ -3,6 +3,9 @@ package org.labkey.api.exp.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.util.Map;
+
 public class DataClassDomainKindProperties
 {
     private int rowId;
@@ -14,6 +17,7 @@ public class DataClassDomainKindProperties
     private Integer sampleType;
     private String category;
     private boolean _strictFieldValidation = true; // Set as false to skip validation check in ExperimentServiceImpl.createDataClass (used in Rlabkey labkey.domain.createAndLoad)
+    private Map<String, String> importAliases;
 
     public DataClassDomainKindProperties()
     {}
@@ -38,6 +42,15 @@ public class DataClassDomainKindProperties
 
         if (dc.getDomain() != null)
             this.domainId = dc.getDomain().getTypeId();
+
+        try
+        {
+            this.importAliases = dc.getImportAliasMap();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to parse parent alias mappings: ", e);
+        }
     }
 
     public int getRowId()
@@ -141,4 +154,15 @@ public class DataClassDomainKindProperties
     {
         _strictFieldValidation = strictFieldValidation;
     }
+
+    public void setImportAliases(Map<String, String> importAliases)
+    {
+        this.importAliases = importAliases;
+    }
+
+    public Map<String, String> getImportAliases()
+    {
+        return this.importAliases;
+    }
+
 }

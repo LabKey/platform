@@ -7400,7 +7400,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
+                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
+            throws ExperimentException
+    {
+        return createDataClass(c, u, name, options, properties, indices, templateInfo, disabledSystemField, null);
+    }
+
+    @Override
+    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField, @Nullable Map<String, String> importAliases)
             throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
@@ -7448,10 +7456,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         domain.setPropertyIndices(propertyIndices);
 
+        String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
+
         DataClass bean = new DataClass();
         bean.setContainer(c);
         bean.setName(name);
         bean.setLSID(lsid.toString());
+        bean.setDataParentImportAliasMap(importAliasJson);
         if (options != null)
         {
             String nameExpression = options.getNameExpression();
@@ -7525,6 +7536,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
+            dataClass.setImportAliasMap(options.getImportAliases());
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
             {
