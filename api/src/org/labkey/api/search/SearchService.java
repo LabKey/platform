@@ -309,6 +309,7 @@ public interface SearchService
     {
         public long totalHits;
         public List<SearchHit> hits;
+        public long offset;
     }
 
     class SearchHit

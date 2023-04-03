@@ -35,6 +35,7 @@ public interface ExpDataClassTable extends ExpTable<ExpDataClassTable.Column>
         NameExpression,
         SampleSet,
         Category,
-        DataCount
+        DataCount,
+        ImportAliases
     }
 }

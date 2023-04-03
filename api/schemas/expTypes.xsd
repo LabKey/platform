@@ -465,6 +465,13 @@
 			<xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="Category" type="string" minOccurs="0" />
 			<xs:element name="SampleType" type="string" minOccurs="0" />
+			<xs:element name="ParentImportAlias" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:choice minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="alias" type="exp:ImportAlias"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 		<xs:attribute ref="rdf:about" use="required"/>
 	</xs:complexType>
