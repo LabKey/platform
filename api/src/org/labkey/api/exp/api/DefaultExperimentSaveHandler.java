@@ -338,16 +338,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @NotNull
     protected Map<ExpData, String> getInputData(ViewContext context, org.json.JSONArray inputDataArray) throws ValidationException
     {
-        return getInputData(context, JSONArray.toOldJsonArray(inputDataArray));
-    }
-
-    @NotNull
-    protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
-    {
         Map<ExpData, String> inputData = new HashMap<>();
         for (int i = 0; i < inputDataArray.length(); i++)
         {
-            JSONObject dataObject = inputDataArray.getJSONObject(i);
+            org.json.JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
@@ -406,7 +400,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         // First, clear out any old data analysis results
         clearOutputDatas(context, run);
 
-        Map<ExpData, String> inputData = getInputData(context, inputDataArray);
+        Map<ExpData, String> inputData = getInputData(context, inputDataArray.toNewJSONArray());
         Map<ExpMaterial, String> inputMaterial = getInputMaterial(context, inputMaterialArray);
 
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
@@ -479,6 +473,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
+    @Deprecated // Use new JSONObject variant above
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
         ExpSampleType sampleType = null;

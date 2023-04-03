@@ -344,6 +344,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @Override
+    @Deprecated // Use new JSONObject variant above
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
         List<AssayDataType> knownTypes = new ArrayList<>();
