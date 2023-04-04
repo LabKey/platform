@@ -943,7 +943,7 @@ public class ListController extends SpringActionController
             Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
             List<Integer> listIDs = new ArrayList<>();
 
-            // Export Lists if the user is an admin of the folders of the selected Lists, else throw Permission error
+            // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
                 if (!pair.second.hasPermission(getUser(), AdminPermission.class))
