@@ -250,10 +250,13 @@ public class IssueServiceImpl implements IssueService
             //IssueObject issue = form.getBean();
             String resolution = issueObject.getResolution() != null ? issueObject.getResolution() : "Fixed";
 
-            if (resolution.equals("Duplicate") &&
-                    issueObject.getDuplicate() != null &&
-                    !issueObject.getDuplicate().equals(prevIssue.getDuplicate()))
+            if (resolution.equals("Duplicate"))
             {
+                if (issueObject.getDuplicate() == null)
+                {
+                    errors.reject(ERROR_MSG, "A duplicate issue number is required");
+                    return;
+                }
                 if (issueObject.getDuplicate() == issueObject.getIssueId())
                 {
                     errors.reject(ERROR_MSG, "An issue may not be a duplicate of itself");

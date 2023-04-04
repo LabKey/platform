@@ -277,27 +277,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
          */
 
         //
-        // date
-        //
-
-        if (!timetype.isVisitBased()
-                && null == indexVisitDate
-                && (_datasetDefinition.isDemographicData() || _datasetDefinition.isParticipantAliasDataset())
-                && !context.getInsertOption().updateOnly)
-        {
-            final Date start = _datasetDefinition.getStudy().getStartDate();
-            indexVisitDate = it.addColumn(new BaseColumnInfo("Date", JdbcType.TIMESTAMP), new Callable()
-            {
-                @Override
-                public Object call()
-                {
-                    return start;
-                }
-            });
-            it.indexVisitDateOutput = indexVisitDate;
-        }
-
-        //
         // SequenceNum
         //
 

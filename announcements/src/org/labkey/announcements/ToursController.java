@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.announcements.query.AnnouncementSchema;
@@ -124,7 +124,7 @@ public class ToursController extends SpringActionController
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
             TourModel model;
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
 
             if (Integer.parseInt(json.getString("rowId")) < 0)
                 model = new TourModel();
@@ -151,7 +151,7 @@ public class ToursController extends SpringActionController
                     ret = TourManager.updateTour(getUser(), model);
                 }
                 json.put("rowId", ret.getRowId());
-                form.bindProperties(json);
+                form.bindJson(json);
             }
             catch (Exception e)
             {
@@ -164,7 +164,7 @@ public class ToursController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("rowId", json.getString("rowId"));
             response.put("success", true);
@@ -179,7 +179,7 @@ public class ToursController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getJsonObject();
+            JSONObject json = form.getNewJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             response.put("mode", TourManager.getTourMode(getContainer(), json.getInt("id")));
