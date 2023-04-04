@@ -769,11 +769,9 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
         try (ResultSet rs = new TableSelector(tt).getResultSet())
         {
             assertTrue(rs.next());
+            // issue 47344 : demographics date no longer required or initialized with the study start date
             if ("A2".equals(rs.getString("SubjectId")))
-                assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
-            assertTrue(rs.next());
-            if ("A2".equals(rs.getString("SubjectId")))
-                assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
+                assertEquals(null, rs.getTimestamp("date"));
         }
     }
 }
