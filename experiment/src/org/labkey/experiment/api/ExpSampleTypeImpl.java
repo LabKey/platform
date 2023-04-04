@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
@@ -1003,7 +1004,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(SampleTypeServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
+        _object.setMaterialParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
     }
 
     @Override

@@ -20,16 +20,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Simple success/fail response message with optional message and optional data.
- *
- * User: kevink
- * Date: 3/30/14
  */
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class SimpleResponse<T>
 {
-    private boolean _success;
-    private String _message;
-    private T _data;
+    private final boolean _success;
+    private final String _message;
+    private final T _data;
 
     public SimpleResponse(boolean success)
     {
@@ -62,5 +59,4 @@ public class SimpleResponse<T>
     {
         return _data;
     }
-
 }

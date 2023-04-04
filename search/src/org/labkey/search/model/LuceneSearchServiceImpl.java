@@ -1560,12 +1560,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     processSearchResultUniqueIds(offset, hitsToRetrieve, topDocs, searcher, searchResultUniqueIds);
 
 
-// Uncomment to log an explanation of each hit
-//                for (SearchHit hit : result.hits)
+                // Uncomment to log an explanation of each hit
+//                for (ScoreDoc hit : topDocs.scoreDocs)
 //                {
 //                    Explanation e = searcher.explain(query, hit.doc);
 //                    _log.info(e.toString());
 //                }
+
             }
             finally
             {
@@ -1631,6 +1632,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             ret.add(hit);
         }
 
+        result.offset = offset;
         result.totalHits = topDocs.totalHits.value;
         result.hits = ret;
     }

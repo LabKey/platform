@@ -40,7 +40,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
@@ -67,6 +66,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
@@ -823,7 +823,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
-        String importAliasJson = getAliasJson(importAliases, name);
+        String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid);
@@ -885,50 +885,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return st;
     }
-
-    public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
-    {
-        if (importAliases == null || importAliases.size() == 0)
-            return null;
-
-        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
-
-        try
-        {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(aliases);
-        }
-        catch (JsonProcessingException e)
-        {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
-    {
-        Map<String, String> cleanAliases = new HashMap<>();
-        importAliases.forEach((key, value) -> {
-            String trimmedKey = StringUtils.trimToNull(key);
-            String trimmedVal = StringUtils.trimToNull(value);
-
-            //Sanity check this should be caught earlier
-            if (trimmedKey == null || trimmedVal == null)
-                throw new IllegalArgumentException("Parent aliases contain blanks");
-
-            //Substitute the currentAliasName for the placeholder value
-            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
-                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
-            {
-                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
-            }
-
-            cleanAliases.put(trimmedKey, trimmedVal);
-        });
-
-        return cleanAliases;
-    }
-
 
     public enum SampleSequenceType
     {
@@ -1100,16 +1056,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return errors;
-    }
-
-    @Override
-    public boolean parentAliasHasCorrectFormat(String parentAlias)
-    {
-        //check if it is of the expected format or targeting the to be created sample type
-        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
-            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
-
-        return true;
     }
 
     public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)

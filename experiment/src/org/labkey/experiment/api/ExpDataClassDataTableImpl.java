@@ -124,6 +124,7 @@ import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,6 +139,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 
@@ -858,25 +860,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClassTableInfo.get();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
-        SearchService ss = SearchService.get();
-        if (null != ss)
+        try
         {
-            // Queue indexing after committing
-            propertiesTable.getSchema().getScope().addCommitTask(() ->
+            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliasMap(), null);
+            SearchService ss = SearchService.get();
+            if (null != ss)
             {
-                step0.setIndexFunction(lsids -> () ->
-                        ListUtils.partition(lsids, 100).forEach(sublist ->
-                                ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                {
-                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                                        expData.index(ss.defaultTask(), this);
-                                })
-                        )
-                );
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+                // Queue indexing after committing
+                propertiesTable.getSchema().getScope().addCommitTask(() ->
+                {
+                    step0.setIndexFunction(lsids -> () ->
+                            ListUtils.partition(lsids, 100).forEach(sublist ->
+                                    ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                    {
+                                        for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                                            expData.index(ss.defaultTask(), this);
+                                    })
+                            )
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+            return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
         }
-        return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private class PreTriggerDataIteratorBuilder implements DataIteratorBuilder
@@ -997,10 +1006,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, dataClassTInfo, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
                         .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
                         .addExtraPropsFn(() -> {
-                            if (c != null)
-                                return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
-                            else
-                                return Collections.emptyMap();
+                            Map<String, Object> props = new HashMap<>();
+                            try
+                            {
+                                Map<String, String> importAliasMap = _dataClass.getImportAliasMap();
+                                props.put(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
+                                props.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
+                            }
+                            catch (IOException e)
+                            {
+                                // do nothing
+                            }
+                            return props;
                         })
                 );
             }
