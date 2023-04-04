@@ -135,6 +135,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -942,13 +943,13 @@ public class ListController extends SpringActionController
             Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
             List<Integer> listIDs = new ArrayList<>();
 
-            // List export is only supported for lists defined in the current folder
+            // Export Lists if the user is an admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
-                if (pair.second != c)
+                if (!pair.second.hasPermission(getUser(), AdminPermission.class))
                 {
-                    errorMessages.add(String.format("Cannot export lists defined in %s from %s. List export is only supported for lists defined in the current folder.", pair.second.getPath(), c.getName()));
-                    break;
+                    String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
+                    throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getName()));
                 }
                 listIDs.add(pair.first);
             }
