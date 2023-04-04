@@ -65,7 +65,7 @@ public abstract class AbstractPipelineStartup
         ModuleDependencySorter sorter = new ModuleDependencySorter();
         modules = sorter.sortModulesByDependencies(modules);
 
-        // Horrible hack to work around failure to respect module dependencies in non-built file based modules
+        // Horrible hack to work around failure to respect module dependencies in non-built file-based modules
         Module pipelineModule = null;
         Module experimentModule = null;
         for (Module module : modules)

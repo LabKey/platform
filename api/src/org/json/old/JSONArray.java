@@ -979,6 +979,12 @@ public class JSONArray implements SafeToRender
         return this;
     }
 
+    // To ease migration from old to new
+    public org.json.JSONArray toNewJSONArray()
+    {
+        return new org.json.JSONArray(toString());
+    }
+
     public static JSONArray toOldJsonArray(org.json.JSONArray jsonArray)
     {
         return new JSONArray(jsonArray.toString());

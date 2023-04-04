@@ -127,7 +127,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         if (json != null)
         {
-            Pair<ExpProtocol, AssayProvider> pp = BaseProtocolAPIAction.getProtocolProvider(json, getContainer());
+            Pair<ExpProtocol, AssayProvider> pp = BaseProtocolAPIAction.getProtocolProvider(json.toNewJSONObject(), getContainer());
             protocol = pp.first;
             provider = pp.second;
 
