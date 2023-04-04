@@ -6918,9 +6918,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public void bindJson(org.json.JSONObject json)
+        public void bindJson(JSONObject json)
         {
-            org.json.JSONObject categoryProp = json.optJSONObject("category");
+            JSONObject categoryProp = json.optJSONObject("category");
             if (null != categoryProp)
             {
                 _category = ViewCategory.fromJSON(_context.getContainer(), categoryProp);
@@ -6928,7 +6928,7 @@ public class StudyController extends BaseStudyController
 
             _name = json.getString("name");
 
-            String type = json.optString("type");
+            String type = json.optString("type", null);
             if (null != type)
                 _type = Type.valueOf(type);
 
