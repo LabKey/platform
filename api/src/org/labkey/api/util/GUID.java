@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONString;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.reader.Readers;
@@ -65,7 +66,7 @@ import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnnecessarySemicolon"})
-public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToRender
+public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToRender, JSONString
 {
     private static final int version  =       0x00001000;
     private static final int reserved =       0x00008000;
@@ -338,6 +339,12 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     public JdbcType getJdbcParameterType()
     {
         return JdbcType.GUID;
+    }
+
+    @Override
+    public String toJSONString()
+    {
+        return _str;
     }
 }
 

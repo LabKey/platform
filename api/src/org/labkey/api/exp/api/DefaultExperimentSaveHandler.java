@@ -336,12 +336,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @NotNull
-    protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
+    protected Map<ExpData, String> getInputData(ViewContext context, org.json.JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
         for (int i = 0; i < inputDataArray.length(); i++)
         {
-            JSONObject dataObject = inputDataArray.getJSONObject(i);
+            org.json.JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
@@ -388,8 +388,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     /**
-     * Enables the implementor to decide how to save the passed in ExpRun.  The default implementation deletes the
-     * run and recreates it.  A custom implementation could choose to enforce that only certain aspects of the
+     * Enables the implementor to decide how to save the passed in ExpRun. The default implementation deletes the
+     * run and recreates it. A custom implementation could choose to enforce that only certain aspects of the
      * protocol application change or choose not add its own data for saving.
      * Called from DefaultAssaySaveHandler.handleRun.
      */
@@ -400,7 +400,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         // First, clear out any old data analysis results
         clearOutputDatas(context, run);
 
-        Map<ExpData, String> inputData = getInputData(context, inputDataArray);
+        Map<ExpData, String> inputData = getInputData(context, inputDataArray.toNewJSONArray());
         Map<ExpMaterial, String> inputMaterial = getInputMaterial(context, inputMaterialArray);
 
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
@@ -467,6 +467,13 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
+    public ExpMaterial handleMaterial(ViewContext context, org.json.JSONObject materialObject) throws ValidationException
+    {
+        return handleMaterial(context, JSONObject.toOldJSONObject(materialObject));
+    }
+
+    @Override
+    @Deprecated // Use new JSONObject variant above
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
         ExpSampleType sampleType = null;
@@ -545,7 +552,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 {
                     List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, context.getContainer(), context.getUser());
                     if (materials.size() > 1)
-                        throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleType to disambiguate the desired material.");
+                        throw new NotFoundException("More than one material matches name '" + materialName + "'. Provide name and sampleType to disambiguate the desired material.");
                     if (materials.size() == 1)
                         material = materials.get(0);
                 }
@@ -574,6 +581,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         return material;
+    }
+
+    @Override
+    public ExpData handleData(ViewContext context, org.json.JSONObject dataObject) throws ValidationException
+    {
+        return handleData(context, JSONObject.toOldJSONObject(dataObject));
     }
 
     @Override
