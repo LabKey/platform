@@ -2797,7 +2797,7 @@ public class ReportsController extends SpringActionController
                 response.put("visibleColumns", columns);
 
                 // provider editor information
-                Map<String, Map<String, Object>> viewTypeProps = new HashMap<>();
+                Map<String, JSONObject> viewTypeProps = new HashMap<>();
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
                     DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
@@ -3189,7 +3189,7 @@ public class ReportsController extends SpringActionController
             ArrayList<JSONObject> views = new ArrayList<>();
             for (DataViewInfo view : helper.views)
             {
-                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view).toNewJSONObject();
+                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIconUrl().getLocalURIString());
@@ -3355,14 +3355,14 @@ public class ReportsController extends SpringActionController
                 categoriesWithoutDisplayOrder.sort(Comparator.comparing(ViewCategory::getLabel, String.CASE_INSENSITIVE_ORDER));
             }
             for (ViewCategory vc : categoriesWithDisplayOrder)
-                categoryList.add(vc.toJSON(getUser()).toNewJSONObject());
+                categoryList.add(vc.toJSON(getUser()));
 
             // assign an order to all categories returned to the client
             int count = categoriesWithDisplayOrder.size() + 1;
             for (ViewCategory vc : categoriesWithoutDisplayOrder)
             {
                 vc.setDisplayOrder(count++);
-                categoryList.add(vc.toJSON(getUser()).toNewJSONObject());
+                categoryList.add(vc.toJSON(getUser()));
             }
             response.put("categories", categoryList);
 
@@ -3393,7 +3393,7 @@ public class ReportsController extends SpringActionController
             {
                 for (JSONObject categoryInfo : JsonUtil.toJSONObjectList(categoriesProp))
                 {
-                    _categories.add(ViewCategory.fromJSON(_context.getContainer(), org.json.old.JSONObject.toOldJSONObject(categoryInfo)));
+                    _categories.add(ViewCategory.fromJSON(_context.getContainer(), categoryInfo));
                 }
             }
         }
@@ -4039,7 +4039,7 @@ public class ReportsController extends SpringActionController
                     List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
                     for (DataViewInfo report : reports)
                     {
-                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report).toNewJSONObject());
+                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
                     }
                 }
             }

@@ -19,8 +19,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
@@ -31,11 +31,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * User: klum
- * Date: Oct 12, 2011
- * Time: 7:23:43 PM
- */
 public class ViewCategory extends Entity implements Comparable<ViewCategory>
 {
     private int _rowId;
