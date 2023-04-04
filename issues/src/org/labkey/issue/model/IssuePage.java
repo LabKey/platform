@@ -110,7 +110,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private boolean _moveDestinations;
 
     private IssueListDef _issueListDef;
-    private RenderContext _renderContext;
+    private Map<String, Object> _renderContextRow;
+    private Map<String, Object> _renderContextDefaultValues = new CaseInsensitiveHashMap<>();
+
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
     private boolean _dirty;
@@ -329,16 +331,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _dirty = dirty;
     }
 
-    private RenderContext getRenderContext(ViewContext context)
+    private RenderContext getRenderContext(ViewContext context, boolean readOnly)
     {
-        if (_renderContext == null)
+        if (_renderContextRow == null)
         {
-            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            _renderContextRow = new CaseInsensitiveHashMap<>();
             IssueListDef issueListDef = getIssueListDef();
             Domain domain = issueListDef.getDomain(context.getUser());
 
             ObjectFactory factory = ObjectFactory.Registry.getFactory(IssueObject.class);
-            factory.toMap(_issue, row);
+            factory.toMap(_issue, _renderContextRow);
 
             // apply any default values
             if (null != domain)
@@ -346,7 +348,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(context.getContainer(), domain, context.getUser());
                 for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
                 {
-                    row.putIfAbsent(entry.getKey().getName(), entry.getValue());
+                    _renderContextDefaultValues.putIfAbsent(entry.getKey().getName(), entry.getValue());
                 }
             }
 
@@ -368,7 +370,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
                         for (Map.Entry<FieldKey, Object> entry : rowMap.entrySet())
                         {
-                            row.putIfAbsent(entry.getKey().encode(), entry.getValue());
+                            _renderContextRow.putIfAbsent(entry.getKey().encode(), entry.getValue());
                         }
                     }
                 }
@@ -377,13 +379,20 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     throw new RuntimeException(e);
                 }
             }
-            row.putAll(_issue.getProperties());
-
-            _renderContext = new RenderContext(context);
-            _renderContext.setMode(_mode);
-            _renderContext.setRow(row);
+            _renderContextRow.putAll(_issue.getProperties());
         }
-        return  _renderContext;
+
+        RenderContext renderContext = new RenderContext(context);
+        renderContext.setMode(_mode);
+        Map<String, Object> row = new CaseInsensitiveHashMap<>(_renderContextRow);
+        if (!readOnly)
+        {
+            // default values don't apply if we are read only
+            row.putAll(_renderContextDefaultValues);
+        }
+        renderContext.setRow(row);
+
+        return  renderContext;
     }
 
     private TableInfo getIssueTable(ViewContext context)
@@ -440,7 +449,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 if (col != null)
                 {
                     DisplayColumn dc = col.getRenderer();
-                    RenderContext renderContext = getRenderContext(context);
+                    RenderContext renderContext = getRenderContext(context, true);
 
                     try (Writer writer = new StringWriter())
                     {
@@ -492,7 +501,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         ((DataColumn)dc).setInputRows(4);
                     }
 
-                    RenderContext renderContext = getRenderContext(context);
+                    RenderContext renderContext = getRenderContext(context, readOnly);
                     renderContext.setMode(readOnly ? DataRegion.MODE_DETAILS : getMode());
 
                     try (StringWriter writer = new StringWriter())
