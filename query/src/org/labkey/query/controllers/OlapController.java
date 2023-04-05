@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonWriter;
@@ -134,15 +134,8 @@ import java.util.stream.Collectors;
 
 
 /**
- * User: matthew
- * Date: 10/30/13
- * Time: 11:12 AM
- *
  * APIs for querying olap (mondrian) cubes
- *
- *
  * TODO consider whether to re-enable server side cache
- *
  */
 public class OlapController extends SpringActionController
 {
@@ -761,7 +754,7 @@ public class OlapController extends SpringActionController
                 return null;
 
             QubeQuery qquery = new QubeQuery(_cube);
-            qquery.fromJson((JSONObject)form.json.get("query"), errors);
+            qquery.fromJson(org.json.old.JSONObject.toOldJSONObject(form.json.getJSONObject("query")), errors);
 
             String mdx =  new MdxQueryImpl(qquery, errors).generateMDX();
             if (errors.hasErrors())
@@ -870,8 +863,8 @@ public class OlapController extends SpringActionController
             try
             {
                 QubeQuery qquery = new QubeQuery(_cube);
-                JSONObject q = (JSONObject)form.json.get("query");
-                qquery.fromJson(q, errors);
+                JSONObject q = form.json.getJSONObject("query");
+                qquery.fromJson(org.json.old.JSONObject.toOldJSONObject(q), errors);
                 if (errors.hasErrors())
                     return null;
 
@@ -1283,6 +1276,7 @@ public class OlapController extends SpringActionController
             ret.put("name", contextName);
             ret.put("defaults", defaultsJSON);
             ret.put("values", valuesJSON);
+
             return ret;
         }
 
