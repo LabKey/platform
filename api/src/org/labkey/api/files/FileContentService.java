@@ -288,6 +288,21 @@ public interface FileContentService
         return 0;
     }
 
+    /** Notifies all registered FileListeners that a file or directory has been replaced */
+    default void fireFileReplacedEvent(@NotNull File replaced, @Nullable User user, @Nullable Container container){}
+    default void fireFileReplacedEvent(@NotNull Path replaced, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(replaced))
+            fireFileReplacedEvent(replaced.toFile(), user, container);
+    }
+
+    default void fireFileDeletedEvent(@NotNull File deleted, @Nullable User user, @Nullable Container container){}
+    default void fireFileDeletedEvent(@NotNull Path deleted, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(deleted))
+            fireFileDeletedEvent(deleted.toFile(), user, container);
+    }
+
     /** Add a listener that will be notified when files are created or are moved */
     void addFileListener(FileListener listener);
 

@@ -64,6 +64,20 @@ public interface FileListener
         return 0;
     }
 
+    default void fileReplaced(@NotNull File replaced, @Nullable User user, @Nullable Container container) {}
+    default void fileReplaced(@NotNull Path replaced, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(replaced))
+            fileReplaced(replaced.toFile(), user, container);
+    }
+
+    default void fileDeleted(@NotNull File deleted, @Nullable User user, @Nullable Container container) {}
+    default void fileDeleted(@NotNull Path deleted, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(deleted))
+            fileDeleted(deleted.toFile(), user, container);
+    }
+
     /**
      * List file paths in the database this FileListener is aware of.
      * @param container If not null, list files in the given container, otherwise from all containers.
