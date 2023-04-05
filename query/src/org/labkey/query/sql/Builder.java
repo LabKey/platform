@@ -116,6 +116,23 @@ public class Builder extends SQLFragment
     }
 
     @Override
+    public SQLFragment appendIdentifier(CharSequence charseq)
+    {
+        if (charseq == null || charseq.length() == 0)
+            return this;
+        appendPrefix();
+        appendIndent();
+        super.appendIdentifier(charseq);
+        return this;
+    }
+
+    @Override
+    public SQLFragment appendEOS()
+    {
+        return super.appendEOS();
+    }
+
+    @Override
     public Builder append(SQLFragment f)
     {
         if (!f.isEmpty())

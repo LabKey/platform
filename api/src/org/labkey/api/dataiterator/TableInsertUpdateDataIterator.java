@@ -441,7 +441,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                     resetSeq.append("  pg_get_serial_sequence(").appendValue(selectName).append(", ").appendValue(colSelectName).append("),\n");
                     resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(selectName).append("), 1),\n");
                     resetSeq.append("  false");
-                    resetSeq.append(");\n");
+                    resetSeq.append(")");
                     new SqlExecutor(_scope, _conn).execute(resetSeq);
                 }
             }

@@ -430,9 +430,9 @@ public class StatementUtils
             sqlfObjectProperty.append("NULL");
         sqlfObjectProperty.append(",");
         appendPropertyValue(sqlfObjectProperty, dp, v);
-        sqlfObjectProperty.append(");\n");
+        sqlfObjectProperty.append(")").appendEOS();
         sqlfObjectProperty.append(ifEND);
-        sqlfObjectProperty.append(";\n");
+        sqlfObjectProperty.appendEOS();
     }
 
     private void appendSQLFDeleteObjectProperty(SQLFragment sqlfDelete, String objectIdVar, List<? extends DomainProperty> domainProperties, Set<DomainProperty> vocabularyProperties)
@@ -448,7 +448,7 @@ public class StatementUtils
             separator = ", ";
             sqlfDelete.appendValue(property.getPropertyId());
         }
-        sqlfDelete.append(");\n");
+        sqlfDelete.append(")").appendEOS();
     }
 
     public void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey,ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
@@ -463,14 +463,14 @@ public class StatementUtils
             sqlfPreselectObject.append(getPkWhereClause(keys));
             sqlfPreselectObject.append("),");
             appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
-            sqlfPreselectObject.append(");\n");
+            sqlfPreselectObject.append(")").appendEOS();
 
         }
         else
         {
             sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = ");
             appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
-            sqlfPreselectObject.append(";\n");
+            sqlfPreselectObject.appendEOS();
         }
     }
 
@@ -607,9 +607,9 @@ public class StatementUtils
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT").appendEOS();;
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300);\n");
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();;
                 useVariables = _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
@@ -638,13 +638,13 @@ public class StatementUtils
                 sqlfInsertObject.append( null == ownerObjectId ? "NULL" : String.valueOf(ownerObjectId) ).append(" AS OwnerObjectId");
                 sqlfInsertObject.append(" WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
-                sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
+                sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();;
 
                 // re-grab the object's ObjectId, in case it was just inserted
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
-                sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
+                sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(")").appendEOS();;
 
                 if (Operation.insert != _operation && (!properties.isEmpty() || !_vocabularyProperties.isEmpty()))
                 {
@@ -668,7 +668,7 @@ public class StatementUtils
             if (objectURIVar == null)
             {
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300);\n");
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300)").appendEOS();;
             }
 
             if (!objectUriPreselectSet && (hasObjectURIColumn || !_vocabularyProperties.isEmpty()))
@@ -832,7 +832,7 @@ public class StatementUtils
                     rowIdVar = "_rowid_";
                 rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn, rowIdVar);
                 if (useVariables)
-                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");  // TODO: Move this into addReselect()?
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT").appendEOS();  // CONSIDER: Move this into addReselect()?
             }
 
             if(_selectObjectUri && hasObjectURIColumn)
@@ -874,12 +874,12 @@ public class StatementUtils
                     throw new TableInsertUpdateDataIterator.NoUpdatableColumnInDataException(table.getName());
 
                 sqlfUpdate.append(new SQLFragment(keys.values().iterator().next().getSelectName()));
-                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1;\n");
+                sqlfUpdate.append(" = 'noop' WHERE 1 <> 1").appendEOS();;
             }
             else
             {
                 sqlfUpdate.append(sqlfWherePK);
-                sqlfUpdate.append(";\n");
+                sqlfUpdate.appendEOS();
             }
 
             if (Operation.merge == _operation)
@@ -899,14 +899,14 @@ public class StatementUtils
                     sqlfUpdate.append(_dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
                     sqlfUpdate.append(ifTHEN).append("\n\t");
 
-                    sqlfInsertInto.append(";\n");
+                    sqlfInsertInto.appendEOS();
                     sqlfInsertInto.append(ifEND);
                 }
             }
         }
 
         if (Operation.insert == _operation || Operation.merge == _operation)
-            sqlfInsertInto.append(";\n");
+            sqlfInsertInto.appendEOS();
 
         if ((_selectIds && (null != objectIdVar || null != rowIdVar)) || (_selectObjectUri && null != objectURIVar))
         {
@@ -988,9 +988,9 @@ public class StatementUtils
                     select.add(ph.p);
                     comma = ", ";
                 }
-                sqlfDeclare.append(";\n");
+                sqlfDeclare.appendEOS();
                 sqlfDeclare.append(select);
-                sqlfDeclare.append(";\n");
+                sqlfDeclare.appendEOS();
             }
             SQLFragment script = new SQLFragment();
             Stream.of(sqlfDeclare, sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
@@ -1027,7 +1027,7 @@ public class StatementUtils
                 call.add(ph.p);
                 comma = ",";
             }
-            fn.append("\n);\n");
+            fn.append("\n)").appendEOS();;
             fn.append("CREATE FUNCTION ").append(fnName).append("(").append(typeName).append(") ");
             fn.append("RETURNS ");
             if (null != sqlfSelectIds)
@@ -1065,7 +1065,7 @@ public class StatementUtils
                     call.append("C varchar");
                 }
 
-                call.append(");");
+                call.append(")").appendEOS();
             }
             else
             {
@@ -1082,17 +1082,17 @@ public class StatementUtils
                 .forEach(fn::append);
             if (null == sqlfSelectIds)
             {
-                fn.append(new SQLFragment("RETURN;\n"));
+                fn.append("RETURN").appendEOS();;
             }
             else
             {
                 sqlfSelectIds.insert(0, "RETURN QUERY\n");
                 fn.append(sqlfSelectIds);
-                fn.append(";\n");
+                fn.appendEOS();
             }
-            fn.append("END;\n$$ LANGUAGE plpgsql;\n");
+            fn.append("END").appendEOS().append("$$ LANGUAGE plpgsql").appendEOS();
             _log.debug(fn.toDebugString());
-            final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE;");
+            final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE").appendEOS();
             _log.debug(drop.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new ParameterMapStatement(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());

@@ -88,7 +88,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                     .append("\n(Id ")
                     .append(DbSchema.getTemp().getSqlDialect().getSqlTypeName(jdbcType))
                     .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
-                    .append(");");
+                    .append(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
             // While the associated mutating operations are necessary, they are not a viable CSRF attack vector.
@@ -247,8 +247,6 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             Assert.assertEquals("Validate second string IN clause", 2, new SqlSelector(_scope, secondSQL).getRowCount());
 
             Assert.assertEquals("Validate SQL matches, indicated cached results", firstSQL, secondSQL);
-
-
         }
     }
 }

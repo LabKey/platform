@@ -359,7 +359,32 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        assert !StringUtils.contains(charseq, ';');
         getStringBuilder().append(charseq);
+        return this;
+    }
+
+
+    /** Functionally the same as append(CharSequence).  This method just has different asserts */
+    public SQLFragment appendIdentifier(CharSequence charseq)
+    {
+        if (null == charseq)
+            return this;
+        String identifier = charseq.toString().strip();
+        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
+        boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
+        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
+        getStringBuilder().append(charseq);
+        return this;
+    }
+
+
+    /** append End Of Statement */
+    public SQLFragment appendEOS()
+    {
+        getStringBuilder().append(";\n");
         return this;
     }
 

@@ -186,12 +186,12 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                                 empty = "NULL";
                         }
 
-                        sqlf.append(String.format(", %s AS %s", empty, getSqlDialect().makeLegalIdentifier(pd.getName())));
+                        sqlf.append(", ").append(empty).append(" AS ").appendIdentifier(getSqlDialect().makeLegalIdentifier(pd.getName()));
                     }
                 }
             }
 
-            sqlf.append(" FROM " + ti.getSelectName() + " D");
+            sqlf.append(" FROM ").appendIdentifier(ti.getSelectName()).append(" D");
             if (def.isShared() && !_crossContainer)
             {
                 if (def.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)

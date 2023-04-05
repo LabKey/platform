@@ -756,7 +756,7 @@ public class DbSchema
                         sbSql.add(Boolean.FALSE);
                     }
 
-                    sbSql.append(";\n");
+                    sbSql.appendEOS();
                     break;
                 }
             }

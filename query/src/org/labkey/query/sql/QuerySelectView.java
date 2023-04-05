@@ -273,7 +273,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
                 selectFrag.append(" AS ");
-                selectFrag.append(dialect.makeLegalIdentifier(column.getAlias()));
+                selectFrag.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
                 strComma = ",\n";
             }
         }

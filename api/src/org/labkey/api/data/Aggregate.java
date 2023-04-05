@@ -452,7 +452,7 @@ public class Aggregate
     public SQLFragment toLabKeySQL(SQLFragment tableInnerSql)
     {
         String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
-        alias = alias.replace("\"", "\\\"");
+        alias = AliasManager.makeLegalName(alias, null);
 
         // special case for those aggregate (i.e. summary stat) types that don't have a LabKey SQL function
         if (_type.getSQLFunctionName(null) == null)
@@ -463,7 +463,7 @@ public class Aggregate
         if (_distinct)
             sb.append("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
-        sb.append(") AS \"").append(alias).append("\"");
+        sb.append(") AS ").appendIdentifier(alias);
         return sb;
     }
 
