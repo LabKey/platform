@@ -7639,7 +7639,6 @@ public class ExperimentController extends SpringActionController
     public static class MoveSamplesAction extends MutatingApiAction<MoveSamplesForm>
     {
         private Container _targetContainer;
-        private Set<Integer> _sampleIds;
         private List<? extends ExpMaterial> _materials;
 
         @Override
@@ -7655,7 +7654,9 @@ public class ExperimentController extends SpringActionController
         public Object execute(MoveSamplesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            resp.put("success", true);
+            resp.put("samplesMoved", samplesMoved);
             // TODO what to include in response?
             return resp;
         }
@@ -7716,15 +7717,15 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            _sampleIds = form.getIds(false);
-            if (_sampleIds == null || _sampleIds.isEmpty())
+            Set<Integer> sampleIds = form.getIds(false);
+            if (sampleIds == null || sampleIds.isEmpty())
             {
                 errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
                 return;
             }
 
-            _materials = ExperimentServiceImpl.get().getExpMaterials(_sampleIds);
-            if (_materials.size() != _sampleIds.size())
+            _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
+            if (_materials.size() != sampleIds.size())
             {
                 errors.reject(ERROR_MSG, "Unable to find all samples for the move operation.");
                 return;
