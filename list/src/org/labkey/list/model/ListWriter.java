@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
@@ -46,6 +47,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
@@ -90,7 +92,6 @@ public class ListWriter
         // We exclude picklists because they contain just sampleIds, which will be different in the new container.
         // Picklists are meant to be transient, so not including them in the export makes sense.
         Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false, false, false);
-        PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
         {
@@ -113,74 +114,102 @@ public class ListWriter
                     }
                 }
             }
-            // Create meta data doc
-            TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
-            TablesType tablesXml = tablesDoc.addNewTables();
+            writeLists(lists, listsDir, ctx, user);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
-            // Create doc for non-table settings (discussions, indexing settings & templates)
-            ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
-            ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
+    private void writeLists(Map<String, ListDefinition> lists, VirtualFile listsDir, FolderExportContext ctx, User user) throws IOException, SQLException
+    {
+        PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
+
+        // Create meta data doc
+        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+        TablesType tablesXml = tablesDoc.addNewTables();
+
+        // Create doc for non-table settings (discussions, indexing settings & templates)
+        ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
+        ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
+
+        for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+        {
+            ListDefinition def = entry.getValue();
+            Container c = def.getContainer();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
             if (ctx.isAddExportComment())
                 XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
             ListQuerySchema schema = new ListQuerySchema(user, c);
+            TableInfo ti = schema.getTable(def.getName());
 
-            for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+
+            // Continue exporting other lists if a TableInfo can't be loaded. One possible scenario: extra long column names
+            // with MV indicators cause errors right now. We need to fix that, but export also needs to be resilient.
+            if (null == ti)
+                continue;
+
+            // Write meta data
+            TableType tableXml = tablesXml.addNewTable();
+            ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, exportPhiLevel));
+            xmlWriter.writeTable(tableXml);
+
+            // Write settings
+            ListsDocument.Lists.List settings = listSettingsXml.addNewList();
+            writeSettings(settings, def);
+
+            // Write data
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
+
+            if (null != ctx && ctx.isAlternateIds())
             {
-                ListDefinition def = entry.getValue();
-                TableInfo ti = schema.getTable(def.getName());
+                createAlternateIdColumns(ti, columns, ctx.getContainer());
+            }
 
-                // Continue exporting other lists if a TableInfo can't be loaded. One possible scenario: extra long column names
-                // with MV indicators cause errors right now. We need to fix that, but export also needs to be resilient.
-                if (null == ti)
-                    continue;
-
-                // Write meta data
-                TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, exportPhiLevel));
-                xmlWriter.writeTable(tableXml);
-
-                // Write settings
-                ListsDocument.Lists.List settings = listSettingsXml.addNewList();
-                writeSettings(settings, def);
-
-                // Write data
-                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
-
-                if (null != ctx && ctx.isAlternateIds())
-                {
-                    createAlternateIdColumns(ti, columns, ctx.getContainer());
-                }
-
-                if (!columns.isEmpty())
-                {
-                    List<DisplayColumn> displayColumns = columns
+            if (!columns.isEmpty())
+            {
+                List<DisplayColumn> displayColumns = columns
                         .stream()
                         .filter(Objects::nonNull)
                         .map(ListExportDataColumn::new)
                         .collect(Collectors.toCollection(LinkedList::new));
 
-                    // Sort the data rows by PK, #11261
-                    Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
+                // Sort the data rows by PK, #11261
+                Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
 
-                    // NOTE: TSVGridWriter generates and closes Results
-                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
-                    {
-                        tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                        PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
-                        tsvWriter.write(out);
-                    }
-
-                    writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                // NOTE: TSVGridWriter generates and closes Results
+                try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+                {
+                    tsvWriter.setApplyFormats(false);
+                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                    PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                    tsvWriter.write(out);
                 }
+
+                writeAttachments(ti, def, c, listsDir, exportPhiLevel);
             }
+        }
 
-            listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
-            listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+        listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+        listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+    }
 
+    public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception
+    {
+        Map<String, ListDefinition> listsToExport = new HashMap<>();
+        for (Pair<Integer, Container> selectedLists : ctx.getLists())
+        {
+            ListDefinition list = ListService.get().getList(selectedLists.second, selectedLists.first);
+            listsToExport.put(list.getName(), list);
+        }
+
+        if (!listsToExport.isEmpty())
+        {
+            writeLists(listsToExport, listsDir, ctx, user);
             return true;
         }
         else

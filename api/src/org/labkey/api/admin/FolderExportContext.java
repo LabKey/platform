@@ -20,10 +20,12 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.Pair;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -43,6 +45,7 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
+    private Set<Pair<Integer, Container>> _lists;
     private Set<String> _queryKeys;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
@@ -169,5 +172,15 @@ public class FolderExportContext extends AbstractFolderContext
     public void setListIds(Integer[] listIds)
     {
         _listIds = new HashSet<>(Arrays.asList(listIds));
+    }
+
+    public Set<Pair<Integer, Container>> getLists()
+    {
+        return _lists;
+    }
+
+    public void setLists(Set<Pair<Integer, Container>> lists)
+    {
+        _lists = new HashSet<>(lists);
     }
 }

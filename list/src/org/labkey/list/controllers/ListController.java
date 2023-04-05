@@ -133,6 +133,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -941,7 +942,7 @@ public class ListController extends SpringActionController
             Container c = getContainer();
             List<String> errorMessages = new ArrayList<>();
             Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
-            List<Integer> listIDs = new ArrayList<>();
+            Set<Pair<Integer, Container>> selectedLists = new HashSet<>();
 
             // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
@@ -951,14 +952,14 @@ public class ListController extends SpringActionController
                     String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
                     throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getPath()));
                 }
-                listIDs.add(pair.first);
+                selectedLists.add(pair);
             }
 
             if (!errorMessages.isEmpty())
                 throw new IllegalArgumentException(StringUtils.join(errorMessages, "\n"));
 
             FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
-            ctx.setListIds(listIDs.toArray(new Integer[0]));
+            ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
 
             // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
@@ -968,7 +969,7 @@ public class ListController extends SpringActionController
 
             try (ZipFile zip = new ZipFile(tempDir, filename))
             {
-                writer.write(c, getUser(), zip, ctx);
+                writer.write(getUser(), zip, ctx);
             }
 
             Path tempZipFile = tempDir.resolve(filename);
