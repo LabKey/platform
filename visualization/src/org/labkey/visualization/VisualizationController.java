@@ -1543,10 +1543,10 @@ public class VisualizationController extends SpringActionController
         {
             super.bindJson(json);
 
-            _renderType = json.getString("renderType");
+            _renderType = json.optString("renderType", null);
             _dataRegionName = json.optString("dataRegionName", null);
-            _svg = json.getString("svg");
-            _thumbnailType = json.getString("thumbnailType");
+            _svg = json.optString("svg", null);
+            _thumbnailType = json.optString("thumbnailType", null);
 
             Object jsonData = json.opt("jsonData");
             if (jsonData != null)

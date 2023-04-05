@@ -1500,7 +1500,7 @@ public class ReportsController extends BaseStudyController
             super.bindJson(json);
 
             // used for export to excel
-            _assayId = json.getInt("assayId");
+            _assayId = (Integer)json.opt("assayId");
 
             Object jsonData = json.opt("jsonData");
             if (jsonData != null)

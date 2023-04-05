@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.view;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -761,16 +760,16 @@ public class ReportUtil
         @Override
         public void bindJson(JSONObject json)
         {
-            _name = json.getString("name");
-            _description = json.getString("description");
-            _schemaName = json.getString("schemaName");
-            _queryName = json.getString("queryName");
+            _name = json.optString("name", null);
+            _description = json.optString("description", null);
+            _schemaName = json.optString("schemaName", null);
+            _queryName = json.optString("queryName", null);
             _viewName = json.optString("viewName", null);
 
             if (json.has("public"))
-                _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)json.get("public"), true);
+                _public = json.optBoolean("public", true);
             else
-                _public = BooleanUtils.toBoolean((Boolean)json.get("shared"));
+                _public = json.optBoolean("shared");
 
             String reportId = json.optString("reportId", null);
             if (reportId != null)
