@@ -108,7 +108,7 @@ public class ZipUtil
 
                 //Verify that the entry target doesn't attempt to push data outside the unzipDir by resolving '..'
                 if (!destFile.toAbsolutePath().normalize().startsWith(unzipDir.toAbsolutePath().normalize().toString())) {
-                    throw new IOException("Zip entry is outside of the target dir: " + entry.getName());
+                    throw new IOException("Zip entry is outside of the target dir. Dest file: " + entry.getName() + ", unzip dir: " + unzipDir);
                 }
 
                 if (entry.isDirectory())
