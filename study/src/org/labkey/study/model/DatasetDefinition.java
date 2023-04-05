@@ -1421,7 +1421,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             var column = getStorageColumn("Date");
             var visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
-            if (!study.getTimepointType().isVisitBased())
+            if (!study.getTimepointType().isVisitBased() && !def.isDemographicData())
                 visitDateCol.setNullable(false);
 
             if (!study.getTimepointType().isVisitBased() && def.getUseTimeKeyField())

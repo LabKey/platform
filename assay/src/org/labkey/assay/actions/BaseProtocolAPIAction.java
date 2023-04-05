@@ -16,7 +16,7 @@
 package org.labkey.assay.actions;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -47,19 +47,19 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
     @Override
     public final ApiResponse execute(FORM form, BindException errors) throws Exception
     {
-        if (form.getJsonObject() == null)
+        if (form.getNewJsonObject() == null)
         {
-            form.bindProperties(new JSONObject());
+            form.bindJson(new org.json.JSONObject());
         }
 
-        JSONObject json = form.getJsonObject();
+        JSONObject json = form.getNewJsonObject();
         ExpProtocol protocol;
 
         // if there is either an assay name or ID, assume this is an assay backed protocol
         // else use a non-assay protocol
         if (json.has(AssayJSONConverter.ASSAY_ID) || json.has(AssayJSONConverter.ASSAY_NAME))
         {
-            Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getContainer());
+            Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(json, getContainer());
             protocol = pair.first;
             _provider = pair.second;
         }

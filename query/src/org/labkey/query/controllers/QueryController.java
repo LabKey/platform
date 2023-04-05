@@ -4283,7 +4283,7 @@ public class QueryController extends SpringActionController
                 if (json.has("provenance"))
                 {
                     JSONObject provenanceJSON = json.getJSONObject("provenance");
-                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), org.json.old.JSONObject.toOldJSONObject(provenanceJSON), ProvenanceService.ADD_RECORDING);
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
                     RecordedAction action = svc.createRecordedAction(getViewContext(), params);
                     if (action != null && params.getRecordingId() != null)
                     {
@@ -4296,7 +4296,7 @@ public class QueryController extends SpringActionController
                                 // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
                                 // be the row lsid but it configurable in the provenance recording params
                                 //
-                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, org.json.old.JSONArray.toOldJsonArray(jsonArray), responseRows);
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonArray, responseRows);
                                 if (!provenanceMap.isEmpty())
                                 {
                                     action.getProvenanceMap().addAll(provenanceMap);
