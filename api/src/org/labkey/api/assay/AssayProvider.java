@@ -363,32 +363,38 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
-    interface AssayResultsChecker
+    /**
+     * Provides a mechanism to check or validate the results for a specified protocol. An instance of ResultsCheckHelper
+     * is used to generate the SQL used during the validation of protocol results.
+     */
+    @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker);
+    @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker, Class<E> clazz);
+
+    interface ResultsCheckHelper
     {
         /**
          * Returns an optional logger, in the event the check is run in the context of a pipeline job.
          */
-        @NotNull
-        Logger getLogger();
+        @NotNull Logger getLogger();
 
         /**
          * Checks whether the results table is valid, has the required fields etc. If errors are returned
          * the validation will not run and the errors will be logged to either the passed logger or the log file
          */
-        @NotNull
-        List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
+        @NotNull List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
 
         /**
          * The SQLFragment to execute to run the check, the SQL should return a list of rows which match
          * the Class passed into the validateResults method.
          */
-        SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
-    }
+        @Nullable SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
 
-    @NotNull
-    Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker);
-    @NotNull
-    <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker, Class<E> clazz);
+        /**
+         * The container filter to use during construction of the assay results table
+         * @return
+         */
+        @Nullable ContainerFilter getContainerFilter();
+    }
 
     /* .xar.xml import/export helpers */
 

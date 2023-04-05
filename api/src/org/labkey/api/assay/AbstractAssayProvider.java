@@ -1738,35 +1738,45 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker)
+    public @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper helper)
     {
-        SQLFragment sql = _generateSQL(container, user, protocol, checker);
-        if (sql != null)
+        if (helper != null)
         {
-            return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getMapCollection();
+            SQLFragment sql = _generateSQL(container, user, protocol, helper);
+            if (sql != null)
+            {
+                return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getMapCollection();
+            }
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+        else
+            throw new IllegalArgumentException("A ResultsCheckHelper must be provided");
     }
 
     @Override
-    public @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker, Class<E> clazz)
+    public @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper helper, Class<E> clazz)
     {
-        SQLFragment sql = _generateSQL(container, user, protocol, checker);
-        if (sql != null)
+        if (helper != null)
         {
-            return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getArrayList(clazz);
+            SQLFragment sql = _generateSQL(container, user, protocol, helper);
+            if (sql != null)
+            {
+                return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getArrayList(clazz);
+            }
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+        else
+            throw new IllegalArgumentException("A ResultsCheckHelper must be provided");
     }
 
-    private @Nullable SQLFragment _generateSQL(Container container, User user, ExpProtocol protocol, AssayResultsChecker checker)
+    private @Nullable SQLFragment _generateSQL(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker)
     {
         Logger log = checker.getLogger();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider != null)
         {
             AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
-            TableInfo assayDataTable = schema.createTable(AssayProtocolSchema.DATA_TABLE_NAME, null);
+            TableInfo assayDataTable = schema.createTable(AssayProtocolSchema.DATA_TABLE_NAME, checker.getContainerFilter());
             if (assayDataTable != null)
             {
                 List<ValidationError> errors = checker.isValid(protocol, assayDataTable);
