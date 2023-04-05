@@ -16,7 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
@@ -114,7 +113,8 @@ public class ListWriter
                     }
                 }
             }
-            writeLists(lists, listsDir, ctx, user);
+            List<Pair<String, ListDefinition>> pairList = lists.entrySet().stream().map(m -> new Pair<>(m.getKey(), m.getValue())).collect(Collectors.toList());
+            writeLists(pairList, listsDir, ctx, user, false);
             return true;
         }
         else
@@ -123,7 +123,7 @@ public class ListWriter
         }
     }
 
-    private void writeLists(Map<String, ListDefinition> lists, VirtualFile listsDir, FolderExportContext ctx, User user) throws IOException, SQLException
+    private void writeLists(List<Pair<String, ListDefinition>> listsToExport, VirtualFile listsDir, FolderExportContext ctx, User user, boolean useFolderNameOrPath) throws IOException, SQLException
     {
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
@@ -135,9 +135,9 @@ public class ListWriter
         ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
         ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
 
-        for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+        for (Pair<String, ListDefinition> list : listsToExport)
         {
-            ListDefinition def = entry.getValue();
+            ListDefinition def = list.getValue();
             Container c = def.getContainer();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
@@ -160,7 +160,7 @@ public class ListWriter
 
             // Write settings
             ListsDocument.Lists.List settings = listSettingsXml.addNewList();
-            writeSettings(settings, def);
+            writeSettings(settings, def, useFolderNameOrPath);
 
             // Write data
             Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
@@ -186,7 +186,8 @@ public class ListWriter
                 {
                     tsvWriter.setApplyFormats(false);
                     tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                    String listFileName = def.getName() + (useFolderNameOrPath ? ("_" + def.getContainer().getName()) : "") + ".tsv";
+                    PrintWriter out = listsDir.getPrintWriter(listFileName);
                     tsvWriter.write(out);
                 }
 
@@ -200,16 +201,16 @@ public class ListWriter
 
     public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception
     {
-        Map<String, ListDefinition> listsToExport = new HashMap<>();
+        List<Pair<String, ListDefinition>> listsToExport = new LinkedList<>();
         for (Pair<Integer, Container> selectedLists : ctx.getLists())
         {
             ListDefinition list = ListService.get().getList(selectedLists.second, selectedLists.first);
-            listsToExport.put(list.getName(), list);
+            listsToExport.add(new Pair<>(list.getName(), list));
         }
 
         if (!listsToExport.isEmpty())
         {
-            writeLists(listsToExport, listsDir, ctx, user);
+            writeLists(listsToExport, listsDir, ctx, user, true);
             return true;
         }
         else
@@ -234,9 +235,9 @@ public class ListWriter
         }
     }
 
-    private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def)
+    private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def, boolean useFolderPath)
     {
-        settings.setName(def.getName());
+        settings.setName(useFolderPath ? (def.getContainer().getPath() + "/" + def.getName()) : def.getName());
         settings.setId(def.getListId());
 
         if (def.getDiscussionSetting().getValue() != 0) settings.setDiscussions(def.getDiscussionSetting().getValue());

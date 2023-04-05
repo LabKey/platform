@@ -134,6 +134,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -942,7 +943,7 @@ public class ListController extends SpringActionController
             Container c = getContainer();
             List<String> errorMessages = new ArrayList<>();
             Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
-            Set<Pair<Integer, Container>> selectedLists = new HashSet<>();
+            List<Pair<Integer, Container>> selectedLists = new LinkedList<>();
 
             // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
