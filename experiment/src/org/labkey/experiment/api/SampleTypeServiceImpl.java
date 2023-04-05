@@ -225,6 +225,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return ExperimentServiceImpl.get().getTinfoProtocolInput();
     }
 
+    private TableInfo getTinfoMaterialAliasMap()
+    {
+        return ExperimentServiceImpl.get().getTinfoMaterialAliasMap();
+    }
+
     private DbSchema getExpSchema()
     {
         return ExperimentServiceImpl.get().getExpSchema();
@@ -1619,4 +1624,68 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotAmounts;
     }
 
+    @Override
+    public int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container targetContainer, @NotNull User user)
+    {
+        if (samples == null || samples.isEmpty())
+            throw new IllegalArgumentException("No samples provided to move operation.");
+
+        List<Integer> sampleIds = samples.stream().map(ExpMaterial::getRowId).toList();
+        int materialRowsUpdated;
+
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            // update for exp.material.container
+            materialRowsUpdated = materialRowContainerUpdate(sampleIds, targetContainer, user);
+
+            // update for exp.object.container
+            objectRowContainerUpdate(sampleIds, targetContainer);
+
+            // update for exp.materialaliasmap.container
+            materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
+
+            // TODO add audit events for each sample move or for batch?
+            //      do we want events for both the source and target containers?
+            //      maybe the sample type event get the summary event for the source container and target container
+            //      then if detailed auditing is on, then add events for each sample in target container
+            // TODO anything for clear caches? see what is done for sample update
+            // TODO anything to do for search indexing? see what is done for TableUpdateFileListener.fileMoved() and for sample update
+
+            transaction.commit();
+        }
+
+        return materialRowsUpdated;
+    }
+
+    private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
+    {
+        TableInfo materialTable = getTinfoMaterial();
+        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(materialTable)
+                .append(" SET container = ?").add(targetContainer.getEntityId())
+                .append(", modified = ?").add(new Date())
+                .append(", modifiedby = ?").add(user.getUserId())
+                .append(" WHERE rowid ");
+        materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
+        return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
+    }
+
+    private void objectRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    {
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ?").add(targetContainer.getEntityId())
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, sampleIds);
+        objectUpdate.append(")");
+        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private void materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    {
+        TableInfo aliasMapTable = getTinfoMaterialAliasMap();
+        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ?").add(targetContainer.getEntityId())
+                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
+        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
+        aliasMapUpdate.append(")");
+        new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
 }
