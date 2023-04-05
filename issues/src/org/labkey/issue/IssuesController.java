@@ -1017,13 +1017,15 @@ public class IssuesController extends SpringActionController
                 visible.add(cc.getName());
             }
             visible.add("notifyList");
-
-            if (Issue.action.resolve == action)
-            {
-                visible.add("resolution");
-                visible.add("duplicate");
-            }
             visible.add("related");
+
+            switch (action)
+            {
+                case update, resolve, close, reopen -> {
+                    visible.add("resolution");
+                    visible.add("duplicate");
+                }
+            }
 
             return visible;
         }
@@ -1035,8 +1037,18 @@ public class IssuesController extends SpringActionController
         {
             final Set<String> readOnly = new HashSet<>(20);
 
-            if (Issue.action.close == action)
-                readOnly.add("assignedTo");
+            switch (action)
+            {
+                case update, reopen -> {
+                    readOnly.add("resolution");
+                    readOnly.add("duplicate");
+                }
+                case close -> {
+                    readOnly.add("resolution");
+                    readOnly.add("duplicate");
+                    readOnly.add("assignedTo");
+                }
+            }
 
             return readOnly;
         }
