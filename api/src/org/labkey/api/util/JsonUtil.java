@@ -224,6 +224,18 @@ public class JsonUtil
         return mapper.writeValueAsString(mapper.readTree(jsonWithComments));
     }
 
+    // +/-Infinity values are not allowed in JSONObject, but are sometimes encountered in our scientific data. This
+    // method translates +/-infinity values to double values that are allowed and then puts values into the JSONObject.
+    public static void safePut(JSONObject json, String key, double value)
+    {
+        if (value == Double.POSITIVE_INFINITY)
+            value = Double.MAX_VALUE;
+        else if (value == Double.NEGATIVE_INFINITY)
+            value = Double.MIN_VALUE;
+
+        json.put(key, value);
+    }
+
     public static class TestCase extends Assert
     {
         private static final String JSON_WITH_COMMENTS = """
@@ -257,10 +269,10 @@ public class JsonUtil
         private static final String JSON_ARRAY_WITH_COMMENTS = """
             /* Here's a block comment */
             // Here's a single-line comment
-            ["Ford", "BMW", "Fiat",] // Here's a trailing comma, which also need to be allowed
+            ["Ford", "BMW", "Fiat",], // Here are trailing commas, which also need to be allowed
             """;
 
-        private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line"};
+        private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line", ",]", "],"};
 
         @Test
         public void testStripComments() throws JsonProcessingException
@@ -290,6 +302,34 @@ public class JsonUtil
             Assert.assertFalse("Expected no comment words after stripping",
                 StringUtils.containsAny(strippedArrayJson, COMMENT_WORDS));
             Assert.assertEquals(3, new JSONArray(strippedArrayJson).length());
+        }
+
+        @Test
+        public void testInfinity()
+        {
+            assertThrows(JSONException.class, () -> new JSONObject().put("divide", 1.0/0.0));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negDivide", -1.0/0.0));
+            assertThrows(JSONException.class, () -> new JSONObject().put("posInfinity", Double.POSITIVE_INFINITY));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negInfinity", Double.NEGATIVE_INFINITY));
+
+            JSONObject json = new JSONObject();
+            json.put("double", 1.0);
+            json.put("max", Double.MAX_VALUE);
+            json.put("min", Double.MIN_VALUE);
+            safePut(json, "divide", 1.0/0.0);
+            safePut(json, "negDivide", -1.0/0.0);
+            safePut(json, "posInfinity", Double.POSITIVE_INFINITY);
+            safePut(json, "negInfinity", Double.NEGATIVE_INFINITY);
+
+            assertEquals(Double.MAX_VALUE, json.getDouble("max"), 0.0);
+            assertEquals(Double.MAX_VALUE, json.getDouble("divide"), 0.0);
+            assertEquals(Double.MAX_VALUE, json.getDouble("posInfinity"), 0.0);
+
+            assertEquals(Double.MIN_VALUE, json.getDouble("min"), 0.0);
+            assertEquals(Double.MIN_VALUE, json.getDouble("negDivide"), 0.0);
+            assertEquals(Double.MIN_VALUE, json.getDouble("negInfinity"), 0.0);
+
+            assertEquals("{\"negDivide\":4.9E-324,\"min\":4.9E-324,\"max\":1.7976931348623157E308,\"double\":1,\"divide\":1.7976931348623157E308,\"negInfinity\":4.9E-324,\"posInfinity\":1.7976931348623157E308}", json.toString());
         }
     }
 }
