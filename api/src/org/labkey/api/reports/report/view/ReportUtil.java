@@ -765,7 +765,7 @@ public class ReportUtil
             _description = json.getString("description");
             _schemaName = json.getString("schemaName");
             _queryName = json.getString("queryName");
-            _viewName = json.getString("viewName");
+            _viewName = json.optString("viewName", null);
 
             if (json.has("public"))
                 _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)json.get("public"), true);
