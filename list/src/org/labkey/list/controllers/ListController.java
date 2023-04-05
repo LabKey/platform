@@ -946,10 +946,10 @@ public class ListController extends SpringActionController
             // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
-                if (!pair.second.hasPermission(getUser(), AdminPermission.class))
+                if (!pair.second.hasPermission(getUser(), DesignListPermission.class))
                 {
                     String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
-                    throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getName()));
+                    throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getPath()));
                 }
                 listIDs.add(pair.first);
             }
