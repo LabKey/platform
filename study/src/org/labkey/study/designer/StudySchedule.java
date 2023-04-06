@@ -15,9 +15,9 @@
  */
 package org.labkey.study.designer;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
-import org.labkey.api.action.CustomApiForm;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
@@ -37,12 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule
- * UI.
- * User: klum
- * Date: Jan 12, 2012
+ * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule UI.
  */
-public class StudySchedule implements CustomApiForm
+public class StudySchedule implements NewCustomApiForm
 {
     List<VisitImpl> _visits;
     List<DatasetDefinition> _datasets;
@@ -170,34 +167,32 @@ public class StudySchedule implements CustomApiForm
     }
 
     @Override
-    public void bindProperties(Map<String, Object> props)
+    public void bindJson(JSONObject json)
     {
-        Object schedule = props.get("schedule");
+        JSONArray schedules = json.optJSONArray("schedule");
         _schedule = new LinkedHashMap<>();
         Container container = HttpView.currentContext().getContainer();
 
-        if (schedule instanceof JSONArray)
+        if (schedules != null)
         {
-            JSONArray schedules = (JSONArray) schedule;
             for (int i = 0; i < schedules.length(); i++)
             {
                 JSONObject rec = schedules.getJSONObject(i);
                 List<VisitDataset> timepoints = new ArrayList<>();
                 Integer datasetId = null;
 
-                for (Map.Entry<String, Object> entry : rec.entrySet())
+                for (String key : rec.keySet())
                 {
-                    if ("id".equals(entry.getKey()))
-                    {
-                        JSONObject id = (JSONObject) entry.getValue();
-                        datasetId = id.getInt("id");
-                    }
-                    else if (entry.getValue() instanceof JSONObject)
-                    {
-                        JSONObject timepoint = (JSONObject) entry.getValue();
+                    JSONObject value = rec.optJSONObject(key);
 
-                        Integer id = (Integer) timepoint.get("id");
-                        Boolean required = (Boolean) timepoint.get("required");
+                    if ("id".equals(key))
+                    {
+                        datasetId = value.getInt("id");
+                    }
+                    else if (value != null)
+                    {
+                        Integer id = (Integer) value.get("id");
+                        Boolean required = (Boolean) value.get("required");
 
                         if (id != null)
                         {

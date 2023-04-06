@@ -28,26 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.FormApiAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasAllowBindParameter;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.json.JSONObject;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
@@ -6893,7 +6875,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DefineDatasetForm implements CustomApiForm, HasViewContext
+    public static class DefineDatasetForm implements NewCustomApiForm, HasViewContext
     {
         enum Type
         {
@@ -6936,22 +6918,22 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            Object categoryProp = props.get("category");
-            if (categoryProp instanceof JSONObject)
+            JSONObject categoryProp = json.optJSONObject("category");
+            if (null != categoryProp)
             {
-                _category = ViewCategory.fromJSON(_context.getContainer(), (JSONObject)categoryProp);
+                _category = ViewCategory.fromJSON(_context.getContainer(), categoryProp);
             }
 
-            _name = (String)props.get("name");
+            _name = json.getString("name");
 
-            Object type = props.get("type");
-            if (type instanceof String)
-                _type = Type.valueOf((String)type);
+            String type = json.optString("type", null);
+            if (null != type)
+                _type = Type.valueOf(type);
 
-            _expectationDataset = (Integer)props.get("expectationDataset");
-            _targetDataset = (Integer)props.get("targetDataset");
+            _expectationDataset = (Integer)json.opt("expectationDataset");
+            _targetDataset = (Integer)json.opt("targetDataset");
         }
 
         @Override

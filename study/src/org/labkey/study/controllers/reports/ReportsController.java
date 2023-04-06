@@ -19,8 +19,9 @@ package org.labkey.study.controllers.reports;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -1456,19 +1457,19 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            super.bindProperties(props);
+            super.bindJson(json);
 
-            Object measures = props.get(ParticipantReport.MEASURES_PROP);
-            if (measures instanceof JSONArray)
+            Object measures = json.opt(ParticipantReport.MEASURES_PROP);
+            if (measures instanceof JSONArray ja)
             {
-                _measures = measures.toString();
+                _measures = ja.toString();
             }
-            Object groups = props.get(ParticipantReport.GROUPS_PROP);
-            if (groups instanceof JSONArray)
+            Object groups = json.opt(ParticipantReport.GROUPS_PROP);
+            if (groups instanceof JSONArray ja)
             {
-                _groups = groups.toString();
+                _groups = ja.toString();
             }
         }
     }
@@ -1494,15 +1495,15 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            super.bindProperties(props);
+            super.bindJson(json);
 
             // used for export to excel
-            _assayId = (Integer) props.get("assayId");
+            _assayId = (Integer)json.opt("assayId");
 
-            Object json = props.get("jsonData");
-            if (json != null)
+            Object jsonData = json.opt("jsonData");
+            if (jsonData != null)
                 _jsonData = json.toString();
         }
     }
