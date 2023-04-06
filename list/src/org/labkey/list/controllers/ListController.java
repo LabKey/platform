@@ -956,7 +956,7 @@ public class ListController extends SpringActionController
                 //Display simple error to the user when Lists with the same names are selected.
                 if (duplicateNames.containsKey(listName))
                 {
-                    errors.reject(ERROR_MSG, "'" + listName + "' is already selected, please select unique Lists to Export.");
+                    errors.reject(ERROR_MSG, "'" + listName + "' is already selected, please select Lists with unique names to Export.");
                     throw new ExportException(new SimpleErrorView(errors, true));
                 }
                 else
