@@ -203,9 +203,9 @@ describe('ExperimentController', () => {
             expect(exception).toEqual('All samples must be from the current container for the move operation.');
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
-            expect(sampleExistsInTop).toBeFalsy();
+            expect(sampleExistsInTop).toBe(false);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeTruthy();
+            expect(sampleExistsInSub1).toBe(true);
         });
 
         it('error, sample ID not in current subfolder', async () => {
@@ -224,9 +224,9 @@ describe('ExperimentController', () => {
             expect(exception).toEqual('All samples must be from the current container for the move operation.');
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
-            expect(sampleExistsInTop).toBeTruthy();
+            expect(sampleExistsInTop).toBe(true);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeFalsy();
+            expect(sampleExistsInSub1).toBe(false);
         });
 
         it('error, requires insert perm in targetContainer', async () => {
@@ -245,9 +245,9 @@ describe('ExperimentController', () => {
             expect(exception).toEqual('You do not have permission to move samples to the target container: ExperimentControllerTest Project.');
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
-            expect(sampleExistsInTop).toBeFalsy();
+            expect(sampleExistsInTop).toBe(false);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeTruthy();
+            expect(sampleExistsInSub1).toBe(true);
         });
 
         it('success, move sample from parent project to subfolder', async () => {
@@ -266,9 +266,9 @@ describe('ExperimentController', () => {
             expect(samplesMoved).toEqual(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
-            expect(sampleExistsInTop).toBeFalsy();
+            expect(sampleExistsInTop).toBe(false);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeTruthy();
+            expect(sampleExistsInSub1).toBe(true);
         });
 
         it('success, move sample from subfolder to parent project', async () => {
@@ -287,9 +287,9 @@ describe('ExperimentController', () => {
             expect(samplesMoved).toEqual(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
-            expect(sampleExistsInTop).toBeTruthy();
+            expect(sampleExistsInTop).toBe(true);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeFalsy();
+            expect(sampleExistsInSub1).toBe(false);
         });
 
         it('success, move sample from subfolder to sibling', async () => {
@@ -308,9 +308,44 @@ describe('ExperimentController', () => {
             expect(samplesMoved).toEqual(1);
 
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
-            expect(sampleExistsInSub1).toBeFalsy();
+            expect(sampleExistsInSub1).toBe(false);
             const sampleExistsInSub2 = await sampleExists(sampleRowId, subfolder2Options);
-            expect(sampleExistsInSub2).toBeTruthy();
+            expect(sampleExistsInSub2).toBe(true);
+        });
+
+        it('success, move multiple sample', async () => {
+            // Arrange
+            const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options);
+            const sampleRowId2 = await createSample('sub1-movetosub2-3', subfolder1Options);
+            const sampleRowId3 = await createSample('sub1-movetosub2-4', subfolder1Options);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder2Options.containerPath,
+                rowIds: [sampleRowId1, sampleRowId2, sampleRowId3]
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { samplesMoved, success } = response.body;
+            expect(success).toBe(true);
+            expect(samplesMoved).toEqual(3);
+
+            let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId2, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId3, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+
+            let sampleExistsInSub2 = await sampleExists(sampleRowId1, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId2, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+
+            // verify that we are able to delete the original sample container after things are moved
+            await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
         });
     });
 });
