@@ -7657,7 +7657,7 @@ public class ExperimentController extends SpringActionController
             int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
             resp.put("success", true);
             resp.put("samplesMoved", samplesMoved);
-            // TODO what to include in response?
+            resp.put("containerPath", _targetContainer.getPath());
             return resp;
         }
 
