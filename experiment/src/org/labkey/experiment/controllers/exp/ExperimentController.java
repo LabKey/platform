@@ -7655,6 +7655,7 @@ public class ExperimentController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
             resp.put("success", true);
             resp.put("samplesMoved", samplesMoved);
             resp.put("containerPath", _targetContainer.getPath());
