@@ -49,7 +49,7 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
     {
         if (form.getNewJsonObject() == null)
         {
-            form.bindJson(new org.json.JSONObject());
+            form.bindJson(new JSONObject());
         }
 
         JSONObject json = form.getNewJsonObject();

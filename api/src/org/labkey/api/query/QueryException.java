@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 public class QueryException extends RuntimeException
 {
