@@ -952,6 +952,8 @@ public class ListController extends SpringActionController
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
                 String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
+
+                //Display simple error to the user when Lists with the same names are selected.
                 if (duplicateNames.containsKey(listName))
                 {
                     errors.reject(ERROR_MSG, "'" + listName + "' is already selected, please select unique Lists to Export.");
