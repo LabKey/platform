@@ -586,10 +586,34 @@ public abstract class SqlDialect
     // GroupConcat is usable as an aggregate function within a GROUP BY
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
     {
-        return getGroupConcat(sql, distinct, sorted, "','");
+        return getGroupConcat(sql, distinct, sorted, ",");
     }
 
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL);
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiter Simple Java string to use as a delimiter (not SQL!)
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public final SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
+    {
+        SQLFragment delimiterFrag = new SQLFragment().appendStringLiteral(delimiter, this);
+        return getGroupConcat(sql, distinct, sorted, new SQLFragment(delimiterFrag));
+    }
+
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiterSQL SQL expression to use as a delimiter
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL);
 
     public abstract boolean supportsSelectConcat();
 

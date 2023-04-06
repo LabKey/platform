@@ -348,7 +348,7 @@ public class QAggregate extends QExpr
                 {
                     SqlBuilder delimiter = new SqlBuilder(builder.getDialect());
                     ((QExpr)iter.next()).appendSql(delimiter, query);
-                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
+                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter);
                 }
                 else
                 {
