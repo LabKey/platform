@@ -20,7 +20,11 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec.Index;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -87,6 +91,16 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         legacyMap.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
         legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
         return legacyMap;
+    }
+
+    public int moveEvents(Container targetContainer, List<Integer> entityIds)
+    {
+        TableInfo auditTable = createStorageTableInfo();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
+                .append(" SET container = ").appendValue(targetContainer)
+                .append(" WHERE ").append(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, entityIds);
+        return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
 
     @Override
