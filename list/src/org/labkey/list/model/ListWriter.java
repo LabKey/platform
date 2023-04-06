@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2023 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public class ListWriter
                 }
             }
             List<Pair<String, ListDefinition>> pairList = lists.entrySet().stream().map(m -> new Pair<>(m.getKey(), m.getValue())).collect(Collectors.toList());
-            writeLists(pairList, listsDir, ctx, user, false);
+            writeLists(pairList, listsDir, ctx, user);
             return true;
         }
         else
@@ -123,7 +123,7 @@ public class ListWriter
         }
     }
 
-    private void writeLists(List<Pair<String, ListDefinition>> listsToExport, VirtualFile listsDir, FolderExportContext ctx, User user, boolean useFolderNameOrPath) throws IOException, SQLException
+    private void writeLists(List<Pair<String, ListDefinition>> listsToExport, VirtualFile listsDir, FolderExportContext ctx, User user) throws IOException, SQLException
     {
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
@@ -160,7 +160,7 @@ public class ListWriter
 
             // Write settings
             ListsDocument.Lists.List settings = listSettingsXml.addNewList();
-            writeSettings(settings, def, useFolderNameOrPath);
+            writeSettings(settings, def);
 
             // Write data
             Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
@@ -186,8 +186,7 @@ public class ListWriter
                 {
                     tsvWriter.setApplyFormats(false);
                     tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    String listFileName = def.getName() + (useFolderNameOrPath ? ("_" + def.getContainer().getName()) : "") + ".tsv";
-                    PrintWriter out = listsDir.getPrintWriter(listFileName);
+                    PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
                     tsvWriter.write(out);
                 }
 
@@ -210,7 +209,7 @@ public class ListWriter
 
         if (!listsToExport.isEmpty())
         {
-            writeLists(listsToExport, listsDir, ctx, user, true);
+            writeLists(listsToExport, listsDir, ctx, user);
             return true;
         }
         else
@@ -235,9 +234,9 @@ public class ListWriter
         }
     }
 
-    private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def, boolean useFolderPath)
+    private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def)
     {
-        settings.setName(useFolderPath ? (def.getContainer().getPath() + "/" + def.getName()) : def.getName());
+        settings.setName(def.getName());
         settings.setId(def.getListId());
 
         if (def.getDiscussionSetting().getValue() != 0) settings.setDiscussions(def.getDiscussionSetting().getValue());
