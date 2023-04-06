@@ -503,9 +503,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             caf.bindProperties(jsonObj);
             return new NullSafeBindException(caf, "form");
         }
-        else if (form instanceof NewCustomApiForm ncaf)
+        else if (form instanceof ApiJsonForm ncaf)
         {
-            ncaf.bindJson(jsonObj.toNewJSONObject()); // Temporary. TODO: Pass new JSONObject to populateForm() once all forms have been migrated to NewCustomApiForm
+            ncaf.bindJson(jsonObj.toNewJSONObject()); // Temporary. TODO: Pass new JSONObject to populateForm() once all forms have been migrated to ApiJsonForm
             return new NullSafeBindException(ncaf, "form");
         }
         else

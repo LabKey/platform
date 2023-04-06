@@ -124,7 +124,7 @@ public class ToursController extends SpringActionController
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
             TourModel model;
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             int rowId = json.getInt("rowId");
 
             if (rowId < 0)
@@ -138,7 +138,7 @@ public class ToursController extends SpringActionController
             model.setTitle(json.getString("title"));
             model.setDescription(json.getString("description"));
             model.setMode(Integer.parseInt(json.getString("mode")));
-            model.setJson(json.getString("tour"));
+            model.setJson(json.getJSONObject("tour").toString()); // TODO: Shouldn't we just set the JSONObject?
 
             try
             {
@@ -165,7 +165,7 @@ public class ToursController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("rowId", json.getString("rowId"));
             response.put("success", true);
@@ -180,7 +180,7 @@ public class ToursController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             response.put("mode", TourManager.getTourMode(getContainer(), json.getInt("id")));

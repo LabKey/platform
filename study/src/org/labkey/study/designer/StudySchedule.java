@@ -17,7 +17,7 @@ package org.labkey.study.designer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.NewCustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule UI.
  */
-public class StudySchedule implements NewCustomApiForm
+public class StudySchedule implements ApiJsonForm
 {
     List<VisitImpl> _visits;
     List<DatasetDefinition> _datasets;

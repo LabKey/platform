@@ -18,7 +18,7 @@ package org.labkey.api.action;
 import java.util.Map;
 
 /*
- * Use NewCustomApiForm instead of this
+ * Use ApiJsonForm instead of this
  */
 @Deprecated
 public interface CustomApiForm

@@ -6875,7 +6875,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DefineDatasetForm implements NewCustomApiForm, HasViewContext
+    public static class DefineDatasetForm implements ApiJsonForm, HasViewContext
     {
         enum Type
         {

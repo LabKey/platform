@@ -36,7 +36,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -693,7 +693,7 @@ public class OlapController extends SpringActionController
 
 
 
-    public static class JsonQueryForm extends OlapForm implements NewCustomApiForm
+    public static class JsonQueryForm extends OlapForm implements ApiJsonForm
     {
         JSONObject json;
 
