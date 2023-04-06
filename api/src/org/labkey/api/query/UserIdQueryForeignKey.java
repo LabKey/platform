@@ -63,17 +63,17 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     @Override
     public TableInfo getLookupTableInfo()
     {
-        if (_table == null && getSchema() != null)
+        if (_table == null && getLookupSchema() != null)
         {
             String cacheKey = this.getClass().getName() + "/" + _includeAllUsers;
-            _table = ((UserSchema) getSchema()).getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
+            _table = ((UserSchema) getLookupSchema()).getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
         }
         return _table;
     }
 
     private TableInfo createLookupTableInfo()
     {
-        TableInfo ret = ((UserSchema) getSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
+        TableInfo ret = ((UserSchema) getLookupSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
         if (null == ret)
             return null;
 

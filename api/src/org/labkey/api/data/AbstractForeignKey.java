@@ -116,19 +116,26 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             return new ContainerFilter.SimpleContainerFilterWithUser(getLookupUser(), c);
         }
         ContainerFilter cf = null;
+        QuerySchema targetSchema = getLookupSchema();
+        if (targetSchema == null)
+        {
+            targetSchema = getSourceSchema();
+        }
+
         if (null != _containerFilter)
             cf = _containerFilter;
-        else if (_sourceSchema instanceof UserSchema userSchema)
+        else if (targetSchema instanceof UserSchema userSchema)
             cf = userSchema.getDefaultLookupContainerFilter();
 
-        if (null != _sourceSchema && _sourceSchema.getContainer().isWorkbook())
+        if (null != targetSchema && targetSchema.getContainer().isWorkbook())
         {
             if (null == cf || cf.getType() == ContainerFilter.Type.Current)
-                cf = ContainerFilter.Type.CurrentOrParentAndWorkbooks.create(_sourceSchema);
+                cf = ContainerFilter.Type.CurrentOrParentAndWorkbooks.create(targetSchema);
         }
         return cf;
     }
 
+    @Override
     public SchemaKey getLookupSchemaKey()
     {
         if (_lookupSchemaKey == null)
