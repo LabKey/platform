@@ -5,8 +5,11 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -143,6 +146,16 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public boolean canDeleteOldRows()
     {
         return false;
+    }
+
+    public int moveEvents(Container targetContainer, List<Integer> sampleIds)
+    {
+        TableInfo auditTable = createStorageTableInfo();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
+                .append(" SET container = ").appendValue(targetContainer)
+                .append(" WHERE SampleID ");
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, sampleIds);
+        return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
 
     public static class SampleTimelineAuditDomainKind extends AbstractAuditDomainKind

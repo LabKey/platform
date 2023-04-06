@@ -22,9 +22,12 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -190,6 +193,18 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             return schema.createView(context, settings, errors);
         }
         return null;
+    }
+
+
+    public int moveEvents(Container targetContainer, List<Integer> rowIds, String schemaName, String queryName)
+    {
+        TableInfo auditTable = createStorageTableInfo();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
+                .append(" SET container = ").appendValue(targetContainer)
+                .append(" WHERE RowPk ");
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowIds);
+        sql.append(" AND SchemaName = ").appendValue(schemaName).append(" AND QueryName = ").appendValue(queryName);
+        return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
 
     public static class QueryUpdateAuditEvent extends DetailedAuditTypeEvent
