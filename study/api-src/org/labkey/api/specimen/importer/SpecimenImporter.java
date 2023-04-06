@@ -671,7 +671,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .add(Boolean.FALSE)
             .append("AND GlobalUniqueId NOT IN (")
             .append(conflictedGUIDs)
-            .append(");");
+            .append(")");
         info("Clearing QC flags for vials that no longer have history conflicts...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteClearedVials);
         info("Complete.");
@@ -691,7 +691,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .add(getUser().getUserId())
             .append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n")
             .append("WHERE GlobalUniqueId NOT IN ")
-            .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);")
+            .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?)")
             .add(getContainer().getId());
         info("Setting QC flags for vials that have new history conflicts...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(insertPlaceholderQCComments);
@@ -715,7 +715,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .append("\tWHERE ")
             .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
             .append(" IS NULL AND\n")
-            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?)")
             .add(getContainer().getId());
         info("Marking requested vials that have been orphaned...");
 
@@ -738,7 +738,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .append(" IS NOT NULL AND\n")
             .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
             .add(Boolean.TRUE)
-            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?)")
             .add(getContainer().getId());
         info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
@@ -2454,7 +2454,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 .append(tempTable)
                 .append(" SET VisitValue = (")
                 .append(StudyUtils.sequenceNumFromDateSQL("DrawTimestamp"))
-                .append(");");
+                .append(")");
             if (DEBUG)
                 info(visitValueSql.toDebugString());
             executeSQL(schema, visitValueSql);
@@ -2766,7 +2766,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 colInfo.setImportAliasesSet(new HashSet<>(aliases));
             columns.add(colInfo);
         }
-        sql.append("\n);");
+        sql.append("\n)");
 
         TempTableInfo tempTableInfo = new TempTableInfo("SpecimenUpload", (List<ColumnInfo>)(List)columns, Arrays.asList("RowId"));
         final String fullTableName = tempTableInfo.getSelectName();

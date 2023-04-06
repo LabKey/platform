@@ -1711,12 +1711,12 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
             for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
-                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
         }
     }
 }
