@@ -264,7 +264,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         String dateExpr = truncateTime ? tableInfoSpecimen.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
-        sql.append(tableInfoSpecimen.getSelectName()).append(";");
+        sql.append(tableInfoSpecimen.getSelectName());
 
         final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
 
