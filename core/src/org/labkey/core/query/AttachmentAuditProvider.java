@@ -32,6 +32,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -93,7 +94,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         return legacyMap;
     }
 
-    public int moveEvents(Container targetContainer, List<Integer> entityIds)
+    public int moveEvents(Container targetContainer, Collection<Integer> entityIds)
     {
         return moveEvents(targetContainer, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, entityIds);
     }

@@ -44,6 +44,7 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -197,14 +198,9 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         };
     }
 
-    public int moveEvents(Container targetContainer, List<String> runLsids)
+    public int moveEvents(Container targetContainer, Collection<String> runLsids)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE runlsid ");
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, runLsids);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        return moveEvents(targetContainer, COLUMN_NAME_RUN_LSID, runLsids);
     }
 
     @Override

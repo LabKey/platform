@@ -42,6 +42,7 @@ import org.labkey.query.controllers.QueryController;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -195,8 +196,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-
-    public int moveEvents(Container targetContainer, List<Integer> rowIds, String schemaName, String queryName)
+    public int moveEvents(Container targetContainer, Collection<Integer> rowIds, String schemaName, String queryName)
     {
         TableInfo auditTable = createStorageTableInfo();
         SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)

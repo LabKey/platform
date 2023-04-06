@@ -18,6 +18,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -148,7 +149,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         return false;
     }
 
-    public int moveEvents(Container targetContainer, List<Integer> sampleIds)
+    public int moveEvents(Container targetContainer, Collection<Integer> sampleIds)
     {
         return moveEvents(targetContainer, SAMPLE_ID_COLUMN_NAME, sampleIds);
     }
