@@ -7710,8 +7710,8 @@ public class ExperimentController extends SpringActionController
                 return false;
 
             boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
-            boolean moveFromChildToProject = !current.isProject() && current.getParent().equals(target);
-            boolean moveFromChildToSibling = !current.isProject() && current.getParent().equals(target.getParent());
+            boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
+            boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
 
             return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
         }
