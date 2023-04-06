@@ -948,7 +948,6 @@ public class ListController extends SpringActionController
             List<Pair<Integer, Container>> selectedLists = new LinkedList<>();
             Map<String, Integer> duplicateNames = new HashMap<>();
 
-            // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
                 String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
@@ -963,6 +962,7 @@ public class ListController extends SpringActionController
                 {
                     duplicateNames.put(listName, pair.first);
                 }
+                // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
                 if (!pair.second.hasPermission(getUser(), DesignListPermission.class))
                 {
                     throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getPath()));
