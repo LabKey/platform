@@ -150,12 +150,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
 
     public int moveEvents(Container targetContainer, List<Integer> sampleIds)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE SampleID ");
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, sampleIds);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        return moveEvents(targetContainer, SAMPLE_ID_COLUMN_NAME, sampleIds);
     }
 
     public static class SampleTimelineAuditDomainKind extends AbstractAuditDomainKind

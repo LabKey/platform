@@ -56,6 +56,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
@@ -205,6 +206,7 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
@@ -7632,6 +7634,57 @@ public class ExperimentController extends SpringActionController
                 builder.append("</table>");
                 return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
             }
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class MoveEventsAction extends MutatingApiAction<MoveEventsForm>
+    {
+
+        @Override
+        public Object execute(MoveEventsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            int eventsMoved = ((SampleTimelineAuditProvider) AuditLogService.get().getAuditProvider(SampleTimelineAuditEvent.EVENT_TYPE)).moveEvents(getTargetContainer(form), form.getRowIds());
+            resp.put("success", true);
+            resp.put("eventsMoved", eventsMoved);
+            return resp;
+        }
+
+
+        private Container getTargetContainer(MoveEventsForm form)
+        {
+            Container c = ContainerManager.getForId(form.getTargetContainer());
+            if (c == null)
+                c = ContainerManager.getForPath(form.getTargetContainer());
+
+            return c;
+        }
+    }
+
+    public static class MoveEventsForm
+    {
+        String  _targetContainer;
+        List<Integer> _rowIds;
+
+        public String getTargetContainer()
+        {
+            return _targetContainer;
+        }
+
+        public void setTargetContainer(String targetContainer)
+        {
+            _targetContainer = targetContainer;
+        }
+
+        public List<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(List<Integer> rowIds)
+        {
+            _rowIds = rowIds;
         }
     }
 

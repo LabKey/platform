@@ -95,12 +95,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
 
     public int moveEvents(Container targetContainer, List<Integer> entityIds)
     {
-        TableInfo auditTable = createStorageTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
-                .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE ").append(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, entityIds);
-        return new SqlExecutor(auditTable.getSchema()).execute(sql);
+        return moveEvents(targetContainer, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, entityIds);
     }
 
     @Override
