@@ -1669,9 +1669,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         TableInfo materialTable = getTinfoMaterial();
         SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(materialTable)
-                .append(" SET container = ?").appendValue(targetContainer.getEntityId())
-                .append(", modified = ?").appendValue(new Date())
-                .append(", modifiedby = ?").appendValue(user.getUserId())
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
                 .append(" WHERE rowid ");
         materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
         return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
@@ -1680,7 +1680,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void objectRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
     {
         TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ?").appendValue(targetContainer.getEntityId())
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE objectid IN (SELECT objectid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, sampleIds);
         objectUpdate.append(")");
@@ -1690,7 +1690,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
     {
         TableInfo aliasMapTable = getTinfoMaterialAliasMap();
-        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ?").appendValue(targetContainer.getEntityId())
+        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
         aliasMapUpdate.append(")");
