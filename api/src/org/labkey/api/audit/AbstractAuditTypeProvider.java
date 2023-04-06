@@ -58,6 +58,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -416,13 +417,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return PageFlowUtil.toQueryString(stringMap.entrySet());
     }
 
-
-    public int moveEvents(Container targetContainer, String idColumnName, List<? extends Object> ids)
+    public int moveEvents(Container targetContainer, String idColumnName, Collection<?> ids)
     {
         TableInfo auditTable = createStorageTableInfo();
         SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
                 .append(" SET container = ").appendValue(targetContainer)
-                .append(" WHERE ").append(idColumnName);
+                .append(" WHERE ").appendValue(idColumnName);
         auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, ids);
         return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
