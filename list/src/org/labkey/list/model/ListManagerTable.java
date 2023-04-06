@@ -53,13 +53,6 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         {
             var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
 
-
-            //TODO If I remove below two lines of code then the URL shows the correct container context for a List,
-            // otherwise the URL defaults to the current folder for the Lists that are in different folders.
-            // Looks like this was done for a reason as per the comment below, but since we do have an option to show Lists
-            // from different folders (when we go to Manage Lists, for ex. or 'All Folders' Filter),
-            // then it makes sense not to always resolve to the current folder.
-
             // This overrides the details URL for the "name" of the list column to always
             // resolve to the current folder. This is done because lists can contain data that span multiple folders
             // and we want to default to showing users data in the list for the folder their working in.
