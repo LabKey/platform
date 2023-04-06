@@ -54,7 +54,11 @@ export const SEARCH_RESULT_HITS = {
             "modifiedBy" : "cnathe@labkey.com",
             "id" : 41234
         },
-        "title" : "M-1"
+        "title" : "M-1",
+        "cardData" : {
+            "title": "M-1",
+            "iconSrc": "construct"
+        }
     },{
         "summary" : "briakinumab_LC immunoglobulin G1-lambda, anti-[Homo sapiens interleukin 12 beta (IL12B, IL-12B, IL12 p40, NKSF2, CMLF p40)], Homo sapiens monoclonal antibody;\nM-1, NS-9, Lambda Light Chain, ips:1247, PS-9, human",
         "data" : {
@@ -74,7 +78,11 @@ export const SEARCH_RESULT_HITS = {
             "modifiedBy" : "cnathe@labkey.com",
             "id" : 41173
         },
-        "title" : "PS-9"
+        "title" : "PS-9",
+        "cardData" : {
+            "title": "PS-9",
+            "iconSrc": "construct"
+        }
     },{
         "summary" : "Project Apollo - M-1 Target\nM-1, HEK293, C-1",
         "data" : {
@@ -95,6 +103,10 @@ export const SEARCH_RESULT_HITS = {
             "id" : 41302
         },
         "title" : "ES-2",
+        "cardData" : {
+            "title": "ES-2",
+            "iconSrc": "construct"
+        }
     }]
 };
 
