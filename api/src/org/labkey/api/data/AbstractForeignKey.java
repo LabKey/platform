@@ -101,8 +101,19 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     @Nullable
     protected User getLookupUser()
     {
-        if (null != _sourceSchema)
-            return _sourceSchema.getUser();
+        if (null != getSourceSchema())
+            return getSourceSchema().getUser();
+
+        return null;
+    }
+
+    protected QuerySchema getSourceSchema()
+    {
+        return _sourceSchema;
+    }
+
+    protected @Nullable QuerySchema getLookupSchema()
+    {
         return null;
     }
 
