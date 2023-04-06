@@ -20,6 +20,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
@@ -304,7 +305,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), "Extra " + STUDY_NAME);
         setFormElement(Locator.name("Description"), "Extra " + STUDY_DESCRIPTION);
-        click(Locator.tag("img").withAttributeContaining("src", "/labkey/_images/paperclip.gif")); //Attach a file
+        click(Locator.tag("img").withAttribute("src", WebTestHelper.getContextPath() + "/_images/paperclip.gif")); //Attach a file
         waitForElement(Locator.xpath("//div[contains(@class, 'protocolPanel')]//input[@type='file']"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.xpath("//div[contains(@class, 'protocolPanel')]//input[@type='file']"), PROTOCOL_DOC2.toString());
         clickButton("Submit");
