@@ -1630,7 +1630,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
 
-        List<Integer> sampleIds = samples.stream().map(ExpMaterial::getRowId).toList();
+        Set<ExpSampleType> sampleTypes = samples.stream().map(ExpMaterial::getSampleType).collect(Collectors.toSet());
+        List<Integer> sampleIds = samples.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
         int materialRowsUpdated;
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -1648,8 +1649,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             //      do we want events for both the source and target containers?
             //      maybe the sample type event get the summary event for the source container and target container
             //      then if detailed auditing is on, then add events for each sample in target container
-            // TODO anything for clear caches? see what is done for sample update
-            // TODO anything to do for search indexing? see what is done for TableUpdateFileListener.fileMoved() and for sample update
+
+            transaction.addCommitTask(() -> {
+                // update search index for moved samples via indexSampleType() helper, it filters for samples to index
+                // based on the modified date
+                for (ExpSampleType sampleType : sampleTypes)
+                {
+                    SampleTypeServiceImpl.get().indexSampleType(sampleType);
+                }
+            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.commit();
         }
