@@ -289,7 +289,7 @@ public class ListImporter
 
                                     SQLFragment keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence,dialect);
                                     keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
-                                    keyupdate.append("), 1), false);");
+                                    keyupdate.append("), 1), false)");
                                     new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                 }
 
