@@ -284,7 +284,7 @@ public class SpecimenServiceImpl implements SpecimenService
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM ");
-        sql.append(tableInfoSpecimen.getSelectName()).append(";");
+        sql.appendIdentifier(tableInfoSpecimen.getSelectName());
 
         final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
 
