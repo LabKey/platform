@@ -1536,21 +1536,21 @@ public class VisualizationController extends SpringActionController
         public void setAllowToggleMode(boolean allowToggleMode)
         {
             _allowToggleMode = allowToggleMode;
-        }        
+        }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            super.bindProperties(props);
+            super.bindJson(json);
 
-            _renderType = (String)props.get("renderType");
-            _dataRegionName = (String)props.get("dataRegionName");
-            _svg = (String)props.get("svg");
-            _thumbnailType = (String)props.get("thumbnailType");
+            _renderType = json.optString("renderType", null);
+            _dataRegionName = json.optString("dataRegionName", null);
+            _svg = json.optString("svg", null);
+            _thumbnailType = json.optString("thumbnailType", null);
 
-            Object json = props.get("jsonData");
-            if (json != null)
-                _jsonData = json.toString();
+            Object jsonData = json.opt("jsonData");
+            if (jsonData != null)
+                _jsonData = jsonData.toString();
         }
     }
 

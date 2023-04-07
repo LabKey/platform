@@ -16,15 +16,13 @@
 package org.labkey.api.query;
 
 import org.apache.xmlbeans.XmlError;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.util.XmlBeansUtil;
 
 import static java.lang.Math.max;
 
 /**
  * Indicates an error during query metadata parsing that will prevent it from completing successfully.
- * User: Nick Arnold
- * Date: 3/6/13
  */
 public class MetadataParseException extends QueryParseException
 {
