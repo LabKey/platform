@@ -166,19 +166,19 @@ public class ViewCategory extends Entity implements Comparable<ViewCategory>
 
         category.setContainer(c.getId());
 
-        Object row = info.get("rowid");
+        Object row = info.opt("rowid");
         if (row instanceof Integer)
             category.setRowId((Integer)row);
 
-        Object label = info.get("label");
+        Object label = info.opt("label");
         if (label instanceof String)
             category.setLabel((String)label);
 
-        Object displayOrder = info.get("displayOrder");
+        Object displayOrder = info.opt("displayOrder");
         if (displayOrder instanceof Integer)
             category.setDisplayOrder((Integer)displayOrder);
 
-        Object parent = info.get("parent");
+        Object parent = info.opt("parent");
         if (parent instanceof Integer)
         {
             category.setParent((Integer)parent);

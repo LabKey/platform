@@ -47,12 +47,12 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
     @Override
     public final ApiResponse execute(FORM form, BindException errors) throws Exception
     {
-        if (form.getNewJsonObject() == null)
+        if (form.getJsonObject() == null)
         {
             form.bindJson(new JSONObject());
         }
 
-        JSONObject json = form.getNewJsonObject();
+        JSONObject json = form.getJsonObject();
         ExpProtocol protocol;
 
         // if there is either an assay name or ID, assume this is an assay backed protocol

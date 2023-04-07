@@ -1276,7 +1276,7 @@ public class ProjectController extends SpringActionController
             }
 
             part.setProperties(qs);
-            part.setExtendedProperties(form.getNewJsonObject());
+            part.setExtendedProperties(form.getJsonObject());
 
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)

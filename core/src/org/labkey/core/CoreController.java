@@ -725,7 +725,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             if (json == null)
             {
                 throw new NotFoundException("No JSON posted");
@@ -863,7 +863,7 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getNewJsonObject();
+            JSONObject object = form.getJsonObject();
             String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
@@ -948,7 +948,7 @@ public class CoreController extends SpringActionController
             }
 
             // Prepare aliases
-            JSONObject object = form.getNewJsonObject();
+            JSONObject object = form.getJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
 
             List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
@@ -1673,7 +1673,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
-            JSONObject formData = form.getNewJsonObject();
+            JSONObject formData = form.getJsonObject();
             JSONArray a = formData.getJSONArray("properties");
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {

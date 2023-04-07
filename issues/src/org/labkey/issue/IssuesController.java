@@ -709,9 +709,9 @@ public class IssuesController extends SpringActionController
         {
             if (_issues == null)
             {
-                if (getJsonObject().containsKey("issues"))
+                if (getOldJsonObject().containsKey("issues"))
                 {
-                    _issues = getJsonObject().getJSONArray("issues");
+                    _issues = getOldJsonObject().getJSONArray("issues");
                 }
             }
             return _issues;
