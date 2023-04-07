@@ -8,8 +8,6 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
