@@ -26,11 +26,14 @@ import org.labkey.api.audit.data.RunGroupColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -41,6 +44,7 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -127,7 +131,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(MutableColumnInfo col)
@@ -180,7 +184,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                 else if (COLUMN_NAME_QCSTATE.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("QC State");
-                    col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoDataStates(), null, "RowId", "Label"));
+                    col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoDataStates(),  "RowId", "Label"));
                 }
                 else if (COLUMN_NAME_MESSAGE.equalsIgnoreCase(col.getName()))
                 {
@@ -192,8 +196,11 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                 }
             }
         };
+    }
 
-        return table;
+    public int moveEvents(Container targetContainer, Collection<String> runLsids)
+    {
+        return moveEvents(targetContainer, COLUMN_NAME_RUN_LSID, runLsids);
     }
 
     @Override
