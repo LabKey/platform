@@ -44,10 +44,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * User: matthew
- * Date: 11/5/13
- * Time: 10:32 AM
- *
  * This is a data structure used to represent an MDX query in a JSON-like way
  */
 public class QubeQuery
@@ -325,6 +321,11 @@ public class QubeQuery
     /*
      * JSON
      */
+
+    public void fromJson(org.json.JSONObject json, BindException errors) throws OlapException, BindException
+    {
+        fromJson(JSONObject.toOldJSONObject(json), errors);
+    }
 
     public void fromJson(JSONObject json, BindException errors) throws OlapException, BindException
     {

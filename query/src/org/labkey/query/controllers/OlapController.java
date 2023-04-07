@@ -25,18 +25,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -134,15 +134,8 @@ import java.util.stream.Collectors;
 
 
 /**
- * User: matthew
- * Date: 10/30/13
- * Time: 11:12 AM
- *
  * APIs for querying olap (mondrian) cubes
- *
- *
  * TODO consider whether to re-enable server side cache
- *
  */
 public class OlapController extends SpringActionController
 {
@@ -700,28 +693,25 @@ public class OlapController extends SpringActionController
 
 
 
-    public static class JsonQueryForm extends OlapForm implements CustomApiForm
+    public static class JsonQueryForm extends OlapForm implements NewCustomApiForm
     {
         JSONObject json;
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject jo)
         {
-            if (props instanceof JSONObject)
-                json = (JSONObject)props;
-            else
-                json = new JSONObject(props);
+            json = jo;
 
             // TODO do regular binding for schemaName, cubeName, etc.
             //ApiAction.JsonPropertyValues values = new ApiAction.JsonPropertyValues(json);
             //BaseViewAction.defaultBindParameters(this, "json", values);
 
             if (null != json.get("schemaName"))
-                setSchemaName(String.valueOf(json.get("schemaName" )));
+                setSchemaName(String.valueOf(json.get("schemaName")));
             if (null != json.get("configId"))
-                setConfigId(String.valueOf(json.get("configId" )));
+                setConfigId(String.valueOf(json.get("configId")));
             if (null != json.get("cubeName"))
-                setCubeName(String.valueOf(json.get("cubeName" )));
+                setCubeName(String.valueOf(json.get("cubeName")));
         }
     }
 
@@ -761,7 +751,7 @@ public class OlapController extends SpringActionController
                 return null;
 
             QubeQuery qquery = new QubeQuery(_cube);
-            qquery.fromJson((JSONObject)form.json.get("query"), errors);
+            qquery.fromJson(form.json.getJSONObject("query"), errors);
 
             String mdx =  new MdxQueryImpl(qquery, errors).generateMDX();
             if (errors.hasErrors())
@@ -831,7 +821,7 @@ public class OlapController extends SpringActionController
         {
             super.validateForm(form, errors);
 
-            JSONObject q = (JSONObject)form.json.get("query");
+            JSONObject q = form.json.optJSONObject("query");
             if (null == q)
             {
                 errors.reject(ERROR_REQUIRED, "query");
@@ -870,7 +860,7 @@ public class OlapController extends SpringActionController
             try
             {
                 QubeQuery qquery = new QubeQuery(_cube);
-                JSONObject q = (JSONObject)form.json.get("query");
+                JSONObject q = form.json.getJSONObject("query");
                 qquery.fromJson(q, errors);
                 if (errors.hasErrors())
                     return null;
@@ -1283,6 +1273,7 @@ public class OlapController extends SpringActionController
             ret.put("name", contextName);
             ret.put("defaults", defaultsJSON);
             ret.put("values", valuesJSON);
+
             return ret;
         }
 
