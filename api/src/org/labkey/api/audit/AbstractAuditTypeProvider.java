@@ -30,6 +30,8 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -56,6 +58,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -412,5 +415,15 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
         return PageFlowUtil.toQueryString(stringMap.entrySet());
+    }
+
+    public int moveEvents(Container targetContainer, String idColumnName, Collection<?> ids)
+    {
+        TableInfo auditTable = createStorageTableInfo();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
+                .append(" SET container = ").appendValue(targetContainer)
+                .append(" WHERE ").append(idColumnName);
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, ids);
+        return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }
 }

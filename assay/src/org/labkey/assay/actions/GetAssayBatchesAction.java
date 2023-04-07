@@ -36,9 +36,9 @@ public class GetAssayBatchesAction extends BaseProtocolAPIAction<SimpleApiJsonFo
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         List<ExpExperiment> batches = new ArrayList<>();
-        if (form.getJsonObject().has(AssayJSONConverter.BATCH_IDS))
+        if (form.getOldJsonObject().has(AssayJSONConverter.BATCH_IDS))
         {
-            JSONArray batchIds = form.getJsonObject().getJSONArray(AssayJSONConverter.BATCH_IDS);
+            JSONArray batchIds = form.getOldJsonObject().getJSONArray(AssayJSONConverter.BATCH_IDS);
             for (int idx = 0; idx < batchIds.length(); idx++)
             {
                 int batchId = batchIds.getInt(idx);

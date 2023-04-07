@@ -122,7 +122,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (json == null)
         {
             // normal json
-            json = form.getJsonObject();
+            json = form.getOldJsonObject();
         }
 
         if (json != null)

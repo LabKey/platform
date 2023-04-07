@@ -253,12 +253,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
     }
 
-    @Deprecated // Just to help with migration. TODO: Eliminate usages and delete this
-    public JavaScriptFragment json(org.json.old.JSONObject jsonObject, int indentFactor)
-    {
-        return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
-    }
-
     /**
      * Quotes a javascript string.
      * Returns a javascript string literal which is wrapped with ', and is properly escaped inside.
