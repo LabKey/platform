@@ -143,7 +143,7 @@ public class ToursController extends SpringActionController
             try
             {
                 TourModel ret;
-                if (Integer.parseInt(json.getString("rowId")) < 0)
+                if (rowId < 0)
                 {
                     ret = TourManager.insertTour(getContainer(), getUser(), model);
                 }
@@ -159,7 +159,6 @@ public class ToursController extends SpringActionController
                 errors.reject(ERROR_MSG, "There was an error while saving. Your changes may not have been saved.");
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
-
         }
 
         @Override
@@ -167,7 +166,7 @@ public class ToursController extends SpringActionController
         {
             JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("rowId", json.getString("rowId"));
+            response.put("rowId", json.getInt("rowId"));
             response.put("success", true);
             return response;
         }
