@@ -16,8 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -44,7 +42,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -56,6 +53,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -82,6 +80,7 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
@@ -1644,6 +1643,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             // update for exp.materialaliasmap.container
             materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
+
+            // update inventory.item.container
+            InventoryService inventoryService = InventoryService.get();
+            if (inventoryService != null)
+                inventoryService.moveSamples(sampleIds, targetContainer, user);
 
             // TODO add audit events for each sample move or for batch?
             //      do we want events for both the source and target containers?
