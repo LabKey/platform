@@ -6926,7 +6926,7 @@ public class StudyController extends BaseStudyController
                 _category = ViewCategory.fromJSON(_context.getContainer(), categoryProp);
             }
 
-            _name = json.getString("name");
+            _name = json.optString("name", null);
 
             String type = json.optString("type", null);
             if (null != type)
