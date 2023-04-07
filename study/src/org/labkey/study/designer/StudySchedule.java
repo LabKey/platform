@@ -191,8 +191,8 @@ public class StudySchedule implements ApiJsonForm
                     }
                     else if (value != null)
                     {
-                        Integer id = (Integer) value.get("id");
-                        Boolean required = (Boolean) value.get("required");
+                        Integer id = (Integer) value.opt("id");
+                        Boolean required = (Boolean) value.opt("required");
 
                         if (id != null)
                         {
