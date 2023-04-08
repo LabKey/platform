@@ -1041,8 +1041,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return getDomainKind(domain).getScope();
     }
 
-    private static SqlDialect getSqlDialect(Domain domain){
-        return getScope(domain).getSqlDialect();
+    private static SqlDialect getSqlDialect(Domain domain)
+    {
+        DbScope scope = getScope(domain);
+        if (null != scope)
+            return scope.getSqlDialect();
+        return CoreSchema.getInstance().getSqlDialect();
     }
 
     @Override

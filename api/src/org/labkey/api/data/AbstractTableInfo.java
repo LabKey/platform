@@ -344,7 +344,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSelectName())
-            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+            return new SQLFragment().appendIdentifier(getSelectName()).append(" ").append(alias);
         else
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }

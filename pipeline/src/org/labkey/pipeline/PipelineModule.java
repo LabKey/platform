@@ -24,10 +24,12 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
@@ -211,6 +213,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+            DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();
+            SqlDialect dialect = PipelineSchema.getInstance().getSchema().getSqlDialect();
             Map<String, Object> result = new HashMap<>();
 
             Map<String, Long> jobCounts = new HashMap<>();
@@ -218,23 +222,21 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
             jobSQL.append(" GROUP BY Provider");
 
-            new SqlSelector(PipelineSchema.getInstance().getSchema(), jobSQL).forEach(rs ->
+            new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
                     jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
             result.put("jobCounts", jobCounts);
 
             Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
-            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ? THEN 1 ELSE 0 END) AS Enabled, ");
-            triggerSQL.append("SUM(CASE WHEN Enabled != ? THEN 1 ELSE 0 END) AS Disabled, ");
+            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Enabled, ");
+            triggerSQL.append("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Disabled, ");
             triggerSQL.append("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
             triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
             triggerSQL.append(" LEFT OUTER JOIN \n");
             triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
             triggerSQL.append(" ON tc.PipelineId = sf.TaskPipelineId\n");
             triggerSQL.append(" GROUP BY PipelineId");
-            triggerSQL.add(true);
-            triggerSQL.add(true);
 
-            new SqlSelector(PipelineSchema.getInstance().getSchema(), triggerSQL).forEach((rs) ->
+            new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
                 {
                     String pipelineId = rs.getString("PipelineId");
                     if (pipelineId.contains(":"))

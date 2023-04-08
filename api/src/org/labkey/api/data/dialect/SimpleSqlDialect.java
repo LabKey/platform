@@ -286,7 +286,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
