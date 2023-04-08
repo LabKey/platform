@@ -10,7 +10,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.activemq:activemq-core:${activemqCoreVersion}",
+            "org.apache.activemq:activemq-client:${activemqVersion}",
             "Apache ActiveMQ",
             "Apache",
             "http://activemq.apache.org/",
