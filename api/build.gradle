@@ -45,7 +45,7 @@ List jackson = [
 ]
 
 List runtime = [
-    "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
+    "com.luamas.kaptcha:kaptcha:${kaptchaVersion}",
 ]
 
 configurations {
@@ -627,7 +627,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
+            "com.luamas.kaptcha:kaptcha:${kaptchaVersion}",
             "Captcha generator",
             "kaptcha",
             "http://code.google.com/p/kaptcha/",

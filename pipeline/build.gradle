@@ -42,7 +42,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "dom4j:dom4j:${dom4jVersion}",
+            "org.dom4j:dom4j:${dom4jVersion}",
             "DOM4J",
             "DOM4J",
             "http://www.dom4j.org/",
