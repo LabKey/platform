@@ -59,22 +59,22 @@
             }
         }
 
-        // Identify all forms that have a getter that returns an old JSONObject (or an array or list of them). This is
-        // useful for the JSONObject migration process.
-//        for (Class<?> formClass : formClasses)
-//        {
-//            for (Method method : formClass.getDeclaredMethods())
-//            {
-//                String name = method.getName();
-//                if (name.startsWith("get"))
-//                {
-//                    String typeName = method.getGenericReturnType().toString();
-//
-//                    if (typeName.contains("org.json.old.JSONObject"))
-//                        System.out.println(typeName + ": " + formClass + "." + name + " -> " + typeName);
-//                }
-//            }
-//        }
+        // Identify all form getter methods that return an old JSONObject (or an array or list of them). This is useful
+        // for the JSONObject migration process.
+        for (Class<?> formClass : formClasses)
+        {
+            for (Method method : formClass.getDeclaredMethods())
+            {
+                String name = method.getName();
+                if (name.startsWith("get"))
+                {
+                    String typeName = method.getGenericReturnType().toString();
+
+                    if (typeName.contains("org.json.old.JSONObject"))
+                        System.out.println(typeName + ": " + formClass + "." + name + " -> " + typeName);
+                }
+            }
+        }
 
         assertTrue(errorMessages.toString(), errorMessages.isEmpty());
     }
