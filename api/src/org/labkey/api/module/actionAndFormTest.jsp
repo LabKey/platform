@@ -37,7 +37,7 @@
                         }
                         catch (Exception e)
                         {
-                            errorMessages.add(e.getMessage() + " while attempting to construct " + ad.getActionClass());
+                            errorMessages.add(e.getMessage() + " while attempting to construct " + ad.getActionClass() + " from controller " + controller);
                             return null;
                         }
                     })
