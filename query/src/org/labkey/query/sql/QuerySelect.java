@@ -1735,7 +1735,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 if (null != wrapAlias)
                 {
                     if (gbExpr instanceof QField)
-                        sql.append(wrapAlias).append(".").append(getSqlDialect().makeLegalIdentifier(((QField) gbExpr).getName()));
+                        sql.append(wrapAlias).append(".").appendIdentifier(getSqlDialect().makeLegalIdentifier(((QField) gbExpr).getName()));
                     else
                         parseError("Cannot generate SQL for Median", expr);
                 }

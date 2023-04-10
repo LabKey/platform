@@ -1504,7 +1504,7 @@ public class ReportsController extends BaseStudyController
 
             Object jsonData = json.opt("jsonData");
             if (jsonData != null)
-                _jsonData = json.toString();
+                _jsonData = jsonData.toString();
         }
     }
 

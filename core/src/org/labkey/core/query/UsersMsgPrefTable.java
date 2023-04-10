@@ -152,10 +152,10 @@ public class UsersMsgPrefTable extends UsersTable
 
             joinSql.append(" LEFT JOIN ").append(_emailPrefsTable, tableAlias);
             joinSql.append(" ON ").append(tableAlias).append(".UserId = ").append(parentAlias).append(".UserId");
-            joinSql.append(" AND ").append(tableAlias).append(".Container = ").append("'").append(_container.getId()).append("'");
+            joinSql.append(" AND ").append(tableAlias).append(".Container = ").appendValue(_container);
             // Filter to only show container-level subscriptions, not subforums
-            joinSql.append(" AND ").append(tableAlias).append(".SrcIdentifier = ").append("'").append(_container.getId()).append("'");
-            joinSql.append(" AND ").append(tableAlias).append(".Type = ").append("'").append(_type).append("'");
+            joinSql.append(" AND ").append(tableAlias).append(".SrcIdentifier = ").appendValue(_container);
+            joinSql.append(" AND ").append(tableAlias).append(".Type = ").appendValue(_type);
             joinSql.append(" LEFT JOIN ").append(_emailOptionsTable, tableOptionsAlias);
             joinSql.append(" ON ").append(tableAlias).append(".EmailOptionId = ").append(tableOptionsAlias).append(".EmailOptionId");
 

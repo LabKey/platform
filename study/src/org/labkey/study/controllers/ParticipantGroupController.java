@@ -26,7 +26,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -837,7 +837,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class GroupsForm implements NewCustomApiForm
+    public static class GroupsForm implements ApiJsonForm
     {
         private final List<Group> _groups = new ArrayList<>();
 

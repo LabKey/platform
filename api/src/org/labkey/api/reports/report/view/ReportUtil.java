@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.NewCustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -666,7 +666,7 @@ public class ReportUtil
     /**
      * Generic form that can be used for serializing report information via json
      */
-    public static class JsonReportForm extends ReturnUrlForm implements NewCustomApiForm
+    public static class JsonReportForm extends ReturnUrlForm implements ApiJsonForm
     {
         private String _name;
         private String _description;

@@ -25,7 +25,7 @@ public class SaveAssayRunsAction extends BaseProtocolAPIAction<SimpleApiJsonForm
     @Override
     protected ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception
     {
-        JSONObject rootJsonObject = form.getJsonObject();
+        JSONObject rootJsonObject = form.getOldJsonObject();
 
         JSONArray runsJsonArray = null;
 

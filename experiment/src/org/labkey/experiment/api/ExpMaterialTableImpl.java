@@ -1119,7 +1119,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 .append(" ELSE ")
                                 .append(propertyColumn.getValueSql("root"))
                                 .append(" END) AS ")
-                                .append(propertyColumn.getSelectName());
+                                .appendIdentifier(propertyColumn.getSelectName());
                     }
                     comma = ", ";
                 }

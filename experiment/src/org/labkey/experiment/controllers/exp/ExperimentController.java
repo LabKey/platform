@@ -481,7 +481,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             String selectionKey = json.optString("selectionKey", null);
             List<ExpRun> runs = new ArrayList<>();
 

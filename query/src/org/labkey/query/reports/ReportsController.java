@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
@@ -36,7 +37,6 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -3370,7 +3370,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class CategoriesForm implements NewCustomApiForm, HasViewContext
+    public static class CategoriesForm implements ApiJsonForm, HasViewContext
     {
         private List<ViewCategory> _categories = new ArrayList<>();
         private ViewContext _context;
@@ -3591,7 +3591,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class DeleteDataViewsForm implements NewCustomApiForm
+    public static class DeleteDataViewsForm implements ApiJsonForm
     {
         List<Pair<String, String>> _views = new ArrayList<>();
 
@@ -3935,7 +3935,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class ReportsForm implements NewCustomApiForm, HasViewContext
+    public static class ReportsForm implements ApiJsonForm, HasViewContext
     {
         private final List<Report> _reports = new ArrayList<>();
         private ViewContext _context;
