@@ -1,22 +1,28 @@
+<%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.junit.Test" %>
-<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.action.BaseViewAction" %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.module.SimpleAction" %>
+<%@ page import="org.labkey.api.util.logging.LogHelper" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
-<%@ page import="java.lang.reflect.Method" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.LinkedList" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="java.util.LinkedList" %>
-<%@ page import="java.util.List" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
+    private final Logger _log = LogHelper.getLogger(getClass(), "");
+    private final ViewContext _context = HttpView.currentContext();
+
     // Enumerate all registered actions, verifying that the actions and their associated forms can be instantiated
     @Test
     public void testActions() throws IllegalAccessException, InstantiationException
@@ -29,15 +35,18 @@
             for (Class<? extends Controller> controllerClass : module.getControllerClassToName().keySet())
             {
                 SpringActionController controller = (SpringActionController) ViewServlet.getController(module, controllerClass);
+                controller.setViewContext(_context);
                 controller.getActionResolver().getActionDescriptors().stream()
                     .map(ad -> {
                         try
                         {
-                            return ad.createController(controller);
+                            return controller.resolveAction(ad.getPrimaryName());
                         }
                         catch (Exception e)
                         {
-                            errorMessages.add(e.getMessage() + " while attempting to construct " + ad.getActionClass() + " (" + ad.getPrimaryName() + ") from controller " + controller.getClass().getName());
+                            String message = e.getMessage() + " while attempting to construct " + ad.getActionClass() + " (" + ad.getPrimaryName() + ") from controller " + controller.getClass().getName();
+                            errorMessages.add(message);
+                            _log.error(message, e);
                             return null;
                         }
                     })
