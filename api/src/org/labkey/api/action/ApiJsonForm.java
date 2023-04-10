@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 LabKey Corporation
+ * Copyright (c) 2009-2016 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,10 @@ package org.labkey.api.action;
 
 import org.json.JSONObject;
 
-public class SimpleApiJsonForm implements ApiJsonForm
+/**
+ * Implement this interface when you need to do custom binding of the JSON sent to an API action.
+ */
+public interface ApiJsonForm
 {
-    private JSONObject _json;
-
-    @Override
-    public void bindJson(JSONObject json)
-    {
-        _json = json;
-    }
-
-    @Deprecated
-    public org.json.old.JSONObject getOldJsonObject()
-    {
-        return null != _json ? new org.json.old.JSONObject(_json.toString()) : null;
-    }
-
-    @Deprecated
-    public JSONObject getNewJsonObject()
-    {
-        return _json;
-    }
-
-    public JSONObject getJsonObject()
-    {
-        return _json;
-    }
+    void bindJson(JSONObject json);
 }

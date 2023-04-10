@@ -3592,13 +3592,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         run.deleteProtocolApplications(datasToDelete, user);
 
-        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n");
+        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n").appendEOS();
         sql.add(run.getRowId());
-        sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?;\n");
+        sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").appendEOS();
         sql.add(run.getRowId());
-        sql.append("DELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?;\n");
+        sql.append("DELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?").appendEOS();
         sql.add(run.getRowId());
-        sql.append("DELETE FROM exp.ExperimentRun WHERE RowId = ?;\n");
+        sql.append("DELETE FROM exp.ExperimentRun WHERE RowId = ?").appendEOS();
         sql.add(run.getRowId());
 
         new SqlExecutor(getExpSchema()).execute(sql);
@@ -4265,7 +4265,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId IN (");
             sb.append(idsString);
-            sb.append(");");
+            sb.append(")");
             Integer[] newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Integer.class);
 
             idsToCheck.addAll(Arrays.asList(newIds));
@@ -4273,7 +4273,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sb = new StringBuilder();
             sb.append("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId IN (");
             sb.append(idsString);
-            sb.append(");");
+            sb.append(")");
             newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Integer.class);
 
             idsToCheck.addAll(Arrays.asList(newIds));
@@ -4328,12 +4328,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
+        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")");
         Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
 
         sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
         sql.append(" WHERE (ChildProtocolId IN (").append(protocolIds).append(")");
-        sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") );");
+        sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") )");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
@@ -4394,7 +4394,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
 
                 String actionIdsJoined = "(" + StringUtils.join(actionIds, ", ") + ")";
-                executor.execute("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";");
+                executor.execute("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined);
                 executor.execute("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined);
             }
 
@@ -4979,10 +4979,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
 
                 SQLFragment deleteSql = new SQLFragment()
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?;\n").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?").add(data.getLSID()).appendEOS()
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS();;
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 if (data.getClassId() != null)
@@ -5191,7 +5191,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
-            sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
+            sql = "SELECT RowId FROM exp.Material WHERE Container = ?";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
             deleteMaterialByRowIds(user, c, matIds, true, true, null, true, true);
 
@@ -5809,13 +5809,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 + " WHERE MI.TargetApplicationId IN "
                 + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY RowId ;";
+                + "  ORDER BY RowId";
         String materialInputSQL = "SELECT MI.* "
                 + " FROM " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
                 + " WHERE MI.TargetApplicationId IN "
                 + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY MI.MaterialId;";
+                + "  ORDER BY MI.MaterialId";
 
         materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL, runId).getArrayList(Material.class));
         List<MaterialInput> materialInputs = new SqlSelector(getExpSchema(), materialInputSQL, runId).getArrayList(MaterialInput.class);
@@ -5839,13 +5839,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 + " WHERE DI.TargetApplicationId IN "
                 + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY RowId ;";
+                + "  ORDER BY RowId ";
         String dataInputSQL = "SELECT DI.*"
                 + " FROM " + getTinfoDataInput().getSelectName() + " DI "
                 + " WHERE DI.TargetApplicationId IN "
                 + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY DataId;";
+                + "  ORDER BY DataId";
 
         datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL, runId).getArrayList(Data.class));
         DataInput[] dataInputs = new SqlSelector(getExpSchema(), dataInputSQL, runId).getArray(DataInput.class);
@@ -5969,7 +5969,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         + " ON D.TargetApplicationId = PA.RowId "
                         + " WHERE DataId IN ( " + inClause + " ) "
                         + " AND PA.RunId <> ? "
-                        + " ORDER BY TargetApplicationId, DataId ;";
+                        + " ORDER BY TargetApplicationId, DataId";
 
                 new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataOutputRS -> {
                     int successorRunId = dataOutputRS.getInt("RunId");

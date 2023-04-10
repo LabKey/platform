@@ -16,12 +16,10 @@
 package org.labkey.api.query;
 
 import org.apache.logging.log4j.Level;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 /**
  * Indicates a non-fatal error parsing query metadata.
- * User: Nick Arnold
- * Date: 3/6/13
  */
 public class MetadataParseWarning extends MetadataParseException
 {

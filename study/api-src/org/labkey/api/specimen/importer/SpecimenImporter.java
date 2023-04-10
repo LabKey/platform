@@ -671,7 +671,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .add(Boolean.FALSE)
             .append("AND GlobalUniqueId NOT IN (")
             .append(conflictedGUIDs)
-            .append(");");
+            .append(")");
         info("Clearing QC flags for vials that no longer have history conflicts...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteClearedVials);
         info("Complete.");
@@ -691,7 +691,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .add(getUser().getUserId())
             .append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n")
             .append("WHERE GlobalUniqueId NOT IN ")
-            .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);")
+            .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?)")
             .add(getContainer().getId());
         info("Setting QC flags for vials that have new history conflicts...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(insertPlaceholderQCComments);
@@ -715,7 +715,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .append("\tWHERE ")
             .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
             .append(" IS NULL AND\n")
-            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?)")
             .add(getContainer().getId());
         info("Marking requested vials that have been orphaned...");
 
@@ -738,7 +738,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .append(" IS NOT NULL AND\n")
             .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
             .add(Boolean.TRUE)
-            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?)")
             .add(getContainer().getId());
         info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
@@ -748,15 +748,13 @@ public class SpecimenImporter extends SpecimenTableManager
     private void setLockedInRequestStatus()
     {
         TableInfo vialTable = getTableInfoVial();
+        SqlDialect dialect =  vialTable.getSqlDialect();
         String vialTableSelectName = vialTable.getSelectName();
         SQLFragment lockedInRequestSql = new SQLFragment("UPDATE ").append(vialTableSelectName).append(
-                " SET LockedInRequest = ? WHERE RowId IN (SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
+                " SET LockedInRequest = ").appendValue(Boolean.TRUE, dialect).append(" WHERE RowId IN (SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
                 .append(" FROM ").append(vialTableSelectName).append(", study.LockedSpecimens " +
-                "WHERE study.LockedSpecimens.Container = ? AND ")
+                "WHERE study.LockedSpecimens.Container = ").appendValue(getContainer(), dialect).append(" AND ")
                 .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = study.LockedSpecimens.GlobalUniqueId)");
-
-        lockedInRequestSql.add(Boolean.TRUE);
-        lockedInRequestSql.add(getContainer().getId());
 
         info("Setting Specimen Locked in Request status...");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(lockedInRequestSql);
@@ -2456,7 +2454,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 .append(tempTable)
                 .append(" SET VisitValue = (")
                 .append(StudyUtils.sequenceNumFromDateSQL("DrawTimestamp"))
-                .append(");");
+                .append(")");
             if (DEBUG)
                 info(visitValueSql.toDebugString());
             executeSQL(schema, visitValueSql);
@@ -2666,30 +2664,29 @@ public class SpecimenImporter extends SpecimenTableManager
 
     public static void makeUpdateSpecimenHashSql(DbSchema schema, Container container, List<SpecimenColumn> loadedColumns, String innerTable, SQLFragment updateHashSql)
     {
-        ArrayList<String> hash = new ArrayList<>();
-        hash.add("?");
-        updateHashSql.add("Fld-" + container.getRowId());
-        String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
+        ArrayList<SQLFragment> hash = new ArrayList<>();
+        hash.add(new SQLFragment("?").add("Fld-" + container.getRowId()));
 
         Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
         loadedColumns.forEach(col -> loadedColumnMap.put(col.getPrimaryTsvColumnName(), col));
+        final String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
         SpecimenColumns.BASE_SPECIMEN_COLUMNS.forEach(col -> {
             if (col.getTargetTable().isSpecimens())
             {
                 if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
                 {
                     String columnName = innerTable + col.getLegalDbColumnName(schema.getSqlDialect());
-                    hash.add("'~'");
-                    hash.add(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END");
+                    hash.add(new SQLFragment("'~'"));
+                    hash.add(new SQLFragment(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END"));
                 }
                 else
                 {
-                    hash.add("'~'");
+                    hash.add(new SQLFragment("'~'"));
                 }
             }
         });
 
-        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new String[hash.size()])));
+        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new SQLFragment[0])));
     }
 
     private Object getValue(ImportableColumn col, Map tsvRow)
@@ -2769,7 +2766,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 colInfo.setImportAliasesSet(new HashSet<>(aliases));
             columns.add(colInfo);
         }
-        sql.append("\n);");
+        sql.append("\n)");
 
         TempTableInfo tempTableInfo = new TempTableInfo("SpecimenUpload", (List<ColumnInfo>)(List)columns, Arrays.asList("RowId"));
         final String fullTableName = tempTableInfo.getSelectName();

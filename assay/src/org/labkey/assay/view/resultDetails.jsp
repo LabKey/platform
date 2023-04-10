@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONArray" %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
@@ -43,7 +43,7 @@
     ExpData data = bean.expData;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
-    JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getUser(), bean.objectId);
+    JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getUser(), bean.objectId).toNewJSONArray();
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

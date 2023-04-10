@@ -16,14 +16,13 @@
 
 package org.labkey.api.reports.report.view;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -89,7 +88,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -668,7 +666,7 @@ public class ReportUtil
     /**
      * Generic form that can be used for serializing report information via json
      */
-    public static class JsonReportForm extends ReturnUrlForm implements CustomApiForm
+    public static class JsonReportForm extends ReturnUrlForm implements ApiJsonForm
     {
         private String _name;
         private String _description;
@@ -760,22 +758,22 @@ public class ReportUtil
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            _name = (String)props.get("name");
-            _description = (String)props.get("description");
-            _schemaName = (String)props.get("schemaName");
-            _queryName = (String)props.get("queryName");
-            _viewName = (String)props.get("viewName");
+            _name = json.optString("name", null);
+            _description = json.optString("description", null);
+            _schemaName = json.optString("schemaName", null);
+            _queryName = json.optString("queryName", null);
+            _viewName = json.optString("viewName", null);
 
-            if (props.containsKey("public"))
-                _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
+            if (json.has("public"))
+                _public = json.optBoolean("public", true);
             else
-                _public = BooleanUtils.toBoolean((Boolean)props.get("shared"));
+                _public = json.optBoolean("shared");
 
-            Object reportId = props.get("reportId");
+            String reportId = json.optString("reportId", null);
             if (reportId != null)
-                _reportId = ReportService.get().getReportIdentifier((String)reportId, null, null);
+                _reportId = ReportService.get().getReportIdentifier(reportId, null, null);
         }
 
         public static JSONObject toJSON(User user, Container container, Report report)

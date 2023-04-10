@@ -697,7 +697,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (String pCol : pCols)
             {
                 sql.append(comma);
-                sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
+                sql.append("p.").appendIdentifier(dialect.makeLegalIdentifier(pCol));
             }
         }
         sql.append(" FROM ");
