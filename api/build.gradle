@@ -627,7 +627,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.luamas.kaptcha:kaptcha:${kaptchaVersion}",
+            "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
             "Captcha generator",
             "kaptcha",
             "http://code.google.com/p/kaptcha/",
