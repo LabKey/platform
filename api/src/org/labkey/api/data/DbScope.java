@@ -2571,7 +2571,7 @@ public class DbScope
 
             SQLFragment query = new SQLFragment("SELECT\n");
             query.append("  COUNT(*) AS NumRows,\n");
-            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, dialect.getStringHandler().quoteStringLiteral(delimiter))).append(" AS StrVals\n");
+            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).append(" AS StrVals\n");
             query.append("FROM (\n");
             query.append("  VALUES\n");
             query.append("  (1, 'x'),\n");

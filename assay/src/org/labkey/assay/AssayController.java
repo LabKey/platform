@@ -767,7 +767,7 @@ public class AssayController extends SpringActionController
             try
             {
                 File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
+                JSONArray fileNames = form.getOldJsonObject() == null ? null : form.getOldJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)

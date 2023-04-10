@@ -214,7 +214,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             // Issue 17183 - Postgres uses lower case column names when quoting is required
             nonBlankRowsSQL.append("x.");
             // Issue 29047
-            nonBlankRowsSQL.append(dialect.makeLegalIdentifier(prop.getPropertyDescriptor().getStorageColumnName().toLowerCase()));
+            nonBlankRowsSQL.appendIdentifier(dialect.makeLegalIdentifier(prop.getPropertyDescriptor().getStorageColumnName().toLowerCase()));
             nonBlankRowsSQL.append(" IS NOT NULL");
             if (prop.isMvEnabled())
             {

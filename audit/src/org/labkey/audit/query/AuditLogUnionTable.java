@@ -169,7 +169,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             FieldKey field = FieldKey.fromParts(fieldName);
 
             if (legacyMap.containsKey(field))
-                sql.append("\'").append(legacyMap.get(field)).append("\'").append(" AS ").append(fieldName);
+                sql.appendValue(legacyMap.get(field)).append(" AS ").append(fieldName);
             else
                 sql.append("NULL AS ").append(fieldName);
 

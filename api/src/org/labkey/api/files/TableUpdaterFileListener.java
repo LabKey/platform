@@ -375,10 +375,10 @@ public class TableUpdaterFileListener implements FileListener
         else
             selectFrag.append("  NULL AS ModifiedBy,\n");
 
-        selectFrag.append("  ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" AS FilePath,\n");
+        selectFrag.append("  ").appendIdentifier(dialect.makeLegalIdentifier(_pathColumn)).append(" AS FilePath,\n");
 
         if (_keyColumn != null)
-            selectFrag.append("  ").append(dialect.makeLegalIdentifier(_keyColumn)).append(" AS SourceKey,\n");
+            selectFrag.append("  ").appendIdentifier(dialect.makeLegalIdentifier(_keyColumn)).append(" AS SourceKey,\n");
         else
             selectFrag.append("  NULL AS SourceKey,\n");
 
@@ -386,7 +386,7 @@ public class TableUpdaterFileListener implements FileListener
         selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
-        selectFrag.append("WHERE ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
+        selectFrag.append("WHERE ").appendIdentifier(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
 
         return selectFrag;
     }

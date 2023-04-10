@@ -24,12 +24,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JsonOrgOldModule;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -44,6 +46,8 @@ import java.util.Map;
  */
 public class JsonUtil
 {
+    public static final Logger LOG = LogHelper.getLogger(JsonUtil.class, "JSON helper functions");
+
     // Default ObjectMapper configured for the common case.
     // The ObjectMapper is thread-safe and can be shared across requests
     // but shouldn't be mutated. If you need to reconfigure the ObjectMapper,
@@ -224,6 +228,41 @@ public class JsonUtil
         return mapper.writeValueAsString(mapper.readTree(jsonWithComments));
     }
 
+    // +Infinity, -Infinity, and NaN values are not allowed in JSONObject, but these sometimes arise in scientific data.
+    // This method translates Double and Float infinity & NaN values to values that are allowed and then puts the
+    // translated values into the JSONObject.
+    public static void safePut(JSONObject json, String key, Number value)
+    {
+        Object translatedValue = translateNumber(value);
+        if (!value.equals(translatedValue))
+            LOG.info("Translated value: " + value + " -> " + translatedValue);
+        json.put(key, translatedValue);
+    }
+
+    private static Object translateNumber(Number value)
+    {
+        if (value instanceof Double d)
+        {
+            if (d.isNaN())
+                return JSONObject.NULL;
+            else if (d == Double.POSITIVE_INFINITY)
+                return Double.MAX_VALUE;
+            else if (d == Double.NEGATIVE_INFINITY)
+                return -Double.MAX_VALUE;
+        }
+        else if (value instanceof Float f)
+        {
+            if (f.isNaN())
+                return JSONObject.NULL;
+            else if (f == Float.POSITIVE_INFINITY)
+                return Float.MAX_VALUE;
+            else if (f == Float.NEGATIVE_INFINITY)
+                return -Float.MAX_VALUE;
+        }
+
+        return value;
+    }
+
     public static class TestCase extends Assert
     {
         private static final String JSON_WITH_COMMENTS = """
@@ -257,10 +296,10 @@ public class JsonUtil
         private static final String JSON_ARRAY_WITH_COMMENTS = """
             /* Here's a block comment */
             // Here's a single-line comment
-            ["Ford", "BMW", "Fiat",] // Here's a trailing comma, which also need to be allowed
+            ["Ford", "BMW", "Fiat",], // Here are trailing commas, which also need to be allowed
             """;
 
-        private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line"};
+        private static final String[] COMMENT_WORDS = new String[]{"//", "/*", "*/", "block", "single-line", ",]", "],"};
 
         @Test
         public void testStripComments() throws JsonProcessingException
@@ -290,6 +329,72 @@ public class JsonUtil
             Assert.assertFalse("Expected no comment words after stripping",
                 StringUtils.containsAny(strippedArrayJson, COMMENT_WORDS));
             Assert.assertEquals(3, new JSONArray(strippedArrayJson).length());
+        }
+
+        @Test
+        public void testInfinityDouble()
+        {
+            assertThrows(JSONException.class, () -> new JSONObject().put("divide", 1.0/0.0));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negDivide", -1.0/0.0));
+            assertThrows(JSONException.class, () -> new JSONObject().put("posInfinity", Double.POSITIVE_INFINITY));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negInfinity", Double.NEGATIVE_INFINITY));
+            assertThrows(JSONException.class, () -> new JSONObject().put("NaN", Double.NaN));
+
+            JSONObject json = new JSONObject();
+            json.put("double", 1.0);
+            json.put("max", Double.MAX_VALUE);
+            json.put("min", Double.MIN_VALUE);
+
+            safePut(json, "NaN", Double.NaN);
+            safePut(json, "divide", 1.0/0.0);
+            safePut(json, "negDivide", -1.0/0.0);
+            safePut(json, "posInfinity", Double.POSITIVE_INFINITY);
+            safePut(json, "negInfinity", Double.NEGATIVE_INFINITY);
+
+            assertEquals(1.0, json.getDouble("double"), 0.0);
+            assertEquals(Double.MAX_VALUE, json.getDouble("max"), 0.0);
+            assertEquals(Double.MIN_VALUE, json.getDouble("min"), 0.0);
+
+            assertTrue(json.isNull("NaN") && json.has("NaN"));
+            assertEquals(Double.MAX_VALUE, json.getDouble("divide"), 0.0);
+            assertEquals(-Double.MAX_VALUE, json.getDouble("negDivide"), 0.0);
+            assertEquals(Double.MAX_VALUE, json.getDouble("posInfinity"), 0.0);
+            assertEquals(-Double.MAX_VALUE, json.getDouble("negInfinity"), 0.0);
+
+            assertEquals("{\"negDivide\":-1.7976931348623157E308,\"min\":4.9E-324,\"max\":1.7976931348623157E308,\"double\":1,\"NaN\":null,\"divide\":1.7976931348623157E308,\"negInfinity\":-1.7976931348623157E308,\"posInfinity\":1.7976931348623157E308}", json.toString());
+        }
+
+        @Test
+        public void testInfinityFloat()
+        {
+            assertThrows(JSONException.class, () -> new JSONObject().put("divide", 1.0f/0.0f));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negDivide", -1.0f/0.0f));
+            assertThrows(JSONException.class, () -> new JSONObject().put("posInfinity", Float.POSITIVE_INFINITY));
+            assertThrows(JSONException.class, () -> new JSONObject().put("negInfinity", Float.NEGATIVE_INFINITY));
+            assertThrows(JSONException.class, () -> new JSONObject().put("NaN", Float.NaN));
+
+            JSONObject json = new JSONObject();
+            json.put("float", 1.0f);
+            json.put("max", Float.MAX_VALUE);
+            json.put("min", Float.MIN_VALUE);
+
+            safePut(json, "NaN", Float.NaN);
+            safePut(json, "divide", 1.0f/0.0f);
+            safePut(json, "negDivide", -1.0f/0.0f);
+            safePut(json, "posInfinity", Float.POSITIVE_INFINITY);
+            safePut(json, "negInfinity", Float.NEGATIVE_INFINITY);
+
+            assertEquals(1.0f, json.getFloat("float"), 0.0f);
+            assertEquals(Float.MAX_VALUE, json.getFloat("max"), 0.0f);
+            assertEquals(Float.MIN_VALUE, json.getFloat("min"), 0.0f);
+
+            assertTrue(json.isNull("NaN") && json.has("NaN"));
+            assertEquals(Float.MAX_VALUE, json.getFloat("divide"), 0.0f);
+            assertEquals(-Float.MAX_VALUE, json.getFloat("negDivide"), 0.0f);
+            assertEquals(Float.MAX_VALUE, json.getFloat("posInfinity"), 0.0f);
+            assertEquals(-Float.MAX_VALUE, json.getFloat("negInfinity"), 0.0f);
+
+            assertEquals("{\"negDivide\":-3.4028235E38,\"min\":1.4E-45,\"max\":3.4028235E38,\"NaN\":null,\"divide\":3.4028235E38,\"negInfinity\":-3.4028235E38,\"float\":1,\"posInfinity\":3.4028235E38}", json.toString());
         }
     }
 }

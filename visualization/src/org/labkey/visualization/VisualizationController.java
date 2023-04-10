@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
@@ -40,7 +41,6 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -1536,21 +1536,21 @@ public class VisualizationController extends SpringActionController
         public void setAllowToggleMode(boolean allowToggleMode)
         {
             _allowToggleMode = allowToggleMode;
-        }        
+        }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            super.bindProperties(props);
+            super.bindJson(json);
 
-            _renderType = (String)props.get("renderType");
-            _dataRegionName = (String)props.get("dataRegionName");
-            _svg = (String)props.get("svg");
-            _thumbnailType = (String)props.get("thumbnailType");
+            _renderType = json.optString("renderType", null);
+            _dataRegionName = json.optString("dataRegionName", null);
+            _svg = json.optString("svg", null);
+            _thumbnailType = json.optString("thumbnailType", null);
 
-            Object json = props.get("jsonData");
-            if (json != null)
-                _jsonData = json.toString();
+            Object jsonData = json.opt("jsonData");
+            if (jsonData != null)
+                _jsonData = jsonData.toString();
         }
     }
 
@@ -1634,7 +1634,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class SourceCountForm implements NewCustomApiForm
+    public static class SourceCountForm implements ApiJsonForm
     {
         private JSONObject _json;
 

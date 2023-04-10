@@ -442,6 +442,11 @@ public abstract class SqlDialect
         return _stringHandler;
     }
 
+    public String quoteStringLiteral(String s)
+    {
+        return getStringHandler().quoteStringLiteral(s);
+    }
+
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
     protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
@@ -581,10 +586,34 @@ public abstract class SqlDialect
     // GroupConcat is usable as an aggregate function within a GROUP BY
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
     {
-        return getGroupConcat(sql, distinct, sorted, "','");
+        return getGroupConcat(sql, distinct, sorted, ",");
     }
 
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL);
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiter Simple Java string to use as a delimiter (not SQL!)
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public final SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
+    {
+        SQLFragment delimiterFrag = new SQLFragment().appendStringLiteral(delimiter, this);
+        return getGroupConcat(sql, distinct, sorted, new SQLFragment(delimiterFrag));
+    }
+
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiterSQL SQL expression to use as a delimiter
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL);
 
     public abstract boolean supportsSelectConcat();
 
@@ -1706,12 +1735,12 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
             for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
-                testEquals(v, new SQLFragment("SELECT ").append(d.getStringHandler().quoteStringLiteral(v)));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
         }
     }
 }

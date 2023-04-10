@@ -698,7 +698,7 @@ public class Table
 
         SQLFragment insertSQL = new SQLFragment();
         StringBuilder columnSQL = new StringBuilder();
-        StringBuilder valueSQL = new StringBuilder();
+        SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
         ColumnInfo versionColumn = null;
         String comma = "";
@@ -753,9 +753,9 @@ public class Table
 
                 valueSQL.append('?');
                 if (value instanceof Parameter.JdbcParameterValue)
-                    insertSQL.add(value);
+                    valueSQL.add(value);
                 else
-                    insertSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                    valueSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
             comma = ", ";
         }
