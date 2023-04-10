@@ -17,6 +17,7 @@
 package org.labkey.assay;
 
 import gwt.client.org.labkey.assay.AssayApplication;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -39,6 +40,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
@@ -62,6 +65,7 @@ import org.labkey.api.pipeline.PipelineService.PipelineProviderSupplier;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -907,5 +911,65 @@ public class AssayManager implements AssayService
     List<AssayProvider> getRegisteredAssayProviders()
     {
         return _providers;
+    }
+
+    @Override
+    public @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper helper)
+    {
+        if (helper != null)
+        {
+            SQLFragment sql = _generateSQL(container, user, protocol, helper);
+            if (sql != null)
+            {
+                return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getMapCollection();
+            }
+            return Collections.emptyList();
+        }
+        else
+            throw new IllegalArgumentException("A ResultsCheckHelper must be provided");
+    }
+
+    @Override
+    public @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper helper, Class<E> clazz)
+    {
+        if (helper != null)
+        {
+            SQLFragment sql = _generateSQL(container, user, protocol, helper);
+            if (sql != null)
+            {
+                return new SqlSelector(ExperimentService.get().getSchema().getScope(), sql).getArrayList(clazz);
+            }
+            return Collections.emptyList();
+        }
+        else
+            throw new IllegalArgumentException("A ResultsCheckHelper must be provided");
+    }
+
+    private @Nullable SQLFragment _generateSQL(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker)
+    {
+        Logger log = checker.getLogger();
+        AssayProvider provider = getProvider(protocol);
+        if (provider != null)
+        {
+            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+            TableInfo assayDataTable = schema.createTable(AssayProtocolSchema.DATA_TABLE_NAME, checker.getContainerFilter());
+            if (assayDataTable != null)
+            {
+                List<ValidationError> errors = checker.isValid(protocol, assayDataTable);
+                if (!errors.isEmpty())
+                {
+                    errors.forEach(ve -> log.error(ve.getMessage()));
+                    return null;
+                }
+
+                return checker.getValidationSql(container, user, protocol, assayDataTable);
+            }
+            else
+                log.error("Assay data table not found for protocol : " + protocol.getName());
+        }
+        else
+            log.error("Assay provider not found for protocol : " + protocol.getName());
+
+        return null;
     }
 }

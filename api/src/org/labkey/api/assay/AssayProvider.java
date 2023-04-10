@@ -363,35 +363,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
-    /**
-     * Provides a mechanism to check or validate the results for a specified protocol. An instance of ResultsCheckHelper
-     * is used to generate the SQL used during the validation of protocol results.
-     */
-    @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker);
-    @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker, Class<E> clazz);
-
-    interface ResultsCheckHelper
-    {
-        @NotNull Logger getLogger();
-
-        /**
-         * Checks whether the results table is valid, has the required fields etc. If errors are returned
-         * the validation will not run and the errors will be logged.
-         */
-        @NotNull List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
-
-        /**
-         * The SQLFragment to execute to run the check, the SQL should return the expected results returned to the checkResults
-         * function.
-         */
-        @Nullable SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
-
-        /**
-         * The container filter to use during construction of the assay results table
-         */
-        @Nullable ContainerFilter getContainerFilter();
-    }
-
     /* .xar.xml import/export helpers */
 
     // return a class instead of directly implementing methods on AssayProvider so we can keep state

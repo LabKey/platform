@@ -723,9 +723,8 @@ public class DatasetQueryView extends StudyQueryView
                     ExpObject expObject = publishSource.resolvePublishSource(dataset.getPublishSourceId());
                     if (expObject instanceof ExpProtocol protocol)
                     {
-                        AssayProvider provider = AssayService.get().getProvider(protocol);
                         LinkedResultsChecker helper = new LinkedResultsChecker(user, dataset);
-                        Collection<String> results = provider.checkResults(container, user, protocol, helper, String.class);
+                        Collection<String> results = AssayService.get().checkResults(container, user, protocol, helper, String.class);
                         if (!results.isEmpty())
                         {
                             _divergedRows = new HashSet<>(results);
@@ -799,7 +798,7 @@ public class DatasetQueryView extends StudyQueryView
                     (_lsid != null && _divergedRows.contains(_lsid.getValue(ctx)));
         }
 
-        private static class LinkedResultsChecker implements AssayProvider.ResultsCheckHelper
+        private static class LinkedResultsChecker implements AssayService.ResultsCheckHelper
         {
             private DatasetDefinition _dataset;
             private User _user;
