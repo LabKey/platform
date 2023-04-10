@@ -1803,7 +1803,7 @@ public class OntologyManager
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
                 if (expSchema.getSqlDialect().isPostgreSQL())
-                    insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING;");
+                    insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
                 int count;
                 try (var tx = expSchema.getScope().ensureTransaction())
                 {
@@ -2559,7 +2559,7 @@ public class OntologyManager
         sql.append(values);
         if (ifNotExists)
         {
-            sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
+            sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?)\n");
             sql.add(propertyuri).add(container);
         }
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);

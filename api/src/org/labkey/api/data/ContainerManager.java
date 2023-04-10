@@ -47,6 +47,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
 import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.exp.ExperimentException;
@@ -2105,20 +2106,22 @@ public class ContainerManager
     }
 
 
-    public static String getIdsAsCsvList(Set<Container> containers)
+    public static SQLFragment getIdsAsCsvList(Set<Container> containers, SqlDialect d)
     {
         if (0 == containers.size())
-            return "(NULL)";    // WHERE x IN (NULL) should match no rows
+            return new SQLFragment("(NULL)");    // WHERE x IN (NULL) should match no rows
 
-        StringBuilder csvList = new StringBuilder("(");
-
+        SQLFragment csvList = new SQLFragment("(");
+        String comma = "";
         for (Container container : containers)
-            csvList.append("'").append(container.getId()).append("',");
+        {
+            csvList.append(comma);
+            comma = ",";
+            csvList.appendValue(container, d);
+        }
+        csvList.append(")");
 
-        // Replace last comma with ending paren
-        csvList.replace(csvList.length() - 1, csvList.length(), ")");
-
-        return csvList.toString();
+        return csvList;
     }
 
 

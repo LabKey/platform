@@ -977,36 +977,38 @@ public class Portal implements ModuleChangeListener
         {
             // Try insert; SQL checks if pageId or index is already there and doesn't insert in those cases.
             List<String> insertColumns = new ArrayList<>();
-            SQLFragment insertSQL = new SQLFragment("INSERT INTO ");
+            ArrayList<Object> insertValues = new ArrayList<>();
 
             insertColumns.add("EntityId");
-            insertSQL.add(p.getEntityId());
+            insertValues.add(p.getEntityId());
             insertColumns.add("Container");
-            insertSQL.add(p.getContainer());
+            insertValues.add(p.getContainer());
             insertColumns.add("PageId");
-            insertSQL.add(p.getPageId());
+            insertValues.add(p.getPageId());
             insertColumns.add(legalIndexName);
-            insertSQL.add(p.getIndex());
+            insertValues.add(p.getIndex());
             insertColumns.add("Caption");
-            insertSQL.add(p.getCaption());
+            insertValues.add(p.getCaption());
             insertColumns.add("Hidden");
-            insertSQL.add(p.isHidden());
+            insertValues.add(p.isHidden());
             insertColumns.add("Type");
-            insertSQL.add(p.getType());
+            insertValues.add(p.getType());
             insertColumns.add("Action");
-            insertSQL.add(p.getAction());
+            insertValues.add(p.getAction());
             insertColumns.add("TargetFolder");
-            insertSQL.add(p.getTargetFolder());
+            insertValues.add(p.getTargetFolder());
             insertColumns.add("Permanent");
-            insertSQL.add(p.isPermanent());
+            insertValues.add(p.isPermanent());
             insertColumns.add("Properties");
-            insertSQL.add(p.getProperties());
+            insertValues.add(p.getProperties());
 
-            insertSQL.append(portalTable.getSelectName())
+            SQLFragment insertSQL = new SQLFragment("INSERT INTO ")
+                    .append(portalTable.getSelectName())
                     .append("\n(")
                     .append(StringUtils.join(insertColumns, ", "))
                     .append(")\n")
                     .append(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
+                    .addAll(insertValues)
                     .add(p.getPageId())
                     .append("SELECT PageId FROM ")
                     .append(portalTable.getSelectName())

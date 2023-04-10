@@ -470,15 +470,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");
         result.append(selectSql);
-        result.append("), '");
-        result.append(delimiter);
-        result.append("')");
-
+        result.append("), ");
+        result.append(getStringHandler().quoteStringLiteral(delimiter));
+        result.append(")");
         return result;
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
@@ -1333,7 +1332,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             }
             else if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
-                colSpec.add(" DEFAULT '" + prop.getDefaultValue().toString() + "'");
+                colSpec.add(" DEFAULT " + getStringHandler().quoteStringLiteral(prop.getDefaultValue().toString()));
             }
             else
             {

@@ -93,7 +93,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         if (!getContainer().hasPermission(getUser(), CanUseSendMessageApiPermission.class) && !getUser().hasRootPermission(CanUseSendMessageApiPermission.class))
             throw new IllegalArgumentException("The current user does not have permission to use the SendMessage API.");
 
-        JSONObject json = form.getJsonObject();
+        JSONObject json = form.getOldJsonObject();
         if (null == json)
             json = new JSONObject();
         String from = json.getString(Props.msgFrom.name());

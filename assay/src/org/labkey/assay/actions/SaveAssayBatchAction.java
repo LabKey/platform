@@ -45,7 +45,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
     @Override
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception
     {
-        JSONObject rootJsonObject = form.getJsonObject();
+        JSONObject rootJsonObject = form.getOldJsonObject();
 
         // A user can send in either an array of batches or just a batch but not both.  If a user sends in an array of batches
         // then it must have at least one batch

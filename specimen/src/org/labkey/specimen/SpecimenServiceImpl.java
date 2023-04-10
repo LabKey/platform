@@ -264,7 +264,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         String dateExpr = truncateTime ? tableInfoSpecimen.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
-        sql.append(tableInfoSpecimen.getSelectName()).append(";");
+        sql.append(tableInfoSpecimen.getSelectName());
 
         final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
 
@@ -284,7 +284,7 @@ public class SpecimenServiceImpl implements SpecimenService
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM ");
-        sql.append(tableInfoSpecimen.getSelectName()).append(";");
+        sql.appendIdentifier(tableInfoSpecimen.getSelectName());
 
         final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
 

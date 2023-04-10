@@ -1696,7 +1696,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ExportQueriesForm extends ExportQueryForm implements NewCustomApiForm
+    public static class ExportQueriesForm extends ExportQueryForm implements ApiJsonForm
     {
         private String filename;
         private List<ExportQueryForm> queryForms;
@@ -2375,7 +2375,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             if (json == null)
                 throw new NotFoundException("Empty request");
 
@@ -3272,7 +3272,7 @@ public class QueryController extends SpringActionController
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            JSONObject object = form.getNewJsonObject();
+            JSONObject object = form.getJsonObject();
             if (object == null)
             {
                 object = new JSONObject();
@@ -4117,7 +4117,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
         {
-            _json = apiSaveRowsForm.getNewJsonObject();
+            _json = apiSaveRowsForm.getJsonObject();
 
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
