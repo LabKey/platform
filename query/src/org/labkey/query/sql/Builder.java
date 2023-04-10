@@ -115,14 +115,34 @@ public class Builder extends SQLFragment
         return this;
     }
 
-    public void newLine()
+    @Override
+    public SQLFragment appendIdentifier(CharSequence charseq)
     {
-        super.append("\n");
-        _fNewLine = true;
+        if (charseq == null || charseq.length() == 0)
+            return this;
+        appendPrefix();
+        appendIndent();
+        super.appendIdentifier(charseq);
+        return this;
     }
 
+    @Override
+    public SQLFragment appendEOS()
+    {
+        return super.appendEOS();
+    }
 
-
+    @Override
+    public Builder append(SQLFragment f)
+    {
+        if (!f.isEmpty())
+        {
+            appendPrefix();
+            appendIndent();
+        }
+        super.append(f);
+        return this;
+    }
 
     /** CONSIDER merge Builder and SqlBuilder, so we don't have all these intermediate overloads, maybe even merge with SqlFragment */
     @Override
@@ -132,12 +152,12 @@ public class Builder extends SQLFragment
         return super.appendValue(s);
     }
 
-    @Override
-    public SQLFragment appendStringLiteral(CharSequence s)
-    {
-        appendPrefix(); appendIndent();
-        return super.appendStringLiteral(s);
-    }
+//    @Override
+//    public SQLFragment appendStringLiteral(CharSequence s)
+//    {
+//        appendPrefix(); appendIndent();
+//        return super.appendStringLiteral(s);
+//    }
 
     @Override
     public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)

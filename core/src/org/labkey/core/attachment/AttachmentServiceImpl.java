@@ -717,7 +717,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 SQLFragment selectStatement = new SQLFragment();
 
                 // Adding unique column RowId ensures we get the proper count
-                selectStatement.append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
+                selectStatement.append("SELECT RowId, CAST(").appendValue(type.getUniqueName()).append(" AS VARCHAR(500)) AS Type FROM ")
                     .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
                     .append(" WHERE ");
                 addAndVerifyWhereSql(type, selectStatement);
@@ -880,7 +880,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         TableInfo table = column.getParentTable();
-        selectStatements.add("    SELECT " + expression + " AS EntityId, '" + table.getSelectName() + "' AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
+        selectStatements.add("    SELECT " + expression + " AS EntityId, " + table.getSqlDialect().quoteStringLiteral(table.getSelectName()) + " AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
     private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
