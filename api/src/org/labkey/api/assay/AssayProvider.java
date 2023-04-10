@@ -372,26 +372,22 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     interface ResultsCheckHelper
     {
-        /**
-         * Returns an optional logger, in the event the check is run in the context of a pipeline job.
-         */
         @NotNull Logger getLogger();
 
         /**
          * Checks whether the results table is valid, has the required fields etc. If errors are returned
-         * the validation will not run and the errors will be logged to either the passed logger or the log file
+         * the validation will not run and the errors will be logged.
          */
         @NotNull List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
 
         /**
-         * The SQLFragment to execute to run the check, the SQL should return a list of rows which match
-         * the Class passed into the validateResults method.
+         * The SQLFragment to execute to run the check, the SQL should return the expected results returned to the checkResults
+         * function.
          */
         @Nullable SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
 
         /**
          * The container filter to use during construction of the assay results table
-         * @return
          */
         @Nullable ContainerFilter getContainerFilter();
     }
