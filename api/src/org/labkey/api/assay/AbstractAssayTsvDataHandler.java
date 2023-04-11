@@ -18,7 +18,6 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -446,7 +445,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, cf);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
 
             // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
             // inputMaterials will have been mapped by first using the input value as a name and then interpreting it as a rowId, so
@@ -734,8 +733,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                                Domain dataDomain,
                                                List<Map<String, Object>> rawData,
                                                DataLoaderSettings settings,
-                                               ParticipantVisitResolver resolver,
-                                               ContainerFilter containerFilter)
+                                               ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -1046,7 +1044,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (o != null && ((byNameSS != null || lookupToAllSamplesByName.contains(pd)) ||
                         lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
-                    // TODO container filter?
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
                     Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
                     ExpMaterial material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, o.toString(), cache, materialCache);
