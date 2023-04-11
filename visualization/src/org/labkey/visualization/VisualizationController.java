@@ -690,14 +690,14 @@ public class VisualizationController extends SpringActionController
      * Alternately a form-encoded post with a parameter called svg to allow JavaScript clients to access it
      */
     @RequiresPermission(ReadPermission.class)
-    abstract class ExportSVGAction extends BaseViewAction
+    abstract class ExportSVGAction extends BaseViewAction<Object>
     {
         private SvgSource _svgSource;
 
         @Override
         protected String getCommandClassMethodName()
         {
-            return "execute";
+            return "validate";
         }
 
         @Override

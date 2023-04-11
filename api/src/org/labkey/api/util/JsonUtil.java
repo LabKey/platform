@@ -233,10 +233,7 @@ public class JsonUtil
     // translated values into the JSONObject.
     public static void safePut(JSONObject json, String key, Number value)
     {
-        Object translatedValue = translateNumber(value);
-        if (!value.equals(translatedValue))
-            LOG.info("Translated value: " + value + " -> " + translatedValue);
-        json.put(key, translatedValue);
+        json.put(key, translateNumber(value));
     }
 
     private static Object translateNumber(Number value)
