@@ -27,7 +27,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -39,8 +38,6 @@ import java.util.Set;
 
 /**
  * Action for simple .html file-backed views in a module's ./resources directory.
- * User: Dave
- * Date: Jan 23, 2009
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {

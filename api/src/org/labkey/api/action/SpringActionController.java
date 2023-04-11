@@ -1108,7 +1108,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
                 catch (IllegalAccessException | InstantiationException | InvocationTargetException e)
                 {
-                    _log.error("unexpected error", e);
+                    _log.error("Unexpected error attempting to instantiate " + getActionClass(), e);
                     throw new RuntimeException(e);
                 }
             }
