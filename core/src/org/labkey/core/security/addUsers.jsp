@@ -37,6 +37,7 @@
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
     LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+    boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     document.addEventListener("DOMContentLoaded", function() {
@@ -64,7 +65,7 @@
     }
 
     Ext4.onReady(function(){
-        createCloneUserField(true, false)
+        createCloneUserField(true, false, <%=excludeSiteAdmins%>)
     });
 </script>
 

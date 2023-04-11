@@ -957,6 +957,8 @@ public class SecurityController extends SpringActionController
     {
         private String _prefix;
         private boolean _includeInactive = false;
+        private boolean _excludeSiteAdmins = false;
+        private Set<Integer> _excludeUsers = Collections.emptySet();
 
         public String getPrefix()
         {
@@ -979,18 +981,51 @@ public class SecurityController extends SpringActionController
         {
             _includeInactive = includeInactive;
         }
+
+        public boolean isExcludeSiteAdmins()
+        {
+            return _excludeSiteAdmins;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExcludeSiteAdmins(boolean excludeSiteAdmins)
+        {
+            _excludeSiteAdmins = excludeSiteAdmins;
+        }
+
+        public Set<Integer> getExcludeUsers()
+        {
+            return _excludeUsers;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExcludeUsers(Set<Integer> excludeUsers)
+        {
+            _excludeUsers = excludeUsers;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class CompleteUserAction extends ReadOnlyApiAction<CompleteUserForm>
     {
         @Override
-        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
+        public ApiResponse execute(CompleteUserForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
+            Collection<User> users = UserManager.getUsers(form.isIncludeInactive());
+            Set<Integer> excludedUsers = form.getExcludeUsers();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(UserManager.getUsers(completeUserForm.isIncludeInactive()), getUser(), getContainer()))
+            if (!excludedUsers.isEmpty())
+            {
+                // New list with excluded users removed
+                users = users.stream()
+                    .filter(u -> !excludedUsers.contains(u.getUserId()))
+                    .filter(u -> !form.isExcludeSiteAdmins() || !u.hasSiteAdminPermission())
+                    .toList();
+            }
+
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(users, getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1561,7 +1596,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    public static class ClonePermissionsAction extends FormViewAction<ClonePermissionsForm>
+    public class ClonePermissionsAction extends FormViewAction<ClonePermissionsForm>
     {
         private ClonePermissionsForm _form;
 
@@ -1580,13 +1615,20 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(ClonePermissionsForm form, BindException errors) throws Exception
         {
-            return false;
+            String cloneUser = (String)getViewContext().get("cloneUser");
+            User source = UserManager.getUser(new ValidEmail(cloneUser));
+            User target = UserManager.getUser(form.getTargetUser());
+
+            deletePermissions(target);
+            clonePermissions(source, target);
+
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ClonePermissionsForm form)
         {
-            return null;
+            return form.getReturnActionURL();
         }
 
         @Override
@@ -1624,7 +1666,6 @@ public class SecurityController extends SpringActionController
             _mailPrefix = mailPrefix;
         }
     }
-
 
     private abstract class AbstractEmailAction extends SimpleViewAction<EmailForm>
     {

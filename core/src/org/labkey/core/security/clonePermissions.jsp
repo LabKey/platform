@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
@@ -35,10 +36,11 @@
 <%
     SecurityController.ClonePermissionsForm form = (SecurityController.ClonePermissionsForm)HttpView.currentModel();
     User target = UserManager.getUser(form.getTargetUser());
+    boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
-        createCloneUserField(false, true);
+        createCloneUserField(false, true, <%=excludeSiteAdmins%>, <%=target.getUserId()%>);
     });
 </script>
 
@@ -54,7 +56,7 @@
         %>
         <tr>
             <td>
-                Warning! This will delete all group memberships and direct role assignments for <%=h(target.getDisplayName(getUser()))%> (<%=h(target.getEmail())%>)
+                Warning! Cloning permissions will delete <strong>all</strong> group memberships and direct role assignments for <strong><%=h(target.getDisplayName(getUser()) + " (" + target.getEmail() + ")")%></strong>
                 and replace them with the group memberships and direct role assignments of the user selected below.
             </td>
         </tr>
@@ -66,6 +68,8 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td>
+                <input type="hidden" name="targetUser" value="<%=form.getTargetUser()%>">
+                <%=ReturnUrlForm.generateHiddenFormField(form.getReturnActionURL())%>
 <%
     ButtonBuilder submit = button("Clone Permissions");
     submit.submit(true);

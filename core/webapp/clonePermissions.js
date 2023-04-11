@@ -11,7 +11,7 @@ function showUserAccess()
     }
 }
 
-function createCloneUserField(disabled, includeInactive)
+function createCloneUserField(disabled, includeInactive, excludeSiteAdmins, excludeUserId)
 {
     const tagConfig = {
         tag: 'input',
@@ -22,12 +22,23 @@ function createCloneUserField(disabled, includeInactive)
         autocomplete: 'off'
     };
 
+    // Note: Any mention of "disabled" in the config (even disabled: false) results in a disabled element
     if (disabled)
         tagConfig.disabled = true;
 
+    const params = {
+        includeInactive: includeInactive
+    }
+
+    if (excludeSiteAdmins)
+        params.excludeSiteAdmins = 1;
+
+    if (excludeUserId)
+        params.excludeUsers = excludeUserId;
+
     Ext4.create('LABKEY.element.AutoCompletionField', {
         renderTo: 'auto-completion-div',
-        completionUrl: LABKEY.ActionURL.buildURL('security', 'completeUser.api', null, {includeInactive: includeInactive}),
+        completionUrl: LABKEY.ActionURL.buildURL('security', 'completeUser.api', null, params),
         tagConfig: tagConfig
     });
 }
