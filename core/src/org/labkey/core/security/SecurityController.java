@@ -40,6 +40,7 @@ import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.audit.provider.GroupAuditProvider.GroupAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
@@ -568,7 +569,7 @@ public class SecurityController extends SpringActionController
 
     private void addGroupAuditEvent(ContainerUser context, Group group, String message)
     {
-        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(group.getContainer(), message);
+        GroupAuditEvent event = new GroupAuditEvent(group.getContainer(), message);
 
         event.setGroup(group.getUserId());
         Container c = ContainerManager.getForId(group.getContainer());
@@ -1658,6 +1659,12 @@ public class SecurityController extends SpringActionController
         {
             deletePermissions(_target);
             clonePermissions(_source, _target);
+
+            String message = "The user " + _target.getEmail() + " had their group memberships and role assignments deleted and replaced with those of user " + _source.getEmail();
+            GroupAuditEvent event = new GroupAuditEvent(ContainerManager.getRoot().getId(), message);
+            event.setUser(_target.getUserId());
+            event.setProjectId(ContainerManager.getRoot().getId());
+            AuditLogService.get().addEvent(getUser(), event);
 
             return true;
         }
