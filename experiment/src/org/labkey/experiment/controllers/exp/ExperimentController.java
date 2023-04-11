@@ -285,7 +285,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -7696,6 +7696,135 @@ public class ExperimentController extends SpringActionController
                 builder.append("</table>");
                 return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
             }
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class MoveSamplesAction extends MutatingApiAction<MoveSamplesForm>
+    {
+        private Container _targetContainer;
+        private List<? extends ExpMaterial> _materials;
+
+        @Override
+        public void validateForm(MoveSamplesForm form, Errors errors)
+        {
+            validateTargetContainer(form, errors);
+
+            // TODO prevent moving if data QC states don't exist in target container scope
+            validateSampleIds(form, errors);
+        }
+
+        @Override
+        public Object execute(MoveSamplesForm form, BindException errors)
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+            resp.put("success", true);
+            resp.put("samplesMoved", samplesMoved);
+            resp.put("containerPath", _targetContainer.getPath());
+            return resp;
+        }
+
+        private void validateTargetContainer(MoveSamplesForm form, Errors errors)
+        {
+            if (form.getTargetContainer() == null)
+            {
+                errors.reject(ERROR_MSG, "A target container must be specified for the move operation.");
+                return;
+            }
+
+            _targetContainer = getTargetContainer(form);
+            if (_targetContainer == null)
+            {
+                errors.reject(ERROR_MSG, "The target container was not found: " + form.getTargetContainer() + ".");
+                return;
+            }
+
+            if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
+            {
+                errors.reject(ERROR_MSG, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
+                return;
+            }
+
+            if (!isValidTargetContainer(getContainer(), _targetContainer))
+            {
+                errors.reject(ERROR_MSG, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
+                return;
+            }
+        }
+
+        private Container getTargetContainer(MoveSamplesForm form)
+        {
+            Container c = ContainerManager.getForId(form.getTargetContainer());
+            if (c == null)
+                c = ContainerManager.getForPath(form.getTargetContainer());
+
+            return c;
+        }
+
+        // targetContainer must be in the same app project at this time
+        // i.e. child of current project, project of current child, sibling within project
+        private boolean isValidTargetContainer(Container current, Container target)
+        {
+            if (current.isRoot() || target.isRoot())
+                return false;
+
+            if (current.equals(target))
+                return false;
+
+            boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
+            boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
+            boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+
+            return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
+        }
+
+        private void validateSampleIds(MoveSamplesForm form, Errors errors)
+        {
+            Set<Integer> sampleIds = form.getIds(false);
+            if (sampleIds == null || sampleIds.isEmpty())
+            {
+                errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
+                return;
+            }
+
+            _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
+            if (_materials.size() != sampleIds.size())
+            {
+                errors.reject(ERROR_MSG, "Unable to find all samples for the move operation.");
+                return;
+            }
+
+            // verify all samples are from the current container
+            if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
+            {
+                errors.reject(ERROR_MSG, "All samples must be from the current container for the move operation.");
+                return;
+            }
+
+            // only allow for samples at root, i.e. without parents, to be moved at this time
+            // TODO remove this once we support moving / splitting the experiment run
+            if (_materials.stream().anyMatch(material -> material.getRunId() != null))
+            {
+                errors.reject(ERROR_MSG, "Only supporting move of root samples at this time.");
+                return;
+            }
+        }
+    }
+
+    public static class MoveSamplesForm extends DataViewSnapshotSelectionForm
+    {
+        private String _targetContainer;
+
+        public String getTargetContainer()
+        {
+            return _targetContainer;
+        }
+
+        public void setTargetContainer(String targetContainer)
+        {
+            _targetContainer = targetContainer;
         }
     }
 }
