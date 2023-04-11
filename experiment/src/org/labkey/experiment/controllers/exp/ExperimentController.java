@@ -7846,7 +7846,7 @@ public class ExperimentController extends SpringActionController
             }
 
             if (form.getTimestamp() == null)
-                throw new IllegalArgumentException("'Timestamp' parameter is required");
+                throw new IllegalArgumentException("'timestamp' parameter is required");
         }
 
         @Override
