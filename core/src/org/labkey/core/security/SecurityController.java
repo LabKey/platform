@@ -1303,9 +1303,9 @@ public class SecurityController extends SpringActionController
 
     public static class AddUsersForm extends ReturnUrlForm
     {
-        private boolean sendMail;
-        private String newUsers;
-        private String _cloneUser;
+        private boolean _sendMail;
+        private String _newUsers;
+        private String _sourceUser;
         private boolean _skipProfile;
         private String _provider = null;
 
@@ -1325,29 +1325,29 @@ public class SecurityController extends SpringActionController
         @SuppressWarnings("unused")
         public void setNewUsers(String newUsers)
         {
-            this.newUsers = newUsers;
+            _newUsers = newUsers;
         }
 
         public String getNewUsers()
         {
-            return this.newUsers;
+            return _newUsers;
         }
 
         @SuppressWarnings("unused")
         public void setSendMail(boolean sendMail)
         {
-            this.sendMail = sendMail;
+            _sendMail = sendMail;
         }
 
         public boolean getSendMail()
         {
-            return this.sendMail;
+            return _sendMail;
         }
 
         @SuppressWarnings("unused")
-        public void setCloneUser(String cloneUser){_cloneUser = cloneUser;}
+        public void setSourceUser(String sourceUser){_sourceUser = sourceUser;}
 
-        public String getCloneUser(){return _cloneUser;}
+        public String getSourceUser(){return _sourceUser;}
 
         @SuppressWarnings("unused")
         public void setSkipProfile(boolean skipProfile)
@@ -1358,13 +1358,6 @@ public class SecurityController extends SpringActionController
         public boolean isSkipProfile()
         {
             return _skipProfile;
-        }
-
-        public void addMessage(String message)
-        {
-            if (_message.length() != 0)
-                _message.append(HtmlString.unsafe("<br/>"));
-            _message.append(message);
         }
 
         public void addMessage(HtmlString message)
@@ -1409,19 +1402,19 @@ public class SecurityController extends SpringActionController
             List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
             User userToClone = null;
 
-            final String cloneUser = form.getCloneUser();
-            if (cloneUser != null && cloneUser.length() > 0)
+            final String sourceUser = form.getSourceUser();
+            if (sourceUser != null && sourceUser.length() > 0)
             {
                 try
                 {
-                    final ValidEmail emailToClone = new ValidEmail(cloneUser);
+                    final ValidEmail emailToClone = new ValidEmail(sourceUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
                         errors.addError(new LabKeyError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
                 }
                 catch (InvalidEmailException e)
                 {
-                    errors.addError(new LabKeyError("Failed to clone user permissions " + cloneUser.trim() + ": Invalid email address"));
+                    errors.addError(new LabKeyError("Failed to clone user permissions " + sourceUser.trim() + ": Invalid email address"));
                 }
             }
 
@@ -1572,16 +1565,16 @@ public class SecurityController extends SpringActionController
 
     public static class ClonePermissionsForm extends ReturnUrlForm
     {
-        private int _sourceUser;
+        private String _sourceUser;
         private int _targetUser;
 
-        public int getSourceUser()
+        public String getSourceUser()
         {
             return _sourceUser;
         }
 
         @SuppressWarnings("unused")
-        public void setSourceUser(int sourceUser)
+        public void setSourceUser(String sourceUser)
         {
             _sourceUser = sourceUser;
         }
@@ -1608,28 +1601,27 @@ public class SecurityController extends SpringActionController
         @Override
         public void validateCommand(ClonePermissionsForm form, Errors errors)
         {
-            // TODO: Should be sending back userId instead
-            String cloneUser = (String)getViewContext().get("cloneUser");
+            String sourceEmail = form.getSourceUser();
 
-            if (null == cloneUser)
+            if (null == sourceEmail)
             {
-                errors.reject(ERROR_MSG, "Clone user is required");
+                errors.reject(ERROR_MSG, "Source user is required");
                 return;
             }
 
             try
             {
-                _source = UserManager.getUser(new ValidEmail(cloneUser));
+                _source = UserManager.getUser(new ValidEmail(sourceEmail));
             }
             catch (InvalidEmailException e)
             {
-                errors.reject(ERROR_MSG, "Invalid clone user email address");
+                errors.reject(ERROR_MSG, "Invalid source user email address");
                 return;
             }
 
             if (null == _source)
             {
-                errors.reject(ERROR_MSG, "Unknown clone user");
+                errors.reject(ERROR_MSG, "Unknown source user");
                 return;
             }
 

@@ -15,9 +15,9 @@ function createCloneUserField(disabled, includeInactive, excludeSiteAdmins, excl
 {
     const tagConfig = {
         tag: 'input',
-        id: 'cloneUser',
+        id: 'sourceUser',
         type: 'text',
-        name: 'cloneUser',
+        name: 'sourceUser',
         style: 'width: 303px;',
         autocomplete: 'off'
     };

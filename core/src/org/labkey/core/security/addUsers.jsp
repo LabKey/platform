@@ -49,7 +49,7 @@
     function enableText()
     {
         const checkBoxElem = document.getElementById("cloneUserCheck");
-        const textElem = document.getElementById("cloneUser");
+        const textElem = document.getElementById("sourceUser");
 
         if (checkBoxElem != null && textElem != null)
         {
