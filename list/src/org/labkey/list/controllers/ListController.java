@@ -96,6 +96,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
@@ -970,7 +971,7 @@ public class ListController extends SpringActionController
                 selectedLists.add(pair);
             }
 
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
             ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
 
