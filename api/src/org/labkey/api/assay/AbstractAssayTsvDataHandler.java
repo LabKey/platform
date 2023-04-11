@@ -1051,7 +1051,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
                     }
-                    else
+                    else if (o instanceof Integer || !remappableLookup.containsKey(pd))
                     {
                         errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
                     }
