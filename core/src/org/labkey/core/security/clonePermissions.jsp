@@ -51,6 +51,7 @@
             {
         %>
         <tr><td><labkey:errors /></td></tr>
+        <tr><td>&nbsp;</td></tr>
         <%
             }
         %>

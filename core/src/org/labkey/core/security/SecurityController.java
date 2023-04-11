@@ -1015,13 +1015,14 @@ public class SecurityController extends SpringActionController
             List<JSONObject> completions = new ArrayList<>();
             Collection<User> users = UserManager.getUsers(form.isIncludeInactive());
             Set<Integer> excludedUsers = form.getExcludeUsers();
+            boolean excludeSiteAdmins = form.isExcludeSiteAdmins();
 
-            if (!excludedUsers.isEmpty())
+            if (!excludedUsers.isEmpty() || excludeSiteAdmins)
             {
                 // New list with excluded users removed
                 users = users.stream()
                     .filter(u -> !excludedUsers.contains(u.getUserId()))
-                    .filter(u -> !form.isExcludeSiteAdmins() || !u.hasSiteAdminPermission())
+                    .filter(u -> !excludeSiteAdmins || !u.hasSiteAdminPermission())
                     .toList();
             }
 
@@ -1515,6 +1516,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    // Note: Callers need to enforce all rules (e.g., App Admin can't delete Site Admin perms)
     private void deletePermissions(User user)
     {
         if (user != null)
@@ -1599,10 +1601,49 @@ public class SecurityController extends SpringActionController
     public class ClonePermissionsAction extends FormViewAction<ClonePermissionsForm>
     {
         private ClonePermissionsForm _form;
+        private User _source;
+        private User _target;
 
         @Override
-        public void validateCommand(ClonePermissionsForm target, Errors errors)
+        public void validateCommand(ClonePermissionsForm form, Errors errors)
         {
+            // TODO: Should be sending back userId instead
+            String cloneUser = (String)getViewContext().get("cloneUser");
+
+            if (null == cloneUser)
+            {
+                errors.reject(ERROR_MSG, "Clone user is required");
+                return;
+            }
+
+            try
+            {
+                _source = UserManager.getUser(new ValidEmail(cloneUser));
+            }
+            catch (InvalidEmailException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid clone user email address");
+                return;
+            }
+
+            if (null == _source)
+            {
+                errors.reject(ERROR_MSG, "Unknown clone user");
+                return;
+            }
+
+            _target = UserManager.getUser(form.getTargetUser());
+
+            if (null == _target)
+                errors.reject(ERROR_MSG, "Unknown target user");
+
+            if (!getUser().hasSiteAdminPermission())
+            {
+                if (_source.hasSiteAdminPermission())
+                    errors.reject(ERROR_MSG, "Only site administrators can clone from users with site administration permissions");
+                else if (_target.hasSiteAdminPermission())
+                    errors.reject(ERROR_MSG, "Only site administrators can clone to users with site administration permissions");
+            }
         }
 
         @Override
@@ -1615,12 +1656,8 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(ClonePermissionsForm form, BindException errors) throws Exception
         {
-            String cloneUser = (String)getViewContext().get("cloneUser");
-            User source = UserManager.getUser(new ValidEmail(cloneUser));
-            User target = UserManager.getUser(form.getTargetUser());
-
-            deletePermissions(target);
-            clonePermissions(source, target);
+            deletePermissions(_target);
+            clonePermissions(_source, _target);
 
             return true;
         }
