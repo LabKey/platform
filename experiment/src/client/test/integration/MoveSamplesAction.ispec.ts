@@ -59,11 +59,20 @@ afterAll(async () => {
     return server.teardown();
 });
 
-async function createSample(sampleName: string, folderOptions: RequestOptions) {
+async function createSample(sampleName: string, folderOptions: RequestOptions, sampleState?: number) {
     const materialResponse = await server.post('query', 'insertRows', {
         schemaName: 'samples',
         queryName: SAMPLE_TYPE_NAME,
-        rows: [{ name: sampleName }]
+        rows: [{ name: sampleName, sampleState }]
+    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
+    return caseInsensitive(materialResponse.body.rows[0], 'rowId');
+}
+
+async function createStatus(label: string, folderOptions: RequestOptions, stateType = 'Available') {
+    const materialResponse = await server.post('query', 'insertRows', {
+        schemaName: 'core',
+        queryName: 'DataStates',
+        rows: [{ label, stateType, publicdata: true }]
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
     return caseInsensitive(materialResponse.body.rows[0], 'rowId');
 }
@@ -250,9 +259,120 @@ describe('ExperimentController', () => {
             expect(sampleExistsInSub1).toBe(true);
         });
 
+        it('error, cannot move locked subfolder sample, status in same container', async () => {
+            // Arrange
+            const statusRowId = await createStatus('sub-Locked-1', subfolder1Options, 'Locked');
+            const sampleRowId = await createSample('sub1-notmoved-3', subfolder1Options, statusRowId);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: topFolderOptions.containerPath,
+                rowIds: [sampleRowId]
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+
+            // Assert
+            const { exception, success } = response.body;
+            expect(success).toBe(false);
+            expect(exception).toEqual('Sample sub1-notmoved-3 has status sub-Locked-1, which prevents moving to a different project.');
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBeFalsy();
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBeTruthy();
+        });
+
+        it('error, cannot move locked subfolder sample, status in parent container', async () => {
+            // Arrange
+            const statusRowId = await createStatus('parent-Locked-1', topFolderOptions, 'Locked');
+            const sampleRowId = await createSample('sub1-notmoved-4', subfolder1Options, statusRowId);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: topFolderOptions.containerPath,
+                rowIds: [sampleRowId]
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+
+            // Assert
+            const { exception, success } = response.body;
+            expect(success).toBe(false);
+            expect(exception).toEqual('Sample sub1-notmoved-4 has status parent-Locked-1, which prevents moving to a different project.');
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBeFalsy();
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBeTruthy();
+        });
+
+        it('error, cannot move locked parent sample', async () => {
+            // Arrange
+            const statusRowId = await createStatus('parent-Locked-2', topFolderOptions, 'Locked')
+            const sampleRowId = await createSample('parent-notmoved-1', topFolderOptions, statusRowId);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [sampleRowId]
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+
+            // Assert
+            const { exception, success } = response.body;
+            expect(success).toBe(false);
+            expect(exception).toEqual('Sample parent-notmoved-1 has status parent-Locked-2, which prevents moving to a different project.');
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBeTruthy();
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBeFalsy();
+        });
+
+        it('error, cannot move subfolder sample with status from subfolder, move to parent', async () => {
+            // Arrange
+            const statusRowId = await createStatus('sub-Available-2', subfolder1Options);
+            const sampleRowId = await createSample('sub1-notmoved-5', subfolder1Options, statusRowId);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: topFolderOptions.containerPath,
+                rowIds: [sampleRowId]
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+
+            // Assert
+            const { exception, success } = response.body;
+            expect(success).toBe(false);
+            expect(exception).toEqual('Sample sub1-notmoved-5 has status sub-Available-2, which prevents moving to a different project.');
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBeFalsy();
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBeTruthy();
+        });
+
+        it('error, cannot move subfolder sample with status from subfolder, move to sibling', async () => {
+            // Arrange
+            const statusRowId = await createStatus('sub-Available-3', subfolder1Options);
+            const sampleRowId = await createSample('sub1-notmoved-6', subfolder1Options, statusRowId);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder2Options.containerPath,
+                rowIds: [sampleRowId]
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+
+            // Assert
+            const { exception, success } = response.body;
+            expect(success).toBe(false);
+            expect(exception).toEqual('Sample sub1-notmoved-6 has status sub-Available-3, which prevents moving to a different project.');
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBeFalsy();
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBeTruthy();
+        });
+
         it('success, move sample from parent project to subfolder', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-movetosub1-1', topFolderOptions);
+            const statusRowId = await createStatus('parent-Available-1', topFolderOptions);
+            const sampleRowId = await createSample('top-movetosub1-1', topFolderOptions, statusRowId);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
@@ -273,7 +393,8 @@ describe('ExperimentController', () => {
 
         it('success, move sample from subfolder to parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetotop-1', subfolder1Options);
+            const statusRowId = await createStatus('parent-Available-2', topFolderOptions);
+            const sampleRowId = await createSample('sub1-movetotop-1', subfolder1Options, statusRowId);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
@@ -294,7 +415,8 @@ describe('ExperimentController', () => {
 
         it('success, move sample from subfolder to sibling', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetosub2-1', subfolder1Options);
+            const statusRowId = await createStatus('parent-Available-3', topFolderOptions);
+            const sampleRowId = await createSample('sub1-movetosub2-1', subfolder1Options, statusRowId);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
