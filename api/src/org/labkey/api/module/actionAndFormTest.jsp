@@ -20,7 +20,7 @@
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
-    private final Logger _log = LogHelper.getLogger(getClass(), "");
+    private final Logger _log = LogHelper.getLogger(getClass(), "Testing of action and form classes");
     private final ViewContext _context = HttpView.currentContext();
 
     // Enumerate all registered actions, verifying that the actions and their associated forms can be instantiated
