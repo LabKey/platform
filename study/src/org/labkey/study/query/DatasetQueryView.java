@@ -718,7 +718,7 @@ public class DatasetQueryView extends StudyQueryView
             {
                 Dataset.PublishSource publishSource = dataset.getPublishSource();
                 // currently limit this to assay linked records
-                if (publishSource.getSourceType().equals("assay"))
+                if (publishSource != null && publishSource.getSourceType().equals("assay"))
                 {
                     ExpObject expObject = publishSource.resolvePublishSource(dataset.getPublishSourceId());
                     if (expObject instanceof ExpProtocol protocol)

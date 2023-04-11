@@ -965,10 +965,10 @@ public class AssayManager implements AssayService
                 return checker.getValidationSql(container, user, protocol, assayDataTable);
             }
             else
-                log.error("Assay data table not found for protocol : " + protocol.getName());
+                log.error(String.format("Assay data table not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
         }
         else
-            log.error("Assay provider not found for protocol : " + protocol.getName());
+            log.error(String.format("Assay provider not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
 
         return null;
     }
