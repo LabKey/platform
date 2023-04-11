@@ -454,12 +454,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // key is the property name, value is a map from the name to the rowId
             Map<String, Map<Integer, Integer>> nameMaterialMap = new HashMap<>();
             inputMaterials.forEach((sample, fieldName) -> {
-                try {
+                if (StringUtils.isNumeric(sample.getName()))
+                {
                     Integer nameAsInt = Integer.parseInt(sample.getName());
                     Map<Integer, Integer> idMap = nameMaterialMap.computeIfAbsent(fieldName, k -> new HashMap<>());
                     idMap.put(nameAsInt, sample.getRowId());
-                } catch (NumberFormatException ignore) {
-                    // names that are not numbers are not problematic
                 }
             });
 
