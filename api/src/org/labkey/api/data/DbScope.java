@@ -150,7 +150,12 @@ public class DbScope
         SQLFragment sql = getSqlDialect().getDatabaseSizeSql(getDatabaseName());
         if (sql != null)
         {
-            return new SqlSelector(this, sql).getObject(Long.class);
+            Long result = new SqlSelector(this, sql).getObject(Long.class);
+            // Check for null as we might not have permission in the DB to find the size. See issue 47674
+            if (result != null)
+            {
+                return result.longValue();
+            }
         }
         return -1;
     }
