@@ -63,26 +63,7 @@ import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticati
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AddUserPermission;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AssayReadPermission;
-import org.labkey.api.security.permissions.DataClassReadPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.EditSharedViewPermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.MediaReadPermission;
-import org.labkey.api.security.permissions.NotebookReadPermission;
-import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
-import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.UpdateUserPermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -138,6 +119,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
@@ -147,28 +130,29 @@ public class SecurityController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         SecurityController.class,
+        SecurityApiActions.AddAssignmentAction.class,
+        SecurityApiActions.AddGroupMemberAction.class,
+        SecurityApiActions.AdminRotatePasswordAction.class,
         SecurityApiActions.BulkUpdateGroupAction.class,
-        SecurityApiActions.GetGroupPermsAction.class,
-        SecurityApiActions.GetUserPermsAction.class,
-        SecurityApiActions.GetGroupsForCurrentUserAction.class,
+        SecurityApiActions.ClearAssignedRolesAction.class,
+        SecurityApiActions.CreateGroupAction.class,
+        SecurityApiActions.CreateNewUsersAction.class,
+        SecurityApiActions.DeleteGroupAction.class,
+        SecurityApiActions.DeletePolicyAction.class,
+        SecurityApiActions.DeleteUserAction.class,
         SecurityApiActions.EnsureLoginAction.class,
+        SecurityApiActions.GetGroupPermsAction.class,
+        SecurityApiActions.GetGroupsForCurrentUserAction.class,
+        SecurityApiActions.GetPolicyAction.class,
         SecurityApiActions.GetRolesAction.class,
         SecurityApiActions.GetSecurableResourcesAction.class,
-        SecurityApiActions.GetPolicyAction.class,
-        SecurityApiActions.SavePolicyAction.class,
-        SecurityApiActions.DeletePolicyAction.class,
-        SecurityApiActions.CreateGroupAction.class,
-        SecurityApiActions.DeleteGroupAction.class,
-        SecurityApiActions.DeleteUserAction.class,
-        SecurityApiActions.AddGroupMemberAction.class,
-        SecurityApiActions.RemoveGroupMemberAction.class,
-        SecurityApiActions.CreateNewUsersAction.class,
-        SecurityApiActions.AddAssignmentAction.class,
-        SecurityApiActions.RemoveAssignmentAction.class,
-        SecurityApiActions.ClearAssignedRolesAction.class,
-        SecurityApiActions.AdminRotatePasswordAction.class,
+        SecurityApiActions.GetUserPermsAction.class,
         SecurityApiActions.ListProjectGroupsAction.class,
-        SecurityApiActions.RenameGroupAction.class);
+        SecurityApiActions.RemoveAssignmentAction.class,
+        SecurityApiActions.RemoveGroupMemberAction.class,
+        SecurityApiActions.RenameGroupAction.class,
+        SecurityApiActions.SavePolicyAction.class
+    );
 
     public SecurityController()
     {
@@ -292,6 +276,14 @@ public class SecurityController extends SpringActionController
                 return url;
             }
             return null;
+        }
+
+        @Override
+        public ActionURL getClonePermissionsURL(User targetUser, @NotNull ActionURL returnUrl)
+        {
+            return new ActionURL(ClonePermissionsAction.class, ContainerManager.getRoot())
+                .addParameter("targetUser", targetUser.getUserId())
+                .addReturnURL(returnUrl);
         }
     }
 
@@ -964,15 +956,28 @@ public class SecurityController extends SpringActionController
     public static class CompleteUserForm
     {
         private String _prefix;
+        private boolean _includeInactive = false;
 
         public String getPrefix()
         {
             return _prefix;
         }
 
+        @SuppressWarnings("unused")
         public void setPrefix(String prefix)
         {
             _prefix = prefix;
+        }
+
+        public boolean isIncludeInactive()
+        {
+            return _includeInactive;
+        }
+
+        @SuppressWarnings("unused")
+        public void setIncludeInactive(boolean includeInactive)
+        {
+            _includeInactive = includeInactive;
         }
     }
 
@@ -985,7 +990,7 @@ public class SecurityController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser(), getContainer()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(UserManager.getUsers(completeUserForm.isIncludeInactive()), getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1422,7 +1427,7 @@ public class SecurityController extends SpringActionController
                     if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
                         errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
                     else
-                        clonePermissions(userToClone, email);
+                        clonePermissions(userToClone, UserManager.getUser(email));
                 }
                 if (user != null)
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
@@ -1433,66 +1438,162 @@ public class SecurityController extends SpringActionController
             return false;
         }
 
-        private void clonePermissions(User clone, ValidEmail userEmail)
-        {
-            // clone this user's permissions
-            final User user = UserManager.getUser(userEmail);
-
-            if (clone != null && user != null)
-            {
-                // clone direct group membership
-                for (int groupId : GroupMembershipCache.getGroupMemberships(clone.getUserId()))
-                {
-                    if (!user.isInGroup(groupId))
-                    {
-                        final Group group = SecurityManager.getGroup(groupId);
-
-                        if (group != null)
-                        {
-                            if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
-                            {
-                                try
-                                {
-                                    SecurityManager.addMember(group, user);
-                                }
-                                catch (InvalidGroupMembershipException e)
-                                {
-                                    // Best effort... fail quietly
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Now clone direct role assignments
-                Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                for (Container container: containers)
-                {
-                    if (container.isInheritedAcl())
-                        continue;
-
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
-                    Collection<Role> roles = policy.getAssignedRoles(clone);
-
-                    if (!roles.isEmpty())
-                    {
-                        for (Role role : roles)
-                        {
-                            if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
-                                policy.addRoleAssignment(user, role);
-                        }
-
-                        SecurityPolicyManager.savePolicy(policy);
-                    }
-                }
-            }
-        }
-
         @Override
         public ActionURL getSuccessURL(AddUsersForm addUsersForm)
         {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private void clonePermissions(User source, User target)
+    {
+        if (source != null && target != null)
+        {
+            // Clone group memberships
+            handleGroups(source, group -> {
+                if (!target.isInGroup(group.getUserId()))
+                {
+                    if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
+                    {
+                        try
+                        {
+                            SecurityManager.addMember(group, target);
+                        }
+                        catch (InvalidGroupMembershipException e)
+                        {
+                            // Best effort... fail quietly
+                        }
+                    }
+                }
+            });
+
+            // Clone direct role assignments
+            handleDirectRoleAssignments(source, (policy, roles) -> {
+                for (Role role : roles)
+                {
+                    if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
+                        policy.addRoleAssignment(target, role, false);
+                }
+
+                SecurityPolicyManager.savePolicy(policy);
+            });
+        }
+    }
+
+    private void deletePermissions(User user)
+    {
+        if (user != null)
+        {
+            // Delete group memberships
+            handleGroups(user, group -> {
+                if (user.isInGroup(group.getUserId()))
+                {
+                    SecurityManager.deleteMember(group, user);
+                }
+            });
+
+            // Delete direct role assignments
+            handleDirectRoleAssignments(user, (policy, roles) -> {
+                policy.clearAssignedRoles(user);
+                SecurityPolicyManager.savePolicy(policy);
+            });
+        }
+    }
+
+    private void handleGroups(User user, Consumer<Group> consumer)
+    {
+        for (int groupId : GroupMembershipCache.getGroupMemberships(user.getUserId()))
+        {
+            final Group group = SecurityManager.getGroup(groupId);
+
+            if (group != null)
+            {
+                consumer.accept(group);
+            }
+        }
+    }
+
+    private void handleDirectRoleAssignments(User user, BiConsumer<MutableSecurityPolicy, Collection<Role>> consumer)
+    {
+        Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+
+        for (Container container: containers)
+        {
+            if (container.isInheritedAcl())
+                continue;
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
+            Collection<Role> roles = policy.getAssignedRoles(user);
+
+            if (!roles.isEmpty())
+            {
+                consumer.accept(policy, roles);
+            }
+        }
+    }
+
+    public static class ClonePermissionsForm extends ReturnUrlForm
+    {
+        private int _sourceUser;
+        private int _targetUser;
+
+        public int getSourceUser()
+        {
+            return _sourceUser;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSourceUser(int sourceUser)
+        {
+            _sourceUser = sourceUser;
+        }
+
+        public int getTargetUser()
+        {
+            return _targetUser;
+        }
+
+        @SuppressWarnings("unused")
+        public void setTargetUser(int targetUser)
+        {
+            _targetUser = targetUser;
+        }
+    }
+
+    @RequiresPermission(UserManagementPermission.class)
+    public static class ClonePermissionsAction extends FormViewAction<ClonePermissionsForm>
+    {
+        private ClonePermissionsForm _form;
+
+        @Override
+        public void validateCommand(ClonePermissionsForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ClonePermissionsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _form = form;
+            return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ClonePermissionsForm form, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ClonePermissionsForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            UserController.addUserDetailsNavTrail(getContainer(), getUser(), root, _form.getReturnActionURL());
+            root.addChild("Clone Permissions");
         }
     }
 
