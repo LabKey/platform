@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -70,6 +71,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -109,13 +111,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     };
 
-    private static final Logger LOG = LogManager.getLogger(AbstractAssayTsvDataHandler.class);
+    private static final Logger LOG = LogHelper.getLogger(AbstractAssayTsvDataHandler.class, "Info related to assay data import");
     private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
     @Override
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public void importFile(ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
@@ -446,7 +448,31 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, cf);
 
+            // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
+            // inputMaterials will have been mapped by first using the input value as a name and then interpreting it as a rowId, so
+            // we employ this mapping here to adjust the data to be imported to the results table to use the rowIds of the input samples.
+
+            // key is the property name, value is a map from the name to the rowId
+            Map<String, Map<Integer, Integer>> nameMaterialMap = new HashMap<>();
+            inputMaterials.forEach((sample, fieldName) -> {
+                try {
+                    Integer nameAsInt = Integer.parseInt(sample.getName());
+                    Map<Integer, Integer> idMap = nameMaterialMap.computeIfAbsent(fieldName, k -> new HashMap<>());
+                    idMap.put(nameAsInt, sample.getRowId());
+                } catch (NumberFormatException ignore) {
+                    // names that are not numbers are not problematic
+                }
+            });
+
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
+            fileData.forEach(d -> {
+                nameMaterialMap.forEach((name, idMap)  -> {
+                    if (d.get(name) != null && idMap.containsKey(d.get(name)))
+                    {
+                        d.put(name, idMap.get(d.get(name)));
+                    }
+                });
+            });
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
@@ -700,7 +726,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * TODO: Replace with a DataIterator pipeline
      * NOTE: Mutates the rawData list in-place
-     * @return the set of materials that are inputs to this run
+     * @return the map of materials that are inputs to this run
      */
     private Map<ExpMaterial, String> checkData(Container container,
                                                User user,
@@ -1017,21 +1043,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Collect sample names or ids for each of the SampleType lookup columns
                 // Add any sample inputs to the rowInputLSIDs
                 ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
-                if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
+                if (o != null && ((byNameSS != null || lookupToAllSamplesByName.contains(pd)) ||
+                        lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
+                    // TODO container filter?
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
                     Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
-                    ExpMaterial material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, (String)o, cache, materialCache);
-                    if (material != null)
-                    {
-                        materialInputs.putIfAbsent(material, pd.getName());
-                        rowInputLSIDs.add(material.getLSID());
-                    }
-                }
-
-                if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
-                {
-                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
+                    ExpMaterial material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, o.toString(), cache, materialCache);
                     if (material != null)
                     {
                         materialInputs.putIfAbsent(material, pd.getName());
@@ -1213,7 +1231,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 DomainProperty property = _importMap.get(key);
                 if (property != null)
                 {
-                    // Find all of the potential synonyms
+                    // Find all the potential synonyms
                     Set<String> allNames = _propToNames.get(property);
                     if (allNames != null)
                     {

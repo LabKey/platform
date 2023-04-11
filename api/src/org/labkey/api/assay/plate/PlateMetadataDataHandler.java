@@ -1,6 +1,7 @@
 package org.labkey.api.assay.plate;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.ExperimentException;
@@ -56,7 +57,7 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
     }
 
     @Override
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public void importFile(ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         // this is just a noop data handler, the actual parsing and importing of the plate metadata needs to happen in
         // AbstractAssayTsvDataHandler.addAssayPlateMetadata because we need to access the inserted result data to get at the
