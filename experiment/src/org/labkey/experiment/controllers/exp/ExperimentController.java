@@ -132,6 +132,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -7718,7 +7719,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(MoveSamplesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            int samplesMoved = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), null, form.getAuditBehavior());
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
             resp.put("success", true);
             resp.put("samplesMoved", samplesMoved);
@@ -7730,26 +7731,26 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getTargetContainer() == null)
             {
-                errors.reject(ERROR_MSG, "A target container must be specified for the move operation.");
+                errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
                 return;
             }
 
             _targetContainer = getTargetContainer(form);
             if (_targetContainer == null)
             {
-                errors.reject(ERROR_MSG, "The target container was not found: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "The target container was not found: " + form.getTargetContainer() + ".");
                 return;
             }
 
             if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
             {
-                errors.reject(ERROR_MSG, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
                 return;
             }
 
             if (!isValidTargetContainer(getContainer(), _targetContainer))
             {
-                errors.reject(ERROR_MSG, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
                 return;
             }
         }
@@ -7785,21 +7786,21 @@ public class ExperimentController extends SpringActionController
             Set<Integer> sampleIds = form.getIds(false);
             if (sampleIds == null || sampleIds.isEmpty())
             {
-                errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
+                errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
                 return;
             }
 
             _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
             if (_materials.size() != sampleIds.size())
             {
-                errors.reject(ERROR_MSG, "Unable to find all samples for the move operation.");
+                errors.reject(ERROR_GENERIC, "Unable to find all samples for the move operation.");
                 return;
             }
 
             // verify all samples are from the current container
             if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
             {
-                errors.reject(ERROR_MSG, "All samples must be from the current container for the move operation.");
+                errors.reject(ERROR_GENERIC, "All samples must be from the current container for the move operation.");
                 return;
             }
 
@@ -7807,8 +7808,7 @@ public class ExperimentController extends SpringActionController
             // TODO remove this once we support moving / splitting the experiment run
             if (_materials.stream().anyMatch(material -> material.getRunId() != null))
             {
-                errors.reject(ERROR_MSG, "Only supporting move of root samples at this time.");
-                return;
+                errors.reject(ERROR_GENERIC, "Only supporting move of root samples at this time.");
             }
         }
     }
@@ -7816,6 +7816,8 @@ public class ExperimentController extends SpringActionController
     public static class MoveSamplesForm extends DataViewSnapshotSelectionForm
     {
         private String _targetContainer;
+        private String _userComment;
+        private AuditBehaviorType _auditBehavior;
 
         public String getTargetContainer()
         {
@@ -7825,6 +7827,26 @@ public class ExperimentController extends SpringActionController
         public void setTargetContainer(String targetContainer)
         {
             _targetContainer = targetContainer;
+        }
+
+        public String getUserComment()
+        {
+            return _userComment;
+        }
+
+        public void setUserComment(String userComment)
+        {
+            _userComment = userComment;
+        }
+
+        public AuditBehaviorType getAuditBehavior()
+        {
+            return _auditBehavior;
+        }
+
+        public void setAuditBehavior(AuditBehaviorType auditBehavior)
+        {
+            _auditBehavior = auditBehavior;
         }
     }
 }

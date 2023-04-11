@@ -77,6 +77,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -100,6 +101,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -596,7 +598,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            addSampleTypeAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+            addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -625,9 +627,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl sampleType, Long txAuditId, String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String auditUserComment)
     {
-        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", sampleType.getName()));
+        addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
+    }
+
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
+    {
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), comment);
         event.setUserComment(auditUserComment);
 
         if (txAuditId != null)
@@ -638,7 +645,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSourceLsid(sampleType.getLSID());
             event.setSampleSetName(sampleType.getName());
         }
-        event.setInsertUpdateChoice("delete type");
+        event.setInsertUpdateChoice(insertUpdateChoice);
         AuditLogService.get().addEvent(user, event);
     }
 
@@ -1160,7 +1167,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return event;
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (getExpSchema().getScope().getCurrentTransaction() != null)
@@ -1176,6 +1183,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSampleType(type.getName());
             event.setSampleTypeId(type.getRowId());
         }
+        event.setUserComment(userComment);
         event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
         return event;
     }
@@ -1183,13 +1191,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata)
     {
-        AuditLogService.get().addEvent(user, createAuditRecord(container, comment, sample, metadata));
+        AuditLogService.get().addEvent(user, createAuditRecord(container, comment, userComment, sample, metadata));
     }
 
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
-        SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata);
+        SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }
@@ -1624,43 +1632,64 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container targetContainer, @NotNull User user)
+    public int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
     {
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
 
-        Set<ExpSampleType> sampleTypes = samples.stream().map(ExpMaterial::getSampleType).collect(Collectors.toSet());
-        List<Integer> sampleIds = samples.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
-        int materialRowsUpdated;
+        Map<ExpSampleType, List<Integer>> sampleTypesMap = new HashMap<>();
+        samples.forEach(sample -> {
+            List<Integer> sampleIds = sampleTypesMap.computeIfAbsent(sample.getSampleType(), t -> new ArrayList<>());
+            sampleIds.add(sample.getRowId());
+        });
+        int materialRowsUpdated = 0;
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            // update for exp.material.container
-            materialRowsUpdated = materialRowContainerUpdate(sampleIds, targetContainer, user);
+            for (Map.Entry<ExpSampleType, List<Integer>> entry: sampleTypesMap.entrySet())
+            {
+                ExpSampleType sampleType = entry.getKey();
+                List<Integer> sampleIds = entry.getValue();
+                // update for exp.material.container
+                materialRowsUpdated = materialRowContainerUpdate(sampleIds, targetContainer, user);
 
-            // update for exp.object.container
-            objectRowContainerUpdate(sampleIds, targetContainer);
+                // update for exp.object.container
+                objectRowContainerUpdate(sampleIds, targetContainer);
 
-            // update for exp.materialaliasmap.container
-            materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
+                // update for exp.materialaliasmap.container
+                materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
 
-            // update inventory.item.container
-            InventoryService inventoryService = InventoryService.get();
-            if (inventoryService != null)
-                inventoryService.moveSamples(sampleIds, targetContainer, user);
+                // update inventory.item.container
+                InventoryService inventoryService = InventoryService.get();
+                if (inventoryService != null)
+                    inventoryService.moveSamples(sampleIds, targetContainer, user);
 
-            // TODO add audit events for each sample move or for batch?
-            //      do we want events for both the source and target containers?
-            //      maybe the sample type event get the summary event for the source container and target container
-            //      then if detailed auditing is on, then add events for each sample in target container
+                // create summary audit entries for the source and target containers
+                auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
+                if (auditBehavior != AuditBehaviorType.NONE)
+                {
+                    addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                            "Moved " + samples.size() + " samples to " + targetContainer.getPath(), userComment, "moved samples out");
+                    addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                            "Moved " + samples.size() + " samples from " + sourceContainer.getPath(), userComment, "moved samples in");
+                }
+                // move the events associated with the samples that have moved
+                SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
+                auditProvider.moveEvents(targetContainer, sampleIds);
+
+                // create new events for each sample that was moved.
+                if (auditBehavior == AuditBehaviorType.DETAILED)
+                {
+                    for (ExpMaterial sample : samples)
+                        addAuditEvent(user, targetContainer, "Moved sample from " + sourceContainer.getPath() + " to " + targetContainer.getPath(), userComment, sample, null);
+                }
+            }
 
             transaction.addCommitTask(() -> {
                 // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                 // based on the modified date
-                for (ExpSampleType sampleType : sampleTypes)
-                {
+                for (ExpSampleType sampleType : sampleTypesMap.keySet())
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
-                }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.commit();
