@@ -1645,7 +1645,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Map<String, Integer> updateCounts = new HashMap<>();
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
-        updateCounts.put("sampleAuditLogs", 0);
+        updateCounts.put("sampleAuditEvents", 0);
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
