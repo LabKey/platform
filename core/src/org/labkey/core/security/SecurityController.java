@@ -1305,7 +1305,7 @@ public class SecurityController extends SpringActionController
     {
         private boolean _sendMail;
         private String _newUsers;
-        private String _sourceUser;
+        private String _cloneUser;
         private boolean _skipProfile;
         private String _provider = null;
 
@@ -1345,9 +1345,12 @@ public class SecurityController extends SpringActionController
         }
 
         @SuppressWarnings("unused")
-        public void setSourceUser(String sourceUser){_sourceUser = sourceUser;}
+        public void setCloneUser(String cloneUser)
+        {
+            _cloneUser = cloneUser;
+        }
 
-        public String getSourceUser(){return _sourceUser;}
+        public String getCloneUser(){return _cloneUser;}
 
         @SuppressWarnings("unused")
         public void setSkipProfile(boolean skipProfile)
@@ -1402,7 +1405,7 @@ public class SecurityController extends SpringActionController
             List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
             User userToClone = null;
 
-            final String sourceUser = form.getSourceUser();
+            final String sourceUser = form.getCloneUser();
             if (sourceUser != null && sourceUser.length() > 0)
             {
                 try
@@ -1565,18 +1568,18 @@ public class SecurityController extends SpringActionController
 
     public static class ClonePermissionsForm extends ReturnUrlForm
     {
-        private String _sourceUser;
+        private String _cloneUser;
         private int _targetUser;
 
-        public String getSourceUser()
+        public String getCloneUser()
         {
-            return _sourceUser;
+            return _cloneUser;
         }
 
         @SuppressWarnings("unused")
-        public void setSourceUser(String sourceUser)
+        public void setCloneUser(String cloneUser)
         {
-            _sourceUser = sourceUser;
+            _cloneUser = cloneUser;
         }
 
         public int getTargetUser()
@@ -1601,11 +1604,11 @@ public class SecurityController extends SpringActionController
         @Override
         public void validateCommand(ClonePermissionsForm form, Errors errors)
         {
-            String sourceEmail = form.getSourceUser();
+            String sourceEmail = form.getCloneUser();
 
             if (null == sourceEmail)
             {
-                errors.reject(ERROR_MSG, "Source user is required");
+                errors.reject(ERROR_MSG, "Clone user is required");
                 return;
             }
 
@@ -1615,13 +1618,13 @@ public class SecurityController extends SpringActionController
             }
             catch (InvalidEmailException e)
             {
-                errors.reject(ERROR_MSG, "Invalid source user email address");
+                errors.reject(ERROR_MSG, "Invalid clone user email address");
                 return;
             }
 
             if (null == _source)
             {
-                errors.reject(ERROR_MSG, "Unknown source user");
+                errors.reject(ERROR_MSG, "Unknown clone user");
                 return;
             }
 
