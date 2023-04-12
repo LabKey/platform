@@ -16,8 +16,8 @@
 package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 
 /**
  * Represents an action that might be performed on a set of files in the pipeline.
- * User: jeckels
- * Date: Dec 16, 2009
  */
 public class PipelineAction
 {
