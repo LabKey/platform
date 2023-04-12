@@ -304,6 +304,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7850,5 +7851,109 @@ public class ExperimentController extends SpringActionController
         {
             _targetContainer = targetContainer;
         }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetEffectiveSchemaQueryAction extends ReadOnlyApiAction<EffectiveQueryForm>
+    {
+        private ContainerFilter.Type _containerFilterType = null;
+        @Override
+        public void validateForm(EffectiveQueryForm form, Errors errors)
+        {
+            try
+            {
+                _containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+            }
+
+            if (form.getTimestamp() == null)
+                throw new IllegalArgumentException("'timestamp' parameter is required");
+        }
+
+        @Override
+        public Object execute(EffectiveQueryForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            User user = getUser();
+            ContainerFilter dataTypeCF = _containerFilterType.create(container, user);
+            ExperimentService experimentService = ExperimentService.get();
+            Date effectiveDate = new Date(form.getTimestamp());
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
+            String effectiveSchemaName = schemaName;
+            String effectiveQueryName = queryName;
+            if ("samples".equalsIgnoreCase(schemaName))
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getEffectiveSampleType(container, user, queryName, effectiveDate, dataTypeCF);
+                if (sampleType != null)
+                    effectiveQueryName = sampleType.getName(); // sample type might have been renamed
+            }
+            else if ("exp.data".equalsIgnoreCase(schemaName))
+            {
+                ExpDataClass dataClass = experimentService.getEffectiveDataClass(container, user, queryName, effectiveDate, dataTypeCF);
+                if (dataClass != null) // dataclass might have been renamed
+                    effectiveQueryName = dataClass.getName();
+            }
+            else if ("assay.general".equalsIgnoreCase(schemaName))
+            {
+                // TODO: get effective schemaname, when assay design renaming is supported
+                // effectiveSchemaName = getEffectiveExpProtocol
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("schemaName", effectiveSchemaName);
+            resp.put("queryName", effectiveQueryName);
+            return resp;
+        }
+    }
+
+    public static class EffectiveQueryForm extends QueryForm
+    {
+        private String _containerFilter;
+        private Long _timestamp;
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            var result = super.createQuerySettings(schema);
+            if (getContainerFilter() != null)
+            {
+                try
+                {
+                    ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(getContainerFilter());
+                    result.setContainerFilterName(containerFilterType.name());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+                }
+            }
+            return result;
+        }
+
+        public Long getTimestamp()
+        {
+            return _timestamp;
+        }
+
+        public void setTimestamp(Long timestamp)
+        {
+            _timestamp = timestamp;
+        }
+
     }
 }
