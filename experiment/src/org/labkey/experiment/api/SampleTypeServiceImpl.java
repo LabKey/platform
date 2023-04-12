@@ -1632,7 +1632,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
     {
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
@@ -1642,7 +1642,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             List<Integer> sampleIds = sampleTypesMap.computeIfAbsent(sample.getSampleType(), t -> new ArrayList<>());
             sampleIds.add(sample.getRowId());
         });
-        int materialRowsUpdated = 0;
+        Map<String, Integer> updateCounts = new HashMap<>();
+        updateCounts.put("samples", 0);
+        updateCounts.put("sampleAliases", 0);
+        updateCounts.put("sampleAuditLogs", 0);
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1651,18 +1654,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 ExpSampleType sampleType = entry.getKey();
                 List<Integer> sampleIds = entry.getValue();
                 // update for exp.material.container
-                materialRowsUpdated = materialRowContainerUpdate(sampleIds, targetContainer, user);
+                updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
                 objectRowContainerUpdate(sampleIds, targetContainer);
 
                 // update for exp.materialaliasmap.container
-                materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
+                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
 
                 // update inventory.item.container
                 InventoryService inventoryService = InventoryService.get();
                 if (inventoryService != null)
-                    inventoryService.moveSamples(sampleIds, targetContainer, user);
+                {
+                    Map<String, Integer> inventoryCounts = inventoryService.moveSamples(sampleIds, targetContainer, user);
+                    inventoryCounts.forEach((key, count) -> {
+                        updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
+                    });
+                    updateCounts.putAll(inventoryService.moveSamples(sampleIds, targetContainer, user));
+                }
 
                 // create summary audit entries for the source and target containers
                 auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
@@ -1675,7 +1684,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
-                auditProvider.moveEvents(targetContainer, sampleIds);
+                updateCounts.put("sampleAuditLogs", auditProvider.moveEvents(targetContainer, sampleIds));
 
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
@@ -1695,7 +1704,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             transaction.commit();
         }
 
-        return materialRowsUpdated;
+        return updateCounts;
     }
 
     private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
@@ -1720,13 +1729,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
-    private void materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    private int materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
     {
         TableInfo aliasMapTable = getTinfoMaterialAliasMap();
         SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
         aliasMapUpdate.append(")");
-        new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+        return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
     }
 }
