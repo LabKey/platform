@@ -16,10 +16,11 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -161,19 +162,17 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     {
         CohortImpl cohort = new CohortImpl();
         cohort.setLabel(o.getString("Label"));
-        if (o.containsKey("SubjectCount") && !"".equals(o.getString("SubjectCount")))
+        if (o.has("SubjectCount") && !"".equals(o.getString("SubjectCount")))
             cohort.setSubjectCount(o.getInt("SubjectCount"));
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
             cohort.setRowId(o.getInt("RowId"));
 
-        Object visitMapInfo = o.get("VisitMap");
-        if (visitMapInfo != null && visitMapInfo instanceof JSONArray)
+        JSONArray visitMapJSON = o.optJSONArray("VisitMap");
+        if (visitMapJSON != null)
         {
-            JSONArray visitMapJSON = (JSONArray) visitMapInfo;
-
             List<TreatmentVisitMapImpl> treatmentVisitMap = new ArrayList<>();
-            for (int j = 0; j < visitMapJSON.length(); j++)
-                treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(visitMapJSON.getJSONObject(j)));
+            for (JSONObject json : JsonUtil.toJSONObjectList(visitMapJSON))
+                treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(json));
 
             cohort.setTreatmentVisitMap(treatmentVisitMap);
         }

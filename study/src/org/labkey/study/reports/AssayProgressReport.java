@@ -22,8 +22,8 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
@@ -42,6 +42,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -213,7 +214,7 @@ public class AssayProgressReport extends AbstractReport
         if (jsonData != null)
         {
             JSONArray assays = new JSONArray(jsonData);
-            for (JSONObject assay : assays.toJSONObjectArray())
+            for (JSONObject assay : JsonUtil.toJSONObjectList(assays))
             {
                 String rowId = assay.getString("RowId");
                 String assayName = assay.getString("AssayName");

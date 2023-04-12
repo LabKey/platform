@@ -16,7 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.TreatmentVisitMap;
 
@@ -107,9 +107,9 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
     {
         TreatmentVisitMapImpl visitMap = new TreatmentVisitMapImpl();
         visitMap.setVisitId(o.getInt("VisitId"));
-        if (o.containsKey("CohortId"))
+        if (o.has("CohortId"))
             visitMap.setCohortId(o.getInt("CohortId"));
-        if (o.containsKey("TreatmentId"))
+        if (o.has("TreatmentId"))
         {
             if (o.get("TreatmentId") instanceof Integer)
                 visitMap.setTreatmentId(o.getInt("TreatmentId"));

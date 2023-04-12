@@ -31,7 +31,6 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
@@ -2600,7 +2599,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class BrowseDataForm extends ReturnUrlForm implements CustomApiForm
+    public static class BrowseDataForm extends ReturnUrlForm implements ApiJsonForm
     {
         private int index;
         private String pageId;
@@ -2608,7 +2607,7 @@ public class ReportsController extends SpringActionController
         private boolean includeMetadata = true;
         private boolean manageView;
         private int _parent = -2;
-        Map<String, Object> _props;
+        private JSONObject _json;
         private boolean includeUncategorized = false;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
@@ -2688,14 +2687,14 @@ public class ReportsController extends SpringActionController
         public void setIncludeUncategorized(boolean includeUncategorized) { this.includeUncategorized = includeUncategorized; }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            _props = props;
+            _json = json;
         }
 
-        public Map<String, Object> getProps()
+        public JSONObject getJson()
         {
-            return _props;
+            return _json;
         }
     }
 
@@ -2726,7 +2725,7 @@ public class ReportsController extends SpringActionController
                 {
                     webPartProps.put("useDynamicHeight", props.get("webpart.useDynamicHeight"));
                 }
-                // older installs wont have a useDynamicHeight prop but thats ok
+                // older installs won't have a useDynamicHeight prop but that's ok
                 else if (props.containsKey("webpart.height") && null != props.get("webpart.height") && !props.get("webpart.height").equals("0"))
                 {
                     webPartProps.put("useDynamicHeight", "false");
@@ -2746,7 +2745,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                props = resolveJSONProperties(form.getProps());
+                props = resolveJSONProperties(form.getJson());
             }
 
             SortOrder sortOrder;
@@ -2869,18 +2868,17 @@ public class ReportsController extends SpringActionController
             return defaultState;
         }
 
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        private Map<String, String> resolveJSONProperties(JSONObject json)
         {
-            JSONObject jsonProps = (JSONObject) formProps;
             Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
-            if (null != jsonProps && !jsonProps.isEmpty())
+            if (null != json && !json.isEmpty())
             {
                 try
                 {
                     // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    JSONArray dataTypes = json.getJSONArray("dataTypes");
                     for (int i=0; i < dataTypes.length(); i++)
                     {
                         props.put((String) dataTypes.get(i), "on");
@@ -3219,7 +3217,7 @@ public class ReportsController extends SpringActionController
             else if (form.isManageView())
                 props = getAdminConfiguration();
             else
-                props = resolveJSONProperties(form.getProps());
+                props = resolveJSONProperties(form.getJson());
 
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
@@ -3247,18 +3245,17 @@ public class ReportsController extends SpringActionController
             return defaultState;
         }
 
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        private Map<String, String> resolveJSONProperties(JSONObject json)
         {
-            JSONObject jsonProps = (JSONObject) formProps;
             Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
-            if (null != jsonProps && !jsonProps.isEmpty())
+            if (null != json && !json.isEmpty())
             {
                 try
                 {
                     // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    JSONArray dataTypes = json.getJSONArray("dataTypes");
                     for (int i=0; i < dataTypes.length(); i++)
                     {
                         props.put((String) dataTypes.get(i), "on");
