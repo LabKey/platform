@@ -25,7 +25,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -38,6 +40,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -45,11 +48,15 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
@@ -64,6 +71,7 @@ import org.labkey.api.security.permissions.RestrictedDeletePermission;
 import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -98,6 +106,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,6 +125,8 @@ import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
  */
 public class DatasetQueryView extends StudyQueryView
 {
+    public static final String EXPERIMENTAL_LINKED_DATASET_CHECK = "LinkedDatasetCheck";
+
     private final DatasetDefinition _dataset;
     private final boolean _showSourceLinks;
 
@@ -686,12 +698,10 @@ public class DatasetQueryView extends StudyQueryView
         }
     }
 
-
-
     @Override
     protected DataRegion createDataRegion()
     {
-        DataRegion rgn = new DatasetDataRegion();
+        DataRegion rgn = new DatasetDataRegion(getSchema().getContainer(), getSchema().getUser(), _dataset);
         configureDataRegion(rgn);
         return rgn;
     }
@@ -699,6 +709,36 @@ public class DatasetQueryView extends StudyQueryView
 
     public static class DatasetDataRegion extends DataRegion
     {
+        private Set<String> _divergedRows = Collections.emptySet();
+        private ColumnInfo _lsid;
+
+        public DatasetDataRegion(Container container, User user, DatasetDefinition dataset)
+        {
+            if (dataset.isPublishedData() && ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LINKED_DATASET_CHECK))
+            {
+                Dataset.PublishSource publishSource = dataset.getPublishSource();
+                // currently limit this to assay linked records
+                if (publishSource != null && publishSource.getSourceType().equals("assay"))
+                {
+                    ExpObject expObject = publishSource.resolvePublishSource(dataset.getPublishSourceId());
+                    if (expObject instanceof ExpProtocol protocol)
+                    {
+                        LinkedResultsChecker helper = new LinkedResultsChecker(user, dataset);
+                        Collection<String> results = AssayService.get().checkResults(container, user, protocol, helper, String.class);
+                        if (!results.isEmpty())
+                        {
+                            _divergedRows = new HashSet<>(results);
+                            _lsid = dataset.getTableInfo(user).getColumn(FieldKey.fromParts("Lsid"));
+
+                            addMessageSupplier(x -> List.of(new DataRegion.Message("Highlighted rows may have different subject or " +
+                                    "timepoint values from the source assay. You may need to recall and relink the affected rows. Administrators can " +
+                                    "configure this check from experimental features.", DataRegion.MessageType.WARNING, DataRegion.MessagePart.header)));
+                        }
+                    }
+                }
+            }
+        }
+
         @Override
         protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
         {
@@ -748,6 +788,87 @@ public class DatasetQueryView extends StudyQueryView
                     msg.append(sessionGroup.getParticipantIds().length);
                 }
                 headerMessage.append(msg);
+            }
+        }
+
+        @Override
+        protected boolean isErrorRow(RenderContext ctx, int rowIndex)
+        {
+            return super.isErrorRow(ctx, rowIndex) ||
+                    (_lsid != null && _divergedRows.contains(_lsid.getValue(ctx)));
+        }
+
+        private static class LinkedResultsChecker implements AssayService.ResultsCheckHelper
+        {
+            private DatasetDefinition _dataset;
+            private User _user;
+            private FieldKey _assaySubject;
+            private FieldKey _assayVisit;
+
+            public LinkedResultsChecker(User user, DatasetDefinition dataset)
+            {
+                _dataset = dataset;
+                _user = user;
+            }
+
+            @Override
+            public @NotNull Logger getLogger()
+            {
+                return _systemLog;
+            }
+
+            @Override
+            public @NotNull List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                List<ValidationError> errors = new ArrayList<>();
+                if (provider != null)
+                {
+                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                    _assaySubject = tableMetadata.getParticipantIDFieldKey();
+                    _assayVisit = tableMetadata.getVisitIDFieldKey(_dataset.getStudy().getTimepointType());
+
+                    if (_assaySubject == null || _assayVisit == null)
+                    {
+                        errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results table does not have subject and timepoint columns"));
+                    }
+                    else if (dataTable.getColumn(_assaySubject) == null || dataTable.getColumn(_assayVisit) == null)
+                    {
+                        errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results table does not have the standard columns : " +
+                                _assaySubject + " and " + _assayVisit));
+                    }
+                }
+                return errors;
+            }
+
+            @Override
+            public SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable)
+            {
+                var sqs = StudyQuerySchema.createSchema(_dataset.getStudy(), user, null);
+                TableInfo datasetTable = sqs.getDatasetTable(_dataset, ContainerFilter.EVERYTHING);
+
+                String studyVisit = _dataset.getStudy().getTimepointType().isVisitBased() ? "SequenceNum" : "Date";
+                if (datasetTable instanceof FilteredTable<?> filteredTable)
+                {
+                    TableInfo rootTable = filteredTable.getRealTable();
+
+                    // create the validation query
+                    SQLFragment sql = new SQLFragment("SELECT DS.lsid")
+                            .append(" FROM ").append(rootTable,"DS")
+                            .append(" JOIN ").append(dataTable, "AT")
+                            .append(" ON DS.").append(_dataset.getKeyPropertyName()).append(" = ").append("AT.").append(dataTable.getPkColumnNames().get(0))
+                            .append(" WHERE DS.").append(studyVisit).append(" <> AT.").append(_assayVisit).append(" OR ")
+                            .append(" DS.ParticipantId <> AT.").append(_assaySubject);
+
+                    return sql;
+                }
+                return null;
+            }
+
+            @Override
+            public @Nullable ContainerFilter getContainerFilter()
+            {
+                return ContainerFilter.EVERYTHING;
             }
         }
     }

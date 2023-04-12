@@ -65,7 +65,8 @@ public interface SampleTypeService
         RemoveFromWorkflow("removing from a workflow"),
         AddAssayData("addition of associated assay data"),
         LinkToStudy("linking to study"),
-        RecallFromStudy("recalling from a study");
+        RecallFromStudy("recalling from a study"),
+        Move("moving to a different project");
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
 

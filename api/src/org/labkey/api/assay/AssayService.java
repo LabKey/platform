@@ -16,12 +16,14 @@
 
 package org.labkey.api.assay;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
@@ -29,6 +31,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -238,4 +241,33 @@ public interface AssayService
      * Returns the TableInfo for the given assay domain based on the assay domain ID.
      */
     TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf);
+
+    /**
+     * Provides a mechanism to check or validate the results for a specified protocol. An instance of ResultsCheckHelper
+     * is used to generate the SQL used during the validation of protocol results.
+     */
+    @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker);
+    @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker, Class<E> clazz);
+
+    interface ResultsCheckHelper
+    {
+        @NotNull Logger getLogger();
+
+        /**
+         * Checks whether the results table is valid, has the required fields etc. If errors are returned
+         * the validation will not run and the errors will be logged.
+         */
+        @NotNull List<ValidationError> isValid(ExpProtocol protocol, TableInfo dataTable);
+
+        /**
+         * The SQLFragment to execute to run the check, the SQL should return the expected results returned to the checkResults
+         * function.
+         */
+        @Nullable SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable);
+
+        /**
+         * The container filter to use during construction of the assay results table
+         */
+        @Nullable ContainerFilter getContainerFilter();
+    }
 }

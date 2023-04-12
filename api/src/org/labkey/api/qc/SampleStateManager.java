@@ -2,6 +2,7 @@ package org.labkey.api.qc;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.query.ExpSchema;
 
 import java.util.List;
@@ -34,6 +35,25 @@ public class SampleStateManager extends DataStateManager
                 return false;
             }
         }).collect(Collectors.toList());
+    }
+
+    public List<DataState> getAllProjectStates(Container container)
+    {
+        List<DataState> states = getStates(container);
+        if (!container.isProject())
+            states.addAll(getStates(container.getProject()));
+        if (container != ContainerManager.getSharedContainer())
+            states.addAll(getStates(ContainerManager.getSharedContainer()));
+        return states;
+    }
+
+    public DataState getState(Container container, Integer stateId)
+    {
+        if (stateId == null)
+            return null;
+
+        List<DataState> allStates = getAllProjectStates(container);
+        return allStates.stream().filter(state -> stateId.equals(state.getRowId())).findFirst().orElse(null);
     }
 
     @Override
