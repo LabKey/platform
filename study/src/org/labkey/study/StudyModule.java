@@ -163,6 +163,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
+import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -415,6 +416,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+
+        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
+                "Assay linked to study consistency check",
+                "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
+                false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

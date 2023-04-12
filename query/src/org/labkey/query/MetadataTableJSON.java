@@ -176,8 +176,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             ColumnType xmlColumn = columnsToDelete.get(metadataColumnJSON.getName());
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(metadataColumnJSON.getName());
+            boolean isNewColumn = false;
             if (rawColumnInfo == null)
             {
+                isNewColumn = true;
                 rawColumnInfo = new BaseColumnInfo((FieldKey)null, (TableInfo)null);
                 // Establish the type of the column
                 if (metadataColumnJSON.getWrappedColumnName() != null)
@@ -206,7 +208,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn = xmlTable.getColumns().addNewColumn();
                 xmlColumn.setColumnName(metadataColumnJSON.getName());
 
-                if (metadataColumnJSON.getWrappedColumnName() != null)
+                if (metadataColumnJSON.getWrappedColumnName() != null && isNewColumn)
                 {
                     // This is a newly created column that wraps another column
                     xmlColumn.setWrappedColumnName(metadataColumnJSON.getWrappedColumnName());
@@ -504,6 +506,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 {
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
+                }
+                else if (metadataColumnJSON.getWrappedColumnName() != null)
+                {
+                    // ensure the wrapped column name is set for all saved columns
+                    xmlColumn.setWrappedColumnName(metadataColumnJSON.getWrappedColumnName());
                 }
             }
         }

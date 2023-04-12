@@ -215,7 +215,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         if (getSampleStateId() == null)
             return null;
-        return DataStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
+
+        return SampleStatusService.get().getStateForRowId(getContainer(), getSampleStateId());
     }
 
 
