@@ -1585,18 +1585,19 @@ public class PipelineController extends SpringActionController
             MutablePropertyValues params = new BaseApiAction.JsonPropertyValues(json);
             BaseViewAction.defaultBindParameters(this, "form", params);
 
-            Object assayProvider = json.get("assay provider");
+            Object assayProvider = json.opt("assay provider");
             if (assayProvider != null)
                 setAssayProvider(String.valueOf(assayProvider));
 
-            Object customParamKey = json.get("customParamKey");
-            if (customParamKey instanceof JSONArray paramKeyJson)
+            JSONArray paramKeyJson = json.optJSONArray("customParamKey");
+            if (paramKeyJson != null)
             {
                 for (Object o : paramKeyJson.toList())
                     _customParamKey.add(String.valueOf(o));
             }
-            Object customParamValue = json.get("customParamValue");
-            if (customParamValue instanceof JSONArray paramValueJson)
+
+            JSONArray paramValueJson = json.getJSONArray("customParamValue");
+            if (paramValueJson != null)
             {
                 for (Object o : paramValueJson.toList())
                     _customParamValue.add(String.valueOf(o));
