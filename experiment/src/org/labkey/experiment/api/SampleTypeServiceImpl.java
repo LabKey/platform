@@ -1678,19 +1678,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (auditBehavior != AuditBehaviorType.NONE)
                 {
                     addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
-                            "Moved " + samples.size() + " samples to " + targetContainer.getPath(), userComment, "moved samples out");
+                            "Moved " + StringUtilsLabKey.pluralize(samples.size(), "sample") + " to " + targetContainer.getPath(), userComment, "moved samples out");
                     addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
-                            "Moved " + samples.size() + " samples from " + sourceContainer.getPath(), userComment, "moved samples in");
+                            "Moved " + StringUtilsLabKey.pluralize(samples.size(), "sample")  + " from " + sourceContainer.getPath(), userComment, "moved samples in");
                 }
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
-                updateCounts.put("sampleAuditLogs", auditProvider.moveEvents(targetContainer, sampleIds));
+                updateCounts.put("sampleAuditEvents", auditProvider.moveEvents(targetContainer, sampleIds));
 
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
                 {
                     for (ExpMaterial sample : samples)
-                        addAuditEvent(user, targetContainer, "Moved sample from " + sourceContainer.getPath() + " to " + targetContainer.getPath(), userComment, sample, null);
+                    {
+                        SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample project was updated.", userComment, sample, null);
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, Map.of("Project", sourceContainer.getName())));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, Map.of("Project", targetContainer.getName())));
+                        AuditLogService.get().addEvent(user, event);
+                    }
                 }
             }
 
