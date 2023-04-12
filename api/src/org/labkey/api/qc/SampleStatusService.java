@@ -48,6 +48,8 @@ public interface SampleStatusService
 
     @NotNull List<DataState> getAllProjectStates(Container container);
 
+    DataState getStateForRowId(Container container, Integer stateId);
+
     boolean isOperationPermitted(Container container, Integer stateId, @NotNull SampleTypeService.SampleOperations operation);
 
     boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation);
@@ -82,13 +84,13 @@ public interface SampleStatusService
         @Override
         public @NotNull List<DataState> getAllProjectStates(Container container)
         {
-            SampleStateManager sampleStateManager = SampleStateManager.getInstance();
-            List<DataState> states = sampleStateManager.getStates(container);
-            if (!container.isProject())
-                states.addAll(sampleStateManager.getStates(container.getProject()));
-            if (container != ContainerManager.getSharedContainer())
-                states.addAll(sampleStateManager.getStates(ContainerManager.getSharedContainer()));
-            return states;
+            return SampleStateManager.getInstance().getAllProjectStates(container);
+        }
+
+        @Override
+        public DataState getStateForRowId(Container container, Integer stateId)
+        {
+            return SampleStateManager.getInstance().getState(container, stateId);
         }
 
         @Override

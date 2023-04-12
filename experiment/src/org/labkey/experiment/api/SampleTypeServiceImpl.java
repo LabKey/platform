@@ -16,8 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -44,7 +42,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -56,6 +53,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -82,10 +80,11 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -223,6 +222,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private TableInfo getTinfoProtocolInput()
     {
         return ExperimentServiceImpl.get().getTinfoProtocolInput();
+    }
+
+    private TableInfo getTinfoMaterialAliasMap()
+    {
+        return ExperimentServiceImpl.get().getTinfoMaterialAliasMap();
     }
 
     private DbSchema getExpSchema()
@@ -482,7 +486,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DataState getSampleState(Container container, Integer stateRowId)
     {
-        return DataStateManager.getInstance().getStateForRowId(container, stateRowId);
+        return SampleStatusService.get().getStateForRowId(container, stateRowId);
     }
 
     private ExpSampleTypeImpl _getSampleType(String lsid)
@@ -1619,4 +1623,81 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotAmounts;
     }
 
+    @Override
+    public int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container targetContainer, @NotNull User user)
+    {
+        if (samples == null || samples.isEmpty())
+            throw new IllegalArgumentException("No samples provided to move operation.");
+
+        Set<ExpSampleType> sampleTypes = samples.stream().map(ExpMaterial::getSampleType).collect(Collectors.toSet());
+        List<Integer> sampleIds = samples.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
+        int materialRowsUpdated;
+
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            // update for exp.material.container
+            materialRowsUpdated = materialRowContainerUpdate(sampleIds, targetContainer, user);
+
+            // update for exp.object.container
+            objectRowContainerUpdate(sampleIds, targetContainer);
+
+            // update for exp.materialaliasmap.container
+            materialAliasMapRowContainerUpdate(sampleIds, targetContainer);
+
+            // update inventory.item.container
+            InventoryService inventoryService = InventoryService.get();
+            if (inventoryService != null)
+                inventoryService.moveSamples(sampleIds, targetContainer, user);
+
+            // TODO add audit events for each sample move or for batch?
+            //      do we want events for both the source and target containers?
+            //      maybe the sample type event get the summary event for the source container and target container
+            //      then if detailed auditing is on, then add events for each sample in target container
+
+            transaction.addCommitTask(() -> {
+                // update search index for moved samples via indexSampleType() helper, it filters for samples to index
+                // based on the modified date
+                for (ExpSampleType sampleType : sampleTypes)
+                {
+                    SampleTypeServiceImpl.get().indexSampleType(sampleType);
+                }
+            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+
+            transaction.commit();
+        }
+
+        return materialRowsUpdated;
+    }
+
+    private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
+    {
+        TableInfo materialTable = getTinfoMaterial();
+        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(materialTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
+        return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
+    }
+
+    private void objectRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    {
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, sampleIds);
+        objectUpdate.append(")");
+        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private void materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    {
+        TableInfo aliasMapTable = getTinfoMaterialAliasMap();
+        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
+        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
+        aliasMapUpdate.append(")");
+        new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
 }
