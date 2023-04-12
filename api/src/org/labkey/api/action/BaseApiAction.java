@@ -517,6 +517,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     public static class JsonPropertyValues extends MutablePropertyValues
     {
+        @Deprecated
         public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {
             addPropertyValues(jsonObj);
@@ -527,6 +528,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             addPropertyValues(jsonObj);
         }
 
+        @Deprecated
         private void addPropertyValues(JSONObject jsonObj) throws JSONException
         {
             for (String key : jsonObj.keySet())

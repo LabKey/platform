@@ -19,7 +19,6 @@ import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -216,13 +215,13 @@ public class AssayProgressReport extends AbstractReport
             JSONArray assays = new JSONArray(jsonData);
             for (JSONObject assay : JsonUtil.toJSONObjectList(assays))
             {
-                String rowId = assay.getString("RowId");
-                String assayName = assay.getString("AssayName");
-                String schemaName = assay.getString("schemaName");
-                String queryName = assay.getString("queryName");
+                int rowId = assay.optInt("RowId", -1);
+                String assayName = assay.optString("AssayName", null);
+                String schemaName = assay.optString("schemaName", null);
+                String queryName = assay.optString("queryName", null);
 
-                if (rowId != null && assayName != null && schemaName != null && queryName != null)
-                    assayConfigMap.put(NumberUtils.toInt(rowId), assay);
+                if (rowId != -1 && assayName != null && schemaName != null && queryName != null)
+                    assayConfigMap.put(rowId, assay);
             }
         }
 

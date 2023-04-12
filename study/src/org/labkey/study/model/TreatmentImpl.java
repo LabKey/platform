@@ -164,7 +164,7 @@ public class TreatmentImpl implements Treatment
 
     public static TreatmentImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        TreatmentImpl treatment = new TreatmentImpl(container, o.getString("Label"), o.getString("Description"));
+        TreatmentImpl treatment = new TreatmentImpl(container, o.getString("Label"), o.optString("Description", null));
 
         if (o.has("RowId"))
         {
