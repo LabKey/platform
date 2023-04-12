@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.QueryService;
 
 import java.util.LinkedHashMap;
@@ -251,7 +251,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         if (row.get("samplestate") != null && !StringUtils.isBlank(row.get("samplestate")))
         {
-            DataState status = DataStateManager.getInstance().getStateForRowId(container, Integer.parseInt(row.get("samplestate")));
+            DataState status = SampleStatusService.get().getStateForRowId(container, Integer.parseInt(row.get("samplestate")));
             if (status != null)
                 return status.getLabel();
         }

@@ -377,7 +377,8 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.RemoveFromWorkflow,
                 SampleTypeService.SampleOperations.AddAssayData,
                 SampleTypeService.SampleOperations.LinkToStudy,
-                SampleTypeService.SampleOperations.RecallFromStudy
+                SampleTypeService.SampleOperations.RecallFromStudy,
+                SampleTypeService.SampleOperations.Move
         )),
         Locked(Set.of(
                 SampleTypeService.SampleOperations.AddToPicklist
