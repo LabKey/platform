@@ -55,6 +55,8 @@ dependencies {
             // (but seem OK for tomcat8).  We exclude jaxen since that doesn't seem to be required for our purposes
             // Another possibility here would be to upgrade to jaxen-1.1.6 and dom4j-1.6.1
             exclude group:"jaxen", module: "jaxen"
+            // Avoid classloader conflicts with Tomcat's copy
+            exclude group: 'javax.activation', module: 'javax.activation-api'
         }
     )
 
