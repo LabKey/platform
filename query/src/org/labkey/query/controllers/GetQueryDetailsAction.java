@@ -158,7 +158,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         }
 
         if (null == tinfo)
-            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+            throw new NotFoundException("Could not find the specified query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
         resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
