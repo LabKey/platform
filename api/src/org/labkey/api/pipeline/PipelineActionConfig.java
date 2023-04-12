@@ -16,8 +16,8 @@
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,8 +26,6 @@ import java.util.List;
 /**
  * Metadata about an available {@link PipelineAction} that can be serialized and sent to the UI to let the user see
  * and invoke the desired action.
- * User: klum
- * Date: Jan 9, 2010
  */
 public class PipelineActionConfig
 {

@@ -7535,7 +7535,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DeleteMPIForm implements CustomApiForm
+    public static class DeleteMPIForm implements ApiJsonForm
     {
         private final List<Pair<String, String>> _params = new ArrayList<>();
 
@@ -7545,42 +7545,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            for (Map.Entry<String, Object> entry : props.entrySet())
+            for (String key : json.keySet())
             {
-                _params.add(new Pair<>(entry.getKey(), String.valueOf(entry.getValue())));
+                _params.add(new Pair<>(key, String.valueOf(json.get(key))));
             }
-        }
-    }
-
-    // Hidden action that allows re-running of the specimen module enabling upgrade process. Could be useful on
-    // deployments that add the specimen module after the original upgrade runs.
-    @RequiresSiteAdmin
-    public static class EnableSpecimenModuleAction extends ConfirmAction<Object>
-    {
-        @Override
-        public ModelAndView getConfirmView(Object o, BindException errors)
-        {
-            return new HtmlView(HtmlString.of("Are you sure you want to enable the specimen module in all study folders that have specimen rows?"));
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            StudyManager.getInstance().enableSpecimenModuleInStudyFolders(getUser());
-            return true;
-        }
-
-        @Override
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        @Override
-        public @NotNull URLHelper getSuccessURL(Object o)
-        {
-            return urlProvider(ProjectUrls.class).getBeginURL(getContainer());
         }
     }
 }

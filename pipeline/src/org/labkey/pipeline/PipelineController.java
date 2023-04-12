@@ -18,11 +18,13 @@ package org.labkey.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -31,6 +33,7 @@ import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -564,33 +567,16 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static class SaveOptionsForm implements CustomApiForm
-    {
-        private Map<String,Object> _props;
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            _props = props;
-        }
-
-        public Map<String,Object> getProps()
-        {
-            return _props;
-        }
-    }
-
     @RequiresPermission(AdminPermission.class)
-    public class UpdatePipelineActionConfigAction extends MutatingApiAction<SaveOptionsForm>
+    public class UpdatePipelineActionConfigAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
-        public ApiResponse execute(SaveOptionsForm form, BindException errors)
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
-            Map<String, Object> props = form.getProps();
-            options.updateFromJSON(props);
+            options.updateFromJSON(form.getJsonObject());
             svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);
@@ -1588,31 +1574,31 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static class PipelineTriggerForm extends TriggerConfiguration implements CustomApiForm
+    public static class PipelineTriggerForm extends TriggerConfiguration implements ApiJsonForm
     {
         private final ReturnUrlForm urlForm = new ReturnUrlForm();
         private String _pipelineTask;
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            MutablePropertyValues params = new MutablePropertyValues(props);
+            MutablePropertyValues params = new BaseApiAction.JsonPropertyValues(json);
             BaseViewAction.defaultBindParameters(this, "form", params);
 
-            Object assayProvider = props.get("assay provider");
+            Object assayProvider = json.get("assay provider");
             if (assayProvider != null)
                 setAssayProvider(String.valueOf(assayProvider));
 
-            Object customParamKey = props.get("customParamKey");
-            if (customParamKey instanceof JSONArray)
+            Object customParamKey = json.get("customParamKey");
+            if (customParamKey instanceof JSONArray paramKeyJson)
             {
-                for (Object o : ((JSONArray)customParamKey).toArray())
+                for (Object o : paramKeyJson.toList())
                     _customParamKey.add(String.valueOf(o));
             }
-            Object customParamValue = props.get("customParamValue");
-            if (customParamValue instanceof JSONArray)
+            Object customParamValue = json.get("customParamValue");
+            if (customParamValue instanceof JSONArray paramValueJson)
             {
-                for (Object o : ((JSONArray)customParamValue).toArray())
+                for (Object o : paramValueJson.toList())
                     _customParamValue.add(String.valueOf(o));
             }
         }

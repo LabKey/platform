@@ -18,8 +18,9 @@ package org.labkey.core.reports;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.Entity;
 import org.labkey.api.docker.DockerService;
 import org.labkey.api.pipeline.file.PathMapper;
@@ -34,13 +35,12 @@ import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.labkey.api.reports.report.r.RScriptEngine.DOCKER_IMAGE_TYPE;
 import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
-public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
+public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, ApiJsonForm
 {
     // Most definitions don't require encryption, so retrieve AES128 lazily
     static final Supplier<Algorithm> AES = () -> {
@@ -544,15 +544,15 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     }
 
     @Override
-    public void bindProperties(Map<String, Object> props)
+    public void bindJson(JSONObject json)
     {
         // Use default binding for most fields
-        MutablePropertyValues params = new MutablePropertyValues(props);
+        MutablePropertyValues params = new BaseApiAction.JsonPropertyValues(json);
         BaseViewAction.defaultBindParameters(this, "form", params);
 
         // Handle pathMap
-        if (props.get("pathMap") != null)
-            _pathMap = props.get("pathMap").toString();
+        if (json.opt("pathMap") != null)
+            _pathMap = json.get("pathMap").toString();
     }
 
     @Override
