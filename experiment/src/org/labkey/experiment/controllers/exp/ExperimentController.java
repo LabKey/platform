@@ -140,6 +140,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -7710,8 +7711,6 @@ public class ExperimentController extends SpringActionController
         public void validateForm(MoveSamplesForm form, Errors errors)
         {
             validateTargetContainer(form, errors);
-
-            // TODO prevent moving if data QC states don't exist in target container scope
             validateSampleIds(form, errors);
         }
 
@@ -7783,7 +7782,7 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            Set<Integer> sampleIds = form.getIds(false);
+            Set<Integer> sampleIds = form.getIds(true);
             if (sampleIds == null || sampleIds.isEmpty())
             {
                 errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
@@ -7801,6 +7800,31 @@ public class ExperimentController extends SpringActionController
             if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
             {
                 errors.reject(ERROR_MSG, "All samples must be from the current container for the move operation.");
+                return;
+            }
+
+            // verify allowed moves based on sample statuses
+            List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
+            for (ExpMaterial material : _materials)
+            {
+                DataState sampleStatus = material.getSampleState();
+                if (sampleStatus == null) continue;
+
+                // prevent move for locked samples
+                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
+                {
+                    invalidStatusSamples.add(material);
+                }
+                // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
+                // only applies when moving from child to parent or child to sibling
+                else if (!getContainer().isProject() && sampleStatus.getContainer().equals(getContainer()))
+                {
+                    invalidStatusSamples.add(material);
+                }
+            }
+            if (!invalidStatusSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
                 return;
             }
 

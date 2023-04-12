@@ -1,4 +1,4 @@
-import { hookServer, RequestOptions, SecurityRole, successfulResponse, TestUser } from '@labkey/test';
+import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
 
 const server = hookServer(process.env);
@@ -16,7 +16,7 @@ let subfolder2Options;
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment']
+        ensureModules: ['experiment'],
     });
     topFolderOptions = { containerPath: PROJECT_NAME };
 
@@ -79,6 +79,10 @@ async function sampleExists(sampleRowId: number, folderOptions: RequestOptions) 
 
 describe('ExperimentController', () => {
     describe('moveSamples.api', () => {
+        // NOTE: the MoveSamplesAction is in the experiment module, but the sample status related test cases won't
+        // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
+        // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
+
         it('requires POST', () => {
             server.get('experiment', 'moveSamples.api').expect(405);
         });
