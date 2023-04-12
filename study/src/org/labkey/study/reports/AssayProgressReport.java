@@ -241,7 +241,7 @@ public class AssayProgressReport extends AbstractReport
             {
                 JSONObject assayConfig = assayConfigMap.get(assay.getRowId());
 
-                String folder = assayConfig.getString("folderId");
+                String folder = assayConfig.optString("folderId");
                 if (folder != null)
                 {
                     Container container = ContainerManager.getForId(folder);
