@@ -7782,7 +7782,7 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            Set<Integer> sampleIds = form.getIds(false);
+            Set<Integer> sampleIds = form.getIds(true);
             if (sampleIds == null || sampleIds.isEmpty())
             {
                 errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
