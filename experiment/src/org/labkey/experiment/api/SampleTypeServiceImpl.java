@@ -1669,7 +1669,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     inventoryCounts.forEach((key, count) -> {
                         updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
                     });
-                    updateCounts.putAll(inventoryService.moveSamples(sampleIds, targetContainer, user));
                 }
 
                 // create summary audit entries for the source and target containers
