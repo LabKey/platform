@@ -342,10 +342,6 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: jeckels
- * Date: Dec 13, 2007
- */
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
@@ -5769,7 +5765,7 @@ public class ExperimentController extends SpringActionController
                 if (outputData.size() > 0)
                     successMessage.append(outputData.size()).append(" data");
 
-                org.json.old.JSONObject ret;
+                JSONObject ret;
                 if (run != null)
                     ret = ExperimentJSONConverter.serializeRun(run, null, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                 else
@@ -6977,9 +6973,9 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+                            JSONObject props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                             props.put("docid", docId);
-                            notInIndex.add(props);
+                            notInIndex.add(props.toMap());
                         }
                     }
                 }

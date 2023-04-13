@@ -24,8 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -107,6 +107,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -709,9 +710,9 @@ public class IssuesController extends SpringActionController
         {
             if (_issues == null)
             {
-                if (getOldJsonObject().containsKey("issues"))
+                if (getJsonObject().has("issues"))
                 {
-                    _issues = getOldJsonObject().getJSONArray("issues");
+                    _issues = getJsonObject().getJSONArray("issues");
                 }
             }
             return _issues;
@@ -728,7 +729,7 @@ public class IssuesController extends SpringActionController
                 JSONArray issues = getIssues();
                 if (issues != null)
                 {
-                    for (JSONObject rec : issues.toJSONObjectArray())
+                    for (JSONObject rec : JsonUtil.toJSONObjectList(issues))
                     {
                         IssuesForm form = new IssuesForm();
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
