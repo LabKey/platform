@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.19.0",
-    "@labkey/components": "2.323.4",
+    "@labkey/api": "1.19.0-fb-intSampleNameWithAssays47509.0",
+    "@labkey/components": "2.325.1-fb-intSampleNameWithAssays47509.0",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
