@@ -18,11 +18,12 @@ package org.labkey.api.files;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.ActionLink;
@@ -40,21 +41,21 @@ import java.util.Map;
 
 /**
  * Configuration for a file web part UI, including what buttons and file actions should be exposed to users.
- * User: klum
- * Date: Feb 2, 2010
  */
 public class FilesAdminOptions
 {
+    private static final Comparator<FilesTbarBtnOption> TBAR_BTN_COMPARATOR = new TbarButtonComparator();
+
+    private final Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<>();
+    private final Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<>();
+
     private boolean _importDataEnabled = true;
     private Boolean _showFolderTree;
     private Boolean _expandFileUpload;
     /** True if we should get our toolbar configuration (the actions available for files) from our parent container */
     private boolean _inheritedTbarConfig = false;
     private Container _container;
-    private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<>();
     private fileConfig _fileConfig = fileConfig.useDefault;
-    private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<>();
-    private static Comparator<FilesTbarBtnOption> TBAR_BTN_COMPARATOR = new TbarButtonComparator();
     private String _gridConfig;
 
     public enum fileConfig {
@@ -382,18 +383,16 @@ public class FilesAdminOptions
         }
     }
 
-    public void updateFromJSON(Map<String, Object> props)
+    public void updateFromJSON(JSONObject props)
     {
-        if (props.containsKey(configProps.actions.name()))
+        if (props.has(configProps.actions.name()))
         {
             Object actions = props.get(configProps.actions.name());
-            if (actions instanceof JSONArray)
+            if (actions instanceof JSONArray jarray)
             {
-                JSONArray jarray = (JSONArray)actions;
-
-                for (int i=0; i < jarray.length(); i++)
+                for (JSONObject configJson : JsonUtil.toJSONObjectList(jarray))
                 {
-                    PipelineActionConfig config = PipelineActionConfig.fromJSON(jarray.getJSONObject(i));
+                    PipelineActionConfig config = PipelineActionConfig.fromJSON(configJson);
                     if (config != null)
                     {
                         if (_pipelineConfig.containsKey(config.getId()))
@@ -404,48 +403,38 @@ public class FilesAdminOptions
                 }
             }
         }
-        if (props.containsKey(configProps.importDataEnabled.name()))
+        if (props.has(configProps.importDataEnabled.name()))
             setImportDataEnabled((Boolean)props.get(configProps.importDataEnabled.name()));
 
-        if (props.containsKey(configProps.fileConfig.name()))
+        if (props.has(configProps.fileConfig.name()))
             setFileConfig(fileConfig.valueOf((String) props.get(configProps.fileConfig.name())));
 
-        if (props.containsKey(configProps.inheritedTbarConfig.name()))
+        if (props.has(configProps.inheritedTbarConfig.name()))
             setInheritedTbarConfig((Boolean) props.get(configProps.inheritedTbarConfig.name()));
 
-        if (props.containsKey(configProps.expandFileUpload.name()))
+        if (props.has(configProps.expandFileUpload.name()))
             setExpandFileUpload((Boolean)props.get(configProps.expandFileUpload.name()));
 
-        if (props.containsKey(configProps.showFolderTree.name()))
+        if (props.has(configProps.showFolderTree.name()))
             setShowFolderTree((Boolean)props.get(configProps.showFolderTree.name()));
 
-        if (props.containsKey(configProps.tbarActions.name()))
+        if (props.has(configProps.tbarActions.name()))
         {
             Object actions = props.get(configProps.tbarActions.name());
-            if (actions instanceof JSONArray)
+            if (actions instanceof JSONArray jarray)
             {
-                JSONArray jarray = (JSONArray)actions;
                 _tbarConfig.clear();
-
-                for (int i=0; i < jarray.length(); i++)
+                for (JSONObject optionJson : JsonUtil.toJSONObjectList(jarray))
                 {
-                    FilesTbarBtnOption o = FilesTbarBtnOption.fromJSON(jarray.getJSONObject(i));
+                    FilesTbarBtnOption o = FilesTbarBtnOption.fromJSON(optionJson);
                     if (o != null)
                         _tbarConfig.put(o.getId(), o);
                 }
             }
         }
 
-        if (props.containsKey(configProps.gridConfig.name()))
+        if (props.has(configProps.gridConfig.name()))
             _gridConfig = String.valueOf(props.get(configProps.gridConfig.name()));
-    }
-
-    public static FilesAdminOptions fromJSON(Container c, Map<String,Object> props)
-    {
-        FilesAdminOptions options = new FilesAdminOptions(c);
-
-        options.updateFromJSON(props);
-        return options;
     }
 
     public Map<String, Object> toJSON()

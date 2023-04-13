@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline.trigger;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 
 import java.util.Date;
@@ -133,7 +133,7 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
         if (StringUtils.isEmpty(configuration))
             _configMap = new HashMap<>();
         else
-            _configMap = new JSONObject(configuration);
+            _configMap = new JSONObject(configuration).toMap();
     }
 
     public void setConfiguration(Map<String, Object> configMap)

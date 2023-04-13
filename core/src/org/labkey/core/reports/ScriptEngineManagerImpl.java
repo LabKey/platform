@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
@@ -140,7 +140,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
                     String newEncryptedPassword = Base64.encodeBase64String(encryptAes.encrypt(decryptedPassword));
-                    json.replace(PASSWORD_FIELD, newEncryptedPassword);
+                    json.put(PASSWORD_FIELD, newEncryptedPassword);
                     assert decryptedPassword.equals(encryptAes.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
                     Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
                 }
