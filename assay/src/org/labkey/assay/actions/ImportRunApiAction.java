@@ -109,6 +109,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         String jobNotificationProvider;
         boolean forceAsync;
         boolean allowCrossRunFileInputs;
+        boolean allowLookupByAlternateKey;
 
         // TODO: support additional input/output data/materials
         Map<Object, String> inputData = new HashMap<>();
@@ -141,6 +142,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             jobDescription = json.optString("jobDescription", null);
             jobNotificationProvider = json.optString("jobNotificationProvider", null);
             allowCrossRunFileInputs = json.optBoolean("allowCrossRunFileInputs");
+            allowLookupByAlternateKey = json.optBoolean("allowLookupByAlternateKey");
 
             runProperties = json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             if (runProperties != null)
@@ -183,6 +185,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             jobDescription = form.getJobDescription();
             jobNotificationProvider = form.getJobNotificationProvider();
             allowCrossRunFileInputs = form.isAllowCrossRunFileInputs();
+            allowLookupByAlternateKey = form.isAllowLookupByAlternateKey();
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -236,7 +239,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setLogger(LOG)
                 .setJobDescription(jobDescription)
                 .setJobNotificationProvider(jobNotificationProvider)
-                .setAllowCrossRunFileInputs(allowCrossRunFileInputs);
+                .setAllowCrossRunFileInputs(allowCrossRunFileInputs)
+                .setAllowLookupByAlternateKey(allowLookupByAlternateKey);
 
         if (file != null && rawData != null)
             throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
@@ -362,6 +366,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _jobNotificationProvider;
         private boolean _forceAsync;
         private boolean _allowCrossRunFileInputs;
+        private boolean _allowLookupByAlternateKey = false;
 
         public JSONObject getJson()
         {
@@ -551,6 +556,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
         {
             _allowCrossRunFileInputs = allowCrossRunFileInputs;
+        }
+
+        public boolean isAllowLookupByAlternateKey()
+        {
+            return _allowLookupByAlternateKey;
+        }
+
+        public void setAllowLookupByAlternateKey(boolean allowLookupByAlternateKey)
+        {
+            _allowLookupByAlternateKey = allowLookupByAlternateKey;
         }
 
         @Override

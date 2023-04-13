@@ -57,7 +57,7 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
     }
 
     @Override
-    public void importFile(ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         // this is just a noop data handler, the actual parsing and importing of the plate metadata needs to happen in
         // AbstractAssayTsvDataHandler.addAssayPlateMetadata because we need to access the inserted result data to get at the
