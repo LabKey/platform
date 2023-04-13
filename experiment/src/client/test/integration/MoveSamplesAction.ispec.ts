@@ -5,7 +5,6 @@ const server = hookServer(process.env);
 const PROJECT_NAME = 'ExperimentControllerTest Project';
 const SAMPLE_TYPE_NAME = 'TestMoveSampleType';
 
-let adminUserOptions: RequestOptions;
 let editorUserOptions: RequestOptions;
 let subEditorUserOptions: RequestOptions;
 let authorUserOptions: RequestOptions;
@@ -28,12 +27,6 @@ beforeAll(async () => {
     subfolder2Options = { containerPath: subfolder2.path };
 
     // create users with different permissions
-    const adminUser = await server.createUser('test_admin@expctrltest.com', 'pwSuperA1!');
-    await server.addUserToRole(adminUser.username, SecurityRole.ProjectAdmin, PROJECT_NAME);
-    await server.addUserToRole(adminUser.username, 'org.labkey.api.security.roles.CanSeeAuditLogRole', "/");
-
-    editorUserOptions = { requestContext: await server.createRequestContext(adminUser) };
-
     const editorUser = await server.createUser('test_editor@expctrltest.com', 'pwSuperA1!');
     await server.addUserToRole(editorUser.username, SecurityRole.Editor, PROJECT_NAME);
     await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder1.path);
@@ -94,7 +87,7 @@ async function getSampleTypeAuditLogs(sampleType: string, folderOptions: Request
         'query.columns': 'Comment,usercomment,transactionId',
         'query.sort': '-Created',
         'query.maxRows': expectedNumber
-    }, { ...folderOptions, ...adminUserOptions }).expect(successfulResponse);
+    }, { ...folderOptions  }).expect(successfulResponse);
     return response.body.rows;
 }
 
@@ -106,7 +99,7 @@ async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: Re
         'query.columns': 'Comment,usercomment,transactionId',
         'query.sort': '-Created',
         'query.maxRows': expectedNumber
-    }, { ...folderOptions, ...adminUserOptions }).expect(successfulResponse);
+    }, { ...folderOptions }).expect(successfulResponse);
     return response.body.rows;
 }
 
