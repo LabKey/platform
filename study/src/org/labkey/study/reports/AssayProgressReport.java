@@ -19,6 +19,7 @@ import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -215,6 +216,7 @@ public class AssayProgressReport extends AbstractReport
             JSONArray assays = new JSONArray(jsonData);
             for (JSONObject assay : JsonUtil.toJSONObjectList(assays))
             {
+                LogManager.getLogger(AssayProgressReport.class).info(assay.toString());
                 int rowId = assay.optInt("RowId", -1);
                 String assayName = assay.optString("AssayName", null);
                 String schemaName = assay.optString("schemaName", null);
@@ -242,11 +244,15 @@ public class AssayProgressReport extends AbstractReport
                 JSONObject assayConfig = assayConfigMap.get(assay.getRowId());
 
                 String folder = assayConfig.optString("folderId");
+                LogManager.getLogger(AssayProgressReport.class).info("folderID: " + folder);
                 if (folder != null)
                 {
                     Container container = ContainerManager.getForId(folder);
                     if (container != null)
+                    {
                         assay.setQueryFolder(container);
+                        LogManager.getLogger(AssayProgressReport.class).info("Query folder: " + container.getPath());
+                    }
                 }
                 assay.setSchemaName(assayConfig.getString("schemaName"));
                 assay.setQueryName(assayConfig.getString("queryName"));
