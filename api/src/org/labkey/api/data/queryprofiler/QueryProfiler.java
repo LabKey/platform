@@ -498,7 +498,7 @@ public class QueryProfiler
                 QueryTracker.exportRowHeader(_pw);
 
                 for (QueryTracker tracker : export.descendingSet())
-                    tracker.exportRow(_pw);
+                    tracker.exportRow(this);
             }
 
             return export.size();

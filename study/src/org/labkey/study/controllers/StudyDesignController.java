@@ -16,10 +16,11 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -38,6 +39,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -503,7 +505,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    public static class StudyProductsForm implements CustomApiForm
+    public static class StudyProductsForm implements ApiJsonForm
     {
         private List<ProductImpl> _products;
 
@@ -518,18 +520,16 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
             Container container = HttpView.currentContext().getContainer();
 
-            Object productsInfo = props.get("products");
-            if (productsInfo != null && productsInfo instanceof JSONArray)
+            JSONArray productsJSON = json.optJSONArray("products");
+            if (productsJSON != null)
             {
-                JSONArray productsJSON = (JSONArray) productsInfo;
-
                 _products = new ArrayList<>();
-                for (int i = 0; i < productsJSON.length(); i++)
-                    _products.add(ProductImpl.fromJSON(productsJSON.getJSONObject(i), container));
+                for (JSONObject product : JsonUtil.toJSONObjectList(productsJSON))
+                    _products.add(ProductImpl.fromJSON(product, container));
             }
         }
     }

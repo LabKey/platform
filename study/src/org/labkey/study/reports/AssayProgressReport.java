@@ -19,11 +19,10 @@ import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
@@ -42,6 +41,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -213,15 +213,15 @@ public class AssayProgressReport extends AbstractReport
         if (jsonData != null)
         {
             JSONArray assays = new JSONArray(jsonData);
-            for (JSONObject assay : assays.toJSONObjectArray())
+            for (JSONObject assay : JsonUtil.toJSONObjectList(assays))
             {
-                String rowId = assay.getString("RowId");
-                String assayName = assay.getString("AssayName");
-                String schemaName = assay.getString("schemaName");
-                String queryName = assay.getString("queryName");
+                int rowId = assay.optInt("RowId", -1);
+                String assayName = assay.optString("AssayName", null);
+                String schemaName = assay.optString("schemaName", null);
+                String queryName = assay.optString("queryName", null);
 
-                if (rowId != null && assayName != null && schemaName != null && queryName != null)
-                    assayConfigMap.put(NumberUtils.toInt(rowId), assay);
+                if (rowId != -1 && assayName != null && schemaName != null && queryName != null)
+                    assayConfigMap.put(rowId, assay);
             }
         }
 
@@ -241,12 +241,14 @@ public class AssayProgressReport extends AbstractReport
             {
                 JSONObject assayConfig = assayConfigMap.get(assay.getRowId());
 
-                String folder = assayConfig.getString("folderId");
+                String folder = assayConfig.optString("folderId", null);
                 if (folder != null)
                 {
                     Container container = ContainerManager.getForId(folder);
                     if (container != null)
+                    {
                         assay.setQueryFolder(container);
+                    }
                 }
                 assay.setSchemaName(assayConfig.getString("schemaName"));
                 assay.setQueryName(assayConfig.getString("queryName"));

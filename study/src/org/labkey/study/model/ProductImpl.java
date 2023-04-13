@@ -16,10 +16,11 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Product;
+import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -178,27 +179,23 @@ public class ProductImpl implements Product
     {
         ProductImpl product = new ProductImpl(container, o.getString("Label"), o.getString("Role"), o.getString("Type"));
 
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
             product.setRowId(o.getInt("RowId"));
 
-        if (o.containsKey("Antigens") && o.get("Antigens")  instanceof JSONArray)
+        if (o.has("Antigens") && o.get("Antigens") instanceof JSONArray antigensJSON)
         {
-            JSONArray antigensJSON = (JSONArray) o.get("Antigens");
-
             List<ProductAntigenImpl> antigens = new ArrayList<>();
-            for (int j = 0; j < antigensJSON.length(); j++)
-                antigens.add(ProductAntigenImpl.fromJSON(antigensJSON.getJSONObject(j), container));
+            for (JSONObject productAntigen : JsonUtil.toJSONObjectList(antigensJSON))
+                antigens.add(ProductAntigenImpl.fromJSON(productAntigen, container));
 
             product.setAntigens(antigens);
         }
 
-        if (o.containsKey("DoseAndRoute") && o.get("DoseAndRoute")  instanceof JSONArray)
+        if (o.has("DoseAndRoute") && o.get("DoseAndRoute") instanceof JSONArray doseJSON)
         {
-            JSONArray doseJSON = (JSONArray) o.get("DoseAndRoute");
-
             List<DoseAndRoute> doseAndRoutes = new ArrayList<>();
-            for (int j = 0; j < doseJSON.length(); j++)
-                doseAndRoutes.add(DoseAndRoute.fromJSON(doseJSON.getJSONObject(j), container, product.getRowId()));
+            for (JSONObject doseAndRoute : JsonUtil.toJSONObjectList(doseJSON))
+                doseAndRoutes.add(DoseAndRoute.fromJSON(doseAndRoute, container, product.getRowId()));
 
             product.setDoseAndRoutes(doseAndRoutes);
         }

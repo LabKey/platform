@@ -23,11 +23,11 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -37,7 +37,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
@@ -366,7 +365,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     cause = e.getMessage();
 
                 // try to parse out the error location so we can position the editor selection
-                errorInfo = parseErrorPosition(cause);
+                errorInfo = parseErrorPosition(cause).toMap();
                 errorInfo.put("message", String.format(msg, cause));
             }
 
@@ -627,31 +626,27 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    public static class SurveyResponseForm extends SurveyForm implements CustomApiForm
+    public static class SurveyResponseForm extends SurveyForm implements ApiJsonForm
     {
         private Map<String, Object> _responses = new HashMap<>();
-        private BeanObjectFactory<Survey> _factory = new BeanObjectFactory<>(Survey.class);
-        private Survey _bean;
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            if (props.containsKey("rowId"))
-                _rowId = NumberUtils.createInteger(String.valueOf(props.get("rowId")));
-            if (props.containsKey("label"))
-                _label = String.valueOf(props.get("label"));
-            if (props.containsKey("surveyDesignId"))
-                _surveyDesignId = NumberUtils.createInteger(String.valueOf(props.get("surveyDesignId")));
-            if (props.containsKey("status"))
-                _status = String.valueOf(props.get("status"));
-            if (props.containsKey("responses"))
-                _responses = (JSONObject)props.get("responses");
-            if (props.containsKey("responsesPk"))
-                _responsesPk = String.valueOf(props.get("responsesPk"));
-            if (props.containsKey("submit"))
-                _isSubmitted = Boolean.parseBoolean(String.valueOf(props.get("submit")));
-
-            //_bean = _factory.fromMap(props);
+            if (json.has("rowId"))
+                _rowId = NumberUtils.createInteger(String.valueOf(json.get("rowId")));
+            if (json.has("label"))
+                _label = String.valueOf(json.get("label"));
+            if (json.has("surveyDesignId"))
+                _surveyDesignId = NumberUtils.createInteger(String.valueOf(json.get("surveyDesignId")));
+            if (json.has("status"))
+                _status = String.valueOf(json.get("status"));
+            if (json.has("responses"))
+                _responses = json.getJSONObject("responses").toMap();
+            if (json.has("responsesPk"))
+                _responsesPk = String.valueOf(json.get("responsesPk"));
+            if (json.has("submit"))
+                _isSubmitted = Boolean.parseBoolean(String.valueOf(json.get("submit")));
         }
 
         public Map<String, Object> getResponses()

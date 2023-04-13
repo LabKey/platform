@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ByteArrayHashKey;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ExceptionUtil;
@@ -306,8 +307,10 @@ class QueryTracker
         out.println("</tr>");
     }
 
-    public void exportRow(PrintWriter out)
+    public void exportRow(TSVWriter tsvWriter)
     {
+        PrintWriter out = tsvWriter.getPrintWriter();
+
         String tab = "";
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
@@ -319,7 +322,8 @@ class QueryTracker
             }
         }
 
-        out.print(tab + getSql().trim().replaceAll("(\\s)+", " "));
+        out.print(tab);
+        out.print(tsvWriter.quoteValue(getSql()));
         out.print('\n');
     }
 }
