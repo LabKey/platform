@@ -47,6 +47,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
@@ -1448,24 +1450,38 @@ public class SecurityController extends SpringActionController
             for (ValidEmail email : emails)
             {
                 HtmlString result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
-                User user = UserManager.getUser(email);
+                User newUser = UserManager.getUser(email);
 
-                if (HtmlString.isBlank(result) && user != null)
+                if (newUser == null)
                 {
-                    ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
-                    result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
-                }
-                else if (userToClone != null)
-                {
-                    if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
-                        errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
-                    else
-                        clonePermissions(userToClone, UserManager.getUser(email));
-                }
-                if (user != null)
-                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
-                else
                     errors.addError(new LabKeyErrorWithHtml("", result));
+                }
+                else
+                {
+                    if (HtmlString.isBlank(result))
+                    {
+                        ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), newUser.getUserId(), returnURL);
+                        result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user. Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
+                    }
+                    else if (userToClone != null)
+                    {
+                        if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
+                        {
+                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
+                        }
+                        else
+                        {
+                            try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
+                            {
+                                audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
+                                clonePermissions(userToClone, UserManager.getUser(email));
+                                result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
+                                transaction.commit();
+                            }
+                        }
+                    }
+                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, newUser.getUserId(), PageFlowUtil.filter(newUser.getEmail()))));
+                }
             }
 
             return false;
@@ -1476,6 +1492,14 @@ public class SecurityController extends SpringActionController
         {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private void audit(User targetUser, String message)
+    {
+        GroupAuditEvent event = new GroupAuditEvent(ContainerManager.getRoot().getId(), message);
+        event.setUser(targetUser.getUserId());
+        event.setProjectId(ContainerManager.getRoot().getId());
+        AuditLogService.get().addEvent(getUser(), event);
     }
 
     private void clonePermissions(User source, User target)
@@ -1653,14 +1677,13 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(ClonePermissionsForm form, BindException errors) throws Exception
         {
-            deletePermissions(_target);
-            clonePermissions(_source, _target);
-
-            String message = "The user " + _target.getEmail() + " had their group memberships and role assignments deleted and replaced with those of user " + _source.getEmail();
-            GroupAuditEvent event = new GroupAuditEvent(ContainerManager.getRoot().getId(), message);
-            event.setUser(_target.getUserId());
-            event.setProjectId(ContainerManager.getRoot().getId());
-            AuditLogService.get().addEvent(getUser(), event);
+            try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
+            {
+                audit(_target, "The user " + _target.getEmail() + " had their group memberships and role assignments deleted and replaced with those of user " + _source.getEmail());
+                deletePermissions(_target);
+                clonePermissions(_source, _target);
+                transaction.commit();
+            }
 
             return true;
         }
