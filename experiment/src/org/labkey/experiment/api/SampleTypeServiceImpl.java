@@ -1637,11 +1637,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
 
-        Map<ExpSampleType, List<Integer>> sampleTypesMap = new HashMap<>();
-        samples.forEach(sample -> {
-            List<Integer> sampleIds = sampleTypesMap.computeIfAbsent(sample.getSampleType(), t -> new ArrayList<>());
-            sampleIds.add(sample.getRowId());
-        });
+        Map<ExpSampleType, List<ExpMaterial>> sampleTypesMap = new HashMap<>();
+        samples.forEach(sample ->
+            sampleTypesMap.computeIfAbsent(sample.getSampleType(), t -> new ArrayList<>()).add(sample));
         Map<String, Integer> updateCounts = new HashMap<>();
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
@@ -1649,10 +1647,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            for (Map.Entry<ExpSampleType, List<Integer>> entry: sampleTypesMap.entrySet())
+            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
-                List<Integer> sampleIds = entry.getValue();
+                List<ExpMaterial> typeSamples = entry.getValue();
+                List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
                 // update for exp.material.container
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
@@ -1689,7 +1688,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
                 {
-                    for (ExpMaterial sample : samples)
+                    for (ExpMaterial sample : typeSamples)
                     {
                         SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample project was updated.", userComment, sample, null);
                         event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, Map.of("Project", sourceContainer.getName())));
