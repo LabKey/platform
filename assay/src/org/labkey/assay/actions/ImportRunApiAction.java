@@ -366,7 +366,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _jobNotificationProvider;
         private boolean _forceAsync;
         private boolean _allowCrossRunFileInputs;
-        private boolean _allowLookupByAlternateKey = false;
+        private boolean _allowLookupByAlternateKey = true;
 
         public JSONObject getJson()
         {
