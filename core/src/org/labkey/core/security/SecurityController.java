@@ -1508,12 +1508,13 @@ public class SecurityController extends SpringActionController
                         policy.addRoleAssignment(target, role, false);
                 }
 
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, getUser());
             });
         }
     }
 
-    // Note: Callers need to enforce all rules (e.g., App Admin can't delete Site Admin perms)
+    // Delete all container permissions. Note: savePolicy() throws on some unauthorized actions (e.g., App Admin
+    // attempting to delete Site Admin perms)
     private void deletePermissions(User user)
     {
         if (user != null)
@@ -1529,7 +1530,7 @@ public class SecurityController extends SpringActionController
             // Delete direct role assignments
             handleDirectRoleAssignments(user, (policy, roles) -> {
                 policy.clearAssignedRoles(user);
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, getUser());
             });
         }
     }
