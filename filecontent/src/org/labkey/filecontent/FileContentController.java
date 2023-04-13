@@ -18,19 +18,19 @@ package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -866,29 +866,13 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    public static class FilePropsForm implements CustomApiForm
-    {
-        private Map<String,Object> _props;
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            _props = props;
-        }
-
-        public Map<String,Object> getProps()
-        {
-            return _props;
-        }
-    }
-
     @RequiresPermission(InsertPermission.class)
-    public class UpdateFilePropsAction extends MutatingApiAction<FilePropsForm>
+    public class UpdateFilePropsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         private List<Map<String, Object>> _files;
 
         @Override
-        public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
             TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
             QueryUpdateService qus = ti.getUpdateService();
@@ -912,9 +896,9 @@ public class FileContentController extends SpringActionController
         private static final String FILE_PROP_ERROR = "%s : %s";
 
         @Override
-        public void validateForm(FilePropsForm form, Errors errors)
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            _files = parseFromJSON(form.getProps());
+            _files = parseFromJSON(form.getJsonObject());
 
             FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(getContainer());
@@ -972,17 +956,15 @@ public class FileContentController extends SpringActionController
             }
         }
 
-        private List<Map<String, Object>> parseFromJSON(Map<String, Object> props)
+        private List<Map<String, Object>> parseFromJSON(JSONObject json)
         {
             List<Map<String, Object>> files = new ArrayList<>();
 
-            if (props.containsKey("files"))
+            if (json.has("files"))
             {
-                Object fileObj = props.get("files");
-                if (fileObj instanceof JSONArray)
+                Object fileObj = json.get("files");
+                if (fileObj instanceof JSONArray jarray)
                 {
-                    JSONArray jarray = (JSONArray)fileObj;
-
                     for (int i=0; i < jarray.length(); i++)
                     {
                         Map<String, Object> fileProps = new HashMap<>();
@@ -990,12 +972,13 @@ public class FileContentController extends SpringActionController
                         JSONObject jobj = jarray.getJSONObject(i);
                         if (jobj != null)
                         {
-                            for (Map.Entry<String, Object> entry : jobj.entrySet())
+                            for (String key : jobj.keySet())
                             {
-                                if (entry.getValue() instanceof String)
-                                    fileProps.put(entry.getKey(), StringUtils.trimToNull((String)entry.getValue()));
+                                Object value = jobj.get(key);
+                                if (value instanceof String s)
+                                    fileProps.put(key, StringUtils.trimToNull(s));
                                 else
-                                    fileProps.put(entry.getKey(), entry.getValue());
+                                    fileProps.put(key, value);
                             }
                         }
                         files.add(fileProps);
@@ -1332,12 +1315,12 @@ public class FileContentController extends SpringActionController
             List<DirectoryPattern> directoryPatterns = new ArrayList<>();
             List<JSONObject> directoryPatternsJson = new ArrayList<>();
 
-            if(null != svc)
+            if (null != svc)
             {
                 directoryPatterns = svc.getZiploaderPatterns(getContainer());
             }
 
-            for(DirectoryPattern directory: directoryPatterns)
+            for (DirectoryPattern directory: directoryPatterns)
             {
                 directoryPatternsJson.add(directory.toJSON());
             }

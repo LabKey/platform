@@ -15,7 +15,7 @@
  */
 package org.labkey.study.model;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.AbstractParticipantCategory;
 import org.labkey.api.data.AbstractParticipantGroup;
 import org.labkey.api.study.ParticipantCategory;

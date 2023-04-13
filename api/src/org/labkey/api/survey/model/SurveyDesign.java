@@ -15,7 +15,7 @@
  */
 package org.labkey.api.survey.model;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 

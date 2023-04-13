@@ -16,13 +16,8 @@
 package org.labkey.api.files;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
-/**
- * User: klum
- * Date: Apr 16, 2010
- * Time: 11:04:41 AM
- */
 public class FilesTbarBtnOption
 {
     String _id;
