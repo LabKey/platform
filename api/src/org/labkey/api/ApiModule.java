@@ -232,6 +232,7 @@ public class ApiModule extends CodeOnlyModule
     {
         List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         return list;
     }
 

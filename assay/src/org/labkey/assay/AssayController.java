@@ -55,7 +55,6 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.AssayRunsAction;
 import org.labkey.api.assay.actions.BaseAssayAction;
 import org.labkey.api.assay.actions.DesignerAction;
-import org.labkey.api.assay.actions.PlateBasedUploadWizardAction;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -170,37 +169,36 @@ import java.util.zip.ZipOutputStream;
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
+        AssayBatchDetailsAction.class,
+        AssayBatchesAction.class,
+        AssayDetailRedirectAction.class,
+        AssayPlateMetadataTemplateAction.class,
+        AssayResultDetailsAction.class,
+        AssayResultsAction.class,
+        AssayRunDetailsAction.class,
+        AssayRunsAction.class,
+        DeleteAction.class,
+        DeleteProtocolAction.class,
+        DesignerAction.class,
         GetAssayBatchAction.class,
         GetAssayBatchesAction.class,
-        SaveAssayBatchAction.class,
         GetAssayRunAction.class,
         GetAssayRunsAction.class,
-        SaveAssayRunsAction.class,
-        ImportRunApiAction.class,
-        UploadWizardAction.class,
-        TransformResultsAction.class,
-        PlateBasedUploadWizardAction.class,
-        PipelineDataCollectorRedirectAction.class,
-        DeleteAction.class,
-        DesignerAction.class,
-        ImportAction.class,
-        TsvImportAction.class,
-        TemplateAction.class,
-        AssayBatchesAction.class,
-        AssayBatchDetailsAction.class,
-        AssayRunsAction.class,
-        AssayRunDetailsAction.class,
-        AssayResultsAction.class,
-        AssayResultDetailsAction.class,
-        ReimportRedirectAction.class,
-        ShowSelectedRunsAction.class,
-        ShowSelectedDataAction.class,
-        SetDefaultValuesAssayAction.class,
-        AssayDetailRedirectAction.class,
-        SaveProtocolAction.class,
         GetProtocolAction.class,
-        DeleteProtocolAction.class,
-        AssayPlateMetadataTemplateAction.class
+        ImportAction.class,
+        ImportRunApiAction.class,
+        PipelineDataCollectorRedirectAction.class,
+        ReimportRedirectAction.class,
+        SaveAssayBatchAction.class,
+        SaveAssayRunsAction.class,
+        SaveProtocolAction.class,
+        SetDefaultValuesAssayAction.class,
+        ShowSelectedDataAction.class,
+        ShowSelectedRunsAction.class,
+        TemplateAction.class,
+        TransformResultsAction.class,
+        TsvImportAction.class,
+        UploadWizardAction.class
     );
 
     public AssayController()
