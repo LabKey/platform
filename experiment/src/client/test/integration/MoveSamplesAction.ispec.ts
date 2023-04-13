@@ -530,11 +530,11 @@ describe('ExperimentController', () => {
             sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options);
             expect(sampleExistsInSub2).toBe(true);
 
-            // verify that we are able to delete the original sample container after things are moved
-            await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
-
             const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3]);
             await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3], auditTransactionId);
+
+            // verify that we are able to delete the original sample container after things are moved
+            await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
 
         });
     });
