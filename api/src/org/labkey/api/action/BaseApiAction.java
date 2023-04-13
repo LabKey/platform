@@ -517,11 +517,18 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     public static class JsonPropertyValues extends MutablePropertyValues
     {
+        @Deprecated
         public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {
             addPropertyValues(jsonObj);
         }
 
+        public JsonPropertyValues(org.json.JSONObject jsonObj) throws JSONException
+        {
+            addPropertyValues(jsonObj);
+        }
+
+        @Deprecated
         private void addPropertyValues(JSONObject jsonObj) throws JSONException
         {
             for (String key : jsonObj.keySet())
@@ -533,6 +540,22 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                     value = ((JSONArray) value).toArray();
                 }
                 else if (value instanceof JSONObject)
+                    throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
+                addPropertyValue(key, value);
+            }
+        }
+
+        private void addPropertyValues(org.json.JSONObject jsonObj) throws JSONException
+        {
+            for (String key : jsonObj.keySet())
+            {
+                Object value = jsonObj.get(key);
+
+                if (value instanceof org.json.JSONArray array)
+                {
+                    value = array.toList().toArray();
+                }
+                else if (value instanceof org.json.JSONObject)
                     throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
                 addPropertyValue(key, value);
             }
