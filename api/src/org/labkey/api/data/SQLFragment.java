@@ -358,9 +358,9 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-//        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-//        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-//        assert !StringUtils.contains(charseq, ';');
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        assert !StringUtils.contains(charseq, ';');
         getStringBuilder().append(charseq);
         return this;
     }
@@ -372,9 +372,9 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == charseq)
             return this;
         String identifier = charseq.toString().strip();
-//        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
-//        boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-//        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
+        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
+        boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
+        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
         getStringBuilder().append(charseq);
         return this;
     }
