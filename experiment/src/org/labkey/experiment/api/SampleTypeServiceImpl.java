@@ -30,6 +30,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
@@ -86,6 +87,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -1647,6 +1649,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            if (AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
             for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
@@ -1670,20 +1678,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
                     });
                 }
+                String samplesPhrase = StringUtilsLabKey.pluralize(samples.size(), "sample");
+                addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                        "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved samples out");
+                addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                        "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved samples in");
 
-                // create summary audit entries for the source and target containers
-                auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
-                if (auditBehavior != AuditBehaviorType.NONE)
-                {
-                    addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
-                            "Moved " + StringUtilsLabKey.pluralize(samples.size(), "sample") + " to " + targetContainer.getPath(), userComment, "moved samples out");
-                    addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
-                            "Moved " + StringUtilsLabKey.pluralize(samples.size(), "sample")  + " from " + sourceContainer.getPath(), userComment, "moved samples in");
-                }
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
                 updateCounts.put("sampleAuditEvents", auditProvider.moveEvents(targetContainer, sampleIds));
 
+                // create summary audit entries for the source and target containers
+                auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
                 {
