@@ -72,6 +72,6 @@ public class StudyAssaySchedule implements ApiJsonForm
                 _assays.add(AssaySpecimenConfigImpl.fromJSON(assayJSON, _container));
         }
 
-        _assayPlan = json.optString("assayPlan");
+        _assayPlan = json.optString("assayPlan", null);
     }
 }
