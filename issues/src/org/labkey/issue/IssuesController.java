@@ -16,7 +16,6 @@
 
 package org.labkey.issue;
 
-import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -2095,8 +2094,7 @@ public class IssuesController extends SpringActionController
             if (issue == null)
                 throw new NotFoundException("The issue : " + issueIdForm.getIssueId() + " was not found.");
 
-            BeanMap wrapper = new BeanMap(issue);
-            JSONObject jsonIssue = new JSONObject(wrapper);
+            JSONObject jsonIssue = new JSONObject(issue);
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
@@ -2114,7 +2112,7 @@ public class IssuesController extends SpringActionController
             jsonIssue.put("comments", comments);
             for (CommentObject c : issue.getCommentObjects())
             {
-                JSONObject jsonComment = new JSONObject(new BeanMap(c));
+                JSONObject jsonComment = new JSONObject(c);
                 jsonComment.put("createdByName", c.getCreatedByName(user));
                 jsonComment.put("comment", c.getHtmlComment());
 
