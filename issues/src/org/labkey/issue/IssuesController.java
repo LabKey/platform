@@ -735,7 +735,8 @@ public class IssuesController extends SpringActionController
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {
-                            stringMap.put(prop, rec.getString(prop));
+                            Object value = rec.get(prop);
+                            stringMap.put(prop, value.toString());
                         }
                         form.setStrings(stringMap);
                         _issueForms.add(form);
