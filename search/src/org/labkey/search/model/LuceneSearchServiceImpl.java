@@ -224,6 +224,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _autoDetectParser = new AutoDetectParser(config);
     }
 
+    private boolean _initializingIndex = false;
+
     /**
      * Initializes the index, if possible. Recovers from some common failures, such as incompatible existing index formats.
      */
@@ -231,31 +233,56 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            try
+            // Avoid reentrancy (e.g., deleteIndex() might attempt to initializeIndex())
+            if (_initializingIndex)
             {
-                attemptInitialize();
+                misconfigured(null);
             }
-            catch (IndexFormatTooOldException | IndexFormatTooNewException | IllegalArgumentException e)
+            else
             {
-                // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
-                // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
-                // "old" index format when they switch back. In either case, just delete the index and retry once.
-                _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
-                deleteIndex();
-                attemptInitialize();
+                _initializingIndex = true;
+
+                try
+                {
+                    attemptInitialize();
+                }
+                catch (IndexFormatTooOldException | IndexFormatTooNewException | IllegalArgumentException e)
+                {
+                    // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
+                    // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
+                    // "old" index format when they switch back. In either case, just delete the index and retry once.
+                    _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
+                    deleteIndex();
+                    attemptInitialize();
+                }
             }
         }
         catch (Throwable t)
         {
-            _log.error("Error: Unable to initialize search index. Search will be disabled and new documents will not be indexed for searching until this is corrected and the server is restarted.", t);
             setConfigurationError(t);
-            String statusMessage = "the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.";
-            _indexManager = new NoopWritableIndex(statusMessage, _log);
+            misconfigured(t);
 
             // No need to send FileSystemException (which includes AccessDenied, NotDirectory, etc.) to mothership
             if (!(t instanceof FileSystemException))
                 throw new RuntimeException("Error: Unable to initialize search index", t);
         }
+        finally
+        {
+            _initializingIndex = false;
+        }
+    }
+
+    private void misconfigured(@Nullable Throwable t)
+    {
+        String logMessage = "Error: Unable to initialize search index. Search will be disabled and new documents will not be indexed for searching until this is corrected and the server is restarted.";
+
+        if (t != null)
+            _log.error(logMessage, t);
+        else
+            _log.error(logMessage);
+
+        String statusMessage = "the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.";
+        _indexManager = new NoopWritableIndex(statusMessage, _log);
     }
 
     private void attemptInitialize() throws IOException
