@@ -1693,9 +1693,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
                 SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
-                auditBehavior = schema.getTable(sampleType, null).getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = schema.getTable(sampleType, null).getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
-                if (auditBehavior == AuditBehaviorType.DETAILED)
+                if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     for (ExpMaterial sample : typeSamples)
                     {
