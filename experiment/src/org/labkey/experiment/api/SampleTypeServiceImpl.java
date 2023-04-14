@@ -1652,6 +1652,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(samples.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
@@ -1678,17 +1679,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
                     });
                 }
-                String samplesPhrase = StringUtilsLabKey.pluralize(samples.size(), "sample");
+                // create summary audit entries for the source and target containers
+                String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
                 addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
-                        "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved samples out");
+                        "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved from project");
                 addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
-                        "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved samples in");
+                        "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved to project");
 
                 // move the events associated with the samples that have moved
                 SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
-                updateCounts.put("sampleAuditEvents", auditProvider.moveEvents(targetContainer, sampleIds));
+                int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
+                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                // create summary audit entries for the source and target containers
                 auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
