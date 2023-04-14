@@ -307,12 +307,11 @@ public class ScriptTrigger implements Trigger
 
     private Script getServerContext(Container c, User u)
     {
-        JSONObject json = PageFlowUtil.jsInitObject(ContainerUser.create(c, u), null, new LinkedHashSet<>(), false);
-
+        String jsCode = "org.labkey.api.util.PageFlowUtil.jsInitObject(org.labkey.api.writer.ContainerUser.create(org.labkey.api.data.ContainerManager.getForId('" + c.getId() + "'), org.labkey.api.security.UserManager.getUser(" + u.getUserId() + ")), null, null, false).toMap()";
         Context ctx = Context.enter();
         try
         {
-            return ctx.compileString("module.exports = " + json.toString(), "serverContext.js", 1, null);
+            return ctx.compileString("module.exports = " + jsCode, "serverContext.js", 1, null);
         }
         finally
         {
