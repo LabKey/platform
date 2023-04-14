@@ -3,7 +3,8 @@ import { caseInsensitive } from '@labkey/components';
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'ExperimentControllerTest Project';
-const SAMPLE_TYPE_NAME = 'TestMoveSampleType';
+const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
+const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
 
 let editorUserOptions: RequestOptions;
 let subEditorUserOptions: RequestOptions;
@@ -51,7 +52,13 @@ beforeAll(async () => {
     // create a sample type at project container for use in tests
     await server.post('property', 'createDomain', {
         kind: 'SampleSet',
-        domainDesign: { name: SAMPLE_TYPE_NAME, fields: [{ name: 'Name',  }] }
+        domainDesign: { name: SAMPLE_TYPE_NAME_1, fields: [{ name: 'Name',  }] }
+    }, topFolderOptions).expect(successfulResponse);
+
+    // create a second sample type at project container for use in tests
+    await server.post('property', 'createDomain', {
+        kind: 'SampleSet',
+        domainDesign: { name: SAMPLE_TYPE_NAME_2, fields: [{ name: 'Name',  }] }
     }, topFolderOptions).expect(successfulResponse);
 });
 
@@ -59,20 +66,20 @@ afterAll(async () => {
     return server.teardown();
 });
 
-async function createSample(sampleName: string, folderOptions: RequestOptions, auditBehavior?: string) {
+async function createSample(sampleName: string, folderOptions: RequestOptions, auditBehavior?: string, sampleType: string = SAMPLE_TYPE_NAME_1) {
     const materialResponse = await server.post('query', 'insertRows', {
         schemaName: 'samples',
-        queryName: SAMPLE_TYPE_NAME,
+        queryName: sampleType,
         rows: [{ name: sampleName }],
         auditBehavior,
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
     return caseInsensitive(materialResponse.body.rows[0], 'rowId');
 }
 
-async function sampleExists(sampleRowId: number, folderOptions: RequestOptions) {
+async function sampleExists(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'samples',
-        queryName: SAMPLE_TYPE_NAME,
+        queryName: sampleType,
         'query.RowId~eq': sampleRowId,
         'query.columns': 'RowId'
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
@@ -105,9 +112,9 @@ async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: Re
 
 describe('ExperimentController', () => {
 
-    async function verifySampleTypeAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], userComment: string = null): Promise<number>
+    async function verifySampleTypeAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], userComment: string = null, sampleType:string = SAMPLE_TYPE_NAME_1): Promise<number>
     {
-        const sampleTypeEventsInSource = await getSampleTypeAuditLogs(SAMPLE_TYPE_NAME, sourceFolderOptions, 2);
+        const sampleTypeEventsInSource = await getSampleTypeAuditLogs(sampleType, sourceFolderOptions, 2);
         const samplesPhrase = sampleIds.length == 1 ? "1 sample" : sampleIds.length + " samples";
         const targetPath = targetFolderOptions.containerPath.charAt(0) === '/' ? targetFolderOptions.containerPath : '/' + targetFolderOptions.containerPath;
         const sourcePath = sourceFolderOptions.containerPath.charAt(0) === '/' ? sourceFolderOptions.containerPath : '/' + sourceFolderOptions.containerPath;
@@ -115,8 +122,8 @@ describe('ExperimentController', () => {
         const transactionId = caseInsensitive(sampleTypeEventsInSource[0], 'transactionId');
         expect(transactionId).toBeTruthy();
         expect(caseInsensitive(sampleTypeEventsInSource[0], 'userComment')).toBe(userComment);
-        expect(caseInsensitive(sampleTypeEventsInSource[1], 'Comment')).toEqual("Samples inserted in: " + SAMPLE_TYPE_NAME);
-        const sampleTypeEventsInTarget = await getSampleTypeAuditLogs(SAMPLE_TYPE_NAME, targetFolderOptions, 1);
+        expect(caseInsensitive(sampleTypeEventsInSource[1], 'Comment')).toEqual("Samples inserted in: " + sampleType);
+        const sampleTypeEventsInTarget = await getSampleTypeAuditLogs(sampleType, targetFolderOptions, 1);
         expect(caseInsensitive(sampleTypeEventsInTarget[0], 'Comment')).toEqual("Moved " + samplesPhrase + " from " + sourcePath);
         expect(caseInsensitive(sampleTypeEventsInTarget[0], 'transactionId')).toBe(transactionId);
         return transactionId;
@@ -131,7 +138,6 @@ describe('ExperimentController', () => {
         for (const sampleRowId of sampleIds) {
             const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions);
             expect(sampleEventsInTarget).toHaveLength(2);
-            console.log(sampleEventsInTarget);
             expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample project was updated.");
             expect(caseInsensitive(sampleEventsInTarget[0], 'userComment')).toBe(userComment);
             expect(caseInsensitive(sampleEventsInTarget[0], 'transactionId')).toBe(transactionId);
@@ -490,6 +496,47 @@ describe('ExperimentController', () => {
 
         });
 
+        it('success, move samples from multiple types', async () => {
+            // Arrange
+            const sampleRowId1 = await createSample('sub1-movetosub2-5', subfolder1Options, "DETAILED");
+            const sampleRowId2 = await createSample('sub1-movetosub2-6', subfolder1Options, "DETAILED");
+            const sampleRowId3 = await createSample('type2-sub1-movetosub2-1', subfolder1Options, "DETAILED", SAMPLE_TYPE_NAME_2);
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder2Options.containerPath,
+                rowIds: [sampleRowId1, sampleRowId2, sampleRowId3],
+                auditBehavior: "DETAILED",
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(3);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(3);
+
+            let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId2, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId3, subfolder1Options, SAMPLE_TYPE_NAME_2);
+            expect(sampleExistsInSub1).toBe(false);
+
+            let sampleExistsInSub2 = await sampleExists(sampleRowId1, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId2, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options, SAMPLE_TYPE_NAME_2);
+            expect(sampleExistsInSub2).toBe(true);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2]);
+            const auditTransactionId2 = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId3], undefined, SAMPLE_TYPE_NAME_2);
+            expect(auditTransactionId2).toBe(auditTransactionId);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3], auditTransactionId);
+
+        });
+
         it('success, move multiple samples', async () => {
             // Arrange
             const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options, "DETAILED");
@@ -531,5 +578,6 @@ describe('ExperimentController', () => {
             await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
 
         });
+
     });
 });
