@@ -84,7 +84,7 @@ async function getSampleTypeAuditLogs(sampleType: string, folderOptions: Request
         schemaName: 'auditlog',
         queryName: 'samplesetauditevent',
         'query.samplesetname~eq': sampleType,
-        'query.columns': 'Comment,usercomment,transactionId',
+        'query.columns': 'Comment,userComment,transactionId,Created',
         'query.sort': '-Created',
         'query.maxRows': expectedNumber
     }, { ...folderOptions  }).expect(successfulResponse);
@@ -96,7 +96,7 @@ async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: Re
         schemaName: 'auditlog',
         queryName: 'SampleTimelineEvent',
         'query.sampleid~eq': sampleRowId,
-        'query.columns': 'Comment,usercomment,transactionId',
+        'query.columns': 'Comment,userComment,transactionId,Created',
         'query.sort': '-Created',
         'query.maxRows': expectedNumber
     }, { ...folderOptions }).expect(successfulResponse);
@@ -111,14 +111,14 @@ describe('ExperimentController', () => {
         const samplesPhrase = sampleIds.length == 1 ? "1 sample" : sampleIds.length + " samples";
         const targetPath = targetFolderOptions.containerPath.charAt(0) === '/' ? targetFolderOptions.containerPath : '/' + targetFolderOptions.containerPath;
         const sourcePath = sourceFolderOptions.containerPath.charAt(0) === '/' ? sourceFolderOptions.containerPath : '/' + sourceFolderOptions.containerPath;
-        expect(sampleTypeEventsInSource[0].Comment).toEqual("Moved " + samplesPhrase + " to " + targetPath);
-        const transactionId = sampleTypeEventsInSource[0].transactionid;
+        expect(caseInsensitive(sampleTypeEventsInSource[0], 'Comment')).toEqual("Moved " + samplesPhrase + " to " + targetPath);
+        const transactionId = caseInsensitive(sampleTypeEventsInSource[0], 'transactionId');
         expect(transactionId).toBeTruthy();
-        expect(sampleTypeEventsInSource[0].usercomment).toBe(userComment);
-        expect(sampleTypeEventsInSource[1].Comment).toEqual("Samples inserted in: " + SAMPLE_TYPE_NAME);
+        expect(caseInsensitive(sampleTypeEventsInSource[0], 'userComment')).toBe(userComment);
+        expect(caseInsensitive(sampleTypeEventsInSource[1], 'Comment')).toEqual("Samples inserted in: " + SAMPLE_TYPE_NAME);
         const sampleTypeEventsInTarget = await getSampleTypeAuditLogs(SAMPLE_TYPE_NAME, targetFolderOptions, 1);
-        expect(sampleTypeEventsInTarget[0].Comment).toEqual("Moved " + samplesPhrase + " from " + sourcePath);
-        expect(sampleTypeEventsInTarget[0].transactionid).toBe(transactionId);
+        expect(caseInsensitive(sampleTypeEventsInTarget[0], 'Comment')).toEqual("Moved " + samplesPhrase + " from " + sourcePath);
+        expect(caseInsensitive(sampleTypeEventsInTarget[0], 'transactionId')).toBe(transactionId);
         return transactionId;
     }
 
@@ -131,10 +131,11 @@ describe('ExperimentController', () => {
         for (const sampleRowId of sampleIds) {
             const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions);
             expect(sampleEventsInTarget).toHaveLength(2);
-            expect(sampleEventsInTarget[0].Comment).toEqual("Sample project was updated.");
-            expect(sampleEventsInTarget[0].usercomment).toBe(userComment);
-            expect(sampleEventsInTarget[0].transactionid).toBe(transactionId);
-            expect(sampleEventsInTarget[1].Comment).toEqual("Sample was registered.");
+            console.log(sampleEventsInTarget);
+            expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample project was updated.");
+            expect(caseInsensitive(sampleEventsInTarget[0], 'userComment')).toBe(userComment);
+            expect(caseInsensitive(sampleEventsInTarget[0], 'transactionId')).toBe(transactionId);
+            expect(caseInsensitive(sampleEventsInTarget[1], 'Comment')).toEqual("Sample was registered.");
         }
     }
 
@@ -386,9 +387,13 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts.samples).toBe(1);
-            expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(1);
+            expect(updateCounts).toStrictEqual({
+                samples: 1,
+                sampleAliases: 0,
+                sampleAuditEvents: 1,
+                inventoryItems: 0,
+                inventoryAuditEvents: 0,
+            });
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(false);
@@ -415,9 +420,13 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts.samples).toBe(1);
-            expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(1);
+            expect(updateCounts).toStrictEqual({
+                samples: 1,
+                sampleAliases: 0,
+                sampleAuditEvents: 1,
+                inventoryItems: 0,
+                inventoryAuditEvents: 0,
+            });
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(false);
@@ -447,9 +456,13 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts.samples).toBe(1);
-            expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(1);
+            expect(updateCounts).toStrictEqual({
+                samples: 1,
+                sampleAliases: 0,
+                sampleAuditEvents: 1,
+                inventoryItems: 0,
+                inventoryAuditEvents: 0,
+            });
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(true);
@@ -475,9 +488,13 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts.samples).toBe(1);
-            expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(1);
+            expect(updateCounts).toStrictEqual({
+                samples: 1,
+                sampleAliases: 0,
+                sampleAuditEvents: 1,
+                inventoryItems: 0,
+                inventoryAuditEvents: 0,
+            });
 
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
@@ -505,9 +522,13 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts.samples).toBe(3);
-            expect(updateCounts.sampleAliases).toBe(0);
-            expect(updateCounts.sampleAuditEvents).toBe(3);
+            expect(updateCounts).toStrictEqual({
+                samples: 3,
+                sampleAliases: 0,
+                sampleAuditEvents: 3,
+                inventoryItems: 0,
+                inventoryAuditEvents: 0,
+            });
 
             let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
