@@ -16,7 +16,7 @@
     "@labkey/components": "2.323.2"
   },
   "devDependencies": {
-    "@labkey/build": "6.9.0",
+    "@labkey/build": "6.9.0-fb-test-package-updates.0",
     "@labkey/test": "1.1.2-fb-test-package-updates.0",
     "@types/jest": "29.2.0",
     "@types/react": "16.14.34",
