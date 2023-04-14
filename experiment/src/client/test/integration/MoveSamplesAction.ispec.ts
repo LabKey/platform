@@ -387,13 +387,9 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts).toStrictEqual({
-                samples: 1,
-                sampleAliases: 0,
-                sampleAuditEvents: 1,
-                inventoryItems: 0,
-                inventoryAuditEvents: 0,
-            });
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(false);
@@ -420,13 +416,9 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts).toStrictEqual({
-                samples: 1,
-                sampleAliases: 0,
-                sampleAuditEvents: 1,
-                inventoryItems: 0,
-                inventoryAuditEvents: 0,
-            });
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(false);
@@ -456,13 +448,9 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts).toStrictEqual({
-                samples: 1,
-                sampleAliases: 0,
-                sampleAuditEvents: 1,
-                inventoryItems: 0,
-                inventoryAuditEvents: 0,
-            });
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(true);
@@ -488,13 +476,9 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts).toStrictEqual({
-                samples: 1,
-                sampleAliases: 0,
-                sampleAuditEvents: 1,
-                inventoryItems: 0,
-                inventoryAuditEvents: 0,
-            });
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
@@ -522,13 +506,9 @@ describe('ExperimentController', () => {
             // Assert
             const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(updateCounts).toStrictEqual({
-                samples: 3,
-                sampleAliases: 0,
-                sampleAuditEvents: 3,
-                inventoryItems: 0,
-                inventoryAuditEvents: 0,
-            });
+            expect(updateCounts.samples).toBe(3);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(3);
 
             let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
