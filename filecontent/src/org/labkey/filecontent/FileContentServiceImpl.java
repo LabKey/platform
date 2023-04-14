@@ -1099,7 +1099,7 @@ public class FileContentServiceImpl implements FileContentService
             _log.info("moving " + prev.getPath() + " to " + dest.getPath());
             boolean doRename = true;
 
-            // Our best bet for perf is to to a rename, which doesn't require creating an actual copy.
+            // Our best bet for perf is to do a rename, which doesn't require creating an actual copy.
             // If it exists, try deleting the target directory, which will only succeed if it's empty, but would
             // enable using renameTo() method. Don't delete if it's a symbolic link, since it wouldn't be recreated
             // in the same way.
