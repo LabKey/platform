@@ -1659,6 +1659,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
+
                 List<ExpMaterial> typeSamples = entry.getValue();
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
                 // update for exp.material.container
@@ -1691,7 +1692,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                auditBehavior = ((ExpSampleTypeImpl) sampleType).getTinfo().getAuditBehavior(auditBehavior);
+                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
+                auditBehavior = schema.getTable(sampleType, null).getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (auditBehavior == AuditBehaviorType.DETAILED)
                 {
