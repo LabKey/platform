@@ -108,7 +108,8 @@ public interface QueryUpdateService extends HasPermission
         BulkLoad,                // (Bool) skips detailed auditing
         CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
         SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
-        PreferPKOverObjectUriAsKey    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
+        PreferPKOverObjectUriAsKey,    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
+        SkipReselectRows // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
     }
 
 
