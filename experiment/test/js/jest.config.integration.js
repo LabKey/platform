@@ -14,11 +14,11 @@ module.exports = {
     testEnvironment: 'jsdom',
     testPathIgnorePatterns: ['/node_modules/'],
     transform: {
-        "^.+\\.tsx?$": [
-            "ts-jest",
+        '^.+\\.tsx?$': [
+            'ts-jest',
             {
                 isolatedModules: true,
-                tsconfig: 'node_modules/@labkey/build/webpack/tsconfig.json'
+                tsconfig: 'node_modules/@labkey/build/webpack/tsconfig.json',
             }
         ]
     },
