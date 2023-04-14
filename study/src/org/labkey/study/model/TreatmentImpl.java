@@ -16,12 +16,13 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Treatment;
+import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,9 +164,9 @@ public class TreatmentImpl implements Treatment
 
     public static TreatmentImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        TreatmentImpl treatment = new TreatmentImpl(container, o.getString("Label"), o.getString("Description"));
+        TreatmentImpl treatment = new TreatmentImpl(container, o.getString("Label"), o.optString("Description", null));
 
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
         {
             if (o.get("RowId") instanceof Integer)
                 treatment.setRowId(o.getInt("RowId"));
@@ -173,13 +174,11 @@ public class TreatmentImpl implements Treatment
                 treatment.setTempRowId(o.getString("RowId"));
         }
 
-        if (o.containsKey("Products") && o.get("Products")  instanceof JSONArray)
+        if (o.has("Products") && o.get("Products") instanceof JSONArray productsJSON)
         {
-            JSONArray productsJSON = (JSONArray) o.get("Products");
-
             List<TreatmentProductImpl> treatmentProducts = new ArrayList<>();
-            for (int j = 0; j < productsJSON.length(); j++)
-                treatmentProducts.add(TreatmentProductImpl.fromJSON(productsJSON.getJSONObject(j), container));
+            for (JSONObject productJson : JsonUtil.toJSONObjectList(productsJSON))
+                treatmentProducts.add(TreatmentProductImpl.fromJSON(productJson, container));
 
             treatment.setTreatmentProducts(treatmentProducts);
         }

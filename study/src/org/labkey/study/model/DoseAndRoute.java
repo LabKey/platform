@@ -18,7 +18,7 @@ package org.labkey.study.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
 
@@ -121,13 +121,13 @@ public class DoseAndRoute
     {
         String dose = null;
         String route = null;
-        if (o.containsKey(keys.Dose.name()))
+        if (o.has(keys.Dose.name()))
             dose = o.getString(keys.Dose.name());
-        if (o.containsKey(keys.Route.name()))
+        if (o.has(keys.Route.name()))
             route = o.getString(keys.Route.name());
 
         DoseAndRoute doseAndRoute = new DoseAndRoute(dose, route, productId, container);
-        if (o.containsKey(keys.RowId.name()))
+        if (o.has(keys.RowId.name()))
             doseAndRoute.setRowId(o.getInt(keys.RowId.name()));
         return doseAndRoute;
     }
