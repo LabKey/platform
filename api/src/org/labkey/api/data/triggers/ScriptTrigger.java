@@ -17,7 +17,6 @@ package org.labkey.api.data.triggers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
@@ -26,12 +25,10 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.commonjs.module.ModuleScript;
@@ -44,7 +41,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -305,7 +301,7 @@ public class ScriptTrigger implements Trigger
         }
     }
 
-    private Script getServerContext(Container c, User u)
+    public static Script getServerContext(Container c, User u)
     {
         String jsCode = "org.labkey.api.util.PageFlowUtil.jsInitObject(org.labkey.api.writer.ContainerUser.create(org.labkey.api.data.ContainerManager.getForId('" + c.getId() + "'), org.labkey.api.security.UserManager.getUser(" + u.getUserId() + ")), null, null, false).toMap()";
         Context ctx = Context.enter();

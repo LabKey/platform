@@ -203,12 +203,13 @@ public final class RhinoService
         {
             Path js = Path.parse(ScriptService.SCRIPTS_DIR + "/validationTest/" + scriptName + ".js");
             ScriptReference script = ScriptService.get().compile(_module, js);
-            script.getContext().setAttribute("ContainerUser", HttpView.currentContext(), ScriptContext.ENGINE_SCOPE);
+
+            script.getContext().setAttribute(SERVER_CONTEXT_KEY, ScriptTrigger.ServerContextModuleScript.create(ScriptTrigger.getServerContext(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser())), ScriptContext.ENGINE_SCOPE);
             script.invokeFn("doTest");
 
             // Now check the caches:
             script = ScriptService.get().compile(_module, js);
-            Assert.assertNull("Cached script should not store container", script.getContext().getAttribute("ContainerUser"));
+            Assert.assertNull("Cached script should not store serverContext", script.getContext().getAttribute(SERVER_CONTEXT_KEY));
         }
 
         @Test
