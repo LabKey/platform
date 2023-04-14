@@ -991,7 +991,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
                 // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
                 // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
-                if (o instanceof String && remappableLookup.containsKey(pd) && !lookupToAllSamplesById.contains(pd))
+                if (o instanceof String && remappableLookup.containsKey(pd) && !lookupToAllSamplesById.contains(pd) && !lookupToSampleTypeById.containsKey(pd))
                 {
                     TableInfo lookupTable = remappableLookup.get(pd);
                     try
@@ -1025,18 +1025,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // Collect sample names or ids for each of the SampleType lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
-                if (o != null && (byNameSS != null || lookupToAllSamplesByName.contains(pd) ||
-                        lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
+                boolean isLookupById = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
+                boolean isLookupByName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+                if (o != null && (isLookupById || isLookupByName))
                 {
+                    ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
                     Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
 
                     // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
-                    // If allowLookupByAlternateKey is true, we call findExpMaterial which will attempt to resolve by name first and then rowId.
+                    // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
                     // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
                     ExpMaterial material;
-                    if (settings.isAllowLookupByAlternateKey())
+                    if (settings.isAllowLookupByAlternateKey() || isLookupByName)
                         material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, o.toString(), cache, materialCache);
                     else
                         material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
@@ -1046,9 +1047,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
 
-                        // Issue 47509: Since we have resolved the material here, adjust the data to be imported to the results table to use the rowIds of the input sample
+                        // Issue 47509: Since we have resolved the material here, adjust the data to be imported to the
+                        // results table to use the rowIds of the input sample if the lookup is lookupToSampleTypeById.
                         // (note this updates the rawData object passed in to checkData which is used by convertPropertyNamesToURIs to create the fileData object).
-                        map.put(pd.getName(), material.getRowId());
+                        if (isLookupById)
+                            map.put(pd.getName(), material.getRowId());
                     }
                     else if (o instanceof Integer || !remappableLookup.containsKey(pd))
                     {
