@@ -3166,7 +3166,8 @@ public class QueryController extends SpringActionController
         {
             QuerySettings results = super.createQuerySettings(schema);
 
-            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows);
+            // NOTE: consider both URL and POST body
+            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows) && null == _initParameters.getPropertyValue(getDataRegionName() + "." + QueryParam.showRows);
             if (null == getLimit() && !results.isMaxRowsSet() && missingShowRows)
             {
                 results.setShowRows(ShowRows.PAGINATED);
