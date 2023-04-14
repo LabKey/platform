@@ -300,7 +300,7 @@ public class VisualizationServiceImpl implements VisualizationService
         props.put("isRecommendedVariable", col.isRecommendedVariable());
         props.put("defaultScale", col.getDefaultScale().name());
 
-        Map<String, Object> lookupJSON = JsonWriter.getLookupInfo(col, false);
+        org.json.JSONObject lookupJSON = JsonWriter.getLookupInfo(col, false);
         if (lookupJSON != null)
         {
             props.put("lookup", lookupJSON);
