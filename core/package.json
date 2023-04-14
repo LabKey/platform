@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.19.0",
-    "@labkey/components": "2.323.4",
+    "@labkey/api": "1.19.1-fb-skipQueryReselect.1",
+    "@labkey/components": "2.326.0-fb-skipQueryReselect.1",
     "@labkey/themes": "1.3.0"
   },
   "devDependencies": {
