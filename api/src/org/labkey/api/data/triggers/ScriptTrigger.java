@@ -17,6 +17,7 @@ package org.labkey.api.data.triggers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
@@ -25,18 +26,25 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Script;
+import org.mozilla.javascript.commonjs.module.ModuleScript;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +57,8 @@ import java.util.function.Supplier;
  */
 public class ScriptTrigger implements Trigger
 {
-    public static final String SCRIPT_CONTAINERUSER_KEY = "~~EffectiveContainerUser~~";
+    public static final String SERVER_CONTEXT_KEY = "~~ServerContext~~";
+    public static final String SERVER_CONTEXT_SCRIPTNAME = "serverContext";
 
     @NotNull protected final Container _container;
     @NotNull protected final TableInfo _table;
@@ -253,22 +262,9 @@ public class ScriptTrigger implements Trigger
                 bindings.put("schemaName", _table.getPublicSchemaName());
                 bindings.put("tableName", _table.getPublicName());
 
-                Object existingValue = _script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
-                if (existingValue != null)
-                {
-                    if (!(existingValue instanceof ContainerUser cu))
-                    {
-                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that wasnt a ContainerUser object");
-                    }
-
-                    if (!cu.getContainer().equals(c) || !cu.getUser().equals(user))
-                    {
-                        throw new IllegalStateException("Found cached " + SCRIPT_CONTAINERUSER_KEY + " object that didnt match table. Cached: " + cu.getContainer() + " / " + cu.getUser() + ", table: " + c +  " / " + user);
-                    }
-                }
-
                 // Note: this is being added to the script-level context object, not bindings on purpose so that it is included in the calls to engine.getRuntimeScope()
-                _script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, ContainerUser.create(c, user), ScriptContext.ENGINE_SCOPE);
+                _script.getContext().setAttribute(SERVER_CONTEXT_KEY, ServerContextModuleScript.create(getServerContext(c, user)), ScriptContext.ENGINE_SCOPE);
+
                 _script.eval(bindings);
             }
 
@@ -284,6 +280,43 @@ public class ScriptTrigger implements Trigger
             {
                 viewContextResetter.close();
             }
+        }
+    }
+
+    public static class ServerContextModuleScript extends ModuleScript
+    {
+        private static final String BASE_URI = "module://scripts/";
+
+        public ServerContextModuleScript(Script serverContext) throws URISyntaxException
+        {
+            super(serverContext, new URI(BASE_URI + SERVER_CONTEXT_SCRIPTNAME + ".js"), new URI(BASE_URI));
+        }
+
+        public static ServerContextModuleScript create(Script serverContext)
+        {
+            try
+            {
+                return new ServerContextModuleScript(serverContext);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalStateException("A URI exception should never occur since this defines the URI");
+            }
+        }
+    }
+
+    private Script getServerContext(Container c, User u)
+    {
+        JSONObject json = PageFlowUtil.jsInitObject(ContainerUser.create(c, u), null, new LinkedHashSet<>(), false);
+
+        Context ctx = Context.enter();
+        try
+        {
+            return ctx.compileString("module.exports = " + json.toString(), "serverContext.js", 1, null);
+        }
+        finally
+        {
+            Context.exit();
         }
     }
 

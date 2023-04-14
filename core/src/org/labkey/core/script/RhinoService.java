@@ -19,14 +19,15 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
 import org.json.JSONObject;
+import org.json.old.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.data.triggers.ScriptTrigger;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -43,11 +44,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.writer.ContainerUser;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -59,7 +58,6 @@ import org.mozilla.javascript.LazilyLoadedCtor;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.WrapFactory;
@@ -109,7 +107,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.data.triggers.ScriptTrigger.SCRIPT_CONTAINERUSER_KEY;
+import static org.labkey.api.data.triggers.ScriptTrigger.SERVER_CONTEXT_KEY;
 import static org.labkey.core.script.RhinoService.LOG;
 
 public final class RhinoService
@@ -205,12 +203,12 @@ public final class RhinoService
         {
             Path js = Path.parse(ScriptService.SCRIPTS_DIR + "/validationTest/" + scriptName + ".js");
             ScriptReference script = ScriptService.get().compile(_module, js);
-            script.getContext().setAttribute(SCRIPT_CONTAINERUSER_KEY, HttpView.currentContext(), ScriptContext.ENGINE_SCOPE);
+            script.getContext().setAttribute("ContainerUser", HttpView.currentContext(), ScriptContext.ENGINE_SCOPE);
             script.invokeFn("doTest");
 
             // Now check the caches:
             script = ScriptService.get().compile(_module, js);
-            Assert.assertNull("Cached script should not store container", script.getContext().getAttribute(SCRIPT_CONTAINERUSER_KEY));
+            Assert.assertNull("Cached script should not store container", script.getContext().getAttribute("ContainerUser"));
         }
 
         @Test
@@ -779,35 +777,6 @@ class RhinoEngine extends RhinoScriptEngine
     }
     */
 
-    private static class ServerContextModuleScript extends ModuleScript
-    {
-        private static final String BASE_URI = "module://scripts/";
-        private static final String NAME = "serverContext";
-        public ServerContextModuleScript(Context ctx, ContainerUser containerUser) throws URISyntaxException
-        {
-            super(getScript(ctx, containerUser), new URI(BASE_URI + NAME + ".js"), new URI(BASE_URI));
-        }
-
-        public static ServerContextModuleScript create(Context ctx, ContainerUser containerUser)
-        {
-            try
-            {
-                return new ServerContextModuleScript(ctx, containerUser);
-            }
-            catch (URISyntaxException e)
-            {
-                throw new IllegalStateException("A URI exception should never occur since this defines the URI");
-            }
-        }
-
-        private static Script getScript(Context ctx, ContainerUser containerUser)
-        {
-            JSONObject json = PageFlowUtil.jsInitObject(containerUser, null, new LinkedHashSet<>(), false);
-
-            return ctx.compileString("module.exports = " + json.toString(), NAME + ".js", 1, null);
-        }
-    }
-
     @Override
     protected Scriptable getRuntimeScope(ScriptContext ctxt)
     {
@@ -826,18 +795,18 @@ class RhinoEngine extends RhinoScriptEngine
         try
         {
             // See: https://github.com/LabKey/platform/pull/3902
-            final Object effectiveContainerUser = ctxt.getAttribute(SCRIPT_CONTAINERUSER_KEY, ScriptContext.ENGINE_SCOPE);
+            final Object scriptContext = ctxt.getAttribute(SERVER_CONTEXT_KEY, ScriptContext.ENGINE_SCOPE);
 
             Map<String, ModuleScript> extraModules = null;
-            if (effectiveContainerUser != null)
+            if (scriptContext != null)
             {
-                if (!(effectiveContainerUser instanceof ContainerUser))
+                if (!(scriptContext instanceof ModuleScript scriptContextScript))
                 {
-                    throw new IllegalStateException("Expected property " + SCRIPT_CONTAINERUSER_KEY + " to be a ContainerUser object");
+                    throw new IllegalStateException("Expected property " + SERVER_CONTEXT_KEY + " to be a ModuleScript object");
                 }
 
                 // Other JS scripts can call require('serverContext') to load this.
-                extraModules = Map.of(ServerContextModuleScript.NAME, ServerContextModuleScript.create(cx, ((ContainerUser)effectiveContainerUser)));
+                extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPTNAME, scriptContextScript);
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
