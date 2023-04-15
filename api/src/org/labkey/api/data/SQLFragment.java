@@ -107,7 +107,7 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence sql, @Nullable List<?> params)
     {
-        this.sql = sql.toString();
+        this.append(sql);
         if (null != params)
             this.params = new ArrayList<>(params);
     }
@@ -348,7 +348,7 @@ public class SQLFragment implements Appendable, CharSequence
     private StringBuilder getStringBuilder()
     {
         if (null == sb)
-            sb = new StringBuilder(sql);
+            sb = new StringBuilder(null==sql?"":sql);
         return sb;
     }
 
