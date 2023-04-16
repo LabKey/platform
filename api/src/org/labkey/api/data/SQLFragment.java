@@ -107,7 +107,8 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence sql, @Nullable List<?> params)
     {
-        this.append(sql);
+        // this.append(sql);
+        this.sql = sql.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
     }
