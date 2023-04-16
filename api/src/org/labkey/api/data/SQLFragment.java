@@ -105,10 +105,12 @@ public class SQLFragment implements Appendable, CharSequence
         sql = "";
     }
 
-    public SQLFragment(CharSequence sql, @Nullable List<?> params)
+    public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        // this.append(sql);
-        this.sql = sql.toString();
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        // allow statement separators
+        this.sql = charseq.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
     }
