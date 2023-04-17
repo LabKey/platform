@@ -33,6 +33,7 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
@@ -60,6 +61,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -78,6 +80,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -88,9 +91,13 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
@@ -105,6 +112,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1634,7 +1642,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
@@ -1646,6 +1654,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
+        updateCounts.put("domainFiles", 0);
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1659,14 +1668,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
+                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
+                TableInfo samplesTable = schema.getTable(sampleType, null);
 
                 List<ExpMaterial> typeSamples = entry.getValue();
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
+
                 // update for exp.material.container
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
                 objectRowContainerUpdate(sampleIds, targetContainer);
+
+                // move the files associated with individual samples
+                // TODO collect all files moved
+                Map<String, File> filesMoved = moveSampleFiles(samplesTable, sampleType, typeSamples, targetContainer, user)
+                updateCounts.put("domainFiles", updateCounts.get("domainFiles") + filesMoved.size());
 
                 // update for exp.materialaliasmap.container
                 updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
@@ -1680,6 +1697,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
                     });
                 }
+
                 // create summary audit entries for the source and target containers
                 String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
                 addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
@@ -1692,8 +1710,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
-                AuditBehaviorType stAuditBehavior = schema.getTable(sampleType, null).getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {
@@ -1713,6 +1730,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+
+            transaction.addCommitTask(() -> {
+                // TODO moveFiles back
+            }, POSTROLLBACK);
 
             transaction.commit();
         }
@@ -1750,5 +1771,102 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
         aliasMapUpdate.append(")");
         return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
+
+    // TODO return the map of file renames
+    private Map<String, File> moveSampleFiles(TableInfo sampleTypeTable, ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    {
+        Map<String, File> filesMoved = new HashMap<>();
+        List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+        if (fileDomainProps.isEmpty())
+            return filesMoved;
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+            return filesMoved;
+
+        List<Map<String, Object>> updatedRows = new ArrayList<>();
+
+        for (ExpMaterial sample : samples)
+        {
+            for (DomainProperty fileProp : fileDomainProps )
+            {
+                File updatedFile = moveFile((String) sample.getProperty(fileProp), sample.getContainer(), targetContainer, user);
+                filesMoved.put((String) sample.getProperty(fileProp), updatedFile);
+                if (updatedFile != null)
+                {
+                    Map<String, Object> rowUpdate = new CaseInsensitiveHashMap<>();
+                    rowUpdate.put("LSID", sample.getLSID());
+                    rowUpdate.put(fileProp.getName(), updatedFile.getAbsolutePath());
+                    updatedRows.add(rowUpdate);
+                }
+            }
+        }
+        //  update the samples
+        BatchValidationException errors = new BatchValidationException();
+        QueryUpdateService qus = sampleTypeTable.getUpdateService();
+        if (qus == null)
+            throw new QueryUpdateServiceException("No update service found for " + sampleTypeTable.getName());
+        qus.updateRows(user, targetContainer, updatedRows, null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        return filesMoved;
+    }
+
+    private File moveFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer, @Nullable User user)
+    {
+        if (absoluteFilePath == null)
+            return null;
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+        {
+            LOG.warn("No file service available. File '" + absoluteFilePath + "' cannot be moved");
+            return null;
+        }
+
+        File file = new File(absoluteFilePath);
+        if (!file.exists())
+        {
+            LOG.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
+            return null;
+        }
+
+        File sourceFileRoot = fileService.getFileRoot(sourceContainer);
+        if (sourceFileRoot == null)
+        {
+            LOG.warn("No file root found for source container " + sourceContainer + ". File '" + absoluteFilePath + " cannot be moved.");
+            return null;
+        }
+        String sourceRootPath = sourceFileRoot.getAbsolutePath();
+        if (!absoluteFilePath.startsWith(sourceRootPath))
+        {
+            LOG.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
+            return null;
+        }
+        File targetFileRoot = fileService.getFileRoot(targetContainer);
+        if (targetFileRoot == null)
+        {
+            LOG.warn("No file root found for target container " + targetContainer + ". File '" + absoluteFilePath + " cannot be moved.");
+            return null;
+        }
+        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        File targetFile = new File(targetPath);
+        if (targetFile.exists())
+        {
+            LOG.warn("File '" + targetFile.getAbsolutePath() + "' already exists in target container.");
+            return null;
+        }
+        if (!file.renameTo(targetFile))
+        {
+            LOG.warn("Rename of '" + file.getAbsolutePath() + "' to '" + targetFile + "' failed.");
+            return null;
+        }
+        // TODO verify this adds an audit log
+        fileService.fireFileMoveEvent(file, targetFile, user, targetContainer);
+        return targetFile;
     }
 }
