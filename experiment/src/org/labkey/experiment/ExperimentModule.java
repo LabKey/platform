@@ -52,6 +52,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
@@ -92,8 +93,24 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.experiment.api.*;
-import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpDataClassType;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.ExperimentStressTest;
+import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.LineageTest;
+import org.labkey.experiment.api.LogDataType;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.UniqueValueCounterTestCase;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ChildOfMethod;
 import org.labkey.experiment.api.data.LineageCompareType;
@@ -120,7 +137,6 @@ import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -319,7 +335,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (data == null)
                     return null;
 
-                return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
             }
 
             @Override
@@ -331,7 +347,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
                 for (String resourceIdentifier : idDataMap.keySet())
-                    searchJsonMap.put(resourceIdentifier, ExperimentJSONConverter.serializeData(idDataMap.get(resourceIdentifier), user, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                    searchJsonMap.put(resourceIdentifier, ExperimentJSONConverter.serializeData(idDataMap.get(resourceIdentifier), user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap());
                 return searchJsonMap;
             }
         });
@@ -355,7 +371,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (dataClass == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
@@ -383,7 +399,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (sampleType == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "sampleSet");
@@ -411,7 +427,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (material == null)
                     return null;
 
-                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
             }
 
             @Override
@@ -433,7 +449,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
                 for (ExpMaterial material : ExperimentService.get().getExpMaterials(rowIds))
                 {
-                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap());
                 }
 
                 return searchJsonMap;
