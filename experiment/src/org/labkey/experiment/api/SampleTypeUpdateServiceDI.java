@@ -949,7 +949,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(queryTableInfo.getName(), getSampleDataCF(container, user));
+            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
             existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
             Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
