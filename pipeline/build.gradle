@@ -11,7 +11,23 @@ dependencies {
         project,
         new ExternalDependency(
             "org.apache.activemq:activemq-client:${activemqVersion}",
-            "Apache ActiveMQ",
+            "Apache ActiveMQ Client",
+            "Apache",
+            "http://activemq.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Java Message Service queuing",
+        ),
+        {
+            exclude group: "javax.servlet", module: "servlet-api"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.activemq:activemq-broker:${activemqVersion}",
+            "Apache ActiveMQ Broker",
             "Apache",
             "http://activemq.apache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
@@ -113,10 +129,23 @@ dependencies {
         new ExternalDependency(
             "com.thoughtworks.xstream:xstream:${xstreamVersion}",
             "XStream",
-            "XStream",
+            "Thoughtworks",
             "http://x-stream.github.io/index.html",
             "BSD",
             "http://x-stream.github.io/license.html",
+            "Pipeline (Mule dependency)",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "backport-util-concurrent:backport-util-concurrent:2.1",
+            "SpringSource Edu Emory Mathcs Backport",
+            "Emory University",
+            "https://backport-jsr166.sourceforge.net",
+            "Public Domain",
+            "https://creativecommons.org/licenses/publicdomain/",
             "Pipeline (Mule dependency)",
         )
     )
