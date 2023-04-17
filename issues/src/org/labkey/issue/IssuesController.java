@@ -16,7 +16,6 @@
 
 package org.labkey.issue;
 
-import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -24,8 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -107,6 +106,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -709,9 +709,9 @@ public class IssuesController extends SpringActionController
         {
             if (_issues == null)
             {
-                if (getOldJsonObject().containsKey("issues"))
+                if (getJsonObject().has("issues"))
                 {
-                    _issues = getOldJsonObject().getJSONArray("issues");
+                    _issues = getJsonObject().getJSONArray("issues");
                 }
             }
             return _issues;
@@ -728,13 +728,14 @@ public class IssuesController extends SpringActionController
                 JSONArray issues = getIssues();
                 if (issues != null)
                 {
-                    for (JSONObject rec : issues.toJSONObjectArray())
+                    for (JSONObject rec : JsonUtil.toJSONObjectList(issues))
                     {
                         IssuesForm form = new IssuesForm();
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
                         for (String prop : rec.keySet())
                         {
-                            stringMap.put(prop, rec.getString(prop));
+                            Object value = rec.get(prop);
+                            stringMap.put(prop, value.toString());
                         }
                         form.setStrings(stringMap);
                         _issueForms.add(form);
@@ -2093,8 +2094,7 @@ public class IssuesController extends SpringActionController
             if (issue == null)
                 throw new NotFoundException("The issue : " + issueIdForm.getIssueId() + " was not found.");
 
-            BeanMap wrapper = new BeanMap(issue);
-            JSONObject jsonIssue = new JSONObject(wrapper);
+            JSONObject jsonIssue = new JSONObject(issue);
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
@@ -2112,7 +2112,7 @@ public class IssuesController extends SpringActionController
             jsonIssue.put("comments", comments);
             for (CommentObject c : issue.getCommentObjects())
             {
-                JSONObject jsonComment = new JSONObject(new BeanMap(c));
+                JSONObject jsonComment = new JSONObject(c);
                 jsonComment.put("createdByName", c.getCreatedByName(user));
                 jsonComment.put("comment", c.getHtmlComment());
 

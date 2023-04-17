@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -765,7 +765,7 @@ public class AssayController extends SpringActionController
             try
             {
                 File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                JSONArray fileNames = form.getOldJsonObject() == null ? null : form.getOldJsonObject().getJSONArray("fileNames");
+                JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)
