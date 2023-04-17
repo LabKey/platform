@@ -745,6 +745,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             return _inner.getSelectName();
         }
 
+        @Override
+        public @Nullable SQLFragment getSQLName()
+        {
+            return _inner.getSQLName();
+        }
+
         @Nullable
         @Override
         public String getMetaDataName()

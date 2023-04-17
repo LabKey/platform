@@ -113,17 +113,17 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName)
     {
         this(parentSchema, tableType, tableName, metaDataName, selectName, null);
     }
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName, @Nullable String title)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName, @Nullable String title)
     {
         _parentSchema = parentSchema;
         _name = tableName;
         _metaDataName = metaDataName;
-        _selectName = new SQLFragment(selectName);
+        _selectName = selectName;
         _tableType = tableType;
         _notificationKey = new Path(parentSchema.getClass().getName(), parentSchema.getName(), getClass().getName(), getName());
         _title = title;
@@ -132,7 +132,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
-        this(parentSchema, tableType, tableMetaDataName, tableMetaDataName, parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName()) + "." + parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName));
+        this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName)));
     }
 
     /**
@@ -223,6 +224,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _selectName.getSQL();
     }
 
+    @Override
+    public @Nullable SQLFragment getSQLName()
+    {
+        return new SQLFragment(_selectName);    // CONSIDER: readonly SQLFragment
+    }
 
     @NotNull
     public SQLFragment getFromSQL()

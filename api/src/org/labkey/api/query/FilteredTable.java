@@ -317,7 +317,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
 
-    private final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
+    public final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
     private final static String filterNameAliasDot = filterNameAlias + ".";
 
     private SQLFragment filterName(ColumnInfo c)
@@ -481,6 +481,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
+    @Override
+    public SQLFragment getSQLName()
+    {
+        if (_filter.isEmpty())
+            return getFromTable().getSQLName();
+        return null;
+    }
 
     @Override
     @NotNull

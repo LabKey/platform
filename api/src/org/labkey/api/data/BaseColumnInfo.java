@@ -40,7 +40,9 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -594,7 +596,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public SQLFragment getValueSql(String tableAliasName)
     {
         // call generateSelectName() to avoid asserts in getSelectName()
-        return new SQLFragment(tableAliasName + "." + generateSelectName());
+        String colIdentifier = generateSelectName();
+        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
+            return new SQLFragment().setSqlUnsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
+        else
+            return new SQLFragment().appendIdentifier(tableAliasName).append(".").appendIdentifier(colIdentifier);
     }
 
     @Override

@@ -80,8 +80,17 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * for INSERT/UPDATE/DELETE. For SELECT use getFromSQL(alias).
      */
     @Nullable
-    String getSelectName();
+    default String getSelectName()
+    {
+        var sqlf = getSQLName();
+        return null == sqlf ? null : sqlf.getSQL();
+    }
 
+    @Nullable
+    default SQLFragment getSQLName()
+    {
+        return null;
+    }
 
     @Nullable
     String getMetaDataName();

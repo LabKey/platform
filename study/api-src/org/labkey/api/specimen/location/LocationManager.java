@@ -296,7 +296,7 @@ public class LocationManager
 
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
             updateSQL
-                .append(locationTableInfo.getSelectName())
+                .append(locationTableInfo)
                 .append(" SET ")
                 .append(inUseColumn.getSelectName())
                 .append(" = ")

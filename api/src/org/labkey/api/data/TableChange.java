@@ -90,7 +90,7 @@ public class TableChange
                 for (String sql : scope.getSqlDialect().getChangeStatements(this))
                 {
                     LOG.debug("Will issue: " + sql);
-                    executor.execute(sql);
+                    executor.execute(new SQLFragment().setSqlUnsafe(sql));
                 }
                 success = true;
             }

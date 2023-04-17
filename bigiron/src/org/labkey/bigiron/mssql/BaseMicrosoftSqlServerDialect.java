@@ -1156,7 +1156,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
