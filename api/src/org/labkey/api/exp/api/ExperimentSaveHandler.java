@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.api;
 
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
@@ -85,18 +85,13 @@ public interface ExperimentSaveHandler
      * Handles persistence of each output data object if included
      * Called from DefaultAssaySaveHandler.handleProtocolApplications
      */
-    @Deprecated // Use new JSONObject variant below
     ExpData handleData(ViewContext context, JSONObject dataJson) throws ValidationException;
-    ExpData handleData(ViewContext context, org.json.JSONObject dataJson) throws ValidationException;
 
     /**
      * Handles persistence of all materials for the run (input or output) if included.
      * Called from DefaultAssaySaveHandler.handleProtocolApplications
      */
-    @Deprecated // Use new JSONObject variant below
     ExpMaterial handleMaterial(ViewContext context, JSONObject materialJson) throws ValidationException;
-
-    ExpMaterial handleMaterial(ViewContext context, org.json.JSONObject materialJson) throws ValidationException;
 
     /**
      * Used to handle any properties of an ExpObject.
