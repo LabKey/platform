@@ -100,12 +100,10 @@ public class QubeQuery
         countDistinctMember = distinct;
     }
 
-
     Cube getCube()
     {
         return cube;
     }
-
 
     public static class QubeExpr
     {
@@ -121,7 +119,6 @@ public class QubeQuery
         final OP op;
         ArrayList<QubeExpr> arguments;
     }
-
 
     public static class QubeMembersExpr extends QubeExpr
     {
@@ -158,11 +155,6 @@ public class QubeQuery
         JSONObject getDataCDS;
     }
 
-
-
-
-
-
     // cache Hierarchies
     Map<String, Hierarchy> _cubeHierarchyMap = new CaseInsensitiveHashMap<>();
     // cache Levels
@@ -192,8 +184,6 @@ public class QubeQuery
         }
     }
 
-
-
     Hierarchy _getHierarchy(String hierarchyName)
     {
         initMetadataCache();
@@ -212,8 +202,6 @@ public class QubeQuery
         return scope.getLevels().get(levelName);
     }
 
-
-
     Member _getMember(String memberUniqueName, Hierarchy h, Level l) throws OlapException
     {
         Member m = _getMemberInner(memberUniqueName, h, l);
@@ -224,7 +212,6 @@ public class QubeQuery
             return null;
         return m;
     }
-
 
     Member _getMemberInner(String memberUniqueName, Hierarchy h, Level l) throws OlapException
     {
@@ -385,7 +372,6 @@ public class QubeQuery
             this.joinLevel = countDistinctLevel;
     }
 
-
     private String toLevelName(Object levelSpec)
     {
         if (levelSpec instanceof String)
@@ -398,8 +384,6 @@ public class QubeQuery
         }
         return null;
     }
-
-
 
     private QubeExpr parseJsonExpr(Object o, OP defaultOp, OP defaultArrayOperator) throws OlapException, BindException
     {
@@ -639,7 +623,6 @@ public class QubeQuery
             throw errors;
         }
     }
-
 
     public static class CompareMetaDataElement implements Comparator<MetadataElement>
     {
