@@ -1740,7 +1740,7 @@ public class QueryController extends SpringActionController
                     // Split arrays into individual pairs to be bound (Issue #45452)
                     for (int i = 0; i < val.length(); i++)
                     {
-                        properties.add(new PropertyValue(key, val.getString(i)));
+                        properties.add(new PropertyValue(key, val.get(i).toString()));
                     }
                 }
                 else
