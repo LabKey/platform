@@ -1682,7 +1682,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 // move the files associated with individual samples
                 // TODO collect all files moved
-                Map<String, File> filesMoved = moveSampleFiles(samplesTable, sampleType, typeSamples, targetContainer, user)
+                Map<String, File> filesMoved = moveSampleFiles(samplesTable, sampleType, typeSamples, targetContainer, user);
                 updateCounts.put("domainFiles", updateCounts.get("domainFiles") + filesMoved.size());
 
                 // update for exp.materialaliasmap.container
