@@ -24,8 +24,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
@@ -65,8 +65,6 @@ import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VAL
 
 /**
  * Serializes and deserializes experiment objects to and from JSON.
- * User: jeckels
- * Date: Jan 21, 2009
  */
 public class ExperimentJSONConverter
 {
@@ -740,7 +738,7 @@ public class ExperimentJSONConverter
     }
 
     @NotNull
-    public static Map<PropertyDescriptor, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties) throws ValidationException
+    public static Map<PropertyDescriptor, Object> convertProperties(JSONObject propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties) throws ValidationException
     {
         Map<PropertyDescriptor, Object> properties = new HashMap<>();
 

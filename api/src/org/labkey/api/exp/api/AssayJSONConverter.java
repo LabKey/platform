@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.api;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
@@ -39,8 +39,6 @@ import java.util.Map;
 
 /**
  * Serializes and deserializes JSON for assay-related APIs
- * User: jeckels
- * Date: Jan 21, 2009
  */
 public class AssayJSONConverter
 {

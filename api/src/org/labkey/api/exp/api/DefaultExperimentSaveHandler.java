@@ -21,9 +21,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
@@ -40,6 +40,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -336,12 +337,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @NotNull
-    protected Map<ExpData, String> getInputData(ViewContext context, org.json.JSONArray inputDataArray) throws ValidationException
+    protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
-        for (int i = 0; i < inputDataArray.length(); i++)
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(inputDataArray))
         {
-            org.json.JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
@@ -400,7 +400,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         // First, clear out any old data analysis results
         clearOutputDatas(context, run);
 
-        Map<ExpData, String> inputData = getInputData(context, inputDataArray.toNewJSONArray());
+        Map<ExpData, String> inputData = getInputData(context, inputDataArray);
         Map<ExpMaterial, String> inputMaterial = getInputMaterial(context, inputMaterialArray);
 
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
@@ -467,13 +467,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
-    public ExpMaterial handleMaterial(ViewContext context, org.json.JSONObject materialObject) throws ValidationException
-    {
-        return handleMaterial(context, JSONObject.toOldJSONObject(materialObject));
-    }
-
-    @Override
-    @Deprecated // Use new JSONObject variant above
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
         ExpSampleType sampleType = null;
@@ -536,7 +529,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
                 try
                 {
-                    materialName = sampleType.createSampleName(properties);
+                    materialName = sampleType.createSampleName(properties.toMap());
                 }
                 catch (ExperimentException e)
                 {
@@ -573,7 +566,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
             // Treat an empty properties collection as if there were no property map at all.
             // To delete a property, include a property map with that property and set its value to null.
-            if (materialProperties.size() > 0)
+            if (!materialProperties.isEmpty())
             {
                 List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
                 handleProperties(context, material, dps, materialProperties);
@@ -581,12 +574,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         return material;
-    }
-
-    @Override
-    public ExpData handleData(ViewContext context, org.json.JSONObject dataObject) throws ValidationException
-    {
-        return handleData(context, JSONObject.toOldJSONObject(dataObject));
     }
 
     @Override
