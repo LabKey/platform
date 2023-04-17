@@ -1641,6 +1641,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotAmounts;
     }
 
+    record FileFieldRenameData(String sampleTypeName, String sampleName, String fieldName, File sourceFile, File targetFile) { }
+
     @Override
     public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
@@ -1654,7 +1656,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
-        updateCounts.put("domainFiles", 0);
+        List<FileFieldRenameData> allTypeFileUpdates = new ArrayList<>();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1680,10 +1682,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 // update for exp.object.container
                 objectRowContainerUpdate(sampleIds, targetContainer);
 
-                // move the files associated with individual samples
-                // TODO collect all files moved
-                Map<String, File> filesMoved = moveSampleFiles(samplesTable, sampleType, typeSamples, targetContainer, user);
-                updateCounts.put("domainFiles", updateCounts.get("domainFiles") + filesMoved.size());
+                // update the paths to files associated with individual samples
+                allTypeFileUpdates.addAll(updateSampleFilePaths(samplesTable, sampleType, typeSamples, targetContainer, user));
 
                 // update for exp.materialaliasmap.container
                 updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
@@ -1732,8 +1732,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.addCommitTask(() -> {
-                // TODO moveFiles back
-            }, POSTROLLBACK);
+                int fileMoveCount = 0;
+                for (FileFieldRenameData renameData : allTypeFileUpdates)
+                {
+                    if (moveFile(renameData, user, targetContainer))
+                        fileMoveCount++;
+                }
+                updateCounts.put("sampleFiles", fileMoveCount);
+            }, POSTCOMMIT);
 
             transaction.commit();
         }
@@ -1773,19 +1779,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
     }
 
-    // TODO return the map of file renames
-    private Map<String, File> moveSampleFiles(TableInfo sampleTypeTable, ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    // return the map of file renames
+    private List<FileFieldRenameData> updateSampleFilePaths(TableInfo sampleTypeTable, ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
-        Map<String, File> filesMoved = new HashMap<>();
+        List<FileFieldRenameData> fileRenames = new ArrayList<>();
         List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
                 .getProperties().stream()
                 .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
         if (fileDomainProps.isEmpty())
-            return filesMoved;
+            return fileRenames;
 
         FileContentService fileService = FileContentService.get();
         if (fileService == null)
-            return filesMoved;
+            return fileRenames;
 
         List<Map<String, Object>> updatedRows = new ArrayList<>();
 
@@ -1793,10 +1799,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             for (DomainProperty fileProp : fileDomainProps )
             {
-                File updatedFile = moveFile((String) sample.getProperty(fileProp), sample.getContainer(), targetContainer, user);
-                filesMoved.put((String) sample.getProperty(fileProp), updatedFile);
+                String sourceFileName = (String) sample.getProperty(fileProp);
+                File updatedFile = getTargetFile(sourceFileName, sample.getContainer(), targetContainer, user);
                 if (updatedFile != null)
                 {
+                    fileRenames.add(new FileFieldRenameData(sampleType.getName(), sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile));
                     Map<String, Object> rowUpdate = new CaseInsensitiveHashMap<>();
                     rowUpdate.put("LSID", sample.getLSID());
                     rowUpdate.put(fileProp.getName(), updatedFile.getAbsolutePath());
@@ -1813,10 +1820,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (errors.hasErrors())
             throw errors;
 
-        return filesMoved;
+        return fileRenames;
     }
 
-    private File moveFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer, @Nullable User user)
+    private File getTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer, @Nullable User user)
     {
         if (absoluteFilePath == null)
             return null;
@@ -1860,13 +1867,30 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             LOG.warn("File '" + targetFile.getAbsolutePath() + "' already exists in target container.");
             return null;
         }
-        if (!file.renameTo(targetFile))
+        return targetFile;
+    }
+
+    private boolean moveFile(FileFieldRenameData renameData, User user, Container targetContainer)
+    {
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
         {
-            LOG.warn("Rename of '" + file.getAbsolutePath() + "' to '" + targetFile + "' failed.");
-            return null;
+            LOG.warn("No file content service available. File '" + renameData.sourceFile.getAbsolutePath() + "' cannot be moved.");
+            return false;
+        }
+
+        if (!renameData.sourceFile.renameTo(renameData.targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.targetFile.getAbsolutePath(),
+                    renameData.sampleTypeName,
+                    renameData.sampleName,
+                    renameData.fieldName));
+            return false;
         }
         // TODO verify this adds an audit log
-        fileService.fireFileMoveEvent(file, targetFile, user, targetContainer);
-        return targetFile;
+        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
+        return true;
     }
 }
