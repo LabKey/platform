@@ -101,6 +101,7 @@ public class JsonWriter
         props.put("jsonType", dc.getJsonTypeName());
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
         props.put("defaultValue", cinfo == null ? null : cinfo.getDefaultValue());
+        props.put("jdbcType", cinfo == null ? null : cinfo.getJdbcType().name());
 
         if (includeDomainFormat)
         {
