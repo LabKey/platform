@@ -158,10 +158,15 @@ public class SQLFragment implements Appendable, CharSequence
         return null != sb ? sb.toString() : null != sql ? sql : "";
     }
 
-    /* useful for wrapping existing SQL, for instance adding a cast
+    /*
+     * Directly set the current SQL.
+     *
+     * This is useful for wrapping existing SQL, for instance adding a cast
      * Obviously parameter number and order must remain unchanged
+     *
+     * This can also be used for processing sql scripts (e.g. module .sql update scripts)
      */
-    public SQLFragment setRawSQL(String sql)
+    public SQLFragment setSqlUnsafe(String sql)
     {
         sb = new StringBuilder(sql);
         return this;

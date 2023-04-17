@@ -325,7 +325,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
         // CONSIDER: always use "_x" and track down and fix usages that assume known table name
         SQLFragment name = c.getValueSql(filterNameAlias);
-        name.setRawSQL(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+        name.setSqlUnsafe(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
         return name;
     }
 

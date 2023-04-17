@@ -836,7 +836,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS FLOAT)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS FLOAT)");
         return cast;
     }
 
