@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONString;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
@@ -101,7 +102,7 @@ import java.util.function.Supplier;
  *
  * CONSIDER: extend {@link org.labkey.api.data.Entity}
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue, JSONString
 {
     private static final Logger LOG = LogHelper.getLogger(Container.class, "Information about projects and folders");
 
@@ -1833,5 +1834,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             return _entityId == null ? null : ContainerManager.getForId(_entityId);
         }
+    }
+
+    @Override
+    public String toJSONString()
+    {
+        return getId();
     }
 }

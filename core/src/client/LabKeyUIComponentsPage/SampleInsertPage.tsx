@@ -3,14 +3,11 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
-import {
-    Alert,
-    EntityInsertPanel,
-    initQueryGridState,
-    SampleTypeDataType,
-    Location,
-} from '@labkey/components';
-
+import { Alert, initQueryGridState, SampleTypeDataType, Location } from '@labkey/components';
+// EntityInsertPanel has been moved to the entities subpackage in preparation for migration to @labkey/premium.
+// This import remains here due to test coverage within the core-components.view which will be moved to the application
+// suites when the EntityInsertPanel is migrated.
+import { EntityInsertPanel } from '@labkey/components/entities';
 
 interface Props {
     isUpdate?: boolean;
