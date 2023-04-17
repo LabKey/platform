@@ -17,7 +17,6 @@
 package org.labkey.announcements;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -182,7 +181,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     private String[] resolveEmailAddress(JSONObject recipient)
     {
         String address = recipient.getString(MsgRecipient.address.name());
-        int principalId = NumberUtils.toInt(recipient.getString(MsgRecipient.principalId.name()), -100);
+        int principalId = recipient.optInt(MsgRecipient.principalId.name(), -100);
 
         if (address != null)
         {
