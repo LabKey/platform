@@ -856,9 +856,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipInputs)
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipDetails)
             throws QueryUpdateServiceException, InvalidKeyException
     {
+        TableInfo queryTableInfo = skipDetails ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
 
@@ -894,7 +895,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!rowIdRowNumMap.isEmpty())
         {
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 Integer rowId = (Integer) row.get("rowid");
@@ -915,7 +916,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(lsidRowNumMap.keySet());
 
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String sampleLsid = (String) row.get("lsid");
@@ -932,7 +933,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
 
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
@@ -963,8 +964,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting && !allKeys.isEmpty())
             throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
-
-        if (skipInputs)
+        if (skipDetails)
             return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
