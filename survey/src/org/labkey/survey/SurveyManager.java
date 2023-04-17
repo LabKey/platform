@@ -116,7 +116,7 @@ public class SurveyManager
     }
 
     @Nullable
-    public org.json.JSONObject createSurveyTemplate(ViewContext context, String schemaName, String queryName)
+    public JSONObject createSurveyTemplate(ViewContext context, String schemaName, String queryName)
     {
         BindException errors = new NullSafeBindException(this, "form");
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
@@ -177,7 +177,7 @@ public class SurveyManager
                 survey.put("sections", Collections.singletonList(panel));
             }
         }
-        return new org.json.JSONObject(survey);
+        return new JSONObject(survey);
     }
 
     public List<String> getKeyMetaDataProps()
