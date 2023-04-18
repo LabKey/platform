@@ -20,7 +20,6 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -107,8 +106,10 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
@@ -165,7 +166,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample typeoperations");
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
@@ -1861,11 +1862,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return null;
         }
         String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        int duplicateCount = 1;
+        String extension = FileUtil.getExtension(file.getName());
+        String name = file.getName();
+        String baseName = FileUtil.getBaseName(name);
         File targetFile = new File(targetPath);
-        if (targetFile.exists())
+        while (targetFile.exists())
         {
-            LOG.warn("File '" + targetFile.getAbsolutePath() + "' already exists in target container.");
-            return null;
+            name = baseName + "-" + duplicateCount;
+            if (extension != null)
+                name += "." + extension;
+
+            targetFile = new File(targetFile.getParentFile(), name);
+            duplicateCount++;
         }
         return targetFile;
     }
