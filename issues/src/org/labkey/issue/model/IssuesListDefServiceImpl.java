@@ -56,6 +56,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 
     private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
+    private static boolean _restrictedIssueListsEnabled;
 
     @Override
     public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, @Nullable String defName)
@@ -78,7 +79,11 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
 
         String relatedFolderName = IssueManager.getDefaultRelatedFolder(container, defName);
 
-        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser, relatedFolderName);
+        boolean isRestrictedIssueList = IssueManager.isRestrictedIssueTracker(container, defName);
+        Group restrictedGroup = IssueManager.getRestrictedIssueListGroup(container,defName);
+
+        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection,
+                assignedToGroup, assignedToUser, relatedFolderName, isRestrictedIssueList, restrictedGroup != null ? restrictedGroup.getUserId() : null);
     }
 
     @Override
@@ -142,6 +147,16 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
         IssueManager.setPropDefaultRelatedFolder(container, name, properties.getRelatedFolderName());
+        IssueManager.setRestrictedIssueTracker(container, name, properties.isRestrictedIssueList());
+        Group restrictedGroup = null;
+        if (properties.getRestrictedIssueListGroup() != null)
+        {
+            restrictedGroup = SecurityManager.getGroup(properties.getRestrictedIssueListGroup());
+            if (null == restrictedGroup)
+                throw new IllegalArgumentException("'" + properties.getRestrictedIssueListGroup().toString() +
+                        "' group not found. Please refer to core.Groups for a valid list of groups.");
+        }
+        IssueManager.setRestrictedIssueListGroup(container, name, restrictedGroup);
     }
 
     @Override
@@ -307,5 +322,17 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     public void deleteIssueDefsForDomain(User user, Domain domain)
     {
         IssueManager.deleteIssueDefsForDomain(user, domain);
+    }
+
+    @Override
+    public void enableRestrictedIssueLists(boolean enabled)
+    {
+        _restrictedIssueListsEnabled = enabled;
+    }
+
+    @Override
+    public boolean areRestrictedIssueListsEnabled()
+    {
+        return _restrictedIssueListsEnabled;
     }
 }
