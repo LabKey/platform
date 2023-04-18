@@ -23,8 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -262,9 +262,9 @@ public class AnalysisController extends SpringActionController
                                 continue;
                         }
 
-                        for (String protocolName : props.getFactory().getProtocolNames(wbRoot, wbDirData, false))
+                        for (String protocolName : props.getFactory().getProtocolNames(wbRoot, wbDirData.toPath(), false))
                         {
-                            protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData, props.getFactory()));
+                            protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData.toPath(), props.getFactory()));
                         }
                     }
                 }
@@ -274,12 +274,6 @@ public class AnalysisController extends SpringActionController
             result.put("protocols", protocols);
             result.put("defaultProtocolName", PipelineService.get().getLastProtocolSetting(props.getFactory(), getContainer(), getUser()));
             return new ApiSimpleResponse(result);
-        }
-
-        @Deprecated //Prefer the Path version
-        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
-        {
-            return getProtocolJson(protocolName, root, dirData.toPath(), factory);
         }
 
         protected JSONObject getProtocolJson(String protocolName, PipeRoot root, @Nullable Path dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
