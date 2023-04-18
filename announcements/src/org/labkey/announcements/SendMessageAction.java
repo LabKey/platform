@@ -180,7 +180,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private String[] resolveEmailAddress(JSONObject recipient)
     {
-        String address = recipient.getString(MsgRecipient.address.name());
+        String address = recipient.optString(MsgRecipient.address.name());
         int principalId = recipient.optInt(MsgRecipient.principalId.name(), -100);
 
         if (address != null)
