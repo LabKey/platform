@@ -25,6 +25,8 @@ import org.labkey.api.security.User;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 /**
  * This interface should be implemented by modules that expose queries
  * that can be updated by the HTTP-based APIs, or any other code that
@@ -134,13 +136,13 @@ public interface QueryUpdateService extends HasPermission
      * @param keys      A map of primary key values for each rowNumber.
      * @param verifyNoCrossFolderData      Throw exception if any key belongs to data outside the desired container.
      * @param verifyExisting      Throw exception if no existing record is found for any row.
-     * @param getDetails      If true, get extra lookup/lineage data
+     * @param columns      Columns that should be included in the result
      * @return The rows data as maps for each rowNumber.
      * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
      * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys);

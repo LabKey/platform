@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.Permission;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A simple wrapper around another QueryUpdateService. All of the real work is delegated through, but
@@ -59,10 +60,10 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        var ret = _service.getExistingRows(user, container, keys, verifyNoCrossFolderData, verifyExisting, getDetails);
+        var ret = _service.getExistingRows(user, container, keys, verifyNoCrossFolderData, verifyExisting, columns);
         clearCache();
         return ret;
     }
