@@ -1030,7 +1030,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Add any sample inputs to the rowInputLSIDs
                 if (o != null && (isSampleLookupById || isSampleLookupByName))
                 {
-                    ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
+                    ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
                     Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
 
