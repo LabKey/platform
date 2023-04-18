@@ -649,7 +649,7 @@ public class QuerySettings
 
     public void setOffset(long offset)
     {
-        assert (offset == Table.NO_OFFSET && _showRows != ShowRows.PAGINATED) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
+        assert (offset == Table.NO_OFFSET && _showRows != ShowRows.PAGINATED) || _showRows == ShowRows.PAGINATED : "Can't set offset when not paginated";
         _offset = offset;
     }
 
