@@ -214,7 +214,7 @@ public class AnalysisController extends SpringActionController
             {
                 JSONObject o = new JSONObject();
                 o.put("name", form.getFile()[i]);
-                o.put("status", form.getFileInputStatus()[i]);
+                o.put("status", JSONObject.wrap(form.getFileInputStatus()[i])); // Wrap to allow 'null' status
                 isRetry |= form.getFileInputStatus()[i] != null;
                 files.put(o);
             }
