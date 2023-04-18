@@ -63,7 +63,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final Container c;
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
-    final boolean _getDetailedData; // If true, get extra information, such as lineage
 
     final DataIteratorContext _context;
 
@@ -86,7 +85,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
         _verifyExisting = option.updateOnly;
-        _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         containerCol = map.get("Container");
@@ -213,7 +211,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 if (auditType == DETAILED || option.updateOnly)
                 {
-                    boolean detailed = auditType == DETAILED && !context.getConfigParameterBoolean(ExperimentService.QueryOptions.SkipDetailedExistingRecord);
+                    boolean detailed = auditType == DETAILED;
                     if (useGetRows)
                         return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
                     else
