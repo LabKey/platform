@@ -83,6 +83,8 @@ dependencies {
                 exclude group: "javax.servlet", module:"servlet-api"
                 // exclude this because it brings older version of log4j
                 exclude group: "log4j", module:"log4j"
+                // Avoid classloader conflicts with Tomcat's copy
+                exclude group: 'javax.activation', module: 'javax.activation-api'
             }
     )
 
