@@ -53,10 +53,6 @@ import java.util.Set;
 
 import static java.lang.Boolean.TRUE;
 
-/**
- * User: klum
- * Date: Jul 24, 2009
- */
 @RequiresPermission(ReadPermission.class)
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
@@ -180,38 +176,40 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private String[] resolveEmailAddress(JSONObject recipient)
     {
-        String address = recipient.getString(MsgRecipient.address.name());
-        int principalId = recipient.optInt(MsgRecipient.principalId.name(), -100);
+        String address = recipient.optString(MsgRecipient.address.name(), null);
 
         if (address != null)
         {
             return new String[]{address};
         }
-        else if (principalId != -100)
+
+        int principalId = recipient.optInt(MsgRecipient.principalId.name(), -100);
+
+        if (-100 == principalId)
         {
-            if (!isServerSideRequest())
-                throw new IllegalArgumentException("Use of principalId is allowed only for server side scripts");
-
-            // specifies a user or group id
-            User user = UserManager.getUser(principalId);
-            if (user != null)
-                return new String[]{user.getEmail()};
-            else
-            {
-                Group group = SecurityManager.getGroup(principalId);
-                if (group != null)
-                {
-                    if (group.isSystemGroup())
-                        throw new IllegalArgumentException("Invalid group ID: site groups are not allowed");
-
-                    return SecurityManager.getGroupMemberNames(principalId);
-                }
-                else
-                    throw new IllegalArgumentException("Unable to resolve principalId");
-            }
-        }
-        else
             throw new IllegalArgumentException("Invalid group or user ID format (must be: id:<user or group id>");
+        }
+
+        if (!isServerSideRequest())
+            throw new IllegalArgumentException("Use of principalId is allowed only for server side scripts");
+
+        // specifies a user or group id
+        User user = UserManager.getUser(principalId);
+        if (user != null)
+            return new String[]{user.getEmail()};
+        else
+        {
+            Group group = SecurityManager.getGroup(principalId);
+            if (group != null)
+            {
+                if (group.isSystemGroup())
+                    throw new IllegalArgumentException("Invalid group ID: site groups are not allowed");
+
+                return SecurityManager.getGroupMemberNames(principalId);
+            }
+            else
+                throw new IllegalArgumentException("Unable to resolve principalId");
+        }
     }
 
     private void addMsgRecipients(MailHelper.MultipartMessage msg, JSONArray recipients) throws IllegalArgumentException
