@@ -200,14 +200,10 @@ public interface IssuesListDefService
     void deleteIssueDefsForDomain(User user, Domain domain);
 
     /**
-     * Enables or disables support for restricted issue lists. A restricted issue list will limit access to an issue based on:
-     * assigment, notification list or group membership.
+     * Registers a single instance of a restricted issue list permissions provider
      */
-    void enableRestrictedIssueLists(boolean enabled);
+    void registerRestrictedIssueProvider(RestrictedIssueProvider provider);
 
-    /**
-     * Returns whether restricted issue lists are enabled
-     */
-    boolean areRestrictedIssueListsEnabled();
+    @Nullable RestrictedIssueProvider getRestrictedIssueProvider();
 }
 

@@ -49,9 +49,11 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.issues.RestrictedIssueProvider;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
@@ -59,6 +61,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.Group;
@@ -78,7 +81,6 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -115,7 +117,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -157,8 +158,6 @@ public class IssueManager
     private static final String CAT_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromCategory";
     private static final String PROP_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromProperty";
     private static final String PROP_DEFAULT_RELATED_FOLDER = "issueDefaultsRelatedFolder";
-    private static final String PROP_RESTRICTED_ISSUE_LIST = "issueRestrictedIssueList";
-    private static final String PROP_RESTRICTED_ISSUE_LIST_GROUP = "issueRestrictedIssueListGroup";
 
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
 
@@ -201,33 +200,29 @@ public class IssueManager
     {
         IssueObject issue = _getIssue(c, user, issueId);
 
-        // check permissions for restricted issue list
-        if (issue != null && IssuesListDefService.get().areRestrictedIssueListsEnabled())
+        // check permissions for a restricted issue list
+        RestrictedIssueProvider provider = IssuesListDefService.get().getRestrictedIssueProvider();
+        if (issue != null && provider != null)
         {
-            Container issueContainer = issue.getContainerFromId();
-            if (issueContainer != null && IssueManager.isRestrictedIssueTracker(issueContainer, issue.getIssueDefName()))
-            {
-                if (!hasPermissions(issueContainer, user, issue))
-                {
-                    throw new UnauthorizedException("This issue is in a restricted issue list. You do not have access to this issue");
-                }
-            }
+            List<Issue> relatedIssues = new ArrayList<>();
+            List<ValidationError> errors = new ArrayList<>();
 
-            // the user must also have access to all related issues
+            // need to check all related issues
             for (Integer relatedIssue : issue.getRelatedIssues())
             {
                 IssueObject related = _getIssue(c, user, relatedIssue);
                 if (related != null)
+                    relatedIssues.add(related);
+            }
+
+            if (!provider.hasPermission(user, issue, relatedIssues, errors))
+            {
+                StringBuilder msg = new StringBuilder();
+                for (ValidationError ve : errors)
                 {
-                    Container relatedContainer = related.getContainerFromId();
-                    if (relatedContainer != null && IssueManager.isRestrictedIssueTracker(relatedContainer, related.getIssueDefName()))
-                    {
-                        if (!hasPermissions(relatedContainer, user, related))
-                        {
-                            throw new UnauthorizedException(String.format("A related issue : %d is in a restricted issue list. You do not have access to that issue", relatedIssue));
-                        }
-                    }
+                    msg.append(ve.getMessage()).append("\n");
                 }
+                throw new UnauthorizedException(msg.toString());
             }
         }
         return issue;
@@ -277,31 +272,6 @@ public class IssueManager
                 return null;
         }
         return issue;
-    }
-
-    private static boolean hasPermissions(Container c, User user, IssueObject issue)
-    {
-        // if you've touched this issue, you have access to it
-        if (Objects.equals(issue.getAssignedTo(), user.getUserId())
-            || Objects.equals(issue.getResolvedBy(), user.getUserId())
-            || Objects.equals(issue.getClosedBy(), user.getUserId())
-            || issue.getCreatedBy() == user.getUserId()
-            || issue.getModifiedBy() == user.getUserId())
-            return true;
-
-        List<Pair<User, ValidEmail>> notifyUsers = issue.getNotifyListUserEmail();
-        for (Pair<User, ValidEmail> nu : notifyUsers)
-        {
-            if (user.equals(nu.getKey()))
-                return true;
-        }
-
-        Group group = IssueManager.getRestrictedIssueListGroup(c, issue.getIssueDefName());
-        if (group != null)
-        {
-            return user.isInGroup(group.getUserId());
-        }
-        return false;
     }
 
     /**
@@ -748,44 +718,6 @@ public class IssueManager
     public static void setPropDefaultRelatedFolder(Container c, String issueDefName, String relatedFolder)
     {
         setPropertyValue(c, issueDefName, PROP_DEFAULT_RELATED_FOLDER, relatedFolder);
-    }
-
-    public static boolean isRestrictedIssueTracker(Container c, String issueDefName)
-    {
-        if (IssuesListDefService.get().areRestrictedIssueListsEnabled())
-        {
-            String value = getPropertyValue(c, issueDefName, PROP_RESTRICTED_ISSUE_LIST);
-            if (value != null)
-            {
-                return Boolean.parseBoolean(value);
-            }
-        }
-        return false;
-    }
-
-    public static void setRestrictedIssueTracker(Container c, String issueDefName, Boolean restrictedTracker)
-    {
-        if (IssuesListDefService.get().areRestrictedIssueListsEnabled())
-            setPropertyValue(c, issueDefName, PROP_RESTRICTED_ISSUE_LIST, String.valueOf(restrictedTracker));
-    }
-
-    public static @Nullable Group getRestrictedIssueListGroup(Container c, String issueDefName)
-    {
-        if (IssuesListDefService.get().areRestrictedIssueListsEnabled())
-        {
-            String groupId = getPropertyValue(c, issueDefName, PROP_RESTRICTED_ISSUE_LIST_GROUP);
-            if (null == groupId)
-                return null;
-
-            return SecurityManager.getGroup(Integer.valueOf(groupId));
-        }
-        return null;
-    }
-
-    public static void setRestrictedIssueListGroup(Container c, String issueDefName, @Nullable Group group)
-    {
-        if (IssuesListDefService.get().areRestrictedIssueListsEnabled())
-            setPropertyValue(c, issueDefName, PROP_RESTRICTED_ISSUE_LIST_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
     }
 
     public static Collection<Container> getMoveDestinationContainers(Container c, User user, String issueDefName)

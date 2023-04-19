@@ -32,7 +32,9 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.Issue;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.issues.RestrictedIssueProvider;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -58,9 +60,9 @@ import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.CustomColumn;
-import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueObject;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -345,11 +347,20 @@ public class ChangeSummary
 
         final Set<User> allAddresses = getUsersToEmail(container, user, _issue, _prevIssue, _action);
         MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer(user);
+        RestrictedIssueProvider provider = IssuesListDefService.get().getRestrictedIssueProvider();
 
         for (User recipient : allAddresses)
         {
             boolean hasPermission = container.hasPermission(recipient, ReadPermission.class);
-            if (!hasPermission) continue;
+            if (!hasPermission)
+                continue;
+
+            if (provider != null)
+            {
+                // don't send notification emails if the user does not have access
+                if (!provider.hasPermission(recipient, _issue, Collections.emptyList(), Collections.emptyList()))
+                    continue;
+            }
 
             String to = recipient.getEmail();
             try

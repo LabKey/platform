@@ -142,8 +142,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        // TODO : remove this and add to ONPRC module
-        IssuesListDefService.get().enableRestrictedIssueLists(true);
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
@@ -238,7 +236,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
-        json.put("hasRestrictedIssueList", IssuesListDefService.get().areRestrictedIssueListsEnabled());
+        json.put("hasRestrictedIssueList", IssuesListDefService.get().getRestrictedIssueProvider() != null);
         return json;
     }
 }

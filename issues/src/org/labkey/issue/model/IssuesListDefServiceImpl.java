@@ -32,6 +32,7 @@ import org.labkey.api.issues.IssuesDomainKindProperties;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.issues.RestrictedIssueProvider;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -56,7 +57,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 
     private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
-    private static boolean _restrictedIssueListsEnabled;
+    private static RestrictedIssueProvider _restrictedIssueProvider;
 
     @Override
     public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, @Nullable String defName)
@@ -79,8 +80,14 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
 
         String relatedFolderName = IssueManager.getDefaultRelatedFolder(container, defName);
 
-        boolean isRestrictedIssueList = IssueManager.isRestrictedIssueTracker(container, defName);
-        Group restrictedGroup = IssueManager.getRestrictedIssueListGroup(container,defName);
+        RestrictedIssueProvider provider = IssuesListDefService.get().getRestrictedIssueProvider();
+        boolean isRestrictedIssueList = false;
+        Group restrictedGroup = null;
+        if (provider != null)
+        {
+            isRestrictedIssueList = provider.isRestrictedIssueTracker(container, defName);
+            restrictedGroup = provider.getRestrictedIssueListGroup(container,defName);
+        }
 
         return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection,
                 assignedToGroup, assignedToUser, relatedFolderName, isRestrictedIssueList, restrictedGroup != null ? restrictedGroup.getUserId() : null);
@@ -147,16 +154,21 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
         IssueManager.setPropDefaultRelatedFolder(container, name, properties.getRelatedFolderName());
-        IssueManager.setRestrictedIssueTracker(container, name, properties.isRestrictedIssueList());
-        Group restrictedGroup = null;
-        if (properties.getRestrictedIssueListGroup() != null)
+
+        RestrictedIssueProvider provider = IssuesListDefService.get().getRestrictedIssueProvider();
+        if (provider != null)
         {
-            restrictedGroup = SecurityManager.getGroup(properties.getRestrictedIssueListGroup());
-            if (null == restrictedGroup)
-                throw new IllegalArgumentException("'" + properties.getRestrictedIssueListGroup().toString() +
-                        "' group not found. Please refer to core.Groups for a valid list of groups.");
+            provider.setRestrictedIssueTracker(container, name, properties.isRestrictedIssueList());
+            Group restrictedGroup = null;
+            if (properties.getRestrictedIssueListGroup() != null)
+            {
+                restrictedGroup = SecurityManager.getGroup(properties.getRestrictedIssueListGroup());
+                if (null == restrictedGroup)
+                    throw new IllegalArgumentException("'" + properties.getRestrictedIssueListGroup().toString() +
+                            "' group not found. Please refer to core.Groups for a valid list of groups.");
+            }
+            provider.setRestrictedIssueListGroup(container, name, restrictedGroup);
         }
-        IssueManager.setRestrictedIssueListGroup(container, name, restrictedGroup);
     }
 
     @Override
@@ -325,14 +337,20 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public void enableRestrictedIssueLists(boolean enabled)
+    public void registerRestrictedIssueProvider(RestrictedIssueProvider provider)
     {
-        _restrictedIssueListsEnabled = enabled;
+        if (provider != null)
+        {
+            if (_restrictedIssueProvider == null)
+                _restrictedIssueProvider = provider;
+            else
+                LOG.error("A restricted issue list provider has already been registered, only one is allowed and subsequent providers will be ignored.");
+        }
     }
 
     @Override
-    public boolean areRestrictedIssueListsEnabled()
+    public @Nullable RestrictedIssueProvider getRestrictedIssueProvider()
     {
-        return _restrictedIssueListsEnabled;
+        return _restrictedIssueProvider;
     }
 }
