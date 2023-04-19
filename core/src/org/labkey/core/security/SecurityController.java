@@ -1474,7 +1474,7 @@ public class SecurityController extends SpringActionController
                             try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
                             {
                                 audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
-                                clonePermissions(userToClone, UserManager.getUser(email));
+                                clonePermissions(userToClone, UserManager.getUser(email), getUser().hasSiteAdminPermission());
                                 result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
                                 transaction.commit();
                             }
@@ -1502,7 +1502,7 @@ public class SecurityController extends SpringActionController
         AuditLogService.get().addEvent(getUser(), event);
     }
 
-    private void clonePermissions(User source, User target)
+    private void clonePermissions(User source, User target, boolean currentUserIsSiteAdmin)
     {
         if (source != null && target != null)
         {
@@ -1510,7 +1510,7 @@ public class SecurityController extends SpringActionController
             handleGroups(source, group -> {
                 if (!target.isInGroup(group.getUserId()))
                 {
-                    if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
+                    if (currentUserIsSiteAdmin || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
                     {
                         try
                         {
@@ -1524,11 +1524,13 @@ public class SecurityController extends SpringActionController
                 }
             });
 
+            target.refreshGroups();
+
             // Clone direct role assignments
             handleDirectRoleAssignments(source, (policy, roles) -> {
                 for (Role role : roles)
                 {
-                    if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
+                    if (currentUserIsSiteAdmin || !role.getPermissions().contains(SiteAdminPermission.class))
                         policy.addRoleAssignment(target, role, false);
                 }
 
@@ -1550,6 +1552,8 @@ public class SecurityController extends SpringActionController
                     SecurityManager.deleteMember(group, user);
                 }
             });
+
+            user.refreshGroups(); // We just deleted them all; refresh so subsequent operations see that
 
             // Delete direct role assignments
             handleDirectRoleAssignments(user, (policy, roles) -> {
@@ -1680,8 +1684,11 @@ public class SecurityController extends SpringActionController
             try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
             {
                 audit(_target, "The user " + _target.getEmail() + " had their group memberships and role assignments deleted and replaced with those of user " + _source.getEmail());
+
+                // Determine and stash this before delete because we could be deleting the current user's permissions
+                boolean currentUserIsSiteAdmin = getUser().hasSiteAdminPermission();
                 deletePermissions(_target);
-                clonePermissions(_source, _target);
+                clonePermissions(_source, _target, currentUserIsSiteAdmin);
                 transaction.commit();
             }
 
