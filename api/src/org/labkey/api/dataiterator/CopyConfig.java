@@ -25,6 +25,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.remoteapi.query.Filter;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -117,17 +118,8 @@ public class CopyConfig
         {
             for (Filter sourceFilter : getSourceFilters())
             {
-                Filter.Operator operator = sourceFilter.getOperator();
-                if (operator == null)
-                {
-                    operator = Filter.Operator.EQUAL;
-                }
-                CompareType type = CompareType.getByURLKey(operator.getUrlKey());
-                if (type == null)
-                {
-                    throw new ConfigurationException("Unsupported filter type: " + sourceFilter.getOperator());
-                }
-                filter.addCondition(FieldKey.fromString(sourceFilter.getColumnName()), sourceFilter.getValue(), type);
+                // NOTE: source filters are now validated in setSourceFilters()
+                filter.addCondition(FieldKey.fromString(sourceFilter.getColumnName()), sourceFilter.getValue(), CompareType.getByURLKey(sourceFilter.getOperator().getUrlKey()));
             }
         }
     }
@@ -252,7 +244,35 @@ public class CopyConfig
 
     public void setSourceFilters(List<Filter> sourceFilters)
     {
-        _sourceFilters = sourceFilters;
+        _sourceFilters = validateSourceFilters(sourceFilters);
+    }
+
+    public static List<Filter> validateSourceFilters(List<Filter> sourceFilters)
+    {
+        if (sourceFilters == null)
+        {
+            return null;
+        }
+
+        List<Filter> toAdd = new ArrayList<>();
+        for (Filter sourceFilter : sourceFilters)
+        {
+            Filter.Operator operator = sourceFilter.getOperator();
+            if (operator == null)
+            {
+                operator = Filter.Operator.EQUAL;
+            }
+
+            CompareType type = CompareType.getByURLKey(operator.getUrlKey());
+            if (type == null)
+            {
+                throw new ConfigurationException("Unsupported filter type: " + sourceFilter.getOperator());
+            }
+
+            toAdd.add(new Filter(sourceFilter.getColumnName(), sourceFilter.getValue(), operator));
+        }
+
+        return toAdd;
     }
 
     public boolean isBulkLoad()
