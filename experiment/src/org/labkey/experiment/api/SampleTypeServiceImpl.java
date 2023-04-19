@@ -1731,21 +1731,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
-            // Done as a post-commit task because otherwise the tableInfo cache may not have the proper tableInfos.
-            transaction.addCommitTask(() -> {
-                FileContentService fileService = FileContentService.get();
-                if (fileService == null)
-                    return;
-
-                for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
-                {
-                    for (FileFieldRenameData renameData : sampleFileRenameData)
-                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, renameData.sampleType.getContainer());
-
-                }
-            }, POSTCOMMIT);
-
-
             transaction.addCommitTask(() -> {
                 // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                 // based on the modified date
@@ -1754,12 +1739,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.addCommitTask(() -> {
+                FileContentService fileService = FileContentService.get();
+                if (fileService == null)
+                    return;
+
                 int fileMoveCount = 0;
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
+                    {
                         if (moveFile(renameData))
+                        {
                             fileMoveCount++;
+                            fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, renameData.sampleType.getContainer());
+                        }
+                    }
                 }
                 updateCounts.put("sampleFiles", fileMoveCount);
             }, POSTCOMMIT);
