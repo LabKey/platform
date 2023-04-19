@@ -1,8 +1,8 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -557,7 +557,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(a1.identifiable.getLSID(), json.getString("seed"));
 
         JSONObject nodes = json.getJSONObject("nodes");
-        assertEquals(4, nodes.size());
+        assertEquals(4, nodes.length());
         JSONObject a1json = nodes.getJSONObject(a1.identifiable.getLSID());
         assertEquals("A1", a1json.getString("name"));
         assertEquals(a1.identifiable.getLSID(), a1json.getString("lsid"));

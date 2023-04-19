@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -64,7 +65,8 @@ public interface SampleTypeService
         RemoveFromWorkflow("removing from a workflow"),
         AddAssayData("addition of associated assay data"),
         LinkToStudy("linking to study"),
-        RecallFromStudy("recalling from a study");
+        RecallFromStudy("recalling from a study"),
+        Move("moving to a different project");
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
 
@@ -225,5 +227,5 @@ public interface SampleTypeService
 
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames) throws IllegalStateException, SQLException;
 
-    int moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container targetContainer, @NotNull User user);
+    Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior);
 }

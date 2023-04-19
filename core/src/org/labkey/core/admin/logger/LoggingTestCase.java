@@ -52,7 +52,7 @@ public class LoggingTestCase extends Assert
     @Test
     public void testOldPropertiesFiles() throws IOException
     {
-        strictTest("log4j.properties", List.of("activeio-core-3.1.0-tests.jar")); // Issue #45120
+        strictTest("log4j.properties", Collections.emptyList()); // Issue #45120
     }
 
     // Must find all expected substrings and no others

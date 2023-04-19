@@ -18,8 +18,8 @@ package org.labkey.study.controllers;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -78,11 +78,6 @@ import java.util.Set;
 import static org.labkey.api.util.HttpUtil.Method.DELETE;
 import static org.labkey.api.util.HttpUtil.Method.POST;
 
-/**
- * User: klum
- * Date: May 30, 2011
- * Time: 2:58:38 PM
- */
 public class ParticipantGroupController extends BaseStudyController
 {
     enum GroupType {

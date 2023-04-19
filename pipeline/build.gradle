@@ -10,8 +10,24 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.activemq:activemq-core:${activemqCoreVersion}",
-            "Apache ActiveMQ",
+            "org.apache.activemq:activemq-client:${activemqVersion}",
+            "Apache ActiveMQ Client",
+            "Apache",
+            "http://activemq.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Java Message Service queuing",
+        ),
+        {
+            exclude group: "javax.servlet", module: "servlet-api"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.activemq:activemq-broker:${activemqVersion}",
+            "Apache ActiveMQ Broker",
             "Apache",
             "http://activemq.apache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
@@ -42,7 +58,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "dom4j:dom4j:${dom4jVersion}",
+            "org.dom4j:dom4j:${dom4jVersion}",
             "DOM4J",
             "DOM4J",
             "http://www.dom4j.org/",
@@ -55,6 +71,8 @@ dependencies {
             // (but seem OK for tomcat8).  We exclude jaxen since that doesn't seem to be required for our purposes
             // Another possibility here would be to upgrade to jaxen-1.1.6 and dom4j-1.6.1
             exclude group:"jaxen", module: "jaxen"
+            // Avoid classloader conflicts with Tomcat's copy
+            exclude group: 'javax.activation', module: 'javax.activation-api'
         }
     )
 
@@ -111,10 +129,23 @@ dependencies {
         new ExternalDependency(
             "com.thoughtworks.xstream:xstream:${xstreamVersion}",
             "XStream",
-            "XStream",
+            "Thoughtworks",
             "http://x-stream.github.io/index.html",
             "BSD",
             "http://x-stream.github.io/license.html",
+            "Pipeline (Mule dependency)",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "backport-util-concurrent:backport-util-concurrent:2.1",
+            "SpringSource Edu Emory Mathcs Backport",
+            "Emory University",
+            "https://backport-jsr166.sourceforge.net",
+            "Public Domain",
+            "https://creativecommons.org/licenses/publicdomain/",
             "Pipeline (Mule dependency)",
         )
     )

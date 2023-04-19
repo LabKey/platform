@@ -16,7 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.ProductAntigen;
 
@@ -160,10 +160,10 @@ public class ProductAntigenImpl implements ProductAntigen
             o.getString("GenBankId"), o.getString("Sequence")
         );
 
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
             antigen.setRowId(o.getInt("RowId"));
 
-        if (o.containsKey("ProductId"))
+        if (o.has("ProductId"))
             antigen.setProductId(o.getInt("ProductId"));
 
         return antigen;

@@ -132,6 +132,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -140,6 +141,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -303,6 +305,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -340,10 +343,6 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: jeckels
- * Date: Dec 13, 2007
- */
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
@@ -5767,7 +5766,7 @@ public class ExperimentController extends SpringActionController
                 if (outputData.size() > 0)
                     successMessage.append(outputData.size()).append(" data");
 
-                org.json.old.JSONObject ret;
+                JSONObject ret;
                 if (run != null)
                     ret = ExperimentJSONConverter.serializeRun(run, null, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                 else
@@ -6975,9 +6974,9 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+                            JSONObject props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                             props.put("docid", docId);
-                            notInIndex.add(props);
+                            notInIndex.add(props.toMap());
                         }
                     }
                 }
@@ -7709,8 +7708,6 @@ public class ExperimentController extends SpringActionController
         public void validateForm(MoveSamplesForm form, Errors errors)
         {
             validateTargetContainer(form, errors);
-
-            // TODO prevent moving if data QC states don't exist in target container scope
             validateSampleIds(form, errors);
         }
 
@@ -7718,10 +7715,10 @@ public class ExperimentController extends SpringActionController
         public Object execute(MoveSamplesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            int samplesMoved = SampleTypeService.get().moveSamples(_materials, _targetContainer, getUser());
+            Map<String, Integer> updateCounts = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
             resp.put("success", true);
-            resp.put("samplesMoved", samplesMoved);
+            resp.put("updateCounts", updateCounts);
             resp.put("containerPath", _targetContainer.getPath());
             return resp;
         }
@@ -7730,26 +7727,26 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getTargetContainer() == null)
             {
-                errors.reject(ERROR_MSG, "A target container must be specified for the move operation.");
+                errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
                 return;
             }
 
             _targetContainer = getTargetContainer(form);
             if (_targetContainer == null)
             {
-                errors.reject(ERROR_MSG, "The target container was not found: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "The target container was not found: " + form.getTargetContainer() + ".");
                 return;
             }
 
             if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
             {
-                errors.reject(ERROR_MSG, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
                 return;
             }
 
             if (!isValidTargetContainer(getContainer(), _targetContainer))
             {
-                errors.reject(ERROR_MSG, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
                 return;
             }
         }
@@ -7782,24 +7779,49 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            Set<Integer> sampleIds = form.getIds(false);
+            Set<Integer> sampleIds = form.getIds(true);
             if (sampleIds == null || sampleIds.isEmpty())
             {
-                errors.reject(ERROR_MSG, "Sample IDs must be specified for the move operation.");
+                errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
                 return;
             }
 
             _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
             if (_materials.size() != sampleIds.size())
             {
-                errors.reject(ERROR_MSG, "Unable to find all samples for the move operation.");
+                errors.reject(ERROR_GENERIC, "Unable to find all samples for the move operation.");
                 return;
             }
 
             // verify all samples are from the current container
             if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
             {
-                errors.reject(ERROR_MSG, "All samples must be from the current container for the move operation.");
+                errors.reject(ERROR_GENERIC, "All samples must be from the current container for the move operation.");
+                return;
+            }
+
+            // verify allowed moves based on sample statuses
+            List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
+            for (ExpMaterial material : _materials)
+            {
+                DataState sampleStatus = material.getSampleState();
+                if (sampleStatus == null) continue;
+
+                // prevent move for locked samples
+                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
+                {
+                    invalidStatusSamples.add(material);
+                }
+                // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
+                // only applies when moving from child to parent or child to sibling
+                else if (!getContainer().isProject() && sampleStatus.getContainer().equals(getContainer()))
+                {
+                    invalidStatusSamples.add(material);
+                }
+            }
+            if (!invalidStatusSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
                 return;
             }
 
@@ -7807,8 +7829,7 @@ public class ExperimentController extends SpringActionController
             // TODO remove this once we support moving / splitting the experiment run
             if (_materials.stream().anyMatch(material -> material.getRunId() != null))
             {
-                errors.reject(ERROR_MSG, "Only supporting move of root samples at this time.");
-                return;
+                errors.reject(ERROR_GENERIC, "Only supporting move of root samples at this time.");
             }
         }
     }
@@ -7816,6 +7837,8 @@ public class ExperimentController extends SpringActionController
     public static class MoveSamplesForm extends DataViewSnapshotSelectionForm
     {
         private String _targetContainer;
+        private String _userComment;
+        private AuditBehaviorType _auditBehavior;
 
         public String getTargetContainer()
         {
@@ -7826,5 +7849,129 @@ public class ExperimentController extends SpringActionController
         {
             _targetContainer = targetContainer;
         }
+
+        public String getUserComment()
+        {
+            return _userComment;
+        }
+
+        public void setUserComment(String userComment)
+        {
+            _userComment = userComment;
+        }
+
+        public AuditBehaviorType getAuditBehavior()
+        {
+            return _auditBehavior;
+        }
+
+        public void setAuditBehavior(AuditBehaviorType auditBehavior)
+        {
+            _auditBehavior = auditBehavior;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetEffectiveSchemaQueryAction extends ReadOnlyApiAction<EffectiveQueryForm>
+    {
+        private ContainerFilter.Type _containerFilterType = null;
+        @Override
+        public void validateForm(EffectiveQueryForm form, Errors errors)
+        {
+            try
+            {
+                _containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+            }
+
+            if (form.getTimestamp() == null)
+                throw new IllegalArgumentException("'timestamp' parameter is required");
+        }
+
+        @Override
+        public Object execute(EffectiveQueryForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            User user = getUser();
+            ContainerFilter dataTypeCF = _containerFilterType.create(container, user);
+            ExperimentService experimentService = ExperimentService.get();
+            Date effectiveDate = new Date(form.getTimestamp());
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
+            String effectiveSchemaName = schemaName;
+            String effectiveQueryName = queryName;
+            if ("samples".equalsIgnoreCase(schemaName))
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getEffectiveSampleType(container, user, queryName, effectiveDate, dataTypeCF);
+                if (sampleType != null)
+                    effectiveQueryName = sampleType.getName(); // sample type might have been renamed
+            }
+            else if ("exp.data".equalsIgnoreCase(schemaName))
+            {
+                ExpDataClass dataClass = experimentService.getEffectiveDataClass(container, user, queryName, effectiveDate, dataTypeCF);
+                if (dataClass != null) // dataclass might have been renamed
+                    effectiveQueryName = dataClass.getName();
+            }
+            else if ("assay.general".equalsIgnoreCase(schemaName))
+            {
+                // TODO: get effective schemaname, when assay design renaming is supported
+                // effectiveSchemaName = getEffectiveExpProtocol
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("schemaName", effectiveSchemaName);
+            resp.put("queryName", effectiveQueryName);
+            return resp;
+        }
+    }
+
+    public static class EffectiveQueryForm extends QueryForm
+    {
+        private String _containerFilter;
+        private Long _timestamp;
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            var result = super.createQuerySettings(schema);
+            if (getContainerFilter() != null)
+            {
+                try
+                {
+                    ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(getContainerFilter());
+                    result.setContainerFilterName(containerFilterType.name());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+                }
+            }
+            return result;
+        }
+
+        public Long getTimestamp()
+        {
+            return _timestamp;
+        }
+
+        public void setTimestamp(Long timestamp)
+        {
+            _timestamp = timestamp;
+        }
+
     }
 }

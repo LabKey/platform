@@ -3,7 +3,7 @@ package org.labkey.pipeline;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -17,6 +17,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.trigger.TriggerConfiguration;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.pipeline.api.PipelineSchema;
 
 import java.io.IOException;
@@ -47,26 +48,25 @@ public class PipelineUpgradeCode implements UpgradeCode
             LOG.info("Updating 'mergeData' option for " +  triggers.size() + " 'Import Samples from Data File' pipeline trigger(s).");
         try (DbScope.Transaction tx = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            User user = User.getSearchUser();
             for (TriggerConfiguration trigger : triggers)
             {
                 Object customConfiguration = trigger.getCustomConfiguration();
                 if (customConfiguration != null && !customConfiguration.toString().equals("") && customConfiguration.toString().contains(oldKey))
                 {
-                    JSONObject json = null;
                     try
                     {
-                        ObjectMapper mapper = new ObjectMapper();
-                        json = mapper.readValue(customConfiguration.toString(), JSONObject.class);
+                        // Note: This is overkill -- new JSONObject(customConfiguration.toString()) should work
+                        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER;
+                        JSONObject json = mapper.readValue(customConfiguration.toString(), JSONObject.class);
                         boolean isMerge = json.optBoolean(oldKey);
                         json.remove(oldKey);
                         json.put("insertOption", isMerge ? QueryUpdateService.InsertOption.MERGE.name() : QueryUpdateService.InsertOption.INSERT.name());
 
                         SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo, "")
-                                .append(" SET customconfiguration =  ?")
-                                .add(json.toString())
-                                .append(" WHERE rowId = ?")
-                                .add(trigger.getRowId());
+                            .append(" SET customconfiguration = ?")
+                            .add(json.toString())
+                            .append(" WHERE rowId = ?")
+                            .add(trigger.getRowId());
 
                         new SqlExecutor(tinfo.getSchema()).execute(sql);
                     }
@@ -76,10 +76,7 @@ public class PipelineUpgradeCode implements UpgradeCode
                     }
                 }
             }
-
             tx.commit();
         }
-
     }
-
 }

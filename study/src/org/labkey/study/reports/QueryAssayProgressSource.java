@@ -15,6 +15,7 @@
  */
 package org.labkey.study.reports;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
@@ -72,8 +73,8 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
     {
         if (_participants.isEmpty())
         {
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), _expectation.getQueryFolder() != null ? _expectation.getQueryFolder() : context.getContainer(),
-                    _expectation.getSchemaName());
+            Container c = _expectation.getQueryFolder() != null ? _expectation.getQueryFolder() : context.getContainer();
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), c, _expectation.getSchemaName());
             if (schema != null)
             {
                 Set<String> participants = new HashSet<>();
@@ -121,12 +122,12 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                 }
                 else
                 {
-                    throw new RuntimeException("Unable to access the configured query: " + _expectation.getQueryName());
+                    throw new RuntimeException("Unable to access the configured query: " + _expectation.getSchemaName() + "." + _expectation.getQueryName() + " in " + c.getPath());
                 }
             }
             else
             {
-                throw new RuntimeException("Unable to access the configured schema schema: " + _expectation.getSchemaName());
+                throw new RuntimeException("Unable to access the configured schema schema: " + _expectation.getSchemaName() + " in " + c.getPath());
             }
         }
     }

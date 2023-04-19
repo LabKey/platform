@@ -1,9 +1,10 @@
-import { hookServer, RequestOptions, SecurityRole, successfulResponse, TestUser } from '@labkey/test';
+import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'ExperimentControllerTest Project';
-const SAMPLE_TYPE_NAME = 'TestMoveSampleType';
+const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
+const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
 
 let editorUserOptions: RequestOptions;
 let subEditorUserOptions: RequestOptions;
@@ -16,7 +17,7 @@ let subfolder2Options;
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment']
+        ensureModules: ['experiment'],
     });
     topFolderOptions = { containerPath: PROJECT_NAME };
 
@@ -51,7 +52,13 @@ beforeAll(async () => {
     // create a sample type at project container for use in tests
     await server.post('property', 'createDomain', {
         kind: 'SampleSet',
-        domainDesign: { name: SAMPLE_TYPE_NAME, fields: [{ name: 'Name',  }] }
+        domainDesign: { name: SAMPLE_TYPE_NAME_1, fields: [{ name: 'Name',  }] }
+    }, topFolderOptions).expect(successfulResponse);
+
+    // create a second sample type at project container for use in tests
+    await server.post('property', 'createDomain', {
+        kind: 'SampleSet',
+        domainDesign: { name: SAMPLE_TYPE_NAME_2, fields: [{ name: 'Name',  }] }
     }, topFolderOptions).expect(successfulResponse);
 });
 
@@ -59,26 +66,90 @@ afterAll(async () => {
     return server.teardown();
 });
 
-async function createSample(sampleName: string, folderOptions: RequestOptions) {
+async function createSample(sampleName: string, folderOptions: RequestOptions, auditBehavior?: string, sampleType: string = SAMPLE_TYPE_NAME_1) {
     const materialResponse = await server.post('query', 'insertRows', {
         schemaName: 'samples',
-        queryName: SAMPLE_TYPE_NAME,
-        rows: [{ name: sampleName }]
+        queryName: sampleType,
+        rows: [{ name: sampleName }],
+        auditBehavior,
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
     return caseInsensitive(materialResponse.body.rows[0], 'rowId');
 }
 
-async function sampleExists(sampleRowId: number, folderOptions: RequestOptions) {
+async function sampleExists(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'samples',
-        queryName: SAMPLE_TYPE_NAME,
-        'query.RowId~eq': sampleRowId
+        queryName: sampleType,
+        'query.RowId~eq': sampleRowId,
+        'query.columns': 'RowId'
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
     return response.body.rows.length === 1;
 }
 
+async function getSampleTypeAuditLogs(sampleType: string, folderOptions: RequestOptions, expectedNumber: number) {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'auditlog',
+        queryName: 'samplesetauditevent',
+        'query.samplesetname~eq': sampleType,
+        'query.columns': 'Comment,userComment,transactionId,Created',
+        'query.sort': '-Created',
+        'query.maxRows': expectedNumber
+    }, { ...folderOptions  }).expect(successfulResponse);
+    return response.body.rows;
+}
+
+async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: RequestOptions, expectedNumber: number = -1) {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'auditlog',
+        queryName: 'SampleTimelineEvent',
+        'query.sampleid~eq': sampleRowId,
+        'query.columns': 'Comment,userComment,transactionId,Created',
+        'query.sort': '-Created',
+        'query.maxRows': expectedNumber
+    }, { ...folderOptions }).expect(successfulResponse);
+    return response.body.rows;
+}
+
 describe('ExperimentController', () => {
+
+    async function verifySampleTypeAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], userComment: string = null, sampleType:string = SAMPLE_TYPE_NAME_1): Promise<number>
+    {
+        const sampleTypeEventsInSource = await getSampleTypeAuditLogs(sampleType, sourceFolderOptions, 2);
+        const samplesPhrase = sampleIds.length == 1 ? "1 sample" : sampleIds.length + " samples";
+        const targetPath = targetFolderOptions.containerPath.charAt(0) === '/' ? targetFolderOptions.containerPath : '/' + targetFolderOptions.containerPath;
+        const sourcePath = sourceFolderOptions.containerPath.charAt(0) === '/' ? sourceFolderOptions.containerPath : '/' + sourceFolderOptions.containerPath;
+        expect(caseInsensitive(sampleTypeEventsInSource[0], 'Comment')).toEqual("Moved " + samplesPhrase + " to " + targetPath);
+        const transactionId = caseInsensitive(sampleTypeEventsInSource[0], 'transactionId');
+        expect(transactionId).toBeTruthy();
+        expect(caseInsensitive(sampleTypeEventsInSource[0], 'userComment')).toBe(userComment);
+        expect(caseInsensitive(sampleTypeEventsInSource[1], 'Comment')).toEqual("Samples inserted in: " + sampleType);
+        const sampleTypeEventsInTarget = await getSampleTypeAuditLogs(sampleType, targetFolderOptions, 1);
+        expect(caseInsensitive(sampleTypeEventsInTarget[0], 'Comment')).toEqual("Moved " + samplesPhrase + " from " + sourcePath);
+        expect(caseInsensitive(sampleTypeEventsInTarget[0], 'transactionId')).toBe(transactionId);
+        return transactionId;
+    }
+
+    async function verifyDetailedAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], transactionId: number, userComment: string = null) {
+        for (const sampleRowId of sampleIds) {
+            const sampleEventsInSource = await getSampleTimelineAuditLogs(sampleRowId, sourceFolderOptions);
+            expect(sampleEventsInSource).toHaveLength(0);
+        }
+
+        for (const sampleRowId of sampleIds) {
+            const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions);
+            expect(sampleEventsInTarget).toHaveLength(2);
+            expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample project was updated.");
+            expect(caseInsensitive(sampleEventsInTarget[0], 'userComment')).toBe(userComment);
+            expect(caseInsensitive(sampleEventsInTarget[0], 'transactionId')).toBe(transactionId);
+            expect(caseInsensitive(sampleEventsInTarget[1], 'Comment')).toEqual("Sample was registered.");
+        }
+    }
+
     describe('moveSamples.api', () => {
+        // NOTE: the MoveSamplesAction is in the experiment module, but the sample status related test cases won't
+        // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
+        // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
+
         it('requires POST', () => {
             server.get('experiment', 'moveSamples.api').expect(405);
         });
@@ -178,7 +249,7 @@ describe('ExperimentController', () => {
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
-                rowIds: [1]
+                rowIds: [-1]
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -250,7 +321,7 @@ describe('ExperimentController', () => {
             expect(sampleExistsInSub1).toBe(true);
         });
 
-        it('success, move sample from parent project to subfolder', async () => {
+        it('success, move sample from parent project to subfolder, no audit logging', async () => {
             // Arrange
             const sampleRowId = await createSample('top-movetosub1-1', topFolderOptions);
 
@@ -261,74 +332,230 @@ describe('ExperimentController', () => {
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
-            const { samplesMoved, success } = response.body;
+            const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(samplesMoved).toEqual(1);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(0);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(false);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
             expect(sampleExistsInSub1).toBe(true);
+
+            await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId]);
+
+            const sampleEventsInTop = await getSampleTimelineAuditLogs(sampleRowId, topFolderOptions);
+            expect(sampleEventsInTop).toHaveLength(0);
+            const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
+            expect(sampleEventsInSub1).toHaveLength(0);
+        });
+
+        it('success, move sample from parent project to subfolder, detailed audit logging', async () => {
+            // Arrange
+            const sampleRowId = await createSample('top-movetosub1-2', topFolderOptions, "DETAILED");
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [sampleRowId],
+                auditBehavior: "DETAILED",
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBe(false);
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(true);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId]);
+            await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], auditTransactionId);
+        });
+
+        it('success, move sample from parent project to subfolder, detailed audit logging with comment', async () => {
+            // Arrange
+            const sampleRowId = await createSample('top-movetosub1-3', topFolderOptions, "DETAILED");
+            const userComment =  "Oops! Wrong project.";
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [sampleRowId],
+                auditBehavior: "DETAILED",
+                userComment
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBe(false);
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(true);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], userComment);
+            await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], auditTransactionId, userComment);
+        });
+
+        it('success, move sample from parent project to subfolder with summary logging', async () => {
+            // Arrange
+            const sampleRowId = await createSample('top-movetosub1-4', topFolderOptions, "DETAILED");
+            const userComment = "4 is in the wrong place."
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [sampleRowId],
+                auditBehavior: 'SUMMARY',
+                userComment
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
+
+            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            expect(sampleExistsInTop).toBe(false);
+            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(true);
+
+            await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], userComment);
+
+            const sampleEventsInTop = await getSampleTimelineAuditLogs(sampleRowId, topFolderOptions);
+            expect(sampleEventsInTop).toHaveLength(0);
+            const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
+            expect(sampleEventsInSub1).toHaveLength(1);
+            expect(sampleEventsInSub1[0].Comment).toEqual("Sample was registered.");
         });
 
         it('success, move sample from subfolder to parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetotop-1', subfolder1Options);
+            const sampleRowId = await createSample('sub1-movetotop-1', subfolder1Options, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: topFolderOptions.containerPath,
-                rowIds: [sampleRowId]
+                rowIds: [sampleRowId],
+                auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
             // Assert
-            const { samplesMoved, success } = response.body;
+            const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(samplesMoved).toEqual(1);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
             expect(sampleExistsInTop).toBe(true);
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, topFolderOptions,  [sampleRowId]);
+            await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId], auditTransactionId);
+
         });
 
         it('success, move sample from subfolder to sibling', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetosub2-1', subfolder1Options);
+            const sampleRowId = await createSample('sub1-movetosub2-1', subfolder1Options, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder2Options.containerPath,
-                rowIds: [sampleRowId]
+                rowIds: [sampleRowId],
+                auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
             // Assert
-            const { samplesMoved, success } = response.body;
+            const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(samplesMoved).toEqual(1);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(1);
 
             const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
             const sampleExistsInSub2 = await sampleExists(sampleRowId, subfolder2Options);
             expect(sampleExistsInSub2).toBe(true);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId]);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId], auditTransactionId);
+
         });
 
-        it('success, move multiple sample', async () => {
+        it('success, move samples from multiple types', async () => {
             // Arrange
-            const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options);
-            const sampleRowId2 = await createSample('sub1-movetosub2-3', subfolder1Options);
-            const sampleRowId3 = await createSample('sub1-movetosub2-4', subfolder1Options);
+            const sampleRowId1 = await createSample('sub1-movetosub2-5', subfolder1Options, "DETAILED");
+            const sampleRowId2 = await createSample('sub1-movetosub2-6', subfolder1Options, "DETAILED");
+            const sampleRowId3 = await createSample('type2-sub1-movetosub2-1', subfolder1Options, "DETAILED", SAMPLE_TYPE_NAME_2);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder2Options.containerPath,
-                rowIds: [sampleRowId1, sampleRowId2, sampleRowId3]
+                rowIds: [sampleRowId1, sampleRowId2, sampleRowId3],
+                auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
             // Assert
-            const { samplesMoved, success } = response.body;
+            const { updateCounts, success } = response.body;
             expect(success).toBe(true);
-            expect(samplesMoved).toEqual(3);
+            expect(updateCounts.samples).toBe(3);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(3);
+
+            let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId2, subfolder1Options);
+            expect(sampleExistsInSub1).toBe(false);
+            sampleExistsInSub1 = await sampleExists(sampleRowId3, subfolder1Options, SAMPLE_TYPE_NAME_2);
+            expect(sampleExistsInSub1).toBe(false);
+
+            let sampleExistsInSub2 = await sampleExists(sampleRowId1, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId2, subfolder2Options);
+            expect(sampleExistsInSub2).toBe(true);
+            sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options, SAMPLE_TYPE_NAME_2);
+            expect(sampleExistsInSub2).toBe(true);
+
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2]);
+            const auditTransactionId2 = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId3], undefined, SAMPLE_TYPE_NAME_2);
+            expect(auditTransactionId2).toBe(auditTransactionId);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3], auditTransactionId);
+
+        });
+
+        it('success, move multiple samples', async () => {
+            // Arrange
+            const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options, "DETAILED");
+            const sampleRowId2 = await createSample('sub1-movetosub2-3', subfolder1Options, "DETAILED");
+            const sampleRowId3 = await createSample('sub1-movetosub2-4', subfolder1Options, "DETAILED");
+
+            // Act
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder2Options.containerPath,
+                rowIds: [sampleRowId1, sampleRowId2, sampleRowId3],
+                auditBehavior: "DETAILED",
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(3);
+            expect(updateCounts.sampleAliases).toBe(0);
+            expect(updateCounts.sampleAuditEvents).toBe(3);
 
             let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);
@@ -344,8 +571,13 @@ describe('ExperimentController', () => {
             sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options);
             expect(sampleExistsInSub2).toBe(true);
 
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3]);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3], auditTransactionId);
+
             // verify that we are able to delete the original sample container after things are moved
             await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
+
         });
+
     });
 });

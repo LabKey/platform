@@ -15,8 +15,8 @@
  */
 package org.labkey.assay.actions;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -45,7 +45,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
     @Override
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception
     {
-        JSONObject rootJsonObject = form.getOldJsonObject();
+        JSONObject rootJsonObject = form.getJsonObject();
 
         // A user can send in either an array of batches or just a batch but not both.  If a user sends in an array of batches
         // then it must have at least one batch

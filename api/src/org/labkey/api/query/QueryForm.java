@@ -97,7 +97,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         // Don't treat a query with errors as if it doesn't exist at all
         if (_queryView.getTable() == null && _queryView.getParseErrors().isEmpty())
         {
-            throw new NotFoundException("The specified query does not exist in schema '" + getSchemaName() + "'");
+            throw new NotFoundException("The specified query '" + getQueryName() + "' does not exist in schema '" + getSchemaName() + "'");
         }
 
         return _queryView;
