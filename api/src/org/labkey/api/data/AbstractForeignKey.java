@@ -15,19 +15,34 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Convenience base class for {@link ForeignKey} implementors.
@@ -410,5 +427,98 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     public void setShowAsPublicDependency(boolean b)
     {
         _showAsPublicDependency = b;
+    }
+    
+    public static class TestCase
+    {
+        public static String CONTAINER_SOURCE = "AbstractForeignKeySource";
+        public static String CONTAINER_DEST = "AbstractForeignKeyDest";
+
+        @BeforeClass
+        public static void doSetup() throws Exception
+        {
+            doCleanup();
+
+            ContainerManager.createContainer(ContainerManager.getRoot(), CONTAINER_SOURCE);
+            ContainerManager.createContainer(ContainerManager.getRoot(), CONTAINER_DEST);
+        }
+
+        @AfterClass
+        public static void doCleanup() throws Exception
+        {
+            Container source = ContainerManager.getForPath(CONTAINER_SOURCE);
+            if (source != null)
+            {
+                ContainerManager.deleteAll(source, TestContext.get().getUser());
+            }
+
+            Container dest = ContainerManager.getForPath(CONTAINER_DEST);
+            if (dest != null)
+            {
+                ContainerManager.deleteAll(dest, TestContext.get().getUser());
+            }
+        }
+
+        /**
+         * See: https://github.com/LabKey/platform/pull/4307
+         * The purpose of this test is to ensure that when adding a FK across containers, that the target of the FK points to the correct container, rather than the source
+         */
+        @Test
+        public void testCrossContainerFks() throws Exception
+        {
+            ListDefinition listSource = ListService.get().createList(ContainerManager.getForPath(CONTAINER_SOURCE), CONTAINER_SOURCE, ListDefinition.KeyType.AutoIncrementInteger);
+            listSource.setKeyName("RowId");
+            Domain d = requireNonNull(listSource.getDomain());
+            d.addProperty(new PropertyStorageSpec("Source1", JdbcType.INTEGER));
+            d.addProperty(new PropertyStorageSpec("Source2", JdbcType.INTEGER));
+            listSource.save(TestContext.get().getUser());
+
+            ListDefinition listDest = ListService.get().createList(ContainerManager.getForPath(CONTAINER_DEST), CONTAINER_DEST, ListDefinition.KeyType.AutoIncrementInteger);
+            listDest.setKeyName("RowId");
+            d = requireNonNull(listDest.getDomain());
+            d.addProperty(new PropertyStorageSpec("Dest1", JdbcType.INTEGER));
+            d.addProperty(new PropertyStorageSpec("Dest2", JdbcType.INTEGER));
+            listDest.save(TestContext.get().getUser());
+
+            Container workbook = ContainerManager.createContainer(ContainerManager.getForPath(CONTAINER_DEST), null, "The workbook", "The description", WorkbookContainerType.NAME, TestContext.get().getUser());
+
+            TableInfo source = QueryService.get().getUserSchema(TestContext.get().getUser(), ContainerManager.getForPath(CONTAINER_SOURCE), "lists").getTable(CONTAINER_SOURCE, null, true, true);
+            int inserted1 = source.getUpdateService().insertRows(TestContext.get().getUser(), ContainerManager.getForPath(CONTAINER_SOURCE), Arrays.asList(
+                    new CaseInsensitiveMapWrapper<>(Map.of("Source1", 1, "Source2", 10)),
+                    new CaseInsensitiveMapWrapper<>(Map.of("Source1", 2, "Source2", 20)),
+                    new CaseInsensitiveMapWrapper<>(Map.of("Source1", 3, "Source2", 30))
+            ), new BatchValidationException(), null, null).size();
+
+            Assert.assertEquals("Incorrect row count", 3, inserted1);
+            TableInfo dest = QueryService.get().getUserSchema(TestContext.get().getUser(), ContainerManager.getForPath(CONTAINER_DEST), "lists").getTable(CONTAINER_DEST);
+            int inserted2 = dest.getUpdateService().insertRows(TestContext.get().getUser(), ContainerManager.getForPath(CONTAINER_DEST), Arrays.asList(
+                    new CaseInsensitiveMapWrapper<>(Map.of("Dest1", 10, "Dest2", 100)),
+                    new CaseInsensitiveMapWrapper<>(Map.of("Dest1", 20, "Dest2", 200, "Container", workbook.getId())),
+                    new CaseInsensitiveMapWrapper<>(Map.of("Dest1", 40, "Dest2", 400))
+            ), new BatchValidationException(), null, null).size();
+            Assert.assertEquals("Incorrect row count", 3, inserted2);
+
+            if (!(source instanceof AbstractTableInfo ati))
+            {
+                throw new IllegalStateException("Should be instance of AbstractTableInfo");
+            }
+
+            MutableColumnInfo col = ati.getMutableColumn(FieldKey.fromString("Source2"));
+            col.setFk(new QueryForeignKey(source.getUserSchema(), null, dest.getUserSchema(), null, CONTAINER_DEST, "Dest1", "Dest2"));
+            ati.removeColumn(ati.getColumn(FieldKey.fromString("Source2")));
+            ati.addColumn(col);
+
+            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(ati, PageFlowUtil.set(FieldKey.fromString("Source1"), FieldKey.fromString("Source2/Dest2")));
+            TableSelector ts = new TableSelector(ati, cols.values(), null, null).setForDisplay(true);
+            Assert.assertEquals("Incorrect row count", 3, ts.getRowCount());
+
+            ts.forEachResults(rs -> {
+                int sourceVal = rs.getInt(FieldKey.fromString("Source1"));
+                Object destVal = rs.getObject(FieldKey.fromString("Source2/Dest2"));
+
+                // sourceVal=3 should not resolve
+                Assert.assertEquals("Incorrect lookup value", sourceVal == 3 ? null : sourceVal * 100, destVal);
+            });
+        }
     }
 }
