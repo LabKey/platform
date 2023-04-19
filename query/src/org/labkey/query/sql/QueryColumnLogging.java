@@ -1,6 +1,5 @@
 package org.labkey.query.sql;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SelectQueryAuditProvider;
@@ -9,6 +8,7 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,17 +28,17 @@ public class QueryColumnLogging extends ColumnLogging
     final Collection<AbstractQueryRelation.RelationColumn> columnsUsed;
 
     QueryColumnLogging(TableInfo parentTable, FieldKey column, Collection<AbstractQueryRelation.RelationColumn> columnsUsed,
-                       boolean shouldLogName, String loggingComment, SelectQueryAuditProvider sqap)
+                       boolean shouldLogName, Set<String> loggingComments, SelectQueryAuditProvider sqap)
     {
         super(parentTable.getSchema().getName(), parentTable.getName(), column,
-                shouldLogName, Set.of(), loggingComment, sqap);
+                shouldLogName, Set.of(), loggingComments, sqap);
         this.columnsUsed = columnsUsed;
     }
 
     static QueryColumnLogging create(TableInfo parentTable, FieldKey column, Collection<AbstractQueryRelation.RelationColumn> cols)
     {
         boolean shouldLogName = false;
-        String loggingComment = null;
+        Set<String> comments = new LinkedHashSet<>();
         SelectQueryAuditProvider sqap = null;
         for (var col : cols)
         {
@@ -46,13 +46,12 @@ public class QueryColumnLogging extends ColumnLogging
             if (null != logging)
             {
                 shouldLogName |= logging.shouldLogName();
-                if (null == loggingComment)
-                    loggingComment = logging.getLoggingComment();
+                comments.addAll(logging.getLoggingComments());
                 if (null == sqap)
                     sqap = logging.getSelectQueryAuditProvider();
             }
         }
-        return new QueryColumnLogging(parentTable, column, cols, shouldLogName, loggingComment, sqap);
+        return new QueryColumnLogging(parentTable, column, cols, shouldLogName, comments, sqap);
     }
 
 
@@ -117,6 +116,6 @@ public class QueryColumnLogging extends ColumnLogging
 
         return new ColumnLogging(
             table.getUserSchema().getSchemaName(), table.getName(), column,
-            _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
+            _shouldLogName, dataLoggingColumns, _loggingComments, _selectQueryAuditProvider);
     }
 }

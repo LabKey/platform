@@ -1,6 +1,7 @@
 package org.labkey.query.sql;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -384,7 +386,7 @@ public class QuerySelectView extends AbstractQueryRelation
     {
         Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
-        String columnLoggingComment = null;
+        Set<String> columnLoggingComments = new LinkedHashSet<>();
         SelectQueryAuditProvider selectQueryAuditProvider = null;
         for (ColumnInfo column : allColumns)
         {
@@ -396,8 +398,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 shouldLogNameLoggings.add(columnLogging);
                 if (null == selectQueryAuditProvider)
                     selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
-                if (null == columnLoggingComment)
-                    columnLoggingComment = columnLogging.getLoggingComment();
+                columnLoggingComments.addAll(columnLogging.getLoggingComments());
                 if (null != columnLogging.getException())
                 {
                     UnauthorizedException uae = columnLogging.getException();
@@ -449,7 +450,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
         {
-            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
+            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), StringUtils.join("\n",columnLoggingComments),
                     shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         }
         else if (!shouldLogNameLoggings.isEmpty())
