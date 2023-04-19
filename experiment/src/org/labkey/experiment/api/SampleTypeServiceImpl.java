@@ -1739,20 +1739,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.addCommitTask(() -> {
-                FileContentService fileService = FileContentService.get();
-                if (fileService == null)
-                    return;
-
                 int fileMoveCount = 0;
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
                     {
                         if (moveFile(renameData))
-                        {
                             fileMoveCount++;
-                            fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, renameData.sampleType.getContainer());
-                        }
                     }
                 }
                 updateCounts.put("sampleFiles", fileMoveCount);
@@ -1834,6 +1827,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     if (updatedFile != null)
                     {
                         FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
                         fieldRenameData.add(renameData);
