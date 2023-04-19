@@ -1022,6 +1022,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting && !allKeys.isEmpty())
             throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
+        // if contains domain fields, check for aliquot specific fields
+        if (!queryTableInfo.getName().equalsIgnoreCase("material"))
+        {
+            Set<String> parentOnlyFields = getSampleMetaFields();
+            for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
+            {
+                Map<String, Object> sampleRow = rowNumSampleRow.getValue();
+
+                if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
+                {
+                    for (String parentOnlyField : parentOnlyFields)
+                        sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
+                }
+            }
+        }
+
         boolean includeParent = existingRowSelect.includeParent;
         if (!includeParent)
             return sampleRows;
@@ -1030,19 +1046,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
-        Set<String> parentOnlyFields = getSampleMetaFields();
-
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
-            {
-                for (String parentOnlyField : parentOnlyFields)
-                    sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
-            }
 
             if (!parents.containsKey(lsidKey))
                 continue;
