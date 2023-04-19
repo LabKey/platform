@@ -1,7 +1,7 @@
 package org.labkey.assay.actions;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -28,23 +28,23 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
     @Override
     public ApiResponse execute(AssayRunsForm assayRunsForm, BindException errors) throws Exception
     {
-        List<JSONObject> runs = new ArrayList<>();
+        List<JSONObject> runs;
         JSONObject result = new JSONObject();
         var settings = new ExperimentJSONConverter.Settings(assayRunsForm.includeProperties, assayRunsForm.includeInputsAndOutputs, assayRunsForm.includeRunSteps);
 
         if (assayRunsForm.getLsids() != null && !assayRunsForm.getLsids().isEmpty())
         {
             runs = assayRunsForm.getLsids().stream()
-                    .map(this::getRun)
-                    .map(run -> this.serializeRun(run, settings))
-                    .collect(Collectors.toList());
+                .map(this::getRun)
+                .map(run -> this.serializeRun(run, settings))
+                .collect(Collectors.toList());
         }
         else if (assayRunsForm.getRunIds() != null && !assayRunsForm.getRunIds().isEmpty())
         {
             runs = assayRunsForm.getRunIds().stream()
-                    .map(this::getRun)
-                    .map(run -> this.serializeRun(run, settings))
-                    .collect(Collectors.toList());
+                .map(this::getRun)
+                .map(run -> this.serializeRun(run, settings))
+                .collect(Collectors.toList());
         }
         else
         {

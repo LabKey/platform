@@ -14,6 +14,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -207,7 +208,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 if (auditType == DETAILED || option.updateOnly)
                 {
-                    boolean detailed = auditType == DETAILED;
+                    boolean detailed = auditType == DETAILED && !context.getConfigParameterBoolean(ExperimentService.QueryOptions.SkipDetailedExistingRecord);
                     if (useGetRows)
                         return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
                     else

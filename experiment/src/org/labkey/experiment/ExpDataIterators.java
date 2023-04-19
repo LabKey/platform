@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -877,13 +877,13 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    else if (o instanceof JSONArray)
+                    else if (o instanceof org.json.old.JSONArray ja)
                     {
-                        parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                        parentNames = Arrays.stream(ja.toArray()).map(String::valueOf).collect(Collectors.toSet());
                     }
-                    else if (o instanceof org.json.JSONArray)
+                    else if (o instanceof JSONArray ja)
                     {
-                        parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
+                        parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
                     }
                     else if (o instanceof Collection)
                     {

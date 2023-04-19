@@ -34,7 +34,7 @@
     ExpExperiment batch = bean.expExperiment;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
-    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS).toNewJSONObject();
+    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
