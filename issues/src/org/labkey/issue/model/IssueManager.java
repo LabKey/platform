@@ -215,7 +215,7 @@ public class IssueManager
                     relatedIssues.add(related);
             }
 
-            if (!provider.hasPermission(user, issue, relatedIssues, errors))
+            if (!provider.hasPermission(user, issue, relatedIssues, errors) && !errors.isEmpty())
             {
                 StringBuilder msg = new StringBuilder();
                 for (ValidationError ve : errors)
