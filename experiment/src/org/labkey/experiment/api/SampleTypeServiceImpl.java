@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -101,7 +102,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -161,7 +161,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample typeoperations");
+    private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
@@ -1637,7 +1637,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotAmounts;
     }
 
-    record FileFieldRenameData(String sampleTypeName, String sampleName, String fieldName, File sourceFile, File targetFile) { }
+    record FileFieldRenameData(ExpSampleType sampleType, String sampleName, String fieldName, File sourceFile, File targetFile) { }
 
     @Override
     public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
@@ -1679,7 +1679,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 objectRowContainerUpdate(sampleIds, targetContainer);
 
                 // update the paths to files associated with individual samples
-                fileMovesBySampleId.putAll(updateSampleFilePaths(samplesTable, sampleType, typeSamples, targetContainer, user));
+                fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
 
                 // update for exp.materialaliasmap.container
                 updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
@@ -1731,6 +1731,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
+            // Done as a post-commit task because otherwise the tableInfo cache may not have the proper tableInfos.
+            transaction.addCommitTask(() -> {
+                FileContentService fileService = FileContentService.get();
+                if (fileService == null)
+                    return;
+
+                for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
+                {
+                    for (FileFieldRenameData renameData : sampleFileRenameData)
+                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, renameData.sampleType.getContainer());
+
+                }
+            }, POSTCOMMIT);
+
+
             transaction.addCommitTask(() -> {
                 // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                 // based on the modified date
@@ -1743,7 +1758,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        if (moveFile(renameData, user, targetContainer))
+                        if (moveFile(renameData))
                             fileMoveCount++;
                 }
                 updateCounts.put("sampleFiles", fileMoveCount);
@@ -1788,40 +1803,54 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     // return the map of file renames
-    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(TableInfo sampleTypeTable, ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
+    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
     {
         Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+        {
+            LOG.warn("No file service available. Sample files cannot be moved.");
+            return sampleFileRenames;
+        }
+
+        if (fileService.getFileRoot(targetContainer) == null)
+        {
+            LOG.warn("No file root found for target container " + targetContainer + "'. Files cannot be moved.");
+            return sampleFileRenames;
+        }
+
         List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
                 .getProperties().stream()
                 .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
         if (fileDomainProps.isEmpty())
             return sampleFileRenames;
 
-        FileContentService fileService = FileContentService.get();
-        if (fileService == null)
-            return sampleFileRenames;
-
+        Map<Container, Boolean> hasFileRoot = new HashMap<>();
         for (ExpMaterial sample : samples)
         {
-            for (DomainProperty fileProp : fileDomainProps )
-            {
-                String sourceFileName = (String) sample.getProperty(fileProp);
-                File updatedFile = getTargetFile(sourceFileName, sample.getContainer(), targetContainer, user);
-                if (updatedFile != null)
+            boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
+            if (!hasSourceRoot)
+                LOG.warn("No file root found for source container " + sample.getContainer() + ". Files cannot be moved.");
+            else
+                for (DomainProperty fileProp : fileDomainProps )
                 {
-                    FileFieldRenameData renameData = new FileFieldRenameData(sampleType.getName(), sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
-                    fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
-                    sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
-                    List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
-                    fieldRenameData.add(renameData);
+                    String sourceFileName = (String) sample.getProperty(fileProp);
+                    File updatedFile = getTargetFile(sourceFileName, sample.getContainer(), targetContainer);
+                    if (updatedFile != null)
+                    {
+                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+                        sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
+                        List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
+                        fieldRenameData.add(renameData);
+                    }
                 }
-            }
         }
 
         return sampleFileRenames;
     }
 
-    private File getTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer, @Nullable User user)
+    private File getTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer)
     {
         if (absoluteFilePath == null)
             return null;
@@ -1842,10 +1871,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         File sourceFileRoot = fileService.getFileRoot(sourceContainer);
         if (sourceFileRoot == null)
-        {
-            LOG.warn("No file root found for source container " + sourceContainer + ". File '" + absoluteFilePath + " cannot be moved.");
             return null;
-        }
+
         String sourceRootPath = sourceFileRoot.getAbsolutePath();
         if (!absoluteFilePath.startsWith(sourceRootPath))
         {
@@ -1854,65 +1881,37 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
         File targetFileRoot = fileService.getFileRoot(targetContainer);
         if (targetFileRoot == null)
-        {
-            LOG.warn("No file root found for target container " + targetContainer + ". File '" + absoluteFilePath + " cannot be moved.");
             return null;
-        }
-        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
-        int duplicateCount = 1;
-        String extension = FileUtil.getExtension(file.getName());
-        String name = file.getName();
-        String baseName = FileUtil.getBaseName(name);
-        File targetFile = new File(targetPath);
-        while (targetFile.exists())
-        {
-            name = baseName + "-" + duplicateCount;
-            if (extension != null)
-                name += "." + extension;
 
-            targetFile = new File(targetFile.getParentFile(), name);
-            duplicateCount++;
-        }
-        return targetFile;
+        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        File targetFile = new File(targetPath);
+        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
     }
 
-    private boolean moveFile(FileFieldRenameData renameData, User user, Container targetContainer)
+    private boolean moveFile(FileFieldRenameData renameData)
     {
-        if (!renameData.sourceFile.renameTo(renameData.targetFile))
+        if (!renameData.targetFile.getParentFile().exists())
         {
-            if (!renameData.targetFile.getParentFile().exists())
+            if (!renameData.targetFile.getParentFile().mkdirs())
             {
-                if (!renameData.targetFile.getParentFile().mkdirs())
-                {
-                    LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
-                            renameData.targetFile.getParent(),
-                            renameData.sourceFile.getAbsolutePath(),
-                            renameData.sampleTypeName,
-                            renameData.sampleName,
-                            renameData.fieldName));
-                    return false;
-                }
-                if (!renameData.sourceFile.renameTo(renameData.targetFile))
-                {
-                    LOG.warn(String.format("After creating target directory, rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
-                            renameData.sourceFile.getAbsolutePath(),
-                            renameData.targetFile.getAbsolutePath(),
-                            renameData.sampleTypeName,
-                            renameData.sampleName,
-                            renameData.fieldName));
-                    return false;
-                }
-            }
-            else
-            {
-                LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
+                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                        renameData.targetFile.getParent(),
                         renameData.sourceFile.getAbsolutePath(),
-                        renameData.targetFile.getAbsolutePath(),
-                        renameData.sampleTypeName,
+                        renameData.sampleType.getName(),
                         renameData.sampleName,
                         renameData.fieldName));
                 return false;
             }
+        }
+        if (!renameData.sourceFile.renameTo(renameData.targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.targetFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName));
+            return false;
         }
 
         return true;
