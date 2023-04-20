@@ -879,12 +879,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 includedColumns.add(remap.get(column.getColumnName()));
         }
 
-        boolean isAllFromMaterialTable = true;
-        Set<String> materialColNames = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
+        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
                 .map(Enum::name)
-                .collect(Collectors.toSet()));
-        for (String column : includedColumns)
-            isAllFromMaterialTable = isAllFromMaterialTable && materialColNames.contains(column);
+                .collect(Collectors.toSet()))
+                .containsAll(includedColumns);
         TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
 
         boolean hasParentInput = false;
@@ -895,11 +893,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Map<String, String> importAliases = _sampleType.getImportAliasMap();
                 for (String col : dataColumns)
                 {
-                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || (importAliases != null && importAliases.containsKey(col)))
+                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    {
                         hasParentInput = true;
+                        break;
+                    }
+
                 }
             }
-            catch (IOException e)
+            catch (IOException ignored)
             {
             }
 
@@ -1038,8 +1040,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        boolean includeParent = existingRowSelect.includeParent;
-        if (!includeParent)
+        if (!existingRowSelect.includeParent)
             return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
