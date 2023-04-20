@@ -6598,12 +6598,6 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
-            Container c = getContainer();
-            if (!ContainerManager.isRenameable(c))
-            {
-                // 16221
-                errors.reject(ERROR_MSG, "This folder may not be renamed as it is reserved by the system.");
-            }
         }
 
         @Override
