@@ -28,6 +28,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channel;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 
 /**
@@ -48,6 +52,13 @@ public interface FileStream
 
     InputStream openInputStream() throws IOException;
 
+    /** Override to provide a more optimized Channel */
+    @Nullable
+    default ReadableByteChannel getInputChannel() throws IOException
+    {
+        return Channels.newChannel(openInputStream());
+    }
+
     void closeInputStream() throws IOException;
 
     default void transferTo(File dest) throws IOException
@@ -63,11 +74,12 @@ public interface FileStream
             throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
         }
 
-        try (BufferedInputStream in = new BufferedInputStream(s.openInputStream());
-             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest));
+        try (ReadableByteChannel cIn = s.getInputChannel();
+             FileOutputStream fOut = new FileOutputStream(dest);
+             FileChannel cOut = fOut.getChannel();
         )
         {
-            IOUtils.copy(in, out);
+            cOut.transferFrom(cIn, 0, s.getSize());
         }
     }
 
@@ -190,7 +202,7 @@ public interface FileStream
         }
 
         @Override
-        public InputStream openInputStream() throws IOException
+        public FileInputStream openInputStream() throws IOException
         {
             if (file != null && in == null)
                 in = new FileInputStream(file);
