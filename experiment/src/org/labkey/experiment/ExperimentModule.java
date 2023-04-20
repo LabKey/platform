@@ -371,7 +371,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (dataClass == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS, user).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
@@ -399,7 +399,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (sampleType == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS, user).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "sampleSet");
