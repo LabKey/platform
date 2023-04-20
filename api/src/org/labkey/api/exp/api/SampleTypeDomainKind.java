@@ -102,7 +102,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).toList());
         RESERVED_NAMES.add("CpasType");
         RESERVED_NAMES.add("IsAliquot");
-        RESERVED_NAMES.add("AliquotedFrom");
+        RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
         RESERVED_NAMES.add("RecomputeRollup");
