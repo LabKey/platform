@@ -1738,7 +1738,7 @@ public class QueryController extends SpringActionController
                     // Split arrays into individual pairs to be bound (Issue #45452)
                     for (int i = 0; i < val.length(); i++)
                     {
-                        properties.add(new PropertyValue(key, val.getString(i)));
+                        properties.add(new PropertyValue(key, val.get(i).toString()));
                     }
                 }
                 else
@@ -3164,7 +3164,8 @@ public class QueryController extends SpringActionController
         {
             QuerySettings results = super.createQuerySettings(schema);
 
-            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows);
+            // See dataintegration/202: The java client api / remote ETL calls selectRows with showRows=all. We need to test _initParameters to properly read this
+            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows) && null == _initParameters.getPropertyValue(getDataRegionName() + "." + QueryParam.showRows);
             if (null == getLimit() && !results.isMaxRowsSet() && missingShowRows)
             {
                 results.setShowRows(ShowRows.PAGINATED);
