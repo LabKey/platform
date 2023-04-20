@@ -428,7 +428,7 @@ public class ExpDataIterators
 
             for (String name : nameMap.keySet())
             {
-                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name))
+                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase("AliquotedFrom", name))
                 {
                     _isDerivation = true;
                     break;
