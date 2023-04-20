@@ -130,7 +130,9 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(SQLFragment other, boolean deep)
     {
-        this(other.getSqlCharSequence(), other.params);
+        sql = other.getSqlCharSequence().toString();
+        if (null != other.params)
+            addAll(other.params);
         if (null != other.commonTableExpressionsMap && !other.commonTableExpressionsMap.isEmpty())
         {
             if (null == this.commonTableExpressionsMap)
@@ -611,11 +613,12 @@ public class SQLFragment implements Appendable, CharSequence
     /** see also append(TableInfo, String alias) */
     public SQLFragment append(TableInfo table)
     {
-        String s = table.getSelectName();
+        SQLFragment s = table.getSQLName();
         if (s != null)
             return append(s);
 
-        return append(table.getFromSQL(table.getName()));
+        String alias = table.getSqlDialect().makeLegalIdentifier(table.getName());
+        return append(table.getFromSQL(alias));
     }
 
     /** Add a table/query to the SQL with an alias, as used in a FROM clause */

@@ -94,12 +94,6 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
             addColumn(sourceNameCol);
         }
 
-        @Override
-        public String getSelectName()
-        {
-            return null;
-        }
-
         @NotNull
         @Override
         public SQLFragment getFromSQL()

@@ -1,10 +1,16 @@
+import mock from 'mock-fs';
 import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
+
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'ExperimentControllerTest Project';
 const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
 const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
+const FILE_FIELD_1_NAME = 'SampleFile1';
+const FILE_FIELD_2_NAME = 'SampleFile2';
+
+const DEFAULT_AUDIT_LOG_COLUMNS = 'Comment,userComment,transactionId,Created';
 
 let editorUserOptions: RequestOptions;
 let subEditorUserOptions: RequestOptions;
@@ -17,7 +23,7 @@ let subfolder2Options;
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment'],
+        ensureModules: ['experiment', 'filecontent'],
     });
     topFolderOptions = { containerPath: PROJECT_NAME };
 
@@ -58,13 +64,42 @@ beforeAll(async () => {
     // create a second sample type at project container for use in tests
     await server.post('property', 'createDomain', {
         kind: 'SampleSet',
-        domainDesign: { name: SAMPLE_TYPE_NAME_2, fields: [{ name: 'Name',  }] }
+        domainDesign: { name: SAMPLE_TYPE_NAME_2, fields: [
+            { name: 'Name', },
+            { name: FILE_FIELD_1_NAME, rangeURI: 'http://cpas.fhcrc.org/exp/xml#fileLink'},
+            { name: FILE_FIELD_2_NAME, rangeURI: 'http://cpas.fhcrc.org/exp/xml#fileLink'}
+        ] }
     }, topFolderOptions).expect(successfulResponse);
 });
 
 afterAll(async () => {
     return server.teardown();
 });
+
+afterEach(() => {
+    mock.restore();
+});
+
+async function createSampleWithFileFields(sampleName: string, folderOptions: RequestOptions, fileData: any, auditBehavior?: string, ) {
+    const materialResponse = await server.request('query', 'insertRows', (agent, url) => {
+        let request = agent.post(url);
+
+        request = request.field('json', JSON.stringify({
+            schemaName: 'samples',
+            queryName: SAMPLE_TYPE_NAME_2,
+            rows: [{name: sampleName}],
+            auditBehavior,
+        }));
+
+        Object.keys(fileData).forEach(fieldName => {
+            request = request.attach(fieldName + "::0", fileData[fieldName]);
+        });
+
+        return request;
+
+    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
+    return caseInsensitive(materialResponse.body.rows[0], 'rowId');
+}
 
 async function createSample(sampleName: string, folderOptions: RequestOptions, auditBehavior?: string, sampleType: string = SAMPLE_TYPE_NAME_1) {
     const materialResponse = await server.post('query', 'insertRows', {
@@ -76,14 +111,19 @@ async function createSample(sampleName: string, folderOptions: RequestOptions, a
     return caseInsensitive(materialResponse.body.rows[0], 'rowId');
 }
 
-async function sampleExists(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
+async function getSampleData(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'samples',
         queryName: sampleType,
         'query.RowId~eq': sampleRowId,
-        'query.columns': 'RowId'
+        'query.columns': columns,
     }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
-    return response.body.rows.length === 1;
+    return response.body.rows
+}
+
+async function sampleExists(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
+    const response = await getSampleData(sampleRowId, folderOptions, sampleType);
+    return response.length === 1;
 }
 
 async function getSampleTypeAuditLogs(sampleType: string, folderOptions: RequestOptions, expectedNumber: number) {
@@ -91,21 +131,20 @@ async function getSampleTypeAuditLogs(sampleType: string, folderOptions: Request
         schemaName: 'auditlog',
         queryName: 'samplesetauditevent',
         'query.samplesetname~eq': sampleType,
-        'query.columns': 'Comment,userComment,transactionId,Created',
+        'query.columns': DEFAULT_AUDIT_LOG_COLUMNS,
         'query.sort': '-Created',
         'query.maxRows': expectedNumber
     }, { ...folderOptions  }).expect(successfulResponse);
     return response.body.rows;
 }
 
-async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: RequestOptions, expectedNumber: number = -1) {
+async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: RequestOptions, columns:string = DEFAULT_AUDIT_LOG_COLUMNS) {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'auditlog',
         queryName: 'SampleTimelineEvent',
         'query.sampleid~eq': sampleRowId,
-        'query.columns': 'Comment,userComment,transactionId,Created',
+        'query.columns': columns,
         'query.sort': '-Created',
-        'query.maxRows': expectedNumber
     }, { ...folderOptions }).expect(successfulResponse);
     return response.body.rows;
 }
@@ -129,18 +168,29 @@ describe('ExperimentController', () => {
         return transactionId;
     }
 
-    async function verifyDetailedAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], transactionId: number, userComment: string = null) {
+    async function verifyDetailedAuditLogs(sourceFolderOptions: RequestOptions, targetFolderOptions: RequestOptions, sampleIds: number[], transactionId: number = undefined, userComment: string = null, valueChanges: any[] = undefined) {
         for (const sampleRowId of sampleIds) {
             const sampleEventsInSource = await getSampleTimelineAuditLogs(sampleRowId, sourceFolderOptions);
             expect(sampleEventsInSource).toHaveLength(0);
         }
 
         for (const sampleRowId of sampleIds) {
-            const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions);
+
+            const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions, valueChanges ? DEFAULT_AUDIT_LOG_COLUMNS + ",OldValues,NewValues": DEFAULT_AUDIT_LOG_COLUMNS);
             expect(sampleEventsInTarget).toHaveLength(2);
             expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample project was updated.");
             expect(caseInsensitive(sampleEventsInTarget[0], 'userComment')).toBe(userComment);
-            expect(caseInsensitive(sampleEventsInTarget[0], 'transactionId')).toBe(transactionId);
+
+            if (valueChanges) {
+                valueChanges.forEach(valueChange => {
+                    const oldValues =  caseInsensitive(sampleEventsInTarget[0], 'OldValues');
+                    const newValues = caseInsensitive(sampleEventsInTarget[0], 'NewValues');
+                    expect(oldValues.indexOf(encodeURIComponent(valueChange.oldValue))).toBeGreaterThan(-1);
+                    expect(newValues.indexOf(encodeURIComponent(valueChange.newValue))).toBeGreaterThan(-1);
+                })
+            }
+            if (transactionId)
+                expect(caseInsensitive(sampleEventsInTarget[0], 'transactionId')).toBe(transactionId);
             expect(caseInsensitive(sampleEventsInTarget[1], 'Comment')).toEqual("Sample was registered.");
         }
     }
@@ -537,6 +587,131 @@ describe('ExperimentController', () => {
 
         });
 
+        it('success, move one sample from parent with file field', async () => {
+            mock({
+                'fileA.txt': 'fileA contents',
+            });
+            const sampleRowId1 = await createSampleWithFileFields('top2-movetosub1-1', topFolderOptions, {[FILE_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
+            const userComment = "Moving files too";
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [sampleRowId1],
+                auditBehavior: "DETAILED",
+                userComment,
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleFiles).toBe(1);
+            const sampleData = await getSampleData(sampleRowId1, subfolder1Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
+
+            expect(sampleData.length).toBe(1);
+            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")).toBe(true);
+
+            await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId1], undefined, userComment,
+                [{
+                    oldValue: topFolderOptions.containerPath + "/@files/sampletype/fileA.txt",
+                    newValue: subfolder1Options.containerPath + "/@files/sampletype/fileA.txt"
+                }]);
+
+        });
+
+        it('success, move sample from subfolder with multiple file fields', async () => {
+            mock({
+                'fileB.txt': 'fileB contents',
+                'fileC.txt': 'fileC contents',
+            });
+            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-1', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileB.txt', [FILE_FIELD_2_NAME]: 'fileC.txt'}, "DETAILED");
+
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: topFolderOptions.containerPath,
+                rowIds: [sampleRowId1],
+                auditBehavior: "DETAILED",
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleFiles).toBe(2);
+            const sampleData = await getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
+            expect(sampleData.length).toBe(1);
+            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")).toBe(true);
+            expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")).toBe(true);
+
+            await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
+                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileB.txt",
+                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileB.txt"
+            }, {
+                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileC.txt",
+                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileC.txt"
+            }]);
+        });
+
+
+        it('success, move sample from subfolder with overlapping file name', async () => {
+            mock({
+                'fileD.txt': 'fileD contents',
+                'fileE.txt': 'fileE contents',
+            });
+            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-2', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileD.txt', [FILE_FIELD_2_NAME]: 'fileE.txt'}, "DETAILED");
+            // create sample in target folder with file names the same as source folder samples.
+            await createSampleWithFileFields('top2-withfile-1', topFolderOptions, {[FILE_FIELD_2_NAME]: 'fileD.txt'}, "DETAILED");
+
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: topFolderOptions.containerPath,
+                rowIds: [sampleRowId1],
+                auditBehavior: "DETAILED",
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleFiles).toBe(2);
+            const sampleData = await getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
+            expect(sampleData.length).toBe(1);
+            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")).toBe(true);
+            expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")).toBe(true);
+
+            await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
+                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileD.txt",
+                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt"
+            }, {
+                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileE.txt",
+                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileE.txt"
+            }]);
+        });
+
+        it('success, move to sibling subfolder without files', async () => {
+            mock({
+                'fileF.txt': 'fileF contents',
+            });
+            const sampleRowId1 = await createSampleWithFileFields('sub12-movetosub2-1', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileF.txt'}, "DETAILED");
+
+            const response = await server.post('experiment', 'moveSamples.api', {
+                targetContainer: subfolder2Options.containerPath,
+                rowIds: [sampleRowId1],
+                auditBehavior: "DETAILED",
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { updateCounts, success } = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+            expect(updateCounts.sampleFiles).toBe(1);
+            const sampleData = await getSampleData(sampleRowId1, subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
+            expect(sampleData.length).toBe(1);
+            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")).toBe(true);
+
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1], undefined, undefined, [{
+                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileF.txt",
+                newValue: subfolder2Options.containerPath + "/@files/sampletype/fileF.txt"
+            }]);
+        });
+
         it('success, move multiple samples', async () => {
             // Arrange
             const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options, "DETAILED");
@@ -556,6 +731,7 @@ describe('ExperimentController', () => {
             expect(updateCounts.samples).toBe(3);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(3);
+            expect(updateCounts.sampleFiles).toBe(0);
 
             let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
             expect(sampleExistsInSub1).toBe(false);

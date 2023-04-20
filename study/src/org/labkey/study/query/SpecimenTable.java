@@ -103,7 +103,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             .append("       ").append("CAST ('").append(getContainer().getId()).append("' AS ")
             .append(getSchema().getSqlDialect().getGuidType()).append(") AS Container");
 
-        sql.append("\n  FROM ").append(getRealTable().getSelectName());
+        sql.append("\n  FROM ").append(getRealTable());
         if (null != _studySpecimenTables)
         {
             for (SpecimenTable table : _studySpecimenTables)
