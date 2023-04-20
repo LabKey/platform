@@ -56,6 +56,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_BY_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_BY_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_COLUMN_NAME;
+
 /**
  * User: jeckels
  * Date: 10/19/12
@@ -189,6 +194,18 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 }
             }
             setDefaultVisibleColumns(defaultColumns);
+        }
+
+        @Override
+        protected boolean shouldIncludeCreatedModified(Set<FieldKey> selectedColumns)
+        {
+            if (null == selectedColumns)
+                return true;
+
+            return selectedColumns.contains(new FieldKey(null, CREATED_COLUMN_NAME)) ||
+                    selectedColumns.contains(new FieldKey(null, CREATED_BY_COLUMN_NAME)) ||
+                    selectedColumns.contains(new FieldKey(null, MODIFIED_COLUMN_NAME)) ||
+                    selectedColumns.contains(new FieldKey(null, MODIFIED_BY_COLUMN_NAME));
         }
     }
 

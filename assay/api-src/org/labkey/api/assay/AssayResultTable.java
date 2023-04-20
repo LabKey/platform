@@ -56,7 +56,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -77,6 +76,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_BY_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_BY_COLUMN_NAME;
+import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_COLUMN_NAME;
 
 /**
  * User: jeckels
@@ -103,6 +107,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         setPublicSchemaName(_userSchema.getSchemaName());
 
         List<FieldKey> visibleColumns = new ArrayList<>();
+        List<FieldKey> visibleCreatedModifiedColumns = new ArrayList<>();
 
         MutableColumnInfo specimenIdCol = null;
         boolean foundTargetStudyCol = false;
@@ -142,49 +147,57 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     col.setFk(new RowIdForeignKey(col));
                 }
 
-                DomainProperty domainProperty = _resultsDomain.getPropertyByName(baseColumn.getName());
-                if (domainProperty != null)
+                if (isCreatedModifiedCol(baseColumn.getName()))
                 {
-                    col.setFieldKey(new FieldKey(null, domainProperty.getName()));
-                    PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
-                    FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, cf);
-
-                    ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
-                    if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
+                    addColumn(col);
+                    visibleCreatedModifiedColumns.add(col.getFieldKey());
                 }
-                addColumn(col);
-
-                if (col.getMvColumnName() != null)
+                else
                 {
-                    var rawValueCol = createRawValueColumn(baseColumn, col, RawValueColumn.RAW_VALUE_SUFFIX, "Raw Value", "This column contains the raw value itself, regardless of any missing value indicators that may have been set.");
-                    addColumn(rawValueCol);
+                    DomainProperty domainProperty = _resultsDomain.getPropertyByName(baseColumn.getName());
+                    if (domainProperty != null)
+                    {
+                        col.setFieldKey(new FieldKey(null, domainProperty.getName()));
+                        PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
+                        FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
+                        PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, cf);
 
-                    Domain domain = schema.getProvider().getResultsDomain(schema.getProtocol());
-                    PropertyDescriptor pd = domain.getPropertyByName(col.getName()).getPropertyDescriptor();
-                    AliasedColumn mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
-                                                            StorageProvisioner.get().getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
-                    // MV indicators are strings
-                    mvColumn.setLabel(col.getLabel() + " MV Indicator");
-                    mvColumn.setSqlTypeName("VARCHAR");
-                    mvColumn.setPropertyURI(col.getPropertyURI());
-                    mvColumn.setNullable(true);
-                    mvColumn.setUserEditable(false);
-                    mvColumn.setHidden(true);
-                    mvColumn.setMvIndicatorColumn(true);
-                    addColumn(mvColumn);
-                    col.setMvColumnName(FieldKey.fromParts(mvColumn.getFieldKey()));        // So we find it correctly for display
+                        ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
+                        if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
+                            col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
+                    }
+                    addColumn(col);
+
+                    if (col.getMvColumnName() != null)
+                    {
+                        var rawValueCol = createRawValueColumn(baseColumn, col, RawValueColumn.RAW_VALUE_SUFFIX, "Raw Value", "This column contains the raw value itself, regardless of any missing value indicators that may have been set.");
+                        addColumn(rawValueCol);
+
+                        Domain domain = schema.getProvider().getResultsDomain(schema.getProtocol());
+                        PropertyDescriptor pd = domain.getPropertyByName(col.getName()).getPropertyDescriptor();
+                        AliasedColumn mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                                StorageProvisioner.get().getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
+                        // MV indicators are strings
+                        mvColumn.setLabel(col.getLabel() + " MV Indicator");
+                        mvColumn.setSqlTypeName("VARCHAR");
+                        mvColumn.setPropertyURI(col.getPropertyURI());
+                        mvColumn.setNullable(true);
+                        mvColumn.setUserEditable(false);
+                        mvColumn.setHidden(true);
+                        mvColumn.setMvIndicatorColumn(true);
+                        addColumn(mvColumn);
+                        col.setMvColumnName(FieldKey.fromParts(mvColumn.getFieldKey()));        // So we find it correctly for display
+                    }
+
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
+                        foundTargetStudyCol = true;
+
+                    if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+                        specimenIdCol = col;
                 }
-
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
-                    foundTargetStudyCol = true;
-
-                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
-                    specimenIdCol = col;
             }
 
-            if (col != null && !col.isHidden() && !col.isUnselectable() && !col.isMvIndicatorColumn())
+            if (col != null && !col.isHidden() && !col.isUnselectable() && !col.isMvIndicatorColumn() && !isCreatedModifiedCol(baseColumn.getName()))
                 visibleColumns.add(col.getFieldKey());
         }
 
@@ -271,6 +284,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var propsCol = createPropertiesColumn();
         addColumn(propsCol);
 
+        visibleColumns.addAll(visibleCreatedModifiedColumns); // move created/modified columns to last
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -300,6 +314,14 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         lsidCol.setReadOnly(true);
         lsidCol.setHidden(true);
         return lsidCol;
+    }
+
+    private boolean isCreatedModifiedCol(String colName)
+    {
+        return CREATED_COLUMN_NAME.equalsIgnoreCase(colName) ||
+                CREATED_BY_COLUMN_NAME.equalsIgnoreCase(colName) ||
+                MODIFIED_COLUMN_NAME.equalsIgnoreCase(colName) ||
+                MODIFIED_BY_COLUMN_NAME.equalsIgnoreCase(colName);
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
@@ -395,21 +417,72 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        return getFromSQL(alias, null);
+    }
+
+    protected boolean shouldIncludeCreatedModified(Set<FieldKey> selectedColumns)
+    {
+        return false;
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    {
         checkReadBeforeExecute();
+        boolean includeCreatedModified = shouldIncludeCreatedModified(selectedColumns);
+
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT innerResults.*, innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container" );
+        TableInfo provisioned = getRealTable();
+
+        result.append("(SELECT ");
+
+        if (includeCreatedModified && provisioned != null)
+        {
+            for (ColumnInfo propertyColumn : provisioned.getColumns())
+            {
+                if (isCreatedModifiedCol(propertyColumn.getName()))
+                {
+                    SQLFragment coalescedCol = new SQLFragment("COALESCE(");
+                    coalescedCol.append(propertyColumn.getValueSql("innerResults"));
+                    coalescedCol.append(", runData.");
+                    coalescedCol.append(propertyColumn.getName());
+                    coalescedCol.append(") AS ");
+                    coalescedCol.append(propertyColumn.getName());
+                    result.append(coalescedCol);
+                }
+                else
+                {
+                    result.append(propertyColumn.getValueSql("innerResults"));
+                }
+                result.append(", ");
+            }
+        }
+        else
+            result.append(" innerResults.*,");
+        result.append(" innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container AS Container" );
         result.append(" FROM\n");
         result.append(getFromTable().getFromSQL("innerResults"));
         result.append("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");
         result.append(" ON (innerData.RowId = innerResults.DataId) ");
+
+        if (includeCreatedModified)
+        {
+            result.append("\nINNER JOIN ");
+            result.append("(SELECT RowId as RunRowId, created, createdBy, modified, modifiedBy FROM ");
+            result.append(ExperimentService.get().getTinfoExperimentRun());
+            result.append(") AS runData");
+            result.append(" ON (runData.RunRowId = innerData.RunId) ");
+        }
+
         var filter = getFilter();
         var where = filter.getSQLFragment(_rootTable.getSqlDialect());
         if (!where.isEmpty())
         {
             Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
             SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "innerResults", columnMap);
-        result.append("\n").append(filterFrag);
+            result.append("\n").append(filterFrag);
         }
         result.append(") ").append(alias);
         return result;
