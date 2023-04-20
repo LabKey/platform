@@ -16,8 +16,10 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -45,6 +47,7 @@ import java.util.Date;
  */
 public interface FileStream
 {
+    Logger LOG = LogHelper.getLogger(FileStream.class, "File transfers");
     long getSize() throws IOException;
 
     @Nullable
@@ -79,7 +82,9 @@ public interface FileStream
              FileChannel cOut = fOut.getChannel();
         )
         {
+            LOG.debug("Starting to transfer to " + dest);
             cOut.transferFrom(cIn, 0, s.getSize());
+            LOG.debug("Finished transferring to " + dest);
         }
     }
 
