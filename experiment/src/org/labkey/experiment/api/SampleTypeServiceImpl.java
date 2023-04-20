@@ -20,10 +20,10 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -60,6 +60,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -78,6 +79,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -102,9 +104,11 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -157,7 +161,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
@@ -1291,7 +1295,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotCount = ? WHERE RowId = ?", count, rowid), null);
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1329,7 +1333,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter unit = new Parameter("unit", JdbcType.VARCHAR);
 
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotVolume = ?, AliquotUnit = ? WHERE RowId = ? ", amount, unit, rowid), null);
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotVolume = ?, AliquotUnit = ? WHERE RowId = ? ").addAll(amount, unit, rowid), null);
 
                 List<Map.Entry<Integer, List<Pair<Double, String>>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 
@@ -1633,6 +1637,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotAmounts;
     }
 
+    record FileFieldRenameData(ExpSampleType sampleType, String sampleName, String fieldName, File sourceFile, File targetFile) { }
+
     @Override
     public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
     {
@@ -1646,6 +1652,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("samples", 0);
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
+        Map<Integer, List<FileFieldRenameData>> fileMovesBySampleId = new HashMap<>();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1659,14 +1666,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
+                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
+                TableInfo samplesTable = schema.getTable(sampleType, null);
 
                 List<ExpMaterial> typeSamples = entry.getValue();
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
+
                 // update for exp.material.container
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
                 objectRowContainerUpdate(sampleIds, targetContainer);
+
+                // update the paths to files associated with individual samples
+                fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
 
                 // update for exp.materialaliasmap.container
                 updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
@@ -1680,6 +1693,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
                     });
                 }
+
                 // create summary audit entries for the source and target containers
                 String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
                 addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
@@ -1692,16 +1706,26 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
                 updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
-                AuditBehaviorType stAuditBehavior = schema.getTable(sampleType, null).getAuditBehavior(auditBehavior);
+                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
                 // create new events for each sample that was moved.
                 if (stAuditBehavior == AuditBehaviorType.DETAILED)
                 {
                     for (ExpMaterial sample : typeSamples)
                     {
                         SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample project was updated.", userComment, sample, null);
-                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, Map.of("Project", sourceContainer.getName())));
-                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, Map.of("Project", targetContainer.getName())));
+                        Map<String, Object> oldRecordMap = new HashMap<>();
+                        oldRecordMap.put("Project", sourceContainer.getName());
+                        Map<String, Object> newRecordMap = new HashMap<>();
+                        newRecordMap.put("Project", targetContainer.getName());
+                        if (fileMovesBySampleId.containsKey(sample.getRowId()))
+                        {
+                            fileMovesBySampleId.get(sample.getRowId()).forEach(fileUpdateData -> {
+                               oldRecordMap.put(fileUpdateData.fieldName, fileUpdateData.sourceFile.getAbsolutePath());
+                               newRecordMap.put(fileUpdateData.fieldName, fileUpdateData.targetFile.getAbsolutePath());
+                            });
+                        }
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, oldRecordMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, newRecordMap));
                         AuditLogService.get().addEvent(user, event);
                     }
                 }
@@ -1713,6 +1737,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+
+            transaction.addCommitTask(() -> {
+                int fileMoveCount = 0;
+                for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
+                {
+                    for (FileFieldRenameData renameData : sampleFileRenameData)
+                    {
+                        if (moveFile(renameData))
+                            fileMoveCount++;
+                    }
+                }
+                updateCounts.put("sampleFiles", fileMoveCount);
+            }, POSTCOMMIT);
 
             transaction.commit();
         }
@@ -1750,5 +1787,121 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
         aliasMapUpdate.append(")");
         return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
+
+    // return the map of file renames
+    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
+    {
+        Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+        {
+            LOG.warn("No file service available. Sample files cannot be moved.");
+            return sampleFileRenames;
+        }
+
+        if (fileService.getFileRoot(targetContainer) == null)
+        {
+            LOG.warn("No file root found for target container " + targetContainer + "'. Files cannot be moved.");
+            return sampleFileRenames;
+        }
+
+        List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+        if (fileDomainProps.isEmpty())
+            return sampleFileRenames;
+
+        Map<Container, Boolean> hasFileRoot = new HashMap<>();
+        for (ExpMaterial sample : samples)
+        {
+            boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
+            if (!hasSourceRoot)
+                LOG.warn("No file root found for source container " + sample.getContainer() + ". Files cannot be moved.");
+            else
+                for (DomainProperty fileProp : fileDomainProps )
+                {
+                    String sourceFileName = (String) sample.getProperty(fileProp);
+                    File updatedFile = getTargetFile(sourceFileName, sample.getContainer(), targetContainer);
+                    if (updatedFile != null)
+                    {
+                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
+                        sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
+                        List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
+                        fieldRenameData.add(renameData);
+                    }
+                }
+        }
+
+        return sampleFileRenames;
+    }
+
+    private File getTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer)
+    {
+        if (absoluteFilePath == null)
+            return null;
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+        {
+            LOG.warn("No file service available. File '" + absoluteFilePath + "' cannot be moved");
+            return null;
+        }
+
+        File file = new File(absoluteFilePath);
+        if (!file.exists())
+        {
+            LOG.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
+            return null;
+        }
+
+        File sourceFileRoot = fileService.getFileRoot(sourceContainer);
+        if (sourceFileRoot == null)
+            return null;
+
+        String sourceRootPath = sourceFileRoot.getAbsolutePath();
+        if (!absoluteFilePath.startsWith(sourceRootPath))
+        {
+            LOG.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
+            return null;
+        }
+        File targetFileRoot = fileService.getFileRoot(targetContainer);
+        if (targetFileRoot == null)
+            return null;
+
+        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        File targetFile = new File(targetPath);
+        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
+    }
+
+    private boolean moveFile(FileFieldRenameData renameData)
+    {
+        if (!renameData.targetFile.getParentFile().exists())
+        {
+            if (!renameData.targetFile.getParentFile().mkdirs())
+            {
+                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                        renameData.targetFile.getParent(),
+                        renameData.sourceFile.getAbsolutePath(),
+                        renameData.sampleType.getName(),
+                        renameData.sampleName,
+                        renameData.fieldName));
+                return false;
+            }
+        }
+        if (!renameData.sourceFile.renameTo(renameData.targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.targetFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName));
+            return false;
+        }
+
+        return true;
     }
 }
