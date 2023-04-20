@@ -399,7 +399,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 try
                 {
-                    int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                    int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned)).execute(deleteSQL);
                     LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " assay result rows");
                 }
                 catch (BadSqlGrammarException x)
