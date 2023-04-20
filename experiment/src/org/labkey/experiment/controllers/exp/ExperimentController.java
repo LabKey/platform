@@ -7715,12 +7715,13 @@ public class ExperimentController extends SpringActionController
         public Object execute(MoveSamplesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            Map<String, Integer> updateCounts = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
+            Map<String, Integer> updateCounts =  SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
             updateSelections(form);
             resp.put("success", true);
             resp.put("updateCounts", updateCounts);
             resp.put("containerPath", _targetContainer.getPath());
+
             return resp;
         }
 
