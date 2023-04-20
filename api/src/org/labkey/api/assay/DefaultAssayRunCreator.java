@@ -537,7 +537,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext);
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey());
             }
         }
     }
