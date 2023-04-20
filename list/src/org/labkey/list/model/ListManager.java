@@ -1054,7 +1054,7 @@ public class ListManager implements SearchService.DocumentProvider
             // Using EXISTS query should be reasonably efficient.
             SQLFragment sql = new SQLFragment("SELECT 1 FROM ");
             sql.append(getListTableName(table));
-            sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
+            sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
             sql.append(" WHERE ListId = ? AND Container = ?)");
             sql.add(list.getListId());
             sql.add(list.getContainer().getEntityId());
@@ -1068,8 +1068,9 @@ public class ListManager implements SearchService.DocumentProvider
     private void setLastIndexed(ListDefinition list, long ms)
     {
         // list table does not have an index on listid, so we should include container in the WHERE
-        new SqlExecutor(getListMetadataSchema()).execute("UPDATE " + getListMetadataTable().getSelectName() +
-                " SET LastIndexed = ? WHERE Container = ? AND ListId = ?", new Timestamp(ms), list.getContainer(), list.getListId());
+        SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
+                .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
+        new SqlExecutor(getListMetadataSchema()).execute(update);
     }
 
 

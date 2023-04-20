@@ -135,7 +135,7 @@ public class SqlScanner extends BaseScanner
 
         private void testIndexOf(String sql, char c, int expectedCharIndex, String str, int expectedStringIndex)
         {
-            SQLFragment frag = new SQLFragment(sql);
+            SQLFragment frag = new SQLFragment().setSqlUnsafe(sql);
             SqlScanner scanner = new SqlScanner(frag);
 
             int i = scanner.indexOf(c);
@@ -180,7 +180,7 @@ public class SqlScanner extends BaseScanner
 
         private void testStripComments(String sql, int expectedLength)
         {
-            SQLFragment frag = new SQLFragment(sql);
+            SQLFragment frag = new SQLFragment().setSqlUnsafe(sql);
             StringBuilder stripped = new SqlScanner(frag).stripComments();
             assertEquals("Stripped SQL (\"" + stripped + "\") had unexpected length", expectedLength, stripped.length());
         }

@@ -400,7 +400,7 @@ public class RequestabilityManager
 
             SQLFragment reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
-            updateSQL.append(tableInfoVial.getSelectName()).append(" SET ");
+            updateSQL.append(tableInfoVial).append(" SET ");
             updateSQL.append(getAvailableAssignmentSQL());
             updateSQL.append(", AvailabilityReason = ");
             updateSQL.append(reason);
@@ -702,15 +702,15 @@ public class RequestabilityManager
             if (vials != null && vials.size() > 0)
                 sql.append(getGlobalUniqueIdInSQL(vials)).append(" AND ");
 
-            sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial.getSelectName()).append(" SV")
+            sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial).append(" SV")
                 .append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM ")
-                .append(SpecimenSchema.get().getTableInfoSampleRequestSpecimen().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequestSpecimen())
                 .append(") SRS ON (GlobalUniqueId = SpecimenGlobalUniqueId)")
                 .append(" LEFT OUTER JOIN (SELECT RowId, StatusId FROM ")
-                .append(SpecimenSchema.get().getTableInfoSampleRequest().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequest())
                 .append(") SR ON (SR.RowId = SRS.SampleRequestId)")
                 .append(" LEFT OUTER JOIN (SELECT RowId, FinalState FROM ")
-                .append(SpecimenSchema.get().getTableInfoSampleRequestStatus().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequestStatus())
                 .append(") SRST ON (SRST.RowId = SR.StatusId)")
                 .append(" WHERE SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
@@ -798,7 +798,7 @@ public class RequestabilityManager
             if (logger != null)
                 logger.info("\tResetting vials to default available state.");
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
-            updateSQL.append(tableInfoVial.getSelectName())
+            updateSQL.append(tableInfoVial)
                      .append(" SET Available = ?, AvailabilityReason = ? ");
             updateSQL.add(Boolean.TRUE);
             updateSQL.add(null);
