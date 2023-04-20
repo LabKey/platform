@@ -182,6 +182,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return getQueryRowReference(null);
+    }
+
+    @Override
     public @Nullable QueryRowReference getQueryRowReference(@Nullable User user)
     {
         ExpDataClassImpl dc = getDataClass(user);

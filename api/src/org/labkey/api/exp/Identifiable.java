@@ -47,12 +47,12 @@ public interface Identifiable
 
     default @Nullable QueryRowReference getQueryRowReference()
     {
-        return getQueryRowReference(null);
+        return null;
     }
 
     default @Nullable QueryRowReference getQueryRowReference(@Nullable User user)
     {
-        return null;
+        return getQueryRowReference();
     }
 
     /**
