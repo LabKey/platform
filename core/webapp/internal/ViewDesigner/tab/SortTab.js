@@ -72,7 +72,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                 store: this.getSortStore(),
                 deferEmptyText: false,
                 multiSelect: true,
-                height: 166,
+                height: 320,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',

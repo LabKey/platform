@@ -58,6 +58,10 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
     void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
+    default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
+    {
+        importFile(data, dataFile, info, log, context);
+    }
     default void importFile(@NotNull ExpData data, Path dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         if (FileUtil.hasCloudScheme(dataFile))
