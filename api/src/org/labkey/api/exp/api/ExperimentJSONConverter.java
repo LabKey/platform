@@ -178,16 +178,16 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serialize(@NotNull Identifiable node, @NotNull User user, @NotNull Settings settings)
     {
-        if (node instanceof ExpExperiment)
-            return serializeRunGroup((ExpExperiment)node, null, settings);
-        else if (node instanceof ExpRun)
-            return serializeRun((ExpRun)node, null, user, settings);
-        else if (node instanceof ExpMaterial)
-            return serializeMaterial((ExpMaterial)node, settings);
-        else if (node instanceof ExpData)
-            return serializeData((ExpData)node, user, settings);
-        else if (node instanceof ExpObject)
-            return serializeExpObject((ExpObject)node, null, settings);
+        if (node instanceof ExpExperiment expExperiment)
+            return serializeRunGroup(expExperiment, null, settings);
+        else if (node instanceof ExpRun expRun)
+            return serializeRun(expRun, null, user, settings);
+        else if (node instanceof ExpMaterial expMaterial)
+            return serializeMaterial(expMaterial, user, settings);
+        else if (node instanceof ExpData expData)
+            return serializeData(expData, user, settings);
+        else if (node instanceof ExpObject expObject)
+            return serializeExpObject(expObject, null, settings, user);
         else
             return serializeIdentifiable(node, settings);
     }
@@ -298,7 +298,7 @@ public class ExperimentJSONConverter
         JSONArray outputMaterialArray = new JSONArray();
         for (ExpMaterial material : materials)
         {
-            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, settings));
+            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, user, settings));
         }
         obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
     }
@@ -319,13 +319,13 @@ public class ExperimentJSONConverter
         for (ExpRunInput runInput : inputs)
         {
             JSONObject json;
-            if (runInput instanceof ExpDataRunInput)
+            if (runInput instanceof ExpDataRunInput expDataRunInput)
             {
-                json = ExperimentJSONConverter.serializeData(((ExpDataRunInput)runInput).getData(), user, settings);
+                json = ExperimentJSONConverter.serializeData(expDataRunInput.getData(), user, settings);
             }
-            else if (runInput instanceof ExpMaterialRunInput)
+            else if (runInput instanceof ExpMaterialRunInput expMaterialRunInput)
             {
-                json = ExperimentJSONConverter.serializeMaterial(((ExpMaterialRunInput)runInput).getMaterial(), settings);
+                json = ExperimentJSONConverter.serializeMaterial(expMaterialRunInput.getMaterial(), user, settings);
             }
             else
             {
@@ -486,7 +486,7 @@ public class ExperimentJSONConverter
             if (obj == null)
                 return null;
 
-            return serializeIdentifiableBean(obj);
+            return serializeIdentifiableBean(obj, null);
         }
 
         return objectUri;
@@ -495,7 +495,7 @@ public class ExperimentJSONConverter
     /**
      * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
      */
-    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj)
+    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj, @Nullable User user)
     {
         JSONObject json = new JSONObject();
 
@@ -507,7 +507,7 @@ public class ExperimentJSONConverter
 
         json.put(CONTAINER, obj.getContainer().getId());
 
-        QueryRowReference rowRef = obj.getQueryRowReference();
+        QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
         {
             json.put(SCHEMA_NAME, rowRef.getSchemaKey().toString());
@@ -524,7 +524,7 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
     {
-        JSONObject json = serializeIdentifiableBean(obj);
+        JSONObject json = serializeIdentifiableBean(obj, null);
         json.put(ExperimentJSONConverter.EXP_TYPE, (Object)null);
 
         if (settings.isIncludeProperties())
@@ -544,12 +544,27 @@ public class ExperimentJSONConverter
      * Serialize ExpObject java bean properties (ID, CreatedBy, Comment) and include object properties and the optional domain properties.
      */
     @NotNull
-    public static JSONObject serializeExpObject(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull Settings settings)
+    public static JSONObject serializeExpObject(
+        @NotNull ExpObject object,
+        @Nullable List<? extends DomainProperty> properties,
+        @NotNull Settings settings
+    )
+    {
+        return serializeExpObject(object, properties, settings, null);
+    }
+
+    @NotNull
+    public static JSONObject serializeExpObject(
+        @NotNull ExpObject object,
+        @Nullable List<? extends DomainProperty> properties,
+        @NotNull Settings settings,
+        @Nullable User user
+    )
     {
         // While serializeIdentifiable can include object properties, we call serializeIdentifiableBean
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
-        JSONObject jsonObject = serializeIdentifiableBean(object);
+        JSONObject jsonObject = serializeIdentifiableBean(object, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
 
         int rowId = object.getRowId();
@@ -656,20 +671,18 @@ public class ExperimentJSONConverter
         return value;
     }
 
-
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        final ExpDataClass dc = data.getDataClass(user);
-
-        JSONObject jsonObject = serializeExpObject(data, null, settings);
+        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
 
         if (settings.isIncludeProperties())
         {
+            final ExpDataClass dc = data.getDataClass(user);
             if (dc != null)
             {
-                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false));
+                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false), user);
                 if (dc.getCategory() != null)
                     dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
@@ -698,16 +711,22 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @NotNull Settings settings)
     {
+        return serializeMaterial(material, null, settings);
+    }
+
+    @NotNull
+    public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @Nullable User user, @NotNull Settings settings)
+    {
         ExpSampleType sampleType = material.getSampleType();
 
         JSONObject jsonObject;
         if (sampleType == null)
         {
-            jsonObject = serializeExpObject(material, null, settings);
+            jsonObject = serializeExpObject(material, null, settings, user);
         }
         else
         {
-            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings);
+            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings, user);
             if (sampleType.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
@@ -719,7 +738,7 @@ public class ExperimentJSONConverter
 
             if (settings.isIncludeProperties())
             {
-                JSONObject sampleTypeJson = serializeExpObject(sampleType, null, settings.withIncludeProperties(false));
+                JSONObject sampleTypeJson = serializeExpObject(sampleType, null, settings.withIncludeProperties(false), user);
                 jsonObject.put(SAMPLE_TYPE, sampleTypeJson);
             }
         }

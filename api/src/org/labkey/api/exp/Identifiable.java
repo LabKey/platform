@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -45,6 +46,11 @@ public interface Identifiable
     }
 
     default @Nullable QueryRowReference getQueryRowReference()
+    {
+        return getQueryRowReference(null);
+    }
+
+    default @Nullable QueryRowReference getQueryRowReference(@Nullable User user)
     {
         return null;
     }

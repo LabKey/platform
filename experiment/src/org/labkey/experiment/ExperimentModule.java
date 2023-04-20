@@ -427,7 +427,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (material == null)
                     return null;
 
-                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                return ExperimentJSONConverter.serializeMaterial(material, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
             }
 
             @Override
@@ -449,7 +449,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
                 for (ExpMaterial material : ExperimentService.get().getExpMaterials(rowIds))
                 {
-                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap());
+                    searchJsonMap.put(
+                        rowIdIdentifierMap.get(material.getRowId()),
+                        ExperimentJSONConverter.serializeMaterial(material, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap()
+                    );
                 }
 
                 return searchJsonMap;
