@@ -342,7 +342,7 @@ public class WikiManager implements WikiService
                 .add(alias)
                 .add(wiki.getRowId())
                 .append("WHERE NOT EXISTS (SELECT * FROM ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases().getFromSQL("__pa"))
+                .append(CommSchema.getInstance().getTableInfoPageAliases())
                 .append(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
                 .add(wiki.getContainerId())
                 .add(alias);
