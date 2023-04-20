@@ -3814,7 +3814,18 @@ if (!LABKEY.DataRegions) {
                     else if (!LABKEY.Utils.isArray(params[pair[0]])) {
                         params[pair[0]] = [params[pair[0]]];
                     }
-                    params[pair[0]].push(pair[1]);
+
+                    // This needs to be formatted for the filter dialog to display correctly when retrieving
+                    // an existing date filter on an async loaded data region
+                    var value = pair[1];
+                    if (LABKEY.Utils.isDate(value)) {
+                        value = $.format.date(value, 'yyyy-MM-dd');
+                        if (LABKEY.Utils.endsWith(value, 'Z')) {
+                            value = value.substring(0, value.length - 1);
+                        }
+                    }
+
+                    params[pair[0]].push(value);
                 }
                 else {
                     params[pair[0]] = pair[1];
