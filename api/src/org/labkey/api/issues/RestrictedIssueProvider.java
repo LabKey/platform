@@ -26,4 +26,6 @@ public interface RestrictedIssueProvider
 
     void setRestrictedIssueListGroup(Container c, String issueDefName, @Nullable Group group);
     @Nullable Group getRestrictedIssueListGroup(Container c, String issueDefName);
+
+    void deleteProperties(Container c, String issueDefName);
 }

@@ -144,22 +144,15 @@ public class IssueManager
     public static final int NOTIFY_SELF_SPAM = 8;           // spam me when I enter/edit a bug
     public static final int DEFAULT_EMAIL_PREFS = NOTIFY_ASSIGNEDTO_OPEN | NOTIFY_ASSIGNEDTO_UPDATE | NOTIFY_CREATED_UPDATE;
 
-    private static final String ISSUES_PREF_MAP = "IssuesPreferencesMap";
-    private static final String ISSUES_REQUIRED_FIELDS = "IssuesRequiredFields";
-
     private static final String CAT_ISSUE_DEF_PROPERTIES = "IssueDefProperties-";
-
-    private static final String CAT_ENTRY_TYPE_NAMES = "issueEntryTypeNames";
     private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
     private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
-
     private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
     private static final String PROP_DEFAULT_ASSIGNED_TO_USER = "issueDefaultAssignedToUser";
-    private static final String CAT_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromCategory";
-    private static final String PROP_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromProperty";
     private static final String PROP_DEFAULT_RELATED_FOLDER = "issueDefaultsRelatedFolder";
-
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
+
+    public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
     private IssueManager()
     {
@@ -215,9 +208,9 @@ public class IssueManager
                     relatedIssues.add(related);
             }
 
-            if (!provider.hasPermission(user, issue, relatedIssues, errors) && !errors.isEmpty())
+            if (!provider.hasPermission(user, issue, relatedIssues, errors))
             {
-                StringBuilder msg = new StringBuilder();
+                StringBuilder msg = new StringBuilder(errors.isEmpty() ? "Access denied" : "");
                 for (ValidationError ve : errors)
                 {
                     msg.append(ve.getMessage()).append("\n");
@@ -595,21 +588,6 @@ public class IssueManager
         }
     }
 
-    /**
-     * @param c
-     * @return Container c itself or the container from which admin settings were inherited from
-     */
-    public static Container getInheritFromOrCurrentContainer(Container c)
-    {
-        Container inheritFrom = getInheritFromContainer(c);
-
-        //Return the container from which admin settings were inherited from
-        if (inheritFrom != null)
-            return inheritFrom;
-        return c;
-    }
-
-
     @NotNull
     public static EntryTypeNames getEntryTypeNames(Container container, String issueDefName)
     {
@@ -630,26 +608,20 @@ public class IssueManager
         return CAT_ISSUE_DEF_PROPERTIES + issueDefName;
     }
 
-    /**
-     * @param container
-     * @param inheritingVals
-     * @return EntryTypeNames of a container with inherited settings, or of current container.
-     */
-    public static EntryTypeNames getEntryTypeNames(Container container, boolean inheritingVals)
+    private static void deleteProperties(Container container, String issueDefName)
     {
-        Container c;
-        if (inheritingVals)
-            c = getInheritFromOrCurrentContainer(container);
-        else
-            c = container;
+        PropertyManager.PropertyMap properties = PropertyManager.getProperties(container, getPropMapName(issueDefName));
+        if (!properties.isEmpty())
+        {
+            properties.delete();
+        }
 
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_ENTRY_TYPE_NAMES);
-        EntryTypeNames ret = new EntryTypeNames();
-        if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName = props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
-        if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
-            ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
-        return ret;
+        // if there is a restricted issue list, give it a chance to clean up saved settings
+        RestrictedIssueProvider provider = IssuesListDefService.get().getRestrictedIssueProvider();
+        if (provider != null)
+        {
+            provider.deleteProperties(container, issueDefName);
+        }
     }
 
     public static void saveEntryTypeNames(Container container, String issueDefName, EntryTypeNames names)
@@ -815,25 +787,6 @@ public class IssueManager
         }
     }
 
-    /**
-     * @param current
-     * @return Container from which current's admin settings are inherited from
-     */
-    public static Container getInheritFromContainer(Container current)
-    {
-        Map<String, String> props = PropertyManager.getProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
-        String propsValue = props.get(PROP_DEFAULT_INHERIT_FROM_CONTAINER);
-
-        Container inheritFromContainer = null;
-
-        if(propsValue != null)
-        {
-            inheritFromContainer = ContainerManager.getForId(propsValue);
-        }
-
-        return inheritFromContainer;
-    }
-
     public static Sort.SortDirection getCommentSortDirection(Container c, String issueDefName)
     {
         String direction = getPropertyValue(c, issueDefName, CAT_COMMENT_SORT);
@@ -937,70 +890,7 @@ public class IssueManager
      */
     public static String getRequiredIssueFields(Container container)
     {
-        return getRequiredIssueFields(container, IssuesController.DEFAULT_REQUIRED_FIELDS);
-    }
-
-    public static String getRequiredIssueFields(Container container, @Nullable String defaultValue)
-    {
-        Map<String, String> map = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), ISSUES_PREF_MAP);
-        String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-
-        if(getInheritFromContainer(container) != null)
-        {
-            return getMyRequiredIssueFields(container) + ";" + requiredFields;
-        }
-        return null == requiredFields ? defaultValue : requiredFields.toLowerCase();
-    }
-
-    /**
-     *
-     * @param container
-     * @return Required fields of the current container
-     */
-    public static String getMyRequiredIssueFields(Container container)
-    {
-        Map<String, String> mapCurrent = PropertyManager.getProperties(container, ISSUES_PREF_MAP);
-        String requiredFieldsCurrent = mapCurrent.get(ISSUES_REQUIRED_FIELDS);
-        return (null == requiredFieldsCurrent) ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFieldsCurrent.toLowerCase();
-    }
-
-    /**
-     *
-     * @param container
-     * @return Required fields of the container from which current container's admin settings were inherited from
-     */
-    public static String getInheritedRequiredIssueFields(Container container)
-    {
-        Map<String, String> map = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), ISSUES_PREF_MAP);
-        String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields.toLowerCase();
-    }
-
-
-    public static void setRequiredIssueFields(Container container, String requiredFields)
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(container, ISSUES_PREF_MAP, true);
-
-        if (!StringUtils.isEmpty(requiredFields))
-            requiredFields = requiredFields.toLowerCase();
-        map.put(ISSUES_REQUIRED_FIELDS, requiredFields);
-        map.save();
-    }
-
-    public static void setRequiredIssueFields(Container container, String[] requiredFields)
-    {
-            final StringBuilder sb = new StringBuilder();
-            if (requiredFields.length > 0)
-            {
-                String sep = "";
-                for (String field : requiredFields)
-                {
-                    sb.append(sep);
-                    sb.append(field);
-                    sep = ";";
-                }
-            }
-            setRequiredIssueFields(container, sb.toString());
+        return DEFAULT_REQUIRED_FIELDS;
     }
 
     public static void setLastIndexed(String containerId, int issueId, long ms)
@@ -1282,6 +1172,7 @@ public class IssueManager
             TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueListDef();
 
             truncateIssueList(def, c, user);
+            deleteProperties(c, def.getName());
             Table.delete(issueDefTable, def.getRowId());
 
             if (deleteDomain)
