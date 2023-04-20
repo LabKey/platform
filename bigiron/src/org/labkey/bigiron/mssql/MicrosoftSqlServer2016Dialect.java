@@ -169,7 +169,5 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
             x = x instanceof Timestamp ? x.toString() : x;
             super.setObject(parameterName, x);
         }
-
-
     }
 }

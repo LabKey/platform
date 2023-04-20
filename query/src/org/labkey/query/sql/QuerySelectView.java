@@ -504,7 +504,7 @@ public class QuerySelectView extends AbstractQueryRelation
         Map<FieldKey, ColumnInfo> available = new HashMap<>();
         columns.forEach(c -> available.putIfAbsent(c.getFieldKey(), c));
 
-        Set<FieldKey> presentInSort = sort.getSortList().stream().map(sf -> sf.getFieldKey()).collect(Collectors.toSet());
+        Set<FieldKey> presentInSort = sort.getSortList().stream().map(Sort.SortField::getFieldKey).collect(Collectors.toSet());
 
         boolean addedSortKeys = false;
 
