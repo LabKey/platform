@@ -217,7 +217,7 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlSelect.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT ? AS Container, ParticipantId, SequenceNum, ParticipantSequenceNum FROM (");
         sqlInsertParticipantVisit.add(container);
@@ -254,7 +254,7 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTable>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT CAST(? AS " + d.getGuidType() +"), ParticipantId, SequenceNum, ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.add(container);
@@ -276,7 +276,7 @@ public class SequenceVisitManager extends VisitManager
         // visit table to tell us which date corresponds to which visit:
         sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTable>",schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
         sqlInsertParticipantVisit.add(container);
@@ -332,7 +332,7 @@ public class SequenceVisitManager extends VisitManager
         {
             TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), defsWithVisitDates, user);
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit.getSelectName());
+            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit);
             if (!schema.getSqlDialect().isSqlServer())
                 sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
             sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
@@ -403,7 +403,7 @@ public class SequenceVisitManager extends VisitManager
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
         TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(def), user);
         SQLFragment sqlUpdateVisitDates = new SQLFragment();
-        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit.getSelectName());
+        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit);
         if (!schema.getSqlDialect().isSqlServer())
             sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
         sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")

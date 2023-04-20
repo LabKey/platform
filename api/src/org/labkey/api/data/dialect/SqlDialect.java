@@ -690,7 +690,7 @@ public abstract class SqlDialect
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
         SQLFragment datePartExpr = new SQLFragment(value);
-        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        datePartExpr.setSqlUnsafe(getDatePart(part, datePartExpr.getRawSQL()));
         return datePartExpr;
     }
 
@@ -701,21 +701,21 @@ public abstract class SqlDialect
     public SQLFragment getDateTimeToDateCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        cast.setSqlUnsafe(getDateTimeToDateCast(cast.getRawSQL()));
         return cast;
     }
 
     public SQLFragment getVarcharCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        cast.setSqlUnsafe( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
         return cast;
     }
 
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
         return cast;
     }
 

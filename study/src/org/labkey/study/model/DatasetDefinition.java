@@ -802,8 +802,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + getStorageTableInfo().getSelectName() + "\n");
-            String and = "WHERE ";
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo());
+            String and = "\nWHERE ";
 
             // only apply a container filter on delete when this is a shared dataset definition
             // and we are not at the container where the definition lives (see issue 28224)
@@ -1552,13 +1552,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if ("ParticipantId".equalsIgnoreCase(name))
                 return getParticipantColumn();
             return super.getColumn(name);
-        }
-
-
-        @Override
-        public String getSelectName()
-        {
-            return null;
         }
 
         @Override
