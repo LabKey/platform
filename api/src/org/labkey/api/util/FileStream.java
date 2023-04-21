@@ -83,8 +83,8 @@ public interface FileStream
         )
         {
             LOG.debug("Starting to transfer to " + dest);
-            cOut.transferFrom(cIn, 0, s.getSize());
-            LOG.debug("Finished transferring to " + dest);
+            long bytes = cOut.transferFrom(cIn, 0, Long.MAX_VALUE);
+            LOG.debug("Finished transferring " + bytes + " bytes to " + dest);
         }
     }
 
