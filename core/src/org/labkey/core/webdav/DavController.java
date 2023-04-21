@@ -3075,6 +3075,9 @@ public class DavController extends SpringActionController
                     InputStream in = fis.openInputStream();
                     if (in instanceof FileInputStream fIn)
                     {
+                        // This means the file is already on the server. That's usually the slowest part of the upload
+                        // sequence, so it's less important to keep the session alive as bytes are consumed from the
+                        // Channel. See issue 47755
                         return fIn.getChannel();
                     }
                     return Channels.newChannel(SessionKeepAliveFilter.wrap(in, getRequest()));
