@@ -107,7 +107,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         setPublicSchemaName(_userSchema.getSchemaName());
 
         List<FieldKey> visibleColumns = new ArrayList<>();
-        List<FieldKey> visibleCreatedModifiedColumns = new ArrayList<>();
 
         MutableColumnInfo specimenIdCol = null;
         boolean foundTargetStudyCol = false;
@@ -150,7 +149,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 if (isCreatedModifiedCol(baseColumn.getName()))
                 {
                     addColumn(col);
-                    visibleCreatedModifiedColumns.add(col.getFieldKey());
                 }
                 else
                 {
@@ -284,7 +282,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var propsCol = createPropertiesColumn();
         addColumn(propsCol);
 
-        visibleColumns.addAll(visibleCreatedModifiedColumns); // move created/modified columns to last
         setDefaultVisibleColumns(visibleColumns);
     }
 
