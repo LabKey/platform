@@ -461,7 +461,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
@@ -610,7 +610,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
+    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider,Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
             throws SQLException, ValidationException
     {
         if (tableInfo instanceof UpdateableTableInfo)
