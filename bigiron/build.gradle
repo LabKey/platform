@@ -30,12 +30,26 @@ dependencies {
             "https://www.oracle.com/downloads/licenses/oracle-free-license.html",
             "Connect with Oracle database servers"
         )
-// This exclude is needed only if we pull in "ojdbc11-production", which includes a bunch of dependencies that we think
-// are optional. For some reason, ojdbc11-production evades our credits handling, so we're using ojdbc11 for now.
+// This exclude is needed only if we pull in "ojdbc11-production", which includes a bunch of dependencies that are
+// largely optional. For some reason, ojdbc11-production evades our credits handling, so we're using ojdbc11 for now.
 //        {
 //            // https://stackoverflow.com/questions/44916255/classnotfoundexception-oracle-i18n-util-localemapper-on-tomcat-tld-scanning-ojd
 //            exclude group: "com.oracle.database.xml", module: "xmlparserv2" // Conflicts with Xerces
 //        }
+    )
+
+    // Needed for Oracle JDBC to support SQLXML
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.oracle.database.xml:xdb:${oracleJdbcVersion}", // Oracle JDBC SQLXML support
+            "Oracle SQLXML support",
+            "Oracle",
+            "https://www.oracle.com/database/technologies/appdev/jdbc.html",
+            "Oracle Free Use License",
+            "https://www.oracle.com/downloads/licenses/oracle-free-license.html",
+            "Connect with Oracle database servers"
+        )
     )
 
     BuildUtils.addExternalDependency(
