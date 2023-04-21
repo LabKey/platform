@@ -1370,10 +1370,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeOtherContainers)
+    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, user, includeOtherContainers);
+        List<String> containerIds = createContainerList(container, user, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -1407,8 +1407,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (legacyObjectId != null)
             return getDataClassByObjectId(legacyObjectId);
 
-        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeOtherContainers, dataClassName);
+        boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeProjectAndShared, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1421,9 +1421,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, user, true, dataClassName);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String dataClassName)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, String dataClassName)
     {
-        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
+        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
     }
 
     @Override
@@ -1438,14 +1438,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, user, rowId, true);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, int rowId, boolean includeProjectAndShared)
     {
-        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getRowId() == rowId));
+        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<DataClass> predicate)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, user, includeOtherContainers);
+        List<String> containerIds = createContainerList(c, user, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -3822,12 +3822,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
-        if (includeProjectAndShared && user == null)
-        {
-            throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
-        }
         if (includeProjectAndShared)
         {
+            if (user == null)
+            {
+                throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
+            }
+            
             Container project = container.getProject();
             if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
             {
@@ -3850,14 +3851,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches)
+    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches)
     {
-        return getExperiments(container, user, includeOtherContainers, includeBatches, false);
+        return getExperiments(container, user, includeProjectAndShared, includeBatches, false);
     }
 
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches, boolean includeHidden)
+    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
     {
-        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+        SimpleFilter filter = createContainerFilter(container, user, includeProjectAndShared);
         if (!includeHidden)
         {
             filter.addCondition(FieldKey.fromParts("Hidden"), Boolean.FALSE);
@@ -3942,7 +3943,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result;
     }
 
-
     private Map<String, List<Material>> getRunInputMaterial(Map<String, Object>[] maps)
     {
         Map<String, List<Material>> outputMap = new HashMap<>();
@@ -3956,7 +3956,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         return outputMap;
     }
-
 
     /**
      * @return map from OntologyEntryURI to parameter

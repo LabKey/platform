@@ -16,6 +16,7 @@
 package org.labkey.issue;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -47,6 +48,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.issue.model.GeneralIssuesListDefProvider;
 import org.labkey.issue.model.IssueCommentType;
 import org.labkey.issue.model.IssueManager;
@@ -228,5 +230,13 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     public void indexDeleted()
     {
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put("hasRestrictedIssueList", IssuesListDefService.get().getRestrictedIssueProvider() != null);
+        return json;
     }
 }
