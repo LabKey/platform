@@ -1032,7 +1032,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
-                    Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
+                    Container lookupContainer = pd.getLookup().getContainer() != null ? pd.getLookup().getContainer() : container;
 
                     // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
                     // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
@@ -1048,10 +1048,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
 
+                        // If the lookup was defined with an explicit container, verify that the sample is in that container
+                        boolean matchesLookupContainer = pd.getLookup().getContainer() == null || material.getContainer().equals(pd.getLookup().getContainer());
+
                         // Issue 47509: Since we have resolved the material here, adjust the data to be imported to the
                         // results table to use the rowIds of the input sample if the lookup is lookupToSampleTypeById.
                         // (note this updates the rawData object passed in to checkData which is used by convertPropertyNamesToURIs to create the fileData object).
-                        if (isSampleLookupById)
+                        if (isSampleLookupById && matchesLookupContainer)
                             map.put(pd.getName(), material.getRowId());
                     }
                     // show better error message then the "failed to convert" message that will be hit downstream
