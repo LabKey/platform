@@ -176,12 +176,6 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             sql.append(delim);
         }
 
-        @Override
-        public String getSelectName()
-        {
-            return null;
-        }
-
         @NotNull
         @Override
         public SQLFragment getFromSQL()

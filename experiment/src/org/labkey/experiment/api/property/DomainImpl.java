@@ -857,7 +857,7 @@ public class DomainImpl implements Domain
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
         ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
         mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
-        SQLFragment sql = new SQLFragment().append("UPDATE ").append(table.getSelectName()).append(" SET ");
+        SQLFragment sql = new SQLFragment().append("UPDATE ").append(table).append(" SET ");
         String separator = "";
         for (DomainProperty prop: uniqueIdProps)
         {

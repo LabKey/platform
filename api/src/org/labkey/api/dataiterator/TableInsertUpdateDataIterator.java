@@ -422,12 +422,9 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             if (autoIncCol == null)
                 return;
 
-            // We're assuming the "selectName" column is in fact the serial/identity "autoIncCol"
-            final String selectName = t.getSelectName();
-
             if (_scope.getSqlDialect().isSqlServer())
             {
-                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(selectName).append(" ").append(bound.toString());
+                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(t).append(" ").append(bound.toString());
                 new SqlExecutor(_scope, _conn).execute(check);
             }
             else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
@@ -438,8 +435,8 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                     String colSelectName = autoIncCol.getSelectName();
                     SQLFragment resetSeq = new SQLFragment();
                     resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence(").appendValue(selectName).append(", ").appendValue(colSelectName).append("),\n");
-                    resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(selectName).append("), 1),\n");
+                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName).append("),\n");
+                    resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
                     resetSeq.append("  false");
                     resetSeq.append(")");
                     new SqlExecutor(_scope, _conn).execute(resetSeq);

@@ -37,7 +37,8 @@ public class TempTableInfo extends SchemaTableInfo
 
     private TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
     {
-        super(schema, DatabaseTableType.TABLE, name, name, schema.getName() + "." + name + "$" + new GUID().toStringNoDashes());
+        super(schema, DatabaseTableType.TABLE, name, name,
+                new SQLFragment().appendIdentifier(schema.getName()).append(".").appendIdentifier(name + "$" + new GUID().toStringNoDashes()));
 
         // make sure TempTableTracker is initialized _before_ caller executes CREATE TABLE
         TempTableTracker.init();

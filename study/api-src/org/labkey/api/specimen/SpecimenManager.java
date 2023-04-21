@@ -77,7 +77,7 @@ public class SpecimenManager
     {
         TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
-        sql.append(tableInfo.getSelectName());
+        sql.append(tableInfo);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
     }
 
@@ -174,7 +174,7 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteVialSql);
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen.getSelectName() + " WHERE ").append(visitRangeSql1);
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " ).append( tableInfoSpecimen ).append( " WHERE ").append(visitRangeSql1);
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 

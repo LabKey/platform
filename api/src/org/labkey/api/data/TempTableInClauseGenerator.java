@@ -82,9 +82,8 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         if (tempTableInfo == null)
         {
             tempTableInfo = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
-            String tableName = tempTableInfo.getSelectName();
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
-            sqlCreate.append(tableName)
+            sqlCreate.append(tempTableInfo)
                     .append("\n(Id ")
                     .append(DbSchema.getTemp().getSqlDialect().getSqlTypeName(jdbcType))
                     .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
@@ -97,6 +96,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
             }
             tempTableInfo.track();
+            String tableName = tempTableInfo.getSelectName();
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
             String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
             try
@@ -133,7 +133,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             }
         }
 
-        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
+        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
         sql.addTempToken(tempTableInfo);
         return sql;
     }
