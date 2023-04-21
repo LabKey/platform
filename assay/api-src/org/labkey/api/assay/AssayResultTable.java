@@ -419,7 +419,13 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     protected boolean shouldIncludeCreatedModified(Set<FieldKey> selectedColumns)
     {
-        return false;
+        if (null == selectedColumns) // select all
+            return true;
+
+        return selectedColumns.contains(new FieldKey(null, CREATED_COLUMN_NAME)) ||
+                selectedColumns.contains(new FieldKey(null, CREATED_BY_COLUMN_NAME)) ||
+                selectedColumns.contains(new FieldKey(null, MODIFIED_COLUMN_NAME)) ||
+                selectedColumns.contains(new FieldKey(null, MODIFIED_BY_COLUMN_NAME));
     }
 
     @NotNull
