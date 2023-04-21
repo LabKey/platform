@@ -1314,8 +1314,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
-        private Container _container;
-        private DatasetDefinition _def;
+        @Override
+        public String getSelectName()
+        {
+            return null;
+        }
+
+        @Override
+        public @Nullable SQLFragment getSQLName()
+        {
+            return null;
+        }
+
+        private final Container _container;
+        private final DatasetDefinition _def;
         boolean _multiContainer;
         BaseColumnInfo _ptid;
 

@@ -1645,9 +1645,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static final String REQUIRED_FIELDS_COLUMNS = "title,assignedto,type,area,priority,milestone,notifylist";
-    public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
-
     @RequiresPermission(AdminPermission.class)
     public class AdminAction extends FormViewAction<IssuesDomainKindProperties>
     {

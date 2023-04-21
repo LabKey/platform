@@ -59,7 +59,7 @@ public class AssayJSONConverter
 
     public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings);
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings, user);
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
