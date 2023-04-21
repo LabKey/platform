@@ -438,7 +438,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 _datasetDefinition.checkForDuplicates(scrollable, indexLSID,
                         indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
                         context, null,
-                        checkDuplicates);
+                        checkDuplicates,
+                        subjectCol, visitdateColumn, seqnumColumn);
                 scrollable.beforeFirst();
                 ret = scrollable;
             }
