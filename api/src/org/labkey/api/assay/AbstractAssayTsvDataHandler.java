@@ -461,7 +461,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/by for results created separately from runs */);
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();

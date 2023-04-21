@@ -199,7 +199,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         @Override
         protected boolean shouldIncludeCreatedModified(Set<FieldKey> selectedColumns)
         {
-            if (null == selectedColumns)
+            if (null == selectedColumns) // select all
                 return true;
 
             return selectedColumns.contains(new FieldKey(null, CREATED_COLUMN_NAME)) ||
