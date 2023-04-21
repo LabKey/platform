@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -440,7 +441,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     // Leave this protected; client-developed action classes call it. See #38307
-    protected void saveRequestedApiVersion(HttpServletRequest request, Object obj)
+    protected void saveRequestedApiVersion(HttpServletRequest request, @Nullable Object obj)
     {
         Object o = null;
 
@@ -476,15 +477,16 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
 
-    private JSONObject getJsonObject() throws IOException
+    private @Nullable JSONObject getJsonObject() throws IOException
     {
         try (Reader r = getViewContext().getRequest().getReader())
         {
-            return new JSONObject(new JSONTokener(r));
+            JSONTokener tokener = new JSONTokener(r);
+            return tokener.more() ? new JSONObject(new JSONTokener(r)) : null;
         }
     }
 
-    private BindException populateForm(JSONObject jsonObj, FORM form)
+    private BindException populateForm(@Nullable JSONObject jsonObj, FORM form)
     {
         if (null == jsonObj)
             return new NullSafeBindException(form, "form");
