@@ -498,7 +498,7 @@ public class QuerySelectView extends AbstractQueryRelation
     private static boolean addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
 	    /* There is a bit of a chicken-and-egg problem here
-	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
+	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
         Map<FieldKey, ColumnInfo> available = new HashMap<>();

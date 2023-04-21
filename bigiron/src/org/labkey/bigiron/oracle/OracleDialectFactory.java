@@ -168,6 +168,9 @@ public class OracleDialectFactory implements SqlDialectFactory
                 protected Set<String> getGoodUrls()
                 {
                     return Set.of(
+                        // New for 19c?
+                        "jdbc:oracle:thin:@localhost:1521:database",
+
                         // New syntax without id/password
                         "jdbc:oracle:thin:@//myhost:1521/database",
                         "jdbc:oracle:thin:@//127.0.0.1:1521/database",

@@ -251,6 +251,10 @@ public abstract class SqlDialect
         addSqlTypeNames(_sqlTypeNameMap);
     }
 
+    protected Map<String, Integer> getSqlTypeNameMap()
+    {
+        return _sqlTypeNameMap;
+    }
 
     private void initializeSqlTypeIntMap()
     {

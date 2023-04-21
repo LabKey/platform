@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.oracle;
 
+import oracle.sql.TIMESTAMP;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionPool;
@@ -47,6 +48,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +85,15 @@ abstract class OracleDialect extends SimpleSqlDialect
             };
         }
     };
+
+    private final Set<String> _sortableTypeNames = new HashSet<>();
+
+    public OracleDialect()
+    {
+        _sortableTypeNames.addAll(getSqlTypeNameMap().keySet());
+        _sortableTypeNames.remove("BLOB"); // Not sortable
+        _sortableTypeNames.remove("CLOB"); // Not sortable
+    }
 
     @Override
     public TableResolver getTableResolver()
@@ -355,6 +366,11 @@ abstract class OracleDialect extends SimpleSqlDialect
         sqlTypeNameMap.put("NUMBER", Types.DECIMAL);
     }
 
+    @Override
+    public boolean isSortableDataType(String sqlDataTypeName)
+    {
+        return _sortableTypeNames.contains(sqlDataTypeName);
+    }
 
     private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
@@ -475,8 +491,14 @@ abstract class OracleDialect extends SimpleSqlDialect
                 }
                 return val;
             }
+            else if (value instanceof TIMESTAMP oracleTimestamp)
+            {
+                return oracleTimestamp.timestampValue();
+            }
             else
+            {
                 return value;
+            }
         }
 
         @Override
