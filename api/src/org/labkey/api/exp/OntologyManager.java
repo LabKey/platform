@@ -913,10 +913,10 @@ public class OntologyManager
         else
         {
             SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName())
+            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
                     .append(" WHERE ObjectId IN\n")
                     .append("(SELECT ObjectId FROM ")
-                    .append(String.valueOf(getTinfoObject())).append("\n")
+                    .append(getTinfoObject()).append("\n")
                     .append(" WHERE ");
             if (c != null)
             {
@@ -929,7 +929,7 @@ public class OntologyManager
             new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
             SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE ");
+            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ");
             if (c != null)
             {
                 sqlDeleteObjects.append(" Container = ?").add(c.getId());
@@ -1795,11 +1795,11 @@ public class OntologyManager
                 String timestamp = expSchema.getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
                 String templateJson = null==ddIn.getTemplateInfo() ? null : ddIn.getTemplateInfo().toJSON();
                 SQLFragment insert = new SQLFragment(
-                        "INSERT INTO " + getTinfoDomainDescriptor().getSelectName() +
-                        " (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
-                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n",
-                        ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
-                .append("WHERE NOT EXISTS (SELECT * FROM "  + getTinfoDomainDescriptor().getSelectName() + " x WHERE x.DomainURI=? AND x.Project=?)\n")
+                        "INSERT INTO ").append(getTinfoDomainDescriptor())
+                        .append(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
+                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n")
+                        .addAll(ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
+                .append("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").append(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
                 if (expSchema.getSqlDialect().isPostgreSQL())

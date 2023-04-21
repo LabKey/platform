@@ -349,7 +349,7 @@ public class SurveyManager
         if (surveys.length > 0)
         {
             SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-            deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
+            deleteSurveysSql.append(s.getSurveysTable()).append(" WHERE Container = ?").add(c);
             executor.execute(deleteSurveysSql);
 
             // invoke any survey listeners to clean up any dependent objects
@@ -386,7 +386,7 @@ public class SurveyManager
                     deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyDesignId);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ?").add(surveyDesignId);
             executor.execute(deleteSurveyDesignsSql);
 
             transaction.commit();

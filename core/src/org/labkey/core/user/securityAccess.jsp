@@ -158,7 +158,7 @@
                                 for (String roleName : roleNames)
                                 {
                                     %><tr><td><% out.print(h(roleName + (inherited ? "*" : ""))); %></td><%
-                                    %><td>"<%
+                                    %><td><%
                                     boolean first = true;
                                     for (Group group : accessGroups.get(roleName))
                                     {

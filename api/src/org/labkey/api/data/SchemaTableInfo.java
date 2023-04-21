@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -113,17 +114,17 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName)
     {
         this(parentSchema, tableType, tableName, metaDataName, selectName, null);
     }
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName, @Nullable String title)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName, @Nullable String title)
     {
         _parentSchema = parentSchema;
         _name = tableName;
         _metaDataName = metaDataName;
-        _selectName = new SQLFragment(selectName);
+        _selectName = selectName;
         _tableType = tableType;
         _notificationKey = new Path(parentSchema.getClass().getName(), parentSchema.getName(), getClass().getName(), getName());
         _title = title;
@@ -132,7 +133,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
-        this(parentSchema, tableType, tableMetaDataName, tableMetaDataName, parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName()) + "." + parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName));
+        this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName)));
     }
 
     /**
@@ -220,13 +222,19 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public String getSelectName()
     {
-        return _selectName.getSQL();
+        return null == _selectName ? null : _selectName.getSQL();
     }
 
+    @Override
+    public @Nullable SQLFragment getSQLName()
+    {
+        return null == _selectName ? null : new SQLFragment(_selectName);    // CONSIDER: readonly SQLFragment
+    }
 
     @NotNull
     public SQLFragment getFromSQL()
     {
+        Objects.requireNonNull(_selectName);
         return new SQLFragment().append("SELECT * FROM ").append(_selectName);
     }
 
@@ -235,8 +243,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        if (null != getSelectName())
-            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+        if (null != getSQLName())
+            return new SQLFragment().append(getSQLName()).append(" ").append(alias);
         else
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }

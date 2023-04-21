@@ -1295,7 +1295,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotCount = ? WHERE RowId = ?", count, rowid), null);
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1333,7 +1333,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter unit = new Parameter("unit", JdbcType.VARCHAR);
 
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE " + materialTable.getSelectName() + " SET AliquotVolume = ?, AliquotUnit = ? WHERE RowId = ? ", amount, unit, rowid), null);
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotVolume = ?, AliquotUnit = ? WHERE RowId = ? ").addAll(amount, unit, rowid), null);
 
                 List<Map.Entry<Integer, List<Pair<Double, String>>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 

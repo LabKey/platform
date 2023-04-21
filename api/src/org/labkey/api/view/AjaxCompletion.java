@@ -21,8 +21,6 @@ import org.labkey.api.util.Pair;
 
 /**
  * Captures options for auto-complete actions requested from the browser (typically based on partial input).
- * User: adam
- * Date: Sep 23, 2007
  */
 public final class AjaxCompletion extends Pair<String, String>
 {
