@@ -127,6 +127,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
 import java.io.FilterWriter;
@@ -143,6 +144,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
@@ -3064,6 +3067,17 @@ public class DavController extends SpringActionController
                 public InputStream openInputStream() throws IOException
                 {
                     return SessionKeepAliveFilter.wrap(fis.openInputStream(), getRequest());
+                }
+
+                @Override
+                public @Nullable ReadableByteChannel getInputChannel() throws IOException
+                {
+                    InputStream in = fis.openInputStream();
+                    if (in instanceof FileInputStream fIn)
+                    {
+                        return fIn.getChannel();
+                    }
+                    return Channels.newChannel(SessionKeepAliveFilter.wrap(in, getRequest()));
                 }
 
                 @Override
