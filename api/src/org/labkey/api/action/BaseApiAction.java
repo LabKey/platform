@@ -20,9 +20,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
@@ -47,8 +48,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Map;
@@ -406,7 +407,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     /**
-     * Parse POST body as JSONObject then use either CustomApiForm or spring form binding to populate the FORM instance.
+     * Parse POST body as JSONObject then use either ApiJsonForm or spring form binding to populate the FORM instance.
      */
     @NotNull
     private Pair<FORM, BindException> populateJSONObjectForm() throws Exception
@@ -443,8 +444,10 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         Object o = null;
 
-        if (obj instanceof Map && ((Map) obj).containsKey(CommonParameters.apiVersion.name()))
-            o = ((Map)obj).get(CommonParameters.apiVersion.name());
+        if (obj instanceof JSONObject jo)
+            o = jo.opt(CommonParameters.apiVersion.name());
+        else if (obj instanceof Map<?, ?> map && map.containsKey(CommonParameters.apiVersion.name()))
+            o = map.get(CommonParameters.apiVersion.name());
         if (_empty(o))
             o = getProperty(CommonParameters.apiVersion.name());
         if (_empty(o))
@@ -475,22 +478,10 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     private JSONObject getJsonObject() throws IOException
     {
-        //read the JSON into a buffer
-        //unfortunately the json.org classes can't read directly from a stream!
-        char[] buf = new char[2048];
-        int chars;
-        StringBuilder json = new StringBuilder();
-        BufferedReader reader = getViewContext().getRequest().getReader();
-
-        while((chars = reader.read(buf)) > 0)
-            json.append(buf, 0, chars);
-
-        String jsonString = json.toString();
-        if(jsonString.isEmpty())
-            return null;
-
-        //deserialize the JSON
-        return new JSONObject(jsonString);
+        try (Reader r = getViewContext().getRequest().getReader())
+        {
+            return new JSONObject(new JSONTokener(r));
+        }
     }
 
     private BindException populateForm(JSONObject jsonObj, FORM form)
@@ -498,14 +489,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         if (null == jsonObj)
             return new NullSafeBindException(form, "form");
 
-        if (form instanceof CustomApiForm caf)
+        if (form instanceof ApiJsonForm ajf)
         {
-            caf.bindProperties(jsonObj);
-            return new NullSafeBindException(caf, "form");
-        }
-        else if (form instanceof ApiJsonForm ajf)
-        {
-            ajf.bindJson(jsonObj.toNewJSONObject()); // Temporary. TODO: Pass new JSONObject to populateForm() once all forms have been migrated to ApiJsonForm
+            ajf.bindJson(jsonObj);
             return new NullSafeBindException(ajf, "form");
         }
         else
@@ -517,46 +503,25 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     public static class JsonPropertyValues extends MutablePropertyValues
     {
-        @Deprecated
         public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {
-            addPropertyValues(jsonObj);
-        }
-
-        public JsonPropertyValues(org.json.JSONObject jsonObj) throws JSONException
-        {
-            addPropertyValues(jsonObj);
-        }
-
-        @Deprecated
-        private void addPropertyValues(JSONObject jsonObj) throws JSONException
-        {
             for (String key : jsonObj.keySet())
             {
                 Object value = jsonObj.get(key);
 
-                if (value instanceof JSONArray)
+                if (value == JSONObject.NULL)
                 {
-                    value = ((JSONArray) value).toArray();
+                    value = null;
                 }
-                else if (value instanceof JSONObject)
-                    throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
-                addPropertyValue(key, value);
-            }
-        }
-
-        private void addPropertyValues(org.json.JSONObject jsonObj) throws JSONException
-        {
-            for (String key : jsonObj.keySet())
-            {
-                Object value = jsonObj.get(key);
-
-                if (value instanceof org.json.JSONArray array)
+                else if (value instanceof JSONArray array)
                 {
                     value = array.toList().toArray();
                 }
-                else if (value instanceof org.json.JSONObject)
+                else if (value instanceof JSONObject)
+                {
                     throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
+                }
+
                 addPropertyValue(key, value);
             }
         }

@@ -27,12 +27,6 @@ public class SimpleApiJsonForm implements ApiJsonForm
         _json = json;
     }
 
-    @Deprecated
-    public JSONObject getNewJsonObject()
-    {
-        return _json;
-    }
-
     public JSONObject getJsonObject()
     {
         return _json;
