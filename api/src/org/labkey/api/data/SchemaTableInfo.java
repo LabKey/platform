@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -221,18 +222,19 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public String getSelectName()
     {
-        return _selectName.getSQL();
+        return null == _selectName ? null : _selectName.getSQL();
     }
 
     @Override
     public @Nullable SQLFragment getSQLName()
     {
-        return new SQLFragment(_selectName);    // CONSIDER: readonly SQLFragment
+        return null == _selectName ? null : new SQLFragment(_selectName);    // CONSIDER: readonly SQLFragment
     }
 
     @NotNull
     public SQLFragment getFromSQL()
     {
+        Objects.requireNonNull(_selectName);
         return new SQLFragment().append("SELECT * FROM ").append(_selectName);
     }
 
@@ -241,8 +243,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        if (null != getSelectName())
-            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+        if (null != getSQLName())
+            return new SQLFragment().append(getSQLName()).append(" ").append(alias);
         else
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
