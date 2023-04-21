@@ -3815,9 +3815,10 @@ if (!LABKEY.DataRegions) {
                         params[pair[0]] = [params[pair[0]]];
                     }
 
-                    // This needs to be formatted for the filter dialog to display correctly when retrieving
-                    // an existing date filter on an async loaded data region
                     var value = pair[1];
+
+                    // This needs to be formatted for the response passed back to the grid for the filter display and
+                    // filter dialog to render correctly
                     if (LABKEY.Utils.isDate(value)) {
                         value = $.format.date(value, 'yyyy-MM-dd');
                         if (LABKEY.Utils.endsWith(value, 'Z')) {
