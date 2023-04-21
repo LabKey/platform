@@ -854,7 +854,7 @@ public class DomainPropertyImpl implements DomainProperty
                 {
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
-                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(OntologyManager.getTinfoObjectProperty()).
                                     append(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
@@ -862,7 +862,7 @@ public class DomainPropertyImpl implements DomainProperty
                 {
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
-                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(OntologyManager.getTinfoObjectProperty()).
                                     append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
