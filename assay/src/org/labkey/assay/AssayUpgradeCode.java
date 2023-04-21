@@ -14,6 +14,7 @@ import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -61,28 +62,36 @@ public class AssayUpgradeCode implements UpgradeCode
                     protocols.addAll(AssayService.get().getAssayProtocols(container));
             }
 
-            Map<Container, List<Pair<ExpProtocol, AssayProvider>>> protocolsByContainer = new HashMap<>();
+            Map<Container, List<Pair<ExpProtocol, Domain>>> protocolsByContainer = new HashMap<>();
             for (ExpProtocol protocol : protocols)
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
-                if (provider instanceof TsvAssayProvider)
-                {
-                    Container container = protocol.getContainer();
-                    protocolsByContainer.computeIfAbsent(container, s -> new ArrayList<>());
-                    protocolsByContainer.get(container).add(new Pair<>(protocol, provider));
-                }
+                if (provider == null)
+                    continue;;
+
+                Domain resultsDomain = provider.getResultsDomain(protocol);
+                if (null == resultsDomain || null == resultsDomain.getStorageTableName() || null == resultsDomain.getTypeURI())
+                    continue;
+
+                Lsid domainLsid = new Lsid(resultsDomain.getTypeURI());
+                if (!ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix()))
+                    continue;
+
+                Container container = protocol.getContainer();
+                protocolsByContainer.computeIfAbsent(container, s -> new ArrayList<>());
+                protocolsByContainer.get(container).add(new Pair<>(protocol, resultsDomain));
             }
 
             User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
             for (Container container : protocolsByContainer.keySet())
             {
-                List<Pair<ExpProtocol, AssayProvider>> protocolProviders = protocolsByContainer.get(container);
-                _log.info("Start adding result created/modified columns for " + protocolProviders.size() + " assay design(s) in " + container.getPath());
+                List<Pair<ExpProtocol, Domain>> protocolDomains = protocolsByContainer.get(container);
+                _log.info("Start adding result created/modified columns for " + protocolDomains.size() + " assay design(s) in " + container.getPath());
 
-                for (Pair<ExpProtocol, AssayProvider> protocolProvider : protocolProviders)
-                    _addAssayResultColumns(protocolProvider.first, protocolProvider.second);
+                for (Pair<ExpProtocol, Domain> protocolDomain : protocolDomains)
+                    _addAssayResultColumns(protocolDomain.first, protocolDomain.second);
 
-                _log.info("Finished adding result created/modified columns for " + protocolProviders.size() + " assay design(s) in " + container.getPath());
+                _log.info("Finished adding result created/modified columns for " + protocolDomains.size() + " assay design(s) in " + container.getPath());
             }
 
             transaction.commit();
@@ -90,15 +99,8 @@ public class AssayUpgradeCode implements UpgradeCode
 
     }
 
-    public static void _addAssayResultColumns(ExpProtocol protocol, AssayProvider provider)
+    public static void _addAssayResultColumns(ExpProtocol protocol, Domain resultsDomain)
     {
-        Domain resultsDomain = provider.getResultsDomain(protocol);
-        if (null == resultsDomain || null == resultsDomain.getStorageTableName())
-        {
-            _log.warn("Unable to get result domain for " + protocol.getName());
-            return;
-        }
-
         AssayResultDomainKind kind = null;
         try
         {
