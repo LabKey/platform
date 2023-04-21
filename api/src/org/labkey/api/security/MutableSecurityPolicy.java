@@ -115,8 +115,8 @@ public class MutableSecurityPolicy extends SecurityPolicy
 
     /**
      * Creates and initializes a policy from the supplied JSONObject. Most often, this content will have been generated
-     * by the toMap() method, sent to the client, modified, and sent back as JSON. A runtime exception will be thrown
-     * if the map does not contain correct/sufficient information.
+     * by the SecurityPolicy.toJson() method, sent to the client, modified, and sent back as JSON. A runtime exception
+     * will be thrown if the JSON does not contain correct/sufficient information.
      * @param json A JSONObject containing policy information
      * @param resource The resource
      * @return An initialized SecurityPolicy
@@ -189,7 +189,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
     }
 
     /**
-     * This will normalize the policy by performing a few clean-up actions. For instance it will
+     * This will normalize the policy by performing a few clean-up actions. For instance, it will
      * remove all redundant NoPermissionsRole assignments.
      */
     public void normalize()

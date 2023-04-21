@@ -669,10 +669,10 @@ public class SecurityApiActions
                             mpolicy.addRoleAssignment(principal, fldrAdminRole);
                     }
                 }
-                resp.put("policy", mpolicy.toMap());
+                resp.put("policy", mpolicy.toJson());
             }
             else
-                resp.put("policy", policy.toMap());
+                resp.put("policy", policy.toJson());
 
             List<String> relevantRoles = new ArrayList<>();
 
@@ -880,12 +880,13 @@ public class SecurityApiActions
             updateRoleAssignment(policy, principal, role);
 
             SavePolicyForm policyForm = new SavePolicyForm();
-            Map<String, Object> policyMap = policy.toMap();
+            JSONObject policyJson = policy.toJson();
             if (form.getConfirm() != null)
-                policyMap.put("confirm", form.getConfirm());
-            policyForm.bindJson(new JSONObject(policyMap));
+                policyJson.put("confirm", form.getConfirm());
+            policyForm.bindJson(policyJson);
             SavePolicyAction savePolicyAction = new SavePolicyAction();
             savePolicyAction.setViewContext(getViewContext());
+
             return savePolicyAction.execute(policyForm, errors);
         }
 
