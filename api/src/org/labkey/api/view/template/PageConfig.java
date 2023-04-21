@@ -502,33 +502,37 @@ public class PageConfig
     {
         HtmlStringBuilder messages = HtmlStringBuilder.of();
 
-        // Keep an empty div for re-addition of dismissable messages onto the page
-        messages.append(HtmlString.unsafe("<div class=\"lk-dismissable-alert-ct\">"));
-        if (context != null && context.getRequest() != null)
+        // Suppress warnings in print mode
+        if (_template != Template.Print)
         {
-            Warnings warnings = WarningService.get().getWarnings(context);
-            HttpSession session = context.getRequest().getSession(true);
-
-            if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
-                session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
-
-            // If the session attribute has explicitly been set to false & there are no more warnings, remove it
-            else if (!(boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && warnings.isEmpty())
-                session.removeAttribute(SESSION_WARNINGS_BANNER_KEY);
-
-            if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null &&
-                    (boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) &&
-                    !warnings.isEmpty())
+            // Keep an empty div for re-addition of dismissable messages onto the page
+            messages.append(HtmlString.unsafe("<div class=\"lk-dismissable-alert-ct\">"));
+            if (context != null && context.getRequest() != null)
             {
-                messages.append(WarningService.get().getWarningsHtml(warnings, context));
-            }
-        }
-        messages.append(HtmlString.unsafe("</div>"));
+                Warnings warnings = WarningService.get().getWarnings(context);
+                HttpSession session = context.getRequest().getSession(true);
 
-        // Display a <noscript> warning message
-        messages.append(HtmlString.unsafe("<noscript>"));
-        messages.append(HtmlString.unsafe("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>"));
-        messages.append(HtmlString.unsafe("</noscript>"));
+                if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
+                    session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
+
+                    // If the session attribute has explicitly been set to false & there are no more warnings, remove it
+                else if (!(boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && warnings.isEmpty())
+                    session.removeAttribute(SESSION_WARNINGS_BANNER_KEY);
+
+                if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null &&
+                        (boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) &&
+                        !warnings.isEmpty())
+                {
+                    messages.append(WarningService.get().getWarningsHtml(warnings, context));
+                }
+            }
+            messages.append(HtmlString.unsafe("</div>"));
+
+            // Display a <noscript> warning message
+            messages.append(HtmlString.unsafe("<noscript>"));
+            messages.append(HtmlString.unsafe("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>"));
+            messages.append(HtmlString.unsafe("</noscript>"));
+        }
 
         return messages;
     }

@@ -178,23 +178,23 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serialize(@NotNull Identifiable node, @NotNull User user, @NotNull Settings settings)
     {
-        if (node instanceof ExpExperiment)
-            return serializeRunGroup((ExpExperiment)node, null, settings);
-        else if (node instanceof ExpRun)
-            return serializeRun((ExpRun)node, null, user, settings);
-        else if (node instanceof ExpMaterial)
-            return serializeMaterial((ExpMaterial)node, settings);
-        else if (node instanceof ExpData)
-            return serializeData((ExpData)node, user, settings);
-        else if (node instanceof ExpObject)
-            return serializeExpObject((ExpObject)node, null, settings);
+        if (node instanceof ExpExperiment expExperiment)
+            return serializeRunGroup(expExperiment, null, settings, user);
+        else if (node instanceof ExpRun expRun)
+            return serializeRun(expRun, null, user, settings);
+        else if (node instanceof ExpMaterial expMaterial)
+            return serializeMaterial(expMaterial, user, settings);
+        else if (node instanceof ExpData expData)
+            return serializeData(expData, user, settings);
+        else if (node instanceof ExpObject expObject)
+            return serializeExpObject(expObject, null, settings, user);
         else
-            return serializeIdentifiable(node, settings);
+            return serializeIdentifiable(node, settings, user);
     }
 
-    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings)
+    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings, @Nullable User user)
     {
-        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
+        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings, user);
         jsonObject.put(COMMENT, runGroup.getComments());
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
         return jsonObject;
@@ -202,7 +202,7 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings);
+        JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
         if (settings.isIncludeProperties())
         {
@@ -257,7 +257,7 @@ public class ExperimentJSONConverter
                 if (protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun || protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
                     continue;
 
-                JSONObject step = serializeRunProtocolApplication(protApp, run, user, settings);
+                JSONObject step = serializeRunProtocolApplication(protApp, user, settings);
                 steps.put(step);
             }
             jsonObject.put(STEPS, steps);
@@ -273,7 +273,7 @@ public class ExperimentJSONConverter
 
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
-        JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false));
+        JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false), user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Protocol");
         return jsonObject;
     }
@@ -298,7 +298,7 @@ public class ExperimentJSONConverter
         JSONArray outputMaterialArray = new JSONArray();
         for (ExpMaterial material : materials)
         {
-            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, settings));
+            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, user, settings));
         }
         obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
     }
@@ -319,13 +319,13 @@ public class ExperimentJSONConverter
         for (ExpRunInput runInput : inputs)
         {
             JSONObject json;
-            if (runInput instanceof ExpDataRunInput)
+            if (runInput instanceof ExpDataRunInput expDataRunInput)
             {
-                json = ExperimentJSONConverter.serializeData(((ExpDataRunInput)runInput).getData(), user, settings);
+                json = ExperimentJSONConverter.serializeData(expDataRunInput.getData(), user, settings);
             }
-            else if (runInput instanceof ExpMaterialRunInput)
+            else if (runInput instanceof ExpMaterialRunInput expMaterialRunInput)
             {
-                json = ExperimentJSONConverter.serializeMaterial(((ExpMaterialRunInput)runInput).getMaterial(), settings);
+                json = ExperimentJSONConverter.serializeMaterial(expMaterialRunInput.getMaterial(), user, settings);
             }
             else
             {
@@ -364,9 +364,9 @@ public class ExperimentJSONConverter
         return jsonArray;
     }
 
-    protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, ExpRun run, User user, Settings settings)
+    protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, User user, Settings settings)
     {
-        JSONObject json = serializeExpObject(protApp, null, settings);
+        JSONObject json = serializeExpObject(protApp, null, settings, user);
         json.put(ExperimentJSONConverter.EXP_TYPE, "ProtocolApplication");
 
         json.put(ACTION_SEQUENCE, protApp.getActionSequence());
@@ -486,7 +486,7 @@ public class ExperimentJSONConverter
             if (obj == null)
                 return null;
 
-            return serializeIdentifiableBean(obj);
+            return serializeIdentifiableBean(obj, null);
         }
 
         return objectUri;
@@ -495,7 +495,7 @@ public class ExperimentJSONConverter
     /**
      * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
      */
-    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj)
+    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj, @Nullable User user)
     {
         JSONObject json = new JSONObject();
 
@@ -507,7 +507,7 @@ public class ExperimentJSONConverter
 
         json.put(CONTAINER, obj.getContainer().getId());
 
-        QueryRowReference rowRef = obj.getQueryRowReference();
+        QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
         {
             json.put(SCHEMA_NAME, rowRef.getSchemaKey().toString());
@@ -522,9 +522,9 @@ public class ExperimentJSONConverter
      * as well as any object properties for the object.
      */
     @NotNull
-    public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
+    public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings, @Nullable User user)
     {
-        JSONObject json = serializeIdentifiableBean(obj);
+        JSONObject json = serializeIdentifiableBean(obj, user);
         json.put(ExperimentJSONConverter.EXP_TYPE, (Object)null);
 
         if (settings.isIncludeProperties())
@@ -544,12 +544,17 @@ public class ExperimentJSONConverter
      * Serialize ExpObject java bean properties (ID, CreatedBy, Comment) and include object properties and the optional domain properties.
      */
     @NotNull
-    public static JSONObject serializeExpObject(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull Settings settings)
+    public static JSONObject serializeExpObject(
+        @NotNull ExpObject object,
+        @Nullable List<? extends DomainProperty> properties,
+        @NotNull Settings settings,
+        @Nullable User user
+    )
     {
         // While serializeIdentifiable can include object properties, we call serializeIdentifiableBean
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
-        JSONObject jsonObject = serializeIdentifiableBean(object);
+        JSONObject jsonObject = serializeIdentifiableBean(object, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
 
         int rowId = object.getRowId();
@@ -628,11 +633,10 @@ public class ExperimentJSONConverter
 
     private static Object serializePropertyValue(Container container, PropertyType type, Settings settings, Object value)
     {
-        if (type == PropertyType.FILE_LINK && value instanceof File)
+        if (type == PropertyType.FILE_LINK && value instanceof File f)
         {
             // We need to return files not as simple string properties with the path, but as an Exp.Data object
             // with multiple values
-            File f = (File) value;
             ExpData data = ExperimentService.get().getExpDataByURL(f, container);
             if (data != null)
             {
@@ -656,20 +660,18 @@ public class ExperimentJSONConverter
         return value;
     }
 
-
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        final ExpDataClass dc = data.getDataClass(user);
-
-        JSONObject jsonObject = serializeExpObject(data, null, settings);
+        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
 
         if (settings.isIncludeProperties())
         {
+            final ExpDataClass dc = data.getDataClass(user);
             if (dc != null)
             {
-                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false));
+                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false), user);
                 if (dc.getCategory() != null)
                     dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
@@ -696,18 +698,18 @@ public class ExperimentJSONConverter
     // TODO: Include MaterialInput edge properties (role and properties)
     // TODO: Include protocol input
     @NotNull
-    public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @NotNull Settings settings)
+    public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @Nullable User user, @NotNull Settings settings)
     {
         ExpSampleType sampleType = material.getSampleType();
 
         JSONObject jsonObject;
         if (sampleType == null)
         {
-            jsonObject = serializeExpObject(material, null, settings);
+            jsonObject = serializeExpObject(material, null, settings, user);
         }
         else
         {
-            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings);
+            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings, user);
             if (sampleType.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
@@ -719,7 +721,7 @@ public class ExperimentJSONConverter
 
             if (settings.isIncludeProperties())
             {
-                JSONObject sampleTypeJson = serializeExpObject(sampleType, null, settings.withIncludeProperties(false));
+                JSONObject sampleTypeJson = serializeExpObject(sampleType, null, settings.withIncludeProperties(false), user);
                 jsonObject.put(SAMPLE_TYPE, sampleTypeJson);
             }
         }
@@ -817,13 +819,12 @@ public class ExperimentJSONConverter
 
         // We need to special case Files to apply extra checks based on the context from which they're being
         // referenced
-        if (javaType.equals(File.class) && convertedValue instanceof File)
+        if (javaType.equals(File.class) && convertedValue instanceof File f)
         {
-            File f = (File)convertedValue;
             PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
             FileContentService fileService = FileContentService.get();
             File fileRoot = fileService == null ? null : fileService.getFileRoot(container);
-            boolean acceptableFile = (root != null && root.isUnderRoot((File)convertedValue)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
+            boolean acceptableFile = (root != null && root.isUnderRoot(f)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
             if (!acceptableFile)
             {
                 // Don't let an assay reference a file that doesn't fall under this container's file root
@@ -909,5 +910,4 @@ public class ExperimentJSONConverter
 
         return cleanAliases;
     }
-
 }
