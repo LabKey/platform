@@ -17,7 +17,6 @@ package org.labkey.core.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -59,10 +58,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
@@ -90,11 +87,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -726,12 +721,6 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class SavePolicyAction extends MutatingApiAction<SavePolicyForm>
     {
-        protected enum RoleModification
-        {
-            Added,
-            Removed
-        }
-
         @Override
         public ApiResponse execute(SavePolicyForm form, BindException errors)
         {
@@ -747,12 +736,8 @@ public class SecurityApiActions
             if (null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
-            //ensure that user has admin permission on resource
-            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
-                throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
+            // Note: savePolicy() checks for admin permissions on old policy
 
-            //get the existing policy so we can audit how it's changed
-            SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
             MutableSecurityPolicy policy = null;
 
             try
@@ -768,29 +753,6 @@ public class SecurityApiActions
             if (policy == null)
                 throw new IllegalArgumentException("Unable to load policy from map.");
 
-            // CONSIDER move check for unauthorized changes to a new SecurityPolicy save() method
-            SortedSet<RoleAssignment> savedAssignments   = oldPolicy.getAssignments();
-            SortedSet<RoleAssignment> updatedAssignments = policy.getAssignments();
-            Set<Role> changedRoles = new HashSet<>();
-            for (RoleAssignment r : savedAssignments)
-                if (!updatedAssignments.contains(r))
-                    changedRoles.add(r.getRole());
-            for (RoleAssignment r : updatedAssignments)
-                if (!savedAssignments.contains(r))
-                    changedRoles.add(r.getRole());
-
-            if (container.isRoot() && !user.hasSiteAdminPermission())
-            {
-                for (Role changedRole : changedRoles)
-                {
-                    // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
-                    if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission.");
-                    if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission.");
-                }
-            }
-
             //if root container permissions update, check for app admin removal
             if (container.isRoot() && resourceId.equals(container.getId()) && user.isApplicationAdmin()
                     && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
@@ -803,15 +765,14 @@ public class SecurityApiActions
                 return new ApiSimpleResponse(props);
             }
 
+            boolean hasChanges = false;
+
             if (!errors.hasErrors())
             {
                 try
                 {
-                    //save it
-                    SecurityPolicyManager.savePolicy(policy);
-
-                    //audit log
-                    writeToAuditLog(resource, oldPolicy, policy);
+                    // Save and audit
+                    hasChanges = SecurityPolicyManager.savePolicy(policy, getUser());
                 }
                 catch (OptimisticConflictException e)
                 {
@@ -821,119 +782,8 @@ public class SecurityApiActions
 
             Map<String, Object> props = new HashMap<>();
             props.put("success", !errors.hasErrors());
-            props.put("hasChanges", !changedRoles.isEmpty());
+            props.put("hasChanges", hasChanges);
             return new ApiSimpleResponse(props);
-        }
-
-        protected void writeToAuditLog(SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
-        {
-            //if moving from inherted to not-inherited, just log the new role assignments
-            if (null == oldPolicy || !(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
-            {
-                SecurableResource parent = resource.getParentResource();
-                String parentName = parent != null ? parent.getResourceName() : "root";
-                GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(),
-                        "A new security policy was established for " +
-                        resource.getResourceName() + ". It will no longer inherit permissions from " +
-                        parentName);
-                event.setResourceEntityId(resource.getResourceId());
-                AuditLogService.get().addEvent(getUser(), event);
-
-                for (RoleAssignment newAsgn : newPolicy.getAssignments())
-                {
-                    writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
-                }
-                return;
-            }
-
-            Iterator<RoleAssignment> oldIter = oldPolicy.getAssignments().iterator();
-            Iterator<RoleAssignment> newIter = newPolicy.getAssignments().iterator();
-            RoleAssignment oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
-            RoleAssignment newAsgn = newIter.hasNext() ? newIter.next() : null;
-
-            while (null != oldAsgn && null != newAsgn)
-            {
-                //if different users...
-                if (oldAsgn.getUserId() != newAsgn.getUserId())
-                {
-                    //if old user < new user, user has been removed
-                    if (oldAsgn.getUserId() < newAsgn.getUserId())
-                    {
-                        writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
-                    }
-                    else
-                    {
-                        //else, user has been added
-                        writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
-                    }
-                }
-                else if (!oldAsgn.getRole().equals(newAsgn.getRole()))
-                {
-                    //if old role < new role, role has been removed
-                    if (oldAsgn.getRole().getUniqueName().compareTo(newAsgn.getRole().getUniqueName()) < 0)
-                    {
-                        writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
-                    }
-                    else
-                    {
-                        //else, role has been added
-                        writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
-                    }
-                }
-
-                //advance
-                if (oldAsgn.compareTo(newAsgn) > 0)
-                    newAsgn = newIter.hasNext() ? newIter.next() : null;
-                else if (oldAsgn.compareTo(newAsgn) < 0)
-                    oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
-                else
-                {
-                    newAsgn = newIter.hasNext() ? newIter.next() : null;
-                    oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
-                }
-
-            }
-
-            //after the loop, we may still have remaining entries in either the old or new assignments
-            while (null != newAsgn)
-            {
-                writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
-                newAsgn = newIter.hasNext() ? newIter.next() : null;
-            }
-
-            while (null != oldAsgn)
-            {
-                writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
-                oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
-            }
-        }
-
-        protected void writeAuditEvent(int principalId, Role role, RoleModification mod, SecurableResource resource)
-        {
-            UserPrincipal principal = SecurityManager.getPrincipal(principalId);
-            if (null == principal)
-                return;
-
-            StringBuilder sb = new StringBuilder("The " + principal.getPrincipalType().getDescription().toLowerCase() + " ");
-            sb.append(principal.getName());
-            if (RoleModification.Added == mod)
-                sb.append(" was assigned to the security role ");
-            else
-                sb.append(" was removed from the security role ");
-            sb.append(role.getName());
-            sb.append(".");
-
-            Container c = getContainer();
-
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), sb.toString());
-            event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
-            if (principal.getPrincipalType() == PrincipalType.USER)
-                event.setUser(principal.getUserId());
-            else
-                event.setGroup(principal.getUserId());
-            event.setResourceEntityId(resource.getResourceId());
-
-            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 
