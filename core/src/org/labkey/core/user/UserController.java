@@ -1140,7 +1140,7 @@ public class UserController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            addUserDetailsNavTrail(root, _pkVal);
+            addUserDetailsNavTrail(getContainer(), getUser(), root, _form.getReturnActionURL());
             root.addChild("Update");
             root.addChild(UserManager.getEmailForId(_pkVal));
         }
@@ -1537,7 +1537,7 @@ public class UserController extends SpringActionController
         {
             if (_showNavTrail)
             {
-                addUserDetailsNavTrail(root, _userId);
+                addUserDetailsNavTrail(getContainer(), getUser(), root, _form.getReturnActionURL());
                 root.addChild("Permissions");
                 root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
@@ -1545,24 +1545,23 @@ public class UserController extends SpringActionController
     }
 
 
-    private void addUserDetailsNavTrail(NavTree root, Integer userId)
+    public static void addUserDetailsNavTrail(Container c, User currentUser, NavTree root, ActionURL userDetailsUrl)
     {
-        Container c = getContainer();
         if (c.isRoot())
         {
-            if (getUser().hasRootPermission(UserManagementPermission.class))
+            if (currentUser.hasRootPermission(UserManagementPermission.class))
                 root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
         }
         else
         {
-            if (c.hasPermission(getUser(), AdminPermission.class))
+            if (c.hasPermission(currentUser, AdminPermission.class))
                 root.addChild("Project Users", new UserUrlsImpl().getProjectUsersURL(c));
         }
 
-        if (null == userId)
+        if (null == userDetailsUrl)
             root.addChild("User Details");
         else
-            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c, getViewContext().getActionURL()).addParameter("userId", userId));
+            root.addChild("User Details", userDetailsUrl);
     }
 
 
@@ -1710,6 +1709,7 @@ public class UserController extends SpringActionController
             if (isProjectAdminOrBetter)
             {
                 ActionURL viewPermissionsURL = new UserUrlsImpl().getUserAccessURL(c, _detailsUserId);
+                viewPermissionsURL.addReturnURL(getViewContext().getActionURL());
                 ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
                 bb.add(viewPermissions);
@@ -1749,6 +1749,16 @@ public class UserController extends SpringActionController
                 bb.addContextualRole(OwnerRole.class);
             }
 
+            if (isUserManager && canManageDetailsUser)
+            {
+                ActionURL cloneUrl = urlProvider(SecurityUrls.class).getClonePermissionsURL(detailsUser, getViewContext().getActionURL());
+                ActionButton cloneButton = new ActionButton(cloneUrl, "Clone Permissions");
+                cloneButton.setActionType(ActionButton.Action.LINK);
+                cloneButton.setTooltip("Replace this user's permissions with those of another user");
+
+                bb.add(cloneButton);
+            }
+
             VBox view = new VBox(detailsView);
 
             if (isProjectAdminOrBetter)
@@ -1778,6 +1788,7 @@ public class UserController extends SpringActionController
         {
             ActionURL changeEmailURL = getChangeEmailAction(c, user);
             changeEmailURL.addParameter("isChangeEmailRequest", true);
+            changeEmailURL.addReturnURL(getViewContext().getActionURL());
             ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
             changeEmail.setActionType(ActionButton.Action.LINK);
             return changeEmail;
@@ -1806,13 +1817,13 @@ public class UserController extends SpringActionController
         private int _urlUserId;
         private boolean _isPasswordPrompt = false;
         private ValidEmail _validRequestedEmail;
+        private UserForm _form;
 
         @Override
         public void validateCommand(UserForm target, Errors errors)
         {
             if (target.getIsChangeEmailRequest())
             {
-
                 String requestedEmail = target.getRequestedEmail();
                 String requestedEmailConfirmation = target.getRequestedEmailConfirmation();
 
@@ -1846,6 +1857,7 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
+            _form = form;
             boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
             if (!canUpdateUser)
             {
@@ -2141,7 +2153,7 @@ public class UserController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            addUserDetailsNavTrail(root, _urlUserId);
+            addUserDetailsNavTrail(getContainer(), getUser(), root, _form.getReturnActionURL());
             String email = UserManager.getEmailForId(_urlUserId);
             root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
         }

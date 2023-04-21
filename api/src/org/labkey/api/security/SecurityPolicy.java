@@ -49,11 +49,7 @@ import java.util.TreeSet;
  * using SecurityMananger.getPolicy(). Note that this class is immutable once constructed, so it may
  * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
- *
  * Note: intentionally does not implement HasPermission, use that interface for things that have a SecurityPolicy
- *
- * User: Dave
- * Date: Apr 27, 2009
  */
 public class SecurityPolicy
 {

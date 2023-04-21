@@ -21,12 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
-/**
- * User: adam
- * Date: Jul 25, 2008
- * Time: 11:48:29 AM
- */
-
 public interface SecurityUrls extends UrlProvider
 {
     ActionURL getBeginURL(Container container);
@@ -44,4 +38,5 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL);
     ActionURL getCompleteUserURL(Container container);
     ActionURL getCompleteUserReadURL(Container container);
+    ActionURL getClonePermissionsURL(User targetUser, @NotNull ActionURL returnURL);
 }
