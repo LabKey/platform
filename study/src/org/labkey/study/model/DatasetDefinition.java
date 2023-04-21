@@ -2094,8 +2094,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
 
     void checkForDuplicates(DataIterator data,
-                                    int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
-                                    DataIteratorContext context, Logger logger, CheckForDuplicates checkDuplicates)
+                            int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
+                            DataIteratorContext context, Logger logger, CheckForDuplicates checkDuplicates,
+                            ColumnInfo subjectCol, ColumnInfo visitDateCol, ColumnInfo sequenceNumCol)
     {
         BatchValidationException errors = context.getErrors();
         HashMap<String, Object[]> failedReplaceMap = checkAndDeleteDupes(
@@ -2120,17 +2121,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 if (errorCount > 100)
                     break;
                 Object[] keys = e.getValue();
-                String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + keys[0];
+                StringBuilder err = new StringBuilder("Duplicate: ").append(subjectCol.getLabel()).append(" = ").append(keys[0]);
                 if (!isDemographicData())
                 {
                     if (!_study.getTimepointType().isVisitBased())
-                        err = err + ", Date = " + keys[1];
+                        err.append(", ").append(visitDateCol.getLabel()).append(" = ").append(keys[1]);
                     else
-                        err = err + ", VisitSequenceNum = " + keys[1];
+                        err.append(", ").append(sequenceNumCol.getLabel()).append(" = ").append(keys[1]);
                 }
                 if (0 < indexKey)
-                    err += ", " + data.getColumnInfo(indexKey).getName() + " = " + keys[2];
-                errors.addRowError(new ValidationException(err));
+                    err.append(", ").append(data.getColumnInfo(indexKey).getLabel()).append(" = ").append(keys[2]);
+                errors.addRowError(new ValidationException(err.toString()));
             }
         }
         if (logger != null) logger.debug("checked for duplicates");
