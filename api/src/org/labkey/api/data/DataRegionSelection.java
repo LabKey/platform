@@ -33,6 +33,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -47,15 +48,19 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Manages row selection states, scoped to schema/query and possibly a separate selection key.
+ * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
+ * should do their own synchronization on the set itself if they are operating on it one element at a time
+ * and want to have a consistent view. This allows for the backing set to be a {@link LinkedHashSet}.
  * User: kevink
- * Date: Jan 3, 2008 4:16:06 PM
+ * Date: Jan 3, 2008
  */
 public class DataRegionSelection
 {
     public static final String SELECTED_VALUES = ".selectValues";
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
-    private static final Object lock = new Object();
+    private static final Object LOCK = new Object();
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
@@ -72,6 +77,11 @@ public class DataRegionSelection
         return getSet(context, key, create, false);
     }
 
+    /**
+     *  * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
+     *  * should do their own synchronization on the set itself if they are operating on it one element at a time
+     *  * and want to have a consistent view
+     */
     private static @NotNull Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
     {
         if (key == null)
@@ -84,15 +94,20 @@ public class DataRegionSelection
             HttpSession session = request != null ? context.getRequest().getSession(false) : null;
             if (session != null)
             {
-                @SuppressWarnings("unchecked") Set<String> result = (Set<String>)session.getAttribute(key);
-                if (result == null)
+                // Ensure that two different requests don't end up creating two different selection sets
+                // in the same session
+                synchronized (LOCK)
                 {
-                    result = new LinkedHashSet<>();
+                    @SuppressWarnings("unchecked") Set<String> result = (Set<String>) session.getAttribute(key);
+                    if (result == null)
+                    {
+                        result = Collections.synchronizedSet(new LinkedHashSet<>());
 
-                    if (create)
-                        session.setAttribute(key, result);
+                        if (create)
+                            session.setAttribute(key, result);
+                    }
+                    return result;
                 }
-                return result;
             }
         }
 
@@ -172,7 +187,8 @@ public class DataRegionSelection
     @Nullable
     public static String getSelectionKeyFromRequest(ViewContext context)
     {
-        return context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
+        HttpServletRequest request = context.getRequest();
+        return request == null ? null : request.getParameter(DATA_REGION_SELECTION_KEY);
     }
 
     /**
@@ -193,9 +209,10 @@ public class DataRegionSelection
         List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
         Set<String> result = new LinkedHashSet<>(parameterSelected);
 
-        synchronized (lock)
+        Set<String> sessionSelected = getSet(context, key, false);
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (sessionSelected)
         {
-            Set<String> sessionSelected = getSet(context, key, false);
             result.addAll(sessionSelected);
             if (clearSession)
                 sessionSelected.removeAll(result);
@@ -250,16 +267,12 @@ public class DataRegionSelection
      */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
-        synchronized (lock)
-        {
-            Set<String> selectedValues = getSet(context, key, true, useSnapshot);
-
-            if (checked)
-                selectedValues.addAll(selection);
-            else
-                selectedValues.removeAll(selection);
-            return selectedValues.size();
-        }
+        Set<String> selectedValues = getSet(context, key, true, useSnapshot);
+        if (checked)
+            selectedValues.addAll(selection);
+        else
+            selectedValues.removeAll(selection);
+        return selectedValues.size();
     }
 
     private static void clearAll(HttpSession session, String path, String key, boolean isSnapshot)
@@ -268,10 +281,7 @@ public class DataRegionSelection
         assert key != null : "DataRegion selection key required";
         if (session == null)
             return;
-        synchronized (lock)
-        {
-            session.removeAttribute(getSessionAttributeKey(path, key, isSnapshot));
-        }
+        session.removeAttribute(getSessionAttributeKey(path, key, isSnapshot));
     }
 
     /**
@@ -293,10 +303,11 @@ public class DataRegionSelection
 
     public static void clearAll(ViewContext context, @Nullable String key, boolean isSnapshot)
     {
+        HttpServletRequest request = context.getRequest();
         if (key == null)
             key = getSelectionKeyFromRequest(context);
-        if (key != null)
-            clearAll(context.getRequest().getSession(false),
+        if (key != null && request != null)
+            clearAll(request.getSession(false),
                 context.getContainer().getPath(), key, isSnapshot);
     }
 
@@ -317,15 +328,17 @@ public class DataRegionSelection
         List<String> items;
         var view = getQueryView(form);
 
-        synchronized (lock)
+        var selection = getSet(view.getViewContext(), form.getQuerySettings().getSelectionKey(), true);
+        items = getSelectedItems(view, selection);
+
+        if (clearSelected && !selection.isEmpty())
         {
-            var selection = getSet(view.getViewContext(), form.getQuerySettings().getSelectionKey(), true);
-            items = getSelectedItems(view, selection);
-
-            if (clearSelected && !selection.isEmpty())
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (selection)
+            {
                 items.forEach(selection::remove);
+            }
         }
-
         return Collections.unmodifiableList(items);
     }
 
@@ -366,24 +379,20 @@ public class DataRegionSelection
         return schema.createView(form, null);
     }
 
-    public static List<String> getValidatedIds(List<String> selection, QueryForm form) throws IOException
+    public static List<String> getValidatedIds(@NotNull List<String> selection, QueryForm form) throws IOException
     {
         return getSelectedItems(getQueryView(form), selection);
     }
 
     /**
      * Sets the selection for all items in the given query form's view
-     * @param form
-     * @param checked
-     * @return
-     * @throws IOException
      */
     public static int setSelectionForAll(QueryForm form, boolean checked) throws IOException
     {
         return setSelectionForAll(getQueryView(form), form.getQuerySettings().getSelectionKey(), checked);
     }
 
-    private static List<String> setDataRegionColumnsForSelection(DataRegion rgn, RenderContext rc, QueryView view, TableInfo table)
+    private static void setDataRegionColumnsForSelection(DataRegion rgn, RenderContext rc, QueryView view, TableInfo table)
     {
         // force the pk column(s) into the default list of columns
         List<String> selectorColNames = rgn.getRecordSelectorValueColumns();
@@ -407,7 +416,6 @@ public class DataRegionSelection
         Collection<ColumnInfo> filterColumns = QueryService.get().ensureRequiredColumns(table, selectorColumns, filter, sort, null);
         rgn.addColumns(selectorColumns);
         rgn.addColumns(filterColumns);
-        return selectorColNames;
     }
 
     public static int setSelectionForAll(QueryView view, String key, boolean checked) throws IOException
@@ -433,9 +441,8 @@ public class DataRegionSelection
      * @param selectedValues optionally (nullable) specify a collection of selected values that will be matched
      *                       against when selecting items. If null, then all items will be returned.
      * @return list of items from the result set that are in the selected session, or an empty list if none.
-     * @throws IOException
      */
-    private static List<String> getSelectedItems(QueryView view, Collection<String> selectedValues) throws IOException
+    private static List<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues) throws IOException
     {
         var dataRegionContext = getDataRegionContext(view);
         var rgn = dataRegionContext.first;
@@ -443,7 +450,11 @@ public class DataRegionSelection
 
         try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
         {
-            return createSelectionList(ctx, rgn, rs, selectedValues);
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (selectedValues)
+            {
+                return createSelectionList(ctx, rgn, rs, selectedValues);
+            }
         }
         catch (SQLException e)
         {
