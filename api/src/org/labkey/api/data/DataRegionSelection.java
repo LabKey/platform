@@ -111,7 +111,7 @@ public class DataRegionSelection
             }
         }
 
-        return Collections.unmodifiableSet(new LinkedHashSet<>());
+        return Collections.synchronizedSet(new LinkedHashSet<>());
     }
 
     /**
