@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -60,7 +61,6 @@ public class DataRegionSelection
     public static final String SELECTED_VALUES = ".selectValues";
     public static final String SEPARATOR = "$";
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
-    private static final Object LOCK = new Object();
 
     // set/updated using query-setSnapshotSelection
     // can be used to hold an arbitrary set of selections in session
@@ -96,7 +96,7 @@ public class DataRegionSelection
             {
                 // Ensure that two different requests don't end up creating two different selection sets
                 // in the same session
-                synchronized (LOCK)
+                synchronized (SessionHelper.getSessionLock(session))
                 {
                     @SuppressWarnings("unchecked") Set<String> result = (Set<String>) session.getAttribute(key);
                     if (result == null)
@@ -111,7 +111,7 @@ public class DataRegionSelection
             }
         }
 
-        return new LinkedHashSet<>();
+        return Collections.unmodifiableSet(new LinkedHashSet<>());
     }
 
     /**
