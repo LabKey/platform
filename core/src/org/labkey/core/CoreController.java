@@ -200,7 +200,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -1666,35 +1665,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class RenameContainerAction extends MutatingApiAction<SimpleApiJsonForm>
-    {
-        @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
-        {
-            JSONObject json = form.getJsonObject();
-            if (json == null)
-            {
-                throw new NotFoundException("No JSON posted");
-            }
-
-            String name = StringUtils.trimToNull(json.optString("name"));
-            String titleValue = StringUtils.trimToNull(json.optString("title"));
-            String title = Objects.equals(name, titleValue) ? null : titleValue;
-            boolean addAlias = json.optBoolean("addAlias");
-
-            try
-            {
-                Container c = ContainerManager.rename(getContainer(), getUser(), name, title, addAlias);
-                return new ApiSimpleResponse(c.toJSON(getUser()));
-            }
-            catch (Exception e)
-            {
-                throw new ApiUsageException(e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
-            }
-        }
-    }
-
     //Note: ModuleProperty.saveValue() performs additional permissions check
     @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class SaveModulePropertiesAction extends MutatingApiAction<SaveModulePropertiesForm>
@@ -2585,8 +2555,7 @@ public class CoreController extends SpringActionController
                 controller.new MoveContainerAction(),
                 controller.new MoveWorkbooksAction(),
                 controller.new GetContainerTreeRootInfoAction(),
-                controller.new MoveWorkbookAction(),
-                controller.new RenameContainerAction()
+                controller.new MoveWorkbookAction()
             );
         }
     }
