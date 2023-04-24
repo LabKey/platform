@@ -17,17 +17,18 @@ package org.labkey.core.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
@@ -668,10 +669,10 @@ public class SecurityApiActions
                             mpolicy.addRoleAssignment(principal, fldrAdminRole);
                     }
                 }
-                resp.put("policy", mpolicy.toMap());
+                resp.put("policy", mpolicy.toJson());
             }
             else
-                resp.put("policy", policy.toMap());
+                resp.put("policy", policy.toJson());
 
             List<String> relevantRoles = new ArrayList<>();
 
@@ -695,26 +696,11 @@ public class SecurityApiActions
         }
     }
 
-    public static class SavePolicyForm implements CustomApiForm
+    public static class SavePolicyForm extends SimpleApiJsonForm
     {
-        private Map<String, Object> _props;
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
+        public boolean isConfirm()
         {
-            _props = props;
-        }
-
-        public Map<String, Object> getProps()
-        {
-            return _props;
-        }
-
-        public boolean isConfirm() {
-            if (_props.containsKey("confirm"))
-                return (Boolean) _props.get("confirm");
-
-            return false;
+            return getJsonObject().optBoolean("confirm");
         }
     }
 
@@ -726,9 +712,10 @@ public class SecurityApiActions
         {
             Container container = getContainer();
             User user = getUser();
+            JSONObject json = form.getJsonObject();
 
             //resolve the resource
-            String resourceId = (String)form.getProps().get("resourceId");
+            String resourceId = json.optString("resourceId", null);
             if (null == resourceId || resourceId.length() == 0)
                 throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
 
@@ -743,7 +730,7 @@ public class SecurityApiActions
             try
             {
                 //create the policy from the props (will throw if invalid)
-                policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
+                policy = MutableSecurityPolicy.fromJson(json, resource);
             }
             catch (Exception e)
             {
@@ -893,12 +880,13 @@ public class SecurityApiActions
             updateRoleAssignment(policy, principal, role);
 
             SavePolicyForm policyForm = new SavePolicyForm();
-            Map<String, Object> policyMap = policy.toMap();
+            JSONObject policyJson = policy.toJson();
             if (form.getConfirm() != null)
-                policyMap.put("confirm", form.getConfirm());
-            policyForm.bindProperties(policyMap);
+                policyJson.put("confirm", form.getConfirm());
+            policyForm.bindJson(policyJson);
             SavePolicyAction savePolicyAction = new SavePolicyAction();
             savePolicyAction.setViewContext(getViewContext());
+
             return savePolicyAction.execute(policyForm, errors);
         }
 
