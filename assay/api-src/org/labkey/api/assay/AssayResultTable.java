@@ -77,10 +77,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_COLUMN_NAME;
+import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 /**
  * User: jeckels
@@ -449,7 +449,16 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     SQLFragment coalescedCol = new SQLFragment("COALESCE(");
                     coalescedCol.append(propertyColumn.getValueSql("innerResults"));
                     coalescedCol.append(", runData.");
-                    coalescedCol.append(propertyColumn.getName());
+
+                    // without any updates to the results rows, the created and modified date of the result should match the created date of the run
+                    // use run.created/by as default result modified/by
+                    String runSelectCol = propertyColumn.getName();
+                    if (MODIFIED_COLUMN_NAME.equalsIgnoreCase(runSelectCol))
+                        runSelectCol = CREATED_COLUMN_NAME;
+                    else if (MODIFIED_BY_COLUMN_NAME.equalsIgnoreCase(runSelectCol))
+                        runSelectCol = CREATED_BY_COLUMN_NAME;
+
+                    coalescedCol.append(runSelectCol);
                     coalescedCol.append(") AS ");
                     coalescedCol.append(propertyColumn.getName());
                     result.append(coalescedCol);
@@ -473,7 +482,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (includeCreatedModified)
         {
             result.append("\nINNER JOIN ");
-            result.append("(SELECT RowId as RunRowId, created, createdBy, modified, modifiedBy FROM ");
+            result.append("(SELECT RowId as RunRowId, created, createdBy FROM ");
             result.append(ExperimentService.get().getTinfoExperimentRun());
             result.append(") AS runData");
             result.append(" ON (runData.RunRowId = innerData.RunId) ");

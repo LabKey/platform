@@ -36,10 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_COLUMN_NAME;
+import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 public class AssayUpgradeCode implements UpgradeCode
 {
@@ -99,7 +99,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     }
 
-    public static void _addAssayResultColumns(ExpProtocol protocol, Domain resultsDomain)
+    private static void _addAssayResultColumns(ExpProtocol protocol, Domain resultsDomain)
     {
         AssayResultDomainKind kind = null;
         try
@@ -132,7 +132,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
         ColumnInfo col = provisionedTable.getColumn(colName);
         if (col != null)
-            throw new IllegalStateException("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
+            _log.error("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
 
         PropertyStorageSpec colProp = kind.getBaseProperties(domain).stream().filter(p -> colName.equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
         StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(colProp), true);

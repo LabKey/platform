@@ -124,6 +124,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     @Override
     public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
     {
+        importFile(data, dataFile, info, log, context, allowLookupByAlternateKey, false);
+    }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
         {
@@ -140,9 +146,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         assert(rawData.size() <= 1);
         try
         {
-            boolean autoFillDefaultResultColumns = false;
-            if (context instanceof AssayRunUploadContext)
-                autoFillDefaultResultColumns = ((AssayRunUploadContext<?>) context).shouldAutoFillDefaultResultColumns();
             importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns);
         }
         catch (ValidationException e)

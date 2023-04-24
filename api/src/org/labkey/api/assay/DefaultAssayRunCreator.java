@@ -249,7 +249,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean forceSaveBatchProps
     ) throws ExperimentException, ValidationException
     {
-        context.setAutoFillDefaultResultColumns(run.getRowId() > 0);
+        context.setAutoFillDefaultResultColumns(run.getRowId() > 0); // need to setAutoFillDefaultResultColumns before run is saved
 
         final Container container = context.getContainer();
 
@@ -539,7 +539,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey());
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
         }
     }

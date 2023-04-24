@@ -56,11 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.CREATED_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.assay.AbstractTsvAssayProvider.MODIFIED_COLUMN_NAME;
-
 /**
  * User: jeckels
  * Date: 10/19/12

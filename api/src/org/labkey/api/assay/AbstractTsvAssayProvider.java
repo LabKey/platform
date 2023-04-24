@@ -41,10 +41,6 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     public static final String ASSAY_SCHEMA_NAME = "assayresult";
     public static final String ROW_ID_COLUMN_NAME = "RowId";
     public static final String DATA_ID_COLUMN_NAME = "DataId";
-    public static final String CREATED_COLUMN_NAME = "Created";
-    public static final String CREATED_BY_COLUMN_NAME = "CreatedBy";
-    public static final String MODIFIED_COLUMN_NAME = "Modified";
-    public static final String MODIFIED_BY_COLUMN_NAME = "ModifiedBy";
 
     public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
