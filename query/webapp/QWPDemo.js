@@ -390,7 +390,7 @@
                         if (firstFilter) {
                             var firstDateFilter = [
                                 // Intentionally unformatted date
-                                LABKEY.Filter.create('MaterialExpDate', new Date('04-23-2023'))
+                                LABKEY.Filter.create('MaterialExpDate', new Date('2023, 04, 23'))
                             ];
                             qwp.replaceFilters(firstDateFilter);
                             firstFilter = false;
