@@ -1681,7 +1681,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
-                objectRowContainerUpdate(sampleIds, targetContainer);
+                objectRowContainerUpdate(getTinfoMaterial(), sampleIds, targetContainer);
 
                 // update the paths to files associated with individual samples
                 fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
@@ -1797,13 +1797,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return 0;
 
         TableInfo runsTable = getTinfoExperimentRun();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
                 .append(", modifiedby = ").appendValue(user.getUserId())
                 .append(" WHERE rowid ");
-        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runs.stream().map(ExpRun::getRowId).toList());
-        return new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
+        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+        objectRowContainerUpdate(getTinfoExperimentRun(), runRowIds, targetContainer);
+        return updateCount;
     }
 
     private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
@@ -1869,12 +1872,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
     }
 
-    private void objectRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    private void objectRowContainerUpdate(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
     {
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objectid IN (SELECT objectid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, sampleIds);
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
         new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
