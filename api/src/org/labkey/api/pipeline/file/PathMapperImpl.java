@@ -306,7 +306,7 @@ public class PathMapperImpl implements PathMapper
             if (localURI == null && remoteURI == null)
                 continue;
 
-            // CONSIDER: CustomApiForm.bindProperties() should accept an Errors object or allow throwing BindException
+            // CONSIDER: ApiJsonForm.bindJson() should accept an Errors object or allow throwing BindException
             if (localURI == null)
             {
                 handleError("localURI", "Local URI must not be empty", errors);

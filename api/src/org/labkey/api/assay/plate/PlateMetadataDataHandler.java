@@ -63,4 +63,10 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
         // AbstractAssayTsvDataHandler.addAssayPlateMetadata because we need to access the inserted result data to get at the
         // lsids.
     }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
+    {
+        // see description above
+    }
 }
