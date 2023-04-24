@@ -667,6 +667,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         if (_resolvers.containsKey(prefix))
             return new Pair<>(prefix, resourceIdentifier.substring(i+1));
+        else if (_resolvers.containsKey(prefix.toLowerCase()))
+            return new Pair<>(prefix.toLowerCase(), resourceIdentifier.substring(i+1));
 
         // Special case to allow customizing docs whose docId does not starting with category.
         // For example, assay design doc id is of "containerId:assays:rowId"
