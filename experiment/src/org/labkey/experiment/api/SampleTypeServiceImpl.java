@@ -1842,7 +1842,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             // create a new derivation run for the samples that are moving
-            expService.derive(run.getMaterialInputs(), Collections.emptyMap(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
+            expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
 
             // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
             run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
@@ -1852,8 +1852,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             outputApp.removeMaterialInputs(user, movingSampleIds);
             if (sourceApplication != null)
                 sourceApplication.removeMaterialInputs(user, movingSampleIds);
-
-            ExperimentService.get().queueSyncRunEdges(run);
 
             runCount++;
         }
