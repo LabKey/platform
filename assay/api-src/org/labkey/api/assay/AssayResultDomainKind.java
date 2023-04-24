@@ -67,9 +67,9 @@ public class AssayResultDomainKind extends AssayDomainKind
         rowIdSpec.setAutoIncrement(true);
         rowIdSpec.setPrimaryKey(true);
 
-        PropertyStorageSpec createdSpec = new PropertyStorageSpec(CREATED_COLUMN_NAME, JdbcType.DATE);
+        PropertyStorageSpec createdSpec = new PropertyStorageSpec(CREATED_COLUMN_NAME, JdbcType.TIMESTAMP);
         PropertyStorageSpec createdBySpec = new PropertyStorageSpec(CREATED_BY_COLUMN_NAME, JdbcType.INTEGER);
-        PropertyStorageSpec modifiedSpec = new PropertyStorageSpec(MODIFIED_COLUMN_NAME, JdbcType.DATE);
+        PropertyStorageSpec modifiedSpec = new PropertyStorageSpec(MODIFIED_COLUMN_NAME, JdbcType.TIMESTAMP);
         PropertyStorageSpec modifiedBySpec = new PropertyStorageSpec(MODIFIED_BY_COLUMN_NAME, JdbcType.INTEGER);
 
         return PageFlowUtil.set(rowIdSpec, dataIdSpec, createdSpec, createdBySpec, modifiedSpec, modifiedBySpec);
