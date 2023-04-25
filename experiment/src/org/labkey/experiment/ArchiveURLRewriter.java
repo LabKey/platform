@@ -105,8 +105,8 @@ public class ArchiveURLRewriter extends URLRewriter
             {
                 _log.info("Archive rootDir: " + rootDir);
                 _log.info("Archive path: " + path);
-                _log.info("Archive relative: " + FileUtil.relativizeUnix(rootDir, path, true));
-                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, path, true));
+                _log.info("Archive relative: " + FileUtil.relativizeUnix(rootDir, path, !Files.isSymbolicLink(path)));
+                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, path, !Files.isSymbolicLink(path)));
             }
             else
             {
