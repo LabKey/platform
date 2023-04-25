@@ -476,7 +476,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     // Get all text strings from the data class for indexing
-    private void getIndexValues(Set<String> identifiers, Set<String> keywords, TableInfo table)
+    private void getIndexValues(
+        Set<String> identifiersHi,
+        Set<String> identifiersMed,
+        Set<String> keywords,
+        @Nullable ExpDataClassImpl dc,
+        TableInfo table
+    )
     {
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
@@ -502,7 +508,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return true;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
 
-        TableSelector ts = new TableSelector(table, columns, new SimpleFilter("rowId", getRowId()), null);
+        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(FieldKey.fromParts("rowId"), getRowId()), null);
         ts.setForDisplay(true);
         try (Results r = ts.getResults())
         {
@@ -521,29 +527,35 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                         continue;
 
                     Object o = map.get(fieldKey);
-                    if (!(o instanceof String))
+                    if (!(o instanceof String s))
                         continue;
 
                     List<String> values;
 
-                    String s = (String)o;
                     if (col instanceof MultiValuedLookupColumn)
                         values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
                     else
                         values = Arrays.asList(s);
 
-                    // treat multi-line text values as keywords, otherwise treat as an identifier
-                    if ("textarea".equalsIgnoreCase(col.getInputType()))
+                    if ("commonName".equalsIgnoreCase(col.getName()) && dc != null && dc.isRegistry())
                     {
+                        identifiersHi.addAll(values);
+                    }
+                    else if ("scientificName".equalsIgnoreCase(col.getName()) && dc != null && dc.isMedia())
+                    {
+                        identifiersHi.addAll(values);
+                    }
+                    else if ("textarea".equalsIgnoreCase(col.getInputType()))
+                    {
+                        // treat multi-line text values as keywords, otherwise treat as an identifier
                         keywords.addAll(values);
                     }
                     else
                     {
-                        identifiers.addAll(values);
+                        identifiersMed.addAll(values);
                     }
                 }
             }
-
         }
         catch (SQLException e)
         {
@@ -772,32 +784,28 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder(getName());
-        Collection<String> aliases = this.getAliases();
+        Collection<String> aliases = getAliases();
         if (!aliases.isEmpty())
         {
             title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
             identifiersHi.addAll(aliases);
         }
 
-        if (tableInfo == null)
+        ExpDataClassImpl dc = getDataClass(null);
+        if (tableInfo == null && dc != null)
         {
-            ExpDataClassImpl dc = this.getDataClass(null);
-            if (dc != null)
-            {
-                tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
-            }
+            tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
         }
 
         if (tableInfo != null)
         {
             // Collect other text columns and lookup display columns
-            getIndexValues(identifiersMed, keywordsLo, tableInfo);
+            getIndexValues(identifiersHi, identifiersMed, keywordsLo, dc, tableInfo);
         }
 
-        ExpDataClass dc = this.getDataClass(null);
         if (null != dc)
         {
-            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());
+            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
