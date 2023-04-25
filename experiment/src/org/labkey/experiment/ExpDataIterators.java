@@ -232,8 +232,8 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (!_isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
-                    _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
+                if (!_isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+                    _aliquotedFromColInd = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
                 else if (_isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
@@ -324,7 +324,7 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _storedAmountCol = map.get("StoredAmount");
             _unitsCol = map.get("Units");
-            _aliquotedFromCol = map.get("AliquotedFrom");
+            _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
             _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
@@ -1049,7 +1049,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
+                if (_isSample && ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
                 {
                     aliquotParentCol = entry.getValue();
                 }
@@ -1096,7 +1096,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFrom"));
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, ExpMaterial.ALIQUOTED_FROM_INPUT));
                         }
 
                         if (aliquotParentName != null)
