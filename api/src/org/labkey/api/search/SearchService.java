@@ -465,7 +465,9 @@ public interface SearchService
          *if the full-text search is deleted, providers may need to clear
          * any stored lastIndexed values.
          */
-        void indexDeleted() throws SQLException;
+        default void indexDeleted() throws SQLException
+        {
+        }
 
         /**
          * Thrown for a document that is an illegal/invalid state that should not be indexed, but can be safely ignored.
