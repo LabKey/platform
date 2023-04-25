@@ -96,6 +96,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     protected String _jobNotificationProvider;
     protected String _pipelineJobGUID;
 
+    private boolean _autoFillDefaultResultColumns;
+
     private AssayRunUploadContextImpl(Factory<ProviderType> factory)
     {
         _protocol = factory._protocol;
@@ -450,5 +452,18 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         return _logger;
     }
+
+    @Override
+    public  boolean shouldAutoFillDefaultResultColumns()
+    {
+        return _autoFillDefaultResultColumns;
+    }
+
+    @Override
+    public  void setAutoFillDefaultResultColumns(boolean autoFill)
+    {
+        _autoFillDefaultResultColumns = autoFill;
+    }
+
 
 }

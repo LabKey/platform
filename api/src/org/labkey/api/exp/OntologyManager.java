@@ -408,6 +408,14 @@ public class OntologyManager
         return resultingLsids;
     }
 
+    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+                                                               UpdateableTableImportHelper helper,
+                                                               List<Map<String, Object>> rows,
+                                                               Logger logger)
+            throws SQLException, ValidationException
+    {
+        return insertTabDelimited(tableInsert, c, user, helper, rows, true, logger);
+    }
 
     /**
      * As an incremental step of QueryUpdateService cleanup, this is a version of insertTabDelimited that works on a
@@ -425,26 +433,38 @@ public class OntologyManager
     public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
+                                                  boolean autoFillDefaultColumns,
                                                   Logger logger)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true);
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns);
+    }
+
+    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
+                                                               UpdateableTableImportHelper helper,
+                                                               List<Map<String, Object>> rows,
+                                                               Logger logger)
+            throws SQLException, ValidationException
+    {
+        return updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
     }
 
     public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
+                                                  boolean autoFillDefaultColumns,
                                                   Logger logger)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false);
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns);
     }
 
     private static List<Map<String, Object>> saveTabDelimited(TableInfo table, Container c, User user,
                                                  UpdateableTableImportHelper helper,
                                                  List<Map<String, Object>> rows,
                                                  Logger logger,
-                                                 boolean insert)
+                                                 boolean insert,
+                                                 boolean autoFillDefaultColumns)
             throws SQLException, ValidationException
     {
         if (!(table instanceof UpdateableTableInfo))
@@ -475,11 +495,11 @@ public class OntologyManager
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, true);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, autoFillDefaultColumns);
             }
             else
             {
-                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, true);
+                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, autoFillDefaultColumns);
             }
             List<ValidationError> errors = new ArrayList<>();
 

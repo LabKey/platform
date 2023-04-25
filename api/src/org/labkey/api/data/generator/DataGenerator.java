@@ -13,6 +13,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -403,7 +404,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             for (int i = 0; i < numAliquots; i++)
             {
                 Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                row.put("AliquotedFrom", parent.get("Name"));
+                row.put(ExpMaterial.ALIQUOTED_FROM_INPUT, parent.get("Name"));
                 rows.add(row);
             }
             generatedCount += numAliquots;
