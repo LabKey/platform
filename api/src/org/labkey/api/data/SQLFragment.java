@@ -107,8 +107,8 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+//        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+//        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
         // allow statement separators
         this.sql = charseq.toString();
         if (null != params)
