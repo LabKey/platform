@@ -288,6 +288,7 @@ public class MothershipReport implements Runnable
     @Override
     public void run()
     {
+        LOG.debug("Starting to submit report to " + _url);
         try
         {
             HttpURLConnection connection = openConnectionWithRedirects(_url, _forwardedFor);
@@ -309,6 +310,7 @@ public class MothershipReport implements Runnable
                         _content = IOUtils.toString(in, encoding);
                     }
                 }
+                LOG.debug("Successfully submitted report to " + _url);
             }
             finally
             {
@@ -430,7 +432,7 @@ public class MothershipReport implements Runnable
         return _content;
     }
 
-    private static String getDistributionStamp()
+    public static String getDistributionStamp()
     {
         String distributionStamp;
         try(InputStream input = MothershipReport.class.getResourceAsStream("/distribution"))

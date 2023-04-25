@@ -19,10 +19,9 @@ package org.labkey.api.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -30,6 +29,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -135,6 +135,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         return true;
     }
 
+    private static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Submits usage metrics to labkey.org");
     private static Timer _timer;
     private static HtmlString _upgradeMessage;
 
@@ -211,6 +212,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         @Override
         public void run()
         {
+            LOG.debug("Starting to generate metrics report for " + _level);
             MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
             if (report != null)
             {
