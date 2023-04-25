@@ -2853,7 +2853,7 @@ public class ReportsController extends SpringActionController
                             category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                     }
                 }
-                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views));
+                response.put("data", DataViewService.get().toJSON(getUser(), views));
             }
 
             return response;
@@ -3187,11 +3187,11 @@ public class ReportsController extends SpringActionController
             ArrayList<JSONObject> views = new ArrayList<>();
             for (DataViewInfo view : helper.views)
             {
-                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
+                JSONObject viewJson = DataViewService.get().toJSON(getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIconUrl().getLocalURIString());
-                viewJson.put("iconCls", view.getIconCls());
+                viewJson.put("iconCls", view.getIconCls() == null ? JSONObject.NULL : view.getIconCls());
                 views.add(viewJson);
             }
             Comparator<JSONObject>naturalOrderComparator = (JSONObject a, JSONObject b) ->
@@ -4036,7 +4036,7 @@ public class ReportsController extends SpringActionController
                     List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
                     for (DataViewInfo report : reports)
                     {
-                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+                        json.add(DataViewService.get().toJSON(getUser(), report));
                     }
                 }
             }
