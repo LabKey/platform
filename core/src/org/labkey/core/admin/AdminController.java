@@ -6630,7 +6630,7 @@ public class AdminController extends SpringActionController
 
     // Note that validation checks occur in ContainerManager.rename()
     @RequiresPermission(AdminPermission.class)
-    public class RenameContainerAction extends MutatingApiAction<RenameContainerForm>
+    public static class RenameContainerAction extends MutatingApiAction<RenameContainerForm>
     {
         @Override
         public ApiResponse execute(RenameContainerForm form, BindException errors)
@@ -10766,7 +10766,7 @@ public class AdminController extends SpringActionController
                 controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
                 new DeleteCustomEmailAction(),
-                controller.new RenameContainerAction(),
+                    new RenameContainerAction(),
                 controller.new RenameFolderAction(),
                 controller.new MoveFolderAction(),
                 new ConfirmProjectMoveAction(),
