@@ -18,6 +18,7 @@
             testHideColumns: testHideColumns,
             testPagingConfig: testPagingConfig,
             testSetPaging: testSetPaging,
+            testDateFilterFormat: testDateFilterFormat,
             test25337: test25337,
             testPageOffset: testPageOffset,
             testParameterizedQueries: testParameterizedQueries,
@@ -366,6 +367,44 @@
                             else {
                                 LABKEY.Utils.signalWebDriverTest('testSetPaging');
                             }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Issue 47735: QWP date filter not being formatted
+        function testDateFilterFormat() {
+            var firstFilter = true;
+            var verifyFilter = false;
+            new LABKEY.QueryWebPart({
+                title: 'Issue #47735: Date filter format',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                failure: function () {
+                    alert('Failed test: Issue #47735');
+                },
+                listeners: {
+                    render: function (qwp) {
+                        if (firstFilter) {
+                            var firstDateFilter = [
+                                // Intentionally unformatted date
+                                LABKEY.Filter.create('MaterialExpDate', new Date('2023, 04, 23'))
+                            ];
+                            qwp.replaceFilters(firstDateFilter);
+                            firstFilter = false;
+                            verifyFilter = true;
+                        }
+                        else if (verifyFilter) {
+                            if ($('span:contains(Expiration Date = 2023-04-23)').length !== 1) {
+                                alert('Failed to properly format filter date.');
+                            }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("testDateFilterFormat");
+                            }
+
+                            verifyFilter = false;
                         }
                     }
                 }
