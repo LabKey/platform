@@ -1266,15 +1266,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            SearchService searchService = SearchService.get();
+            if (null != searchService)
             {
                 persist.setIndexFunction(lsids -> () ->
                     ListUtils.partition(lsids, 100).forEach(sublist ->
-                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
                             for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
-                                expMaterial.index(ss.defaultTask());
+                                expMaterial.index(searchService.defaultTask());
                         })
                     )
                 );
