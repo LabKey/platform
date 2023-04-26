@@ -863,6 +863,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private ContainerFilter getSampleStatusLookupContainerFilter()
     {
+        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // for the sample status lookup since in the app project context we want to share status definitions accross
+        // a given project instead of creating duplicate statuses in each subfolder project.
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
         type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
         return type.create(getUserSchema());
