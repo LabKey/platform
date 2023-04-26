@@ -232,6 +232,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -6590,6 +6591,67 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class RenameContainerForm
+    {
+        private String name;
+        private String title;
+        private boolean addAlias = true;
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getTitle()
+        {
+            return title;
+        }
+
+        public void setTitle(String title)
+        {
+            this.title = title;
+        }
+
+        public boolean isAddAlias()
+        {
+            return addAlias;
+        }
+
+        public void setAddAlias(boolean addAlias)
+        {
+            this.addAlias = addAlias;
+        }
+    }
+
+    // Note that validation checks occur in ContainerManager.rename()
+    @RequiresPermission(AdminPermission.class)
+    public static class RenameContainerAction extends MutatingApiAction<RenameContainerForm>
+    {
+        @Override
+        public ApiResponse execute(RenameContainerForm form, BindException errors)
+        {
+            String name = StringUtils.trimToNull(form.getName());
+            String titleValue = StringUtils.trimToNull(form.getTitle());
+            String title = Objects.equals(name, titleValue) ? null : titleValue;
+            boolean addAlias = form.isAddAlias();
+
+            try
+            {
+                Container c = ContainerManager.rename(getContainer(), getUser(), name, title, addAlias);
+                return new ApiSimpleResponse(c.toJSON(getUser()));
+            }
+            catch (Exception e)
+            {
+                throw new ApiUsageException(e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+            }
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
@@ -6598,12 +6660,6 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
-            Container c = getContainer();
-            if (!ContainerManager.isRenameable(c))
-            {
-                // 16221
-                errors.reject(ERROR_MSG, "This folder may not be renamed as it is reserved by the system.");
-            }
         }
 
         @Override
@@ -10710,6 +10766,7 @@ public class AdminController extends SpringActionController
                 controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
                 new DeleteCustomEmailAction(),
+                    new RenameContainerAction(),
                 controller.new RenameFolderAction(),
                 controller.new MoveFolderAction(),
                 new ConfirmProjectMoveAction(),

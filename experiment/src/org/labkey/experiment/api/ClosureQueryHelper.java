@@ -303,7 +303,7 @@ public class ClosureQueryHelper
                 upsert = new SQLFragment()
                         .append("INSERT INTO temp.${NAME} (Start_, rowId, targetid)\n")
                         .append("SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(" TMP\n")
-                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId");
+                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId").appendEOS();
             }
             else
             {
@@ -311,7 +311,7 @@ public class ClosureQueryHelper
                         .append("MERGE temp.${NAME} AS Target\n")
                         .append("USING (SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(") AS Source ON Target.Start_=Source.Start_ AND Target.targetid=Source.targetId\n")
                         .append("WHEN MATCHED THEN UPDATE SET Target.targetId = Source.targetId\n")
-                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId)");
+                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId)").appendEOS();
             }
 
             helper.upsert(upsert);

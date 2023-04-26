@@ -158,17 +158,17 @@ public class DataViewService
 
     public static final int DEFAULT_CATEGORY_DISPLAY_ORDER = 1000;
 
-    public JSONArray toJSON(Container container, User user, List<DataViewInfo> views)
+    public JSONArray toJSON(User user, List<DataViewInfo> views)
     {
         JSONArray jsonViews = new JSONArray();
 
         for (DataViewInfo info : views)
-            jsonViews.put(toJSON(container, user, info));
+            jsonViews.put(toJSON(user, info));
 
         return jsonViews;
     }
 
-    public JSONObject toJSON(Container container, User user, DataViewInfo info)
+    public JSONObject toJSON(User user, DataViewInfo info)
     {
         JSONObject o = new JSONObject();
 
