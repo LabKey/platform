@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -27,7 +28,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
+
+import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
+import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
 /**
  * User: brittp
@@ -59,13 +67,27 @@ public class AssayResultDomainKind extends AssayDomainKind
         rowIdSpec.setAutoIncrement(true);
         rowIdSpec.setPrimaryKey(true);
 
-        return PageFlowUtil.set(rowIdSpec, dataIdSpec);
+        PropertyStorageSpec createdSpec = new PropertyStorageSpec(CREATED_COLUMN_NAME, JdbcType.TIMESTAMP);
+        PropertyStorageSpec createdBySpec = new PropertyStorageSpec(CREATED_BY_COLUMN_NAME, JdbcType.INTEGER);
+        PropertyStorageSpec modifiedSpec = new PropertyStorageSpec(MODIFIED_COLUMN_NAME, JdbcType.TIMESTAMP);
+        PropertyStorageSpec modifiedBySpec = new PropertyStorageSpec(MODIFIED_BY_COLUMN_NAME, JdbcType.INTEGER);
+
+        return PageFlowUtil.set(rowIdSpec, dataIdSpec, createdSpec, createdBySpec, modifiedSpec, modifiedBySpec);
     }
 
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return PageFlowUtil.set(new PropertyStorageSpec.Index(false, AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME));
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
+    {
+        return new HashSet<>(Arrays.asList(
+                new PropertyStorageSpec.ForeignKey(CREATED_BY_COLUMN_NAME, "core", "users", "userid", null, false),
+                new PropertyStorageSpec.ForeignKey(MODIFIED_BY_COLUMN_NAME, "core", "users", "userid", null, false)
+        ));
     }
 
     @Override
@@ -80,7 +102,7 @@ public class AssayResultDomainKind extends AssayDomainKind
         return AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME;
     }
 
-    private DbSchema getSchema()
+    public DbSchema getSchema()
     {
         return DbSchema.get(getStorageSchemaName(), getSchemaType());
     }

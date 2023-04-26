@@ -525,7 +525,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException("Updating aliquotedFrom is not supported");
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
-        rowCopy.remove("AliquotedFrom");
+        rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
@@ -1208,7 +1208,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             // only add when AliquotedFrom column is not null
-            if (columnNameMap.containsKey("AliquotedFrom"))
+            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
             {
                 addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
                 addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
@@ -1376,7 +1376,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get("AliquotedFrom");
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             if (aliquotedFromObj != null)
             {
                 if (aliquotedFromObj instanceof String)
@@ -1384,7 +1384,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
                     // but we don't want to include the quotes in the name we generate using AliquotedFrom
                     aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
-                    map.put("AliquotedFrom", aliquotedFrom);
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)
                 {
@@ -1594,7 +1594,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private String getAliquotedFromColName()
         {
             // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
-            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : "AliquotedFrom";
+            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : ExpMaterial.ALIQUOTED_FROM_INPUT;
         }
 
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)

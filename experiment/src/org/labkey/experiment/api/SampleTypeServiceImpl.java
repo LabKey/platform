@@ -64,7 +64,10 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -90,6 +93,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -105,6 +109,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
@@ -142,6 +147,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
@@ -1640,7 +1646,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     record FileFieldRenameData(ExpSampleType sampleType, String sampleName, String fieldName, File sourceFile, File targetFile) { }
 
     @Override
-    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
     {
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
@@ -1676,7 +1682,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
-                objectRowContainerUpdate(sampleIds, targetContainer);
+                objectRowContainerUpdate(getTinfoMaterial(), sampleIds, targetContainer);
 
                 // update the paths to files associated with individual samples
                 fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
@@ -1731,6 +1737,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
+            updateCounts.putAll(moveDerivationRuns(samples, targetContainer, user));
+
             transaction.addCommitTask(() -> {
                 // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                 // based on the modified date
@@ -1757,6 +1765,116 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return updateCounts;
     }
 
+    private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        // collect unique runIds mapped to the samples that are moving that have that runId
+        Map<Integer, Set<ExpMaterial>> runIdSamples = new HashMap<>();
+        samples.forEach(sample -> {
+            if (sample.getRunId() != null)
+                runIdSamples.computeIfAbsent(sample.getRunId(), t -> new HashSet<>()).add(sample);
+        });
+        // find the set of runs associated with samples that are moving
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(runIdSamples.keySet());
+        List<ExpRun> toUpdate = new ArrayList<>();
+        List<ExpRun> toSplit = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            Set<Integer> outputIds = run.getMaterialOutputs().stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            Set<Integer> movingIds = runIdSamples.get(run.getRowId()).stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            if (movingIds.size() == outputIds.size() && movingIds.containsAll(outputIds))
+                toUpdate.add(run);
+            else
+                toSplit.add(run);
+        }
+
+        int updateCount = updateExperimentRuns(toUpdate, targetContainer, user);
+        int splitCount = splitExperimentRuns(toSplit, runIdSamples, targetContainer, user);
+        return Map.of("sampleDerivationRunsUpdated", updateCount, "sampleDerivationRunsSplit", splitCount);
+    }
+
+    private int updateExperimentRuns(List<ExpRun> runs, Container targetContainer, User user)
+    {
+        if (runs.isEmpty())
+            return 0;
+
+        TableInfo runsTable = getTinfoExperimentRun();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
+        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+        objectRowContainerUpdate(getTinfoExperimentRun(), runRowIds, targetContainer);
+        return updateCount;
+    }
+
+    private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        final ViewBackgroundInfo targetInfo = new ViewBackgroundInfo(targetContainer, user, null);
+        ExperimentServiceImpl expService = (ExperimentServiceImpl) ExperimentService.get();
+        int runCount = 0;
+        for (ExpRun run : runs)
+        {
+            ExpProtocolApplication sourceApplication = null;
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+            boolean isAliquot = SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(run.getProtocol().getLSID());
+
+            Set<ExpMaterial> movingSet = movingSamples.get(run.getRowId());
+            int numStaying = 0;
+            Map<ExpMaterial, String> movingOutputsMap = new HashMap<>();
+            ExpMaterial aliquotParent = null;
+            // the derived samples (outputs of the run) are inputs to the output step of the run (obviously)
+            for (ExpMaterialRunInput materialInput : outputApp.getMaterialInputs())
+            {
+                ExpMaterial material = materialInput.getMaterial();
+                if (movingSet.contains(material))
+                {
+                    // clear out the run and source application so a new derivation run can be created.
+                    material.setRun(null);
+                    material.setSourceApplication(null);
+                    movingOutputsMap.put(material, materialInput.getRole());
+                }
+                else
+                {
+                    if (sourceApplication == null)
+                        sourceApplication = material.getSourceApplication();
+                    numStaying++;
+                }
+                if (isAliquot && aliquotParent == null && material.getAliquotedFromLSID() != null)
+                {
+                    aliquotParent = expService.getExpMaterial(material.getAliquotedFromLSID());
+                }
+
+            }
+
+            if (isAliquot && aliquotParent != null)
+            {
+                ExpRunImpl expRun = expService.createAliquotRun(aliquotParent, movingOutputsMap.keySet(), targetInfo);
+                expService.saveSimpleExperimentRun(expRun, run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), Collections.emptyMap(), targetInfo, LOG, false);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getAliquotRunName(aliquotParent, numStaying));
+            }
+            else
+            {
+                // create a new derivation run for the samples that are moving
+                expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+            }
+            run.save(user);
+            List<Integer> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();
+
+            outputApp.removeMaterialInputs(user, movingSampleIds);
+            if (sourceApplication != null)
+                sourceApplication.removeMaterialInputs(user, movingSampleIds);
+
+            runCount++;
+        }
+        return runCount;
+    }
+
     private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
     {
         TableInfo materialTable = getTinfoMaterial();
@@ -1769,12 +1887,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
     }
 
-    private void objectRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    private void objectRowContainerUpdate(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
     {
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objectid IN (SELECT objectid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, sampleIds);
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
         new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
