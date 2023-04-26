@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -868,8 +868,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
         private class WebDavTestCase
         {
-            private ExpData _data;
-            private String _relativePath;
+            private final ExpData _data;
+            private final String _relativePath;
 
             public WebDavTestCase(String name, File file, String relativePath)
             {

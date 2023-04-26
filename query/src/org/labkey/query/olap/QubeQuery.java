@@ -17,11 +17,12 @@ package org.labkey.query.olap;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.OlapException;
@@ -308,11 +309,6 @@ public class QubeQuery
     /*
      * JSON
      */
-
-    public void fromJson(org.json.JSONObject json, BindException errors) throws OlapException, BindException
-    {
-        fromJson(JSONObject.toOldJSONObject(json), errors);
-    }
 
     public void fromJson(JSONObject json, BindException errors) throws OlapException, BindException
     {
@@ -606,9 +602,9 @@ public class QubeQuery
             uniqueName =  (String)json.get("uniqueName");
         else if (null != json.get("uname"))
         {
-            JSONArray uname = (JSONArray)json.get("uname");
+            JSONArray uname = json.getJSONArray("uname");
             Path path = new Path();
-            for (Object o : uname.toArray())
+            for (Object o : JsonUtil.toJSONObjectList(uname))
                 path = path.append(String.valueOf(o));
             uniqueName = pathToUniqueName(path);
         }
