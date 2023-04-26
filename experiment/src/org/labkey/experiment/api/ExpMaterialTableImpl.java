@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ImportAliasable;
@@ -1269,14 +1270,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             SearchService searchService = SearchService.get();
             if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> () ->
+                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
                     ListUtils.partition(lsids, 100).forEach(sublist ->
                         searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
                             for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
                                 expMaterial.index(searchService.defaultTask());
                         })
-                    )
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 
