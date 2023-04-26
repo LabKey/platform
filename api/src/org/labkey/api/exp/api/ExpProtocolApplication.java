@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +69,7 @@ public interface ExpProtocolApplication extends ExpObject
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
     void removeMaterialInput(User user, ExpMaterial material);
-
+    void removeMaterialInputs(User user, Collection<Integer> rowIds);
     void addProvenanceInput(Set<String> lsids);
     void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
     Set<Pair<String, String>> getProvenanceMapping();

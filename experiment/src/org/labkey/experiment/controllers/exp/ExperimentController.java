@@ -7715,13 +7715,32 @@ public class ExperimentController extends SpringActionController
         public Object execute(MoveSamplesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            Map<String, Integer> updateCounts =  SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
-            resp.put("success", true);
-            resp.put("updateCounts", updateCounts);
-            resp.put("containerPath", _targetContainer.getPath());
+            try
+            {
+                Map<String, Integer> updateCounts = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
 
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+                updateSelections(form);
+
+                resp.put("success", true);
+                resp.put("updateCounts", updateCounts);
+                resp.put("containerPath", _targetContainer.getPath());
+
+            }
+            catch (Exception e)
+            {
+                resp.put("success", false);
+                resp.put("error", e);
+            }
             return resp;
+        }
+
+        // Since the samples have moved containers, the selections are no longer valid for the given context so need to be removed
+        private void updateSelections(MoveSamplesForm form)
+        {
+            String selectionKey = form.getDataRegionSelectionKey();
+            if (selectionKey != null)
+                DataRegionSelection.setSelected(getViewContext(), selectionKey, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()), false);
         }
 
         private void validateTargetContainer(MoveSamplesForm form, Errors errors)
@@ -7746,10 +7765,7 @@ public class ExperimentController extends SpringActionController
             }
 
             if (!isValidTargetContainer(getContainer(), _targetContainer))
-            {
                 errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
-                return;
-            }
         }
 
         private Container getTargetContainer(MoveSamplesForm form)
@@ -7780,7 +7796,7 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            Set<Integer> sampleIds = form.getIds(true);
+            Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
             if (sampleIds == null || sampleIds.isEmpty())
             {
                 errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
@@ -7821,17 +7837,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
             if (!invalidStatusSamples.isEmpty())
-            {
-                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
-                return;
-            }
-
-            // only allow for samples at root, i.e. without parents, to be moved at this time
-            // TODO remove this once we support moving / splitting the experiment run
-            if (_materials.stream().anyMatch(material -> material.getRunId() != null))
-            {
-                errors.reject(ERROR_GENERIC, "Only supporting move of root samples at this time.");
-            }
+                errors.reject(ERROR_GENERIC, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
         }
     }
 

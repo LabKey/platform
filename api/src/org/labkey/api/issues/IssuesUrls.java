@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.action;
 
-import org.json.JSONObject;
+package org.labkey.api.issues;
 
-public class SimpleApiJsonForm implements ApiJsonForm
+import org.labkey.api.action.UrlProvider;
+import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
+
+/*
+* User: adam
+* Date: Nov 19, 2010
+* Time: 9:38:34 PM
+*/
+public interface IssuesUrls extends UrlProvider
 {
-    private JSONObject _json;
-
-    @Override
-    public void bindJson(JSONObject json)
-    {
-        _json = json;
-    }
-
-    public JSONObject getJsonObject()
-    {
-        return _json;
-    }
+    ActionURL getDetailsURL(Container c);
+    ActionURL getInsertURL(Container c, String issueDefName);
+    ActionURL getListURL(Container c, String issueDefName);
 }

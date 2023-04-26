@@ -1054,7 +1054,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (null == selectedColumns)
             return ALL_COLUMNS;
         selectedColumns = new TreeSet<>(selectedColumns);
-        if (selectedColumns.contains(new FieldKey(null, "AliquotedFrom")))
+        if (selectedColumns.contains(new FieldKey(null, ExpMaterial.ALIQUOTED_FROM_INPUT)))
             selectedColumns.add(new FieldKey(null, "aliquotedfromlsid"));
         if (selectedColumns.contains(new FieldKey(null, "IsAliquot")))
             selectedColumns.add(new FieldKey(null, "rootMaterialLsid"));

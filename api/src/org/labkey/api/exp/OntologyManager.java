@@ -408,6 +408,14 @@ public class OntologyManager
         return resultingLsids;
     }
 
+    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+                                                               UpdateableTableImportHelper helper,
+                                                               List<Map<String, Object>> rows,
+                                                               Logger logger)
+            throws SQLException, ValidationException
+    {
+        return insertTabDelimited(tableInsert, c, user, helper, rows, true, logger);
+    }
 
     /**
      * As an incremental step of QueryUpdateService cleanup, this is a version of insertTabDelimited that works on a
@@ -425,26 +433,38 @@ public class OntologyManager
     public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
+                                                  boolean autoFillDefaultColumns,
                                                   Logger logger)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true);
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns);
+    }
+
+    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
+                                                               UpdateableTableImportHelper helper,
+                                                               List<Map<String, Object>> rows,
+                                                               Logger logger)
+            throws SQLException, ValidationException
+    {
+        return updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
     }
 
     public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
+                                                  boolean autoFillDefaultColumns,
                                                   Logger logger)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false);
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns);
     }
 
     private static List<Map<String, Object>> saveTabDelimited(TableInfo table, Container c, User user,
                                                  UpdateableTableImportHelper helper,
                                                  List<Map<String, Object>> rows,
                                                  Logger logger,
-                                                 boolean insert)
+                                                 boolean insert,
+                                                 boolean autoFillDefaultColumns)
             throws SQLException, ValidationException
     {
         if (!(table instanceof UpdateableTableInfo))
@@ -475,11 +495,11 @@ public class OntologyManager
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, true);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, autoFillDefaultColumns);
             }
             else
             {
-                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, true);
+                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, autoFillDefaultColumns);
             }
             List<ValidationError> errors = new ArrayList<>();
 
@@ -913,10 +933,10 @@ public class OntologyManager
         else
         {
             SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName())
+            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
                     .append(" WHERE ObjectId IN\n")
                     .append("(SELECT ObjectId FROM ")
-                    .append(String.valueOf(getTinfoObject())).append("\n")
+                    .append(getTinfoObject()).append("\n")
                     .append(" WHERE ");
             if (c != null)
             {
@@ -929,7 +949,7 @@ public class OntologyManager
             new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
             SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE ");
+            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ");
             if (c != null)
             {
                 sqlDeleteObjects.append(" Container = ?").add(c.getId());
@@ -1795,11 +1815,11 @@ public class OntologyManager
                 String timestamp = expSchema.getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
                 String templateJson = null==ddIn.getTemplateInfo() ? null : ddIn.getTemplateInfo().toJSON();
                 SQLFragment insert = new SQLFragment(
-                        "INSERT INTO " + getTinfoDomainDescriptor().getSelectName() +
-                        " (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
-                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n",
-                        ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
-                .append("WHERE NOT EXISTS (SELECT * FROM "  + getTinfoDomainDescriptor().getSelectName() + " x WHERE x.DomainURI=? AND x.Project=?)\n")
+                        "INSERT INTO ").append(getTinfoDomainDescriptor())
+                        .append(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
+                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n")
+                        .addAll(ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
+                .append("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").append(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
                 if (expSchema.getSqlDialect().isPostgreSQL())

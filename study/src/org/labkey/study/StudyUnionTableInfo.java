@@ -191,7 +191,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                 }
             }
 
-            sqlf.append(" FROM ").appendIdentifier(ti.getSelectName()).append(" D");
+            sqlf.append(" FROM ").append(ti, "D");
             if (def.isShared() && !_crossContainer)
             {
                 if (def.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
@@ -272,7 +272,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                 continue;
             count++;
             sqlf.append(unionAll);
-            sqlf.append("SELECT ParticipantId, SequenceNum FROM " + ti.getSelectName() + " _");
+            sqlf.append("SELECT ParticipantId, SequenceNum FROM ").append(ti,  "_");
             if (def.isShared() && !_crossContainer)
             {
                 sqlf.append(" WHERE container=?");
@@ -309,13 +309,6 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         }
         unionSql.appendComment("</StudyUnionTableInfo>", getSchema().getSqlDialect());
         return unionSql;
-    }
-
-
-    @Override
-    public String getSelectName()
-    {
-        return null;
     }
 
 

@@ -644,13 +644,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             Collections.sort(_materialOutputs);
             Collections.sort(_dataOutputs);
 
-            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<>();
-            sortedMaterialInputs.putAll(_materialInputs);
-            _materialInputs = sortedMaterialInputs;
+            _materialInputs = new TreeMap<>(_materialInputs);
 
-            Map<ExpData, String> sortedDataInputs = new TreeMap<>();
-            sortedDataInputs.putAll(_dataInputs);
-            _dataInputs = sortedDataInputs;
+            _dataInputs = new TreeMap<>(_dataInputs);
 
             for (ExpProtocolApplicationImpl step : _protocolSteps)
             {

@@ -249,6 +249,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean forceSaveBatchProps
     ) throws ExperimentException, ValidationException
     {
+        context.setAutoFillDefaultResultColumns(run.getRowId() > 0); // need to setAutoFillDefaultResultColumns before run is saved
+
         final Container container = context.getContainer();
 
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
@@ -518,7 +520,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
                 dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
-                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
+                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns());
             }
         }
         else
@@ -537,7 +539,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey());
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
         }
     }

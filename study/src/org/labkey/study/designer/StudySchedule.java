@@ -121,7 +121,7 @@ public class StudySchedule implements ApiJsonForm
         {
             DataViewInfo info = _viewInfo.get(ds.getEntityId());
 
-            o = DataViewService.get().toJSON(ds.getContainer(), user, info);
+            o = DataViewService.get().toJSON(user, info);
             o.put("entityId", ds.getEntityId());
         }
         o.put("label", ds.getLabel());

@@ -32,6 +32,7 @@ public interface ExpMaterial extends ExpRunItem
     String DEFAULT_CPAS_TYPE = "Material";
     String MATERIAL_INPUT_PARENT = "MaterialInputs";
     String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
+    String ALIQUOTED_FROM_INPUT = "AliquotedFrom";
 
     @Nullable
     ExpSampleType getSampleType();
