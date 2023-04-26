@@ -147,6 +147,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
@@ -1818,10 +1819,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             ExpProtocolApplication sourceApplication = null;
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+            boolean isAliquot = SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(run.getProtocol().getLSID());
 
             Set<ExpMaterial> movingSet = movingSamples.get(run.getRowId());
             int numStaying = 0;
             Map<ExpMaterial, String> movingOutputsMap = new HashMap<>();
+            ExpMaterial aliquotParent = null;
             // the derived samples (outputs of the run) are inputs to the output step of the run (obviously)
             for (ExpMaterialRunInput materialInput : outputApp.getMaterialInputs())
             {
@@ -1839,13 +1842,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         sourceApplication = material.getSourceApplication();
                     numStaying++;
                 }
+                if (isAliquot && aliquotParent == null && material.getAliquotedFromLSID() != null)
+                {
+                    aliquotParent = expService.getExpMaterial(material.getAliquotedFromLSID());
+                }
+
             }
 
-            // create a new derivation run for the samples that are moving
-            expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
-
-            // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
-            run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+            if (isAliquot && aliquotParent != null)
+            {
+                ExpRunImpl expRun = expService.createAliquotRun(aliquotParent, movingOutputsMap.keySet(), targetInfo);
+                expService.saveSimpleExperimentRun(expRun, run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), Collections.emptyMap(), targetInfo, LOG, false);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getAliquotRunName(aliquotParent, numStaying));
+            }
+            else
+            {
+                // create a new derivation run for the samples that are moving
+                expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+            }
             run.save(user);
             List<Integer> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();
 

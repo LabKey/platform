@@ -7153,7 +7153,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return name.toString();
     }
 
-    private ExpRunImpl createAliquotRun(ExpMaterial parent, List<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
+    public ExpRunImpl createAliquotRun(ExpMaterial parent, Collection<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
@@ -7165,20 +7165,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (parent == null)
             throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
 
-        StringBuilder name = new StringBuilder("Create ");
-        if (aliquots.size() == 1)
-            name.append("aliquot ");
-        else
-            name.append(aliquots.size()).append(" aliquots ");
-        name.append("from ");
-        name.append(parent.getName());
-
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
-        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
         return run;
+    }
+
+    public static String getAliquotRunName(ExpMaterial parent, int numAliquots)
+    {
+        StringBuilder name = new StringBuilder("Create ");
+        if (numAliquots == 1)
+            name.append("aliquot ");
+        else
+            name.append(numAliquots).append(" aliquots ");
+        name.append("from ");
+        name.append(parent.getName());
+        return name.toString();
     }
 
     @Override
