@@ -98,8 +98,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -837,10 +840,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, !getDetails);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
     private ContainerFilter getSampleDataCF(Container container, User user)
@@ -856,10 +859,64 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipDetails)
+    public record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
+
+    public @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
+    {
+        if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
+            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true);
+
+        CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
+        if (null == remap)
+            remap = CaseInsensitiveHashMap.of();
+
+        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid");
+        for (ColumnInfo column : getQueryTable().getColumns())
+        {
+            if (dataColumns.contains(column.getColumnName()))
+                includedColumns.add(column.getColumnName());
+            else if (dataColumns.contains(remap.get(column.getColumnName())))
+                includedColumns.add(remap.get(column.getColumnName()));
+        }
+
+        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
+                .map(Enum::name)
+                .collect(Collectors.toSet()))
+                .containsAll(includedColumns);
+        TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+
+        boolean hasParentInput = false;
+        if (_sampleType != null)
+        {
+            try
+            {
+                Map<String, String> importAliases = _sampleType.getImportAliasMap();
+                for (String col : dataColumns)
+                {
+                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    {
+                        hasParentInput = true;
+                        break;
+                    }
+
+                }
+            }
+            catch (IOException ignored)
+            {
+            }
+
+        }
+
+        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws QueryUpdateServiceException, InvalidKeyException
     {
-        TableInfo queryTableInfo = skipDetails ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+        ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
+        TableInfo queryTableInfo = existingRowSelect.tableInfo;
+        Set<String> selectColumns = existingRowSelect.columns;
+
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
 
@@ -895,7 +952,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!rowIdRowNumMap.isEmpty())
         {
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 Integer rowId = (Integer) row.get("rowid");
@@ -916,7 +973,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(lsidRowNumMap.keySet());
 
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String sampleLsid = (String) row.get("lsid");
@@ -933,7 +990,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
 
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
@@ -949,7 +1006,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user)); // don't use TinfoMaterial here since UserSchema is needed
+            if (tInfo == null)
+                throw new QueryUpdateServiceException("Unable to get the existing sample record");
+
             existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
             Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
@@ -964,26 +1024,34 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting && !allKeys.isEmpty())
             throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
-        if (skipDetails)
+        // if contains domain fields, check for aliquot specific fields
+        if (!queryTableInfo.getName().equalsIgnoreCase("material"))
+        {
+            Set<String> parentOnlyFields = getSampleMetaFields();
+            for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
+            {
+                Map<String, Object> sampleRow = rowNumSampleRow.getValue();
+
+                if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
+                {
+                    for (String parentOnlyField : parentOnlyFields)
+                        sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
+                }
+            }
+        }
+
+        if (!existingRowSelect.includeParent)
             return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
-        Set<String> parentOnlyFields = getSampleMetaFields();
-
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
-            {
-                for (String parentOnlyField : parentOnlyFields)
-                    sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
-            }
 
             if (!parents.containsKey(lsidKey))
                 continue;

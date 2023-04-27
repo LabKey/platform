@@ -132,7 +132,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
         UseLsidForUpdate,
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
-        SkipDetailedExistingRecord,
     }
 
     @Nullable

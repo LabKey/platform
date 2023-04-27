@@ -7720,6 +7720,8 @@ public class ExperimentController extends SpringActionController
                 Map<String, Integer> updateCounts = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
 
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+                updateSelections(form);
+
                 resp.put("success", true);
                 resp.put("updateCounts", updateCounts);
                 resp.put("containerPath", _targetContainer.getPath());
@@ -7731,6 +7733,14 @@ public class ExperimentController extends SpringActionController
                 resp.put("error", e);
             }
             return resp;
+        }
+
+        // Since the samples have moved containers, the selections are no longer valid for the given context so need to be removed
+        private void updateSelections(MoveSamplesForm form)
+        {
+            String selectionKey = form.getDataRegionSelectionKey();
+            if (selectionKey != null)
+                DataRegionSelection.setSelected(getViewContext(), selectionKey, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()), false);
         }
 
         private void validateTargetContainer(MoveSamplesForm form, Errors errors)
@@ -7786,7 +7796,7 @@ public class ExperimentController extends SpringActionController
 
         private void validateSampleIds(MoveSamplesForm form, Errors errors)
         {
-            Set<Integer> sampleIds = form.getIds(true);
+            Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
             if (sampleIds == null || sampleIds.isEmpty())
             {
                 errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
