@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ImportAliasable;
@@ -1276,17 +1277,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            SearchService searchService = SearchService.get();
+            if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> () ->
+                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
                     ListUtils.partition(lsids, 100).forEach(sublist ->
-                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
                             for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
-                                expMaterial.index(ss.defaultTask());
+                                expMaterial.index(searchService.defaultTask());
                         })
-                    )
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 
