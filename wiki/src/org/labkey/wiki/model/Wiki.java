@@ -138,6 +138,10 @@ public class Wiki extends Entity implements Serializable
 
     public void setParent(Integer parent)
     {
+        if (parent != null && parent.intValue() < 0)
+        {
+            throw new IllegalArgumentException("Bad parent ID: " + parent);
+        }
         _parent = parent;
     }
 

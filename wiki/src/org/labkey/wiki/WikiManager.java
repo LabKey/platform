@@ -558,7 +558,7 @@ public class WikiManager implements WikiService
             if (destParentId != null)
                 newWikiPage.setParent(destParentId);
             else
-                newWikiPage.setParent(-1);
+                newWikiPage.setParent(null);
         }
 
         //get wiki & attachments
