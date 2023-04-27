@@ -589,7 +589,7 @@ public class ExpDataIterators
                 row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
             _rows.add(row);
 
-            if (_isDerivation)
+            if (_isDerivation && _rowIdCol != null)
                 _keys.add((Integer)get(_rowIdCol));
 
             return true;
