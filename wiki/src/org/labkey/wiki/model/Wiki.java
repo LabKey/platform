@@ -37,7 +37,6 @@ import java.util.List;
 /**
  * User: mbellew
  * Date: Jan 13, 2005
- * Time: 10:28:24 AM
  */
 
 public class Wiki extends Entity implements Serializable
@@ -49,7 +48,7 @@ public class Wiki extends Entity implements Serializable
 
     private int _rowId;
     private String _name;
-    private int _parent = -1;
+    private Integer _parent;
     private float _displayOrder = 0;
     private Integer _pageVersionId;
     private boolean _showAttachments = true;
@@ -125,15 +124,19 @@ public class Wiki extends Entity implements Serializable
 
     public Wiki getParentWiki()
     {
+        if (getParent() == null)
+        {
+            return null;
+        }
         return WikiSelectManager.getWiki(ContainerManager.getForId(getContainerId()), getParent());
     }
 
-    public int getParent()
+    public Integer getParent()
     {
         return _parent;
     }
 
-    public void setParent(int parent)
+    public void setParent(Integer parent)
     {
         _parent = parent;
     }
