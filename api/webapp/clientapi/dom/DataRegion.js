@@ -2931,6 +2931,17 @@ if (!LABKEY.DataRegions) {
         return newSorts.join(',');
     };
 
+    var _ensureFilterDateFormat = function(value) {
+        if (LABKEY.Utils.isDate(value)) {
+            value = $.format.date(value, 'yyyy-MM-dd');
+            if (LABKEY.Utils.endsWith(value, 'Z')) {
+                value = value.substring(0, value.length - 1);
+            }
+        }
+
+        return value;
+    }
+
     var _buildQueryString = function(region, pairs) {
         if (!LABKEY.Utils.isArray(pairs)) {
             return '';
@@ -2945,12 +2956,7 @@ if (!LABKEY.DataRegions) {
             queryParts.push(encodeURIComponent(key));
             if (LABKEY.Utils.isDefined(value)) {
 
-                if (LABKEY.Utils.isDate(value)) {
-                    value = $.format.date(value, 'yyyy-MM-dd');
-                    if (LABKEY.Utils.endsWith(value, 'Z')) {
-                        value = value.substring(0, value.length - 1);
-                    }
-                }
+                value = _ensureFilterDateFormat(value);
                 queryParts.push('=');
                 queryParts.push(encodeURIComponent(value));
             }
@@ -3814,7 +3820,15 @@ if (!LABKEY.DataRegions) {
                     else if (!LABKEY.Utils.isArray(params[pair[0]])) {
                         params[pair[0]] = [params[pair[0]]];
                     }
-                    params[pair[0]].push(pair[1]);
+
+                    var value = pair[1];
+
+                    // Issue 47735: QWP date filter not being formatted
+                    // This needs to be formatted for the response passed back to the grid for the filter display and
+                    // filter dialog to render correctly
+                    value = _ensureFilterDateFormat(value);
+
+                    params[pair[0]].push(value);
                 }
                 else {
                     params[pair[0]] = pair[1];

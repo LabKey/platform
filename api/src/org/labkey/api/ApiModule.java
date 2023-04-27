@@ -240,6 +240,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
+            AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,

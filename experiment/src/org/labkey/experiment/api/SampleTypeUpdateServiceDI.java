@@ -333,7 +333,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (InventoryService.get() != null && !_sampleType.isMedia())
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
 
-            if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null)
+            if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
         }
         return dib;
