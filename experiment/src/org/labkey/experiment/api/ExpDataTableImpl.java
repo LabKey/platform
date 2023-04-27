@@ -943,8 +943,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 JSONObject json = new JSONObject(writer.toString());
                 JSONObject row = json.getJSONArray("rows").getJSONObject(0);
 
-                String webDavUrl = row.getJSONObject("WebDavUrl").getString("value");
-                String webDavUrlRelative = row.getJSONObject("WebDavUrlRelative").getString("value");
+                String webDavUrl = row.getJSONObject("WebDavUrl").optString("value", null);
+                String webDavUrlRelative = row.getJSONObject("WebDavUrlRelative").optString("value", null);
 
                 assertEquals("Incorrect WebDavUrlRelative", tc.getUrlRelative(), webDavUrlRelative);
                 assertEquals("Incorrect WebDavUrl", tc.getUrl(), webDavUrl);
