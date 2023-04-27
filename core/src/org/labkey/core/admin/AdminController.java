@@ -6635,14 +6635,30 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(RenameContainerForm form, BindException errors)
         {
+            Container container = getContainer();
             String name = StringUtils.trimToNull(form.getName());
-            String titleValue = StringUtils.trimToNull(form.getTitle());
-            String title = Objects.equals(name, titleValue) ? null : titleValue;
+            String title = StringUtils.trimToNull(form.getTitle());
+
+            String nameValue = name;
+            String titleValue = title;
+            if (name == null && title == null)
+            {
+                throw new ApiUsageException("Please specify a name or a title.");
+            }
+            else if (name != null && title == null)
+            {
+                titleValue = name;
+            }
+            else if (name == null)
+            {
+                nameValue = container.getName();
+            }
+
             boolean addAlias = form.isAddAlias();
 
             try
             {
-                Container c = ContainerManager.rename(getContainer(), getUser(), name, title, addAlias);
+                Container c = ContainerManager.rename(container, getUser(), nameValue, titleValue, addAlias);
                 return new ApiSimpleResponse(c.toJSON(getUser()));
             }
             catch (Exception e)
