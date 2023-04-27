@@ -69,4 +69,10 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
     {
         // see description above
     }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    {
+        // see description above
+    }
 }

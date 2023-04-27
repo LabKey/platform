@@ -455,7 +455,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
@@ -742,7 +742,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
-        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                 .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
@@ -860,6 +860,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
         }
+    }
+
+    private ContainerFilter getSampleStatusLookupContainerFilter()
+    {
+        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // for the sample status lookup since in the app project context we want to share status definitions accross
+        // a given project instead of creating duplicate statuses in each subfolder project.
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
+        type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
+        return type.create(getUserSchema());
     }
 
     private void addAvailableAliquotCountColumn()
