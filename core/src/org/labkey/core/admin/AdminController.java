@@ -35,7 +35,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -9827,9 +9827,9 @@ public class AdminController extends SpringActionController
                 params.putAll(report.getParams());
                 // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
                 Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
-                if (jsonMetrics instanceof String)
+                if (jsonMetrics instanceof String jms)
                 {
-                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    JSONObject o = new JSONObject(jms);
                     params.put(MothershipReport.JSON_METRICS_KEY, o);
                 }
                 if (form.isSubmit())
@@ -9979,9 +9979,7 @@ public class AdminController extends SpringActionController
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 throw new UnauthorizedException();
 
-            Map<String,Object> json;
-            json = getConfigurationJson();
-            return json;
+            return getConfigurationJson();
         }
 
         @Override
@@ -10218,7 +10216,7 @@ public class AdminController extends SpringActionController
     }
 
     /* returns a jackson serializable object that reports superset of information returned in admin console */
-    Map<String, Object> getConfigurationJson()
+    JSONObject getConfigurationJson()
     {
         JSONObject res = new JSONObject();
 
