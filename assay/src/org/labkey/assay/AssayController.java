@@ -1459,7 +1459,9 @@ public class AssayController extends SpringActionController
                 for (Integer id : form.getRowList())
                 {
                     // assuming that column in storage table has same name
-                    Table.update(getUser(), ti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
+                    Map<String, Object> flagComment = new HashMap<>();
+                    flagComment.put(flagCol.getColumnName(), comment);
+                    Table.update(getUser(), ti, flagComment, id);
                     rowsAffected++;
                 }
                 transaction.commit();

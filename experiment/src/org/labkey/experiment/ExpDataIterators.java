@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -232,8 +232,8 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (!_isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
-                    _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
+                if (!_isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+                    _aliquotedFromColInd = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
                 else if (_isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
@@ -324,7 +324,7 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _storedAmountCol = map.get("StoredAmount");
             _unitsCol = map.get("Units");
-            _aliquotedFromCol = map.get("AliquotedFrom");
+            _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
             _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
@@ -528,10 +528,11 @@ public class ExpDataIterators
         final ExpSampleType _sampleType;
         final MapDataIterator _data;
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
-        final List<Integer> _keys = new ArrayList<>();
+        final List<Integer> _derivativeKeys = new ArrayList<>();
         final UserSchema _schema;
-        private boolean _isDerivation = false;
+        private boolean _hasParentInput;
         final Integer _rowIdCol;
+        final List<Integer> _parentCols = new ArrayList<>();
 
         protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
@@ -548,12 +549,12 @@ public class ExpDataIterators
 
             for (String name : nameMap.keySet())
             {
-                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name))
+                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase("AliquotedFrom", name))
                 {
-                    _isDerivation = true;
-                    break;
+                    _parentCols.add(nameMap.get(name));
                 }
             }
+            _hasParentInput = !_parentCols.isEmpty();
         }
 
         @Override
@@ -563,34 +564,51 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                if (!_rows.isEmpty())
+                if (!_derivativeKeys.isEmpty())
                 {
-                    if (_isDerivation)
-                    {
-                        _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                            try
-                            {
-                                // derived samples can't be linked until after the transaction is committed
-                                StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _keys, _container, _user);
-                            }
-                            catch (ExperimentException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        }, DbScope.CommitTaskOption.POSTCOMMIT);
-                    }
-                    else
-                        StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                        try
+                        {
+                            // derived samples can't be linked until after the transaction is committed
+                            StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
                 }
+
+                if (!_rows.isEmpty())
+                    StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+
                 return false;
             }
-            Map<FieldKey, Object> row = new HashMap<>();
-            for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
-                row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
-            _rows.add(row);
+            boolean isDerivative = false;
+            if (_hasParentInput)
+            {
+                for (Integer parentCol : _parentCols)
+                {
+                    if (get(parentCol) != null)
+                    {
+                        isDerivative = true;
+                        break;
+                    }
+                }
+            }
 
-            if (_isDerivation)
-                _keys.add((Integer)get(_rowIdCol));
+            if (!isDerivative)
+            {
+                Map<FieldKey, Object> row = new HashMap<>();
+                for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
+                    row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
+                _rows.add(row);
+            }
+            else
+            {
+                _derivativeKeys.add((Integer)get(_rowIdCol));
+            }
+
 
             return true;
         }
@@ -877,13 +895,13 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    else if (o instanceof JSONArray)
+                    else if (o instanceof org.json.old.JSONArray ja)
                     {
-                        parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                        parentNames = Arrays.stream(ja.toArray()).map(String::valueOf).collect(Collectors.toSet());
                     }
-                    else if (o instanceof org.json.JSONArray)
+                    else if (o instanceof JSONArray ja)
                     {
-                        parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
+                        parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
                     }
                     else if (o instanceof Collection)
                     {
@@ -1049,7 +1067,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
+                if (_isSample && ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
                 {
                     aliquotParentCol = entry.getValue();
                 }
@@ -1096,7 +1114,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFrom"));
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, ExpMaterial.ALIQUOTED_FROM_INPUT));
                         }
 
                         if (aliquotParentName != null)

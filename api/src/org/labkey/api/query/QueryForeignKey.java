@@ -342,17 +342,17 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         if (null != _user)
             return _user;
-        if (null != getSchema())
-            return getSchema().getUser();
+        if (null != getLookupSchema())
+            return getLookupSchema().getUser();
         return super.getLookupUser();
     }
 
     @Override
     public TableInfo getLookupTableInfo()
     {
-        if (_table == null && getSchema() != null)
+        if (_table == null && getLookupSchema() != null)
         {
-            TableInfo t = getSchema().getTable(_tableName, getLookupContainerFilter());
+            TableInfo t = getLookupSchema().getTable(_tableName, getLookupContainerFilter());
             if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
                 t = null;
             _table = t;
@@ -360,7 +360,8 @@ public class QueryForeignKey extends AbstractForeignKey
         return _table;
     }
 
-    protected QuerySchema getSchema()
+    @Override
+    protected QuerySchema getLookupSchema()
     {
         if (_schema == null && _user != null && _lookupSchemaKey != null)
         {

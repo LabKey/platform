@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -180,7 +181,7 @@ public class FileLinkFileListener implements FileListener
 
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
-            DbSchema schema = DbSchema.get(row.get("StorageSchemaName").toString());
+            DbSchema schema = DbSchema.get(row.get("StorageSchemaName").toString(), DbSchemaType.Provisioned);
             TableInfo tableInfo = schema.getTable(row.get("StorageTableName").toString());
             if (tableInfo != null)
             {

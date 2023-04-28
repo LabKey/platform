@@ -145,12 +145,6 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return getProtocolDir(root, archived).resolve(name + ".xml");
     }
 
-    @Deprecated //Prefer the Path version
-    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
-    {
-        return getProtocolNames(root, dirData.toPath(), archived);
-    }
-
     /** @return sorted list of protocol names */
     public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
     {

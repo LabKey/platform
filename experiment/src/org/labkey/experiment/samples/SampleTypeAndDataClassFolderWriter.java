@@ -295,7 +295,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     private ColumnInfo getAliquotedFromNameColumn(TableInfo tinfo)
     {
         ColumnInfo col = tinfo.getColumn(FieldKey.fromParts(ExpMaterialTable.Column.AliquotedFromLSID.name()));
-        AliasedColumn aliquotedAlias = new AliasedColumn(tinfo, "AliquotedFrom", col);
+        AliasedColumn aliquotedAlias = new AliasedColumn(tinfo, ExpMaterial.ALIQUOTED_FROM_INPUT, col);
         aliquotedAlias.setDisplayColumnFactory(NameFromLsidDataColumn::new);
         return aliquotedAlias;
     }

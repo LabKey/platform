@@ -75,6 +75,21 @@
 <%@ page import="static org.hamcrest.CoreMatchers.hasItem" %>
 <%@ page import="static org.hamcrest.CoreMatchers.not" %>
 <%@ page import="org.labkey.api.assay.DefaultAssayRunCreator" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.assay.AssayProtocolSchema" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.query.BatchValidationException" %>
+<%@ page import="org.labkey.api.assay.AssayResultTable" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="org.labkey.remoteapi.CommandException" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.DbSchema" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -106,13 +121,15 @@
         return material;
     }
 
-    public Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context)
+    public Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults)
             throws AssayException, ValidationException
     {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context);
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
         assayTemplate.setName(ASSAY_NAME);
+        assayTemplate.setEditableRuns(true);
+        assayTemplate.setEditableResults(true);
         List<GWTDomain<GWTPropertyDescriptor>> domains = assayTemplate.getDomains();
 
         // clear the batch domain fields
@@ -130,6 +147,14 @@
         sampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
         sampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
         resultDomain.getFields().add(sampleLookup);
+
+        if (editableRunsAndResults)
+        {
+            GWTPropertyDescriptor runProp = new GWTPropertyDescriptor("runProp", "int");
+            runDomain.getFields().add(runProp);
+            GWTPropertyDescriptor resultProp = new GWTPropertyDescriptor("resultProp", "int");
+            resultDomain.getFields().add(resultProp);
+        }
 
         // create the assay
         log.info("creating assay");
@@ -205,7 +230,7 @@
         }
 
         // create the assay
-        var assayPair = createAssay(context);
+        var assayPair = createAssay(context, false);
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
@@ -306,7 +331,7 @@
         final var pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
 
         // create the assay
-        var assayPair = createAssay(context);
+        var assayPair = createAssay(context, false);
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
@@ -385,4 +410,115 @@
         assertEquals(firstData, dataList.get(0));
         assertEquals(dataList.size(), 1);
     }
+
+    private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, int resultRowId)
+    {
+        Map<String, Object>[] results = new SqlSelector(schema, "SELECT * FROM assayresult." + assayResultRealTable + " WHERE rowid = '" + resultRowId + "'").getMapArray();
+        return results[0];
+    }
+
+    /**
+     * Verify Assay Result Created/Modified fields
+     * - result created/modified/by matches run's created/modified/by on initial run upload from query view
+     * - provisioned result db table have created/modified/by as null on initial run upload
+     * - on run edit, result created/modified/by stays unchanged from query view, and remains null in DB
+     * - on result edit, result created/by stays unchanged, but result modified/by is popuated in DB and differs from run
+     * @throws Exception
+     */
+    @Test
+    public void testAssayResultCreatedModified() throws Exception
+    {
+        final var info = new ViewBackgroundInfo(c, user, null);
+        final var context = new ViewContext(info);
+        final var pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+
+        // create the assay with editable runs/results
+        var assayPair = createAssay(context, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // create a file in the pipeline root to import
+        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+        Files.writeString(file.toPath(), "ResultProp\n" + 100 + "\n", Charsets.UTF_8);
+
+        // import the file
+        log.info("first import");
+        var run = assayImportFile(c, user, provider, assayProtocol, file, false);
+        int runRowId = run.getRowId();
+
+        AssayProtocolSchema schema = provider.createProtocolSchema(user, c, assayProtocol, null);
+        TableInfo runsTable = schema.getTable("Runs");
+        TableInfo resultsTable = schema.getTable("Data");
+
+        Set<String> selectColumns = new HashSet<>();
+        selectColumns.add("rowId");
+        selectColumns.add("Created");
+        selectColumns.add("Modified");
+        selectColumns.add("CreatedBy");
+        selectColumns.add("ModifiedBy");
+        Map<String, Object> originalRunResult = new TableSelector(runsTable, selectColumns, new SimpleFilter("rowId", runRowId), null).getMap();
+        FieldKey runFieldKey = new FieldKey(FieldKey.fromParts("Run"), "RowId");
+        Map<String, Object> originalQueryResult = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
+        int resultRowId = (Integer) originalQueryResult.get("rowid");
+
+        // verify results created/modified matches run's created in query table
+        Object runOriginalCreated = originalRunResult.get("Created");
+        Object runOriginalModified = originalRunResult.get("Modified");
+        Object resultOriginalCreated = originalQueryResult.get("Created");
+        Object resultOriginalModified = originalQueryResult.get("Modified");
+        assertTrue(resultOriginalCreated.equals(runOriginalCreated) && resultOriginalModified.equals(runOriginalCreated));
+        assertTrue(originalRunResult.get("CreatedBy").equals(originalQueryResult.get("CreatedBy")) && originalRunResult.get("ModifiedBy").equals(originalQueryResult.get("ModifiedBy")));
+
+        // verify results created/modified is null in DB provisioned table
+        TableInfo realResultsTable = ((AssayResultTable) resultsTable).getRealTable();
+        Map<String, Object> dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
+        assertTrue(dbResult.get("Created") == null && dbResult.get("Modified") == null && dbResult.get("CreatedBy") == null && dbResult.get("ModifiedBy") == null );
+
+        // verify editing the run won't update/populate existing data's modified/modifiedby
+        QueryUpdateService runsQUS = runsTable.getUpdateService();
+        var updated = new CaseInsensitiveHashMap<>();
+        updated.put("RunProp", 2);
+        updated.put("RowId", runRowId);
+        BatchValidationException errors = new BatchValidationException();
+        runsQUS.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
+        // verify runs modified is changed, but created is not
+        Map<String, Object> modifiedRunResults = new TableSelector(runsTable, selectColumns, new SimpleFilter("rowId", runRowId), null).getMap();
+        assertTrue(modifiedRunResults.get("Created").equals(runOriginalCreated));
+        assertFalse(modifiedRunResults.get("Modified").equals(runOriginalModified));
+
+        // verify results created/modified matches run's created in query table
+        Map<String, Object> queryResultAfterRunModify = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
+        assertTrue(queryResultAfterRunModify.get("Created").equals(runOriginalCreated));
+        assertTrue(queryResultAfterRunModify.get("Modified").equals(runOriginalCreated));
+        assertFalse(queryResultAfterRunModify.get("Modified").equals(modifiedRunResults.get("Modified")));
+
+        // verify created/modified in provisioned result table is still not populated after run edit
+        dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
+        assertTrue(dbResult.get("Created") == null && dbResult.get("Modified") == null);
+
+        // now edit the result
+        QueryUpdateService resultsQUS = resultsTable.getUpdateService();
+        updated = new CaseInsensitiveHashMap<>();
+        updated.put("ResultProp", 200);
+        updated.put("RowId", resultRowId);
+        errors = new BatchValidationException();
+        resultsQUS.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
+
+        // verify result created matches run's created in query table, but result modified now differs from run's created
+        Map<String, Object> modifiedResults = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
+        assertTrue(modifiedResults.get("Created").equals(runOriginalCreated));
+        assertFalse(modifiedResults.get("Created").equals(modifiedResults.get("Modified")));
+        assertFalse(modifiedResults.get("Modified").equals(runOriginalCreated));
+        assertFalse(modifiedResults.get("Modified").equals(runOriginalModified));
+        assertFalse(modifiedResults.get("Modified").equals(modifiedRunResults.get("Modified")));
+
+        // verify modified in provisioned result table no longer null after result edit
+        dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
+        assertTrue(dbResult.get("Created") == null && dbResult.get("CreatedBy") == null);
+        assertFalse(dbResult.get("Modified") == null || dbResult.get("ModifiedBy") == null);
+        assertTrue(dbResult.get("Modified").equals(modifiedResults.get("Modified")));
+        assertTrue(dbResult.get("ModifiedBy").equals(modifiedResults.get("ModifiedBy")));
+
+    }
+
 %>

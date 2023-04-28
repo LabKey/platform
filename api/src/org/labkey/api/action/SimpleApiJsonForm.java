@@ -27,18 +27,6 @@ public class SimpleApiJsonForm implements ApiJsonForm
         _json = json;
     }
 
-    @Deprecated
-    public org.json.old.JSONObject getOldJsonObject()
-    {
-        return null != _json ? new org.json.old.JSONObject(_json.toString()) : null;
-    }
-
-    @Deprecated
-    public JSONObject getNewJsonObject()
-    {
-        return _json;
-    }
-
     public JSONObject getJsonObject()
     {
         return _json;

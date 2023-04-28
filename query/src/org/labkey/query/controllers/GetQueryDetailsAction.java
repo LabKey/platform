@@ -18,8 +18,8 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -76,10 +76,6 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-/**
- * User: dave
- * Date: Sep 3, 2009
- */
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>

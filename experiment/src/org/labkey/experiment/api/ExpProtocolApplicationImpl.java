@@ -18,7 +18,9 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -32,6 +34,7 @@ import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -43,6 +46,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -493,6 +497,27 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
+        Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+    }
+
+    @Override
+    public void removeMaterialInputs(User user, Collection<Integer> rowIds)
+    {
+        // Clean up MaterialInput exp.object and properties
+        List<String> inputLsids = new ArrayList<>();
+        rowIds.forEach(rowId -> {
+            inputLsids.add(MaterialInput.lsid(rowId, getRowId()));
+        });
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
+                .append(" AND ObjectURI ");
+        expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
+        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+        filter.addCondition(FieldKey.fromParts("MaterialId"), rowIds, CompareType.IN);
         Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
     }

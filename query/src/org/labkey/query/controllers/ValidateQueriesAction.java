@@ -15,8 +15,8 @@
  */
 package org.labkey.query.controllers;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -30,9 +30,6 @@ import org.labkey.query.ValidateQueriesVisitor;
 import org.springframework.validation.BindException;
 
 /**
- * User: kevink
- * Date: 10/12/12
- * 
  * Validates all queries.
  */
 @RequiresPermission(ReadPermission.class)
@@ -58,6 +55,7 @@ public class ValidateQueriesAction extends ReadOnlyApiAction
             JSONObject ret = new JSONObject();
             ret.put("valid", false);
             ret.put("warnings", warnings);
+
             return new ApiSimpleResponse(ret);
         }
         else

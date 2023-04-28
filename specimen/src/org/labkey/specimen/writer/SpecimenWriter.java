@@ -165,7 +165,7 @@ public class SpecimenWriter extends AbstractSpecimenWriter
                 sql.append("\n    ");
                 if (column.getJoinType() != null)
                     sql.append(column.getJoinType()).append(" ");
-                sql.append("JOIN ").append(specimenTableManager.getTableInfoFromFkTableName(column.getFkTable()).getSelectName()).append(" AS ").append(column.getFkTableAlias()).append(" ON ");
+                sql.append("JOIN ").append(specimenTableManager.getTableInfoFromFkTableName(column.getFkTable())).append(" AS ").append(column.getFkTableAlias()).append(" ON ");
                 sql.append("(se.");
                 sql.append(ci.getSelectName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
             }

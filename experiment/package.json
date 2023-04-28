@@ -10,10 +10,10 @@
     "build-dev": "npm run clean && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen",
-    "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand --silent -c test/js/jest.config.integration.js"
+    "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "2.326.0"
+    "@labkey/components": "2.331.0"
   },
   "devDependencies": {
     "@labkey/build": "6.10.0",
@@ -25,6 +25,7 @@
     "jest-cli": "29.2.2",
     "jest-environment-jsdom": "29.2.2",
     "jest-teamcity-reporter": "0.9.0",
+    "mock-fs": "5.1.4",
     "ts-jest": "29.0.3"
   }
 }

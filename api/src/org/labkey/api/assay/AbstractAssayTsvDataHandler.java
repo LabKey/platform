@@ -18,8 +18,8 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.old.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -70,6 +70,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -109,13 +110,25 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     };
 
-    private static final Logger LOG = LogManager.getLogger(AbstractAssayTsvDataHandler.class);
+    private static final Logger LOG = LogHelper.getLogger(AbstractAssayTsvDataHandler.class, "Info related to assay data import");
     private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
     @Override
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    {
+        importFile(data, dataFile, info, log, context, true);
+    }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
+    {
+        importFile(data, dataFile, info, log, context, allowLookupByAlternateKey, false);
+    }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
     {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
@@ -127,12 +140,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
         DataLoaderSettings settings = new DataLoaderSettings();
+        settings.setAllowLookupByAlternateKey(allowLookupByAlternateKey);
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
         try
         {
-            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings);
+            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns);
         }
         catch (ValidationException e)
         {
@@ -145,7 +159,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings);
+            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
         {
@@ -391,7 +405,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 try
                 {
-                    int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                    int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned)).execute(deleteSQL);
                     LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " assay result rows");
                 }
                 catch (BadSqlGrammarException x)
@@ -412,10 +426,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData)
             throws ExperimentException, ValidationException
     {
-        importRows(data, user, run, protocol, provider, rawData, null);
+        importRows(data, user, run, protocol, provider, rawData, null, false);
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData, @Nullable DataLoaderSettings settings)
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData, @Nullable DataLoaderSettings settings, boolean autoFillDefaultResultColumns)
             throws ExperimentException, ValidationException
     {
         if (settings == null)
@@ -450,7 +464,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
@@ -599,12 +613,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
+    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider,Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
             throws SQLException, ValidationException
     {
         if (tableInfo instanceof UpdateableTableInfo)
         {
-            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, LOG);
+            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, autoFillDefaultColumns, LOG);
         }
         else
         {
@@ -700,7 +714,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * TODO: Replace with a DataIterator pipeline
      * NOTE: Mutates the rawData list in-place
-     * @return the set of materials that are inputs to this run
+     * @return the map of materials that are inputs to this run
      */
     private Map<ExpMaterial, String> checkData(Container container,
                                                User user,
@@ -886,8 +900,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     iter.set(map);
                 }
 
-                // validate the data value
-                if (validatorMap.containsKey(pd))
+                // validate the data value for the non-sample lookup fields
+                // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
+                boolean isSampleLookupById = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
+                boolean isSampleLookupByName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+                if (validatorMap.containsKey(pd) && !isSampleLookupById && !isSampleLookupByName)
                 {
                     for (ColumnValidator validator : validatorMap.get(pd))
                     {
@@ -982,7 +999,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
                 // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
-                if (o instanceof String && remappableLookup.containsKey(pd))
+                // Issue 47509: if the value is a string and is for a SampleId lookup field, let the code below which handles populating materialInputs take care of the remapping.
+                if (o instanceof String && remappableLookup.containsKey(pd) && !isSampleLookupById)
                 {
                     TableInfo lookupTable = remappableLookup.get(pd);
                     try
@@ -1016,30 +1034,49 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // Collect sample names or ids for each of the SampleType lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
-                if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
+                if (o != null && (isSampleLookupById || isSampleLookupByName))
                 {
+                    ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
-                    Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
-                    ExpMaterial material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, (String)o, cache, materialCache);
-                    if (material != null)
-                    {
-                        materialInputs.putIfAbsent(material, pd.getName());
-                        rowInputLSIDs.add(material.getLSID());
-                    }
-                }
+                    Container lookupContainer = pd.getLookup().getContainer() != null ? pd.getLookup().getContainer() : container;
 
-                if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
-                {
-                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
+                    // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
+                    // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
+                    // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
+                    ExpMaterial material;
+                    if (settings.isAllowLookupByAlternateKey() || isSampleLookupByName)
+                        material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, o.toString(), cache, materialCache);
+                    else
+                        material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
+
                     if (material != null)
                     {
                         materialInputs.putIfAbsent(material, pd.getName());
                         rowInputLSIDs.add(material.getLSID());
+
+                        // If the lookup was defined with an explicit container, verify that the sample is in that container
+                        boolean matchesLookupContainer = pd.getLookup().getContainer() == null || material.getContainer().equals(pd.getLookup().getContainer());
+
+                        // Issue 47509: Since we have resolved the material here, adjust the data to be imported to the
+                        // results table to use the rowIds of the input sample if the lookup is lookupToSampleTypeById.
+                        // (note this updates the rawData object passed in to checkData which is used by convertPropertyNamesToURIs to create the fileData object).
+                        if (isSampleLookupById && matchesLookupContainer)
+                            map.put(pd.getName(), material.getRowId());
                     }
-                    else
+                    // show better error message then the "failed to convert" message that will be hit downstream
+                    else if (o instanceof String && isSampleLookupById)
                     {
                         errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
+                    }
+                    // check for sample Lookup Validator
+                    else if (validatorMap.containsKey(pd))
+                    {
+                        for (ColumnValidator validator : validatorMap.get(pd))
+                        {
+                            String error = validator.validate(rowNum, o, validatorContext);
+                            if (error != null)
+                                errors.add(new PropertyValidationError(error, pd.getName()));
+                        }
                     }
                 }
             }
@@ -1213,7 +1250,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 DomainProperty property = _importMap.get(key);
                 if (property != null)
                 {
-                    // Find all of the potential synonyms
+                    // Find all the potential synonyms
                     Set<String> allNames = _propToNames.get(property);
                     if (allNames != null)
                     {

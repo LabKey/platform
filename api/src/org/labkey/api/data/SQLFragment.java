@@ -105,9 +105,12 @@ public class SQLFragment implements Appendable, CharSequence
         sql = "";
     }
 
-    public SQLFragment(CharSequence sql, @Nullable List<?> params)
+    public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        this.sql = sql.toString();
+//        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+//        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        // allow statement separators
+        this.sql = charseq.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
     }
@@ -127,7 +130,9 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(SQLFragment other, boolean deep)
     {
-        this(other.getSqlCharSequence(), other.params);
+        sql = other.getSqlCharSequence().toString();
+        if (null != other.params)
+            addAll(other.params);
         if (null != other.commonTableExpressionsMap && !other.commonTableExpressionsMap.isEmpty())
         {
             if (null == this.commonTableExpressionsMap)
@@ -155,12 +160,18 @@ public class SQLFragment implements Appendable, CharSequence
         return null != sb ? sb.toString() : null != sql ? sql : "";
     }
 
-    /* useful for wrapping existing SQL, for instance adding a cast
+    /*
+     * Directly set the current SQL.
+     *
+     * This is useful for wrapping existing SQL, for instance adding a cast
      * Obviously parameter number and order must remain unchanged
+     *
+     * This can also be used for processing sql scripts (e.g. module .sql update scripts)
      */
-    public void setRawSQL(String sql)
+    public SQLFragment setSqlUnsafe(String sql)
     {
         sb = new StringBuilder(sql);
+        return this;
     }
 
     private String replaceCteTokens(String self, String select, List<Pair<String,CTE>> ctes)
@@ -348,7 +359,7 @@ public class SQLFragment implements Appendable, CharSequence
     private StringBuilder getStringBuilder()
     {
         if (null == sb)
-            sb = new StringBuilder(sql);
+            sb = new StringBuilder(null==sql?"":sql);
         return sb;
     }
 
@@ -602,11 +613,12 @@ public class SQLFragment implements Appendable, CharSequence
     /** see also append(TableInfo, String alias) */
     public SQLFragment append(TableInfo table)
     {
-        String s = table.getSelectName();
+        SQLFragment s = table.getSQLName();
         if (s != null)
             return append(s);
 
-        return append(table.getFromSQL(table.getName()));
+        String alias = table.getSqlDialect().makeLegalIdentifier(table.getName());
+        return append(table.getFromSQL(alias));
     }
 
     /** Add a table/query to the SQL with an alias, as used in a FROM clause */

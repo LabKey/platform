@@ -16,8 +16,10 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -28,6 +30,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channel;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 
 /**
@@ -41,12 +47,20 @@ import java.util.Date;
  */
 public interface FileStream
 {
+    Logger LOG = LogHelper.getLogger(FileStream.class, "File transfers");
+    /** @return -1 if unknown */
     long getSize() throws IOException;
 
     @Nullable
     default Date getLastModified() { return null; }
 
     InputStream openInputStream() throws IOException;
+
+    /** Override to provide a more optimized Channel */
+    default ReadableByteChannel getInputChannel() throws IOException
+    {
+        return Channels.newChannel(openInputStream());
+    }
 
     void closeInputStream() throws IOException;
 
@@ -63,11 +77,37 @@ public interface FileStream
             throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
         }
 
-        try (BufferedInputStream in = new BufferedInputStream(s.openInputStream());
-             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest));
-        )
+        boolean success = false;
+        long expected = s.getSize();
+        long actual = 0;
+        long bytesCopied;
+        try (ReadableByteChannel cIn = s.getInputChannel();
+             FileOutputStream fOut = new FileOutputStream(dest);
+             FileChannel cOut = fOut.getChannel())
         {
-            IOUtils.copy(in, out);
+            LOG.debug("Starting to transfer to " + dest + ", expecting " + (expected == -1 ? "an unknown number" : Long.toString(expected)) + " bytes");
+            do
+            {
+                bytesCopied = cOut.transferFrom(cIn, actual, Long.MAX_VALUE);
+                actual += bytesCopied;
+                if (actual != expected && bytesCopied != 0)
+                {
+                    LOG.debug("Still transferring to " + dest + ", " + actual + " bytes transferred so far");
+                }
+            }
+            while (bytesCopied != 0);
+            success = true;
+        }
+        finally
+        {
+            if (success)
+            {
+                LOG.debug("Finished transferring " + actual + " bytes to " + dest);
+            }
+            else
+            {
+                LOG.debug("Failed during transfer, but successfully copied at least " + actual + " bytes to " + dest);
+            }
         }
     }
 
@@ -190,7 +230,7 @@ public interface FileStream
         }
 
         @Override
-        public InputStream openInputStream() throws IOException
+        public FileInputStream openInputStream() throws IOException
         {
             if (file != null && in == null)
                 in = new FileInputStream(file);
