@@ -17,11 +17,12 @@ package org.labkey.query.olap;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.OlapException;
@@ -309,50 +310,37 @@ public class QubeQuery
      * JSON
      */
 
-    public void fromJson(org.json.JSONObject json, BindException errors) throws OlapException, BindException
-    {
-        fromJson(JSONObject.toOldJSONObject(json), errors);
-    }
-
     public void fromJson(JSONObject json, BindException errors) throws OlapException, BindException
     {
         this.errors = errors;
-        Object v = json.get("showEmpty");
-        showEmpty = null==v ? false : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
+        showEmpty = json.optBoolean("showEmpty");
+        includeNullMemberInCount = json.optBoolean("includeNullMemberInCount");
+        onRows = parseJsonExpr(json.opt("onRows"), OP.MEMBERS, OP.XINTERSECT);
 
-        v = json.get("includeNullMemberInCount");
-        includeNullMemberInCount = null==v ? true : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
-
-        onRows = parseJsonExpr(json.get("onRows"), OP.MEMBERS, OP.XINTERSECT);
-
-        Object cols = null != json.get("onColumns") ? json.get("onColumns") : json.get("onCols");
+        Object cols = null != json.opt("onColumns") ? json.get("onColumns") : json.opt("onCols");
         onColumns = parseJsonExpr(cols, OP.MEMBERS, OP.XINTERSECT);
 
-
-        Object countFilter = json.get("countFilter");
+        Object countFilter = json.opt("countFilter");
         if (null == countFilter)
-            countFilter = json.get("filter");
+            countFilter = json.opt("filter");
         if (countFilter instanceof JSONObject)
             countFilter = new JSONArray(Collections.singleton(countFilter));
         countFilters = parseJsonExpr(countFilter, OP.MEMBERS, OP.XINTERSECT);
 
-
-        Object sliceFilter = json.get("sliceFilter");
+        Object sliceFilter = json.opt("sliceFilter");
         if (sliceFilter instanceof JSONObject)
             sliceFilter = new JSONArray(Collections.singleton(sliceFilter));
         sliceFilters = parseJsonExpr(sliceFilter, OP.MEMBERS, OP.XINTERSECT);
 
-
-        Object whereFilter = json.get("whereFilter");
+        Object whereFilter = json.opt("whereFilter");
         if (whereFilter instanceof JSONObject)
             whereFilter = new JSONArray(Collections.singleton(whereFilter));
         whereFilters = parseJsonExpr(whereFilter, OP.MEMBERS, OP.XINTERSECT);
 
-
-        Object countDistinctLevelNameSpec = json.get("countDistinctLevel");
+        Object countDistinctLevelNameSpec = json.opt("countDistinctLevel");
         String countDistinctLevelName = toLevelName(countDistinctLevelNameSpec);
 
-        Object joinLevelNameSpec = json.get("joinLevel");
+        Object joinLevelNameSpec = json.opt("joinLevel");
         String joinLevelName = toLevelName(joinLevelNameSpec);
 
         if (!StringUtils.isEmpty(countDistinctLevelName))
@@ -392,15 +380,15 @@ public class QubeQuery
 
         JSONObject expr = null;
 
-        if (o instanceof JSONObject)
+        if (o instanceof JSONObject jo)
         {
-            expr = (JSONObject)o;
-            if (null == expr.get("operator"))
+            expr = jo;
+            if (null == expr.opt("operator"))
             {
-                if (null != expr.get("membersQuery") || null != expr.get("members") || null==defaultOp)
-                    expr.put("operator","MEMBERS");
+                if (null != expr.opt("membersQuery") || null != expr.opt("members") || null==defaultOp)
+                    expr.put("operator", "MEMBERS");
                 else
-                    expr.put("operator",defaultOp.toString());
+                    expr.put("operator", defaultOp.toString());
             }
         }
         else if (o instanceof JSONArray)
@@ -413,14 +401,11 @@ public class QubeQuery
     }
 
 
-    private QubeExpr parseJsonObject(Object o, OP defaultOp) throws OlapException, BindException
+    private QubeExpr parseJsonObject(JSONObject json, OP defaultOp) throws OlapException, BindException
     {
-        if (null == o)
+        if (null == json)
             return null;
-        if (!(o instanceof Map))
-            throw new IllegalArgumentException();
 
-        Map json = (Map)o;
         Object v = json.get("operator");
         OP operator = null==v ? defaultOp : OP.valueOf(v.toString());
         if (operator != OP.MEMBERS)
@@ -447,7 +432,7 @@ public class QubeQuery
             Level l = _getLevel(json, h);
 
             QubeMembersExpr e = new QubeMembersExpr(h,l,errors);
-            Object membersObj = json.get("members");
+            Object membersObj = json.opt("members");
             if (null != membersObj)
             {
                 if (membersObj instanceof String)
@@ -516,7 +501,7 @@ public class QubeQuery
                     throw errors;
                 }
             }
-            else if (null != json.get("membersQuery"))
+            else if (null != json.opt("membersQuery"))
             {
                 Object membersQuery = json.get("membersQuery");
                 if (!(membersQuery instanceof JSONObject))
@@ -526,20 +511,20 @@ public class QubeQuery
                 }
                 e.membersQuery = parseJsonExpr(membersQuery, OP.MEMBERS, OP.XINTERSECT);
             }
-            else if (null != json.get("sql"))
+            else if (null != json.opt("sql"))
             {
                 // execution code needs to make sure user has permission to execute this query, if it is running as a service user
-                e.sql = (String)json.get("sql");
+                e.sql = json.getString("sql");
             }
-            else if (null != json.get("getData"))
+            else if (null != json.opt("getData"))
             {
                 // execution code needs to make sure user has permission to execute this query, if it is running as a service user
-                e.getData = (JSONObject)json.get("getData");
+                e.getData = json.getJSONObject("getData");
             }
-            else if (null != json.get("getDataCDS"))
+            else if (null != json.opt("getDataCDS"))
             {
                 // execution code needs to make sure user has permission to execute this query, if it is running as a service user
-                e.getDataCDS = (JSONObject)json.get("getDataCDS");
+                e.getDataCDS = json.getJSONObject("getDataCDS");
             }
             else
             {
@@ -551,9 +536,9 @@ public class QubeQuery
     }
 
 
-    Hierarchy _getHierarchy(Map json) throws BindException
+    Hierarchy _getHierarchy(JSONObject json) throws BindException
     {
-        String hierarchyName = (String)json.get("hierarchy");
+        String hierarchyName = json.optString("hierarchy", null);
         if (null == hierarchyName)
             return null;
         Hierarchy h = _getHierarchy(hierarchyName);
@@ -566,9 +551,9 @@ public class QubeQuery
     }
 
 
-    Level _getLevel(Map json, Hierarchy scope) throws BindException
+    Level _getLevel(JSONObject json, Hierarchy scope) throws BindException
     {
-        String levelName = (String)json.get("level");
+        String levelName = json.optString("level", null);
         if (null != levelName)
         {
             Level l = _getLevel(levelName,scope);
@@ -606,9 +591,9 @@ public class QubeQuery
             uniqueName =  (String)json.get("uniqueName");
         else if (null != json.get("uname"))
         {
-            JSONArray uname = (JSONArray)json.get("uname");
+            JSONArray uname = json.getJSONArray("uname");
             Path path = new Path();
-            for (Object o : uname.toArray())
+            for (Object o : JsonUtil.toJSONObjectList(uname))
                 path = path.append(String.valueOf(o));
             uniqueName = pathToUniqueName(path);
         }

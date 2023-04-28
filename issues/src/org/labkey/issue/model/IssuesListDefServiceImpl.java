@@ -294,13 +294,6 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    @Deprecated // TODO: Delete
-    public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body)
-    {
-        return createIssue(container, user, issueDefName, title, null != body ? HtmlString.unsafe(body) : null);
-    }
-
-    @Override
     public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable HtmlString body)
     {
         IssueListDef def = IssueManager.getIssueListDef(container, issueDefName);

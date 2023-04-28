@@ -92,7 +92,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         JSONObject json = form.getJsonObject();
         if (null == json)
             json = new JSONObject();
-        String from = json.optString(Props.msgFrom.name());
+        String from = json.optString(Props.msgFrom.name(), null);
         String subject = json.optString(Props.msgSubject.name());
 
         if (from == null)

@@ -528,10 +528,11 @@ public class ExpDataIterators
         final ExpSampleType _sampleType;
         final MapDataIterator _data;
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
-        final List<Integer> _keys = new ArrayList<>();
+        final List<Integer> _derivativeKeys = new ArrayList<>();
         final UserSchema _schema;
-        private boolean _isDerivation = false;
+        private boolean _hasParentInput;
         final Integer _rowIdCol;
+        final List<Integer> _parentCols = new ArrayList<>();
 
         protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
@@ -548,12 +549,12 @@ public class ExpDataIterators
 
             for (String name : nameMap.keySet())
             {
-                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name))
+                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase("AliquotedFrom", name))
                 {
-                    _isDerivation = true;
-                    break;
+                    _parentCols.add(nameMap.get(name));
                 }
             }
+            _hasParentInput = !_parentCols.isEmpty();
         }
 
         @Override
@@ -563,34 +564,51 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                if (!_rows.isEmpty())
+                if (!_derivativeKeys.isEmpty())
                 {
-                    if (_isDerivation)
-                    {
-                        _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                            try
-                            {
-                                // derived samples can't be linked until after the transaction is committed
-                                StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _keys, _container, _user);
-                            }
-                            catch (ExperimentException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        }, DbScope.CommitTaskOption.POSTCOMMIT);
-                    }
-                    else
-                        StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                        try
+                        {
+                            // derived samples can't be linked until after the transaction is committed
+                            StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
                 }
+
+                if (!_rows.isEmpty())
+                    StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+
                 return false;
             }
-            Map<FieldKey, Object> row = new HashMap<>();
-            for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
-                row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
-            _rows.add(row);
+            boolean isDerivative = false;
+            if (_hasParentInput)
+            {
+                for (Integer parentCol : _parentCols)
+                {
+                    if (get(parentCol) != null)
+                    {
+                        isDerivative = true;
+                        break;
+                    }
+                }
+            }
 
-            if (_isDerivation && _rowIdCol != null)
-                _keys.add((Integer)get(_rowIdCol));
+            if (!isDerivative)
+            {
+                Map<FieldKey, Object> row = new HashMap<>();
+                for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
+                    row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
+                _rows.add(row);
+            }
+            else
+            {
+                _derivativeKeys.add((Integer)get(_rowIdCol));
+            }
+
 
             return true;
         }
