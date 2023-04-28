@@ -33,8 +33,6 @@ import java.util.Map;
 
 /**
  * Writer that knows how to generate a JSON version of the content back to the client.
- * User: tgaluhn
- * Date: 5/13/13
  */
 public class ApiJsonWriter extends ApiResponseWriter
 {
@@ -189,7 +187,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             jg.writeEndArray();
         }
-        else if (value instanceof JSONArray jsonArray)
+        else if (value instanceof JSONArray jsonArray) // TODO: replace the upstream creation of these JSONArrays with Jackson methods
         {
             jg.writeStartArray();
             for (Object o : jsonArray)

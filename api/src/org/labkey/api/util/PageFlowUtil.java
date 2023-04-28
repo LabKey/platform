@@ -753,14 +753,15 @@ public class PageFlowUtil
 
 
     /**
-     * boolean controlling whether or not we compress JSON-serialized objects when we render them in HTML forms.
+     * boolean controlling whether we compress JSON-serialized objects when we render them in HTML forms.
      */
-    static private final boolean COMPRESS_OBJECT_STREAMS = true;
+    private static final boolean COMPRESS_OBJECT_STREAMS = true;
 
     static public HtmlString encodeObject(Object o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        OutputStream osCompressed;
+        final OutputStream osCompressed;
+
         if (COMPRESS_OBJECT_STREAMS)
         {
             osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
@@ -769,6 +770,7 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
+
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             Class cls = o.getClass();
@@ -785,7 +787,7 @@ public class PageFlowUtil
             }
             w.write(json.toString());
         }
-        osCompressed.close();
+
         return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
@@ -2644,7 +2646,6 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
-
         @Test
         public void testScriptDetection()
         {

@@ -3352,7 +3352,9 @@ public class ExperimentController extends SpringActionController
                 tx.commit();
             }
 
-            response.putIfAbsent("success", !errors.hasErrors());
+            if (null != response.get("success"))
+                response.put("success", !errors.hasErrors());
+
             return response;
         }
 

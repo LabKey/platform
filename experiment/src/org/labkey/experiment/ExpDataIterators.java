@@ -895,10 +895,6 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    else if (o instanceof org.json.old.JSONArray ja)
-                    {
-                        parentNames = Arrays.stream(ja.toArray()).map(String::valueOf).collect(Collectors.toSet());
-                    }
                     else if (o instanceof JSONArray ja)
                     {
                         parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
@@ -921,9 +917,9 @@ public class ExpDataIterators
 
                     String parentColName = _parentCols.get(parentCol);
                     Set<Pair<String, String>> parts = parentNames.stream()
-                            .map(String::trim)
-                            .map(s -> Pair.of(parentColName, s))
-                            .collect(Collectors.toSet());
+                        .map(String::trim)
+                        .map(s -> Pair.of(parentColName, s))
+                        .collect(Collectors.toSet());
 
                     allParts.addAll(parts);
                 }
