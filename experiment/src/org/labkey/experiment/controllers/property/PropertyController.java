@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1007,24 +1006,10 @@ public class PropertyController extends SpringActionController
             if (optionsProperties == null)
             {
                 JSONObject jsOptions = getOptions();
-                if (jsOptions == null)
-                    jsOptions = new JSONObject();
-
-                optionsProperties = new HashMap<>();
-
-                // Convert JSONObject to a Map, unpacking JSONArray as we go.
-                // XXX: There must be utility for this somewhere?
-                for (String key : jsOptions.keySet())
-                {
-                    Object value = jsOptions.get(key);
-                    if (value instanceof JSONArray ja)
-                        optionsProperties.put(key, ja.toList());
-                    else
-                        optionsProperties.put(key, value);
-                }
+                optionsProperties = Collections.unmodifiableMap(jsOptions == null ? new HashMap<>() : jsOptions.toMap());
             }
 
-            return Collections.unmodifiableMap(optionsProperties);
+            return optionsProperties;
         }
 
         @JsonIgnore
