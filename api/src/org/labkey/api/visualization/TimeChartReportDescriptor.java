@@ -104,7 +104,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     {
         JSONArray measures = json.getJSONArray("measures");
 
-        for(int i = 0; i < measures.length(); i++)
+        for (int i = 0; i < measures.length(); i++)
         {
             try
             {
