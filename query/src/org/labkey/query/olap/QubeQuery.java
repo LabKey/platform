@@ -197,9 +197,6 @@ public class QubeQuery
         Level l = _cubeLevelMap.get(levelName);
         if (null != l || null == scope)
             return l;
-        l = scope.getLevels().get(levelName);
-        if (null != l)
-            return l;
         return scope.getLevels().get(levelName);
     }
 
@@ -337,11 +334,9 @@ public class QubeQuery
             whereFilter = new JSONArray(Collections.singleton(whereFilter));
         whereFilters = parseJsonExpr(whereFilter, OP.MEMBERS, OP.XINTERSECT);
 
-        Object countDistinctLevelNameSpec = json.opt("countDistinctLevel");
-        String countDistinctLevelName = toLevelName(countDistinctLevelNameSpec);
+        String countDistinctLevelName = toLevelName(json.opt("countDistinctLevel"));
 
-        Object joinLevelNameSpec = json.opt("joinLevel");
-        String joinLevelName = toLevelName(joinLevelNameSpec);
+        String joinLevelName = toLevelName(json.opt("joinLevel"));
 
         if (!StringUtils.isEmpty(countDistinctLevelName))
         {
@@ -366,9 +361,9 @@ public class QubeQuery
         {
             return (String)levelSpec;
         }
-        else if (levelSpec instanceof Map && ((Map)levelSpec).get("uniqueName") instanceof String)
+        else if (levelSpec instanceof JSONObject levelJSON)
         {
-            return (String)((Map)levelSpec).get("uniqueName");
+            return levelJSON.optString("uniqueName");
         }
         return null;
     }
@@ -406,22 +401,26 @@ public class QubeQuery
         if (null == json)
             return null;
 
-        Object v = json.get("operator");
+        Object v = json.opt("operator");
         OP operator = null==v ? defaultOp : OP.valueOf(v.toString());
         if (operator != OP.MEMBERS)
         {
             JSONArray array;
             ArrayList<QubeExpr> arguments = new ArrayList<>();
-            v = json.get("arguments");
+            v = json.opt("arguments");
             if (null == v)
             {
                 errors.reject(SpringActionController.ERROR_MSG, ("Operator with no arguments: " + operator));
                 throw errors;
             }
-            if (!(v instanceof JSONArray))
-                array = new JSONArray(Collections.singletonList(v));
+            if (v instanceof JSONArray arr)
+            {
+                array = arr;
+            }
             else
-                array = (JSONArray)v;
+            {
+                array = new JSONArray(Collections.singletonList(v));
+            }
             for (int i=0 ; i<array.length() ; i++)
                 arguments.add(parseJsonExpr(array.get(i),OP.MEMBERS, OP.XINTERSECT));
             return new QubeExpr(operator,arguments);
@@ -435,15 +434,15 @@ public class QubeQuery
             Object membersObj = json.opt("members");
             if (null != membersObj)
             {
-                if (membersObj instanceof String)
+                if (membersObj instanceof String membersStr)
                 {
-                    if ("members".equals(membersObj))
+                    if ("members".equals(membersStr))
                         e.membersMember = true;
-                    else if ("children".equals(membersObj))
+                    else if ("children".equals(membersStr))
                         e.childrenMember = true;
                     else
                     {
-                        Member m = _getMember(membersObj, h, l);
+                        Member m = _getMember(membersStr, h, l);
                         if (null == m)
                         {
                             errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + String.valueOf(membersObj));
@@ -452,10 +451,9 @@ public class QubeQuery
                         e.membersSet = Collections.singleton(m);
                     }
                 }
-                else if (membersObj instanceof JSONArray)
+                else if (membersObj instanceof JSONArray arr)
                 {
                     TreeSet<Member> set = new TreeSet<>(new CompareMetaDataElement());
-                    JSONArray arr = (JSONArray) membersObj;
                     for (int i=0 ; i<arr.length() ; i++)
                     {
                         Member m = _getMember(arr.get(i), h, l);
@@ -468,14 +466,14 @@ public class QubeQuery
                     }
                     e.membersSet = set;
                 }
-                else if (membersObj instanceof JSONObject)
+                else if (membersObj instanceof JSONObject membersJson)
                 {
-                    if (((Map)membersObj).containsKey("namedSet"))
+                    if (membersJson.has("namedSet"))
                     {
                         // For now we're only expecting a single optional property in the json map, to use a previously
                         // saved named set substition for the members enumeration.
-                        Object setName = ((Map) membersObj).get("namedSet");
-                        if (setName == null || !(setName instanceof String) || setName.toString().equals(""))
+                        Object setName = membersJson.get("namedSet");
+                        if (!(setName instanceof String) || setName.toString().equals(""))
                         {
                             errors.reject(SpringActionController.ERROR_MSG, "Could not parse namedSet for members property");
                             throw errors;
@@ -569,7 +567,7 @@ public class QubeQuery
             errors.reject(SpringActionController.ERROR_MSG, msg);
             throw errors;
         }
-        Object lnumO = json.get("lnum");
+        Object lnumO = json.opt("lnum");
         if (null != lnumO)
         {
             int lnum = (Integer)ConvertUtils.convert(String.valueOf(lnumO), Integer.class);
@@ -587,9 +585,9 @@ public class QubeQuery
         JSONObject json = (JSONObject)memberSpec;
 
         String uniqueName = null;
-        if (json.get("uniqueName") instanceof String)
-            uniqueName =  (String)json.get("uniqueName");
-        else if (null != json.get("uname"))
+        if (json.opt("uniqueName") instanceof String)
+            uniqueName =  json.getString("uniqueName");
+        else if (null != json.opt("uname"))
         {
             JSONArray uname = json.getJSONArray("uname");
             Path path = new Path();
