@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Helper methods for parsing JSON objects using Jackson.
+ * Helper methods for working with Jackson, JSONObject, and JSONArray
  */
 public class JsonUtil
 {
@@ -266,9 +266,9 @@ public class JsonUtil
             {
                 /*
                    Comments are explicitly disallowed in JSON, but some documents still include them and some parsers
-                   allow them. In our case, the old org.json.JSONObject implementation tolerated comments but the
-                   newer one does not. This document is used to test that comments normally cause the new JSONObject
-                   parser to fail and stripComments() successfully strips Java-style block and single-line comments.
+                   allow them. In our case, the old JSONObject implementation tolerated comments but the newer one does
+                   not. This document is used to test that comments normally cause the new JSONObject parser to fail and
+                   stripComments() successfully strips Java-style block and single-line comments.
                 */
                 "widget": {  // widget is the top-level object
                     "debug": "on",
