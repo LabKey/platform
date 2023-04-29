@@ -18,9 +18,9 @@ package org.labkey.api.visualization;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
@@ -112,11 +112,11 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                 JSONArray values = dimension.getJSONArray("values");
                 JSONArray transformedPTIDs = new JSONArray();
 
-                if(values != null)
+                if (values != null)
                 {
-                    for(int j = 0; j < values.length(); j++)
+                    for (int j = 0; j < values.length(); j++)
                     {
-                        if(alternateIdMap.containsKey(values.get(j)))
+                        if (alternateIdMap.containsKey(values.get(j)))
                         {
                             transformedPTIDs.put(alternateIdMap.get(values.get(j)));
                         }
@@ -131,7 +131,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
             catch(JSONException e)
             {
-                if(e.getMessage().contains("is not a JSONArray"))
+                if (e.getMessage().contains("is not a JSONArray"))
                 {
                     // no-op, values is not always defined so this is an acceptable failure.
                 }
@@ -195,7 +195,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), "queryName", changes);
 
             JSONArray measures = json.getJSONArray("measures");
-            for(int i = 0; i < measures.length(); i++)
+            for (int i = 0; i < measures.length(); i++)
             {
                 // update dateOptions queryNames for dateCol and zeroDateCol
                 boolean dateColUpdates = false;

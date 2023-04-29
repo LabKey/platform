@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -1124,15 +1124,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (provenanceInputs instanceof JSONArray inputJSONArr)
                 {
-                    Object[] inputArr = inputJSONArr.toArray();
-                    for (Object lsid: inputArr)
+                    for (Object lsid: inputJSONArr.toList())
                     {
                         rowInputLSIDs.add(lsid.toString());
                     }
                 }
-                else if (provenanceInputs instanceof Collection)
+                else if (provenanceInputs instanceof Collection<?> col)
                 {
-                    for (Object obj : (Collection)provenanceInputs)
+                    for (Object obj : col)
                     {
                         rowInputLSIDs.add(Objects.toString(obj));
                     }

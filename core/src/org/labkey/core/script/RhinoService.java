@@ -1079,9 +1079,8 @@ class SandboxContextFactory extends ContextFactory
                 return cx.newObject(scope, ScriptableErrorsList.CLASSNAME, new Object[] { obj });
             else if (obj instanceof char[])
                 return new String((char[])obj);
-            else if (obj instanceof Object[])
+            else if (obj instanceof Object[] arr)
             {
-                Object[] arr = (Object[])obj;
                 int len = arr.length;
                 Object[] wrapped = new Object[len];
                 Class<?> componentType = arr.getClass().getComponentType();
