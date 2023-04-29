@@ -95,13 +95,13 @@ public class ApiXmlWriter extends ApiResponseWriter
             {
                 _xmlWriter.writeCharacters(filter(value.toString()));
             }
-            else if (value instanceof JSONObject)
+            else if (value instanceof JSONObject jo)
             {
-                writeJsonObjInternal((JSONObject) value);
+                writeJsonObjInternal(jo);
             }
-            else if (value instanceof JSONArray)
+            else if (value instanceof JSONArray ja)
             {
-                writeJsonArray((JSONArray) value);
+                writeJsonArray(ja);
             }
             else if (value instanceof Map)
             {

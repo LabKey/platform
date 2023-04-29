@@ -2613,7 +2613,7 @@ public class ExperimentController extends SpringActionController
                 {
                     for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        List<Object> objectList = ((JSONArray) rowsArray.get(i)).toList();
+                        List<Object> objectList = rowsArray.getJSONArray(i).toList();
                         Iterator<Object> it = objectList.iterator();
                         List<String> list = new ArrayList<>();
 
