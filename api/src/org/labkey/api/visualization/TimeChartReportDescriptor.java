@@ -109,7 +109,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             try
             {
                 JSONObject dimension = measures.getJSONObject(i).getJSONObject("dimension");
-                JSONArray values = dimension.getJSONArray("values");
+                JSONArray values = dimension.optJSONArray("values");
                 JSONArray transformedPTIDs = new JSONArray();
 
                 if (values != null)
