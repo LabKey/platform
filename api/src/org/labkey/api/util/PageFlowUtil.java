@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -773,17 +774,18 @@ public class PageFlowUtil
 
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            Class cls = o.getClass();
-            final org.json.old.JSONObject json;
-            if (o instanceof Map)
+            Class<?> cls = o.getClass();
+            final JSONObject json;
+            if (o instanceof Map<?, ?> m)
             {
-                json = new org.json.old.JSONObject((Map)o);
+                json = new JSONObject(m);
             }
             else
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new org.json.old.JSONObject();
-                f.toMap(o, json);
+                Map<String, Object> map = new HashMap<>();
+                f.toMap(o, map);
+                json = new JSONObject(map);
             }
             w.write(json.toString());
         }
@@ -801,25 +803,26 @@ public class PageFlowUtil
 
         byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-        InputStream isCompressed;
+        final InputStream isUncompressed;
 
         if (COMPRESS_OBJECT_STREAMS)
         {
-            isCompressed = new InflaterInputStream(byteArrayInputStream);
+            isUncompressed = new InflaterInputStream(byteArrayInputStream);
         }
         else
         {
-            isCompressed = byteArrayInputStream;
+            isUncompressed = byteArrayInputStream;
         }
-        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
+        try (InputStream is=isUncompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
+            JSONObject json = new JSONObject(new JSONTokener(r));
+            Map<String, Object> map = json.toMap();
 
             if (cls == Map.class || cls == HashMap.class)
-                return (T)json;
+                return (T)map;
 
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(json);
+            Object o = f.fromMap(map);
             if (cls.isAssignableFrom(o.getClass()))
                 return (T)o;
             throw new ClassCastException("Could not create class: " + cls.getName());
