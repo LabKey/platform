@@ -86,6 +86,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
@@ -1097,6 +1098,7 @@ public class PropertyController extends SpringActionController
         {
             Map<String, MultipartFile> fileMap = getFileMap();
             File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
+            FileType guessFormat = form.isGuessFormatAsTSV() ? TabLoader.TSV_FILE_TYPE : null;
             DataLoader loader = null;
 
             try
@@ -1105,14 +1107,14 @@ public class PropertyController extends SpringActionController
                 // Allow preview only for files under the pipeline root.
                 if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
                 {
-                    loader = DataLoader.get().createLoader(file, null, true, null, null);
+                    loader = DataLoader.get().createLoader(file, null, true, null, guessFormat);
                 }
                 else if (fileMap.size() == 1)
                 {
                     Optional<MultipartFile> opt = fileMap.values().stream().findAny();
                     MultipartFile postedFile = opt.orElse(null);
                     if (postedFile != null)
-                        loader = DataLoader.get().createLoader(postedFile, true, null, null);
+                        loader = DataLoader.get().createLoader(postedFile, true, null, guessFormat);
                 }
                 else
                 {
@@ -1172,6 +1174,7 @@ public class PropertyController extends SpringActionController
         private Integer _numLinesToInclude;
         private Object _file;
         private String _domainKindName;
+        private boolean _guessFormatAsTSV;
 
         public Integer getNumLinesToInclude()
         {
@@ -1201,6 +1204,16 @@ public class PropertyController extends SpringActionController
         public void setDomainKindName(String domainKindName)
         {
             _domainKindName = domainKindName;
+        }
+
+        public boolean isGuessFormatAsTSV()
+        {
+            return _guessFormatAsTSV;
+        }
+
+        public void setGuessFormatAsTSV(boolean guessFormatAsTSV)
+        {
+            _guessFormatAsTSV = guessFormatAsTSV;
         }
     }
 
