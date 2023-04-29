@@ -222,15 +222,14 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
                 // update measure queryName
                 JSONObject measureJson = measures.getJSONObject(i).getJSONObject("measure");
-                String origQueryName = measureJson.getString("queryName");
                 boolean measureUpdates = updateJSONObjectQueryNameReference(measureJson, "queryName", changes);
                 // special case for measure queryname:
                 // reset the measure alias based on the schemaName_queryName_measureName and add a queryLabel
                 if (measureUpdates)
                 {
-                    String schema = measureJson.getString("schemaName");
-                    String query = measureJson.getString("queryName");
-                    String name = measureJson.getString("name");
+                    String schema = measureJson.optString("schemaName", null);
+                    String query = measureJson.optString("queryName", null);
+                    String name = measureJson.optString("name", null);
                     if (schema != null && query != null && name != null)
                         measureJson.put("alias", schema + "_" + query + "_" + name);
 
@@ -248,7 +247,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
 
             // update filterQuery (should be schema.query)
-            if (null != json.getString("filterQuery"))
+            if (null != json.optString("filterQuery", null))
             {
                 String[] keyParts = json.getString("filterQuery").split("\\.");
                 if (keyParts.length == 2 && queryNameChangeMap.containsKey(keyParts[1]))
@@ -260,7 +259,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
 
             // update filterUrl (parameter fieldKeys)
-            if (null != json.getString("filterUrl"))
+            if (null != json.optString("filterUrl", null))
             {
                 boolean filterUrlChanges = false;
                 ActionURL filterUrl = new ActionURL(json.getString("filterUrl"));
@@ -304,7 +303,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     private boolean updateJSONObjectQueryNameReference(JSONObject json, String propName, Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
-        String queryName = json.getString(propName);
+        String queryName = json.optString(propName, null);
         if (queryName != null)
         {
             for (QueryChangeListener.QueryPropertyChange qpc : changes)
