@@ -178,15 +178,6 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             jg.writeEndArray();
         }
-        else if (value instanceof org.json.old.JSONArray jsonArray)  // JSONArray is a wrapper for ArrayList, but doesn't expose the same convenience methods. TODO: replace the upstream creation of these JSONArrays with Jackson methods
-        {
-            jg.writeStartArray();
-            for (int i = 0; i < jsonArray.length(); i++)
-            {
-                writeObject(jsonArray.get(i));
-            }
-            jg.writeEndArray();
-        }
         else if (value instanceof JSONArray jsonArray) // TODO: replace the upstream creation of these JSONArrays with Jackson methods
         {
             jg.writeStartArray();

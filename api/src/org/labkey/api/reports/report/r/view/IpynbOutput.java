@@ -17,10 +17,11 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.reports.report.ScriptOutput;
@@ -37,6 +38,7 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -114,19 +116,19 @@ public class IpynbOutput extends HtmlOutput
 
         private String getSource(JSONObject cell)
         {
-            Object o = cell.get("source");
+            Object o = cell.opt("source");
             if (null == o)
-                o = cell.get("input");      // non-compiled ipynb???
+                o = cell.opt("input");      // non-compiled ipynb???
             if (o instanceof JSONArray jarray)
             {
-                Object[] sourceArray = jarray.toArray();
+                List<Object> sourceArray = jarray.toList();
                 return StringUtils.join(sourceArray,"");
             }
             return null;
         }
 
 
-        Pattern ansiColor = Pattern.compile("\u001B\\[[;0-9]+m");
+        private final Pattern ansiColor = Pattern.compile("\u001B\\[[;0-9]+m");
 
         String stripAnsiColors(String s)
         {
@@ -156,12 +158,12 @@ public class IpynbOutput extends HtmlOutput
                 HtmlStringBuilder sb = HtmlStringBuilder.of();
                 sb.append(HtmlString.unsafe("<div class=labkey-wiki>"));
 
-                JSONArray arr = (JSONArray) obj.get("cells");
+                JSONArray arr = obj.optJSONArray("cells");
                 if (null == arr)
                 {
-                    JSONArray worksheets = (JSONArray) obj.get("worksheets");
+                    JSONArray worksheets = obj.optJSONArray("worksheets");
                     if (null != worksheets && worksheets.length() > 0)
-                        arr = (JSONArray) ((JSONObject) worksheets.get(0)).get("cells");
+                        arr = worksheets.getJSONObject(0).optJSONArray("cells");
                 }
 
                 // TODO move to stylesheet
@@ -169,7 +171,7 @@ public class IpynbOutput extends HtmlOutput
 
                 for (int cellindex = 0; null != arr && cellindex < arr.length(); cellindex++)
                 {
-                    JSONObject cell = (JSONObject) arr.get(cellindex);
+                    JSONObject cell = arr.getJSONObject(cellindex);
                     String cell_type = String.valueOf(cell.get("cell_type"));
                     String execution_count = null;
                     if (null != cell.get("execution_count"))
@@ -185,23 +187,15 @@ public class IpynbOutput extends HtmlOutput
 
                     switch (cell_type)
                     {
-                        case "markdown":
-                            renderMarkdownSource(sb, cell);
-                            break;
-                        case "raw":
-                            renderRawSource(sb, cell);
-                            break;
-                        case "code":
-                            renderCodeSource(sb, cell);
-                            break;
-                        case "header": // old format
-                            renderHeaderCell(sb, cell);
-                            break;
+                        case "markdown" -> renderMarkdownSource(sb, cell);
+                        case "raw" -> renderRawSource(sb, cell);
+                        case "code" -> renderCodeSource(sb, cell);
+                        case "header" -> renderHeaderCell(sb, cell); // old format
                     }
 
                     sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-source
 
-                    JSONArray outputs = (JSONArray) cell.get("outputs");
+                    JSONArray outputs = cell.optJSONArray("outputs");
                     if (outputs != null && outputs.length() > 0)
                     {
                         sb.append(executionCountDiv);
@@ -209,7 +203,7 @@ public class IpynbOutput extends HtmlOutput
 
                         for (int outputindex = 0; outputindex < outputs.length(); outputindex++)
                         {
-                            renderOutput(sb, (JSONObject) outputs.get(outputindex));
+                            renderOutput(sb, outputs.getJSONObject(outputindex));
                         }
 
                         sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-outputs
@@ -279,7 +273,7 @@ public class IpynbOutput extends HtmlOutput
 
         /* see https://ipython.org/ipython-doc/3/notebook/nbformat.html */
         /* TODO it would be nice if Outputs implemented Renderable to avoid putting this all into HtmlStringBuilder */
-        private void renderOutput(HtmlStringBuilder sbOutput, JSONObject output)
+        private void renderOutput(HtmlStringBuilder sbOutput, @NotNull JSONObject output)
         {
             HtmlStringBuilder sb = HtmlStringBuilder.of();
             JSONObject data = output;
@@ -297,7 +291,7 @@ public class IpynbOutput extends HtmlOutput
                     sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-error\">"));
                     sb.append(HtmlString.unsafe("<pre>\n"));
                     sb.append(HtmlString.unsafe("<b>")).append((String)output.get("ename")).append(": ").append((String)output.get("evalue")).append(HtmlString.unsafe("</b><br>"));
-                    JSONArray traceback = (JSONArray)output.get("traceback");
+                    JSONArray traceback = output.optJSONArray("traceback");
                     if (null != traceback)
                     {
                         for (int i=0 ; i<traceback.length() ; i++)
@@ -317,7 +311,7 @@ public class IpynbOutput extends HtmlOutput
                 case "raw":
                 case "stream":
                     if (null != output.get("data"))
-                        data = (JSONObject) output.get("data");
+                        data = output.optJSONObject("data");
                     if (null != data)
                     {
                         String imagePng = StringUtils.defaultString((String) data.get("image/png"), (String) data.get("png"));
@@ -336,7 +330,7 @@ public class IpynbOutput extends HtmlOutput
                         }
                         if (null != data.get("image/svg+xml"))
                         {
-                            var textArray = (JSONArray)data.get("image/svg+xml");
+                            var textArray = data.getJSONArray("image/svg+xml");
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-svg\">"));
                             for (int i=0 ; i<textArray.length() ; i++)
                                 sb.append(HtmlString.unsafe((String)textArray.get(i)));
@@ -347,7 +341,7 @@ public class IpynbOutput extends HtmlOutput
                         if (null != data.get("text/plain") || null != data.get("text"))
                         {
                             boolean isError = "stderr".equals(data.get("name"));
-                            var textArray = (JSONArray) Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
+                            var textArray = Objects.requireNonNullElse(data.optJSONArray("text/plain"), data.getJSONArray("text"));
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"" + (isError ? "ipynb-error" : "ipynb-text") + "\">"));
                             sb.append(HtmlString.unsafe("<pre>\n"));
                             for (int i=0 ; i<textArray.length() ; i++)

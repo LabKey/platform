@@ -20,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1065,9 +1065,9 @@ class SandboxContextFactory extends ContextFactory
         @Override
         public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType)
         {
-            // Unwrap JSONArrays to standard arrays first
-            if (obj instanceof JSONArray)
-                obj = ((JSONArray)obj).toArray();
+            // Unwrap JSONArrays to standard lists first
+            if (obj instanceof JSONArray ja)
+                obj = ja.toList();
 
             if (obj instanceof Map)
                 return new ScriptableMap(scope, (Map)obj);
