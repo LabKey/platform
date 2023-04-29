@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.sql.Connection;
@@ -74,13 +75,13 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         return execute(sql, NORMAL_EXECUTOR, null).intValue();
     }
 
-    public Collection<String> getExecutionPlan(SQLFragment sql)
+    public Collection<String> getExecutionPlan(SQLFragment sql, ExecutionPlanType type)
     {
         SqlDialect dialect = getScope().getSqlDialect();
 
-        if (dialect.canShowExecutionPlan())
+        if (dialect.canShowExecutionPlan(type))
         {
-            return dialect.getExecutionPlan(getScope(), sql);
+            return dialect.getExecutionPlan(getScope(), sql, type);
         }
         else
         {
@@ -91,10 +92,10 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
     /**
      *  Convenience method that logs the plan to the passed in Logger (if non-null)
      */
-    public void logExecutionPlan(@Nullable Logger logger, SQLFragment sql)
+    public void logExecutionPlan(@Nullable Logger logger, SQLFragment sql, ExecutionPlanType type)
     {
         if (null != logger)
-            logger.info(String.join("\n", getExecutionPlan(sql)));
+            logger.info(String.join("\n", getExecutionPlan(sql, type)));
     }
 
     public <T> T executeWithResults(SQLFragment sql, ResultSetHandler<T> handler)
