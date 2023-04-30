@@ -758,7 +758,7 @@ public class PageFlowUtil
      */
     private static final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public HtmlString encodeObject(Object o) throws IOException
+    public static <T> HtmlString encodeObject(T o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final OutputStream osCompressed;
@@ -774,20 +774,20 @@ public class PageFlowUtil
 
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            Class<?> cls = o.getClass();
-            final JSONObject json;
+            final Map<?, ?> map;
+
             if (o instanceof Map<?, ?> m)
             {
-                json = new JSONObject(m);
+                map = m;
             }
             else
             {
-                ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                Map<String, Object> map = new HashMap<>();
-                f.toMap(o, map);
-                json = new JSONObject(map);
+                @SuppressWarnings("unchecked")
+                ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)o.getClass());
+                map = f.toMap(o, new HashMap<>());
             }
-            w.write(json.toString());
+
+            w.write(new JSONObject(map).toString());
         }
 
         return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
@@ -821,10 +821,11 @@ public class PageFlowUtil
             if (cls == Map.class || cls == HashMap.class)
                 return (T)map;
 
-            ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(map);
+            ObjectFactory<T> f = ObjectFactory.Registry.getFactory(cls);
+            T o = f.fromMap(map);
             if (cls.isAssignableFrom(o.getClass()))
-                return (T)o;
+                return o;
+
             throw new ClassCastException("Could not create class: " + cls.getName());
         }
         catch (IllegalArgumentException x)
