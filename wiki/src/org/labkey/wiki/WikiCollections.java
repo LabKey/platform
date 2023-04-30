@@ -95,7 +95,11 @@ public class WikiCollections
         new SqlSelector(CommSchema.getInstance().getSchema(), new SQLFragment(SQL, c)).forEach(rs -> {
             int rowId = rs.getInt(1);
             String name = rs.getString(2);
-            int parentId = rs.getInt(3);
+            Integer parentId = rs.getInt(3);
+            if (rs.wasNull())
+            {
+                parentId = null;
+            }
             String title = rs.getString(4);
 
             assert !name.isEmpty();
@@ -228,7 +232,7 @@ public class WikiCollections
     }
 
     // Returns null for non-existent wiki
-    @Nullable WikiTree getWikiTree(int rowId)
+    @Nullable WikiTree getWikiTree(Integer rowId)
     {
         return _treesByRowId.get(rowId);
     }
