@@ -315,6 +315,9 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                           jse.toString());
             // kevink: supress mothership logging.
             ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
+
+            // Debugging only. Do not merge.
+            _log.error(jse);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
