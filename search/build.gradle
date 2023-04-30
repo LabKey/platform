@@ -5,7 +5,6 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="9.4.2"
 ext.mime4jVersion="0.8.7"
 
 dependencies {
