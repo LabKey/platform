@@ -58,8 +58,10 @@ public class CommonTableExpressions
                 return;
             }
 
-            // With's QAs is backwards from other QAs's
+            // see 'commonTableExpression' parser rule in SqlBase.g
             QNode expr = qAs.getLastChild();
+            if (qAs.childList().size() == 3 && _dialect.isSqlServer())
+                expr = qAs.childList().get(1);
 
             if (!(expr instanceof QQuery) && !(expr instanceof QUnion))
             {

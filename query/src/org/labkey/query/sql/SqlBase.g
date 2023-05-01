@@ -328,8 +328,9 @@ commonTableExpressions
     ;
 
 
+// this magic syntax is handled in CommonTableExpression.java
 commonTableExpression
-    : identifier AS^ OPEN! selectStatement CLOSE!
+    : identifier AS^ OPEN! selectStatement CLOSE! (WHEN! 'sqlserver'! 'else'! OPEN! selectStatement CLOSE!)?
     ;
 
 
