@@ -275,6 +275,21 @@ public class DataRegionSelection
         return selectedValues.size();
     }
 
+    /**
+     * Clear any session attributes that match the given container path, as the prefix, and the selection key, as the suffix
+     */
+    public static void clearRelatedByContainerPath(ViewContext context, String key)
+    {
+        if (key == null || context.getRequest() == null)
+            return;
+
+        HttpSession session = context.getRequest().getSession(false);
+        String containerPath = context.getContainer().getPath();
+        Collections.list(session.getAttributeNames()).stream()
+            .filter(name -> name.startsWith(containerPath) && (name.endsWith(key + SNAPSHOT_SELECTED_VALUES) || name.endsWith(key + SELECTED_VALUES)))
+            .forEach(session::removeAttribute);
+    }
+
     private static void clearAll(HttpSession session, String path, String key, boolean isSnapshot)
     {
         assert path != null : "DataRegion container path required";

@@ -7740,7 +7740,15 @@ public class ExperimentController extends SpringActionController
         {
             String selectionKey = form.getDataRegionSelectionKey();
             if (selectionKey != null)
+            {
                 DataRegionSelection.setSelected(getViewContext(), selectionKey, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()), false);
+
+                // if moving samples from a sample type, the selections from other selectionKeys in that container will
+                // possibly be holding onto invalid keys after the move, so clear them based on the containerPath and selectionKey suffix
+                String[] keyParts = selectionKey.split("|");
+                if (keyParts.length > 1)
+                    DataRegionSelection.clearRelatedByContainerPath(getViewContext(), keyParts[keyParts.length - 1]);
+            }
         }
 
         private void validateTargetContainer(MoveSamplesForm form, Errors errors)
