@@ -20,8 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -185,6 +183,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull
     List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
+    
+    List<? extends ExpData> getExpDatasUnderPath(@NotNull Path path);
 
     /**
      * Get all ExpData that are members of the ExpDataClass.

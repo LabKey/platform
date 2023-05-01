@@ -7758,6 +7758,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @NotNull
+    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull Path path)
+    {
+        SimpleFilter filter = new SimpleFilter();
+
+        String prefix = path.toUri().toString();
+
+        filter.addCondition(FieldKey.fromParts("datafileurl"), prefix, CompareType.STARTS_WITH);
+
+        List<ExpDataImpl> childDatas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
+
+        // Include exp.data at the path itself
+        if (prefix.endsWith("/"))
+            prefix = prefix.substring(0, prefix.length() - 1);
+
+        filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("datafileurl"), prefix);
+
+        childDatas.addAll(ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class)));
+
+        return childDatas;
+    }
+
+    @Override
     public ExpProtocol insertProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
     {
         if (wrappedProtocol == null)
