@@ -146,7 +146,7 @@
                             .name("parent")
                             .id(ID_PREFIX + "parent")
                             .addStyle("width:600px");
-                        parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(model.getParent() == -1).build());
+                        parentBuilder.addOption(new OptionBuilder().value("").label("[none]").selected(model.getParent() == null).build());
                         model.getPossibleParents().forEach(pp->{
                             StringBuilder indent = new StringBuilder();
                             int depth = pp.getDepth();
