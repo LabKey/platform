@@ -22,13 +22,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JsonOrgOldModule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.logging.LogHelper;
@@ -58,9 +58,7 @@ public class JsonUtil
     {
         ObjectMapper result = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
-        // result.registerModule(new JsonOrgModule()); // TODO: Uncomment this once we remove JsonOrgOldModule
-        // Allow org.json.old classes to be serialized by Jackson (TODO: Remove this after migrating from org.json.old.* -> org.json.*)
-        result.registerModule(new JsonOrgOldModule());
+        result.registerModule(new JsonOrgModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
         result.registerModule(new JavaTimeModule());
         result.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
