@@ -1868,13 +1868,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return true;
+        // I don't think SQL Server provides actual times
+        return type == ExecutionPlanType.Estimated;
     }
 
     @Override
-    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         try
         {
