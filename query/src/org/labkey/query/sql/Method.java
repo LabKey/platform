@@ -241,7 +241,7 @@ public abstract class Method
                     }
                     className = param.substring(0,dot);
                     propertyName = param.substring(dot + 1);
-                    Class cls = Class.forName(className);
+                    Class<?> cls = Class.forName(className);
                     Field f = cls.getField(propertyName);
                     if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
                         parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, line, column));
@@ -1054,13 +1054,9 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
-            ret.add(new Callable(){
-                @Override
-                public Object call()
-                {
-                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
-                    return null == user ? null : user.getUserId();
-                }
+            ret.add((Callable<Integer>) () -> {
+                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                return null == user ? null : user.getUserId();
             });
             return ret;
         }
@@ -1182,7 +1178,7 @@ public abstract class Method
                 String className = param.substring(0,dot);
                 String propertyName = param.substring(dot+1);
 
-                Class cls;
+                Class<?> cls;
                 try
                 {
                     cls = Class.forName(className);
@@ -1231,7 +1227,7 @@ public abstract class Method
     }
 
 
-    class ContextPathInfo extends AbstractMethodInfo
+    static class ContextPathInfo extends AbstractMethodInfo
     {
         ContextPathInfo()
         {
@@ -1248,7 +1244,7 @@ public abstract class Method
     }
 
 
-    class IsMemberInfo extends AbstractMethodInfo
+    static class IsMemberInfo extends AbstractMethodInfo
     {
         IsMemberInfo()
         {
@@ -1349,7 +1345,7 @@ public abstract class Method
     }
 
 
-    class OverlapsMethodInfo extends AbstractMethodInfo
+    static class OverlapsMethodInfo extends AbstractMethodInfo
     {
         OverlapsMethodInfo()
         {
@@ -1367,7 +1363,7 @@ public abstract class Method
         }
     }
 
-    class SimilarToMethodInfo extends AbstractMethodInfo
+    static class SimilarToMethodInfo extends AbstractMethodInfo
     {
         SimilarToMethodInfo()
         {
@@ -1435,7 +1431,7 @@ public abstract class Method
     }
 
 
-    /** NOTE: because of how our parser works, a bunch of randon SQL keywords end up as strings.
+    /** NOTE: because of how our parser works, a bunch of random SQL keywords end up as strings.
      * isSimpleString() and toSimpleString() can be used to "extract" those sequences.
      * For instance "SQL_TSI_DAY"
      * It would be better to parse these into QSqlKeyword or something like that, but we'd still have the
@@ -1553,7 +1549,7 @@ public abstract class Method
             {
                 return new AbstractMethodInfo(JdbcType.VARCHAR)
                 {
-                    private final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
+                    private static final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
                             "?", "?|", "?&", "||", "-", "#-");
 
                     @Override
@@ -1563,12 +1559,12 @@ public abstract class Method
                         String strippedOperator = isSimpleString(rawOperator) ? toSimpleString(rawOperator) : null;
                         if (StringUtils.isBlank(strippedOperator))
                         {
-                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                            throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
                         if (!ALLOWED_OPERATORS.contains(strippedOperator))
                         {
-                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                            throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
                         return new SQLFragment("(").append(arguments[0]).append(")").
@@ -1795,7 +1791,6 @@ public abstract class Method
         @Test
         public void testSimpleString()
         {
-            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
             assertNotSimpleString(new SQLFragment("test ?").add("param"));
             assertNotSimpleString(new SQLFragment("?").add(5));
             assertNotSimpleString(new SQLFragment("SELECT 'test'"));
