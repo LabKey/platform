@@ -77,6 +77,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
             case Contact:
                 var contactCol = wrapColumn(alias, _rootTable.getColumn("ContactId"));
+                contactCol.setShownInInsertView(false); // Issue 47576
                 contactCol.setLabel("Contact");
                 return contactCol;
             case ExperimentDescriptionURL:

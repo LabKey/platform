@@ -827,9 +827,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         rgn.setTable(baseTable);
         for (ColumnInfo col : baseTable.getColumns())
         {
+            // Issue 47576: if there are wrapped columns that are marked as userEditable and shownInInsertView, include them in the form / UI
+            boolean shouldInclude = col.getWrappedColumnName() != null && col.isUserEditable() && col.isShownInInsertView();
+
             String propertyURI = col.getPropertyURI();
             DomainProperty dp = propertiesMap.get(propertyURI);
-            if (dp == null || !dp.isShownInInsertView())
+            if ((dp == null || !dp.isShownInInsertView()) && !shouldInclude)
                 continue;
 
             // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties

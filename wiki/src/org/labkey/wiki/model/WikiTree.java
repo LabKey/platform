@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 
 /*
 * User: adam
@@ -30,7 +31,7 @@ import java.util.LinkedHashSet;
 // Represents a tree or sub-tree of wiki objects.  Used for caching TOC, children, siblings, etc.
 public class WikiTree
 {
-    private final int _rowId;
+    private final Integer _rowId;
     private final String _name;
     private final String _title;
     private final Collection<WikiTree> _children;
@@ -40,10 +41,10 @@ public class WikiTree
 
     public static WikiTree createRootWikiTree()
     {
-        return new WikiTree(-1, null, null);
+        return new WikiTree(null, null, null);
     }
 
-    public WikiTree(int rowId, String name, String title)
+    public WikiTree(Integer rowId, String name, String title)
     {
         _rowId = rowId;
         _name = name;
@@ -51,7 +52,7 @@ public class WikiTree
         _children = new LinkedHashSet<>();
     }
 
-    public int getRowId()
+    public Integer getRowId()
     {
         return _rowId;
     }
@@ -95,7 +96,7 @@ public class WikiTree
 
         WikiTree wikiTree = (WikiTree) o;
 
-        if (_rowId != wikiTree._rowId) return false;
+        if (Objects.equals(_rowId, wikiTree._rowId)) return false;
 
         return true;
     }
@@ -103,6 +104,6 @@ public class WikiTree
     @Override
     public int hashCode()
     {
-        return _rowId;
+        return Objects.hash(_rowId);
     }
 }
