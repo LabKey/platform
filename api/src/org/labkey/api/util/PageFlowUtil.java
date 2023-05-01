@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.Assert;
@@ -787,7 +788,15 @@ public class PageFlowUtil
                 map = f.toMap(o, new HashMap<>());
             }
 
-            w.write(new JSONObject(map).toString());
+            try
+            {
+                w.write(new JSONObject(map).toString());
+            }
+            catch (JSONException e)
+            {
+                _log.error("Failed to serialize " + o + ". Map: " + map.toString());
+                throw e;
+            }
         }
 
         return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
