@@ -459,9 +459,11 @@ public class ParamReplacementSvc
         catch (Exception e)
         {
             // Debugging only. Do not merge.
-            _log.error(e, new Exception());
+            _log.error("Error in appendReplacement: " + m.toString() + " / " + sb.toString() + " / " + replacementStr + " / " + m.toMatchResult().group());
+            _log.error(e);
             throw new IllegalArgumentException("There was a syntax error with the substitution parameter in your script.\n"
                     + (StringUtils.isEmpty(token) ? "" : "Substitution token \"" + token + "\" is used incorrectly.\n")
+                    + (StringUtils.isEmpty(replacementStr) ? "" : "Replacement string was: \"" + replacementStr + "\"\n")
                     + "Error message: " + e.getMessage(), e);
         }
     }
