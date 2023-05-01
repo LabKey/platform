@@ -38,8 +38,15 @@ public class MySql80Dialect extends MySql57Dialect
     }
 
     // MySQL 8.0 introduced EXPLAIN ANALYZE
-    protected String getExplainPrefix()
+    @Override
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return "EXPLAIN ANALYZE ";
+        return true;
+    }
+
+    @Override
+    protected String getExplainPrefix(ExecutionPlanType type)
+    {
+        return type == ExecutionPlanType.Estimated ? "EXPLAIN FORMAT = TREE " : "EXPLAIN ANALYZE ";
     }
 }
