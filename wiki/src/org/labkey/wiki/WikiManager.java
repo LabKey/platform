@@ -430,7 +430,7 @@ public class WikiManager implements WikiService
             else
             {
                 Wiki parent = wiki.getParentWiki();
-                int parentId = -1;
+                Integer parentId = null;
                 float wikiDisplay = wiki.getDisplayOrder();
                 Wiki nextWiki = null;
 
@@ -558,7 +558,7 @@ public class WikiManager implements WikiService
             if (destParentId != null)
                 newWikiPage.setParent(destParentId);
             else
-                newWikiPage.setParent(-1);
+                newWikiPage.setParent(null);
         }
 
         //get wiki & attachments

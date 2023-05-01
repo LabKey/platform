@@ -206,7 +206,7 @@ public class WikiSelectManager
     }
 
 
-    public static @NotNull Collection<WikiTree> getChildren(Container c, int rowId)
+    public static @NotNull Collection<WikiTree> getChildren(Container c, Integer rowId)
     {
         WikiTree tree = getWikiCollections(c).getWikiTree(rowId);
 
@@ -217,7 +217,7 @@ public class WikiSelectManager
 
 
     // Only use if a full wiki is needed (otherwise, use WikiTree)
-    public static @NotNull List<Wiki> getChildWikis(Container c, int rowId)
+    public static @NotNull List<Wiki> getChildWikis(Container c, Integer rowId)
     {
         List<Wiki> wikis = new LinkedList<>();
 

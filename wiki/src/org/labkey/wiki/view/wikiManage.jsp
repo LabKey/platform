@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="java.util.Objects" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -146,7 +147,7 @@
                     .id("parent")
                     .addStyle("width:420px")
                     .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; submit();");
-                parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
+                parentBuilder.addOption(new OptionBuilder().value("").label("[none]").selected(wiki.getParent() == null).build());
                 bean.possibleParents.forEach(pp->{
                     StringBuilder indent = new StringBuilder();
                     int depth = pp.getDepth();
@@ -157,7 +158,7 @@
                     parentBuilder.addOption(new OptionBuilder()
                         .value(String.valueOf(pp.getRowId()))
                         .label(label)
-                        .selected(pp.getRowId() == wiki.getParent())
+                        .selected(Objects.equals(pp.getRowId(), wiki.getParent()))
                         .build()
                     );
                 });

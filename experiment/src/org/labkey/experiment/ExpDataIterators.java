@@ -564,23 +564,20 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                if (!_derivativeKeys.isEmpty())
-                {
-                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                        try
-                        {
-                            // derived samples can't be linked until after the transaction is committed
+                _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                    try
+                    {
+                        if (!_derivativeKeys.isEmpty())
                             StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
-                        }
-                        catch (ExperimentException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                    }, DbScope.CommitTaskOption.POSTCOMMIT);
-                }
 
-                if (!_rows.isEmpty())
-                    StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                        if (!_rows.isEmpty())
+                            StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                    }
+                    catch (ExperimentException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
 
                 return false;
             }

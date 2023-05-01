@@ -32,6 +32,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -391,12 +392,15 @@ public class QueryProfiler
 
                     out.println("\n<script>new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');</script>\n");
 
-                    if (tracker.canShowExecutionPlan())
+                    for (ExecutionPlanType type : ExecutionPlanType.values())
                     {
-                        out.println("<table>\n  <tr><td>");
-                        ActionURL url = executeFactory.getActionURL(tracker.getSql());
-                        out.println(PageFlowUtil.link("Show Execution Plan").href(url).build());
-                        out.println("  </td></tr></table>\n<br>\n");
+                        if (tracker.canShowExecutionPlan(type))
+                        {
+                            out.println("<table>\n  <tr><td>");
+                            ActionURL url = executeFactory.getActionURL(tracker.getSql());
+                            out.println(PageFlowUtil.link("Show " + type.getDescription()).href(url.addParameter("type", type.name())).build());
+                            out.println("  </td></tr></table>\n<br>\n");
+                        }
                     }
 
                     out.println("<table>\n");
@@ -407,8 +411,7 @@ public class QueryProfiler
         };
     }
 
-
-    public HttpView<?> getExecutionPlanView(int hashCode)
+    public HttpView<?> getExecutionPlanView(int hashCode, ExecutionPlanType type)
     {
         SQLFragment sql;
         DbScope scope;
@@ -421,8 +424,8 @@ public class QueryProfiler
             if (null == tracker)
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
-            if (!tracker.canShowExecutionPlan())
-                throw new IllegalStateException("Can't show the execution plan for this query");
+            if (!tracker.canShowExecutionPlan(type))
+                throw new IllegalStateException("Can't show the \"" + type.name() + "\" execution plan for this query");
 
             scope = tracker.getScope();
 
@@ -432,7 +435,7 @@ public class QueryProfiler
             sql = tracker.getSQLFragment();
         }
 
-        Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql);
+        Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql, type);
 
         String fullPlan = StringUtils.join(executionPlan, "\n");
 
