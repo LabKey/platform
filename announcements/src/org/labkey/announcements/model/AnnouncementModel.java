@@ -189,6 +189,7 @@ public class AnnouncementModel extends Entity implements Serializable
         return AttachmentService.get().getAttachments(getAttachmentParent());
     }
 
+    @Transient
     public @NotNull Collection<AnnouncementModel> getResponses()
     {
         if (null == _responses)

@@ -792,10 +792,10 @@ public class PageFlowUtil
             {
                 w.write(new JSONObject(map).toString());
             }
-            catch (JSONException e)
+            catch (Throwable t)
             {
                 _log.error("Failed to serialize " + o + ". Map: " + map.toString());
-                throw e;
+                throw t;
             }
         }
 
