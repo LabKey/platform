@@ -306,6 +306,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
+    @Transient
     public Cohort getCohort()
     {
         if (_cohortId == null)
