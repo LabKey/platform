@@ -54,6 +54,7 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -627,7 +628,7 @@ public class QueryController extends SpringActionController
                 }
 
                 sb.append("<td>");
-                sb.append(connected ? new Button.ButtonBuilder("Test").href(new ActionURL(TestDataSourceAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "");
+                sb.append(connected ? new Button.ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "");
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDisplayName()));
                 sb.append("</td><td>");
@@ -748,6 +749,76 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class TestDataSourceConfirmForm extends TestDataSourceForm
+    {
+        private String _excludeSchemas;
+        private String _excludeTables;
+
+        public String getExcludeSchemas()
+        {
+            return _excludeSchemas;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExcludeSchemas(String excludeSchemas)
+        {
+            _excludeSchemas = excludeSchemas;
+        }
+
+        public String getExcludeTables()
+        {
+            return _excludeTables;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExcludeTables(String excludeTables)
+        {
+            _excludeTables = excludeTables;
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class TestDataSourceConfirmAction extends FormViewAction<TestDataSourceConfirmForm>
+    {
+        private DbScope _scope;
+
+        @Override
+        public ModelAndView getView(TestDataSourceConfirmForm form, boolean reshow, BindException errors) throws Exception
+        {
+            validateCommand(form, errors);
+            return new JspView<>("/org/labkey/query/view/testDataSourceConfirm.jsp", _scope);
+        }
+
+        @Override
+        public void validateCommand(TestDataSourceConfirmForm form, Errors errors)
+        {
+            _scope = DbScope.getDbScope(form.getDataSource());
+
+            if (null == _scope)
+                throw new NotFoundException("Could not resolve data source " + form.getDataSource());
+        }
+
+        @Override
+        public boolean handlePost(TestDataSourceConfirmForm form, BindException errors) throws Exception
+        {
+            saveTestDataSourceProperties(form);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(TestDataSourceConfirmForm form)
+        {
+            return new ActionURL(TestDataSourceAction.class, getContainer()).addParameter("dataSource", _scope.getDataSourceName());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            new DataSourceAdminAction(getViewContext()).addNavTrail(root);
+            root.addChild("Prepare Test of " + _scope.getDataSourceName());
+        }
+    }
+
     @AdminConsoleAction(AdminOperationsPermission.class)
     public static class TestDataSourceAction extends SimpleViewAction<TestDataSourceForm>
     {
@@ -761,7 +832,7 @@ public class QueryController extends SpringActionController
             if (null == _scope)
                 throw new NotFoundException("Could not resolve data source " + form.getDataSource());
 
-            return new JspView<>("/org/labkey/query/view/dataSource.jsp", _scope);
+            return new JspView<>("/org/labkey/query/view/testDataSource.jsp", _scope);
         }
 
         @Override
@@ -770,6 +841,33 @@ public class QueryController extends SpringActionController
             new DataSourceAdminAction(getViewContext()).addNavTrail(root);
             root.addChild("Test " + _scope.getDataSourceName());
         }
+    }
+
+    private static final String TEST_DATA_SOURCE_CATEGORY = "testDataSourceProperties";
+    private static final String TEST_DATA_SOURCE_SCHEMAS_PROPERTY = "excludeSchemas";
+    private static final String TEST_DATA_SOURCE_TABLES_PROPERTY = "excludeTables";
+
+    private static String getCategory(String dataSourceName)
+    {
+        return TEST_DATA_SOURCE_CATEGORY + "|" + dataSourceName;
+    }
+
+    public static void saveTestDataSourceProperties(TestDataSourceConfirmForm form)
+    {
+        PropertyMap map = PropertyManager.getWritableProperties(getCategory(form.getDataSource()), true);
+        map.put(TEST_DATA_SOURCE_SCHEMAS_PROPERTY, form.getExcludeSchemas());
+        map.put(TEST_DATA_SOURCE_TABLES_PROPERTY, form.getExcludeTables());
+        map.save();
+    }
+
+    public static TestDataSourceConfirmForm getTestDataSourceProperties(String dataSourceName)
+    {
+        TestDataSourceConfirmForm form = new TestDataSourceConfirmForm();
+        PropertyMap map = PropertyManager.getProperties(getCategory(dataSourceName));
+        form.setExcludeSchemas(map.get(TEST_DATA_SOURCE_SCHEMAS_PROPERTY));
+        form.setExcludeTables(map.get(TEST_DATA_SOURCE_TABLES_PROPERTY));
+
+        return form;
     }
 
     @RequiresPermission(ReadPermission.class)

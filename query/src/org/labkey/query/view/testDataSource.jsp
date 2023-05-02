@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.DbSchemaType" %>
@@ -25,23 +26,40 @@
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.util.logging.LogHelper" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.query.controllers.QueryController.TestDataSourceAction" %>
+<%@ page import="org.labkey.query.controllers.QueryController.TestDataSourceConfirmForm" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page extends="org.labkey.api.jsp.FormPage" %>
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="java.util.Set" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    private static final Logger LOG = LogHelper.getLogger(QueryController.TestDataSourceAction.class, "Output from data source test");
+    private static final Logger LOG = LogHelper.getLogger(TestDataSourceAction.class, "Output from data source test");
 
-    // TODO: This is temporary... planning to move configuration of these to datasource-specific properties that can be edited & saved via the form
-    Set<String> skipSchemas = Set.of("SYS");
-    Set<String> skipSchemaPrefixes = Set.of();
-    Set<String> skipTables = Set.of("MDSYS.ALL_ANNOTATION_TEXT_METADATA", "MDSYS.ALL_SDO_CSW_SERVICE_INFO", "DVSYS.DBA_DV_USER_PRIVS_ALL", "DVSYS.DBA_DV_USER_PRIVS", "XDB.XDB$STATS");
-    Set<String> skipTablePrefixes = Set.of("SYS_IOT_OVER_");
+    private void populateSets(Set<String> set, Set<String> prefixSet, String values)
+    {
+        StringUtils.trimToEmpty(values).lines()
+            .forEach(value -> {
+                if (value.endsWith("*"))
+                    prefixSet.add(StringUtils.chop(value)); // Remove *
+                else
+                    set.add(value);
+            });
+    }
 %>
 <%
     DbScope scope = (DbScope)getModelBean();
+    TestDataSourceConfirmForm form = QueryController.getTestDataSourceProperties(scope.getDataSourceName());
+
+    Set<String> skipSchemas = new HashSet<>();
+    Set<String> skipSchemaPrefixes = new HashSet<>();
+    populateSets(skipSchemas, skipSchemaPrefixes, form.getExcludeSchemas());
+
+    Set<String> skipTables = new HashSet<>();
+    Set<String> skipTablePrefixes = new HashSet<>();
+    populateSets(skipTables, skipTablePrefixes, form.getExcludeTables());
+
     LOG.info("Started test of data source " + scope.getDataSourceName());
     Collection<String> schemaNames = scope.getSchemaNames();
 
