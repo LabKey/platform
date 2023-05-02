@@ -601,12 +601,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return new SimpleResponse<>(true, null, data);
     }
 
-    // Wrapping an ApiSimpleResponse with a SimpleResponse is strange, but a few actions do it so make it work
-    public static SimpleResponse<?> success(ApiSimpleResponse data)
-    {
-        return success(data.getJson());
-    }
-
     public static <T> SimpleResponse<T> success(String message, T data)
     {
         return new SimpleResponse<>(true, message, data);
