@@ -796,11 +796,11 @@ public class QueryManager
             return true;
 
         boolean isPublic = o.getBoolean("isPublic");
-        SchemaKey schemaPath = SchemaKey.fromString(o.getString("schemaName"));
+        SchemaKey schemaPath = SchemaKey.fromString(o.optString("schemaName"));
         String queryName = o.getString("queryName");
-        String displayColumn = o.getString("displayColumn");
-        String keyColumn = o.getString("keyColumn");
-        String containerPath = o.getString("containerPath");
+        String displayColumn = o.optString("displayColumn");
+        String keyColumn = o.optString("keyColumn");
+        String containerPath = o.optString("containerPath");
 
         Container lookupContainer = containerPath == null ? container : ContainerManager.getForPath(containerPath);
         if (lookupContainer == null)
