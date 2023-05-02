@@ -96,7 +96,7 @@ public class SimpleUserSchema extends UserSchema
         }
     }
 
-    // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
+    // Hidden tables are hidden from the UI but will still be addressable by Query (for fk lookups, etc.)
     public SimpleUserSchema(String name, String description,
                             User user, Container container,
                             DbSchema dbschema,

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.DbSchemaType" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
@@ -22,31 +23,56 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
+<%@ page import="org.labkey.api.util.logging.LogHelper" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    private static final Logger LOG = LogHelper.getLogger(QueryController.TestDataSourceAction.class, "Output from data source test");
+
+    // TODO: This is temporary... planning to move configuration of these to datasource-specific properties that can be edited & saved via the form
+    Set<String> skipSchemas = Set.of("SYS");
+    Set<String> skipSchemaPrefixes = Set.of();
+    Set<String> skipTables = Set.of("MDSYS.ALL_ANNOTATION_TEXT_METADATA", "MDSYS.ALL_SDO_CSW_SERVICE_INFO", "DVSYS.DBA_DV_USER_PRIVS_ALL", "DVSYS.DBA_DV_USER_PRIVS", "XDB.XDB$STATS");
+    Set<String> skipTablePrefixes = Set.of("SYS_IOT_OVER_");
+%>
 <%
     DbScope scope = (DbScope)getModelBean();
+    LOG.info("Started test of data source " + scope.getDataSourceName());
     Collection<String> schemaNames = scope.getSchemaNames();
 
     for (String schemaName : schemaNames)
     {
-        if ("SYS".equals(schemaName)) // Bad schema in Oracle -- querying its table names never returns
-            continue;
-        DbSchema schema = scope.getSchema(schemaName, DbSchemaType.Bare);
-        %><%=h(schemaName)%> has <%=h(StringUtilsLabKey.pluralize(schema.getTableNames().size(), "table"))%><br><%
-        for (String tableName : schema.getTableNames())
+        if (skipSchemas.contains(schemaName) || skipSchemaPrefixes.stream().anyMatch(schemaName::startsWith))
         {
-            TableInfo table = schema.getTable(tableName);
-            %>&nbsp;&nbsp;<%=h(tableName)%><%
+            LOG.info("Schema " + schemaName + " SKIPPED");
+            %>Schema <%=h(schemaName)%> SKIPPED<br><%
+        }
+        else
+        {
+            LOG.info("Schema " + schemaName + ":");
+            DbSchema schema = scope.getSchema(schemaName, DbSchemaType.Bare);
+            %>Schema <%=h(schemaName)%> has <%=h(StringUtilsLabKey.pluralize(schema.getTableNames().size(), "table"))%><br><%
+            List<String> tableNames = new ArrayList<>(schema.getTableNames());
+            tableNames.sort(String.CASE_INSENSITIVE_ORDER);
 
-            if (tableName.startsWith("SYS_IOT_OVER_")) // Bad tables in Oracle
+            for (String tableName : tableNames)
             {
-                %> SKIPPED (Appears to be an overflow table of an index-organized table)<br><%
-            }
-            else
-            {
-                System.out.print(schemaName + "." + tableName + ": ");
+                String fullName = schemaName + "." + tableName;
+                if (skipTables.contains(fullName) || skipTablePrefixes.stream().anyMatch(tableName::startsWith))
+                {
+                    LOG.info("Table " + fullName + " SKIPPED");
+                    %>&nbsp;&nbsp;<%=h(tableName)%> SKIPPED<br><%
+                    continue;
+                }
+                TableInfo table = schema.getTable(tableName);
+                %>&nbsp;&nbsp;<%=h(tableName)%><%
+
+                LOG.info("Table " + fullName + ":");
                 TableSelector selector = new TableSelector(table);
                 long count;
                 try
@@ -55,26 +81,31 @@
                 }
                 catch (Exception e)
                 {
-                    %> COUNT FAILED: <%=h(e.getMessage())%><%
+                    %> COUNT FAILED: <%=h(e.getMessage())%><br><%
                     continue;
                 }
 
-                System.out.println(StringUtilsLabKey.pluralize(count, "row"));
+                LOG.info(StringUtilsLabKey.pluralize(count, "row"));
                 %> has <%=h(StringUtilsLabKey.pluralize(count, "row"))%><%
                 selector.setMaxRows(100);
                 try
                 {
+                    int rowCount = 0;
                     try (Results results = selector.getResults())
                     {
-                        while (results.next());
+                        while (results.next())
+                            rowCount++;
                     }
+                    LOG.info(StringUtilsLabKey.pluralize(rowCount, "row") + " read");
                     %><br><%
                 }
-                catch (Exception e)
+                catch (Throwable t)
                 {
-                    %> RESULTS FAILED: <%=h(e.getMessage())%><br><%
+                    %> RESULTS FAILED: <%=h(t.getMessage())%><br><%
                 }
             }
         }
     }
+
+    LOG.info("Completed test of data source " + scope.getDataSourceName());
 %>
