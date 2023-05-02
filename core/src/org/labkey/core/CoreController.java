@@ -1387,7 +1387,7 @@ public class CoreController extends SpringActionController
             if (p != null)
                 response.put("project", getContainerProps(p));
 
-            return new ApiSimpleResponse(response);
+            return response;
         }
 
         private Map<String, Object> getContainerProps(Container c)

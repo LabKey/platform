@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +36,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -67,6 +68,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
@@ -2561,12 +2563,17 @@ public class AdminController extends SpringActionController
     public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
         private int _hashCode;
+        private ExecutionPlanType _type;
 
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             _hashCode = form.getSqlHashCode();
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
+            _type = EnumUtils.getEnum(ExecutionPlanType.class, form.getType());
+            if (null == _type)
+                throw new NotFoundException("Unknown execution plan type");
+
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode(), _type);
         }
 
         @Override
@@ -2574,14 +2581,15 @@ public class AdminController extends SpringActionController
         {
             addAdminNavTrail(root, "Queries", QueriesAction.class);
             root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
-            root.addChild("Execution Plan");
+            root.addChild(_type.getDescription());
         }
     }
 
 
     public static class QueryForm
     {
-        int _sqlHashCode;
+        private int _sqlHashCode;
+        private String _type = "Estimated"; // All dialects support Estimated
 
         public int getSqlHashCode()
         {
@@ -2592,6 +2600,17 @@ public class AdminController extends SpringActionController
         public void setSqlHashCode(int sqlHashCode)
         {
             _sqlHashCode = sqlHashCode;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setType(String type)
+        {
+            _type = type;
         }
     }
 
@@ -9827,9 +9846,9 @@ public class AdminController extends SpringActionController
                 params.putAll(report.getParams());
                 // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
                 Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
-                if (jsonMetrics instanceof String)
+                if (jsonMetrics instanceof String jms)
                 {
-                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    JSONObject o = new JSONObject(jms);
                     params.put(MothershipReport.JSON_METRICS_KEY, o);
                 }
                 if (form.isSubmit())
@@ -9979,9 +9998,7 @@ public class AdminController extends SpringActionController
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 throw new UnauthorizedException();
 
-            Map<String,Object> json;
-            json = getConfigurationJson();
-            return json;
+            return getConfigurationJson();
         }
 
         @Override
@@ -10218,7 +10235,7 @@ public class AdminController extends SpringActionController
     }
 
     /* returns a jackson serializable object that reports superset of information returned in admin console */
-    Map<String, Object> getConfigurationJson()
+    JSONObject getConfigurationJson()
     {
         JSONObject res = new JSONObject();
 

@@ -20,6 +20,7 @@ import com.google.common.primitives.Ints;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.QueryService;
@@ -398,7 +399,7 @@ public class Parameter implements AutoCloseable
             return ((Enum<?>)value).name();
         else if (value instanceof Class)
             return (((Class<?>) value).getName());
-        else if (value instanceof Lsid || value instanceof org.json.JSONObject || value instanceof org.json.old.JSONObject || value instanceof File)
+        else if (value instanceof Lsid || value instanceof JSONObject || value instanceof File)
             return value.toString();
 
         return value;

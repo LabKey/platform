@@ -608,7 +608,7 @@ public class AnnouncementManager
                         else
                         {
                             reason = EmailNotificationBean.Reason.signedUp;
-                            changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
+                            changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifier());
                         }
 
                         try
