@@ -4011,7 +4011,7 @@ public class QueryController extends SpringActionController
                     throw errors;
                 // Issue 42519: Submitter role not able to insert
                 // as per the definition of submitter, should allow insert without read
-                if (qus.hasPermission(user, ReadPermission.class))
+                if (qus.hasPermission(user, ReadPermission.class) && shouldReselect(configParameters))
                 {
                     return qus.getRows(user, container, insertedRows);
                 }
@@ -4044,7 +4044,7 @@ public class QueryController extends SpringActionController
                     throw errors;
                 // Issue 42519: Submitter role not able to insert
                 // as per the definition of submitter, should allow insert without read
-                if (qus.hasPermission(user, ReadPermission.class))
+                if (qus.hasPermission(user, ReadPermission.class) && shouldReselect(configParameters))
                 {
                     updatedRows = qus.getRows(user, container, updatedRows);
                 }
@@ -4083,7 +4083,7 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, null, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                return qus.getRows(user, container, updatedRows);
+                return shouldReselect(configParameters) ? qus.getRows(user, container, updatedRows) : updatedRows;
             }
         },
         updateChangingKeys(UpdatePermission.class, QueryService.AuditAction.UPDATE)
@@ -4108,7 +4108,8 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                updatedRows = qus.getRows(user, container, updatedRows);
+                if (shouldReselect(configParameters))
+                    updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
@@ -4147,6 +4148,14 @@ public class QueryController extends SpringActionController
         public QueryService.AuditAction getAuditAction()
         {
             return _auditAction;
+        }
+
+        public static boolean shouldReselect(Map<Enum, Object> configParameters)
+        {
+            if (configParameters == null || !configParameters.containsKey(QueryUpdateService.ConfigParameters.SkipReselectRows))
+                return true;
+
+            return Boolean.TRUE != configParameters.get(QueryUpdateService.ConfigParameters.SkipReselectRows);
         }
 
         public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -4296,6 +4305,10 @@ public class QueryController extends SpringActionController
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
+
+            boolean skipReselectRows = json.optBoolean("skipReselectRows", false);
+            if (skipReselectRows)
+                configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
 
             //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to

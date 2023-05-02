@@ -17,8 +17,8 @@ package org.labkey.api.action;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
@@ -52,33 +52,34 @@ import java.util.Set;
 
 /**
  * API response class for a {@link QueryView}.
- *
- * User: Dave
- * Date: Feb 13, 2008
  */
 public class ApiQueryResponse implements ApiResponse
 {
     public static final String URL_COL_PREFIX = "_labkeyurl_";
+
     boolean _doItWithStyle = false;
-    private TableInfo _tinfo = null;
-    private List<DisplayColumn> _displayColumns = null;
-    private Map<DisplayColumn, String> _displayColumnCaptions = new HashMap<>();
-    protected long _rowCount = 0;
-    protected RenderContext _ctx = null;
-    private ViewContext _viewContext;
-    private boolean _schemaEditable = false;
-    private final boolean _includeLookupInfo;
-    private String _schemaName = null;
+
     protected String _queryName = null;
-    protected long _offset = 0;                   //starting offset row number
-    protected long _numRespRows = 0;              //number of response rows
-    private List<FieldKey> _fieldKeys = null;
-    protected boolean _metaDataOnly = false;
     // Include an empty "rows" array when serializing metadata only (maxRows=0)
     // CONSIDER: We could remove this option if we want to include empty "rows" array in the ReportingApiQueryResponse to be similar to the other response formats.
     protected boolean _metaDataOnlyIncludesEmptyRowset = true;
     protected Map<String, Object> _extraReturnProperties;
-    protected DataRegion _dataRegion;
+
+    private final Map<DisplayColumn, String> _displayColumnCaptions = new HashMap<>();
+    private final boolean _includeLookupInfo;
+
+    private long _rowCount = 0;
+    private long _offset = 0;                   //starting offset row number
+    private long _numRespRows = 0;              //number of response rows
+    private RenderContext _ctx = null;
+    private boolean _schemaEditable = false;
+    private boolean _metaDataOnly = false;
+    private DataRegion _dataRegion;
+    private TableInfo _tinfo = null;
+    private List<DisplayColumn> _displayColumns = null;
+    private ViewContext _viewContext;
+    private String _schemaName = null;
+    private List<FieldKey> _fieldKeys = null;
     private boolean _includeDetailsColumn;
     private boolean _includeUpdateColumn;
     private boolean _includeDisplayValues;

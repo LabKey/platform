@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
@@ -319,24 +320,24 @@ public class SecurityPolicy
     }
 
     /**
-     * Serializes this policy into a map suitable for returning via an API action
+     * Serializes this policy into a JSONObject suitable for returning via an API action
      * @return The serialized policy
      */
     @NotNull
-    public Map<String, Object> toMap()
+    public JSONObject toJson()
     {
-        Map<String, Object> props = new HashMap<>();
+        JSONObject json = new JSONObject();
 
         //modified
         Date modified = getModified();
-        props.put("modified", modified);  // Standard JSON format for dates is only accurate to the second
+        json.put("modified", modified);  // Standard JSON format for dates is only accurate to the second
 
         //modifiedMillis
         if (null != modified)
-            props.put("modifiedMillis", modified.getTime());  // Add a more accurate timestamp for optimistic concurrency purposes
+            json.put("modifiedMillis", modified.getTime());  // Add a more accurate timestamp for optimistic concurrency purposes
 
         //resource id
-        props.put("resourceId", getResourceId());
+        json.put("resourceId", getResourceId());
 
         //role assignments
         List<Map<String, Object>> assignments = new ArrayList<>();
@@ -354,8 +355,9 @@ public class SecurityPolicy
             }
             assignments.add(assignmentProps);
         }
-        props.put("assignments", assignments);
-        return props;
+        json.put("assignments", assignments);
+
+        return json;
     }
 
 

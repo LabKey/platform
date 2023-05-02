@@ -172,18 +172,6 @@ public interface IssuesListDefService
      * @param body The Issue message body
      * @return int IssueId for the newly created Issue
      */
-    @Deprecated // Use HtmlString version below. TODO: Delete
-    int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body) throws Exception;
-
-    /**
-     * Create a new Issue in the IssueListDef for the specified container and user.
-     * @param container The container to create the Issue in
-     * @param user The user to create the issue as and set the initial assignedTo property
-     * @param issueDefName The name of the IssueListDef
-     * @param title The Issue title
-     * @param body The Issue message body
-     * @return int IssueId for the newly created Issue
-     */
     int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable HtmlString body) throws Exception;
 
     /**

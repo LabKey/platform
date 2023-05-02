@@ -460,7 +460,7 @@ public class ParamReplacementSvc
         {
             throw new IllegalArgumentException("There was a syntax error with the substitution parameter in your script.\n"
                     + (StringUtils.isEmpty(token) ? "" : "Substitution token \"" + token + "\" is used incorrectly.\n")
-                    + "Error message: " + e.getMessage());
+                    + "Error message: " + e.getMessage(), e);
         }
     }
 

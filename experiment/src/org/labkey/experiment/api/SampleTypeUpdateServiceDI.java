@@ -98,8 +98,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -330,7 +333,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (InventoryService.get() != null && !_sampleType.isMedia())
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
 
-            if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null)
+            if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
         }
         return dib;
@@ -525,7 +528,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException("Updating aliquotedFrom is not supported");
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
-        rowCopy.remove("AliquotedFrom");
+        rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
@@ -837,10 +840,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, !getDetails);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
     private ContainerFilter getSampleDataCF(Container container, User user)
@@ -856,10 +859,64 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipDetails)
+    public record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
+
+    public @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
+    {
+        if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
+            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true);
+
+        CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
+        if (null == remap)
+            remap = CaseInsensitiveHashMap.of();
+
+        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid");
+        for (ColumnInfo column : getQueryTable().getColumns())
+        {
+            if (dataColumns.contains(column.getColumnName()))
+                includedColumns.add(column.getColumnName());
+            else if (dataColumns.contains(remap.get(column.getColumnName())))
+                includedColumns.add(remap.get(column.getColumnName()));
+        }
+
+        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
+                .map(Enum::name)
+                .collect(Collectors.toSet()))
+                .containsAll(includedColumns);
+        TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+
+        boolean hasParentInput = false;
+        if (_sampleType != null)
+        {
+            try
+            {
+                Map<String, String> importAliases = _sampleType.getImportAliasMap();
+                for (String col : dataColumns)
+                {
+                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    {
+                        hasParentInput = true;
+                        break;
+                    }
+
+                }
+            }
+            catch (IOException ignored)
+            {
+            }
+
+        }
+
+        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws QueryUpdateServiceException, InvalidKeyException
     {
-        TableInfo queryTableInfo = skipDetails ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+        ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
+        TableInfo queryTableInfo = existingRowSelect.tableInfo;
+        Set<String> selectColumns = existingRowSelect.columns;
+
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
 
@@ -895,7 +952,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!rowIdRowNumMap.isEmpty())
         {
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 Integer rowId = (Integer) row.get("rowid");
@@ -916,7 +973,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(lsidRowNumMap.keySet());
 
             Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String sampleLsid = (String) row.get("lsid");
@@ -933,7 +990,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
 
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
@@ -949,7 +1006,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user)); // don't use TinfoMaterial here since UserSchema is needed
+            if (tInfo == null)
+                throw new QueryUpdateServiceException("Unable to get the existing sample record");
+
             existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
             Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
@@ -964,26 +1024,34 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting && !allKeys.isEmpty())
             throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
-        if (skipDetails)
+        // if contains domain fields, check for aliquot specific fields
+        if (!queryTableInfo.getName().equalsIgnoreCase("material"))
+        {
+            Set<String> parentOnlyFields = getSampleMetaFields();
+            for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
+            {
+                Map<String, Object> sampleRow = rowNumSampleRow.getValue();
+
+                if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
+                {
+                    for (String parentOnlyField : parentOnlyFields)
+                        sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
+                }
+            }
+        }
+
+        if (!existingRowSelect.includeParent)
             return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
-        Set<String> parentOnlyFields = getSampleMetaFields();
-
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
-            {
-                for (String parentOnlyField : parentOnlyFields)
-                    sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
-            }
 
             if (!parents.containsKey(lsidKey))
                 continue;
@@ -1208,7 +1276,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             // only add when AliquotedFrom column is not null
-            if (columnNameMap.containsKey("AliquotedFrom"))
+            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
             {
                 addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
                 addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
@@ -1376,7 +1444,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get("AliquotedFrom");
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             if (aliquotedFromObj != null)
             {
                 if (aliquotedFromObj instanceof String)
@@ -1384,7 +1452,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
                     // but we don't want to include the quotes in the name we generate using AliquotedFrom
                     aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
-                    map.put("AliquotedFrom", aliquotedFrom);
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)
                 {
@@ -1594,7 +1662,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private String getAliquotedFromColName()
         {
             // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
-            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : "AliquotedFrom";
+            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : ExpMaterial.ALIQUOTED_FROM_INPUT;
         }
 
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)

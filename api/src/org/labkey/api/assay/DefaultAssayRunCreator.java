@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -249,6 +249,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean forceSaveBatchProps
     ) throws ExperimentException, ValidationException
     {
+        context.setAutoFillDefaultResultColumns(run.getRowId() > 0); // need to setAutoFillDefaultResultColumns before run is saved
+
         final Container container = context.getContainer();
 
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
@@ -418,9 +420,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         runInputLSIDs = Set.of(provInputs.split(","));
                 }
 
-                if (provInputsProperty instanceof JSONArray)
+                if (provInputsProperty instanceof JSONArray jsonArray)
                 {
-                    runInputLSIDs = Arrays.stream(((JSONArray)provInputsProperty).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                    runInputLSIDs = jsonArray.toList().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toSet());
                 }
 
                 if (runInputLSIDs != null && !runInputLSIDs.isEmpty())
@@ -518,7 +522,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
                 dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
-                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
+                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns());
             }
         }
         else
@@ -537,7 +541,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey());
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
         }
     }
@@ -604,7 +608,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
         {
-            if (entry.getValue() == null)
+            String value = entry.getValue();
+            if (value == null || value.isEmpty())
                 continue;
 
             DomainProperty dp = entry.getKey();
@@ -620,7 +625,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // Use the DomainProperty name as the role
             String role = dp.getName();
 
-            String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
                 addMaterialByName(context, inputMaterials, value, role, searchContainers, st, cache, materialCache);

@@ -112,7 +112,6 @@ import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -150,7 +149,7 @@ import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInp
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private final @NotNull ExpDataClassImpl _dataClass;
-    private final Supplier<TableInfo> _dataClassTableInfo;
+    private final Supplier<TableInfo> _dataClassDataTableSupplier;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     public static final Set<String> DATA_CLASS_ALT_MERGE_KEYS;
@@ -168,7 +167,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         super(name, ExperimentService.get().getTinfoData(), schema, cf);
         _dataClass = dataClass;
-        _dataClassTableInfo = new CachingSupplier<>(_dataClass::getTinfo);
+        _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
@@ -363,7 +362,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         else
             setDescription("Contains one row per registered data in the " + _dataClass.getName() + " data class");
 
-        TableInfo extTable = _dataClassTableInfo.get();
+        TableInfo extTable = _dataClassDataTableSupplier.get();
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
@@ -554,7 +553,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (_vocabularyDomainProviders != null)
             return _vocabularyDomainProviders;
 
-        TableInfo extTable = _dataClassTableInfo.get();
+        TableInfo extTable = _dataClassDataTableSupplier.get();
         _vocabularyDomainProviders = new CaseInsensitiveHashMap<>();
 
         for (ColumnInfo col : extTable.getColumns())
@@ -668,7 +667,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
     {
         checkReadBeforeExecute();
-        TableInfo provisioned = _dataClassTableInfo.get();
+        TableInfo provisioned = _dataClassDataTableSupplier.get();
         SqlDialect dialect = _rootTable.getSqlDialect();
 
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
@@ -762,7 +761,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getUniqueIndices());
-        indices.putAll(wrapTableIndices(_dataClassTableInfo.get()));
+        indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
 
         // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
         // RemapCache is used to findExpData using name/rowId remap.
@@ -796,14 +795,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getAllIndices());
-        indices.putAll(wrapTableIndices(_dataClassTableInfo.get()));
+        indices.putAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
         return Collections.unmodifiableMap(indices);
     }
 
     @Override
     public boolean hasDbTriggers()
     {
-        return super.hasDbTriggers() || _dataClassTableInfo.get().hasDbTriggers();
+        return super.hasDbTriggers() || _dataClassDataTableSupplier.get().hasDbTriggers();
     }
 
     @Override
@@ -859,28 +858,27 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        TableInfo propertiesTable = _dataClassTableInfo.get();
+        TableInfo propertiesTable = _dataClassDataTableSupplier.get();
         try
         {
             PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliasMap(), null);
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            SearchService searchService = SearchService.get();
+            if (null != searchService)
             {
                 // Queue indexing after committing
-                propertiesTable.getSchema().getScope().addCommitTask(() ->
-                {
-                    step0.setIndexFunction(lsids -> () ->
-                            ListUtils.partition(lsids, 100).forEach(sublist ->
-                                    ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                    {
-                                        for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                                            expData.index(ss.defaultTask(), this);
-                                    })
-                            )
-                    );
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                step0.setIndexFunction(lsids ->  propertiesTable.getSchema().getScope().addCommitTask(() -> {
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                                        expData.index(searchService.defaultTask(), this);
+                                })
+                        );
+                    }, DbScope.CommitTaskOption.POSTCOMMIT)
+                );
             }
-            return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
+            DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));
         }
         catch (IOException e)
         {
@@ -943,7 +941,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // Ensure we have a dataClass column and it is of the right value
             // use materialized classId so that parameter binding works for both exp.data as well as materialized table
-            ColumnInfo classIdCol = _dataClassTableInfo.get().getColumn("classId");
+            ColumnInfo classIdCol = _dataClassDataTableSupplier.get().getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
             // Ensure we have a cpasType column and it is of the right value
@@ -1128,7 +1126,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return null;
 
             TableInfo d = getDbTable();
-            TableInfo t = _dataClassTableInfo.get();
+            TableInfo t = _dataClassDataTableSupplier.get();
 
             SQLFragment sql = new SQLFragment()
                     .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
@@ -1192,7 +1190,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
             keys = new Object[] {lsid};
-            TableInfo t = _dataClassTableInfo.get();
+            TableInfo t = _dataClassDataTableSupplier.get();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
                 ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));

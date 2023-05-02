@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -124,6 +124,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     @Override
     public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
     {
+        importFile(data, dataFile, info, log, context, allowLookupByAlternateKey, false);
+    }
+
+    @Override
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
         if (sourceApplication == null)
         {
@@ -140,7 +146,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         assert(rawData.size() <= 1);
         try
         {
-            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings);
+            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns);
         }
         catch (ValidationException e)
         {
@@ -153,7 +159,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings);
+            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
         {
@@ -420,10 +426,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData)
             throws ExperimentException, ValidationException
     {
-        importRows(data, user, run, protocol, provider, rawData, null);
+        importRows(data, user, run, protocol, provider, rawData, null, false);
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData, @Nullable DataLoaderSettings settings)
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData, @Nullable DataLoaderSettings settings, boolean autoFillDefaultResultColumns)
             throws ExperimentException, ValidationException
     {
         if (settings == null)
@@ -458,7 +464,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
@@ -607,12 +613,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
+    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider,Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
             throws SQLException, ValidationException
     {
         if (tableInfo instanceof UpdateableTableInfo)
         {
-            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, LOG);
+            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, autoFillDefaultColumns, LOG);
         }
         else
         {
@@ -1118,15 +1124,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (provenanceInputs instanceof JSONArray inputJSONArr)
                 {
-                    Object[] inputArr = inputJSONArr.toArray();
-                    for (Object lsid: inputArr)
+                    for (Object lsid: inputJSONArr.toList())
                     {
                         rowInputLSIDs.add(lsid.toString());
                     }
                 }
-                else if (provenanceInputs instanceof Collection)
+                else if (provenanceInputs instanceof Collection<?> col)
                 {
-                    for (Object obj : (Collection)provenanceInputs)
+                    for (Object obj : col)
                     {
                         rowInputLSIDs.add(Objects.toString(obj));
                     }

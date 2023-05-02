@@ -18,9 +18,9 @@ package org.labkey.api.visualization;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
@@ -104,19 +104,20 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     {
         JSONArray measures = json.getJSONArray("measures");
 
-        for(int i = 0; i < measures.length(); i++)
+        for (int i = 0; i < measures.length(); i++)
         {
             try
             {
                 JSONObject dimension = measures.getJSONObject(i).getJSONObject("dimension");
-                JSONArray values = dimension.getJSONArray("values");
-                JSONArray transformedPTIDs = new JSONArray();
+                JSONArray values = dimension.optJSONArray("values");
 
-                if(values != null)
+                if (values != null)
                 {
-                    for(int j = 0; j < values.length(); j++)
+                    JSONArray transformedPTIDs = new JSONArray();
+
+                    for (int j = 0; j < values.length(); j++)
                     {
-                        if(alternateIdMap.containsKey(values.get(j)))
+                        if (alternateIdMap.containsKey(values.get(j)))
                         {
                             transformedPTIDs.put(alternateIdMap.get(values.get(j)));
                         }
@@ -131,7 +132,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
             catch(JSONException e)
             {
-                if(e.getMessage().contains("is not a JSONArray"))
+                if (e.getMessage().contains("is not a JSONArray"))
                 {
                     // no-op, values is not always defined so this is an acceptable failure.
                 }
@@ -195,7 +196,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), "queryName", changes);
 
             JSONArray measures = json.getJSONArray("measures");
-            for(int i = 0; i < measures.length(); i++)
+            for (int i = 0; i < measures.length(); i++)
             {
                 // update dateOptions queryNames for dateCol and zeroDateCol
                 boolean dateColUpdates = false;
@@ -222,15 +223,14 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
                 // update measure queryName
                 JSONObject measureJson = measures.getJSONObject(i).getJSONObject("measure");
-                String origQueryName = measureJson.getString("queryName");
                 boolean measureUpdates = updateJSONObjectQueryNameReference(measureJson, "queryName", changes);
                 // special case for measure queryname:
                 // reset the measure alias based on the schemaName_queryName_measureName and add a queryLabel
                 if (measureUpdates)
                 {
-                    String schema = measureJson.getString("schemaName");
-                    String query = measureJson.getString("queryName");
-                    String name = measureJson.getString("name");
+                    String schema = measureJson.optString("schemaName", null);
+                    String query = measureJson.optString("queryName", null);
+                    String name = measureJson.optString("name", null);
                     if (schema != null && query != null && name != null)
                         measureJson.put("alias", schema + "_" + query + "_" + name);
 
@@ -248,7 +248,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
 
             // update filterQuery (should be schema.query)
-            if (null != json.getString("filterQuery"))
+            if (null != json.optString("filterQuery", null))
             {
                 String[] keyParts = json.getString("filterQuery").split("\\.");
                 if (keyParts.length == 2 && queryNameChangeMap.containsKey(keyParts[1]))
@@ -260,7 +260,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             }
 
             // update filterUrl (parameter fieldKeys)
-            if (null != json.getString("filterUrl"))
+            if (null != json.optString("filterUrl", null))
             {
                 boolean filterUrlChanges = false;
                 ActionURL filterUrl = new ActionURL(json.getString("filterUrl"));
@@ -304,7 +304,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     private boolean updateJSONObjectQueryNameReference(JSONObject json, String propName, Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
-        String queryName = json.getString(propName);
+        String queryName = json.optString(propName, null);
         if (queryName != null)
         {
             for (QueryChangeListener.QueryPropertyChange qpc : changes)

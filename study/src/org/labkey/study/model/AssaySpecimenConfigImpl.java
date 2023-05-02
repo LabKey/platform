@@ -230,7 +230,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         props.put("Source", getSource());
         props.put("TubeType", getTubeType());
         props.put("PrimaryTypeId", getPrimaryTypeId());
-        props.put("DerivtiveTypeId", getDerivativeTypeId());
+        props.put("DerivativeTypeId", getDerivativeTypeId());
         props.put("Lab", getLab());
         props.put("SampleType", getSampleType());
         props.put("SampleQuantity", getSampleQuantity());
@@ -239,7 +239,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         return props;
     }
 
-    public static AssaySpecimenConfigImpl fromJSON(@NotNull org.json.JSONObject o, Container container)
+    public static AssaySpecimenConfigImpl fromJSON(@NotNull JSONObject o, Container container)
     {
         AssaySpecimenConfigImpl assay = new AssaySpecimenConfigImpl(container, o.getString("AssayName"), o.getString("Description"));
 

@@ -2602,14 +2602,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
-            SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
+            SQLFragment parentsInnerSelectFrag = new SQLFragment().setSqlUnsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
             String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment().setSqlUnsafe(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2617,14 +2617,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
             childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-            SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
+            SQLFragment childrenInnerSelectFrag = new SQLFragment().setSqlUnsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment().setSqlUnsafe(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -6321,7 +6321,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                           Map<ExpData, String> outputDatas,
                                           Map<ExpData, String> transformedDatas,
                                           ViewBackgroundInfo info,
-                                          Logger log,
+                                          @NotNull Logger log,
                                           boolean loadDataFiles,
                                           @Nullable Set<String> runInputLsids,
                                           @Nullable Set<Pair<String, String>> finalOutputLsids)
@@ -7073,9 +7073,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
-                                Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
-                                ViewBackgroundInfo info, Logger log)
+    public ExpRun derive(@NotNull Map<ExpMaterial, String> inputMaterials, @NotNull Map<ExpData, String> inputDatas,
+                                @NotNull Map<ExpMaterial, String> outputMaterials, @NotNull Map<ExpData, String> outputDatas,
+                                @NotNull ViewBackgroundInfo info, @NotNull Logger log)
             throws ExperimentException
     {
         ExpRun run = createRun(inputMaterials, inputDatas, outputMaterials, outputDatas,info);
@@ -7108,20 +7108,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ExperimentException("The material " + expMaterial.getName() + " cannot be an input to its own derivation.");
         }
 
+        ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), getDerivationRunName(inputMaterials, inputDatas, outputMaterials.size(), outputDatas.size()));
+        run.setProtocol(protocol);
+        run.setFilePathRoot(pipeRoot.getRootPath());
+
+        return run;
+    }
+
+    public static String getDerivationRunName(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                                       int numMaterialOutputs, int numDataOutputs)
+    {
         StringBuilder name = new StringBuilder("Derive ");
-        if (outputDatas.isEmpty())
+        if (numDataOutputs <= 0)
         {
-            if (outputMaterials.size() == 1)
+            if (numMaterialOutputs == 1)
                 name.append("sample ");
             else
-                name.append(outputMaterials.size()).append(" samples ");
+                name.append(numMaterialOutputs).append(" samples ");
         }
-        else if (outputMaterials.isEmpty())
+        else if (numMaterialOutputs <= 0)
         {
-            if (outputDatas.size() == 1)
+            if (numDataOutputs == 1)
                 name.append("data ");
             else
-                name.append(outputDatas.size()).append(" data ");
+                name.append(numDataOutputs).append(" data ");
         }
         name.append("from ");
         String nameSeparator = "";
@@ -7139,16 +7150,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             name.append(material.getName());
             nameSeparator = ", ";
         }
-
-        ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
-        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
-        run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
-
-        return run;
+        return name.toString();
     }
 
-    private ExpRunImpl createAliquotRun(ExpMaterial parent, List<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
+    public ExpRunImpl createAliquotRun(ExpMaterial parent, Collection<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
@@ -7160,20 +7165,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (parent == null)
             throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
 
-        StringBuilder name = new StringBuilder("Create ");
-        if (aliquots.size() == 1)
-            name.append("aliquot ");
-        else
-            name.append(aliquots.size()).append(" aliquots ");
-        name.append("from ");
-        name.append(parent.getName());
-
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
-        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
         return run;
+    }
+
+    public static String getAliquotRunName(ExpMaterial parent, int numAliquots)
+    {
+        StringBuilder name = new StringBuilder("Create ");
+        if (numAliquots == 1)
+            name.append("aliquot ");
+        else
+            name.append(numAliquots).append(" aliquots ");
+        name.append("from ");
+        name.append(parent.getName());
+        return name.toString();
     }
 
     @Override

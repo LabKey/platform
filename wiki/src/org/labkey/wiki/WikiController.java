@@ -1017,7 +1017,7 @@ public class WikiController extends SpringActionController
                 //map source page row ids to new page row ids
                 Map<Integer, Integer> pageIdMap = new HashMap<>();
                 //shortcut for root topics
-                pageIdMap.put(-1, -1);
+                pageIdMap.put(null, null);
 
                 //copy each page in the list
                 for (String name : srcPageNames)
@@ -1620,7 +1620,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
         private String _title;
-        private int _parent;
+        private Integer _parent;
         private String _siblingOrder;
         private String _nextAction;
         private boolean _shouldIndex;
@@ -1692,13 +1692,13 @@ public class WikiController extends SpringActionController
             _title = title;
         }
 
-        public int getParent()
+        public Integer getParent()
         {
             return _parent;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setParent(int parent)
+        public void setParent(Integer parent)
         {
             _parent = parent;
         }
@@ -2044,7 +2044,7 @@ public class WikiController extends SpringActionController
         private String _name;
         private String _title;
         private String _body;
-        private Integer _parent = -1;
+        private Integer _parent;
         private Integer _pageVersionId;
         private String _rendererType;
         private String _pageId;
@@ -2126,9 +2126,9 @@ public class WikiController extends SpringActionController
             _pageVersionId = pageVersionId;
         }
 
-        public int getParentId()
+        public Integer getParentId()
         {
-            return null == _parent ? -1 : _parent;
+            return _parent;
         }
 
         public String getRendererType()
@@ -2366,7 +2366,7 @@ public class WikiController extends SpringActionController
                     (null != wikiversion.getBody() && null == form.getBody()) ||
                     (null != wikiversion.getBody() && null != form.getBody() && wikiversion.getBody().compareTo(form.getBody().trim()) != 0) ||
                     !wikiversion.getRendererTypeEnum().equals(currentRendererType) ||
-                    wikiUpdate.getParent() != form.getParentId() ||
+                    !Objects.equals(wikiUpdate.getParent(), form.getParentId()) ||
                     wikiUpdate.isShowAttachments() != form.isShowAttachments() ||
                     wikiUpdate.isShouldIndex() != form.isShouldIndex())
             {

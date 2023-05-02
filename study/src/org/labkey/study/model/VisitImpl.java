@@ -306,6 +306,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
+    @Transient
     public Cohort getCohort()
     {
         if (_cohortId == null)
@@ -449,12 +450,13 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             assert !_readableProperties.remove("relevantPermissions");
             assert !_readableProperties.remove("parentResource");
             assert !_readableProperties.remove("policy");
+            assert !_readableProperties.remove("sourceModule");
         }
     }
 
     public static BigDecimal calcDefaultDateBasedProtocolDay(BigDecimal sequenceMin, BigDecimal sequenceMax)
     {
-        // Average and round, which is what the double version does
+        // Average and round
         return sequenceMin.add(sequenceMax).divide(BigDecimal.valueOf(2)).setScale(0, RoundingMode.HALF_UP);
     }
 

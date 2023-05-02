@@ -754,11 +754,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         StringBuilder body = new StringBuilder();
 
-        // Name is an identifier with highest weight
+        // Name is an identifier with the highest weight
         identifiersHi.add(getName());
+        keywordsMed.add(getName()); // also add to keywords since those are stemmed
 
         // Description is added as a keywordsLo -- in Biologics it is common for the description to
-        // contain names of other DataClasses, e.g., "Mature desK of PS-10", which would will be tokenized as
+        // contain names of other DataClasses, e.g., "Mature desK of PS-10", which would be tokenized as
         // [mature, desk, ps, 10] if added it as a keyword so we lower its priority to avoid useless results.
         // CONSIDER: tokenize the description and extract identifiers
         if (null != getDescription())
@@ -768,7 +769,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (comment != null)
             keywordsMed.add(comment);
 
-        // Add aliases in parenthesis in the title
+        // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder(getName());
         Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())

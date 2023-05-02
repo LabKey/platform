@@ -62,6 +62,12 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     {
         importFile(data, dataFile, info, log, context);
     }
+
+    default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
+    {
+        importFile(data, dataFile, info, log, context);
+    }
+
     default void importFile(@NotNull ExpData data, Path dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         if (FileUtil.hasCloudScheme(dataFile))

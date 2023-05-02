@@ -177,6 +177,8 @@ public class JsonWriter
 
         props.put("derivationDataScope", cinfo == null ? null : cinfo.getDerivationDataScope());
 
+        props.put("wrappedColumnName", cinfo == null ? null : cinfo.getWrappedColumnName());
+
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
         {

@@ -198,6 +198,15 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @Nullable
     default File getOriginalFileLocation() { return null; }
 
+    default boolean shouldAutoFillDefaultResultColumns()
+    {
+        return false;
+    }
+
+    default void setAutoFillDefaultResultColumns(boolean autoFill)
+    {
+    }
+
     /**
      * Builder pattern for creating a AssayRunUploadContext instance.
      */

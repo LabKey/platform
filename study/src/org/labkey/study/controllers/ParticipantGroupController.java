@@ -842,15 +842,15 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public void bindJson(org.json.JSONObject json)
+        public void bindJson(JSONObject json)
         {
             if (json.has("groups"))
             {
-                org.json.JSONArray groupArr = json.getJSONArray("groups");
+                JSONArray groupArr = json.getJSONArray("groups");
 
                 for (int i=0; i < groupArr.length(); i++)
                 {
-                    org.json.JSONObject group = groupArr.getJSONObject(i);
+                    JSONObject group = groupArr.getJSONObject(i);
 
                     GroupType type = GroupType.valueOf(group.getString("type"));
 

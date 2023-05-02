@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -164,7 +165,9 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
 
     public Container getAutoLinkTargetContainer()
     {
-        return _autoLinkTargetContainer;
+        if (_autoLinkTargetContainer == null)
+            return null;
+        return ContainerManager.getForId(_autoLinkTargetContainer.getId());
     }
     
     public void setAutoLinkTargetContainer(Container autoLinkTargetContainer)
