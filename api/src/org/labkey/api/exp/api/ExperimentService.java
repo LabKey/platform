@@ -58,6 +58,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SampleStatusTable;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -979,6 +980,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @return The number of edges removed.
      */
     int removeEdges(ExpLineageEdge.FilterOptions options);
+
+    void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
+
+    Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     class XarExportOptions
     {

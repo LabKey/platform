@@ -7699,102 +7699,75 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public static class MoveSamplesAction extends MutatingApiAction<MoveSamplesForm>
+    public static class MoveDataClassObjectsAction extends MoveEntitiesAction
     {
-        private Container _targetContainer;
+        private List<? extends ExpData> _dataClassObjects;
+
+        @Override
+        public void validateForm(MoveEntitiesForm form, Errors errors)
+        {
+            super.validateForm(form, errors);
+            _entityType = "sources";
+            validateDataIds(form, errors);
+        }
+
+        @Override
+        Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
+        {
+            return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
+        }
+
+        @Override
+        void updateSelections(MoveEntitiesForm form)
+        {
+            updateSelections(form, _dataClassObjects);
+        }
+
+        private void validateDataIds(MoveEntitiesForm form, Errors errors)
+        {
+            Set<Integer> dataIds = form.getIds(false); // handle clear of selectionKey after move complete
+            if (dataIds == null || dataIds.isEmpty())
+            {
+                errors.reject(ERROR_GENERIC, "Source IDs must be specified for the move operation.");
+                return;
+            }
+
+            _dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
+            if (_dataClassObjects.size() != dataIds.size())
+            {
+                errors.reject(ERROR_GENERIC, "Unable to find all sources for the move operation.");
+                return;
+            }
+
+            // verify all samples are from the current container
+            if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
+            {
+                errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
+            }
+        }
+
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class MoveSamplesAction extends MoveEntitiesAction
+    {
         private List<? extends ExpMaterial> _materials;
 
         @Override
-        public void validateForm(MoveSamplesForm form, Errors errors)
+        public void validateForm(MoveEntitiesForm form, Errors errors)
         {
-            validateTargetContainer(form, errors);
+            super.validateForm(form, errors);
+            _entityType = "samples";
             validateSampleIds(form, errors);
         }
 
         @Override
-        public Object execute(MoveSamplesForm form, BindException errors)
+        public Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            try
-            {
-                Map<String, Integer> updateCounts = SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
-                updateSelections(form);
-
-                resp.put("success", true);
-                resp.put("updateCounts", updateCounts);
-                resp.put("containerPath", _targetContainer.getPath());
-
-            }
-            catch (Exception e)
-            {
-                resp.put("success", false);
-                resp.put("error", e);
-            }
-            return resp;
+            return SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
         }
 
-        // Since the samples have moved containers, the selections are no longer valid for the given context so need to be removed
-        private void updateSelections(MoveSamplesForm form)
-        {
-            String selectionKey = form.getDataRegionSelectionKey();
-            if (selectionKey != null)
-                DataRegionSelection.setSelected(getViewContext(), selectionKey, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()), false);
-        }
-
-        private void validateTargetContainer(MoveSamplesForm form, Errors errors)
-        {
-            if (form.getTargetContainer() == null)
-            {
-                errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
-                return;
-            }
-
-            _targetContainer = getTargetContainer(form);
-            if (_targetContainer == null)
-            {
-                errors.reject(ERROR_GENERIC, "The target container was not found: " + form.getTargetContainer() + ".");
-                return;
-            }
-
-            if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
-            {
-                errors.reject(ERROR_GENERIC, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
-                return;
-            }
-
-            if (!isValidTargetContainer(getContainer(), _targetContainer))
-                errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
-        }
-
-        private Container getTargetContainer(MoveSamplesForm form)
-        {
-            Container c = ContainerManager.getForId(form.getTargetContainer());
-            if (c == null)
-                c = ContainerManager.getForPath(form.getTargetContainer());
-
-            return c;
-        }
-
-        // targetContainer must be in the same app project at this time
-        // i.e. child of current project, project of current child, sibling within project
-        private boolean isValidTargetContainer(Container current, Container target)
-        {
-            if (current.isRoot() || target.isRoot())
-                return false;
-
-            if (current.equals(target))
-                return false;
-
-            boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
-            boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
-            boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
-
-            return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
-        }
-
-        private void validateSampleIds(MoveSamplesForm form, Errors errors)
+        private void validateSampleIds(MoveEntitiesForm form, Errors errors)
         {
             Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
             if (sampleIds == null || sampleIds.isEmpty())
@@ -7839,9 +7812,116 @@ public class ExperimentController extends SpringActionController
             if (!invalidStatusSamples.isEmpty())
                 errors.reject(ERROR_GENERIC, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
         }
+
+        @Override
+        protected void updateSelections(MoveEntitiesForm form)
+        {
+            updateSelections(form, _materials);
+        }
     }
 
-    public static class MoveSamplesForm extends DataViewSnapshotSelectionForm
+
+    @RequiresPermission(UpdatePermission.class)
+    public abstract static class MoveEntitiesAction extends MutatingApiAction<MoveEntitiesForm>
+    {
+        protected Container _targetContainer;
+        protected String _entityType;
+
+        @Override
+        public void validateForm(MoveEntitiesForm form, Errors errors)
+        {
+            validateTargetContainer(form, errors);
+        }
+
+        abstract Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException;
+
+        abstract void updateSelections(MoveEntitiesForm form);
+
+        protected void updateSelections(MoveEntitiesForm form, Collection<? extends ExpRunItem> runItems)
+        {
+            // Since the run items have moved containers, the selections are no longer valid for the given context so need to be removed
+            String selectionKey = form.getDataRegionSelectionKey();
+            if (selectionKey != null)
+                DataRegionSelection.setSelected(getViewContext(), selectionKey, runItems.stream().map(expRunItem -> Integer.toString(expRunItem.getRowId())).collect(Collectors.toSet()), false);
+        }
+
+        @Override
+        public Object execute(MoveEntitiesForm form, BindException errors)
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            try
+            {
+                Map<String, Integer> updateCounts = doMove(form);
+
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", _entityType);
+                updateSelections(form);
+
+                resp.put("success", true);
+                resp.put("updateCounts", updateCounts);
+                resp.put("containerPath", _targetContainer.getPath());
+
+            }
+            catch (Exception e)
+            {
+                resp.put("success", false);
+                resp.put("error", e);
+            }
+            return resp;
+        }
+
+        private void validateTargetContainer(MoveEntitiesForm form, Errors errors)
+        {
+            if (form.getTargetContainer() == null)
+            {
+                errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
+                return;
+            }
+
+            _targetContainer = getTargetContainer(form);
+            if (_targetContainer == null)
+            {
+                errors.reject(ERROR_GENERIC, "The target container was not found: " + form.getTargetContainer() + ".");
+                return;
+            }
+
+            if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
+            {
+                errors.reject(ERROR_GENERIC, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
+                return;
+            }
+
+            if (!isValidTargetContainer(getContainer(), _targetContainer))
+                errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
+        }
+
+        private Container getTargetContainer(MoveEntitiesForm form)
+        {
+            Container c = ContainerManager.getForId(form.getTargetContainer());
+            if (c == null)
+                c = ContainerManager.getForPath(form.getTargetContainer());
+
+            return c;
+        }
+
+        // targetContainer must be in the same app project at this time
+        // i.e. child of current project, project of current child, sibling within project
+        private boolean isValidTargetContainer(Container current, Container target)
+        {
+            if (current.isRoot() || target.isRoot())
+                return false;
+
+            if (current.equals(target))
+                return false;
+
+            boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
+            boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
+            boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+
+            return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
+        }
+    }
+
+    public static class MoveEntitiesForm extends DataViewSnapshotSelectionForm
     {
         private String _targetContainer;
         private String _userComment;

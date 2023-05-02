@@ -45,6 +45,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ExperimentAuditEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -79,6 +80,7 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -93,6 +95,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
@@ -8326,6 +8329,126 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
 
         return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
+    }
+
+    @Override
+    public void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
+    {
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
+        objectUpdate.append(")");
+        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private int dataObjectAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    {
+        TableInfo aliasMapTable = getTinfoDataAliasMap();
+        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
+        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
+        aliasMapUpdate.append(")");
+        return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
+
+    @Override
+    public Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
+    {
+        if (dataObjects == null || dataObjects.isEmpty())
+            throw new IllegalArgumentException("No sources provided to move operation.");
+
+        Map<ExpDataClass, List<ExpData>> dataClassesMap = new HashMap<>();
+        dataObjects.forEach(dataObject ->
+                dataClassesMap.computeIfAbsent(dataObject.getDataClass(user), t -> new ArrayList<>()).add(dataObject));
+
+        Map<String, Integer> updateCounts = new HashMap<>();
+        updateCounts.put("sources", 0);
+        updateCounts.put("sourceAliases", 0);
+        updateCounts.put("sourceAuditEvents", 0);
+
+
+
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            if (AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(dataObjects.size());
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
+            for (Map.Entry<ExpDataClass, List<ExpData>> entry: dataClassesMap.entrySet())
+            {
+                ExpDataClass dataClass = entry.getKey();
+                List<ExpData> classObjects = entry.getValue();
+                List<Integer> dataIds = classObjects.stream().map(ExpData::getRowId).toList();
+                DataClassUserSchema schema = new DataClassUserSchema(dataClass.getContainer(), user);
+                TableInfo dataClassTable = schema.getTable(dataClass.getName());
+
+
+                // update exp.data.container
+                updateCounts.put("sources", updateCounts.get("sources") + dataRowContainerUpdate(dataIds, targetContainer, user));
+
+                // update for exp.object.container
+                updateExpObjectContainers(getTinfoData(), dataIds, targetContainer);
+
+                // update for exp.dataaliasmap.container
+                updateCounts.put("sourceAliases", dataObjectAliasMapRowContainerUpdate(dataIds, targetContainer));
+
+                // update core.document.container for any files attached to the data objects that are moving
+                moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
+
+                // TODO create summary audit entries for the source and target containers
+                // TODO create new detailed events for each data object that was moved
+            }
+
+            transaction.addCommitTask(() -> {
+                // update search index for moved data class object via indexDataClass() helper. It filters for data objects
+                // to index based on the modified date
+                for (ExpDataClass dataClass : dataClassesMap.keySet())
+                    indexDataClass((ExpDataClassImpl) dataClass);
+            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            transaction.commit();
+        }
+        return updateCounts;
+    }
+
+    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
+    {
+        QueryService queryService = QueryService.get();
+        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY);
+
+    }
+
+    private int dataRowContainerUpdate(List<Integer> dataIds, Container targetContainer, User user)
+    {
+        TableInfo dataTable = getTinfoData();
+        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, dataIds);
+        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
+    }
+
+    private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
+    {
+        List<? extends DomainProperty> attachmentDomainProps = dataClass.getDomain()
+                .getProperties().stream()
+                .filter(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType())).toList();
+        if (attachmentDomainProps.isEmpty())
+            return;
+
+        List<AttachmentParent> parents = new ArrayList<>();
+        for (ExpData data : classObjects)
+        {
+            Lsid lsid = new Lsid(data.getLSID());
+            parents.add(new ExpDataClassAttachmentParent(data.getContainer(), lsid));
+
+        }
+        AttachmentService.get().moveAttachments(targetContainer, parents, user);
     }
 
     public static class TestCase extends Assert

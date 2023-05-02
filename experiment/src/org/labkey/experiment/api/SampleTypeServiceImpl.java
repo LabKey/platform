@@ -1659,6 +1659,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
         Map<Integer, List<FileFieldRenameData>> fileMovesBySampleId = new HashMap<>();
+        ExperimentService expService = ExperimentService.get();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1682,7 +1683,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
 
                 // update for exp.object.container
-                objectRowContainerUpdate(getTinfoMaterial(), sampleIds, targetContainer);
+                expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
 
                 // update the paths to files associated with individual samples
                 fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
@@ -1806,7 +1807,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
         int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
-        objectRowContainerUpdate(getTinfoExperimentRun(), runRowIds, targetContainer);
+        ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
         return updateCount;
     }
 
@@ -1885,16 +1886,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" WHERE rowid ");
         materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
         return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
-    }
-
-    private void objectRowContainerUpdate(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
-    {
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
-        objectUpdate.append(")");
-        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
     private int materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
