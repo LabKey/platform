@@ -52,6 +52,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -1316,9 +1317,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             for (DomainKind<?> dk : PropertyService.get().getDomainKinds())
             {
+                if (dk instanceof TestDomainKind)
+                    continue;
                 String schemaName = dk.getStorageSchemaName();
                 if (null != schemaName)
                 {
+                    assert !"temp".equalsIgnoreCase(schemaName);
                     Path path = new Path(schemaName);
                     schemaNames.add(path);
                     nonProvisionedTableMap.put(path, dk.getNonProvisionedTableNames());
