@@ -8367,8 +8367,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         updateCounts.put("sourceAliases", 0);
         updateCounts.put("sourceAuditEvents", 0);
 
-
-
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             if (AuditBehaviorType.NONE != auditBehavior)
@@ -8402,12 +8400,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // TODO move derivation runs
                 
                 // move audit events associated with the sources that are moving
-                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds,  dataClassTable.getSchema().getName(), dataClassTable.getName());
-                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
 
-                // create summary audit entries for the source and target containers.
+                // create summary audit entries for the source container only.  The message is pretty generic, so having it
+                // in both source and target doesn't help much.
                 addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
-                addDataClassSummaryAuditEvent(user, targetContainer, dataClassTable, updateCount, userComment);
 
                 // create new detailed events for each data object that was moved
                 AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
@@ -8417,13 +8415,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     List<Map<String, Object>> newRows = new ArrayList<>();
                     for (ExpData data : classObjects)
                     {
-                        Map<String, Object> oldRecordMap = new HashMap<>();
-                        oldRecordMap.put("Project", sourceContainer.getName());
-                        oldRecordMap.put("RowId", data.getRowId());
+                        Map<String, Object> oldRecordMap = new CaseInsensitiveHashMap<>();
+                        oldRecordMap.put("Container", sourceContainer.getName());
+                        oldRecordMap.put("rowId", data.getRowId());
                         oldRows.add(oldRecordMap);
-                        Map<String, Object> newRecordMap = new HashMap<>();
-                        newRecordMap.put("Project", targetContainer.getName());
-                        newRecordMap.put("RowId", data.getRowId());
+                        Map<String, Object> newRecordMap = new CaseInsensitiveHashMap<>();
+                        newRecordMap.put("Container", targetContainer.getName());
+                        newRecordMap.put("rowId", data.getRowId());
                         newRows.add(newRecordMap);
                     }
                     QueryService.get().getDefaultAuditHandler().addAuditEvent(user, targetContainer, dataClassTable, dcAuditBehavior, userComment, QueryService.AuditAction.UPDATE, newRows, oldRows);
