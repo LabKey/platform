@@ -103,9 +103,10 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             _selectedColumns.put(pt.getFieldKey(), pt);
         }
 
-        // add ref to first column, this may be used in (SELECT) expression
+        // add ref to first column, this may be required for expressions such as WHERE IN (SELECT ...)
+        // we use _query as the referer to make sure this ref does not go away
         if (!_selectedColumns.isEmpty())
-            _selectedColumns.get(0).addRef(this);
+            _selectedColumns.get(0).addRef(_query);
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
@@ -290,8 +291,8 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
                     if (fieldKeys.contains(lkCol.getFieldKey()))
                         lkCol.addRef(this);
                 }
-                if (_selectedColumns.isEmpty())
-                    _selectedColumns.get(0).addRef(this);
+                // column 0 should still have a reference because it has a reference from _query (see constructor)
+                assert _selectedColumns.get(0).ref.count() > 0;
             }
             return super.getFromSQL(alias);
         }
