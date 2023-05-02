@@ -586,19 +586,25 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     // Static helpers to create a simple response object for Jackson serialization
     //
 
-    public static SimpleResponse success()
+    public static SimpleResponse<Void> success()
     {
-        return new SimpleResponse(true);
+        return new SimpleResponse<>(true);
     }
 
-    public static SimpleResponse success(String message)
+    public static SimpleResponse<String> success(String message)
     {
-        return new SimpleResponse(true, message);
+        return new SimpleResponse<>(true, message);
     }
 
     public static <T> SimpleResponse<T> success(T data)
     {
         return new SimpleResponse<>(true, null, data);
+    }
+
+    // Wrapping an ApiSimpleResponse with a SimpleResponse is strange, but a few actions do it so make it work
+    public static SimpleResponse<?> success(ApiSimpleResponse data)
+    {
+        return success(data.getJson());
     }
 
     public static <T> SimpleResponse<T> success(String message, T data)
@@ -615,6 +621,5 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         throw new NotFoundException(message);
     }
-
 }
 
