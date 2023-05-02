@@ -21,7 +21,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
     @Override
-    public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
+    public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment)
     {
         if (table.supportsAuditTracking())
         {
@@ -30,7 +30,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
             if (auditType == SUMMARY)
             {
-                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, null, dataRowCount, null);
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, dataRowCount, null);
 
                 AuditLogService.get().addEvent(user, event);
             }

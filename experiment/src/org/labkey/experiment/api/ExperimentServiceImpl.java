@@ -8386,9 +8386,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 DataClassUserSchema schema = new DataClassUserSchema(dataClass.getContainer(), user);
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
-
                 // update exp.data.container
-                updateCounts.put("sources", updateCounts.get("sources") + dataRowContainerUpdate(dataIds, targetContainer, user));
+                int updateCount = dataRowContainerUpdate(dataIds, targetContainer, user);
+                updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
                 updateExpObjectContainers(getTinfoData(), dataIds, targetContainer);
@@ -8399,8 +8399,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
 
-                // TODO create summary audit entries for the source and target containers
-                // TODO create new detailed events for each data object that was moved
+                // TODO move derivation runs
+                
+                // move audit events associated with the sources that are moving
+                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds,  dataClassTable.getSchema().getName(), dataClassTable.getName());
+                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+
+                // create summary audit entries for the source and target containers.
+                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+                addDataClassSummaryAuditEvent(user, targetContainer, dataClassTable, updateCount, userComment);
+
+                // create new detailed events for each data object that was moved
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                if (dcAuditBehavior == AuditBehaviorType.DETAILED)
+                {
+                    List<Map<String, Object>> oldRows = new ArrayList<>();
+                    List<Map<String, Object>> newRows = new ArrayList<>();
+                    for (ExpData data : classObjects)
+                    {
+                        Map<String, Object> oldRecordMap = new HashMap<>();
+                        oldRecordMap.put("Project", sourceContainer.getName());
+                        oldRecordMap.put("RowId", data.getRowId());
+                        oldRows.add(oldRecordMap);
+                        Map<String, Object> newRecordMap = new HashMap<>();
+                        newRecordMap.put("Project", targetContainer.getName());
+                        newRecordMap.put("RowId", data.getRowId());
+                        newRows.add(newRecordMap);
+                    }
+                    QueryService.get().getDefaultAuditHandler().addAuditEvent(user, targetContainer, dataClassTable, dcAuditBehavior, userComment, QueryService.AuditAction.UPDATE, newRows, oldRows);
+                }
             }
 
             transaction.addCommitTask(() -> {
@@ -8417,8 +8444,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
     {
         QueryService queryService = QueryService.get();
-        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY);
-
+        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
     private int dataRowContainerUpdate(List<Integer> dataIds, Container targetContainer, User user)
