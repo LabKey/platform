@@ -212,8 +212,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         try
         {
-            if (obj instanceof ApiResponse)
-                write((ApiResponse)obj);
+            if (obj instanceof ApiResponse apiResponse)
+                write(apiResponse);
             else
                 writeObject(obj);
         }

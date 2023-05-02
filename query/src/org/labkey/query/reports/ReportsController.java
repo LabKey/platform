@@ -3158,7 +3158,7 @@ public class ReportsController extends SpringActionController
             // Construct response
             JSONObject root = new JSONObject();
             JSONObject tree = convertTree(rootHelper);
-            JSONArray children = (JSONArray)tree.get("children");
+            JSONArray children = tree.getJSONArray("children");
             root.put("name", ".");
             root.put("expanded", true);
             root.put("children", children);

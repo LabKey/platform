@@ -92,7 +92,7 @@ public class JsonTest extends Assert
     @Test
     public void jsonOrgViaJackson() throws IOException
     {
-        // Test serializing org.json.* classes via Jackson
+        // Test serializing JSONObject and JSONArray via Jackson
         ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER;
 
         final Date d = new GregorianCalendar(2011, Calendar.DECEMBER, 3).getTime();
@@ -103,12 +103,12 @@ public class JsonTest extends Assert
         obj.put("nul", (Object)null);
 //        obj.put("d", d);  //TODO: new JSONObject serializes date-times as ISO
 
-        // Verify serializing org.json.JSONObject via Jackson is equivalent
+        // Verify serializing JSONObject via Jackson is equivalent
         String jacksonToString = mapper.writeValueAsString(obj);
         String jsonOrgToString = obj.toString();
         assertEquals(jsonOrgToString, jacksonToString);
 
-        // Verify deserializing org.json.JSONObject via Jackson is equivalent
+        // Verify deserializing JSONObject via Jackson is equivalent
         // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
         JSONObject jsonOrgRoundTrip =  new JSONObject(jacksonToString);
         JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, JSONObject.class);

@@ -17,7 +17,7 @@ package org.labkey.api.dataiterator;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.logging.LogHelper;
@@ -29,8 +29,6 @@ import java.util.function.Supplier;
 
 /**
  * Wrapper around some other DataIterator that provides Log4J-based logging of the values that are passing through.
- * User: matthewb
- * Date: 2011-05-27
  */
 public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
@@ -124,12 +122,12 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
 
         if (supportsGetMap())
         {
-            Map<String,Object> map = getMap();
+            Map<String, Object> map = getMap();
             JSONObject json = new JSONObject(map);
             // avoid recursion bombs
             json.remove("extraProperties");
             json.remove("properties");
-            sb.append(json.toString());
+            sb.append(json);
             sb.append("\n");
         }
 

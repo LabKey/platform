@@ -79,6 +79,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -126,7 +127,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -309,7 +309,7 @@ public class FileContentController extends SpringActionController
                                         throw new FileNotFoundException();
                                     if (null == fis)
                                         throw new FileNotFoundException();
-                                    IOUtils.copy(new InputStreamReader(fis), out);
+                                    IOUtils.copy(Readers.getUnbufferedReader(fis), out);
                                 }
                                 catch (FileNotFoundException x)
                                 {
@@ -581,7 +581,7 @@ public class FileContentController extends SpringActionController
            FileContentService service = FileContentService.get();
 
            if (null == name)
-              	errors.reject(SpringActionController.ERROR_MSG, "Please enter a label for the file set. ");
+               errors.reject(SpringActionController.ERROR_MSG, "Please enter a label for the file set. ");
            else if (name.length() > MAX_NAME_LENGTH)
                 errors.reject(SpringActionController.ERROR_MSG, "Name is too long, should be less than " + MAX_NAME_LENGTH +" characters.");
            else
@@ -595,7 +595,7 @@ public class FileContentController extends SpringActionController
            else if (path.length() > MAX_PATH_LENGTH)
                 errors.reject(SpringActionController.ERROR_MSG, "File path is too long, should be less than " + MAX_PATH_LENGTH + " characters.");
 
-		   String message = "";
+           String message = "";
            if (errors.getErrorCount() == 0)
            {
                service.registerDirectory(getContainer(), name, path, false);             // TODO: S3
@@ -648,7 +648,7 @@ public class FileContentController extends SpringActionController
            form.setRootPath(webRoot == null ? null : FileUtil.getAbsolutePath(getContainer(), webRoot.toUri()));
            setReshow(true);
 
-		   return true;
+           return true;
        }
    }
 
@@ -819,11 +819,11 @@ public class FileContentController extends SpringActionController
                 public void write(ApiResponse response) throws IOException
                 {
                     // need to write out the json in a form that the ext tree loader expects
-                    Map<String, ?> props = ((ApiSimpleResponse)response).getProperties();
-                    if (props.containsKey("children"))
+                    JSONObject json = ((ApiSimpleResponse)response).getJson();
+                    if (json.has("children"))
                     {
-                        JSONArray json = new JSONArray((Collection<Object>)props.get("children"));
-                        getWriter().write(json.toString(4));
+                        JSONArray children = json.getJSONArray("children");
+                        getWriter().write(children.toString(4));
                     }
                     else
                         super.write(response);
@@ -1503,7 +1503,7 @@ public class FileContentController extends SpringActionController
     {
         public IFrameView(String url)
         {
-			super("/org/labkey/filecontent/view/iframe.jsp", url);
+            super("/org/labkey/filecontent/view/iframe.jsp", url);
         }
     }
 

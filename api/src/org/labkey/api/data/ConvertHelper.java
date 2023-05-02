@@ -42,7 +42,7 @@ import org.apache.commons.beanutils.converters.SqlTimeConverter;
 import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -882,14 +882,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return value;
 
             if (value instanceof Map)
-                return new JSONObject((Map)value);
+                return new JSONObject((Map<?, ?>)value);
+
             if (value instanceof String)
                 return new JSONObject((String)value);
 
             throw new ConversionExceptionWithMessage("Could not convert '" + value + "' to a JSONObject");
         }
     }
-
 
     /* Java 7 formats using infinity symbol instead of "Infinity", but doesn't parse it */
     public static class InfDoubleConverter implements Converter

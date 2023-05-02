@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
@@ -39,7 +39,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -141,9 +140,9 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             if (m.containsKey(prop))
             {
                 Object value = m.get(prop);
-                // TODO (JSONArray should implement List, but not for this branch)
-                if (value instanceof JSONArray)
-                    value = Arrays.asList(((JSONArray)value).toArray());
+                if (value instanceof JSONArray ja)
+                    value = ja.toList();
+
                 try
                 {
                     try
@@ -179,7 +178,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             }
         }
 
-        this.fixupBean(bean);
+        fixupBean(bean);
+
         return bean;
     }
 
