@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -420,9 +420,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         runInputLSIDs = Set.of(provInputs.split(","));
                 }
 
-                if (provInputsProperty instanceof JSONArray)
+                if (provInputsProperty instanceof JSONArray jsonArray)
                 {
-                    runInputLSIDs = Arrays.stream(((JSONArray)provInputsProperty).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                    runInputLSIDs = jsonArray.toList().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toSet());
                 }
 
                 if (runInputLSIDs != null && !runInputLSIDs.isEmpty())

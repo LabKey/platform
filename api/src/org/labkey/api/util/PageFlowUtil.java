@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -155,7 +156,16 @@ import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.onmouseout;
+import static org.labkey.api.util.DOM.Attribute.onmouseover;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.tabindex;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.Attribute.width;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
@@ -753,14 +763,15 @@ public class PageFlowUtil
 
 
     /**
-     * boolean controlling whether or not we compress JSON-serialized objects when we render them in HTML forms.
+     * boolean controlling whether we compress JSON-serialized objects when we render them in HTML forms.
      */
-    static private final boolean COMPRESS_OBJECT_STREAMS = true;
+    private static final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public HtmlString encodeObject(Object o) throws IOException
+    public static <T> HtmlString encodeObject(T o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        OutputStream osCompressed;
+        final OutputStream osCompressed;
+
         if (COMPRESS_OBJECT_STREAMS)
         {
             osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
@@ -769,23 +780,33 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
+
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            Class cls = o.getClass();
-            final org.json.old.JSONObject json;
-            if (o instanceof Map)
+            final Map<?, ?> map;
+
+            if (o instanceof Map<?, ?> m)
             {
-                json = new org.json.old.JSONObject((Map)o);
+                map = m;
             }
             else
             {
-                ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new org.json.old.JSONObject();
-                f.toMap(o, json);
+                @SuppressWarnings("unchecked")
+                ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)o.getClass());
+                map = f.toMap(o, new HashMap<>());
             }
-            w.write(json.toString());
+
+            try
+            {
+                w.write(new JSONObject(map).toString());
+            }
+            catch (Throwable t)
+            {
+                _log.error("Failed to serialize " + o + ". Map: " + map.toString());
+                throw t;
+            }
         }
-        osCompressed.close();
+
         return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
@@ -799,27 +820,29 @@ public class PageFlowUtil
 
         byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-        InputStream isCompressed;
+        final InputStream isUncompressed;
 
         if (COMPRESS_OBJECT_STREAMS)
         {
-            isCompressed = new InflaterInputStream(byteArrayInputStream);
+            isUncompressed = new InflaterInputStream(byteArrayInputStream);
         }
         else
         {
-            isCompressed = byteArrayInputStream;
+            isUncompressed = byteArrayInputStream;
         }
-        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
+        try (InputStream is=isUncompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
+            JSONObject json = new JSONObject(new JSONTokener(r));
+            Map<String, Object> map = json.toMap();
 
             if (cls == Map.class || cls == HashMap.class)
-                return (T)json;
+                return (T)map;
 
-            ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(json);
+            ObjectFactory<T> f = ObjectFactory.Registry.getFactory(cls);
+            T o = f.fromMap(map);
             if (cls.isAssignableFrom(o.getClass()))
-                return (T)o;
+                return o;
+
             throw new ClassCastException("Could not create class: " + cls.getName());
         }
         catch (IllegalArgumentException x)
@@ -2644,7 +2667,6 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
-
         @Test
         public void testScriptDetection()
         {

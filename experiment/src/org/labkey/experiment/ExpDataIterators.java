@@ -564,23 +564,20 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                if (!_derivativeKeys.isEmpty())
-                {
-                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                        try
-                        {
-                            // derived samples can't be linked until after the transaction is committed
+                _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                    try
+                    {
+                        if (!_derivativeKeys.isEmpty())
                             StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
-                        }
-                        catch (ExperimentException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                    }, DbScope.CommitTaskOption.POSTCOMMIT);
-                }
 
-                if (!_rows.isEmpty())
-                    StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                        if (!_rows.isEmpty())
+                            StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                    }
+                    catch (ExperimentException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
 
                 return false;
             }
@@ -895,10 +892,6 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    else if (o instanceof org.json.old.JSONArray ja)
-                    {
-                        parentNames = Arrays.stream(ja.toArray()).map(String::valueOf).collect(Collectors.toSet());
-                    }
                     else if (o instanceof JSONArray ja)
                     {
                         parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
@@ -921,9 +914,9 @@ public class ExpDataIterators
 
                     String parentColName = _parentCols.get(parentCol);
                     Set<Pair<String, String>> parts = parentNames.stream()
-                            .map(String::trim)
-                            .map(s -> Pair.of(parentColName, s))
-                            .collect(Collectors.toSet());
+                        .map(String::trim)
+                        .map(s -> Pair.of(parentColName, s))
+                        .collect(Collectors.toSet());
 
                     allParts.addAll(parts);
                 }

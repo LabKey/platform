@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -67,6 +68,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
@@ -2561,12 +2563,17 @@ public class AdminController extends SpringActionController
     public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
         private int _hashCode;
+        private ExecutionPlanType _type;
 
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             _hashCode = form.getSqlHashCode();
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
+            _type = EnumUtils.getEnum(ExecutionPlanType.class, form.getType());
+            if (null == _type)
+                throw new NotFoundException("Unknown execution plan type");
+
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode(), _type);
         }
 
         @Override
@@ -2574,14 +2581,15 @@ public class AdminController extends SpringActionController
         {
             addAdminNavTrail(root, "Queries", QueriesAction.class);
             root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
-            root.addChild("Execution Plan");
+            root.addChild(_type.getDescription());
         }
     }
 
 
     public static class QueryForm
     {
-        int _sqlHashCode;
+        private int _sqlHashCode;
+        private String _type = "Estimated"; // All dialects support Estimated
 
         public int getSqlHashCode()
         {
@@ -2592,6 +2600,17 @@ public class AdminController extends SpringActionController
         public void setSqlHashCode(int sqlHashCode)
         {
             _sqlHashCode = sqlHashCode;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setType(String type)
+        {
+            _type = type;
         }
     }
 

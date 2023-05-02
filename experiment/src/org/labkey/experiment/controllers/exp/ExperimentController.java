@@ -2613,7 +2613,7 @@ public class ExperimentController extends SpringActionController
                 {
                     for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        List<Object> objectList = ((JSONArray) rowsArray.get(i)).toList();
+                        List<Object> objectList = rowsArray.getJSONArray(i).toList();
                         Iterator<Object> it = objectList.iterator();
                         List<String> list = new ArrayList<>();
 
@@ -3352,7 +3352,9 @@ public class ExperimentController extends SpringActionController
                 tx.commit();
             }
 
-            response.putIfAbsent("success", !errors.hasErrors());
+            if (null != response.get("success"))
+                response.put("success", !errors.hasErrors());
+
             return response;
         }
 
@@ -7839,10 +7841,17 @@ public class ExperimentController extends SpringActionController
 
         protected void updateSelections(MoveEntitiesForm form, Collection<? extends ExpRunItem> runItems)
         {
-            // Since the run items have moved containers, the selections are no longer valid for the given context so need to be removed
             String selectionKey = form.getDataRegionSelectionKey();
             if (selectionKey != null)
-                DataRegionSelection.setSelected(getViewContext(), selectionKey, runItems.stream().map(expRunItem -> Integer.toString(expRunItem.getRowId())).collect(Collectors.toSet()), false);
+            {
+                DataRegionSelection.setSelected(getViewContext(), selectionKey, runItems.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()), false);
+
+                // if moving run items from a type, the selections from other selectionKeys in that container will
+                // possibly be holding onto invalid keys after the move, so clear them based on the containerPath and selectionKey suffix
+                String[] keyParts = selectionKey.split("|");
+                if (keyParts.length > 1)
+                    DataRegionSelection.clearRelatedByContainerPath(getViewContext(), keyParts[keyParts.length - 1]);
+            }
         }
 
         @Override
