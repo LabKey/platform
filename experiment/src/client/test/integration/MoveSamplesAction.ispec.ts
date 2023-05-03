@@ -2,6 +2,7 @@ import mock from 'mock-fs';
 import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
 import {
+    createDerivedObjects,
     createSample,
     createSource,
     FILE_FIELD_1_NAME,
@@ -90,36 +91,7 @@ afterEach(() => {
 });
 
 async function createDerivedSamples(sampleNames: string[], sampleTypeName: string, folderOptions: RequestOptions, parentSampleType: string, parentSamples: string[], sourceParents?: string[], auditBehavior?: string, ) {
-    const materialResponse = await server.request('query', 'insertRows', (agent, url) => {
-        let request = agent.post(url);
-        const rows = [];
-        sampleNames.forEach(sampleName => {
-            const row = {name: sampleName};
-            if (parentSamples)
-                row['MaterialInputs/' + parentSampleType] = parentSamples.join(',');
-            if (sourceParents)
-                row['DataInputs/' + SOURCE_TYPE_NAME_1] = sourceParents.join(',');
-            rows.push(row);
-        })
-        request = request.field('json', JSON.stringify({
-            schemaName: 'samples',
-            queryName: sampleTypeName,
-            rows,
-            auditBehavior,
-        }));
-
-        return request;
-
-    }, { ...editorUserOptions, ...folderOptions }).expect(200);
-    const sampleData = [];
-    materialResponse.body.rows.forEach(row => {
-        sampleData.push({
-            name: caseInsensitive(row, 'name'),
-            rowId: caseInsensitive(row, 'rowId'),
-            run: caseInsensitive(row, 'run')
-        });
-    })
-    return sampleData;
+    return createDerivedObjects(server, sampleNames, "samples", sampleTypeName, folderOptions, editorUserOptions, SOURCE_TYPE_NAME_1, sourceParents, parentSampleType, parentSamples, auditBehavior);
 }
 
 async function createAliquots(sampleNames: string[], parentSampleName, sampleTypeName: string, folderOptions: RequestOptions, auditBehavior?: string, ) {
