@@ -340,7 +340,7 @@ public class IpynbOutput extends HtmlOutput
                         }
                         if (data.has("text/plain") || data.has("text"))
                         {
-                            boolean isError = "stderr".equals(data.get("name"));
+                            boolean isError = "stderr".equals(data.opt("name"));
                             var textArray = Objects.requireNonNullElse(data.optJSONArray("text/plain"), data.getJSONArray("text"));
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"" + (isError ? "ipynb-error" : "ipynb-text") + "\">"));
                             sb.append(HtmlString.unsafe("<pre>\n"));
