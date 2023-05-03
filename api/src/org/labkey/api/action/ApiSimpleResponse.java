@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -55,6 +56,7 @@ public class ApiSimpleResponse implements ApiResponse
         _json.put(key, value);
     }
 
+    @JsonValue // Tell Jackson that this is the serialization method
     public JSONObject getJson()
     {
         return _json;
