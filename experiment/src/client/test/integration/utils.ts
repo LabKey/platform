@@ -74,7 +74,7 @@ export async function createDerivedObjects(
     sampleParents?: string[],
     auditBehavior?: string,
 ) {
-    const materialResponse = await server.request('query', 'insertRows', (agent, url) => {
+    const response = await server.request('query', 'insertRows', (agent, url) => {
         let request = agent.post(url);
         const rows = [];
         names.forEach(sampleName => {
@@ -96,7 +96,7 @@ export async function createDerivedObjects(
 
     }, { ...userOptions, ...folderOptions }).expect(200);
     const data = [];
-    materialResponse.body.rows.forEach(row => {
+    response.body.rows.forEach(row => {
         data.push({
             name: caseInsensitive(row, 'name'),
             rowId: caseInsensitive(row, 'rowId'),
@@ -107,7 +107,6 @@ export async function createDerivedObjects(
 }
 
 export async function getExperimentRun(server: IntegrationTestServer, runId: number, folderOptions: RequestOptions) {
-    console.log("runId", runId);
     const response = await server.post('query', 'selectRows', {
         schemaName: 'exp',
         queryName: 'runs',

@@ -127,6 +127,16 @@ async function _getSourceData(rowId: number, folderOptions: RequestOptions, sour
     return getSourceData(server, rowId, folderOptions, editorUserOptions, sourceType, columns);
 }
 
+async function getSourceRunId(rowId: number, folderOptions: RequestOptions) {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'exp',
+        queryName: 'data',
+        'query.RowId~eq': rowId,
+        // 'query.columns': 'Run/RowId',
+    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
+    return response.body.rows[0].Run;
+}
+
 async function _sourceExists(rowId: number, folderOptions: RequestOptions, sampleType: string = SOURCE_TYPE_NAME_1) {
     return sourceExists(server, rowId, folderOptions, editorUserOptions, sampleType);
 }
@@ -182,7 +192,6 @@ describe('ExperimentController', () => {
         expect(caseInsensitive(runData[0], 'container/Path')).toBe(getAbsoluteContainerPath(folderOptions.containerPath));
         expect(caseInsensitive(runData[0], 'name')).toBe(name);
     }
-
 
     async function verifySummaryAuditLogs(sourceFolderOptions: RequestOptions, count: number, userComment: string = null, sourceType: string = SOURCE_TYPE_NAME_1): Promise<number>
     {
@@ -611,7 +620,8 @@ describe('ExperimentController', () => {
             const auditTransactionId = await verifySummaryAuditLogs(subfolder1Options,  2);
             const auditTransactionId2 = await verifySummaryAuditLogs(subfolder1Options,  1, undefined, SOURCE_TYPE_NAME_2);
             expect(auditTransactionId2).toBe(auditTransactionId);
-            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sourceRowId1, sourceRowId2, sourceRowId3], auditTransactionId);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sourceRowId1, sourceRowId2], auditTransactionId);
+            await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sourceRowId3], auditTransactionId, undefined, SOURCE_TYPE_NAME_2);
 
         });
 
@@ -729,8 +739,9 @@ describe('ExperimentController', () => {
 
             const rowIdsToMove = derivedSources.map(data => data.rowId);
             // the two sources should have the same runId
-            const runId = caseInsensitive(derivedSources[0], 'run');
-            expect(runId).toBe(caseInsensitive(derivedSources[1], 'run'));
+            const runId1Before = await getSourceRunId(rowIdsToMove[0], subfolder3Options);
+            const runId2Before = await getSourceRunId(rowIdsToMove[1], subfolder3Options);
+            expect(runId1Before).toBe(runId2Before);
 
             // move sources to sibling folder
             const response = await server.post('experiment', ACTION_NAME, {
@@ -746,21 +757,18 @@ describe('ExperimentController', () => {
             expect(updateCounts.sourceDerivationRunsSplit).toBe(0);
 
             // verify run container is updated
-            const source1Data = await _getSourceData(rowIdsToMove[0], subfolder2Options, SOURCE_TYPE_NAME_2, "RowId,Run");
-            // runId should not change
-            expect(source1Data.length).toBe(1);
-            expect(caseInsensitive(source1Data[0], 'run')).toBe(runId);
+            const runId1After = await getSourceRunId(rowIdsToMove[0], subfolder2Options);
+            expect(runId1After).toBe(runId1Before);
 
-            const source2Data = await _getSourceData(rowIdsToMove[0], subfolder2Options, SOURCE_TYPE_NAME_2, "RowId,Run");
+            const runId2After = await getSourceRunId(rowIdsToMove[1], subfolder2Options);
             // runId should not change
-            expect(source2Data.length).toBe(1);
-            expect(caseInsensitive(source2Data[0], 'run')).toBe(runId);
+            expect(runId2After).toBe(runId1Before);
 
-            verifyRunData(runId, subfolder2Options, 'Derive 2 data from top-parent-1');
+            verifyRunData(runId1Before, subfolder2Options, 'Derive 2 data from top-parent-1');
 
             // delete original subfolder
             await server.post('core', 'deleteContainer', undefined, { ...subfolder3Options }).expect(successfulResponse);
-            verifyRunData(runId, subfolder2Options, 'Derive 2 data from top-parent-1');
+            verifyRunData(runId1Before, subfolder2Options, 'Derive 2 data from top-parent-1');
         });
 
         it ('success, move source with source and sample parents', async () => {
@@ -788,13 +796,18 @@ describe('ExperimentController', () => {
 
             // create parent source in subfolder
             await _createSource('sub3-parent-1', subfolder3Options);
-            // create surces derived from parent in subfolder
+            // create sources derived from parent in subfolder
             const sub3ParentSamples = await createDerivedSources(['sub3-parent-source1', 'sub3-parent-source2', 'sub3-parent-source3'], SOURCE_TYPE_NAME_2, subfolder3Options, SOURCE_TYPE_NAME_1, ['sub3-parent-1']);
 
             // move all source-parent-only sources, a subset of sample-and-source-parent sources, and one source from subfolder parent to sibling
             const movingRowIds = sourceParentSources.map(s => caseInsensitive(s, 'rowId'));
             movingRowIds.push(caseInsensitive(samSourceParentSources[1], 'rowId'));
             movingRowIds.push(caseInsensitive(sub3ParentSamples[0], 'rowId'));
+            const movingId1Before = await getSourceRunId(movingRowIds[0], subfolder3Options);
+            const notMovingId2Before = await getSourceRunId(caseInsensitive(samSourceParentSources[0], 'rowId'), subfolder3Options);
+            const movingId2Before = await getSourceRunId(caseInsensitive(samSourceParentSources[1], 'rowId'), subfolder3Options);
+            const movingId3Before = await getSourceRunId(caseInsensitive(sub3ParentSamples[0], 'rowId'), subfolder3Options);
+            const notMovingId3Before = await getSourceRunId(caseInsensitive(sub3ParentSamples[1], 'rowId'), subfolder3Options);
 
             const response = await server.post('experiment', ACTION_NAME, {
                 targetContainer: subfolder2Options.containerPath,
@@ -809,33 +822,30 @@ describe('ExperimentController', () => {
             expect(updateCounts.sourceDerivationRunsSplit).toBe(2);
 
             // verify runs
-            let data = await _getSourceData(caseInsensitive(sourceParentSources[0], 'rowId'), subfolder2Options, SOURCE_TYPE_NAME_1, "RowId,Run");
+            let runIdAfter = await getSourceRunId(movingRowIds[0], subfolder2Options);
             // runId should not change when all derived sources have moved
-            expect(data.length).toBe(1);
-            let runId = caseInsensitive(data[0], 'run');
-            expect(runId).toBe(caseInsensitive(sourceParentSources[0], 'run'));
-            verifyRunData(runId, subfolder2Options, 'Derive 2 data from top-source-1');
+            expect(runIdAfter).toBe(movingId1Before);
+            verifyRunData(runIdAfter, subfolder2Options, 'Derive 2 data from top-source-1');
 
             // runId should stay the same for subset sources that did not move
-            data = await _getSourceData(caseInsensitive(samSourceParentSources[0], 'rowId'), subfolder3Options, SOURCE_TYPE_NAME_2, 'RowId,Run');
-            runId = caseInsensitive(data[0], 'run')
-            expect(runId).toBe(caseInsensitive(samSourceParentSources[0], 'run'));
-            verifyRunData(runId, subfolder3Options, 'Derive data from top-source-1, top-parent-3');
+            runIdAfter = await getSourceRunId(caseInsensitive(samSourceParentSources[0], 'rowId'), subfolder3Options);
+            expect(runIdAfter).toBe(notMovingId2Before);
+            verifyRunData(runIdAfter, subfolder3Options, 'Derive data from top-source-1, top-parent-3');
 
             // new runId for subset source that moved
-            data = await _getSourceData(caseInsensitive(samSourceParentSources[1], 'rowid'), subfolder2Options, SOURCE_TYPE_NAME_2, 'RowId,Run');
-            expect(caseInsensitive(data[0], 'run') !== caseInsensitive(samSourceParentSources[1], 'run')).toBe(true);
-            verifyRunData(caseInsensitive(data[0], 'run'), subfolder2Options, 'Derive data from top-source-1, top-parent-3');
+            runIdAfter = await getSourceRunId(caseInsensitive(samSourceParentSources[1], 'rowid'), subfolder2Options);
+            expect(runIdAfter !== movingId2Before).toBe(true);
+            verifyRunData(runIdAfter, subfolder2Options, 'Derive data from top-source-1, top-parent-3');
 
             // runId should stay the same for subset source that did not move
-            data = await _getSourceData(caseInsensitive(sub3ParentSamples[1], 'rowid'), subfolder3Options, SOURCE_TYPE_NAME_2, 'RowId,Run');
-            expect(caseInsensitive(data[0], 'run')).toBe(caseInsensitive(sub3ParentSamples[1], 'run'));
-            verifyRunData(caseInsensitive(data[0], 'run'), subfolder3Options, 'Derive 2 data from sub3-parent-1');
+            runIdAfter = await getSourceRunId(caseInsensitive(sub3ParentSamples[1], 'rowid'), subfolder3Options);
+            expect(runIdAfter).toBe(notMovingId3Before);
+            verifyRunData(runIdAfter, subfolder3Options, 'Derive 2 data from sub3-parent-1');
 
             // new runId for subset source that moved
-            data = await _getSourceData(caseInsensitive(sub3ParentSamples[0], 'rowid'), subfolder2Options, SOURCE_TYPE_NAME_2, 'RowId,Run');
-            expect(caseInsensitive(data[0], 'run') !== caseInsensitive(sub3ParentSamples[0], 'run')).toBe(true);
-            verifyRunData(caseInsensitive(data[0], 'run'), subfolder2Options, 'Derive data from sub3-parent-1');
+            runIdAfter = await getSourceRunId(caseInsensitive(sub3ParentSamples[0], 'rowid'), subfolder2Options);
+            expect(runIdAfter !== movingId3Before).toBe(true);
+            verifyRunData(runIdAfter, subfolder2Options, 'Derive data from sub3-parent-1');
 
             // delete original subfolder
             await server.post('core', 'deleteContainer', undefined, { ...subfolder3Options }).expect(successfulResponse);
