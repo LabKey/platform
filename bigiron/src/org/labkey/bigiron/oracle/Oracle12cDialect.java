@@ -16,19 +16,51 @@
 package org.labkey.bigiron.oracle;
 
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 
 /**
  * Created by Josh on 11/25/2015.
  */
 public class Oracle12cDialect extends Oracle11gR2Dialect
 {
-    // Nothing Oracle 12c specific yet, but this is the place to add extra keywords and such
+    // Oracle 12c introduced the OFFSET - FETCH clause; this enabled a more standard paging mechanism.
+    private static final LimitRowsCustomizer CUSTOMIZER = new LimitRowsCustomizer()
+    {
+        @Override
+        public void appendLimit(SQLFragment frag, int limit)
+        {
+            frag.append("FETCH NEXT ").appendValue(limit).append(" ROWS ONLY");
+        }
 
-    // TODO: Could implement limitRows() methods via OFFSET / FETCH (see LimitRowsSqlGenerator.limitRows()), but we need
-    // a test instance of Oracle 12c.
+        @Override
+        public void appendOffset(SQLFragment frag, long offset)
+        {
+            frag.append("OFFSET ").appendValue(offset).append(" ROWS");
+        }
+
+        @Override
+        public boolean supportsOffsetWithoutLimit()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean requiresOffsetBeforeLimit()
+        {
+            return true;
+        }
+    };
+
+    @Override
+    public SQLFragment limitRows(SQLFragment frag, int maxRows)
+    {
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, CUSTOMIZER);
+    }
+
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return super.limitRows(select, from, filter, order, groupBy, maxRows, offset);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
 }
