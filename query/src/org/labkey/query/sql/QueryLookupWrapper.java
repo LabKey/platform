@@ -282,18 +282,17 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         @Override
         public @NotNull SQLFragment getFromSQL(String alias, Set<FieldKey> fieldKeys)
         {
-            if (null != fieldKeys)
+            if (null == fieldKeys)
+                getFromSQL(alias);
+            for (var lkCol : _selectedColumns)
+                lkCol.releaseRef(this);
+            for (var lkCol : _selectedColumns)
             {
-                for (var lkCol : _selectedColumns)
-                    lkCol.releaseRef(this);
-                for (var lkCol : _selectedColumns)
-                {
-                    if (fieldKeys.contains(lkCol.getFieldKey()))
-                        lkCol.addRef(this);
-                }
-                // column 0 should still have a reference because it has a reference from _query (see constructor)
-                assert _selectedColumns.get(0).ref.count() > 0;
+                if (fieldKeys.contains(lkCol.getFieldKey()))
+                    lkCol.addRef(this);
             }
+            // column 0 should still have a reference because it has a reference from _query (see constructor)
+            assert _selectedColumns.get(0).ref.count() > 0;
             return super.getFromSQL(alias);
         }
     }
