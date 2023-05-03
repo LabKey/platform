@@ -983,6 +983,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
 
+    int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
+
+
     Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     class XarExportOptions

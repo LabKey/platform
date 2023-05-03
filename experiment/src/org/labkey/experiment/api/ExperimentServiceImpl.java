@@ -8397,8 +8397,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
 
-                // TODO move derivation runs
-                
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
                 updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
@@ -8427,6 +8425,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     QueryService.get().getDefaultAuditHandler().addAuditEvent(user, targetContainer, dataClassTable, dcAuditBehavior, userComment, QueryService.AuditAction.UPDATE, newRows, oldRows);
                 }
             }
+
+            // move derivation runs
+            updateCounts.putAll(moveDerivationRuns(dataObjects, targetContainer, user));
 
             transaction.addCommitTask(() -> {
                 // update search index for moved data class object via indexDataClass() helper. It filters for data objects
@@ -8473,6 +8474,102 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         }
         AttachmentService.get().moveAttachments(targetContainer, parents, user);
+    }
+
+    private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpData> dataObjects, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        // collect unique runIds mapped to the dataobjects that are moving that have that runId
+        Map<Integer, Set<ExpData>> runIdData = new HashMap<>();
+        dataObjects.forEach(dataObject -> {
+            if (dataObject.getRunId() != null)
+                runIdData.computeIfAbsent(dataObject.getRunId(), t -> new HashSet<>()).add(dataObject);
+        });
+        // find the set of runs associated with data objects that are moving
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(runIdData.keySet());
+        List<ExpRun> toUpdate = new ArrayList<>();
+        List<ExpRun> toSplit = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            Set<Integer> outputIds = run.getDataOutputs().stream().map(ExpData::getRowId).collect(Collectors.toSet());
+            Set<Integer> movingIds = runIdData.get(run.getRowId()).stream().map(ExpData::getRowId).collect(Collectors.toSet());
+            if (movingIds.size() == outputIds.size() && movingIds.containsAll(outputIds))
+                toUpdate.add(run);
+            else
+                toSplit.add(run);
+        }
+
+        int updateCount = moveExperimentRuns(toUpdate, targetContainer, user);
+        int splitCount = splitExperimentRuns(toSplit, runIdData, targetContainer, user);
+        return Map.of("sourceDerivationRunsUpdated", updateCount, "sourceDerivationRunsSplit", splitCount);
+    }
+
+    @Override
+    public int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user)
+    {
+        if (runs.isEmpty())
+            return 0;
+
+        TableInfo runsTable = getTinfoExperimentRun();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
+        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+        ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
+        return updateCount;
+    }
+
+    private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpData>> movingData, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        final ViewBackgroundInfo targetInfo = new ViewBackgroundInfo(targetContainer, user, null);
+        ExperimentServiceImpl expService = (ExperimentServiceImpl) ExperimentService.get();
+        int runCount = 0;
+        for (ExpRun run : runs)
+        {
+            ExpProtocolApplication sourceApplication = null;
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+
+            Set<ExpData> movingSet = movingData.get(run.getRowId());
+            int numStaying = 0;
+            Map<ExpData, String> movingOutputsMap = new HashMap<>();
+
+            // the derived samples (outputs of the run) are inputs to the output step of the run (obviously)
+            for (ExpDataRunInput dataInput : outputApp.getDataInputs())
+            {
+                ExpData dataObject = dataInput.getData();
+                if (movingSet.contains(dataObject))
+                {
+                    // clear out the run and source application so a new derivation run can be created.
+                    dataObject.setRun(null);
+                    dataObject.setSourceApplication(null);
+                    movingOutputsMap.put(dataObject, dataInput.getRole());
+                }
+                else
+                {
+                    if (sourceApplication == null)
+                        sourceApplication = dataObject.getSourceApplication();
+                    numStaying++;
+                }
+            }
+
+            // create a new derivation run for the data that are moving
+            expService.derive(run.getMaterialInputs(), run.getDataInputs(), Collections.emptyMap(), movingOutputsMap, targetInfo, LOG);
+            // Update the run for the data that have stayed behind. Change the name and remove the moved data as outputs
+            run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), run.getMaterialOutputs().size(), numStaying));
+
+            run.save(user);
+            List<Integer> movingDataIds = movingSet.stream().map(ExpData::getRowId).toList();
+
+            outputApp.removeDataInputs(user, movingDataIds);
+            if (sourceApplication != null)
+                sourceApplication.removeDataInputs(user, movingDataIds);
+
+            runCount++;
+        }
+        return runCount;
     }
 
     public static class TestCase extends Assert

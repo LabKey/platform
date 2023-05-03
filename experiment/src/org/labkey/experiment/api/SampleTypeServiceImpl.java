@@ -1774,8 +1774,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (sample.getRunId() != null)
                 runIdSamples.computeIfAbsent(sample.getRunId(), t -> new HashSet<>()).add(sample);
         });
+        ExperimentService expService = ExperimentService.get();
         // find the set of runs associated with samples that are moving
-        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(runIdSamples.keySet());
+        List<? extends ExpRun> runs = expService.getExpRuns(runIdSamples.keySet());
         List<ExpRun> toUpdate = new ArrayList<>();
         List<ExpRun> toSplit = new ArrayList<>();
         for (ExpRun run : runs)
@@ -1788,27 +1789,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 toSplit.add(run);
         }
 
-        int updateCount = updateExperimentRuns(toUpdate, targetContainer, user);
+        int updateCount = expService.moveExperimentRuns(toUpdate, targetContainer, user);
         int splitCount = splitExperimentRuns(toSplit, runIdSamples, targetContainer, user);
         return Map.of("sampleDerivationRunsUpdated", updateCount, "sampleDerivationRunsSplit", splitCount);
-    }
-
-    private int updateExperimentRuns(List<ExpRun> runs, Container targetContainer, User user)
-    {
-        if (runs.isEmpty())
-            return 0;
-
-        TableInfo runsTable = getTinfoExperimentRun();
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
-        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
-        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
-        ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
-        return updateCount;
     }
 
     private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException

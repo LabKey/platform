@@ -7700,6 +7700,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @ActionNames("moveSources, moveDataClassObjects")
     @RequiresPermission(UpdatePermission.class)
     public static class MoveDataClassObjectsAction extends MoveEntitiesAction
     {
@@ -7708,8 +7709,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(MoveEntitiesForm form, Errors errors)
         {
-            super.validateForm(form, errors);
             _entityType = "sources";
+            super.validateForm(form, errors);
             validateDataIds(form, errors);
         }
 
@@ -7758,8 +7759,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(MoveEntitiesForm form, Errors errors)
         {
-            super.validateForm(form, errors);
             _entityType = "samples";
+            super.validateForm(form, errors);
             validateSampleIds(form, errors);
         }
 
@@ -7895,7 +7896,7 @@ public class ExperimentController extends SpringActionController
 
             if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
             {
-                errors.reject(ERROR_GENERIC, "You do not have permission to move samples to the target container: " + form.getTargetContainer() + ".");
+                errors.reject(ERROR_GENERIC, "You do not have permission to move " + _entityType + " to the target container: " + form.getTargetContainer() + ".");
                 return;
             }
 

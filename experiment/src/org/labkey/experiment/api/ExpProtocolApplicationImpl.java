@@ -488,6 +488,27 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
+    public void removeDataInputs(User user, Collection<Integer> rowIds)
+    {
+        // Clean up DataInput exp.object and properties
+        List<String> inputLsids = new ArrayList<>();
+        rowIds.forEach(rowId -> {
+            inputLsids.add(MaterialInput.lsid(rowId, getRowId()));
+        });
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
+                .append(" AND ObjectURI ");
+        expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
+        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+        filter.addCondition(FieldKey.fromParts("DataId"), rowIds, CompareType.IN);
+        Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+    }
+
+    @Override
     public void removeMaterialInput(User user, ExpMaterial material)
     {
         // Clean up MaterialInput exp.object and properties
