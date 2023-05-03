@@ -8473,7 +8473,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             parents.add(new ExpDataClassAttachmentParent(data.getContainer(), lsid));
 
         }
-        AttachmentService.get().moveAttachments(targetContainer, parents, user);
+        try
+        {
+            AttachmentService.get().moveAttachments(targetContainer, parents, user);
+        }
+        catch (IOException ignored)
+        {
+            // method doesn't actually throw.
+        }
     }
 
     private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpData> dataObjects, Container targetContainer, User user) throws ExperimentException, BatchValidationException
