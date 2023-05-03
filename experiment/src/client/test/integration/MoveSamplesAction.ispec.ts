@@ -1,15 +1,22 @@
 import mock from 'mock-fs';
 import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
-
+import {
+    createSample,
+    createSource,
+    FILE_FIELD_1_NAME,
+    FILE_FIELD_2_NAME,
+    getExperimentRun,
+    getSampleData,
+    SAMPLE_TYPE_NAME_1,
+    SAMPLE_TYPE_NAME_2,
+    sampleExists,
+    SOURCE_TYPE_NAME_1
+} from './utils';
 
 const server = hookServer(process.env);
-const PROJECT_NAME = 'ExperimentControllerTest Project';
-const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
-const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
-const SOURCE_TYPE_NAME = 'SourceType1';
-const FILE_FIELD_1_NAME = 'SampleFile1';
-const FILE_FIELD_2_NAME = 'SampleFile2';
+const PROJECT_NAME = 'MoveSamplesTest Project';
+
 let editorUser
 
 const DEFAULT_AUDIT_LOG_COLUMNS = 'Comment,userComment,transactionId,Created';
@@ -25,7 +32,7 @@ let subfolder2Options;
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment', 'filecontent'],
+        ensureModules: ['experiment'],
     });
     topFolderOptions = { containerPath: PROJECT_NAME };
 
@@ -91,7 +98,7 @@ async function createDerivedSamples(sampleNames: string[], sampleTypeName: strin
             if (parentSamples)
                 row['MaterialInputs/' + parentSampleType] = parentSamples.join(',');
             if (sourceParents)
-                row['DataInputs/' + SOURCE_TYPE_NAME] = sourceParents.join(',');
+                row['DataInputs/' + SOURCE_TYPE_NAME_1] = sourceParents.join(',');
             rows.push(row);
         })
         request = request.field('json', JSON.stringify({
@@ -167,38 +174,12 @@ async function createSampleWithFileFields(sampleName: string, folderOptions: Req
     return caseInsensitive(materialResponse.body.rows[0], 'rowId');
 }
 
-async function createSample(sampleName: string, folderOptions: RequestOptions, auditBehavior?: string, sampleType: string = SAMPLE_TYPE_NAME_1) {
-    const materialResponse = await server.post('query', 'insertRows', {
-        schemaName: 'samples',
-        queryName: sampleType,
-        rows: [{ name: sampleName }],
-        auditBehavior,
-    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
-    return caseInsensitive(materialResponse.body.rows[0], 'rowId');
+async function _createSource(sourceName: string, folderOptions: RequestOptions) {
+    return createSource(server, sourceName, folderOptions, editorUserOptions)
 }
 
-async function createSource(sourceName: string, folderOptions: RequestOptions) {
-    const dataResponse = await server.post('query', 'insertRows', {
-        schemaName: 'exp.data',
-        queryName: SOURCE_TYPE_NAME,
-        rows: [{ name: sourceName }],
-    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
-    return caseInsensitive(dataResponse.body.rows[0], 'rowId');
-}
-
-async function getSampleData(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'samples',
-        queryName: sampleType,
-        'query.RowId~eq': sampleRowId,
-        'query.columns': columns,
-    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
-    return response.body.rows
-}
-
-async function sampleExists(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
-    const response = await getSampleData(sampleRowId, folderOptions, sampleType);
-    return response.length === 1;
+async function _getSampleData(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
+    return getSampleData(server, sampleRowId, folderOptions, editorUserOptions, sampleType, columns);
 }
 
 async function getSampleTypeAuditLogs(sampleType: string, folderOptions: RequestOptions, expectedNumber: number) {
@@ -223,17 +204,11 @@ async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: Re
     return response.body.rows;
 }
 
-async function getExperimentRun(runId: number, folderOptions: RequestOptions) {
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'exp',
-        queryName: 'runs',
-        'query.rowid~eq': runId,
-        'query.columns': 'rowId,name,container/Path',
-    }, { ...folderOptions }).expect(successfulResponse);
-    return response.body.rows;
-}
 
 describe('ExperimentController', () => {
+    // NOTE: the MoveSamplesAction is in the experiment module, but the sample status related test cases won't
+    // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
+    // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
 
     function getAbsoluteContainerPath(containerPath: string)
     {
@@ -241,7 +216,7 @@ describe('ExperimentController', () => {
     }
 
     async function verifyRunData(runId: number, folderOptions: RequestOptions, name: string) {
-        const runData = await getExperimentRun(runId, folderOptions);
+        const runData = await getExperimentRun(server, runId, folderOptions);
         expect(runData).toHaveLength(1);
         expect(caseInsensitive(runData[0], 'container/Path')).toBe(getAbsoluteContainerPath(folderOptions.containerPath));
         expect(caseInsensitive(runData[0], 'name')).toBe(name);
@@ -291,41 +266,37 @@ describe('ExperimentController', () => {
         }
     }
 
-    describe('moveSamples.api', () => {
-        // NOTE: the MoveSamplesAction is in the experiment module, but the sample status related test cases won't
-        // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
-        // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
-
+    describe("moveSamples.api", () => {
         it('requires POST', () => {
             server.get('experiment', 'moveSamples.api').expect(405);
         });
 
         it('error, no permissions', async () => {
             // Act
-            const response = await server.post('experiment', 'moveSamples.api', {}, { ...topFolderOptions, ...noPermsUserOptions }).expect(403);
+            const response = await server.post('experiment', 'moveSamples.api', {}, {...topFolderOptions, ...noPermsUserOptions}).expect(403);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('User does not have permission to perform this operation.');
         });
 
         it('error, requires update permissions in current', async () => {
             // Act
-            const response = await server.post('experiment', 'moveSamples.api', {}, { ...topFolderOptions, ...authorUserOptions }).expect(403);
+            const response = await server.post('experiment', 'moveSamples.api', {}, {...topFolderOptions, ...authorUserOptions}).expect(403);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('User does not have permission to perform this operation.');
         });
 
         it('error, missing required targetContainer param', async () => {
             // Act
-            const response = await server.post('experiment', 'moveSamples.api', {}, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            const response = await server.post('experiment', 'moveSamples.api', {}, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('A target container must be specified for the move operation.');
         });
@@ -334,10 +305,10 @@ describe('ExperimentController', () => {
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: 'BOGUS'
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('The target container was not found: BOGUS.');
         });
@@ -346,22 +317,22 @@ describe('ExperimentController', () => {
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: PROJECT_NAME
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('Invalid target container for the move operation: ExperimentControllerTest Project.');
+            expect(exception).toEqual('Invalid target container for the move operation: ' + PROJECT_NAME + '.');
         });
 
         it('error, targetContainer cannot equal current for subfolder', async () => {
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('Invalid target container for the move operation: ' + subfolder1Options.containerPath + '.');
         });
@@ -370,10 +341,10 @@ describe('ExperimentController', () => {
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('Sample IDs must be specified for the move operation.');
         });
@@ -383,10 +354,10 @@ describe('ExperimentController', () => {
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: []
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('Sample IDs must be specified for the move operation.');
         });
@@ -396,97 +367,97 @@ describe('ExperimentController', () => {
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: [-1]
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('Unable to find all samples for the move operation.');
         });
 
         it('error, sample ID not in current parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-notmoved-1', subfolder1Options);
+            const sampleRowId = await createSample(server, 'sub1-notmoved-1', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: [sampleRowId]
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('All samples must be from the current container for the move operation.');
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
         });
 
         it('error, sample ID not in current subfolder', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-notmoved-1', topFolderOptions);
+            const sampleRowId = await createSample(server, 'top-notmoved-1', topFolderOptions, editorUserOptions);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: [sampleRowId]
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
             expect(exception).toEqual('All samples must be from the current container for the move operation.');
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(true);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
         });
 
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-notmoved-2', subfolder1Options);
+            const sampleRowId = await createSample(server, 'sub1-notmoved-2', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: [sampleRowId]
-            }, { ...subfolder1Options, ...subEditorUserOptions }).expect(400);
+            }, {...subfolder1Options, ...subEditorUserOptions}).expect(400);
 
             // Assert
-            const { exception, success } = response.body;
+            const {exception, success} = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('You do not have permission to move samples to the target container: ExperimentControllerTest Project.');
+            expect(exception).toEqual('You do not have permission to move samples to the target container: ' + PROJECT_NAME + '.');
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
         });
 
         it('success, move sample from parent project to subfolder, no audit logging', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-movetosub1-1', topFolderOptions);
+            const sampleRowId = await createSample(server, 'top-movetosub1-1', topFolderOptions, editorUserOptions);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: [sampleRowId]
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(0);
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
 
             await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId]);
@@ -499,25 +470,25 @@ describe('ExperimentController', () => {
 
         it('success, move sample from parent project to subfolder, detailed audit logging', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-movetosub1-2', topFolderOptions, "DETAILED");
+            const sampleRowId = await createSample(server, 'top-movetosub1-2', topFolderOptions, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: [sampleRowId],
                 auditBehavior: "DETAILED",
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(1);
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
 
             const auditTransactionId = await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId]);
@@ -526,26 +497,26 @@ describe('ExperimentController', () => {
 
         it('success, move sample from parent project to subfolder, detailed audit logging with comment', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-movetosub1-3', topFolderOptions, "DETAILED");
-            const userComment =  "Oops! Wrong project.";
+            const sampleRowId = await createSample(server, 'top-movetosub1-3', topFolderOptions, editorUserOptions, "DETAILED");
+            const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder1Options.containerPath,
                 rowIds: [sampleRowId],
                 auditBehavior: "DETAILED",
                 userComment
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(1);
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
 
             const auditTransactionId = await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], userComment);
@@ -554,7 +525,7 @@ describe('ExperimentController', () => {
 
         it('success, move sample from parent project to subfolder with summary logging', async () => {
             // Arrange
-            const sampleRowId = await createSample('top-movetosub1-4', topFolderOptions, "DETAILED");
+            const sampleRowId = await createSample(server, 'top-movetosub1-4', topFolderOptions, editorUserOptions, "DETAILED");
             const userComment = "4 is in the wrong place."
 
             // Act
@@ -563,18 +534,18 @@ describe('ExperimentController', () => {
                 rowIds: [sampleRowId],
                 auditBehavior: 'SUMMARY',
                 userComment
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(1);
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
 
             await verifySampleTypeAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], userComment);
@@ -588,53 +559,53 @@ describe('ExperimentController', () => {
 
         it('success, move sample from subfolder to parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetotop-1', subfolder1Options, "DETAILED");
+            const sampleRowId = await createSample(server, 'sub1-movetotop-1', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: [sampleRowId],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(1);
 
-            const sampleExistsInTop = await sampleExists(sampleRowId, topFolderOptions);
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(true);
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
 
-            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, topFolderOptions,  [sampleRowId]);
+            const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId]);
             await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId], auditTransactionId);
 
         });
 
         it('success, move sample from subfolder to sibling', async () => {
             // Arrange
-            const sampleRowId = await createSample('sub1-movetosub2-1', subfolder1Options, "DETAILED");
+            const sampleRowId = await createSample(server, 'sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: [sampleRowId],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(1);
 
-            const sampleExistsInSub1 = await sampleExists(sampleRowId, subfolder1Options);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
-            const sampleExistsInSub2 = await sampleExists(sampleRowId, subfolder2Options);
+            const sampleExistsInSub2 = await sampleExists(server, sampleRowId, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
 
             const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId]);
@@ -644,36 +615,36 @@ describe('ExperimentController', () => {
 
         it('success, move samples from multiple types', async () => {
             // Arrange
-            const sampleRowId1 = await createSample('sub1-movetosub2-5', subfolder1Options, "DETAILED");
-            const sampleRowId2 = await createSample('sub1-movetosub2-6', subfolder1Options, "DETAILED");
-            const sampleRowId3 = await createSample('type2-sub1-movetosub2-1', subfolder1Options, "DETAILED", SAMPLE_TYPE_NAME_2);
+            const sampleRowId1 = await createSample(server, 'sub1-movetosub2-5', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId2 = await createSample(server, 'sub1-movetosub2-6', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId3 = await createSample(server, 'type2-sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED", SAMPLE_TYPE_NAME_2);
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: [sampleRowId1, sampleRowId2, sampleRowId3],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(3);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(3);
 
-            let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
+            let sampleExistsInSub1 = await sampleExists(server, sampleRowId1, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
-            sampleExistsInSub1 = await sampleExists(sampleRowId2, subfolder1Options);
+            sampleExistsInSub1 = await sampleExists(server, sampleRowId2, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
-            sampleExistsInSub1 = await sampleExists(sampleRowId3, subfolder1Options, SAMPLE_TYPE_NAME_2);
+            sampleExistsInSub1 = await sampleExists(server, sampleRowId3, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_2);
             expect(sampleExistsInSub1).toBe(false);
 
-            let sampleExistsInSub2 = await sampleExists(sampleRowId1, subfolder2Options);
+            let sampleExistsInSub2 = await sampleExists(server, sampleRowId1, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
-            sampleExistsInSub2 = await sampleExists(sampleRowId2, subfolder2Options);
+            sampleExistsInSub2 = await sampleExists(server, sampleRowId2, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
-            sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options, SAMPLE_TYPE_NAME_2);
+            sampleExistsInSub2 = await sampleExists(server, sampleRowId3, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_2);
             expect(sampleExistsInSub2).toBe(true);
 
             const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2]);
@@ -694,14 +665,14 @@ describe('ExperimentController', () => {
                 rowIds: [sampleRowId1],
                 auditBehavior: "DETAILED",
                 userComment,
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleFiles).toBe(1);
-            const sampleData = await getSampleData(sampleRowId1, subfolder1Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
+            const sampleData = await _getSampleData(sampleRowId1, subfolder1Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
 
             expect(sampleData.length).toBe(1);
             expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")).toBe(true);
@@ -719,20 +690,23 @@ describe('ExperimentController', () => {
                 'fileB.txt': 'fileB contents',
                 'fileC.txt': 'fileC contents',
             });
-            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-1', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileB.txt', [FILE_FIELD_2_NAME]: 'fileC.txt'}, "DETAILED");
+            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-1', subfolder1Options, {
+                [FILE_FIELD_1_NAME]: 'fileB.txt',
+                [FILE_FIELD_2_NAME]: 'fileC.txt'
+            }, "DETAILED");
 
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: [sampleRowId1],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleFiles).toBe(2);
-            const sampleData = await getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
+            const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
             expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")).toBe(true);
             expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")).toBe(true);
@@ -752,7 +726,10 @@ describe('ExperimentController', () => {
                 'fileD.txt': 'fileD contents',
                 'fileE.txt': 'fileE contents',
             });
-            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-2', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileD.txt', [FILE_FIELD_2_NAME]: 'fileE.txt'}, "DETAILED");
+            const sampleRowId1 = await createSampleWithFileFields('sub12-movetotop-2', subfolder1Options, {
+                [FILE_FIELD_1_NAME]: 'fileD.txt',
+                [FILE_FIELD_2_NAME]: 'fileE.txt'
+            }, "DETAILED");
             // create sample in target folder with file names the same as source folder samples.
             await createSampleWithFileFields('top2-withfile-1', topFolderOptions, {[FILE_FIELD_2_NAME]: 'fileD.txt'}, "DETAILED");
 
@@ -760,14 +737,14 @@ describe('ExperimentController', () => {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: [sampleRowId1],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleFiles).toBe(2);
-            const sampleData = await getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
+            const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
             expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")).toBe(true);
             expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")).toBe(true);
@@ -791,14 +768,14 @@ describe('ExperimentController', () => {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: [sampleRowId1],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(1);
             expect(updateCounts.sampleFiles).toBe(1);
-            const sampleData = await getSampleData(sampleRowId1, subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
+            const sampleData = await _getSampleData(sampleRowId1, subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
             expect(sampleData.length).toBe(1);
             expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")).toBe(true);
 
@@ -810,54 +787,54 @@ describe('ExperimentController', () => {
 
         it('success, move multiple samples', async () => {
             // Arrange
-            const sampleRowId1 = await createSample('sub1-movetosub2-2', subfolder1Options, "DETAILED");
-            const sampleRowId2 = await createSample('sub1-movetosub2-3', subfolder1Options, "DETAILED");
-            const sampleRowId3 = await createSample('sub1-movetosub2-4', subfolder1Options, "DETAILED");
+            const sampleRowId1 = await createSample(server, 'sub1-movetosub2-2', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId2 = await createSample(server, 'sub1-movetosub2-3', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId3 = await createSample(server, 'sub1-movetosub2-4', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('experiment', 'moveSamples.api', {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: [sampleRowId1, sampleRowId2, sampleRowId3],
                 auditBehavior: "DETAILED",
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(3);
             expect(updateCounts.sampleAliases).toBe(0);
             expect(updateCounts.sampleAuditEvents).toBe(3);
             expect(updateCounts.sampleFiles).toBe(0);
 
-            let sampleExistsInSub1 = await sampleExists(sampleRowId1, subfolder1Options);
+            let sampleExistsInSub1 = await sampleExists(server, sampleRowId1, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
-            sampleExistsInSub1 = await sampleExists(sampleRowId2, subfolder1Options);
+            sampleExistsInSub1 = await sampleExists(server, sampleRowId2, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
-            sampleExistsInSub1 = await sampleExists(sampleRowId3, subfolder1Options);
+            sampleExistsInSub1 = await sampleExists(server, sampleRowId3, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(false);
 
-            let sampleExistsInSub2 = await sampleExists(sampleRowId1, subfolder2Options);
+            let sampleExistsInSub2 = await sampleExists(server, sampleRowId1, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
-            sampleExistsInSub2 = await sampleExists(sampleRowId2, subfolder2Options);
+            sampleExistsInSub2 = await sampleExists(server, sampleRowId2, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
-            sampleExistsInSub2 = await sampleExists(sampleRowId3, subfolder2Options);
+            sampleExistsInSub2 = await sampleExists(server, sampleRowId3, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub2).toBe(true);
 
             const auditTransactionId = await verifySampleTypeAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3]);
             await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1, sampleRowId2, sampleRowId3], auditTransactionId);
 
             // verify that we are able to delete the original sample container after things are moved
-            await server.post('core', 'deleteContainer', undefined, { ...subfolder1Options }).expect(successfulResponse);
+            await server.post('core', 'deleteContainer', undefined, {...subfolder1Options}).expect(successfulResponse);
         });
 
         it('success, move all child derived samples to sibling', async () => {
             const subfolder3 = await server.createTestContainer();
 
-            const subfolder3Options = { containerPath: subfolder3.path };
+            const subfolder3Options = {containerPath: subfolder3.path};
             await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            const sampleRowId1 = await createSample('top-parent-1', topFolderOptions, "DETAILED");
+            const sampleRowId1 = await createSample(server, 'top-parent-1', topFolderOptions, editorUserOptions, "DETAILED");
 
             // derive samples into new subfolder
             const derivedSamples = await createDerivedSamples(
@@ -878,21 +855,21 @@ describe('ExperimentController', () => {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: rowIdsToMove,
                 auditBehavior: "DETAILED",
-            }, { ...subfolder3Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder3Options, ...editorUserOptions}).expect(200);
 
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(2);
             expect(updateCounts.sampleDerivationRunsUpdated).toBe(1);
             expect(updateCounts.sampleDerivationRunsSplit).toBe(0);
 
             // verify run container is updated
-            const sample1Data = await getSampleData(rowIdsToMove[0], subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId,Run");
+            const sample1Data = await _getSampleData(rowIdsToMove[0], subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId,Run");
             // runId should not change
             expect(sample1Data.length).toBe(1);
             expect(caseInsensitive(sample1Data[0], 'run')).toBe(runId);
 
-            const sample2Data = await getSampleData(rowIdsToMove[0], subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId,Run");
+            const sample2Data = await _getSampleData(rowIdsToMove[0], subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId,Run");
             // runId should not change
             expect(sample2Data.length).toBe(1);
             expect(caseInsensitive(sample2Data[0], 'run')).toBe(runId);
@@ -900,18 +877,18 @@ describe('ExperimentController', () => {
             verifyRunData(runId, subfolder2Options, 'Derive 2 samples from top-parent-1');
 
             // delete original subfolder
-            await server.post('core', 'deleteContainer', undefined, { ...subfolder3Options }).expect(successfulResponse);
+            await server.post('core', 'deleteContainer', undefined, {...subfolder3Options}).expect(successfulResponse);
             verifyRunData(runId, subfolder2Options, 'Derive 2 samples from top-parent-1');
         });
 
-        it ('success, move some child aliquots to parent', async () => {
+        it('success, move some child aliquots to parent', async () => {
             const subfolder3 = await server.createTestContainer();
 
-            const subfolder3Options = { containerPath: subfolder3.path };
+            const subfolder3Options = {containerPath: subfolder3.path};
             await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            await createSample('top-parent-2', topFolderOptions, "DETAILED");
+            await createSample(server, 'top-parent-2', topFolderOptions, editorUserOptions, "DETAILED");
 
             // derive samples into new subfolder
             const aliquots = await createAliquots(
@@ -931,52 +908,52 @@ describe('ExperimentController', () => {
                 targetContainer: topFolderOptions.containerPath,
                 rowIds: aliquotRowIds.slice(1),
                 auditBehavior: "DETAILED",
-            }, { ...subfolder3Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder3Options, ...editorUserOptions}).expect(200);
 
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(2);
             expect(updateCounts.sampleDerivationRunsUpdated).toBe(0);
             expect(updateCounts.sampleDerivationRunsSplit).toBe(1);
 
             // verify run is not updated for aliquot that did not move
-            const sample1Data = await getSampleData(aliquotRowIds[0], subfolder3Options, SAMPLE_TYPE_NAME_1, "RowId,Run");
+            const sample1Data = await _getSampleData(aliquotRowIds[0], subfolder3Options, SAMPLE_TYPE_NAME_1, "RowId,Run");
             // runId should not change
             expect(sample1Data.length).toBe(1);
             expect(caseInsensitive(sample1Data[0], 'run')).toBe(runId);
             verifyRunData(runId, subfolder3Options, 'Create aliquot from top-parent-2');
 
-            const sample2Data = await getSampleData(aliquotRowIds[1], topFolderOptions, SAMPLE_TYPE_NAME_1, "RowId,Run");
+            const sample2Data = await _getSampleData(aliquotRowIds[1], topFolderOptions, SAMPLE_TYPE_NAME_1, "RowId,Run");
             // runId should change
             expect(sample2Data.length).toBe(1);
             expect(caseInsensitive(sample2Data[0], 'run') !== runId).toBe(true);
             verifyRunData(caseInsensitive(sample2Data[0], 'run'), topFolderOptions, 'Create 2 aliquots from top-parent-2');
 
             // delete original subfolder
-            await server.post('core', 'deleteContainer', undefined, { ...subfolder3Options }).expect(successfulResponse);
+            await server.post('core', 'deleteContainer', undefined, {...subfolder3Options}).expect(successfulResponse);
 
             // verify run in top container still exists
             verifyRunData(caseInsensitive(sample2Data[0], 'run'), topFolderOptions, 'Create 2 aliquots from top-parent-2');
         });
 
 
-        it ('success, move samples with source and sample parents', async () => {
+        it('success, move samples with source and sample parents', async () => {
             // create data class
             await server.post('property', 'createDomain', {
                 kind: 'DataClass',
-                domainDesign: { name: SOURCE_TYPE_NAME, fields: [{ name: 'Data' }] }
+                domainDesign: {name: SOURCE_TYPE_NAME_1, fields: [{name: 'Data'}]}
             }, topFolderOptions).expect(successfulResponse);
 
             const subfolder3 = await server.createTestContainer();
 
-            const subfolder3Options = { containerPath: subfolder3.path };
+            const subfolder3Options = {containerPath: subfolder3.path};
             await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            await createSample('top-parent-3', topFolderOptions);
+            await createSample(server, 'top-parent-3', editorUserOptions, topFolderOptions);
 
             // create a source in the top folder
-            await createSource('top-source-1', topFolderOptions);
+            await _createSource('top-source-1', topFolderOptions);
 
             // create samples with only source parent in subfolder
             const sourceParentSamples = await createDerivedSamples(['sub3-src1-sample1', 'sub3-src1-sample2'], SAMPLE_TYPE_NAME_1, subfolder3Options, undefined, undefined, ['top-source-1']);
@@ -984,7 +961,7 @@ describe('ExperimentController', () => {
             const samSourceParentSamples = await createDerivedSamples(['sub3-p3-src1-sample1', 'sub3-p3-src1-sample2'], SAMPLE_TYPE_NAME_2, subfolder3Options, SAMPLE_TYPE_NAME_1, ['top-parent-3'], ['top-source-1']);
 
             // create parent sample in subfolder
-            await createSample('sub3-parent-1', subfolder3Options);
+            await createSample(server, 'sub3-parent-1', editorUserOptions, subfolder3Options);
             // create samples derived from parent in subfolder
             const sub3ParentSamples = await createDerivedSamples(['sub3-parent-sample1', 'sub3-parent-sample2', 'sub3-parent-sample3'], SAMPLE_TYPE_NAME_2, subfolder3Options, SAMPLE_TYPE_NAME_1, ['sub3-parent-1']);
 
@@ -997,16 +974,16 @@ describe('ExperimentController', () => {
                 targetContainer: subfolder2Options.containerPath,
                 rowIds: movingRowIds,
                 auditBehavior: "DETAILED",
-            }, { ...subfolder3Options, ...editorUserOptions }).expect(200);
+            }, {...subfolder3Options, ...editorUserOptions}).expect(200);
 
-            const { updateCounts, success } = response.body;
+            const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.samples).toBe(4);
             expect(updateCounts.sampleDerivationRunsUpdated).toBe(1);
             expect(updateCounts.sampleDerivationRunsSplit).toBe(2);
 
             // verify runs
-            let sampleData = await getSampleData(caseInsensitive(sourceParentSamples[0], 'rowId'), subfolder2Options, SAMPLE_TYPE_NAME_1, "RowId,Run");
+            let sampleData = await _getSampleData(caseInsensitive(sourceParentSamples[0], 'rowId'), subfolder2Options, SAMPLE_TYPE_NAME_1, "RowId,Run");
             // runId should not change when all derived samples have moved
             expect(sampleData.length).toBe(1);
             let runId = caseInsensitive(sampleData[0], 'run');
@@ -1014,30 +991,30 @@ describe('ExperimentController', () => {
             verifyRunData(runId, subfolder2Options, 'Derive 2 samples from top-source-1');
 
             // runId should stay the same for subset sample that did not move
-            sampleData = await getSampleData(caseInsensitive(samSourceParentSamples[0], 'rowId'), subfolder3Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
+            sampleData = await _getSampleData(caseInsensitive(samSourceParentSamples[0], 'rowId'), subfolder3Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
             runId = caseInsensitive(sampleData[0], 'run')
             expect(caseInsensitive(sampleData[0], 'run')).toBe(caseInsensitive(samSourceParentSamples[0], 'run'));
             verifyRunData(caseInsensitive(sampleData[0], 'run'), subfolder3Options, 'Derive sample from top-source-1, top-parent-3');
 
             // new runId for subset sample that moved
-            sampleData = await getSampleData(caseInsensitive(samSourceParentSamples[1], 'rowid'), subfolder2Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
+            sampleData = await _getSampleData(caseInsensitive(samSourceParentSamples[1], 'rowid'), subfolder2Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
             expect(caseInsensitive(sampleData[0], 'run') !== caseInsensitive(samSourceParentSamples[1], 'run')).toBe(true);
             verifyRunData(caseInsensitive(sampleData[0], 'run'), subfolder2Options, 'Derive sample from top-source-1, top-parent-3');
 
             // runId should stay the same for subset sample that did not move
-            sampleData = await getSampleData(caseInsensitive(sub3ParentSamples[1], 'rowid'), subfolder3Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
+            sampleData = await _getSampleData(caseInsensitive(sub3ParentSamples[1], 'rowid'), subfolder3Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
             expect(caseInsensitive(sampleData[0], 'run')).toBe(caseInsensitive(sub3ParentSamples[1], 'run'));
             verifyRunData(caseInsensitive(sampleData[0], 'run'), subfolder3Options, 'Derive 2 samples from sub3-parent-1');
 
             // new runId for subset sample that moved
-            sampleData = await getSampleData(caseInsensitive(sub3ParentSamples[0], 'rowid'), subfolder2Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
+            sampleData = await _getSampleData(caseInsensitive(sub3ParentSamples[0], 'rowid'), subfolder2Options, SAMPLE_TYPE_NAME_2, 'RowId,Run');
             expect(caseInsensitive(sampleData[0], 'run') !== caseInsensitive(sub3ParentSamples[0], 'run')).toBe(true);
             verifyRunData(caseInsensitive(sampleData[0], 'run'), subfolder2Options, 'Derive sample from sub3-parent-1');
 
             // delete original subfolder
-            await server.post('core', 'deleteContainer', undefined, { ...subfolder3Options }).expect(successfulResponse);
+            await server.post('core', 'deleteContainer', undefined, {...subfolder3Options}).expect(successfulResponse);
 
         });
     });
-
 });
+
