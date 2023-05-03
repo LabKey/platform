@@ -8342,12 +8342,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
-    private int dataObjectAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
+    private int dataObjectAliasMapRowContainerUpdate(List<Integer> dataIds, Container targetContainer)
     {
         TableInfo aliasMapTable = getTinfoDataAliasMap();
         SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
-        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
+        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
         aliasMapUpdate.append(")");
         return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
     }
