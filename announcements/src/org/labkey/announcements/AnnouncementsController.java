@@ -2404,7 +2404,7 @@ public class AnnouncementsController extends SpringActionController
                     else
                     {
                         // See if they're subscribed to the whole forum
-                        int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifer());
+                        int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifier());
 
                         // Or if they're subscribed because they've posted to this thread already
                         // Remember the emailOption is a bitmask, so don't use simple equality checks
@@ -2427,13 +2427,13 @@ public class AnnouncementsController extends SpringActionController
                         if (forumSubscription)
                         {
                             // Give them a link to the forum level subscription UI
-                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
+                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifier()));
                         }
                         else
                         {
                             // Otherwise, let them subscribe to either the forum or the specific thread
                             NavTree subscribeTree = new NavTree("subscribe");
-                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
+                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifier()));
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addReturnURL(getViewContext().getActionURL());

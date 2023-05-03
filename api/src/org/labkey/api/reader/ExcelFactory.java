@@ -319,9 +319,9 @@ public class ExcelFactory
                     Object value = rowArray.isNull(colIndex) ? null : rowArray.get(colIndex);
                     JSONObject metadataObject = null;
                     CellStyle cellStyle = defaultStyle;
-                    if (value instanceof JSONObject)
+                    if (value instanceof JSONObject jo)
                     {
-                        metadataObject = (JSONObject)value;
+                        metadataObject = jo;
                         value = metadataObject.get("value");
                     }
 

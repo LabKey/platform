@@ -22,13 +22,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JsonOrgOldModule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.logging.LogHelper;
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Helper methods for parsing JSON objects using Jackson.
+ * Helper methods for working with Jackson, JSONObject, and JSONArray
  */
 public class JsonUtil
 {
@@ -58,9 +58,7 @@ public class JsonUtil
     {
         ObjectMapper result = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
-        // result.registerModule(new JsonOrgModule()); // TODO: Uncomment this once we remove JsonOrgOldModule
-        // Allow org.json.old classes to be serialized by Jackson (TODO: Remove this after migrating from org.json.old.* -> org.json.*)
-        result.registerModule(new JsonOrgOldModule());
+        result.registerModule(new JsonOrgModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
         result.registerModule(new JavaTimeModule());
         result.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
@@ -266,9 +264,9 @@ public class JsonUtil
             {
                 /*
                    Comments are explicitly disallowed in JSON, but some documents still include them and some parsers
-                   allow them. In our case, the old org.json.JSONObject implementation tolerated comments but the
-                   newer one does not. This document is used to test that comments normally cause the new JSONObject
-                   parser to fail and stripComments() successfully strips Java-style block and single-line comments.
+                   allow them. In our case, the old JSONObject implementation tolerated comments but the newer one does
+                   not. This document is used to test that comments normally cause the new JSONObject parser to fail and
+                   stripComments() successfully strips Java-style block and single-line comments.
                 */
                 "widget": {  // widget is the top-level object
                     "debug": "on",

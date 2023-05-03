@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
@@ -885,21 +885,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 for (Object o1 : (Object[])o)
                     values.add(_c.convert(o1));
             }
-            else if (o instanceof Collection)
+            else if (o instanceof Collection<?> col)
             {
-                for (Object o1 : (Collection)o)
+                for (Object o1 : col)
                     values.add(_c.convert(o1));
             }
-            else if (o instanceof JSONArray)
+            else if (o instanceof JSONArray ja)
             {
                 // Only supports array of simple values right now.
-                for (Object o1 : ((JSONArray)o).toArray())
-                    values.add(_c.convert(o1));
-            }
-            else if (o instanceof org.json.JSONArray)
-            {
-                // Only supports array of simple values right now.
-                for (Object o1 : ((org.json.JSONArray) o).toList())
+                for (Object o1 : ja.toList())
                     values.add(_c.convert(o1));
             }
             else if (o != null)
@@ -909,7 +903,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             return values;
         }
-
     }
 
     public enum RemapMissingBehavior

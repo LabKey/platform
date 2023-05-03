@@ -223,6 +223,7 @@ public abstract class AbstractStudyEntity<T>
 
     @Override
     @NotNull
+    @Transient
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);

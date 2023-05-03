@@ -16,10 +16,7 @@
 package org.labkey.api.action;
 
 /**
- * Interface for client API responses.
- *
- * User: Dave
- * Date: Feb 13, 2008
+ * Interface for client API responses
  */
 public interface ApiResponse
 {

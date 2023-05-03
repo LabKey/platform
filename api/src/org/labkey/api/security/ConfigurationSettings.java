@@ -2,10 +2,11 @@ package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class ConfigurationSettings
@@ -20,9 +21,9 @@ public class ConfigurationSettings
     {
         _standardSettings = settings;
         String propertiesJson = (String) settings.get("Properties");
-        _properties = null != propertiesJson ? new JSONObject(propertiesJson) : new JSONObject();
+        _properties = null != propertiesJson ? new JSONObject(propertiesJson).toMap() : Collections.emptyMap();
         String encryptedPropertiesJson = (String) settings.get("EncryptedProperties");
-        Map<String, Object> encryptedProperties = new JSONObject();
+        Map<String, Object> encryptedProperties = Collections.emptyMap();
 
         if (null != encryptedPropertiesJson)
         {
@@ -30,7 +31,7 @@ public class ConfigurationSettings
             {
                 try
                 {
-                    encryptedProperties = new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson)));
+                    encryptedProperties = new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson))).toMap();
                 }
                 catch (Encryption.DecryptionException e)
                 {

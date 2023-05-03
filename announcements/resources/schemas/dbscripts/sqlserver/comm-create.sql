@@ -50,7 +50,7 @@ CREATE VIEW comm.PagePaths AS
       CAST(p.Name AS VARCHAR(2000)) AS PathParts,
       0 AS Depth
     FROM comm.Pages p
-      WHERE p.Parent = -1
+      WHERE p.Parent IS NULL
 
     UNION ALL
 
