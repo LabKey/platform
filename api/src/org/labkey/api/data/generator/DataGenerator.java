@@ -7,7 +7,9 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
@@ -42,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -88,6 +91,8 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected final List<CPUTimer> _timers = new ArrayList<>();
 
     protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
+
+    protected Map<Integer, Long> _sampleTypeCounts = new HashMap<>();
 
     public record NamingPatternData(String prefix, Long startGenId) {};
 
@@ -183,7 +188,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         _config = config;
     }
 
-    public List<ExpSampleType> getSampleTypes()
+    public List<? extends ExpSampleType> getSampleTypes()
     {
         return _sampleTypes;
     }
@@ -424,6 +429,22 @@ public class DataGenerator<T extends DataGenerator.Config>
             generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size() / 2), randomInt(aliquots.size() / 2, aliquots.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations);
         }
         return generatedCount;
+    }
+
+    protected List<Integer> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
+    {
+        if (limit <= 0)
+            return Collections.emptyList();
+
+        TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
+        SQLFragment sql = new SQLFragment("SELECT RowId FROM ")
+                .append(tableInfo)
+                .append(" LIMIT ")
+                .appendValue(limit);
+        if (totalSampleCount > limit)
+            sql.append(" OFFSET ")
+                .appendValue(randomLong(0, totalSampleCount-limit));
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
     }
 
     private List<Map<String, Object>> getRandomSamples(ExpSampleType sampleType, int quantity)
