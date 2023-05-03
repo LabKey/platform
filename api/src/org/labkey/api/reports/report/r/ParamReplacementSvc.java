@@ -460,6 +460,7 @@ public class ParamReplacementSvc
         {
             throw new IllegalArgumentException("There was a syntax error with the substitution parameter in your script.\n"
                     + (StringUtils.isEmpty(token) ? "" : "Substitution token \"" + token + "\" is used incorrectly.\n")
+                    + (StringUtils.isEmpty(replacementStr) ? "" : "Replacement string was: \"" + replacementStr + "\"\n")
                     + "Error message: " + e.getMessage(), e);
         }
     }
@@ -528,6 +529,10 @@ public class ParamReplacementSvc
                     {
                         resultFileName = resultFile.getAbsolutePath().replaceAll("\\\\", "/");
                     }
+
+                    // NOTE: dollar signs in the path will cause "java.lang.IllegalArgumentException: Illegal group reference" from Matcher.appendReplacement
+                    resultFileName = resultFileName.replaceAll("\\$", "\\\\\\$");
+
                     _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
                 }
                 String replacementStr = pattern.getReplacementStr(resultFileName, m.group(0), param.getName());
