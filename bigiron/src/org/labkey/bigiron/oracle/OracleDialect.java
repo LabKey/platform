@@ -26,6 +26,7 @@ import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -48,6 +49,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -370,6 +372,23 @@ abstract class OracleDialect extends SimpleSqlDialect
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return _sortableTypeNames.contains(sqlDataTypeName);
+    }
+
+    @Override
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
+    {
+        // Just the estimated plan for now
+        return type == ExecutionPlanType.Estimated;
+    }
+
+    @Override
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
+    {
+        SQLFragment copy = new SQLFragment(sql);
+        copy.insert(0, "EXPLAIN PLAN FOR ");
+        new SqlExecutor(scope, conn).execute(copy);
+
+        return new SqlSelector(scope, conn, "SELECT plan_table_output FROM table(dbms_xplan.display('plan_table',null,'all'))").getCollection(String.class);
     }
 
     private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
