@@ -59,6 +59,11 @@ public class ContextListener implements ServletContextListener
         }
         // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
         System.setProperty("log4j2.Script.enableLanguages", "rhino");
+
+        // Force standard Xerces implementations so the bad versions brought in by the Oracle JDBC driver are ignored
+        System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
+        System.setProperty("javax.xml.parsers.SAXParserFactory", "org.apache.xerces.jaxp.SAXParserFactoryImpl");
+        System.setProperty("javax.xml.transform.TransformerFactory", "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl");
     }
 
     // NOTE: this line of code with LogManager.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)

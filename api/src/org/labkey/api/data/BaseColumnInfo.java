@@ -1681,14 +1681,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 while (rsCols.next())
                 {
                     String metaDataName = reader.getName();
-                    var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName()));
+                    int sqlType = reader.getSqlType();
+                    String sqlTypeName = reader.getSqlTypeName();
+                    var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(sqlType, sqlTypeName));
 
                     col._metaDataName = metaDataName;
                     col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
-                    col._sqlTypeName = reader.getSqlTypeName();
+                    col._sqlTypeName = sqlTypeName;
                     col._isAutoIncrement = reader.isAutoIncrement();
-                    int type = reader.getSqlType();
-                    if (type == Types.DECIMAL || type == Types.NUMERIC)
+
+                    if (sqlType == Types.DECIMAL || sqlType == Types.NUMERIC)
                     {
                         col._scale = reader.getDecimalDigits();
                         col._precision = reader.getScale();
@@ -1697,6 +1699,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     {
                         col._scale = reader.getScale();
                     }
+
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 
