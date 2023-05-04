@@ -494,6 +494,7 @@ public class QuerySelectView extends AbstractQueryRelation
         return Collections.singletonList(col);
     }
 
+    private static final int DEFAULT_SORT_MAX_COLUMNS = 5; // Limit default ORDER BY in no PK case to five columns
 
     private static boolean addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
@@ -516,8 +517,12 @@ public class QuerySelectView extends AbstractQueryRelation
             if (sortFields != null && !sortFields.isEmpty())
             {
                 if (presentInSort.add(column.getFieldKey()))
+                {
                     // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
                     sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+                    if (sort.getSortList().size() >= DEFAULT_SORT_MAX_COLUMNS)
+                        break;
+                }
                 addedSortKeys = true;
             }
         }
