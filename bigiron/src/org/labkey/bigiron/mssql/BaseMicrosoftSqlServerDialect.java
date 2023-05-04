@@ -836,7 +836,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS FLOAT)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS FLOAT)");
         return cast;
     }
 
@@ -1156,7 +1156,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
@@ -1868,13 +1868,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return true;
+        // I don't think SQL Server provides actual times
+        return type == ExecutionPlanType.Estimated;
     }
 
     @Override
-    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         try
         {

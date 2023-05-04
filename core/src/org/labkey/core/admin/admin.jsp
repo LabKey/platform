@@ -108,6 +108,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Username</td><td><%=h(AdminBean.userName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(AdminBean.userHomeDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(AdminBean.webappDir)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution</td><td><%=h(AdminBean.distribution)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(AdminBean.osName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>

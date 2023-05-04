@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
@@ -428,16 +428,18 @@ public class ViewInfo
         _shared = shared;
     }
 
+    // TODO: Delete?
     public JSONObject toJSON(User user)
     {
         return toJSON(user, null);
     }
 
+    // TODO: Delete?
     public JSONObject toJSON(User user, String dateFormat)
     {
         JSONObject o = new JSONObject();
 
-        if(dateFormat == null)
+        if (dateFormat == null)
         {
             dateFormat = DateUtil.getStandardDateFormatString();
         }
@@ -458,7 +460,7 @@ public class ViewInfo
             o.put("queryView", getQueryView());
 
         if (getEntityId() != null)
-            o.put("entityId", getEntityId().toString());
+            o.put("entityId", getEntityId());
         if (getReportId() != null)
             o.put("reportId", getReportId().toString());
         if (getQuery() != null)
@@ -521,6 +523,7 @@ public class ViewInfo
         return o;
     }
 
+    // TODO: Delete?
     private JSONObject createUserObject(User user, User currentUser)
     {
         JSONObject json = new JSONObject();

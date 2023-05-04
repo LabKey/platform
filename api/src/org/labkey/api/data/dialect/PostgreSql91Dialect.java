@@ -1223,7 +1223,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
@@ -1785,16 +1785,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
         return true;
     }
 
     @Override
-    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         SQLFragment copy = new SQLFragment(sql);
-        copy.insert(0, "EXPLAIN ANALYZE ");
+        copy.insert(0, type == ExecutionPlanType.Estimated ? "EXPLAIN " : "EXPLAIN ANALYZE ");
 
         return new SqlSelector(scope, conn, copy).getCollection(String.class);
     }

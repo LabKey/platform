@@ -22,8 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
@@ -187,17 +187,18 @@ public abstract class CompareType
         @Override
         public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
-            if (!(value instanceof Comparable))
+            if (value instanceof Comparable<?> val)
             {
-                return false;
+                Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
+
+                if (filterValue instanceof Comparable<?> fv)
+                {
+                    return compareTo(val, fv) > 0;
+                }
             }
-            Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (!(filterValue instanceof Comparable))
-            {
-                return false;
-            }
-            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
-        }
+
+            return false;
+         }
     };
 
     public static final CompareType DATE_GT = new CompareType("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
@@ -961,11 +962,6 @@ public abstract class CompareType
                 {
                     // pass
                 }
-            }
-            else
-            {
-                // Unsupported
-                // pass
             }
         }
         else

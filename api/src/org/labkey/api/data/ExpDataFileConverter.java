@@ -170,7 +170,7 @@ public class ExpDataFileConverter implements Converter
         // try to resolve by data class properties
         else if (dataObject.has(ExperimentJSONConverter.DATA_CLASS) && dataObject.has(ExperimentJSONConverter.NAME))
         {
-            JSONObject dataClass = (JSONObject)dataObject.get(ExperimentJSONConverter.DATA_CLASS);
+            JSONObject dataClass = dataObject.getJSONObject(ExperimentJSONConverter.DATA_CLASS);
             ExpDataClass expDataClass = null;
             if (dataClass.has(ExperimentJSONConverter.ID))
                 expDataClass = ExperimentService.get().getDataClass(container, dataClass.getInt(ExperimentJSONConverter.ID));
@@ -217,10 +217,10 @@ public class ExpDataFileConverter implements Converter
                 return value;
             }
 
-            if (value instanceof JSONObject)
+            if (value instanceof JSONObject json)
             {
                 // Assume the same structure as the saveBatch and getBatch APIs work with
-                ExpData data = resolveExpData((JSONObject)value, null, null, Collections.emptyList());
+                ExpData data = resolveExpData(json, null, null, Collections.emptyList());
                 if (data != null && data.getFile() != null)
                 {
                     return data.getFile();

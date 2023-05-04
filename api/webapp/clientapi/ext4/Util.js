@@ -869,7 +869,8 @@
                     c.lookup.schemaName || c.lookup.schema,
                     c.lookup.queryName || c.lookup.table,
                     c.lookup.keyColumn,
-                    c.lookup.displayColumn
+                    c.lookup.displayColumn,
+                    c.lookup.viewName
                 ].join('||');
             }
 

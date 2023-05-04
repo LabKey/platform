@@ -189,6 +189,7 @@ public class AnnouncementModel extends Entity implements Serializable
         return AttachmentService.get().getAttachments(getAttachmentParent());
     }
 
+    @Transient
     public @NotNull Collection<AnnouncementModel> getResponses()
     {
         if (null == _responses)
@@ -368,6 +369,7 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     @JsonIgnore
+    @Transient
     public Set<User> getAuthors()
     {
         if (null == _authors)
@@ -404,7 +406,7 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     /** Find the srcIdentifier for this thread. It's only stored at the parent level, so look there if needed */
-    public String lookupSrcIdentifer()
+    public String lookupSrcIdentifier()
     {
         if (getParent() == null)
         {

@@ -98,9 +98,9 @@ public class SpecimenManager
     public LocationImpl[] getSitesWithRequests(Container container)
     {
         TableInfo locationTableInfo = SpecimenSchema.get().getTableInfoLocation(container);
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + locationTableInfo.getSelectName() + " WHERE rowid IN\n" +
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(locationTableInfo).append(" WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
-                "AND container = ? ORDER BY label", container.getId(), container.getId());
+                "AND container = ? ORDER BY label").addAll(container, container);
 
         return new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArray(LocationImpl.class);
     }

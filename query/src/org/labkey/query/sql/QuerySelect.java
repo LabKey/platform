@@ -60,9 +60,10 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 
 public class QuerySelect extends AbstractQueryRelation implements Cloneable
@@ -98,11 +99,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     // shim tableinfo used for creating expression columninfo
     private final SQLTableInfo _sti;
     private final AliasManager _aliasManager;
-//    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
-
-    // This is set by initializeSelect(), it will remain false ONLY when there is a recursive union.
-    // In that case initializeSelect() will have to be called again in a 2nd pass see QueryWith constructor
-    private boolean initialized = false;
 
     private boolean  skipSuggestedColumns = false;  // set to skip normal getSuggestedColumns() code
 
@@ -427,57 +423,46 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         // two passes to maintain ordering and avoid the odd name collision
         // create unique aliases where missing
         int expressionUniq = 0;
-        Map<FieldKey, FieldKey> fieldKeys = new HashMap<>();
+        CaseInsensitiveHashSet columnNamesInUse = new CaseInsensitiveHashSet();
         for (SelectColumn column : columnList)
         {
             String name = column.getName();
             if (null == name)
                 continue;
-            if (null == column._key)
-                column._key = new FieldKey(null, name);
-            if (fieldKeys.containsKey(column._key))
+            if (columnNamesInUse.add(name))
+                continue;
+            if (!_query.isAllowDuplicateColumns())
             {
-                if (_query.isAllowDuplicateColumns())
-                {
-                    // Fabricate a unique name for this duplicate column
-                    int i = 1;
-                    FieldKey parent = column._key.getParent();
-                    String n = column._key.getName();
-                    FieldKey uniqueKey;
-                    do
-                    {
-                        uniqueKey = new FieldKey(parent, n + "_" + i++);
-                    }
-                    while (fieldKeys.containsKey(uniqueKey));
-                    column._key = uniqueKey;
-                    column._alias = uniqueKey.getName();
-                    reportWarning("Automatically creating alias for duplicate column: " + name, column._node);
-                }
-                else
-                {
-                    parseError("Duplicate column '" + column.getName() + "'", column.getField());
-                }
+                parseError("Duplicate column '" + column.getName() + "'", column.getField());
             }
-            fieldKeys.put(column._key, column._key);
+            else
+            {
+                // Fabricate a unique name for this duplicate column
+                int i = 1;
+                String uniqueName = name + "_" + i++;
+                while (columnNamesInUse.contains(uniqueName))
+                    uniqueName = name + "_" + i++;
+                column._expliclitAliasForColumnName = new QIdentifier(uniqueName);
+                columnNamesInUse.add(uniqueName);
+                reportWarning("Automatically creating alias for duplicate column: " + uniqueName, column._node);
+            }
         }
         for (SelectColumn column : columnList)
         {
-            String name = column.getName();
-            if (null != name)
+            if (null != column.getName())
                 continue;
-            while (fieldKeys.containsKey(new FieldKey(null, "Expression" + ++expressionUniq)))
+            while (columnNamesInUse.contains("Expression" + ++expressionUniq))
                 ;
-            name = "Expression" + expressionUniq;
-            reportWarning("Automatically creating alias for expression column: " + name, column._node);
-            if (null == column._key)
-                column._key = new FieldKey(null, name);
-            fieldKeys.put(column._key, column._key);
+            String uniqueName = "Expression" + expressionUniq;
+            reportWarning("Automatically creating alias for expression column: " + uniqueName, column._node);
+            column._expliclitAliasForColumnName = new QIdentifier(uniqueName);
+            columnNamesInUse.add(uniqueName);
         }
         for (SelectColumn column : columnList)
         {
             if (null == column.getAlias())
                 column.setAlias(_aliasManager.decideAlias(column.getName()));
-            _columns.put(column._key, column);
+            _columns.put(column.getFieldKey(), column);
         }
 
         // fix up ORDER BY position and associate each entry with an alias in the columnList
@@ -512,8 +497,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 }
             }
         }
-
-        initialized = true;
     }
 
 
@@ -721,27 +704,23 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 alias = (QIdentifier) children.get(1);
 
             ContainerFilter.Type cfType = null;
-            Map<String, Object> annotations = ((QUnknownNode) node).getAnnotations();
-            if (null != annotations)
+            for (var entry : ((QUnknownNode) node).getAnnotations().entrySet())
             {
-                for (var entry : annotations.entrySet())
+                var value = entry.getValue();
+                switch (entry.getKey().toLowerCase())
                 {
-                    var value = entry.getValue();
-                    switch (entry.getKey().toLowerCase())
-                    {
-                        case "containerfilter":
-                            if (!(value instanceof String))
-                            {
-                                _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
-                                continue;
-                            }
-                            cfType = ContainerFilter.getType((String) value);
-                            if (null == cfType)
-                                _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
-                            break;
-                        default:
-                            _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
-                    }
+                    case "containerfilter":
+                        if (!(value instanceof String))
+                        {
+                            _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
+                            continue;
+                        }
+                        cfType = ContainerFilter.getType((String) value);
+                        if (null == cfType)
+                            _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
+                        break;
+                    default:
+                        _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
                 }
             }
 
@@ -904,7 +883,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 // TODO make table method work on outer tables
                 if (methodName)
                 {
-                    parseError("Method not found: " + key.toString(), expr);
+                    parseError("Method not found: " + key, expr);
                 }
                 return super.getField(key, expr, referant);
             }
@@ -1119,7 +1098,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (Map.Entry<FieldKey,QueryRelation> entry : _tables.entrySet())
             entry.getValue().declareFields();
 
-        Set selectAliases = Sets.newCaseInsensitiveHashSet();
+        Set<String> selectAliases = Sets.newCaseInsensitiveHashSet();
         if (null != _columns)
         {
             for (SelectColumn column : _columns.values())
@@ -1361,16 +1340,28 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             @Override
             public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedFieldKeys)
             {
-                if (null != selectedFieldKeys && !selectedFieldKeys.isEmpty())
+                if (null == selectedFieldKeys)
                 {
-                    Set<String> names = selectedFieldKeys.stream()
-                        .map(FieldKey::getRootName)
-                        .collect(Collectors.toSet());
-                    releaseAllSelected(_query);
-                    markAllSelected(new CaseInsensitiveHashSet(names),_query);
+                    markAllSelected(_query);
                 }
                 else
-                    markAllSelected(_query);
+                {
+                    assert !_columns.isEmpty();
+                    if (selectedFieldKeys.isEmpty())
+                    {
+                        // this could be SELECT COUNT(*) for instance, just mark first column as selected
+                        markAllSelected(Set.of(requireNonNull(getFirstColumn()).getName()), _query);
+                    }
+                    else
+                    {
+                        Set<String> names = selectedFieldKeys.stream()
+                                .map(FieldKey::getRootName)
+                                .collect(Collectors.toSet());
+                        releaseAllSelected(_query);
+                        markAllSelected(new CaseInsensitiveHashSet(names), _query);
+                    }
+                }
+
                 SQLFragment s = getSql();
                 if (!getParseErrors().isEmpty())
                     throw getParseErrors().get(0);
@@ -1544,7 +1535,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     {
         for (SelectColumn c : _columns.values())
         {
-            c._selected = true;
             c.addRef(referant);
         }
     }
@@ -1554,20 +1544,14 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (SelectColumn c : _columns.values())
         {
             if (names.contains(c.getName()))
-            {
-                c._selected = true;
                 c.addRef(referant);
-            }
         }
     }
 
     public void releaseAllSelected(Object referant)
     {
         for (SelectColumn column : _columns.values())
-        {
-            int count = column.releaseRef(referant);
-            column._selected = (count > 0);
-        }
+            column.releaseRef(referant);
     }
 
     @Override
@@ -1814,7 +1798,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.append(") ").append(getAlias());
         }
 
-        if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
+        if (!AppProps.getInstance().isDevMode() || _inFromClause)
             return sql;
 
         // debug comments
@@ -1885,10 +1869,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     public SelectColumn getColumn(@NotNull String name)
     {
         FieldKey key = new FieldKey(null,name);
-        SelectColumn col = _columns.get(key);
-        if (col != null)
-            col._selected = true;
-        return col;
+        return _columns.get(key);
     }
 
     // 1 indexed to be compatible with all the other database-y apis
@@ -1965,12 +1946,8 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (SelectColumn sc : _columns.values())
         {
             QExpr expr = sc.getResolvedField();
-            if (expr instanceof QField)
-            {
-                QField f = (QField) expr;
-                if (f._column == find)
-                    return sc;
-            }
+            if (expr instanceof QField f && f._column == find)
+                return sc;
         }
         return null;
     }
@@ -1987,7 +1964,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         SelectColumn parent = (SelectColumn)parentRelCol;
 
-        FieldKey key = new FieldKey(parent._key, name);
+        FieldKey key = new FieldKey(parent.getFieldKey(), name);
         SelectColumn c = _columns.get(key);
         if (null != c)
             return c;
@@ -2003,8 +1980,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (fromLookupColumn == null)
             return null;
         SelectColumn sc = new SelectColumn(new QField(fromLookupColumn, null));
-        sc._key = key;
-        sc._selected = true;
         _columns.put(key, sc);
         return sc;
     }
@@ -2057,9 +2032,8 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (null == sc._field || sc._suggestedColumn)
                 continue;
             QExpr expr = sc.getResolvedField();
-            if (!(expr instanceof QField))
+            if (!(expr instanceof QField field))
                 continue;
-            QField field = (QField)expr;
             if (null == field.getTable() || null == field.getRelationColumn())
                 continue;
 
@@ -2089,7 +2063,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 QField field = new QField(s, null);
                 SelectColumn selectColumn = new SelectColumn(field, true);
                 selectColumn._suggestedColumn = true;
-                selectColumn._selected = true;
                 _columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);
             }
@@ -2109,16 +2082,15 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         SelectColumn parent = (SelectColumn)parentRelCol;
 
-        FieldKey key = new FieldKey(parent._key, name);
+        FieldKey key = new FieldKey(parent.getFieldKey(), name);
         SelectColumn c = _columns.get(key);
         if (null != c)
             return c;
 
         QExpr qexpr = parent.getResolvedField();
-        if (!(qexpr instanceof QField))
+        if (!(qexpr instanceof QField parentField))
             return null;
 
-        QField parentField = (QField)qexpr;
         RelationColumn fromParentColumn = parentField.getRelationColumn();
         if (fromParentColumn == null)
             return null;
@@ -2126,8 +2098,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (fromLookupColumn == null)
             return null;
         SelectColumn col = new SelectColumn(new QField(fromLookupColumn, null));
-        col._key = key;
-        col._selected = true;
         _columns.put(key, col);
         return col;
     }
@@ -2135,8 +2105,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
     public class SelectColumn extends RelationColumn
     {
-        FieldKey _key;
-        boolean _selected = false;
+        @Nullable final FieldKey _sourceColumnFieldKey;
         boolean _selectStarColumn = false;
         QNode _node;
         QExpr _field;
@@ -2145,26 +2114,27 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         Map<String,Object> _annotations = null;
         String _uniqueName = null;
 
-        QIdentifier _aliasId;
-        String _alias;
+        QIdentifier _expliclitAliasForColumnName;
+        String _internalAliasForSqlGeneration;
 
         private SelectColumn()
         {
+            _sourceColumnFieldKey = null;
         }
 
         public SelectColumn(FieldKey fk)
         {
             _field = QFieldKey.of(fk);
-            _key = new FieldKey(null, fk.getName());
-            _alias = _aliasManager.decideAlias(getName());
+            _sourceColumnFieldKey = new FieldKey(null, fk.getName());
+            _internalAliasForSqlGeneration = _aliasManager.decideAlias(getName());
         }
 
         public SelectColumn(QExpr expr, String aliasPrefix)
         {
             _node = expr;
             _field = expr;
-            _alias = _aliasManager.decideAlias(aliasPrefix);
-            _key = new FieldKey(null,_alias);
+            _internalAliasForSqlGeneration = _aliasManager.decideAlias(aliasPrefix);
+            _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration);
         }
 
         public SelectColumn(QNode node)
@@ -2176,16 +2146,17 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 _annotations.remove("concepturi");
             }
 
+            FieldKey sourceFieldKey = null;
             _node = node;
             if (node instanceof QAs && node.childList().size() > 1)
             {
                 _field = ((QAs) node).getExpression();
                 if (_field instanceof QIfDefined)
                     ((QIfDefined)_field).setQuerySelect(QuerySelect.this);
-                FieldKey key = _field.getFieldKey();
-                if (null != key && key.getName().equals("*"))
+                sourceFieldKey = _field.getFieldKey();
+                if (null != sourceFieldKey && sourceFieldKey.getName().equals("*"))
                     parseError("* expression can not be aliased", node);
-                _aliasId = ((QAs) node).getAlias();
+                _expliclitAliasForColumnName = ((QAs) node).getAlias();
             }
             else
             {
@@ -2196,20 +2167,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
                 if (null != fk && !fk.getName().startsWith("@@"))
-                    _key = new FieldKey(null, fk.getName());
+                    sourceFieldKey = new FieldKey(null, fk.getName());
             }
+            _sourceColumnFieldKey = sourceFieldKey;
             String name = getName();
             if (null != name)
-                _alias = _aliasManager.decideAlias(name);
-        }
-
-        public SelectColumn(QExpr expr)
-        {
-            _field = expr;
-            FieldKey key = _field.getFieldKey();
-            if (null != key)
-                _key = new FieldKey(null, key.getName());
-            _alias = getName() == null ? null : _aliasManager.decideAlias(getName());
+                _internalAliasForSqlGeneration = _aliasManager.decideAlias(name);
         }
 
         public SelectColumn(QField field)
@@ -2223,13 +2186,13 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             _resolved = field;
             if (generateName)
             {
-                _alias = _aliasManager.decideAlias(field.getName());
-                _key = new FieldKey(null, _alias);
+                _internalAliasForSqlGeneration = _aliasManager.decideAlias(field.getName());
+                _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration);
             }
             else
             {
-                _key = new FieldKey(null, field.getName());
-                _alias = _aliasManager.decideAlias(getName());
+                _sourceColumnFieldKey = new FieldKey(null, field.getName());
+                _internalAliasForSqlGeneration = _aliasManager.decideAlias(getName());
             }
         }
 
@@ -2292,10 +2255,10 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         public String getName()
         {
-            if (null != _aliasId)
-                return _aliasId.getIdentifier();
-            else if (null != _key)
-                return _key.getName();
+            if (null != _expliclitAliasForColumnName)
+                return _expliclitAliasForColumnName.getIdentifier();
+            else if (null != _sourceColumnFieldKey)
+                return _sourceColumnFieldKey.getName();
             else
                 return null;
         }
@@ -2309,7 +2272,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         @Override
         public String getAlias()
         {
-            return _alias;
+            return _internalAliasForSqlGeneration;
         }
 
         @Override
@@ -2379,7 +2342,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         @Override
         void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
-            Objects.requireNonNull(to);
+            requireNonNull(to);
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
             {
@@ -2459,7 +2422,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             Object lbl = null==_annotations?null:_annotations.get("title");
             if (lbl instanceof String && null != (lbl = StringUtils.trimToNull((String)lbl)))
                 return (String)lbl;
-            if (_aliasId != null)
+            if (_expliclitAliasForColumnName != null)
                 return ColumnInfo.labelFromName(getName());
             return null;
         }
@@ -2467,18 +2430,18 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         public void appendSource(SourceBuilder builder)
         {
             _field.appendSource(builder);
-            if (_aliasId != null)
+            if (_expliclitAliasForColumnName != null)
             {
                 builder.append(" AS ");
-                _aliasId.appendSource(builder);
+                _expliclitAliasForColumnName.appendSource(builder);
             }
         }
 
         public void setAlias(String alias)
         {
-            _alias = StringUtils.trimToNull(alias);
-            assert null != _alias;
-            _aliasId = new QIdentifier(_alias);
+            _internalAliasForSqlGeneration = StringUtils.trimToNull(alias);
+            assert null != _internalAliasForSqlGeneration;
+            _expliclitAliasForColumnName = new QIdentifier(_internalAliasForSqlGeneration);
         }
 
         public QExpr getField()

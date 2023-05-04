@@ -270,7 +270,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 store: this.getFilterStore(),
                 deferEmptyText: false,
                 multiSelect: true,
-                height: this.hideContainerFilterToolbar ? 166 : 136,
+                height: this.hideContainerFilterToolbar ? 320 : 290,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',

@@ -2569,7 +2569,7 @@ public class NameGenerator
         {
 
             Map<Object, Object> m = new HashMap<>();
-            m.put("AliquotedFrom", aliquotedFrom);
+            m.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
             m.put("SourceMeta", sourceMeta);
 
             Container c = JunitUtil.getTestContainer();
@@ -2605,7 +2605,7 @@ public class NameGenerator
                 assertEquals("S100.mouse1.2", s);
 
                 Map<Object, Object> m2 = new HashMap<>();
-                m2.put("AliquotedFrom", aliquotedFrom);
+                m2.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 m2.put("SourceMeta", "mouse2");
 
                 s = se.eval(m2);

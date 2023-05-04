@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -56,12 +57,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean useMark;
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
+    final Set<String> _dataColumnNames = new CaseInsensitiveHashSet();
 
     final User user;
     final Container c;
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
-    final boolean _getDetailedData; // If true, get extra information, such as lineage
 
     final DataIteratorContext _context;
 
@@ -84,12 +85,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
         _verifyExisting = option.updateOnly;
-        _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         containerCol = map.get("Container");
 
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
+
+        _dataColumnNames.addAll(detailed ? map.keySet() : keyNames);
+
         for (String name : keyNames)
         {
             Integer index = map.get(name);
@@ -208,7 +211,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 if (auditType == DETAILED || option.updateOnly)
                 {
-                    boolean detailed = auditType == DETAILED && !context.getConfigParameterBoolean(ExperimentService.QueryOptions.SkipDetailedExistingRecord);
+                    boolean detailed = auditType == DETAILED;
                     if (useGetRows)
                         return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
                     else
@@ -372,7 +375,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _getDetailedData);
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _dataColumnNames);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();

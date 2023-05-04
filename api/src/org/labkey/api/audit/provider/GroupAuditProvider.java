@@ -96,13 +96,13 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getLabel()
     {
-        return "Group events";
+        return "Group and role events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Information about group modifications and security changes.";
+        return "Information about group modifications and role assignments.";
     }
 
     public GroupAuditProvider()

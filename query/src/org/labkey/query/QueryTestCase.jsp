@@ -78,6 +78,7 @@
 <%@ page import="java.util.concurrent.Callable" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -1332,33 +1333,72 @@ d,seven,twelve,day,month,date,duration,guid
     // Duplicate column names are supported. Introduced as an option for #35424; made the default behavior for #42081.
     private void testDuplicateColumns(User user, Container c) throws SQLException
     {
-        String sql = "SELECT d, seven, d, seven FROM R";
-        QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
-        query.setSql(sql);
-        ArrayList<QueryException> qerrors = new ArrayList<>();
-        TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
+        {
+            String sql = "SELECT d, seven, d, seven FROM R";
+            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
+            query.setSql(sql);
+            ArrayList<QueryException> qerrors = new ArrayList<>();
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
 
-        if (null == t)
-        {
-            Assert.fail("Table not found");
-        }
-        else if (!qerrors.isEmpty())
-        {
-            throw qerrors.get(0);
-        }
-        else
-        {
-            try (Results rs = QueryService.get().getSelectBuilder(t).select())
+            if (null == t)
             {
-                assertNotNull(sql, rs);
-                assertEquals(sql, Rsize, rs.getSize());
-                ResultSetMetaData md = rs.getMetaData();
-                assertEquals(sql, 4, md.getColumnCount());
-                assertEquals(sql, 4, rs.getFieldMap().size());
-                assertEquals(sql, "d", rs.getColumn(1).getName());
-                assertEquals(sql, "seven", rs.getColumn(2).getName());
-                assertEquals(sql, "d_1", rs.getColumn(3).getName());
-                assertEquals(sql, "seven_1", rs.getColumn(4).getName());
+                Assert.fail("Table not found");
+            }
+            else if (!qerrors.isEmpty())
+            {
+                throw qerrors.get(0);
+            }
+            else
+            {
+                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                {
+                    assertNotNull(sql, rs);
+                    assertEquals(sql, Rsize, rs.getSize());
+                    ResultSetMetaData md = rs.getMetaData();
+                    assertEquals(sql, 4, md.getColumnCount());
+                    assertEquals(sql, 4, rs.getFieldMap().size());
+                    assertEquals(sql, "d", rs.getColumn(1).getName());
+                    assertEquals(sql, "seven", rs.getColumn(2).getName());
+                    assertEquals(sql, "d_1", rs.getColumn(3).getName());
+                    assertEquals(sql, "seven_1", rs.getColumn(4).getName());
+                }
+            }
+        }
+
+        {
+            /*
+            * Test that the duplicate columns are aliased even if they have explicit AS clauses
+            * NOTE: I think it would be even better to change the column name of the column selected by "*" rather than the explicitly select column.
+            * Still this is better than not de-duplicating.
+            */
+            String sql = "SELECT *, d as D, seven as SEVEN FROM R";
+            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
+            query.setSql(sql);
+            ArrayList<QueryException> qerrors = new ArrayList<>();
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
+
+            if (null == t)
+            {
+                Assert.fail("Table not found");
+            }
+            else if (!qerrors.isEmpty())
+            {
+                throw qerrors.get(0);
+            }
+            else
+            {
+                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                {
+                    assertNotNull(sql, rs);
+                    assertEquals(sql, Rsize, rs.getSize());
+                    ResultSetMetaData md = rs.getMetaData();
+                    assertEquals(sql, Rcolumns+2, md.getColumnCount());
+                    assertEquals(sql, Rcolumns+2, rs.getFieldMap().size());
+                    int d1 = rs.findColumn(new FieldKey(null,"d_1"));
+                    int seven1 = rs.findColumn(new FieldKey(null,"seven_1"));
+                    assertEquals(sql, Rcolumns+1, d1);
+                    assertEquals(sql, Rcolumns+2, seven1);
+                }
             }
         }
     }

@@ -18,6 +18,7 @@ package org.labkey.assay;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayBatchDomainKind;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayProviderSchema;
@@ -33,6 +34,7 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -101,7 +103,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.000;
+        return 23.001;
     }
 
     @Override
@@ -285,4 +287,12 @@ public class AssayModule extends SpringModule
             PlateManager.TestCase.class
         );
     }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new AssayUpgradeCode();
+    }
+
 }

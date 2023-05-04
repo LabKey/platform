@@ -15,7 +15,7 @@
  */
 package org.labkey.query.olap.rolap;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -168,13 +168,11 @@ public class RolapTestCase extends Assert
         assertEquals(5+1,lAssay.getMembers().size());
     }
 
-
     private Map<String,Integer> oneAxisQuery(String json) throws Exception
     {
         JSONObject query = new JSONObject(json);
         return oneAxisQuery(query);
     }
-
 
     private Map<String,Integer> oneAxisQuery(JSONObject query) throws Exception
     {

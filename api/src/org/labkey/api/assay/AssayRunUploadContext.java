@@ -147,6 +147,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         return false;
     }
 
+    default boolean isAllowLookupByAlternateKey()
+    {
+        return true;
+    }
+
     ProviderType getProvider();
 
     String getTargetStudy();
@@ -193,6 +198,15 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @Nullable
     default File getOriginalFileLocation() { return null; }
 
+    default boolean shouldAutoFillDefaultResultColumns()
+    {
+        return false;
+    }
+
+    default void setAutoFillDefaultResultColumns(boolean autoFill)
+    {
+    }
+
     /**
      * Builder pattern for creating a AssayRunUploadContext instance.
      */
@@ -219,6 +233,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<?, String> _inputMaterials;
         protected Map<?, String> _outputMaterials;
         protected boolean _allowCrossRunFileInputs;
+        protected boolean _allowLookupByAlternateKey = true;
         protected List<Map<String, Object>> _rawData;
         protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
@@ -341,6 +356,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public final FACTORY setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
         {
             _allowCrossRunFileInputs = allowCrossRunFileInputs;
+            return self();
+        }
+
+        public final FACTORY setAllowLookupByAlternateKey(boolean allowLookupByAlternateKey)
+        {
+            _allowLookupByAlternateKey = allowLookupByAlternateKey;
             return self();
         }
 

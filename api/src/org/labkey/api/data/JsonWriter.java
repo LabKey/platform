@@ -101,6 +101,7 @@ public class JsonWriter
         props.put("jsonType", dc.getJsonTypeName());
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
         props.put("defaultValue", cinfo == null ? null : cinfo.getDefaultValue());
+        props.put("jdbcType", cinfo == null ? null : cinfo.getJdbcType().name());
 
         if (includeDomainFormat)
         {
@@ -175,6 +176,8 @@ public class JsonWriter
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
 
         props.put("derivationDataScope", cinfo == null ? null : cinfo.getDerivationDataScope());
+
+        props.put("wrappedColumnName", cinfo == null ? null : cinfo.getWrappedColumnName());
 
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)

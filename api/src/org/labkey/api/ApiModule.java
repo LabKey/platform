@@ -18,7 +18,6 @@ package org.labkey.api;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.json.OldJsonTest;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -74,8 +73,8 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportType;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationConfiguration;
@@ -197,7 +196,6 @@ public class ApiModule extends CodeOnlyModule
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
-            OldJsonTest.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,
@@ -240,6 +238,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
+            AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,

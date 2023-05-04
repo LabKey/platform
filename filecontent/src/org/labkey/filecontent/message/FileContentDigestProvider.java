@@ -94,7 +94,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
         if (table != null)
         {
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + table.getRealTable().getSelectName() + " WHERE Created >= ? and Created < ?", start, end);
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM ").append(table.getRealTable()).append(" WHERE Created >= ? and Created < ?").addAll(start, end);
             Collection<String> containerIds = new SqlSelector(table.getSchema(), sql).getCollection(String.class);
 
             for (String id : containerIds)

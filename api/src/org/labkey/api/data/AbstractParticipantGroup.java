@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

@@ -1580,13 +1580,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Nullable
     @Override
-    public String getSelectName()
-    {
-        return null;
-    }
-
-    @Nullable
-    @Override
     public String getMetaDataName()
     {
         return null;

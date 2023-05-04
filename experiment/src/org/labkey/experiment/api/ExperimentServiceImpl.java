@@ -1370,10 +1370,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeOtherContainers)
+    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, user, includeOtherContainers);
+        List<String> containerIds = createContainerList(container, user, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -1407,8 +1407,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (legacyObjectId != null)
             return getDataClassByObjectId(legacyObjectId);
 
-        boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeOtherContainers, dataClassName);
+        boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, user, includeProjectAndShared, dataClassName);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1421,9 +1421,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, user, true, dataClassName);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String dataClassName)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, String dataClassName)
     {
-        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
+        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
     }
 
     @Override
@@ -1438,14 +1438,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, user, rowId, true);
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, int rowId, boolean includeProjectAndShared)
     {
-        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getRowId() == rowId));
+        return getDataClass(c, user, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
-    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<DataClass> predicate)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, user, includeOtherContainers);
+        List<String> containerIds = createContainerList(c, user, includeProjectAndShared);
         for (String containerId : containerIds)
         {
             Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
@@ -2602,14 +2602,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
-            SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
+            SQLFragment parentsInnerSelectFrag = new SQLFragment().setSqlUnsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
             String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment().setSqlUnsafe(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2617,14 +2617,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
             childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-            SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
+            SQLFragment childrenInnerSelectFrag = new SQLFragment().setSqlUnsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment().setSqlUnsafe(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -3822,12 +3822,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
-        if (includeProjectAndShared && user == null)
-        {
-            throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
-        }
         if (includeProjectAndShared)
         {
+            if (user == null)
+            {
+                throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
+            }
+            
             Container project = container.getProject();
             if (project != null && project.getEntityId() != container.getEntityId() && project.hasPermission(user, ReadPermission.class))
             {
@@ -3850,14 +3851,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches)
+    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches)
     {
-        return getExperiments(container, user, includeOtherContainers, includeBatches, false);
+        return getExperiments(container, user, includeProjectAndShared, includeBatches, false);
     }
 
-    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches, boolean includeHidden)
+    public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeProjectAndShared, boolean includeBatches, boolean includeHidden)
     {
-        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+        SimpleFilter filter = createContainerFilter(container, user, includeProjectAndShared);
         if (!includeHidden)
         {
             filter.addCondition(FieldKey.fromParts("Hidden"), Boolean.FALSE);
@@ -3942,7 +3943,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result;
     }
 
-
     private Map<String, List<Material>> getRunInputMaterial(Map<String, Object>[] maps)
     {
         Map<String, List<Material>> outputMap = new HashMap<>();
@@ -3956,7 +3956,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         return outputMap;
     }
-
 
     /**
      * @return map from OntologyEntryURI to parameter
@@ -6322,7 +6321,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                           Map<ExpData, String> outputDatas,
                                           Map<ExpData, String> transformedDatas,
                                           ViewBackgroundInfo info,
-                                          Logger log,
+                                          @NotNull Logger log,
                                           boolean loadDataFiles,
                                           @Nullable Set<String> runInputLsids,
                                           @Nullable Set<Pair<String, String>> finalOutputLsids)
@@ -7074,9 +7073,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
-                                Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
-                                ViewBackgroundInfo info, Logger log)
+    public ExpRun derive(@NotNull Map<ExpMaterial, String> inputMaterials, @NotNull Map<ExpData, String> inputDatas,
+                                @NotNull Map<ExpMaterial, String> outputMaterials, @NotNull Map<ExpData, String> outputDatas,
+                                @NotNull ViewBackgroundInfo info, @NotNull Logger log)
             throws ExperimentException
     {
         ExpRun run = createRun(inputMaterials, inputDatas, outputMaterials, outputDatas,info);
@@ -7109,20 +7108,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new ExperimentException("The material " + expMaterial.getName() + " cannot be an input to its own derivation.");
         }
 
+        ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), getDerivationRunName(inputMaterials, inputDatas, outputMaterials.size(), outputDatas.size()));
+        run.setProtocol(protocol);
+        run.setFilePathRoot(pipeRoot.getRootPath());
+
+        return run;
+    }
+
+    public static String getDerivationRunName(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                                       int numMaterialOutputs, int numDataOutputs)
+    {
         StringBuilder name = new StringBuilder("Derive ");
-        if (outputDatas.isEmpty())
+        if (numDataOutputs <= 0)
         {
-            if (outputMaterials.size() == 1)
+            if (numMaterialOutputs == 1)
                 name.append("sample ");
             else
-                name.append(outputMaterials.size()).append(" samples ");
+                name.append(numMaterialOutputs).append(" samples ");
         }
-        else if (outputMaterials.isEmpty())
+        else if (numMaterialOutputs <= 0)
         {
-            if (outputDatas.size() == 1)
+            if (numDataOutputs == 1)
                 name.append("data ");
             else
-                name.append(outputDatas.size()).append(" data ");
+                name.append(numDataOutputs).append(" data ");
         }
         name.append("from ");
         String nameSeparator = "";
@@ -7140,16 +7150,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             name.append(material.getName());
             nameSeparator = ", ";
         }
-
-        ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
-        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
-        run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
-
-        return run;
+        return name.toString();
     }
 
-    private ExpRunImpl createAliquotRun(ExpMaterial parent, List<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
+    public ExpRunImpl createAliquotRun(ExpMaterial parent, Collection<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
@@ -7161,20 +7165,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (parent == null)
             throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
 
-        StringBuilder name = new StringBuilder("Create ");
-        if (aliquots.size() == 1)
-            name.append("aliquot ");
-        else
-            name.append(aliquots.size()).append(" aliquots ");
-        name.append("from ");
-        name.append(parent.getName());
-
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
-        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
         return run;
+    }
+
+    public static String getAliquotRunName(ExpMaterial parent, int numAliquots)
+    {
+        StringBuilder name = new StringBuilder("Create ");
+        if (numAliquots == 1)
+            name.append("aliquot ");
+        else
+            name.append(numAliquots).append(" aliquots ");
+        name.append("from ");
+        name.append(parent.getName());
+        return name.toString();
     }
 
     @Override

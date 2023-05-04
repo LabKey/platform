@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -166,15 +167,16 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     /**
      *  Generates the current select SQL and returns the execution plan. SQL is generated as if getResultSet() had been
-     *  called, which means that TableSelector limit, offset, sort, filter, etc. are all respected.
+     *  called, which means that TableSelector limit, offset, sort, filter, etc. are all respected. Callers must test
+     *  canShowExecutionPlan() before invoking this method.
      */
-    Collection<String> getExecutionPlan()
+    Collection<String> getExecutionPlan(ExecutionPlanType type)
     {
         SqlDialect dialect = getScope().getSqlDialect();
 
-        if (dialect.canShowExecutionPlan())
+        if (dialect.canShowExecutionPlan(type))
         {
-            return dialect.getExecutionPlan(getScope(), getSqlFactory(true).getSql());
+            return dialect.getExecutionPlan(getScope(), getSqlFactory(true).getSql(), type);
         }
         else
         {
@@ -186,10 +188,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
      *  Convenience method that generates select SQL and logs the execution plan to the passed in Logger (if non-null)
      */
     @SuppressWarnings("unused")
-    public SELECTOR logExecutionPlan(@Nullable Logger logger)
+    public SELECTOR logExecutionPlan(@Nullable Logger logger, ExecutionPlanType type)
     {
         if (null != logger)
-            logger.info(String.join("\n", getExecutionPlan()));
+            logger.info(String.join("\n", getExecutionPlan(type)));
 
         return getThis();
     }
