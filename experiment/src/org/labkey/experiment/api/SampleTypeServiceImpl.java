@@ -1680,7 +1680,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
-                updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
+                updateCounts.put("samples", updateCounts.get("samples") + expService.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user));
 
                 // update for exp.object.container
                 expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
@@ -1689,7 +1689,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
 
                 // update for exp.materialaliasmap.container
-                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
+                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + expService.aliasMapRowContainerUpdate(getTinfoMaterialAliasMap(), sampleIds, targetContainer));
 
                 // update inventory.item.container
                 InventoryService inventoryService = InventoryService.get();
@@ -1830,7 +1830,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     aliquotParent = expService.getExpMaterial(material.getAliquotedFromLSID());
                 }
-
             }
 
             if (isAliquot && aliquotParent != null)
@@ -1857,28 +1856,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             runCount++;
         }
         return runCount;
-    }
-
-    private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
-    {
-        TableInfo materialTable = getTinfoMaterial();
-        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(materialTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
-        return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
-    }
-
-    private int materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
-    {
-        TableInfo aliasMapTable = getTinfoMaterialAliasMap();
-        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
-        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
-        aliasMapUpdate.append(")");
-        return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
     }
 
     // return the map of file renames

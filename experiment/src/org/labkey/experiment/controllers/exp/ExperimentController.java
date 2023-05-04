@@ -7742,7 +7742,7 @@ public class ExperimentController extends SpringActionController
                 return;
             }
 
-            // verify all samples are from the current container
+            // verify all sources are from the current container
             if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
             {
                 errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");

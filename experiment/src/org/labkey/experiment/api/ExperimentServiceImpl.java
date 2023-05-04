@@ -8342,9 +8342,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
-    private int dataObjectAliasMapRowContainerUpdate(List<Integer> dataIds, Container targetContainer)
+    @Override
+    public int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer)
     {
-        TableInfo aliasMapTable = getTinfoDataAliasMap();
         SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
@@ -8385,14 +8385,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = dataRowContainerUpdate(dataIds, targetContainer, user);
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
                 updateExpObjectContainers(getTinfoData(), dataIds, targetContainer);
 
                 // update for exp.dataaliasmap.container
-                updateCounts.put("sourceAliases", dataObjectAliasMapRowContainerUpdate(dataIds, targetContainer));
+                updateCounts.put("sourceAliases", aliasMapRowContainerUpdate(getTinfoDataAliasMap(), dataIds, targetContainer));
 
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
@@ -8446,15 +8446,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    private int dataRowContainerUpdate(List<Integer> dataIds, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
     {
-        TableInfo dataTable = getTinfoData();
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
                 .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, dataIds);
+                .append(" WHERE ").append(idField);
+        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
         return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
 
