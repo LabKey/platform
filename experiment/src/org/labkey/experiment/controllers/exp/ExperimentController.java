@@ -4131,6 +4131,10 @@ public class ExperimentController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
+
+            if (query.getContainerFilter() != null) // cross folder import not supported
+                query.setContainerFilter(ContainerFilter.Type.Current.create(getContainer(), getUser()));
+
             if (!qpe.isEmpty())
                 throw qpe.get(0);
             if (null != t)
