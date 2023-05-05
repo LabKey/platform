@@ -44,8 +44,8 @@ public class ReexecutableRenderContext extends RenderContext
                     .setOffset(offset)
                     .setForceSortForDisplay(true);
             var sqlfWithCTE = selector.getSql();
-            // flatten out CTEs
-            SQLFragment sqlf = new SQLFragment(sqlfWithCTE.getSQL(), sqlfWithCTE.getParams());
+            // flatten out CTEs (CONSIDER new method SQLFragment.flatten())
+            SQLFragment sqlf = SQLFragment.unsafe(sqlfWithCTE.getSQL()).addAll(sqlfWithCTE.getParams());
             List<ColumnInfo> selectedColumns = new ArrayList<>(selector.getSelectedColumns());
 
             return Pair.of(selectedColumns, sqlf);

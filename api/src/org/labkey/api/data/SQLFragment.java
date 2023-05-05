@@ -107,8 +107,10 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-//        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-//        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
+        assert !StringUtils.contains(charseq, ';');
+
         // allow statement separators
         this.sql = charseq.toString();
         if (null != params)
@@ -168,11 +170,18 @@ public class SQLFragment implements Appendable, CharSequence
      *
      * This can also be used for processing sql scripts (e.g. module .sql update scripts)
      */
-    public SQLFragment setSqlUnsafe(String sql)
+    public SQLFragment setSqlUnsafe(String unsafe)
     {
-        sb = new StringBuilder(sql);
+        this.sql = unsafe;
+        this.sb = null;
         return this;
     }
+
+    public static SQLFragment unsafe(String unsafe)
+    {
+        return new SQLFragment().setSqlUnsafe(unsafe);
+    }
+
 
     private String replaceCteTokens(String self, String select, List<Pair<String,CTE>> ctes)
     {
