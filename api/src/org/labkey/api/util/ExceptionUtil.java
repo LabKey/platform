@@ -772,7 +772,7 @@ public class ExceptionUtil
         }
         else if (ex instanceof ApiUsageException)
         {
-            responseStatus = HttpServletResponse.SC_BAD_REQUEST;
+            responseStatus = ((ApiUsageException) ex).getStatus();
             errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {

@@ -57,7 +57,7 @@ public class BadRequestException extends HttpStatusException
             @Override
             public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
             {
-                return true;
+                return false;
             }
         };
 
@@ -76,12 +76,12 @@ public class BadRequestException extends HttpStatusException
         this(message, null, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
-    public BadRequestException(String message, @Nullable Exception x)
+    public BadRequestException(String message, @Nullable Throwable x)
     {
         this(message, x, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
-    public BadRequestException(String message, @Nullable Exception x, int httpStatusCode)
+    public BadRequestException(String message, @Nullable Throwable x, int httpStatusCode)
     {
         this(message, x, httpStatusCode, HttpServletResponse.SC_METHOD_NOT_ALLOWED == httpStatusCode ? HowBad.Malicious : HowBad.MaybeBad);
     }
@@ -91,7 +91,7 @@ public class BadRequestException extends HttpStatusException
         this(message, null, HttpServletResponse.SC_BAD_REQUEST, severity);
     }
 
-    BadRequestException(String message, @Nullable Exception x, int httpStatusCode, HowBad severity)
+    protected BadRequestException(String message, @Nullable Throwable x, int httpStatusCode, HowBad severity)
     {
         super(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x, httpStatusCode);
         this.severity = severity;

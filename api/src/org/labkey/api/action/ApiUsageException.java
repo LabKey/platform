@@ -17,17 +17,17 @@ package org.labkey.api.action;
 
 import org.apache.hc.core5.http.HttpStatus;
 import org.labkey.api.util.SkipMothershipLogging;
-import org.labkey.api.view.HttpStatusException;
+import org.labkey.api.view.BadRequestException;
 
 /**
  * Signals the client API caller that they somehow made an invalid request. These errors are not reported to the
  * mothership.
  */
-public class ApiUsageException extends HttpStatusException implements SkipMothershipLogging
+public class ApiUsageException extends BadRequestException implements SkipMothershipLogging
 {
     public ApiUsageException(String message, Throwable cause)
     {
-        super(message, cause, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        super(message, cause, HttpStatus.SC_BAD_REQUEST, HowBad.LetItGo);
     }
 
     public ApiUsageException(String message)
