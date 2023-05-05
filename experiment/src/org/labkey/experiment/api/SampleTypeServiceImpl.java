@@ -1659,6 +1659,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("sampleAliases", 0);
         updateCounts.put("sampleAuditEvents", 0);
         Map<Integer, List<FileFieldRenameData>> fileMovesBySampleId = new HashMap<>();
+        ExperimentService expService = ExperimentService.get();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1679,16 +1680,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
-                updateCounts.put("samples", updateCounts.get("samples") + materialRowContainerUpdate(sampleIds, targetContainer, user));
+                updateCounts.put("samples", updateCounts.get("samples") + expService.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user));
 
                 // update for exp.object.container
-                objectRowContainerUpdate(getTinfoMaterial(), sampleIds, targetContainer);
+                expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
 
                 // update the paths to files associated with individual samples
                 fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
 
                 // update for exp.materialaliasmap.container
-                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + materialAliasMapRowContainerUpdate(sampleIds, targetContainer));
+                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + expService.aliasMapRowContainerUpdate(getTinfoMaterialAliasMap(), sampleIds, targetContainer));
 
                 // update inventory.item.container
                 InventoryService inventoryService = InventoryService.get();
@@ -1773,8 +1774,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (sample.getRunId() != null)
                 runIdSamples.computeIfAbsent(sample.getRunId(), t -> new HashSet<>()).add(sample);
         });
+        ExperimentService expService = ExperimentService.get();
         // find the set of runs associated with samples that are moving
-        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(runIdSamples.keySet());
+        List<? extends ExpRun> runs = expService.getExpRuns(runIdSamples.keySet());
         List<ExpRun> toUpdate = new ArrayList<>();
         List<ExpRun> toSplit = new ArrayList<>();
         for (ExpRun run : runs)
@@ -1787,27 +1789,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 toSplit.add(run);
         }
 
-        int updateCount = updateExperimentRuns(toUpdate, targetContainer, user);
+        int updateCount = expService.moveExperimentRuns(toUpdate, targetContainer, user);
         int splitCount = splitExperimentRuns(toSplit, runIdSamples, targetContainer, user);
         return Map.of("sampleDerivationRunsUpdated", updateCount, "sampleDerivationRunsSplit", splitCount);
-    }
-
-    private int updateExperimentRuns(List<ExpRun> runs, Container targetContainer, User user)
-    {
-        if (runs.isEmpty())
-            return 0;
-
-        TableInfo runsTable = getTinfoExperimentRun();
-        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
-        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
-        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
-        objectRowContainerUpdate(getTinfoExperimentRun(), runRowIds, targetContainer);
-        return updateCount;
     }
 
     private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
@@ -1846,7 +1830,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     aliquotParent = expService.getExpMaterial(material.getAliquotedFromLSID());
                 }
-
             }
 
             if (isAliquot && aliquotParent != null)
@@ -1873,38 +1856,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             runCount++;
         }
         return runCount;
-    }
-
-    private int materialRowContainerUpdate(List<Integer> sampleIds, Container targetContainer, User user)
-    {
-        TableInfo materialTable = getTinfoMaterial();
-        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(materialTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        materialTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, sampleIds);
-        return new SqlExecutor(materialTable.getSchema()).execute(materialUpdate);
-    }
-
-    private void objectRowContainerUpdate(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
-    {
-        TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
-        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
-        objectUpdate.append(")");
-        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
-    }
-
-    private int materialAliasMapRowContainerUpdate(List<Integer> sampleIds, Container targetContainer)
-    {
-        TableInfo aliasMapTable = getTinfoMaterialAliasMap();
-        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoMaterial()).append(" WHERE rowid ");
-        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, sampleIds);
-        aliasMapUpdate.append(")");
-        return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
     }
 
     // return the map of file renames
