@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ImportAliasable;
@@ -454,7 +455,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
@@ -741,7 +742,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
-        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                 .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
@@ -859,6 +860,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
         }
+    }
+
+    private ContainerFilter getSampleStatusLookupContainerFilter()
+    {
+        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // for the sample status lookup since in the app project context we want to share status definitions accross
+        // a given project instead of creating duplicate statuses in each subfolder project.
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
+        type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
+        return type.create(getUserSchema());
     }
 
     private void addAvailableAliquotCountColumn()
@@ -1070,6 +1081,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
+        provisionedCols.remove(Column.LSID.name());
+        provisionedCols.remove(Column.Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
         // all columns from exp.material except lsid
@@ -1266,17 +1279,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            SearchService searchService = SearchService.get();
+            if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> () ->
+                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
                     ListUtils.partition(lsids, 100).forEach(sublist ->
-                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
                             for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
-                                expMaterial.index(ss.defaultTask());
+                                expMaterial.index(searchService.defaultTask());
                         })
-                    )
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 

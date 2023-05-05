@@ -25,6 +25,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
@@ -45,8 +46,6 @@ import java.util.zip.DataFormatException;
 /**
  * Information about a specific query that has been issued against the database. Intended to have one instance
  * per unique SQL. Tracks information about executions to date, and code that invoked it.
- * User: jeckels
- * Date: 2/13/14
  */
 class QueryTracker
 {
@@ -123,9 +122,9 @@ class QueryTracker
         return _parameters;
     }
 
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan() && _validSql && Table.isSelect(_sql);
+        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && Table.isSelect(_sql);
     }
 
     public long getCount()

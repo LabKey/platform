@@ -434,10 +434,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
 
-        // Name is identifier with highest weight
+        // Name is identifier with the highest weight
         identifiersHi.add(getName());
 
-        // Add aliases in parenthesis in the title
+        // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder("Sample - " + getName());
         Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())

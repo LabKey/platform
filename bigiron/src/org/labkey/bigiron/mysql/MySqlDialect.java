@@ -288,22 +288,26 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return true;
+        // Old MySQL versions only support estimated execution plans
+        return type == ExecutionPlanType.Estimated;
     }
 
     @Override
-    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         SQLFragment copy = new SQLFragment(sql);
-        copy.insert(0, getExplainPrefix());
+        copy.insert(0, getExplainPrefix(type));
 
         return new SqlSelector(scope, conn, copy).getCollection(String.class);
     }
 
-    protected String getExplainPrefix()
+    protected String getExplainPrefix(ExecutionPlanType type)
     {
+        // Note: This is not very useful because the query returns multiple columns, most of which we ignore. But
+        // MySQL 5.7 and before doesn't support FORMAT = TREE. We could concatenate the columns ourselves, but it's
+        // not worth the bother for unsupported versions of MySQL.
         return "EXPLAIN ";
     }
 }

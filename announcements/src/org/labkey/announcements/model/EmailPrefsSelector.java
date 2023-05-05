@@ -195,7 +195,7 @@ public abstract class EmailPrefsSelector
         {
             if (null != ann)
             {
-                String srcIdentifier = ann.lookupSrcIdentifer();
+                String srcIdentifier = ann.lookupSrcIdentifier();
 
                 // srcIdentfier preference takes precedence, so return it if present
                 UserPreference up = _preferenceMap.get(srcIdentifier);

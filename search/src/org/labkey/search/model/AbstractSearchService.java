@@ -71,11 +71,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: matthewb
- * Date: Nov 12, 2009
- * Time: 12:58:21 PM
- */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
     private static final Logger _log = LogManager.getLogger(AbstractSearchService.class);

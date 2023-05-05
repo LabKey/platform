@@ -26,8 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
@@ -87,6 +86,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
@@ -235,7 +235,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
+    public static class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
         //Keeping both request and response object mappers to avoid serialization/deserialization issues
         //as not sure if request object mapper is needed
@@ -251,12 +251,6 @@ public class PropertyController extends SpringActionController
         public void validateForm(DomainApiForm form, Errors errors)
         {
             form.validate(getContainer(), getUser(), false);
-        }
-
-        @Override
-        protected ObjectMapper createResponseObjectMapper()
-        {
-            return this.createRequestObjectMapper();
         }
 
         @Override
@@ -841,6 +835,7 @@ public class PropertyController extends SpringActionController
             return domainId;
         }
 
+        @SuppressWarnings("unused")
         public void setDomainId(Integer domainId)
         {
             this.domainId = domainId;
@@ -851,6 +846,7 @@ public class PropertyController extends SpringActionController
             return schemaName;
         }
 
+        @SuppressWarnings("unused")
         public void setSchemaName(String schemaName)
         {
             this.schemaName = schemaName;
@@ -861,6 +857,7 @@ public class PropertyController extends SpringActionController
             return queryName;
         }
 
+        @SuppressWarnings("unused")
         public void setQueryName(String queryName)
         {
             this.queryName = queryName;
@@ -871,6 +868,7 @@ public class PropertyController extends SpringActionController
             return kind;
         }
 
+        @SuppressWarnings("unused")
         public void setKind(String kind)
         {
             this.kind = kind;
@@ -881,6 +879,7 @@ public class PropertyController extends SpringActionController
             return StringUtils.trimToNull(domainKind);
         }
 
+        @SuppressWarnings("unused")
         public void setDomainKind(String domainKind)
         {
             this.domainKind = domainKind;
@@ -891,6 +890,7 @@ public class PropertyController extends SpringActionController
             return domainName;
         }
 
+        @SuppressWarnings("unused")
         public void setDomainName(String domainName)
         {
             this.domainName = domainName;
@@ -901,6 +901,7 @@ public class PropertyController extends SpringActionController
             return module;
         }
 
+        @SuppressWarnings("unused")
         public void setModule(String module)
         {
             this.module = module;
@@ -911,6 +912,7 @@ public class PropertyController extends SpringActionController
             return domainGroup;
         }
 
+        @SuppressWarnings("unused")
         public void setDomainGroup(String domainGroup)
         {
             this.domainGroup = domainGroup;
@@ -921,6 +923,7 @@ public class PropertyController extends SpringActionController
             return domainTemplate;
         }
 
+        @SuppressWarnings("unused")
         public void setDomainTemplate(String domainTemplate)
         {
             this.domainTemplate = domainTemplate;
@@ -931,6 +934,7 @@ public class PropertyController extends SpringActionController
             return createDomain;
         }
 
+        @SuppressWarnings("unused")
         public void setCreateDomain(boolean createDomain)
         {
             this.createDomain = createDomain;
@@ -941,6 +945,7 @@ public class PropertyController extends SpringActionController
             return importData;
         }
 
+        @SuppressWarnings("unused")
         public void setImportData(boolean importData)
         {
             this.importData = importData;
@@ -951,6 +956,7 @@ public class PropertyController extends SpringActionController
             return domainDesign;
         }
 
+        @SuppressWarnings("unused")
         public void setDomainDesign(GWTDomain domainDesign)
         {
             this.domainDesign = domainDesign;
@@ -961,6 +967,7 @@ public class PropertyController extends SpringActionController
             return options;
         }
 
+        @SuppressWarnings("unused")
         public void setOptions(JSONObject options)
         {
             this.options = options;
@@ -971,6 +978,7 @@ public class PropertyController extends SpringActionController
             return containerPath;
         }
 
+        @SuppressWarnings("unused")
         public void setContainerPath(String containerPath)
         {
             this.containerPath = containerPath;
@@ -981,6 +989,7 @@ public class PropertyController extends SpringActionController
             return includeWarnings;
         }
 
+        @SuppressWarnings("unused")
         public void setIncludeWarnings(boolean includeWarnings)
         {
             this.includeWarnings = includeWarnings;
@@ -995,27 +1004,13 @@ public class PropertyController extends SpringActionController
         @JsonIgnore
         public Map<String, Object> getOptionsProperties()
         {
-            if (this.optionsProperties == null)
+            if (optionsProperties == null)
             {
-                JSONObject jsOptions = this.getOptions();
-                if (jsOptions == null)
-                    jsOptions = new JSONObject();
-
-                optionsProperties = new HashMap<>();
-
-                // Convert JSONObject to a Map, unpacking JSONArray as we go.
-                // XXX: There must be utility for this somewhere?
-                for (String key : jsOptions.keySet())
-                {
-                    Object value = jsOptions.get(key);
-                    if (value instanceof JSONArray)
-                        optionsProperties.put(key, ((JSONArray) value).toArray());
-                    else
-                        optionsProperties.put(key, value);
-                }
+                JSONObject jsOptions = getOptions();
+                optionsProperties = Collections.unmodifiableMap(jsOptions == null ? new HashMap<>() : jsOptions.toMap());
             }
 
-            return Collections.unmodifiableMap(optionsProperties);
+            return optionsProperties;
         }
 
         @JsonIgnore
@@ -1025,9 +1020,9 @@ public class PropertyController extends SpringActionController
             if (getDomainGroup() != null)
                 return null;
 
-            String kindName = this.getKind() == null ? this.getDomainKind() : this.getKind();
+            String kindName = getKind() == null ? getDomainKind() : getKind();
             DomainKind kind = null;
-            GWTDomain design = this.getDomainDesign();
+            GWTDomain design = getDomainDesign();
 
             if (kindName != null)
             {
@@ -1047,7 +1042,7 @@ public class PropertyController extends SpringActionController
 
             //TODO not a fan of doing this conversion in multiple locations
             ObjectMapper mapper = JsonUtil.createDefaultMapper();
-            Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
+            Object options = mapper.convertValue(getOptionsProperties(), kind.getTypeClass());
 
             if (design != null)
             {
@@ -1095,7 +1090,7 @@ public class PropertyController extends SpringActionController
         @Override
         protected ObjectMapper createResponseObjectMapper()
         {
-            return this.createRequestObjectMapper();
+            return createRequestObjectMapper();
         }
 
         @Override
@@ -1103,6 +1098,7 @@ public class PropertyController extends SpringActionController
         {
             Map<String, MultipartFile> fileMap = getFileMap();
             File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
+            FileType guessFormat = form.isGuessFormatAsTSV() ? TabLoader.TSV_FILE_TYPE : null;
             DataLoader loader = null;
 
             try
@@ -1111,14 +1107,14 @@ public class PropertyController extends SpringActionController
                 // Allow preview only for files under the pipeline root.
                 if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
                 {
-                    loader = DataLoader.get().createLoader(file, null, true, null, null);
+                    loader = DataLoader.get().createLoader(file, null, true, null, guessFormat);
                 }
                 else if (fileMap.size() == 1)
                 {
                     Optional<MultipartFile> opt = fileMap.values().stream().findAny();
                     MultipartFile postedFile = opt.orElse(null);
                     if (postedFile != null)
-                        loader = DataLoader.get().createLoader(postedFile, true, null, null);
+                        loader = DataLoader.get().createLoader(postedFile, true, null, guessFormat);
                 }
                 else
                 {
@@ -1178,6 +1174,7 @@ public class PropertyController extends SpringActionController
         private Integer _numLinesToInclude;
         private Object _file;
         private String _domainKindName;
+        private boolean _guessFormatAsTSV;
 
         public Integer getNumLinesToInclude()
         {
@@ -1207,6 +1204,16 @@ public class PropertyController extends SpringActionController
         public void setDomainKindName(String domainKindName)
         {
             _domainKindName = domainKindName;
+        }
+
+        public boolean isGuessFormatAsTSV()
+        {
+            return _guessFormatAsTSV;
+        }
+
+        public void setGuessFormatAsTSV(boolean guessFormatAsTSV)
+        {
+            _guessFormatAsTSV = guessFormatAsTSV;
         }
     }
 
@@ -1469,11 +1476,6 @@ public class PropertyController extends SpringActionController
         {
             return kind.updateDomain(original, update, options, container, user, includeWarnings);
         }
-        else if (org.json.JSONObject.class == kind.getTypeClass()) // New JSONObject
-        {
-            Object props = null != options ? options.toNewJSONObject() : null; // TODO: Remove this once new JSONObject is passed in
-            return kind.updateDomain(original, update, props, container, user, includeWarnings);
-        }
         else
         {
             Object domainKindProps = null;
@@ -1536,18 +1538,6 @@ public class PropertyController extends SpringActionController
         }
 
         return domain;
-    }
-
-    public static class GetForm
-    {
-        private String schemaName;
-        private String queryName;
-
-        public String getQueryName() {return queryName;}
-        public void setQueryName(String queryName) {this.queryName = queryName;}
-
-        public String getSchemaName() {return schemaName;}
-        public void setSchemaName(String schemaName) {this.schemaName = schemaName;}
     }
 
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)

@@ -45,9 +45,6 @@ import java.util.Stack;
  * Used by API actions to write various types of objects to the response stream.
  * Note that this class is abstract--use the derived classes to write objects
  * in various formats (JSON, XML, etc.)
- *
- * User: Dave
- * Date: Feb 8, 2008
  */
 public abstract class ApiResponseWriter implements AutoCloseable
 {
@@ -215,8 +212,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         try
         {
-            if (obj instanceof ApiResponse)
-                write((ApiResponse)obj);
+            if (obj instanceof ApiResponse apiResponse)
+                write(apiResponse);
             else
                 writeObject(obj);
         }

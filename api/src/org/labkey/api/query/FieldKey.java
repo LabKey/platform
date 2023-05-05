@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONPropertyIgnore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -176,6 +177,7 @@ public class FieldKey extends QueryKey<FieldKey>
         return getRootFieldKey().getName();
     }
 
+    @JSONPropertyIgnore
     public FieldKey getRootFieldKey()
     {
         FieldKey fk = this;

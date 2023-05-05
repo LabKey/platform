@@ -15,28 +15,23 @@
  */
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Use this for simple responses from Api actions.
- *
- * User: Dave
- * Date: Feb 13, 2008
- * Time: 4:44:39 PM
+ * Use this for simple responses from API actions
  */
-public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
+public class ApiSimpleResponse implements ApiResponse
 {
     private final JSONObject _json;
 
@@ -50,11 +45,6 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         _json = json;
     }
 
-    public ApiSimpleResponse(org.json.JSONObject json)
-    {
-        this(json.toMap());
-    }
-
     public ApiSimpleResponse(Map<String, ?> values)
     {
         _json = new JSONObject(values);
@@ -66,19 +56,8 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         _json.put(key, value);
     }
 
-    public ApiSimpleResponse(String key, int value)
-    {
-        _json = new JSONObject();
-        _json.put(key, Integer.valueOf(value));
-    }
-
-    public ApiSimpleResponse(String key, boolean value)
-    {
-        _json = new JSONObject();
-        _json.put(key, Boolean.valueOf(value));
-    }
-
-    public Map<String, ?> getProperties()
+    @JsonValue // Tell Jackson that this is the serialization method
+    public JSONObject getJson()
     {
         return _json;
     }
@@ -88,26 +67,21 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
      */
     public <T> void putBean(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
-        Map<String,Object> map = getBeanMap(bean, props);
-        _json.putAll(map);
-    }
-
-    public <T> void putBean(String key, T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
-    {
-        _json.put(key, getBeanMap(bean, props));
+        Map<String, Object> map = getBeanMap(bean, props);
+        putAll(map);
     }
 
     public <T> void putBeanList(String key, List<T> beans, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
-        List<Map> beanMaps = new ArrayList<>();
-        for(Object bean : beans)
+        List<Map<String, Object>> beanMaps = new ArrayList<>();
+        for (Object bean : beans)
             beanMaps.add(getBeanMap(bean, props));
         _json.put(key, beanMaps);
     }
 
-    protected <T> Map<String,Object> getBeanMap(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    protected <T> Map<String, Object> getBeanMap(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
-        if(null == props || props.length == 0)
+        if (null == props || props.length == 0)
         {
             //noinspection unchecked
             ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)bean.getClass());
@@ -117,7 +91,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
         }
         else
         {
-            Map<String,Object> map = new HashMap<>(props.length);
+            Map<String, Object> map = new HashMap<>(props.length);
             for(String prop : props)
                 map.put(prop, BeanUtils.getProperty(bean, prop));
             return map;
@@ -126,92 +100,32 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
 
     public boolean equals(Object o)
     {
-        return _json.equals(o);
+        throw new UnsupportedOperationException("ApiSimpleResponse.equals() is not supported");
     }
 
     public int hashCode()
     {
-        return _json.hashCode();
+        throw new UnsupportedOperationException("ApiSimpleResponse.hasCode() is not supported");
     }
 
-    @Override
-    public int size()
+    public Object get(String key)
     {
-        return _json.size();
+        return _json.opt(key);
     }
 
-    @Override
-    public boolean isEmpty()
-    {
-        return _json.isEmpty();
-    }
-
-    @Override
-    public Object get(Object o)
-    {
-        return _json.get(o);
-    }
-
-    @Override
-    public boolean containsKey(Object o)
-    {
-        return _json.containsKey(o);
-    }
-
-    @Override
-    public Object remove(Object o)
-    {
-        return _json.remove(o);
-    }
-
-    @Override
-    public void clear()
-    {
-        _json.clear();
-    }
-
-    @Override
-    public boolean containsValue(Object o)
-    {
-        return _json.containsValue(o);
-    }
-
-    @Override
-    @NotNull
-    public Set<String> keySet()
-    {
-        return _json.keySet();
-    }
-
-    @Override
-    @NotNull
-    public Collection<Object> values()
-    {
-        return _json.values();
-    }
-
-    @Override
-    @NotNull
-    public Set<Map.Entry<String, Object>> entrySet()
-    {
-        return _json.entrySet();
-    }
-
-    @Override
     public Object put(String key, Object value)
     {
         return _json.put(key,value);
     }
 
-    @Override
-    public void putAll(@NotNull Map map)
+    public void putAll(@NotNull Map<String, Object> map)
     {
-        _json.putAll(map);
+        map.forEach(_json::put);
     }
 
     @Override
     public void render(ApiResponseWriter writer) throws IOException
     {
-        writer.writeObject(getProperties());
+        writer.writeObject(getJson());
     }
 }

@@ -17,8 +17,6 @@
 %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
@@ -35,7 +33,7 @@
 %>
 <%
     SecurityController.ClonePermissionsForm form = (SecurityController.ClonePermissionsForm)HttpView.currentModel();
-    User target = UserManager.getUser(form.getTargetUser());
+    User target = form.getTargetUserValidated();
     boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -46,15 +44,6 @@
 
 <labkey:form action="<%=urlFor(ClonePermissionsAction.class)%>" method="POST">
     <table>
-        <%
-            if (getErrors("form").hasErrors());
-            {
-        %>
-        <tr><td><labkey:errors /></td></tr>
-        <tr><td>&nbsp;</td></tr>
-        <%
-            }
-        %>
         <tr>
             <td>
                 Warning! Cloning permissions will delete <strong>all</strong> group memberships and direct role assignments for <strong><%=h(target.getDisplayName(getUser()) + " (" + target.getEmail() + ")")%></strong>
@@ -69,14 +58,10 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td>
-                <input type="hidden" name="targetUser" value="<%=form.getTargetUser()%>">
+                <input type="hidden" name="targetUser" value="<%=target.getUserId()%>">
                 <%=ReturnUrlForm.generateHiddenFormField(form.getReturnActionURL())%>
-<%
-    ButtonBuilder submit = button("Clone Permissions");
-    submit.submit(true);
-%>
-                <%=submit%>
-                <%= button("Cancel").href(form.getReturnURLHelper()) %>
+                <%=button("Clone Permissions").submit(true)%>
+                <%=button("Cancel").href(form.getReturnURLHelper())%>
             </td>
         </tr>
     </table>

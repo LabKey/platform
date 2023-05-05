@@ -1677,9 +1677,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment)
         {
-            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType);
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType, userComment);
         }
 
         @Override

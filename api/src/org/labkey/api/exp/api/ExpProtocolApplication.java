@@ -60,6 +60,7 @@ public interface ExpProtocolApplication extends ExpObject
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole);
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole, @Nullable ExpDataProtocolInput protocolInput);
     void removeDataInput(User user, ExpData data);
+    void removeDataInputs(User user, Collection<Integer> rowIds);
 
     /**
      * Add a material input
