@@ -249,6 +249,16 @@ public class SimpleUserSchema extends UserSchema
             return true;
         }
 
+        // Override the (dubious) default behavior of resolveColumn(). AbstractTableInfo resolves by checking property
+        // names if column name lookup fails. But this can lead to missing columns in cases where one column's property
+        // name matches another column's name. Example column names with this issue encountered in the real world:
+        // "Version#" and "Version" in the same table.
+        @Override
+        protected ColumnInfo resolveColumn(String name)
+        {
+            return null;
+        }
+
         public void wrapAllColumns()
         {
             try
