@@ -45,6 +45,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ExperimentAuditEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -79,6 +80,7 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -93,6 +95,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
@@ -8326,6 +8329,253 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
 
         return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
+    }
+
+    @Override
+    public void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
+    {
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
+        objectUpdate.append(")");
+        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    @Override
+    public int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer)
+    {
+        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
+        aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
+        aliasMapUpdate.append(")");
+        return new SqlExecutor(aliasMapTable.getSchema()).execute(aliasMapUpdate);
+    }
+
+    @Override
+    public Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
+    {
+        if (dataObjects == null || dataObjects.isEmpty())
+            throw new IllegalArgumentException("No sources provided to move operation.");
+
+        Map<ExpDataClass, List<ExpData>> dataClassesMap = new HashMap<>();
+        dataObjects.forEach(dataObject ->
+                dataClassesMap.computeIfAbsent(dataObject.getDataClass(user), t -> new ArrayList<>()).add(dataObject));
+
+        Map<String, Integer> updateCounts = new HashMap<>();
+        updateCounts.put("sources", 0);
+        updateCounts.put("sourceAliases", 0);
+        updateCounts.put("sourceAuditEvents", 0);
+
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            if (AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(dataObjects.size());
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
+            for (Map.Entry<ExpDataClass, List<ExpData>> entry: dataClassesMap.entrySet())
+            {
+                ExpDataClass dataClass = entry.getKey();
+                List<ExpData> classObjects = entry.getValue();
+                List<Integer> dataIds = classObjects.stream().map(ExpData::getRowId).toList();
+                DataClassUserSchema schema = new DataClassUserSchema(dataClass.getContainer(), user);
+                TableInfo dataClassTable = schema.getTable(dataClass.getName());
+
+                // update exp.data.container
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
+                updateCounts.put("sources", updateCounts.get("sources") + updateCount);
+
+                // update for exp.object.container
+                updateExpObjectContainers(getTinfoData(), dataIds, targetContainer);
+
+                // update for exp.dataaliasmap.container
+                updateCounts.put("sourceAliases", aliasMapRowContainerUpdate(getTinfoDataAliasMap(), dataIds, targetContainer));
+
+                // update core.document.container for any files attached to the data objects that are moving
+                moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
+
+                // move audit events associated with the sources that are moving
+                int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
+                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+
+                // create summary audit entries for the source container only.  The message is pretty generic, so having it
+                // in both source and target doesn't help much.
+                addDataClassSummaryAuditEvent(user, sourceContainer, dataClassTable, updateCount, userComment);
+
+                // create new detailed events for each data object that was moved
+                AuditBehaviorType dcAuditBehavior = dataClassTable.getAuditBehavior(auditBehavior);
+                if (dcAuditBehavior == AuditBehaviorType.DETAILED)
+                {
+                    List<Map<String, Object>> oldRows = new ArrayList<>();
+                    List<Map<String, Object>> newRows = new ArrayList<>();
+                    for (ExpData data : classObjects)
+                    {
+                        Map<String, Object> oldRecordMap = new CaseInsensitiveHashMap<>();
+                        oldRecordMap.put("Container", sourceContainer.getName());
+                        oldRecordMap.put("rowId", data.getRowId());
+                        oldRows.add(oldRecordMap);
+                        Map<String, Object> newRecordMap = new CaseInsensitiveHashMap<>();
+                        newRecordMap.put("Container", targetContainer.getName());
+                        newRecordMap.put("rowId", data.getRowId());
+                        newRows.add(newRecordMap);
+                    }
+                    QueryService.get().getDefaultAuditHandler().addAuditEvent(user, targetContainer, dataClassTable, dcAuditBehavior, userComment, QueryService.AuditAction.UPDATE, newRows, oldRows);
+                }
+            }
+
+            // move derivation runs
+            updateCounts.putAll(moveDerivationRuns(dataObjects, targetContainer, user));
+
+            transaction.addCommitTask(() -> {
+                // update search index for moved data class object via indexDataClass() helper. It filters for data objects
+                // to index based on the modified date
+                for (ExpDataClass dataClass : dataClassesMap.keySet())
+                    indexDataClass((ExpDataClassImpl) dataClass);
+            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            transaction.commit();
+        }
+        return updateCounts;
+    }
+
+    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
+    {
+        QueryService queryService = QueryService.get();
+        queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
+    }
+
+    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
+    {
+        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE ").append(idField);
+        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
+        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
+    }
+
+    private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
+    {
+        List<? extends DomainProperty> attachmentDomainProps = dataClass.getDomain()
+                .getProperties().stream()
+                .filter(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType())).toList();
+        if (attachmentDomainProps.isEmpty())
+            return;
+
+        List<AttachmentParent> parents = new ArrayList<>();
+        for (ExpData data : classObjects)
+        {
+            Lsid lsid = new Lsid(data.getLSID());
+            parents.add(new ExpDataClassAttachmentParent(data.getContainer(), lsid));
+
+        }
+        try
+        {
+            AttachmentService.get().moveAttachments(targetContainer, parents, user);
+        }
+        catch (IOException ignored)
+        {
+            // method doesn't actually throw.
+        }
+    }
+
+    private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpData> dataObjects, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        // collect unique runIds mapped to the dataobjects that are moving that have that runId
+        Map<Integer, Set<ExpData>> runIdData = new HashMap<>();
+        dataObjects.forEach(dataObject -> {
+            if (dataObject.getRunId() != null)
+                runIdData.computeIfAbsent(dataObject.getRunId(), t -> new HashSet<>()).add(dataObject);
+        });
+        // find the set of runs associated with data objects that are moving
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(runIdData.keySet());
+        List<ExpRun> toUpdate = new ArrayList<>();
+        List<ExpRun> toSplit = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            Set<Integer> outputIds = run.getDataOutputs().stream().map(ExpData::getRowId).collect(Collectors.toSet());
+            Set<Integer> movingIds = runIdData.get(run.getRowId()).stream().map(ExpData::getRowId).collect(Collectors.toSet());
+            if (movingIds.size() == outputIds.size() && movingIds.containsAll(outputIds))
+                toUpdate.add(run);
+            else
+                toSplit.add(run);
+        }
+
+        int updateCount = moveExperimentRuns(toUpdate, targetContainer, user);
+        int splitCount = splitExperimentRuns(toSplit, runIdData, targetContainer, user);
+        return Map.of("sourceDerivationRunsUpdated", updateCount, "sourceDerivationRunsSplit", splitCount);
+    }
+
+    @Override
+    public int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user)
+    {
+        if (runs.isEmpty())
+            return 0;
+
+        TableInfo runsTable = getTinfoExperimentRun();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
+        int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+        ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
+        return updateCount;
+    }
+
+    private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpData>> movingData, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        final ViewBackgroundInfo targetInfo = new ViewBackgroundInfo(targetContainer, user, null);
+        ExperimentServiceImpl expService = (ExperimentServiceImpl) ExperimentService.get();
+        int runCount = 0;
+        for (ExpRun run : runs)
+        {
+            ExpProtocolApplication sourceApplication = null;
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+
+            Set<ExpData> movingSet = movingData.get(run.getRowId());
+            int numStaying = 0;
+            Map<ExpData, String> movingOutputsMap = new HashMap<>();
+
+            // the derived samples (outputs of the run) are inputs to the output step of the run (obviously)
+            for (ExpDataRunInput dataInput : outputApp.getDataInputs())
+            {
+                ExpData dataObject = dataInput.getData();
+                if (movingSet.contains(dataObject))
+                {
+                    // clear out the run and source application so a new derivation run can be created.
+                    dataObject.setRun(null);
+                    dataObject.setSourceApplication(null);
+                    movingOutputsMap.put(dataObject, dataInput.getRole());
+                }
+                else
+                {
+                    if (sourceApplication == null)
+                        sourceApplication = dataObject.getSourceApplication();
+                    numStaying++;
+                }
+            }
+
+            // create a new derivation run for the data that are moving
+            expService.derive(run.getMaterialInputs(), run.getDataInputs(), Collections.emptyMap(), movingOutputsMap, targetInfo, LOG);
+            // Update the run for the data that have stayed behind. Change the name and remove the moved data as outputs
+            run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), run.getMaterialOutputs().size(), numStaying));
+
+            run.save(user);
+            List<Integer> movingDataIds = movingSet.stream().map(ExpData::getRowId).toList();
+
+            outputApp.removeDataInputs(user, movingDataIds);
+            if (sourceApplication != null)
+                sourceApplication.removeDataInputs(user, movingDataIds);
+
+            runCount++;
+        }
+        return runCount;
     }
 
     public static class TestCase extends Assert
