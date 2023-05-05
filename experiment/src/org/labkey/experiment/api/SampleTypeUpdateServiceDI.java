@@ -859,9 +859,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    public record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
+    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
 
-    public @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
+    private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
     {
         if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
             return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true, false);
