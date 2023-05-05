@@ -880,7 +880,7 @@ public abstract class SqlDialect
 
     protected boolean isKeyword(SqlExecutor executor, String candidate)
     {
-        String sql = getIdentifierTestSql(candidate);
+        SQLFragment sql = getIdentifierTestSql(candidate);
 
         try
         {
@@ -912,14 +912,14 @@ public abstract class SqlDialect
         return 61;
     }
 
-    protected String getIdentifierTestSql(String candidate)
+    protected SQLFragment getIdentifierTestSql(String candidate)
     {
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
+        return SQLFragment.unsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";";
+               "DROP TABLE " + name + ";");
     }
 
 

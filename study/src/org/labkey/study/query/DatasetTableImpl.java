@@ -1128,8 +1128,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     /** Wrap a column in our underlying publish source results table with one that puts it in the dataset table */
     protected ExprColumn wrapPublishSourceColumn(final ColumnInfo columnInfo, final String name, AliasSupplier<String> supplier)
     {
-        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(supplier.get(ExprColumn.STR_TABLE_ALIAS)), columnInfo.getJdbcType())
+        ExprColumn wrappedColumn = new ExprColumn(this, name, null, columnInfo.getJdbcType())
         {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return columnInfo.getValueSql(supplier.get(tableAlias));
+            }
+
             @Override
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
             {
