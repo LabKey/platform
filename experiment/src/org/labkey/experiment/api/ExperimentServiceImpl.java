@@ -8332,14 +8332,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
+    public int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
     {
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
-        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private int updateExpObjectContainers(List<String> lsids, Container targetContainer)
+    {
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objecturi ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
     @Override
@@ -8524,7 +8533,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
         int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+
         ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
+
+        // LKB media have object properties associated with the protocol applications of the run
+        // and object properties associated with the data inputs for those protocol applications //DataInput.lsid(6897, 274047)
+        List<String> lsidsToUpdate = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            for (ExpProtocolApplication pa : run.getProtocolApplications())
+            {
+                lsidsToUpdate.add(pa.getLSID());
+                for (ExpDataRunInput dataInput : pa.getDataInputs())
+                    lsidsToUpdate.add(DataInput.lsid(dataInput.getData().getRowId(), pa.getRowId()));
+            }
+        }
+        updateExpObjectContainers(lsidsToUpdate, targetContainer);
+
         return updateCount;
     }
 

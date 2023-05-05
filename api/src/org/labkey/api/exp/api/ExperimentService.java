@@ -981,7 +981,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     int removeEdges(ExpLineageEdge.FilterOptions options);
 
-    void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
+    int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
