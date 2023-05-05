@@ -19,15 +19,16 @@ dependencies {
         )
     )
 
-// Some history here: For a long time, we used ojdbc11 instead of ojdbc11-production. ojdbc11 brings in no dependencies
-// but it lacks support for Oracle XMLType and probably other features. OTOH, ojdbc11-production brings in XML parsers
-// that conflict with Xerces. We've resolved this by setting appropriate system properties in ContextListener.
+// I'd rather specify ojdbc11-production below (not ojdbc11) since it supports XMLType and other Oracle features. But it
+// brings in many dependencies, including XML parser implementations that conflict with Xerces. We could resolve this by
+// adding overrides in META-INF/services (see link below), but this seems not worth the effort given no customer
+// requests. Plus one of the dependencies (orai18n) is flagged as having a couple CVEs.
 // https://stackoverflow.com/questions/44916255/classnotfoundexception-oracle-i18n-util-localemapper-on-tomcat-tld-scanning-ojd
 
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.oracle.database.jdbc:ojdbc11-production:${oracleJdbcVersion}", // Oracle JDBC Driver and dependencies
+            "com.oracle.database.jdbc:ojdbc11:${oracleJdbcVersion}", // Oracle JDBC Driver and dependencies
             "Oracle JDBC Driver",
             "Oracle",
             "https://www.oracle.com/database/technologies/appdev/jdbc.html",
