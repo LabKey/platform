@@ -520,10 +520,10 @@ public class QuerySelectView extends AbstractQueryRelation
                 {
                     // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
                     sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+                    addedSortKeys = true;
                     if (sort.getSortList().size() >= DEFAULT_SORT_MAX_COLUMNS)
                         break;
                 }
-                addedSortKeys = true;
             }
         }
         return addedSortKeys;
