@@ -636,10 +636,10 @@ public class QueryController extends SpringActionController
                                     TD(scope.getDatabaseName()),
                                     TD(scope.getDatabaseProductName()),
                                     TD(scope.getDatabaseProductVersion()),
-                                    TD(String.valueOf(scope.getDataSourceProperties().getMaxTotal())),
-                                    TD(String.valueOf(scope.getDataSourceProperties().getNumActive())),
-                                    TD(String.valueOf(scope.getDataSourceProperties().getNumIdle())),
-                                    TD(String.valueOf(scope.getDataSourceProperties().getMaxWaitMillis()))
+                                    TD(scope.getDataSourceProperties().getMaxTotal()),
+                                    TD(scope.getDataSourceProperties().getNumActive()),
+                                    TD(scope.getDataSourceProperties().getNumIdle()),
+                                    TD(scope.getDataSourceProperties().getMaxWaitMillis())
                                 ),
                                 TR(
                                     cl(rowStyle),
@@ -648,7 +648,6 @@ public class QueryController extends SpringActionController
                                 )
                             );
                         })
-                        .toArray()
                 )
             );
 
@@ -669,7 +668,7 @@ public class QueryController extends SpringActionController
 
             return TABLE(paths.stream()
                 .map(path -> TR(TD(at(DOM.Attribute.colspan, 4), getDataSourcePath(path, byContainerPath.get(path)))))
-                .toArray());
+            );
         }
 
         private Renderable getDataSourcePath(String path, Collection<ExternalSchemaDef> unsorted)
@@ -698,7 +697,6 @@ public class QueryController extends SpringActionController
                                     .href(urls.urlUpdateExternalSchema(c, def))
                                     .clearClasses())
                             ))
-                            .toArray()
                     )))
                 ));
         }
