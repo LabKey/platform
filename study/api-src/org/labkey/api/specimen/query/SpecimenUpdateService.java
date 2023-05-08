@@ -346,9 +346,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
-            assert null != oldKeys;
-            Map<String, Object> oldRow = oldKeys.get(i);
-            long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+            Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
+            long rowId = oldKey != null ? keyFromMap(oldKey) : keyFromMap(row);
             rowIds.add(rowId);
             uniqueRows.put(rowId, row);
         }
