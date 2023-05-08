@@ -20,11 +20,11 @@ import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 
 /**
- * Created by Josh on 11/25/2015.
+ * Handles both 12cR1 and 12cR2 (we haven't seen any reason to distinguish between them)
  */
 public class Oracle12cDialect extends Oracle11gR2Dialect
 {
-    // Oracle 12c introduced the OFFSET - FETCH clause; this enabled a more standard paging mechanism.
+    // Oracle 12c introduced the OFFSET - FETCH clause, which allows for a more standard paging mechanism
     private static final LimitRowsCustomizer CUSTOMIZER = new LimitRowsCustomizer()
     {
         @Override
