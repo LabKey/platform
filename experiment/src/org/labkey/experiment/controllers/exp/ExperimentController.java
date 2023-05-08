@@ -4126,17 +4126,24 @@ public class ExperimentController extends SpringActionController
         protected QueryForm _form;
 
         @Override
+        public void validateForm(QueryForm form, Errors errors)
+        {
+            QueryDefinition query = form.getQueryDef();
+            if (query.getContainerFilter() != null && query.getContainerFilter().getType() != null)
+            {
+                // cross folder import not supported
+                if (query.getContainerFilter().getType() != ContainerFilter.Type.Current)
+                    errors.reject(ERROR_MSG, "ContainerFilter is not supported for import actions.");
+            }
+        }
+
+        @Override
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            if (query.getContainerFilter() == null)
-            {
-                ContainerFilter cf = QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
-                if (cf != null)
-                    query.setContainerFilter(cf);
-            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
+
             if (!qpe.isEmpty())
                 throw qpe.get(0);
             if (null != t)
