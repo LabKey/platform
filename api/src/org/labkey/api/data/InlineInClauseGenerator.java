@@ -144,7 +144,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
         {
             // We now inline arbitrary strings
             Assert.assertEquals(
-                    new SQLFragment(" IN ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', 'nasty'';DROP SCHEMA core')"),
+                    SQLFragment.unsafe(" IN ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', 'nasty'';DROP SCHEMA core')"),
                     new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "nasty';DROP SCHEMA core")));
         }
     }

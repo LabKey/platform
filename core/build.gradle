@@ -12,7 +12,7 @@ project.tasks.register("serverSideJS", ServerSideJS) {
         task.group = GroupNames.CODE_GENERATION
         task.description = "Concatenate javascript files for use on the server side"
 }
-project.tasks.processModuleResources.dependsOn(project.tasks.serverSideJS)
+project.tasks.named('processModuleResources').configure { dependsOn(project.tasks.serverSideJS) }
 
 dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
