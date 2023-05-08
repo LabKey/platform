@@ -33,17 +33,34 @@
 %>
 <%
     SecurityController.ClonePermissionsForm form = (SecurityController.ClonePermissionsForm)HttpView.currentModel();
-    User target = form.getTargetUserValidated();
+    User target = form.getTargetUserObject();
     boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
+
+    if (null != target)
+    {
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
         createCloneUserField(false, true, <%=excludeSiteAdmins%>, <%=target.getUserId()%>);
     });
 </script>
-
+<%
+    }
+%>
 <labkey:form action="<%=urlFor(ClonePermissionsAction.class)%>" method="POST">
     <table>
+        <%
+            if (getErrors("form").hasErrors());
+            {
+        %>
+        <tr><td><labkey:errors /></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <%
+            }
+
+            if (null != target)
+            {
+        %>
         <tr>
             <td>
                 Warning! Cloning permissions will delete <strong>all</strong> group memberships and direct role assignments for <strong><%=h(target.getDisplayName(getUser()) + " (" + target.getEmail() + ")")%></strong>
@@ -64,6 +81,8 @@
                 <%=button("Cancel").href(form.getReturnURLHelper())%>
             </td>
         </tr>
+        <%
+            }
+        %>
     </table>
-
 </labkey:form>

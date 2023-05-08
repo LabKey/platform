@@ -93,7 +93,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.SpringErrorView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -1599,8 +1598,7 @@ public class SecurityController extends SpringActionController
     public static class ClonePermissionsForm extends ReturnUrlForm
     {
         private String _cloneUser;
-        private int _targetId;
-        private User _target;
+        private int _targetUser;
 
         public String getCloneUser()
         {
@@ -1615,35 +1613,19 @@ public class SecurityController extends SpringActionController
 
         public int getTargetUser()
         {
-            return _targetId;
+            return _targetUser;
         }
 
         @SuppressWarnings("unused")
-        public void setTargetUser(int targetId)
+        public void setTargetUser(int targetUser)
         {
-            _targetId = targetId;
+            _targetUser = targetUser;
         }
 
-        private User validateTargetUser(Errors errors)
+        public @Nullable User getTargetUserObject()
         {
-            if (0 == _targetId)
-            {
-                errors.reject(ERROR_MSG, "Target user is required");
-            }
-            else
-            {
-                _target = UserManager.getUser(_targetId);
-
-                if (null == _target)
-                    errors.reject(ERROR_MSG, "Unknown target user");
-            }
-
-            return _target;
-        }
-
-        public @NotNull User getTargetUserValidated()
-        {
-            return _target;
+            int userId = getTargetUser();
+            return 0 == userId ? null : UserManager.getUser(userId);
         }
     }
 
@@ -1657,11 +1639,6 @@ public class SecurityController extends SpringActionController
         @Override
         public void validateCommand(ClonePermissionsForm form, Errors errors)
         {
-            _target = form.validateTargetUser(errors);
-
-            if (errors.hasErrors())
-                return;
-
             String sourceEmail = form.getCloneUser();
 
             if (null == sourceEmail)
@@ -1686,6 +1663,11 @@ public class SecurityController extends SpringActionController
                 return;
             }
 
+            _target = form.getTargetUserObject();
+
+            if (null == _target)
+                errors.reject(ERROR_MSG, "Unknown target user");
+
             if (!getUser().hasSiteAdminPermission())
             {
                 if (_source.hasSiteAdminPermission())
@@ -1700,17 +1682,11 @@ public class SecurityController extends SpringActionController
         {
             _form = form;
 
-            if (!errors.hasErrors())
-                form.validateTargetUser(errors);
+            // We already have a spring error if targetUser parameter is blank
+            if (!errors.hasErrors() && null == form.getTargetUserObject())
+                errors.reject(ERROR_MSG, "Unknown target user");
 
-            if (errors.hasErrors())
-            {
-                return new SpringErrorView(errors);
-            }
-            else
-            {
-                return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form);
-            }
+            return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form, errors);
         }
 
         @Override
