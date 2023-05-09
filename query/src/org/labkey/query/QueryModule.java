@@ -232,6 +232,8 @@ public class QueryModule extends DefaultModule
                 "Allow for lookup fields in product projects to query across all folders within the top-level folder.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
                 "Only list project-specific data within product projects.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION, "Selection of data structure to be shown in projects",
+                "Configure which sample types, source types, assay designs and storage locations are relevant for each project.", false);
     }
 
 

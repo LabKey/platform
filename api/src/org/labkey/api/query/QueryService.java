@@ -75,6 +75,7 @@ public interface QueryService
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
+    String EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION = "queryProductProjectDataTypeSelection";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
