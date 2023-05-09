@@ -51,7 +51,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
 {
     private static final String RESPONSE_FORMAT_ATTRIBUTE = ApiResponseWriter.class.getName() + "$responseFormat";
 
-     /*
+    /*
      * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
      * when any error is encountered.  I think this is wrong.  Expected
      * errors should be encoded in a normal JSON response and SC_OK.
@@ -60,7 +60,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
      *
      * Allow new code to specify that SC_OK should be used for errors
      */
-    int errorResponseStatus = HttpServletResponse.SC_BAD_REQUEST;
+    static final int defaultErrorStatus = HttpServletResponse.SC_BAD_REQUEST;
+    Integer errorResponseStatus = null;
 
     private boolean serializeViaJacksonAnnotations = false;
 
@@ -92,23 +93,33 @@ public abstract class ApiResponseWriter implements AutoCloseable
         {
             this(null);
         }
+
         public StreamState(String name)
         {
             this(name, 0);
         }
+
         public StreamState(String name, int level)
         {
             _name = name;
             _level = level;
         }
 
-        public String getName() { return _name;}
-        public int getLevel() { return _level;}
+        public String getName()
+        {
+            return _name;
+        }
+
+        public int getLevel()
+        {
+            return _level;
+        }
+
         public String getSeparator()
         {
             //first time return ""
             //all successive times, return ","
-            if(null == _separator)
+            if (null == _separator)
             {
                 _separator = ",\n";
                 return "";
@@ -123,48 +134,48 @@ public abstract class ApiResponseWriter implements AutoCloseable
     public enum Format
     {
         JSON
-        {
-            @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
-            {
-                return new ApiJsonWriter(response, contentTypeOverride, objectMapper, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
-            }
+                {
+                    @Override
+                    public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
+                    {
+                        return new ApiJsonWriter(response, contentTypeOverride, objectMapper, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
+                    }
 
-            @Override
-            public boolean isJson()
-            {
-                return true;
-            }
-        },
+                    @Override
+                    public boolean isJson()
+                    {
+                        return true;
+                    }
+                },
         XML
-        {
-            @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
-            {
-                // TODO: Use Jackson for object -> XML serialization
-                return new ApiXmlWriter(response, contentTypeOverride);
-            }
+                {
+                    @Override
+                    public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
+                    {
+                        // TODO: Use Jackson for object -> XML serialization
+                        return new ApiXmlWriter(response, contentTypeOverride);
+                    }
 
-            @Override
-            public boolean isJson()
-            {
-                return false;
-            }
-        },
+                    @Override
+                    public boolean isJson()
+                    {
+                        return false;
+                    }
+                },
         JSON_COMPACT
-        {
-            @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
-            {
-                return new ApiJsonWriter(response, contentTypeOverride, objectMapper, false);
-            }
+                {
+                    @Override
+                    public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
+                    {
+                        return new ApiJsonWriter(response, contentTypeOverride, objectMapper, false);
+                    }
 
-            @Override
-            public boolean isJson()
-            {
-                return true;
-            }
-        };
+                    @Override
+                    public boolean isJson()
+                    {
+                        return true;
+                    }
+                };
 
         public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException;
 
@@ -207,6 +218,25 @@ public abstract class ApiResponseWriter implements AutoCloseable
         errorResponseStatus = status;
     }
 
+    public int getErrorResponseStatus()
+    {
+        return null != errorResponseStatus ? errorResponseStatus : defaultErrorStatus;
+    }
+
+    public int getErrorResponseStatus(Throwable ex)
+    {
+        if (null != errorResponseStatus)
+            return errorResponseStatus;
+
+        if (ex instanceof HttpStatusException statusEx)
+            return statusEx.getStatus();
+
+        if (ex instanceof BatchValidationException || ex instanceof ValidationException)
+            return defaultErrorStatus;
+
+        return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+    }
+
     /**
      * Entry-point for writing a response back to the client in the desired format.
      * The object argument may be an response object to be serialized or an {@link ApiResponse} instance.
@@ -230,29 +260,15 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     public void writeResponse(Throwable e) throws IOException
     {
-        int status;
-
-        if (e instanceof BatchValidationException)
-        {
-            writeObject(toJSON(e));
-            return;
-        }
-        if (e instanceof ValidationException)
-        {
-            writeObject(toJSON(e));
-            return;
-        }
-        if (e instanceof HttpStatusException)
-            status = ((HttpStatusException)e).getStatus();
-        else
-            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-
+        int status = getErrorResponseStatus(e);
         e = ExceptionUtil.unwrapException(e);
 
         try
         {
             setResponseStatus(status);
-            writeObject(toJSON(e));
+            var json = toJSON(e);
+            json.put("success", false);
+            writeObject(json);
         }
         finally
         {
@@ -263,7 +279,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     public void writeResponse(Errors errors) throws IOException
     {
-        setResponseStatus(errorResponseStatus);
+        int status = getErrorResponseStatus();
+        setResponseStatus(status);
 
         Pair<String, JSONArray> pair = convertToJSON(errors, 0);
 
@@ -290,7 +307,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         setResponseStatus(status);
 
         JSONObject root = new JSONObject();
-        root.put("success", false);
+        root.put("success", status == HttpServletResponse.SC_OK);
         root.put("exception", message);
         root.put("errors", new JSONArray());
 
@@ -350,9 +367,10 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 if (null != getResponse())
                     resetOutput();
 
-                int status =  e instanceof HttpStatusException hstex ?  hstex.getStatus() : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                int status =  getErrorResponseStatus();
                 setResponseStatus(status);
                 writeThrowableProperties(e);
+                writeProperty("success", false);
             }
         }
         catch (IOException io)
@@ -423,7 +441,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
                     message = child.optString("exception", "(No error message)");
                 arr.put(child);
             }
-            obj.put("success", Boolean.FALSE);
             obj.put("errors", arr);
             obj.put("errorCount", arr.length());
             obj.put("exception", message);
