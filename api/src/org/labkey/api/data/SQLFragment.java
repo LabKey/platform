@@ -109,7 +109,7 @@ public class SQLFragment implements Appendable, CharSequence
     {
         assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
         assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        // assert !StringUtils.contains(charseq, ';');
+        assert !StringUtils.contains(charseq, ';');
 
         // allow statement separators
         this.sql = charseq.toString();
