@@ -27,6 +27,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpStatusException;
 import org.springframework.validation.Errors;
@@ -54,6 +55,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
      * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
      * when any error is encountered.  I think this is wrong.  Expected
      * errors should be encoded in a normal JSON response and SC_OK.
+     *
+     * Also, this using SC_BAD_REQUEST means failed APIs get taggd by BlockListFilter
      *
      * Allow new code to specify that SC_OK should be used for errors
      */
@@ -210,6 +213,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
      */
     public final void writeResponse(Object obj) throws IOException
     {
+        assert !(obj instanceof Throwable);
         try
         {
             if (obj instanceof ApiResponse apiResponse)
@@ -223,13 +227,111 @@ public abstract class ApiResponseWriter implements AutoCloseable
         }
     }
 
+
+    public void writeResponse(Throwable e) throws IOException
+    {
+        int status;
+
+        if (e instanceof BatchValidationException)
+        {
+            writeObject(toJSON(e));
+            return;
+        }
+        if (e instanceof ValidationException)
+        {
+            writeObject(toJSON(e));
+            return;
+        }
+        if (e instanceof HttpStatusException)
+            status = ((HttpStatusException)e).getStatus();
+        else
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+
+        e = ExceptionUtil.unwrapException(e);
+
+        try
+        {
+            setResponseStatus(status);
+            writeObject(toJSON(e));
+        }
+        finally
+        {
+            close();
+        }
+    }
+
+
+    public void writeResponse(Errors errors) throws IOException
+    {
+        setResponseStatus(errorResponseStatus);
+
+        Pair<String, JSONArray> pair = convertToJSON(errors, 0);
+
+        JSONObject root = new JSONObject();
+        root.put("success", false);
+        root.put("exception", pair.getKey());
+        root.put("errors", pair.getValue());
+        try
+        {
+            writeObject(root);
+        }
+        finally
+        {
+            close();
+        }
+    }
+
+
+    /**
+     * Allows for writing a simplified status/message to the response.
+     */
+    public void writeResponse(int status, String message) throws IOException
+    {
+        setResponseStatus(status);
+
+        JSONObject root = new JSONObject();
+        root.put("success", false);
+        root.put("exception", message);
+        root.put("errors", new JSONArray());
+
+        try
+        {
+            writeObject(root);
+        }
+        finally
+        {
+            close();
+        }
+    }
+
+
     protected void write(ApiResponse response) throws IOException
     {
         try
         {
             response.render(this);
         }
-        catch (Exception e)
+        catch (IOException io)
+        {
+            throw io;
+        }
+        catch (Exception ex)
+        {
+            throw UnexpectedException.wrap(ex);
+        }
+    }
+
+
+    /**
+     * Even though the default exception handling is implemented here, we require that response.render()
+     * invokes this method in its own catch() block before endResponse().  This seems cleaner than coordinating
+     * to have render() not output matching { open and close } braces.
+     *
+     * @see ApiResponse#render(ApiResponseWriter) 
+     */
+    public void handleRenderException(Exception e) throws IOException
+    {
+        try
         {
             if (ExceptionUtil.isClientAbortException(e))
             {
@@ -248,10 +350,17 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 if (null != getResponse())
                     resetOutput();
 
-                writeAndClose(e);
+                int status =  e instanceof HttpStatusException hstex ?  hstex.getStatus() : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                setResponseStatus(status);
+                writeThrowableProperties(e);
             }
         }
+        catch (IOException io)
+        {
+            /* */
+        }
     }
+
 
     /**
      * Override this method if the writer subclass tracks the output context independently of the response
@@ -265,11 +374,22 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     protected abstract void writeObject(Object object) throws IOException;
 
+    protected abstract void writeProperties(JSONObject json) throws IOException;
+
     /** Completes the response, writing out closing elements/tags/etc */
     @Override
     public abstract void close() throws IOException;
 
-    public void writeAndClose(Throwable e, int status) throws IOException
+
+    private void setResponseStatus(int status)
+    {
+        var response = getResponse();
+        if (null != response && !response.isCommitted())
+            getResponse().setStatus(status);
+    }
+
+
+    private void writeThrowableProperties(Throwable e) throws IOException
     {
         if (null == getResponse())
         {
@@ -280,110 +400,47 @@ public abstract class ApiResponseWriter implements AutoCloseable
             throw new RuntimeException(e);
         }
 
-        getResponse().setStatus(status);
-
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
-        jsonObj.put("exceptionClass", e.getClass().getName());
-        jsonObj.put("stackTrace", e.getStackTrace());
-        jsonObj.put("success", status == HttpServletResponse.SC_OK);
-
-        try
-        {
-            writeObject(jsonObj);
-        }
-        finally
-        {
-            close();
-        }
+        writeProperties(toJSON(e));
     }
 
 
-    public void writeAndClose(Throwable e) throws IOException
+    public JSONObject toJSON(Throwable e)
     {
-        int status;
+        //noinspection ConstantConditions
+        if (e instanceof ValidationException ve)
+        {
+            return toJSON(ve);
+        }
+        else if (e instanceof BatchValidationException bve)
+        {
+            JSONObject obj = new JSONObject();
+            JSONArray arr = new JSONArray();
+            String message = null;
+            for (ValidationException vex : bve.getRowErrors())
+            {
+                JSONObject child = toJSON(vex);
+                if (message == null)
+                    message = child.optString("exception", "(No error message)");
+                arr.put(child);
+            }
+            obj.put("success", Boolean.FALSE);
+            obj.put("errors", arr);
+            obj.put("errorCount", arr.length());
+            obj.put("exception", message);
+            obj.put("extraContext", bve.getExtraContext());
 
-        if (e instanceof BatchValidationException)
-        {
-            write((BatchValidationException) e);
-            return;
+            return obj;
         }
-        if (e instanceof ValidationException)
-        {
-            write((ValidationException) e);
-            return;
-        }
-        if (e instanceof HttpStatusException)
-            status = ((HttpStatusException)e).getStatus();
         else
-            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-
-        e = ExceptionUtil.unwrapException(e);
-
-        try
         {
-            writeAndClose(e, status);
-        }
-        finally
-        {
-            close();
+            JSONObject jsonObj = new JSONObject();
+            jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+            jsonObj.put("exceptionClass", e.getClass().getName());
+            jsonObj.put("stackTrace", e.getStackTrace());
+            return jsonObj;
         }
     }
 
-
-    public void write(BatchValidationException e) throws IOException
-    {
-        if (null != getResponse())
-            getResponse().setStatus(errorResponseStatus);
-
-        try
-        {
-            writeObject(getJSON(e));
-        }
-        finally
-        {
-            close();
-        }
-    }
-
-    public JSONObject getJSON(BatchValidationException e)
-    {
-        JSONObject obj = new JSONObject();
-        JSONArray arr = new JSONArray();
-        String message = null;
-        for (ValidationException vex : e.getRowErrors())
-        {
-            JSONObject child = toJSON(vex);
-            if (message == null)
-                message = child.optString("exception", "(No error message)");
-            arr.put(child);
-        }
-        obj.put("success", Boolean.FALSE);
-        obj.put("errors", arr);
-        obj.put("errorCount", arr.length());
-        obj.put("exception", message);
-        obj.put("extraContext", e.getExtraContext());
-
-        return obj;
-    }
-
-    public void write(ValidationException e) throws IOException
-    {
-        if (null != getResponse())
-            getResponse().setStatus(errorResponseStatus);
-
-        JSONObject obj = toJSON(e);
-        obj.put("success", Boolean.FALSE);
-
-        try
-        {
-            writeObject(obj);
-        }
-        finally
-        {
-            close();
-        }
-    }
 
     protected JSONObject toJSON(ValidationException e)
     {
@@ -411,6 +468,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         return obj;
     }
 
+
     private void toJSON(JSONArray parent, ValidationError error)
     {
         String msg = error.getMessage();
@@ -435,50 +493,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         parent.put(jsonError);
     }
 
-    public void writeAndClose(Errors errors) throws IOException
-    {
-        //set the status to 400 to indicate that it was a bad request
-        if (null != getResponse())
-            getResponse().setStatus(errorResponseStatus);
 
-        Pair<String, JSONArray> pair = convertToJSON(errors, 0);
-
-        JSONObject root = new JSONObject();
-        root.put("success", false);
-        root.put("exception", pair.getKey());
-        root.put("errors", pair.getValue());
-        try
-        {
-            writeObject(root);
-        }
-        finally
-        {
-            close();
-        }
-    }
-
-    /**
-     * Allows for writing a simplified status/message to the response.
-     */
-    public void writeAndCloseError(int status, String message) throws IOException
-    {
-        if (null != getResponse())
-            getResponse().setStatus(status);
-
-        JSONObject root = new JSONObject();
-        root.put("success", false);
-        root.put("exception", message);
-        root.put("errors", new JSONArray());
-
-        try
-        {
-            writeObject(root);
-        }
-        finally
-        {
-            close();
-        }
-    }
 
     /**
      * Converts the errors to JSON-friendly client responses. Starts at the specified index, skipping any prior
@@ -552,10 +567,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
     public abstract void startResponse() throws IOException;
 
     public abstract void endResponse() throws IOException;
-
-    public abstract void startMap(String name) throws IOException;
-
-    public abstract void endMap() throws IOException;
 
     public abstract void writeProperty(String name, Object value) throws IOException;
 

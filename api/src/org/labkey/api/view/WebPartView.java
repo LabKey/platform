@@ -19,8 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -150,15 +152,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             }
             else // 21477: Query editor fails to display simple errors
             {
-                writer.startResponse();
-                writer.writeProperty("html", mr.getContentAsString());
-                writer.writeProperty("requiredJsScripts", includes);
-                writer.writeProperty("implicitJsIncludes", implicitIncludes);
-                writer.writeProperty("requiredCssScripts", cssScripts);
-                writer.writeProperty("implicitCssIncludes", implicitCssScripts);
-                writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                writer.endResponse();
-            }
+                JSONObject json = new JSONObject();
+                json.put("html", mr.getContentAsString());
+                json.put("requiredJsScripts", includes);
+                json.put("implicitJsIncludes", implicitIncludes);
+                json.put("requiredCssScripts", cssScripts);
+                json.put("implicitCssIncludes", implicitCssScripts);
+                json.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+                writer.writeResponse(json);            }
         };
     }
 
