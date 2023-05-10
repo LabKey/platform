@@ -94,7 +94,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
@@ -992,8 +991,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         DocumentParser p = detectParser(r, is);
         if (null != p)
         {
-            if (!p.getMediaType().equals(MimeMap.MimeType.PLAIN.getContentType()))
-                _log.info("Detected as " + p.getMediaType() + ". Inputs: " + r.getName() + ", " + r.getContentType());
             metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
             if (!tooBig)  //Check filesize even if parser set. Issue #40253
                 p.parse(is, handler);

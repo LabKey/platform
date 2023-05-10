@@ -553,11 +553,8 @@ public class FileType implements Serializable
             }
         }
 
-        // Attempt to match using only the header.
-        if (header != null && isHeaderMatch(header))
-            return true;
-
-        return false;
+        // Attempt to match using just the header, but only if we don't have a content type, Issue 47814
+        return null == contentType && header != null && isHeaderMatch(header);
     }
 
     protected static String detectContentType(String fileName, byte[] header)
