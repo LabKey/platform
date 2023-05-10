@@ -1457,7 +1457,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             try
             {
-                QueryParser queryParser = new MultiFieldQueryParser(standardFields, getAnalyzer(), boosts);
+                String[] customFields = null;
+                if (options.fields != null && !options.fields.isEmpty())
+                {
+                    List<String> customFieldsList = new ArrayList<>();
+                    for (String s : standardFields)
+                    {
+                        if (options.fields.contains(s))
+                            customFieldsList.add(s);
+                    }
+
+                    if (!customFieldsList.isEmpty())
+                        customFields = customFieldsList.toArray(new String[0]);
+                }
+
+                QueryParser queryParser = new MultiFieldQueryParser(customFields != null ? customFields : standardFields, getAnalyzer(), boosts);
                 queryBuilder.add(queryParser.parse(options.queryString), BooleanClause.Occur.MUST);
             }
             catch (ParseException x)

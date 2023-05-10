@@ -605,6 +605,7 @@ public class SearchController extends SpringActionController
                 {
                     SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(query, getUser(), getContainer());
                     options.categories = ss.getCategories(form.getCategory());
+                    options.fields = form.getFields();
                     options.invertResults = form.isInvertSort();
                     options.limit = form.getLimit() < 0 ? 1000 : form.getLimit();
                     options.offset = form.getOffset();
@@ -915,6 +916,7 @@ public class SearchController extends SpringActionController
         private String _category = null;
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
+        private List<String> _fields;
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
         private boolean _showAdvanced = false;
@@ -1119,6 +1121,16 @@ public class SearchController extends SpringActionController
         public void setExperimentalCustomJson(boolean experimentalCustomJson)
         {
             _experimentalCustomJson = experimentalCustomJson;
+        }
+
+        public List<String> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<String> fields)
+        {
+            _fields = fields;
         }
     }
 
