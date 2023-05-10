@@ -477,11 +477,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     // Get all text strings from the data class for indexing
     private void getIndexValues(
+        ExpDataClassDataTableImpl table,
         Set<String> identifiersHi,
         Set<String> identifiersMed,
-        Set<String> keywords,
-        @Nullable ExpDataClassImpl dc,
-        TableInfo table
+        Set<String> identifiersLo,
+        Set<String> keywordHi,
+        Set<String> keywordMed,
+        Set<String> keywordsLo
     )
     {
         // collect the set of columns to index
@@ -537,18 +539,43 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                     else
                         values = Arrays.asList(s);
 
-                    if ("commonName".equalsIgnoreCase(col.getName()) && dc != null && dc.isRegistry())
+                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumns(fieldKey);
+                    if (searchProperty != null)
                     {
-                        identifiersHi.addAll(values);
+                        switch (searchProperty)
+                        {
+                            case identifiersHi -> {
+                                identifiersHi.addAll(values);
+                                continue;
+                            }
+                            case identifiersMed -> {
+                                identifiersMed.addAll(values);
+                                continue;
+                            }
+                            case identifiersLo -> {
+                                identifiersLo.addAll(values);
+                                continue;
+                            }
+                            case keywordsHi -> {
+                                keywordHi.addAll(values);
+                                continue;
+                            }
+                            case keywordsMed -> {
+                                keywordMed.addAll(values);
+                                continue;
+                            }
+                            case keywordsLo -> {
+                                keywordsLo.addAll(values);
+                                continue;
+                            }
+                            default -> LOG.debug("Unable to index column " + fieldKey.toString() + " with property: " + searchProperty.name() + ". Not yet supported.");
+                        }
                     }
-                    else if ("scientificName".equalsIgnoreCase(col.getName()) && dc != null && dc.isMedia())
-                    {
-                        identifiersHi.addAll(values);
-                    }
-                    else if ("textarea".equalsIgnoreCase(col.getInputType()))
+
+                    if ("textarea".equalsIgnoreCase(col.getInputType()))
                     {
                         // treat multi-line text values as keywords, otherwise treat as an identifier
-                        keywords.addAll(values);
+                        keywordsLo.addAll(values);
                     }
                     else
                     {
@@ -758,6 +785,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public WebdavResource createDocument(@Nullable ExpDataClassDataTableImpl tableInfo)
     {
         Map<String, Object> props = new HashMap<>();
+        Set<String> keywordsHi = new HashSet<>();
         Set<String> keywordsMed = new HashSet<>();
         Set<String> keywordsLo = new HashSet<>();
 
@@ -800,7 +828,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (tableInfo != null)
         {
             // Collect other text columns and lookup display columns
-            getIndexValues(identifiersHi, identifiersMed, keywordsLo, dc, tableInfo);
+            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo);
         }
 
         if (null != dc)
@@ -824,6 +852,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // === Stemmed
 
+        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
         props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
         props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
 
@@ -853,20 +882,19 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         props.put(SearchService.PROPERTY.summary.toString(), summary);
 
-        final int id = getRowId();
         return new ExpDataResource(
-                id,
-                new Path(docId),
-                docId,
-                getContainer().getId(),
-                "text/plain",
-                body.toString(),
-                view,
-                props,
-                getCreatedBy(),
-                getCreated(),
-                getModifiedBy(),
-                getModified()
+            getRowId(),
+            new Path(docId),
+            docId,
+            getContainer().getId(),
+            "text/plain",
+            body.toString(),
+            view,
+            props,
+            getCreatedBy(),
+            getCreated(),
+            getModifiedBy(),
+            getModified()
         );
     }
 

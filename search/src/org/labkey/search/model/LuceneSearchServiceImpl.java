@@ -1427,47 +1427,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
-                               Container current, SearchScope scope,
-                               @Nullable String sortField,
-                               int offset, int limit) throws IOException
+    public SearchResult search(SearchOptions options) throws IOException
     {
-        return search(queryString, categories, user, current, scope, sortField, offset, limit, false);
+        SearchResult result = new SearchResult();
+        doSearch(options, result, new ArrayList<>());
+        return result;
     }
 
     @Override
-    public List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user,
-                               Container current, SearchScope scope,
-                               @Nullable String sortField,
-                               int offset, int limit, boolean invertResults) throws IOException
+    public List<String> searchUniqueIds(SearchOptions options) throws IOException
     {
         List<String> results = new ArrayList<>();
-        doSearch(queryString, categories, user, current, scope, sortField, offset, limit, invertResults, false, new SearchResult(), results);
+        doSearch(options, new SearchResult(), results);
         return results;
     }
 
-    @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
-                               Container current, SearchScope scope,
-                               @Nullable String sortField,
-                               int offset, int limit, boolean invertResults) throws IOException
-    {
-        SearchResult results = new SearchResult();
-        doSearch(queryString, categories, user, current, scope, sortField, offset, limit, invertResults, true, results, new ArrayList<>());
-        return results;
-    }
-
-    private void doSearch(String queryString, @Nullable List<SearchCategory> categories, User user,
-                          Container current, SearchScope scope,
-                          @Nullable String sortField,
-                          int offset, int limit, boolean invertResults, boolean fullResult, @NotNull SearchResult searchResult, @NotNull List<String> searchResultUniqueIds) throws IOException
+    private void doSearch(SearchOptions options, @NotNull SearchResult searchResult, @NotNull List<String> searchResultUniqueIds) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
         try
         {
-            int hitsToRetrieve = offset + limit;
-            boolean requireCategories = (null != categories);
+            int hitsToRetrieve = options.offset + options.limit;
+            boolean requireCategories = (null != options.categories);
 
             iTimer.setPhase(SEARCH_PHASE.createQuery);
 
@@ -1476,7 +1458,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             try
             {
                 QueryParser queryParser = new MultiFieldQueryParser(standardFields, getAnalyzer(), boosts);
-                queryBuilder.add(queryParser.parse(queryString), BooleanClause.Occur.MUST);
+                queryBuilder.add(queryParser.parse(options.queryString), BooleanClause.Occur.MUST);
             }
             catch (ParseException x)
             {
@@ -1492,7 +1474,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if ("<EOF>".equals(mp.getEncountered()))
                     {
                         message = HtmlString.of("Query string is incomplete");
-                        problemLocation = queryString.length();
+                        problemLocation = options.queryString.length();
                     }
                     else
                     {
@@ -1509,7 +1491,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         }
                     }
 
-                    throw new HtmlParseException(message, queryString, problemLocation);
+                    throw new HtmlParseException(message, options.queryString, problemLocation);
                 }
                 else
                 {
@@ -1518,12 +1500,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             catch (IllegalArgumentException x)
             {
-                throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
+                throw new IOException(SearchUtils.getStandardPrefix(options.queryString) + x.getMessage());
             }
 
-            if (null != categories)
+            if (null != options.categories)
             {
-                Iterator<SearchCategory> itr = categories.iterator();
+                Iterator<SearchCategory> itr = options.categories.iterator();
 
                 if (requireCategories)
                 {
@@ -1548,14 +1530,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
 
             Sort sort = null;
-            if (sortField != null && !sortField.equals("score"))
+            if (options.sortField != null && !options.sortField.equals("score"))
             {
-                if (sortField.equals(FIELD_NAME.created.name()) || sortField.equals(FIELD_NAME.modified.name()))
-                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, !invertResults), SortField.FIELD_SCORE);
-                else if (sortField.equals(FIELD_NAME.container.name()))
-                    sort = new Sort(new SortField(sortField, new ContainerFieldComparatorSource(), invertResults), SortField.FIELD_SCORE);
+                if (options.sortField.equals(FIELD_NAME.created.name()) || options.sortField.equals(FIELD_NAME.modified.name()))
+                    sort = new Sort(new SortField(options.sortField, SortField.Type.LONG, !options.invertResults), SortField.FIELD_SCORE);
+                else if (options.sortField.equals(FIELD_NAME.container.name()))
+                    sort = new Sort(new SortField(options.sortField, new ContainerFieldComparatorSource(), options.invertResults), SortField.FIELD_SCORE);
                 else
-                    sort = new Sort(new SortField(sortField, SortField.Type.STRING, invertResults), SortField.FIELD_SCORE);
+                    sort = new Sort(new SortField(options.sortField, SortField.Type.STRING, options.invertResults), SortField.FIELD_SCORE);
             }
 
             IndexSearcher searcher = _indexManager.getSearcher();
@@ -1564,9 +1546,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
 
-                if (!user.isSearchUser())
+                if (!options.user.isSearchUser())
                 {
-                    Query securityFilter = new SecurityQuery(user, scope, current, iTimer);
+                    Query securityFilter = new SecurityQuery(options.user, options.scope, options.container, iTimer);
                     queryBuilder.add(securityFilter, BooleanClause.Occur.FILTER);
                 }
 
@@ -1581,10 +1563,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
 
-                if (fullResult)
-                    processSearchResult(offset, hitsToRetrieve, topDocs, searcher, searchResult);
+                if (options.fullResult)
+                    processSearchResult(options.offset, hitsToRetrieve, topDocs, searcher, searchResult);
                 else
-                    processSearchResultUniqueIds(offset, hitsToRetrieve, topDocs, searcher, searchResultUniqueIds);
+                    processSearchResultUniqueIds(options.offset, hitsToRetrieve, topDocs, searcher, searchResultUniqueIds);
 
 
                 // Uncomment to log an explanation of each hit
@@ -2143,8 +2125,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         private List<SearchHit> search(String query) throws IOException
         {
-            SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, null, 0, 100);
+            SearchOptions.Builder options = new SearchOptions.Builder(query, _context.getUser(), _c);
+            options.categories = Collections.singletonList(_category);
 
+            SearchResult result = _ss.search(options.build());
             return result.hits;
         }
     }

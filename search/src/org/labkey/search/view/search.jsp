@@ -254,7 +254,15 @@
 
             if (includeNavigationResults)
             {
-                navResult = SearchService.get().search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, sortField, offset, hitsPerPage, invertSort);
+                SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(queryString, user, c);
+                options.categories = Arrays.asList(SearchService.navigationCategory);
+                options.invertResults = invertSort;
+                options.limit = hitsPerPage;
+                options.offset = offset;
+                options.scope = scope;
+                options.sortField = sortField;
+
+                navResult = SearchService.get().search(options.build());
                 hasNavResults = navResult != null && navResult.hits.size() > 0;
             }
         }

@@ -603,10 +603,15 @@ public class SearchController extends SpringActionController
                 SearchResult result;
                 try
                 {
-                    //UNDONE: paging, rowlimit etc
-                    int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                    result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
-                        form.getSortField(), form.getOffset(), limit, form.isInvertSort());
+                    SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(query, getUser(), getContainer());
+                    options.categories = ss.getCategories(form.getCategory());
+                    options.invertResults = form.isInvertSort();
+                    options.limit = form.getLimit() < 0 ? 1000 : form.getLimit();
+                    options.offset = form.getOffset();
+                    options.scope = form.getSearchScope();
+                    options.sortField = form.getSortField();
+
+                    result = ss.search(options.build());
                 }
                 catch (Exception x)
                 {
@@ -755,7 +760,15 @@ public class SearchController extends SpringActionController
         @Override
         public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit, boolean invertSort) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit, invertSort);
+            SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(queryString, user, currentContainer);
+            options.categories = _ss.getCategories(category);
+            options.invertResults = invertSort;
+            options.limit = limit;
+            options.offset = offset;
+            options.scope = scope;
+            options.sortField = sortField;
+
+            return _ss.search(options.build());
         }
 
         @Override
