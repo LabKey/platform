@@ -675,31 +675,24 @@ public class PageFlowUtil
 
     public static String encodeURI(String s)
     {
-        try
+        StringBuilder sb = new StringBuilder();
+        int len=s.length(),start=0,end=0;
+        while (start < s.length())
         {
-            StringBuilder sb = new StringBuilder();
-            int len=s.length(),start=0,end=0;
-            while (start < s.length())
+            for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
+                { /* */ }
+            sb.append(s,start,end);
+            if (end < len)
             {
-                for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
-                    { /* */ }
-                sb.append(s,start,end);
-                if (end < len)
-                {
-                    String ch = s.substring(end,end+1);
-                    if (ch.charAt(0)==' ')
-                        sb.append("%20");
-                    else
-                        sb.append(URLEncoder.encode(ch, StringUtilsLabKey.DEFAULT_CHARSET.name()));
-                }
-                start = end+1;
+                String ch = s.substring(end,end+1);
+                if (ch.charAt(0)==' ')
+                    sb.append("%20");
+                else
+                    sb.append(URLEncoder.encode(ch, StringUtilsLabKey.DEFAULT_CHARSET));
             }
-            return sb.toString();
+            start = end+1;
         }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return sb.toString();
     }
 
 
@@ -708,14 +701,7 @@ public class PageFlowUtil
      */
     public static String decode(String s)
     {
-        try
-        {
-            return null==s ? "" : URLDecoder.decode(s, StringUtilsLabKey.DEFAULT_CHARSET.name());
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return null == s ? "" : URLDecoder.decode(s, StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
     /**
@@ -1297,7 +1283,7 @@ public class PageFlowUtil
 	}
 
 
-    // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.
+    // Fetch the contents of an input stream, and return it in a list, skipping comment lines if skipComments == true.
     // Assumes stream is encoded using the LabKey standard character set
     public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
     {
@@ -1331,7 +1317,7 @@ public class PageFlowUtil
         if (!m.find())
             return s;
         //for (int i=0 ; i<=m.groupCount() ; i++) System.err.println(i + " " + m.group(i));
-        StringBuffer sb = new StringBuffer(20);
+        StringBuilder sb = new StringBuilder(20);
         m.appendReplacement(sb, "");
         String area = m.group(3);
         String exch = m.group(4);
