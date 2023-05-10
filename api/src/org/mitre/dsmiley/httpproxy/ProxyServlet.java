@@ -959,6 +959,11 @@ public class ProxyServlet extends HttpServlet
         LOG.error("getTargetHost: " + getTargetHost(servletRequest));
         LOG.error("servletRequest.getRequestURL(): " + servletRequest.getRequestURL());
 
+        if (theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
+        {
+            theUrl = theUrl.replace("https://localhost:", "http://localhost:");
+        }
+
         if (theUrl.startsWith("/") || theUrl.startsWith(targetUri))
         {
       /*-
