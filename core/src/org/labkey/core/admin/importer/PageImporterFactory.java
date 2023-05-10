@@ -226,6 +226,14 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 // We found both the legacy name and the default tab for this folder
                 if (portalDefaultTabXml != null && folderDefaultTabXml != null)
                 {
+                    // Issue 47841: if the portalDefaultTabXml contains only menu bar webparts, keep them both
+                    if (!portalDefaultTabXml.getWebpartList().isEmpty())
+                    {
+                        boolean allMenuBarParts = portalDefaultTabXml.getWebpartList().stream().allMatch(webpart -> WebPartFactory.LOCATION_MENUBAR.equalsIgnoreCase(webpart.getLocation()));
+                        if (allMenuBarParts)
+                            return;
+                    }
+
                     // The folder's default tab is empty
                     if (folderDefaultTabXml.getWebpartArray().length == 0)
                     {

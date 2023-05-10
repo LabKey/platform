@@ -6662,7 +6662,8 @@ public class AdminController extends SpringActionController
             String titleValue = title;
             if (name == null && title == null)
             {
-                throw new ApiUsageException("Please specify a name or a title.");
+                errors.reject(ERROR_MSG, "Please specify a name or a title.");
+                return new ApiSimpleResponse("success", false);
             }
             else if (name != null && title == null)
             {
@@ -6682,7 +6683,8 @@ public class AdminController extends SpringActionController
             }
             catch (Exception e)
             {
-                throw new ApiUsageException(e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+                return new ApiSimpleResponse("success", false);
             }
         }
     }
@@ -10799,7 +10801,7 @@ public class AdminController extends SpringActionController
                 controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
                 new DeleteCustomEmailAction(),
-                    new RenameContainerAction(),
+                new RenameContainerAction(),
                 controller.new RenameFolderAction(),
                 controller.new MoveFolderAction(),
                 new ConfirmProjectMoveAction(),

@@ -8328,19 +8328,37 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
+    public int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
     {
+        if (rowIds == null || rowIds.isEmpty())
+            return 0;
+
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
-        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private int updateExpObjectContainers(List<String> lsids, Container targetContainer)
+    {
+        if (lsids == null || lsids.isEmpty())
+            return 0;
+
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objecturi ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
     @Override
     public int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer)
     {
+        if (dataIds == null || dataIds.isEmpty())
+            return 0;
+
         SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
@@ -8520,7 +8538,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
         int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+
         ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
+
+        // LKB media have object properties associated with the protocol applications of the run
+        // and object properties associated with the material and data inputs for those protocol applications
+        List<String> lsidsToUpdate = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            for (ExpProtocolApplication pa : run.getProtocolApplications())
+            {
+                lsidsToUpdate.add(pa.getLSID());
+                for (ExpDataRunInput dataInput : pa.getDataInputs())
+                    lsidsToUpdate.add(DataInput.lsid(dataInput.getData().getRowId(), pa.getRowId()));
+                for (ExpMaterialRunInput materialInput : pa.getMaterialInputs())
+                    lsidsToUpdate.add(MaterialInput.lsid(materialInput.getMaterial().getRowId(), pa.getRowId()));
+            }
+        }
+        updateExpObjectContainers(lsidsToUpdate, targetContainer);
+
         return updateCount;
     }
 
