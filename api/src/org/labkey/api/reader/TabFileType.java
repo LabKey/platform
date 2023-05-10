@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 class TabFileType extends FileType
 {
-    // Graphic char followed by graphic or space chacaters
+    // Graphic char followed by graphic or space characters
     private static final Pattern HEADER = Pattern.compile("^\\p{Graph}[\\p{Graph} ]*", Pattern.UNICODE_CHARACTER_CLASS);
 
     private final String delim;
@@ -106,5 +106,4 @@ class TabFileType extends FileType
 
         return HEADER.matcher(cs).matches();
     }
-
 }
