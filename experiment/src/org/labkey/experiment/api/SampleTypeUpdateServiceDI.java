@@ -859,12 +859,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    public record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
+    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
 
-    public @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
+    private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
     {
         if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
-            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true);
+            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true, false);
 
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
         if (null == remap)
@@ -907,7 +907,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         }
 
-        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
+        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput, isAllFromMaterialTable /* Unlike samples table, Materials table doesn't have container filter applied*/);
     }
 
     private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
@@ -916,6 +916,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
         TableInfo queryTableInfo = existingRowSelect.tableInfo;
         Set<String> selectColumns = existingRowSelect.columns;
+        boolean filterToCurrentContainer = existingRowSelect.addContainerFilter;
 
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
@@ -951,7 +952,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (!rowIdRowNumMap.isEmpty())
         {
-            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -972,7 +975,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             useLsid = true;
             allKeys.addAll(lsidRowNumMap.keySet());
 
-            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -989,6 +994,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(nameRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
 
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)

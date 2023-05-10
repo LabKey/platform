@@ -598,7 +598,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // call generateSelectName() to avoid asserts in getSelectName()
         String colIdentifier = generateSelectName();
         if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
-            return new SQLFragment().setSqlUnsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
+            return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
         else
             return new SQLFragment().appendIdentifier(tableAliasName).append(".").appendIdentifier(colIdentifier);
     }

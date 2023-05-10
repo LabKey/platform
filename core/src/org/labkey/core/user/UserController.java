@@ -1545,7 +1545,7 @@ public class UserController extends SpringActionController
     }
 
 
-    public static void addUserDetailsNavTrail(Container c, User currentUser, NavTree root, ActionURL userDetailsUrl)
+    public static void addUserDetailsNavTrail(Container c, User currentUser, NavTree root, @Nullable ActionURL userDetailsUrl)
     {
         if (c.isRoot())
         {

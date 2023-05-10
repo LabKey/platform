@@ -1621,6 +1621,12 @@ public class SecurityController extends SpringActionController
         {
             _targetUser = targetUser;
         }
+
+        public @Nullable User getTargetUserObject()
+        {
+            int userId = getTargetUser();
+            return 0 == userId ? null : UserManager.getUser(userId);
+        }
     }
 
     @RequiresPermission(UserManagementPermission.class)
@@ -1657,7 +1663,7 @@ public class SecurityController extends SpringActionController
                 return;
             }
 
-            _target = UserManager.getUser(form.getTargetUser());
+            _target = form.getTargetUserObject();
 
             if (null == _target)
                 errors.reject(ERROR_MSG, "Unknown target user");
@@ -1675,6 +1681,11 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(ClonePermissionsForm form, boolean reshow, BindException errors) throws Exception
         {
             _form = form;
+
+            // We already have a spring error if targetUser parameter is blank
+            if (!errors.hasErrors() && null == form.getTargetUserObject())
+                errors.reject(ERROR_MSG, "Unknown target user");
+
             return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form, errors);
         }
 
