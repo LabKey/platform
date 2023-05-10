@@ -750,7 +750,7 @@ public abstract class SqlDialect
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for auto-incrementing columns (e.g. IDENTITY in SQL Server
-     * or SERIAL in Postgres). The input StringBuffer is modified to
+     * or SERIAL in Postgres). The input StringBuilder is modified to
      * wrap the statements in dialect-specific code to allow this.
      *
      * @param statements the insert statements. If more than one,
