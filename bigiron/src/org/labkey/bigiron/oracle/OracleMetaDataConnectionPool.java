@@ -17,6 +17,7 @@ package org.labkey.bigiron.oracle;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ConnectionPool;
@@ -43,7 +44,9 @@ public class OracleMetaDataConnectionPool extends ConnectionPool
         try
         {
             // At minimum, read-only access to V$PARAMETER is necessary in order get the open_cursors value set for your Oracle instance.
-            openCursorsMax = new SqlSelector(scope, "SELECT VALUE FROM V$PARAMETER WHERE Name = 'open_cursors'").getObject(Integer.class);
+            openCursorsMax = new SqlSelector(scope, "SELECT VALUE FROM V$PARAMETER WHERE Name = 'open_cursors'")
+                .setLogLevel(Level.OFF)  // This could fail
+                .getObject(Integer.class);
         }
         catch (Exception e)
         {
