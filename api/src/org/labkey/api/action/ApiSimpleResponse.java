@@ -126,6 +126,6 @@ public class ApiSimpleResponse implements ApiResponse
     @Override
     public void render(ApiResponseWriter writer) throws IOException
     {
-        writer.writeObject(getJson());
+        writer.writeResponse(getJson());
     }
 }

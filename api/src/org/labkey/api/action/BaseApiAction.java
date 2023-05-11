@@ -140,6 +140,31 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         super.setViewContext(context);
     }
 
+    private void writeResponse(Object o) throws IOException
+    {
+        try (var writer = createResponseWriter())
+        {
+            writer.writeResponse(o);
+        }
+    }
+
+    private void writeResponse(Exception ex) throws IOException
+    {
+        try (var writer = createResponseWriter())
+        {
+            writer.writeResponse(ex);
+        }
+    }
+
+    private void writeResponse(Errors errors) throws IOException
+    {
+        try (var writer = createResponseWriter())
+        {
+            writer.writeResponse(errors);
+        }
+    }
+
+
     @SuppressWarnings("TryWithIdenticalCatches")
     public ModelAndView handlePost() throws Exception
     {
@@ -172,7 +197,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             //return them without calling execute.
             if (isFailure(errors))
             {
-                createResponseWriter().writeAndClose((Errors) errors);
+                writeResponse((Errors) errors);
             }
             else
             {
@@ -216,36 +241,36 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 try (Timing ignored = MiniProfiler.step("render"))
                 {
                     if (isFailure(errors))
-                        createResponseWriter().writeAndClose((Errors) errors);
+                        writeResponse((Errors) errors);
                     else if (null != response)
-                        createResponseWriter().writeResponse(response);
+                        writeResponse(response);
                 }
             }
         }
         catch (BindException e)
         {
-            createResponseWriter().writeAndClose((Errors) e);
+            writeResponse((Errors) e);
         }
         //don't log exceptions that result from bad inputs
         catch (BatchValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().writeAndClose(e);
+            writeResponse(e);
         }
         catch (ValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().writeAndClose(e);
+            writeResponse(e);
         }
         catch (RuntimeValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().writeAndClose(e.getValidationException());
+            writeResponse(e.getValidationException());
         }
         catch (QueryException | IllegalArgumentException |
                 NotFoundException | InvalidKeyException | ApiUsageException e)
         {
-            createResponseWriter().writeAndClose(e);
+            writeResponse(e);
         }
         catch (UnauthorizedException e)
         {
@@ -259,7 +284,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
 
-            createResponseWriter().writeAndClose(e);
+            writeResponse(e);
         }
 
         return null;

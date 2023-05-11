@@ -130,6 +130,14 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+
+    @Override
+    protected void writeProperties(JSONObject json) throws IOException
+    {
+        writeObject(json);
+    }
+
+
     private static String filter(String s)
     {
         if (s == null)
@@ -195,38 +203,6 @@ public class ApiXmlWriter extends ApiResponseWriter
         verifyOpen();
         assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
         close();
-        _streamStack.pop();
-    }
-
-    @Override
-    public void startMap(String name) throws IOException
-    {
-        verifyOpen();
-        StreamState state = _streamStack.peek();
-        assert (null != state) : "startResponse will start the root-level map!";
-        try
-        {
-            _xmlWriter.writeStartElement(escapeElementName(name));
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
-        }
-        _streamStack.push(new StreamState(name, state.getLevel() + 1));
-    }
-
-    @Override
-    public void endMap() throws IOException
-    {
-        verifyOpen();
-        try
-        {
-            _xmlWriter.writeEndElement();
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
-        }
         _streamStack.pop();
     }
 
