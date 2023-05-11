@@ -159,7 +159,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 json.put("requiredCssScripts", cssScripts);
                 json.put("implicitCssIncludes", implicitCssScripts);
                 json.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                writer.writeResponse(json);            }
+                writer.writeResponse(json);
+            }
         };
     }
 
