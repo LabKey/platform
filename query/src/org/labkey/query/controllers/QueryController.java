@@ -621,7 +621,7 @@ public class QueryController extends SpringActionController
                                 status = "connected";
                                 connected = true;
                             }
-                            catch (SQLException e)
+                            catch (Exception e)
                             {
                                 status = FONT(cl("labkey-error"), "disconnected");
                             }
