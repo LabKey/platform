@@ -310,7 +310,8 @@ public class ApiJsonWriter extends ApiResponseWriter
     /**
      * Attempt to reset the http response.  If possible the response will be completely reset.  If not possible,
      * this code will attempt to return the response to the top-level object in the json response.
-     * Since the response will be in an unspecified state, the caller should only use The caller should use writeExceptionPropertiesToRootAndEndObject() after calling this method.
+     * Since the response will be in an unspecified state, the caller should use writeExceptionPropertiesToRootAndEndObject() after calling this method.
+
      */
      @Override
     protected void resetOutput() throws IOException
