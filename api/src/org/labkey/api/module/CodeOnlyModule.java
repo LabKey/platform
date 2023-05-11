@@ -89,4 +89,10 @@ public abstract class CodeOnlyModule extends DefaultModule
     {
         return null;
     }
+
+    @Override
+    public final boolean isAutoUninstall()
+    {
+        return true;
+    }
 }
