@@ -183,9 +183,12 @@ public class AssayModule extends SpringModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(AssayManager.ASSAY_CATEGORY);
-            ss.addResourceResolver(AssayManager.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+            ss.addSearchCategory(AssayService.ASSAY_CATEGORY);
+            ss.addSearchCategory(AssayService.ASSAY_RUN_CATEGORY);
+            ss.addResourceResolver(AssayService.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+            ss.addResourceResolver(AssayService.ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
+            ss.addDocumentProvider(new AssayRunDocumentProvider());
         }
 
         // add a container listener so we'll know when our container is deleted:

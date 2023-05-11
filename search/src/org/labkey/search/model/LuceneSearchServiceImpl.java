@@ -76,7 +76,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;

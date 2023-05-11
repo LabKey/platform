@@ -74,6 +74,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
@@ -89,7 +90,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -183,7 +183,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         try
         {
-            // Whether or not we need to save batch properties
+            // Whether we need to save batch properties
             boolean forceSaveBatchProps = false;
             if (batch == null)
             {
@@ -336,11 +336,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
 
-            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
+            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm<ProviderType> uploadForm)
             {
                 context.setTransformResult(transformResult);
-                ((AssayRunUploadForm)context).setName(run.getName());
-                ((AssayRunUploadForm) context).setComments(run.getComments());
+                uploadForm.setName(run.getName());
+                uploadForm.setComments(run.getComments());
                 throw new ValidationException(" ");
             }
 
@@ -401,6 +401,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
+            int runRowId = run.getRowId();
+            transaction.addCommitTask(() -> indexAssayRun(runRowId), DbScope.CommitTaskOption.POSTCOMMIT);
+
             transaction.commit();
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
@@ -410,10 +413,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 ProvenanceService pvs = ProvenanceService.get();
                 Set<String> runInputLSIDs = null;
-                if (provInputsProperty instanceof String)
+                if (provInputsProperty instanceof String provInputs)
                 {
                     // parse as a JSONArray of values or a comma-separated list of values
-                    String provInputs = (String)provInputsProperty;
                     if (provInputs.startsWith("[") && provInputs.endsWith("]"))
                         provInputsProperty = new JSONArray(provInputs);
                     else
@@ -442,6 +444,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             throw new ExperimentException(e);
         }
+    }
+
+    private void indexAssayRun(int expRunRowId)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        AssayService.get().indexAssayRun(ss.defaultTask(), expRunRowId);
     }
 
     private void resolveParticipantVisits(

@@ -119,14 +119,6 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    public static final SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
-        }
-    };
-
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
@@ -682,6 +674,38 @@ public class AssayManager implements AssayService
         }
         WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
         task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+    @Override
+    public void indexAssayRuns(SearchService.IndexTask task, Container c)
+    {
+        List<ExpProtocol> protocols = getAssayProtocols(c);
+
+        for (ExpProtocol protocol : protocols)
+            indexAssayRuns(task, c, protocol);
+    }
+
+    private void indexAssayRuns(SearchService.IndexTask task, Container c, ExpProtocol protocol)
+    {
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
+
+        for (ExpRun run : runs)
+            indexAssayRun(task, run);
+    }
+
+    @Override
+    public void indexAssayRun(SearchService.IndexTask task, int expRunRowId)
+    {
+        indexAssayRun(task, ExperimentService.get().getExpRun(expRunRowId));
+    }
+
+    private void indexAssayRun(SearchService.IndexTask task, ExpRun run)
+    {
+        if (run == null)
+            return;
+
+        WebdavResource resource = AssayRunDocumentProvider.createDocument(run);
+        task.addResource(resource, SearchService.PRIORITY.item);
     }
 
     @Override
