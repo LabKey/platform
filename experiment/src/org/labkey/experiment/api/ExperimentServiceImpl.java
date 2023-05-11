@@ -8460,7 +8460,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user)
     {
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())

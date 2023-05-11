@@ -986,7 +986,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
-    int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user);
+    int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user);
     Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     class XarExportOptions
