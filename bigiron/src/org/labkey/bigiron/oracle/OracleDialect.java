@@ -19,6 +19,7 @@ package org.labkey.bigiron.oracle;
 import oracle.sql.TIMESTAMP;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -391,6 +392,18 @@ abstract class OracleDialect extends SimpleSqlDialect
         return new SqlSelector(scope, conn, "SELECT plan_table_output FROM table(dbms_xplan.display('plan_table',null,'all'))").getCollection(String.class);
     }
 
+    @Override
+    public @NotNull String getDefaultSchemasToExcludeFromTesting()
+    {
+        return "SYS";
+    }
+
+    @Override
+    public @NotNull String getDefaultTablesToExcludeFromTesting()
+    {
+        return "SYS_IOT_OVER_*";
+    }
+
     private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
         private OracleColumnMetaDataReader(ResultSet rsCols)
@@ -420,8 +433,11 @@ abstract class OracleDialect extends SimpleSqlDialect
         {
             int sqlType = super.getSqlType();
 
-            // Oracle claims all numbers are DECIMAL... convert to INTEGER if decimal digits == 0
-            if (Types.DECIMAL == sqlType && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+            // Old JDBC driver gave us DECIMAL; assert that we don't anymore.
+            assert sqlType != Types.DECIMAL;
+
+            // Oracle claims all numbers are DECIMAL... convert to INTEGER if decimal digits <= 0 (sometimes -127 for numeric keys)
+            if (Types.NUMERIC == sqlType && _rsCols.getInt("DECIMAL_DIGITS") <= 0)
                 return Types.INTEGER;
 
             return sqlType;
@@ -432,7 +448,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         {
             String typeName = super.getSqlTypeName();
 
-            if ("NUMBER".equals(typeName) && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+            if ("NUMBER".equals(typeName) && _rsCols.getInt("DECIMAL_DIGITS") <= 0)
                 typeName = "INTEGER";
 
             return typeName;
