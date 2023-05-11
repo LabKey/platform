@@ -818,6 +818,28 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class ResetDataSourcePropertiesAction extends FormHandlerAction<TestDataSourceForm>
+    {
+        @Override
+        public void validateCommand(TestDataSourceForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(TestDataSourceForm form, BindException errors) throws Exception
+        {
+            PropertyManager.getWritableProperties(getCategory(form.getDataSource()), false).delete();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(TestDataSourceForm form)
+        {
+            return new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", form.getDataSource()) ;
+        }
+    }
+
     private static final String TEST_DATA_SOURCE_CATEGORY = "testDataSourceProperties";
     private static final String TEST_DATA_SOURCE_SCHEMAS_PROPERTY = "excludeSchemas";
     private static final String TEST_DATA_SOURCE_TABLES_PROPERTY = "excludeTables";
@@ -830,17 +852,18 @@ public class QueryController extends SpringActionController
     public static void saveTestDataSourceProperties(TestDataSourceConfirmForm form)
     {
         PropertyMap map = PropertyManager.getWritableProperties(getCategory(form.getDataSource()), true);
-        map.put(TEST_DATA_SOURCE_SCHEMAS_PROPERTY, form.getExcludeSchemas());
-        map.put(TEST_DATA_SOURCE_TABLES_PROPERTY, form.getExcludeTables());
+        // Save empty entries as empty string to distinguish from null (which results in default values)
+        map.put(TEST_DATA_SOURCE_SCHEMAS_PROPERTY, StringUtils.trimToEmpty(form.getExcludeSchemas()));
+        map.put(TEST_DATA_SOURCE_TABLES_PROPERTY, StringUtils.trimToEmpty(form.getExcludeTables()));
         map.save();
     }
 
-    public static TestDataSourceConfirmForm getTestDataSourceProperties(String dataSourceName)
+    public static TestDataSourceConfirmForm getTestDataSourceProperties(DbScope scope)
     {
         TestDataSourceConfirmForm form = new TestDataSourceConfirmForm();
-        PropertyMap map = PropertyManager.getProperties(getCategory(dataSourceName));
-        form.setExcludeSchemas(map.get(TEST_DATA_SOURCE_SCHEMAS_PROPERTY));
-        form.setExcludeTables(map.get(TEST_DATA_SOURCE_TABLES_PROPERTY));
+        PropertyMap map = PropertyManager.getProperties(getCategory(scope.getDataSourceName()));
+        form.setExcludeSchemas(map.getOrDefault(TEST_DATA_SOURCE_SCHEMAS_PROPERTY, scope.getSqlDialect().getDefaultSchemasToExcludeFromTesting()));
+        form.setExcludeTables(map.getOrDefault(TEST_DATA_SOURCE_TABLES_PROPERTY, scope.getSqlDialect().getDefaultTablesToExcludeFromTesting()));
 
         return form;
     }

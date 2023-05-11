@@ -23,13 +23,13 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     DbScope scope = (DbScope)getModelBean();
-    TestDataSourceConfirmForm form = QueryController.getTestDataSourceProperties(scope.getDataSourceName());
+    TestDataSourceConfirmForm form = QueryController.getTestDataSourceProperties(scope);
 %>
 <div style="max-width: 1000px;">
 <p>
 This will test data source <%=h(scope.getDataSourceName())%> by enumerating all schemas and tables in the data source,
-querying the row count and all data in the first 100 rows of each table. This operation could take several minutes,
-depending on the number of schemas and tables. The server log will show progress as each table is tested.
+querying the row count and 100 rows of data from each table, skipping the first 10 rows. This operation could take
+several minutes, depending on the number of schemas and tables. The server log will show progress as each table is tested.
 </p>
 <p>
 You can exclude specific schemas and tables from testing by adding names to the corresponding text boxes below. These
@@ -49,5 +49,10 @@ exclusions will be saved associated with the data source name.
         </tr>
     </table><br>
     <%=button("Test").submit(true)%>
+    <%=button("Reset")
+        .href(urlFor(QueryController.ResetDataSourcePropertiesAction.class).addParameter("dataSource", scope.getDataSourceName()))
+        .tooltip("Reset this form back to the default values")
+        .usePost()
+    %>
     <%=button("Cancel").href(urlFor(QueryController.DataSourceAdminAction.class))%>
 </labkey:form>

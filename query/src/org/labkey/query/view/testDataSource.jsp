@@ -50,7 +50,7 @@
 %>
 <%
     DbScope scope = (DbScope)getModelBean();
-    TestDataSourceConfirmForm form = QueryController.getTestDataSourceProperties(scope.getDataSourceName());
+    TestDataSourceConfirmForm form = QueryController.getTestDataSourceProperties(scope);
 
     Set<String> skipSchemas = new HashSet<>();
     Set<String> skipSchemaPrefixes = new HashSet<>();
@@ -105,7 +105,7 @@
 
                 LOG.info(StringUtilsLabKey.pluralize(count, "row"));
                 %> has <%=h(StringUtilsLabKey.pluralize(count, "row"))%><%
-                selector.setMaxRows(100);
+                selector.setOffset(10).setMaxRows(100);
                 try
                 {
                     int rowCount = 0;
