@@ -28,7 +28,7 @@ SELECT
        DisplayKey,
        '{' || SelectKey || '}' AS SelectKey,
        Value,
-       -- Need to string quotes from the JSON string value
+       -- Need to strip quotes from the JSON string value
        CAST(CASE WHEN Type = 'string' THEN SUBSTRING(CAST(Value AS VARCHAR), 2, LENGTH(CAST(Value AS VARCHAR)) - 2) END AS VARCHAR) AS StringValue,
        CAST(CASE WHEN Type = 'number' THEN Value END AS DECIMAL) AS NumberValue,
        CAST(CASE WHEN Type = 'boolean' THEN Value END AS BOOLEAN) AS BooleanValue,
