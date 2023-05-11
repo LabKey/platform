@@ -132,7 +132,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             throw new IllegalStateException("close() called without calling endResponse()");
     }
 
-    private void checkClosed()
+    private void ensureNotClosed()
     {
         if (state == WriterState.Closed)
             throw new IllegalStateException("writer is closed");
@@ -141,7 +141,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     public void startResponse() throws IOException
     {
-        checkClosed();
+        ensureNotClosed();
         if (state != WriterState.Initialized)
             throw new IllegalStateException("startResponse() has already been called");
         state = WriterState.Started;
@@ -154,7 +154,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     public void endResponse() throws IOException
     {
-        checkClosed();
+        ensureNotClosed();
         if (state != WriterState.Started)
             throw new IllegalStateException("startResponse() has not been called");
 
@@ -173,7 +173,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     protected void writeObject(Object value) throws IOException
     {
-        checkClosed();
+        ensureNotClosed();
         if (value instanceof String || value instanceof Number || value instanceof Boolean || value == null)
         {
             jg.writeObject(value);
@@ -313,15 +313,10 @@ public class ApiJsonWriter extends ApiResponseWriter
      * Since the response will be in an unspecified state, the caller should use writeExceptionPropertiesToRootAndEndObject() after calling this method.
 
      */
-     @Override
+    @Override
     protected void resetOutput() throws IOException
     {
         var context = jg.getOutputContext();
-
-        // If context.inRoot() is true, then either we haven't started writing and object, or we've finished writing the top-level object.
-        // So either there's nothing to do, or nothing we can do.
-        if (context.inRoot())
-            return;
 
         // If the entire response so far is buffered in memory, we get a do over.
         if (!getResponse().isCommitted())
@@ -332,6 +327,13 @@ public class ApiJsonWriter extends ApiResponseWriter
             if (state == WriterState.Started)
                 jg.writeStartObject();
             return;
+        }
+        else
+        {
+            // If context.inRoot() is true, then either we haven't started writing the response object, or we've finished writing it.
+            // So either there's nothing to do, or nothing we can do.
+            if (context.inRoot())
+                return;
         }
 
         // Because of our fastidious use of try-with-resource and try-finally we expect to be in the root object,
