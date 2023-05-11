@@ -4486,7 +4486,7 @@ public class QueryController extends SpringActionController
             {
                 if (isSuccessOnValidationError())
                 {
-                    response.put("errors", createResponseWriter().getJSON(e));
+                    response.put("errors", createResponseWriter().toJSON(e));
                 }
                 else
                 {

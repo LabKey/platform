@@ -321,9 +321,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         Materialized m = getMaterialized(txCacheKey);
         if (null == m)
             return;
-        String sql = sqlf.getSQL().replace("${NAME}", m._tableName);
-        List<Object> params = sqlf.getParams();
-        new SqlExecutor(_scope).execute(new SQLFragment(sql,params));
+        SQLFragment copy = new SQLFragment(sqlf);
+        copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
+        new SqlExecutor(_scope).execute(copy);
     }
 
 

@@ -430,19 +430,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (useOutputIntoTableVar || proposedVariable != null)
         {
-            sql.insert(0, "DECLARE @TableVar TABLE(" + columnName + " INTEGER);\n");
+            SQLFragment declareTableVar = new SQLFragment("DECLARE @TableVar TABLE(").appendIdentifier(columnName).append(" INTEGER)").appendEOS().append("\n");
+            sql.prepend(declareTableVar);
 
             if (null != proposedVariable)
             {
                 ret = "@" + proposedVariable;
 
                 // Note: Assume one row and one column for now
-                sql.append(";\nSELECT TOP 1 ").append(ret).append(" = ").append(columnName).append(" FROM @TableVar;");
+                sql.appendEOS().append("\nSELECT TOP 1 ").append(ret).append(" = ").append(columnName).append(" FROM @TableVar").appendEOS();
             }
             else
             {
                 // Note: Assume one row and one column for now
-                sql.append(";\nSELECT TOP 1 ").append(columnName).append(" FROM @TableVar;");
+                sql.appendEOS().append("\nSELECT TOP 1 ").append(columnName).append(" FROM @TableVar").appendEOS();
             }
         }
 
@@ -915,7 +916,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
-        return "UPDATE STATISTICS " + tableName + ";";
+        return "UPDATE STATISTICS " + tableName;
     }
 
     @Override
@@ -1799,7 +1800,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // RDS doesn't allow executing sp_updatestats, so just skip it for now, part of #35805.
         // In the future, we may want to integrate with something like SQL Maintenance Solution tool,
         // https://ola.hallengren.com/sql-server-index-and-statistics-maintenance.html
-        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats;";
+        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats";
     }
 
 
