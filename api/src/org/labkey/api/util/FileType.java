@@ -511,6 +511,8 @@ public class FileType implements Serializable
      */
     public boolean isType(@Nullable String filePath, @Nullable String contentType, @Nullable byte[] header)
     {
+        String providedContentType = contentType; // Save it for later
+
         // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml"
         if (isAntiFileType(filePath, header))
         {
@@ -553,8 +555,8 @@ public class FileType implements Serializable
             }
         }
 
-        // Attempt to match using just the header, but only if we don't have a content type, Issue 47814
-        return null == contentType && header != null && isHeaderMatch(header);
+        // Attempt to match using just the header, but only if the original content type was null, Issue 47814
+        return null == providedContentType && header != null && isHeaderMatch(header);
     }
 
     protected static String detectContentType(String fileName, byte[] header)
