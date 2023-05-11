@@ -8411,6 +8411,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
 
+                // LKB registry data class objects can have related junction list rows that need to be updated as well.
+                // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> extraContext = Map.of(
+                        "eventType", "move", "targetContainer", targetContainer,
+                        "classObjects", classObjects, "dataIds", dataIds
+                );
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.UPDATE, false, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
+
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
                 updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
