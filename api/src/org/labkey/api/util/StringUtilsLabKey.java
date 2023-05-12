@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.exp.Identifiable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -54,6 +55,23 @@ public class StringUtilsLabKey
 
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
+
+    public static void append(StringBuilder sb, @Nullable Identifiable identifiable)
+    {
+        if (null != identifiable)
+            append(sb, identifiable.getName());
+    }
+
+    public static void append(StringBuilder sb, @Nullable String value)
+    {
+        if (null != value)
+        {
+            if (sb.length() > 0)
+                sb.append(" ");
+
+            sb.append(value);
+        }
+    }
 
     // Finds the longest common prefix present in all elements of the passed in string collection. In other words,
     // the longest string (prefix) such that, for all s in strings, s.startsWith(prefix). An empty collection returns

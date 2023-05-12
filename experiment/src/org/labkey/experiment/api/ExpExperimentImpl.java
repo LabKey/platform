@@ -22,6 +22,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -168,7 +169,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void addRuns(User user, ExpRun... newRuns)
     {
-        try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentServiceImpl.get().ensureTransaction())
         {
             List<ExpRunImpl> existingRuns = getRuns();
             Set<Integer> existingRunIds = new HashSet<>();
@@ -225,7 +226,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void save(User user)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
+        try (DbScope.Transaction tx = ExperimentServiceImpl.get().ensureTransaction())
+        {
+            save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
+
+            tx.addCommitTask(() -> ExperimentServiceImpl.get().onAfterExperimentSaved(this, getContainer(), user), DbScope.CommitTaskOption.POSTCOMMIT);
+
+            tx.commit();
+        }
     }
 
     @Override

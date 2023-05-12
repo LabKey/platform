@@ -67,6 +67,13 @@ public interface AssayService
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
+    SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batch") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
+    };
     SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Run") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
@@ -153,10 +160,8 @@ public interface AssayService
 
     void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol);
     void indexAssays(SearchService.IndexTask task, Container c);
-    void indexAssayRun(SearchService.IndexTask task, int expRunRowId);
-    void indexAssayRuns(SearchService.IndexTask task, Container c);
 
-    void unindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
+    void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
 
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.

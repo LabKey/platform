@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.search.SearchService;
@@ -24,18 +24,18 @@ import java.util.Set;
 
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
-public class AssayRunDocumentProvider implements SearchService.DocumentProvider
+public class AssayBatchDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> AssayManager.get().indexAssayRuns(task, c, modifiedSince);
+        Runnable runEnumerate = () -> AssayManager.get().indexAssayBatches(task, c, modifiedSince);
         task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
     }
 
     private static SearchService.SearchCategory getSearchCategory()
     {
-        return AssayService.ASSAY_RUN_CATEGORY;
+        return AssayService.ASSAY_BATCH_CATEGORY;
     }
 
     private static String getDocumentIdPrefix()
@@ -43,38 +43,38 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
         return getSearchCategory().getName() + ":";
     }
 
-    public static String getDocumentId(@NotNull ExpRun expRun)
+    public static String getDocumentId(@NotNull ExpExperiment batch)
     {
-        return getDocumentIdPrefix() + expRun.getRowId();
+        return getDocumentIdPrefix() + batch.getRowId();
     }
 
-    public static WebdavResource createDocument(@NotNull ExpRun expRun)
+    public static WebdavResource createDocument(@NotNull ExpExperiment batch)
     {
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
         Set<String> identifiersMed = new HashSet<>();
-        final String documentId = getDocumentId(expRun);
+        final String documentId = getDocumentId(batch);
 
-        identifiersHi.add(expRun.getName());
-        identifiersMed.add(expRun.getLSID());
+        identifiersHi.add(batch.getName());
+        identifiersMed.add(batch.getLSID());
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
         props.put(SearchService.PROPERTY.categories.toString(), getSearchCategory().getName());
-        props.put(SearchService.PROPERTY.title.toString(), "Assay Run - " + expRun.getName());
+        props.put(SearchService.PROPERTY.title.toString(), "Assay Batch - " + batch.getName());
 
         StringBuilder body = new StringBuilder();
-        append(body, expRun.getComments());
-        append(body, expRun.getProtocol());
+        append(body, batch.getComments());
+        append(body, batch.getBatchProtocol());
 
-        ActionURL url = expRun.detailsURL();
+        ActionURL url = batch.detailsURL();
         if (url != null)
-            url.setExtraPath(expRun.getContainer().getId());
+            url.setExtraPath(batch.getContainer().getId());
 
         return new SimpleDocumentResource(
             new Path(documentId),
             documentId,
-            expRun.getContainer().getId(),
+            batch.getContainer().getId(),
             "text/plain",
             body.toString(),
             url,
@@ -93,75 +93,75 @@ public class AssayRunDocumentProvider implements SearchService.DocumentProvider
                 if (resourceIdentifier.startsWith(prefix))
                     resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-                int expRunId;
+                int batchId;
                 try
                 {
-                    expRunId = Integer.parseInt(resourceIdentifier);
+                    batchId = Integer.parseInt(resourceIdentifier);
                 }
                 catch (NumberFormatException e)
                 {
                     return null;
                 }
 
-                return expRunId;
+                return batchId;
             }
 
-            private @Nullable ExpRun getExpRun(@NotNull String resourceIdentifier)
+            private @Nullable ExpExperiment getBatch(@NotNull String resourceIdentifier)
             {
-                Integer expRunRowId = fromDocumentId(resourceIdentifier);
-                if (expRunRowId == null)
+                Integer batchRowId = fromDocumentId(resourceIdentifier);
+                if (batchRowId == null)
                     return null;
 
-                return ExperimentService.get().getExpRun(expRunRowId);
+                return ExperimentService.get().getExpExperiment(batchRowId);
             }
 
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
             {
-                ExpRun expRun = getExpRun(resourceIdentifier);
-                if (expRun == null)
+                ExpExperiment batch = getBatch(resourceIdentifier);
+                if (batch == null)
                     return null;
 
-                return createDocument(expRun);
+                return createDocument(batch);
             }
 
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
-                ExpRun expRun = getExpRun(resourceIdentifier);
-                if (expRun == null)
+                ExpExperiment batch = getBatch(resourceIdentifier);
+                if (batch == null)
                     return null;
 
-                return serialize(expRun, user);
+                return serialize(batch, user);
             }
 
             @Override
             public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
             {
-                Set<Integer> expRunRowIds = new HashSet<>();
+                Set<Integer> batchRowIds = new HashSet<>();
                 Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    Integer expRunRowId = fromDocumentId(resourceIdentifier);
-                    if (expRunRowId != null)
+                    Integer batchRowId = fromDocumentId(resourceIdentifier);
+                    if (batchRowId != null)
                     {
-                        expRunRowIds.add(expRunRowId);
-                        rowIdIdentifierMap.put(expRunRowId, resourceIdentifier);
+                        batchRowIds.add(batchRowId);
+                        rowIdIdentifierMap.put(batchRowId, resourceIdentifier);
                     }
                 }
 
                 Map<String, Map<String, Object>> results = new HashMap<>();
-                for (ExpRun expRun : ExperimentService.get().getExpRuns(expRunRowIds))
+                for (ExpExperiment batch : ExperimentService.get().getExpExperiments(batchRowIds))
                 {
-                    results.put(rowIdIdentifierMap.get(expRun.getRowId()), serialize(expRun, user));
+                    results.put(rowIdIdentifierMap.get(batch.getRowId()), serialize(batch, user));
                 }
 
                 return results;
             }
 
-            private Map<String, Object> serialize(@NotNull ExpRun expRun, User user)
+            private Map<String, Object> serialize(@NotNull ExpExperiment batch, User user)
             {
-                return ExperimentJSONConverter.serialize(expRun, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                return ExperimentJSONConverter.serialize(batch, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
             }
         };
     }

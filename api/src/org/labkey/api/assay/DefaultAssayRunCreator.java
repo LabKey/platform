@@ -402,7 +402,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
             int runRowId = run.getRowId();
-            transaction.addCommitTask(() -> indexAssayRun(runRowId), DbScope.CommitTaskOption.POSTCOMMIT);
 
             transaction.commit();
 
@@ -444,15 +443,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             throw new ExperimentException(e);
         }
-    }
-
-    private void indexAssayRun(int expRunRowId)
-    {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
-        AssayService.get().indexAssayRun(ss.defaultTask(), expRunRowId);
     }
 
     private void resolveParticipantVisits(
