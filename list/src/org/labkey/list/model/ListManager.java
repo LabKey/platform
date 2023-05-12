@@ -429,7 +429,8 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
                     ListDefinition list = ListService.get().getList(c, def.getListId());
-                    indexList(task, list, designChange, false);
+                    if (null != list) // Could have just been deleted
+                        indexList(task, list, designChange, false);
                 }
             };
 
