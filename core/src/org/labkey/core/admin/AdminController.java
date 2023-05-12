@@ -917,7 +917,10 @@ public class AdminController extends SpringActionController
             {
                 if (!checkResult.isHealthy())
                 {
-                    createResponseWriter().writeAndCloseError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    try (var writer= createResponseWriter())
+                    {
+                        writer.writeResponse(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    }
                     return null;
                 }
 

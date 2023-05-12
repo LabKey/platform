@@ -1854,13 +1854,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
             try
             {
                 Map<String, Object> map = new HashMap<>();
+                map.put("ClassName", module.getClass().getName());
                 map.put("AutoUninstall", module.isAutoUninstall());
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
                 Table.update(null, getTableInfoModules(), map, module.getName());
             }
             catch (RuntimeSQLException e)
             {
-                // This should be fixed now (see #24473), but leave detailed logging in place just in case
+                // This should be fixed now (see Issue 24473), but leave detailed logging in place just in case
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }

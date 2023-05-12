@@ -173,12 +173,9 @@ public class ModuleContext implements Cloneable
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setAutoUninstall(Boolean autoUninstall)
+    public void setAutoUninstall(boolean autoUninstall)
     {
-        if (autoUninstall != null)
-        {
-            _autoUninstall = autoUninstall;
-        }
+        _autoUninstall = autoUninstall;
     }
 
     public @Nullable String getSchemas()

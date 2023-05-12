@@ -100,9 +100,8 @@ public class ExprColumn extends BaseColumnInfo
     {
         if (tableAlias.equals(STR_TABLE_ALIAS))
             return _sql;
-        String sql = StringUtils.replace(_sql.getSQL(), STR_TABLE_ALIAS, tableAlias);
-        SQLFragment ret = new SQLFragment(sql);
-        ret.addAll(_sql.getParams());
+        SQLFragment ret = new SQLFragment(_sql);
+        ret.setSqlUnsafe(StringUtils.replace(_sql.getSQL(), STR_TABLE_ALIAS, tableAlias));
         return ret;
     }
 

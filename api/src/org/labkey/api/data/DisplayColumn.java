@@ -519,7 +519,7 @@ public abstract class DisplayColumn extends RenderColumn
             }
             catch (IllegalArgumentException e)
             {
-                LOG.warn("Unable to apply format, likely a SQL type mismatch between XML metadata and actual ResultSet");
+                LOG.warn("Unable to apply format to " + value.getClass().getName() + " value, likely a SQL type mismatch between XML metadata and actual ResultSet");
                 return ConvertUtils.convert(value);
             }
         }
