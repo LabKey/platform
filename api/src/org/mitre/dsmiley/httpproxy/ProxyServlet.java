@@ -187,7 +187,7 @@ public class ProxyServlet extends HttpServlet
     protected static final String ATTR_TARGET_HOST =
             ProxyServlet.class.getSimpleName() + ".targetHost";
 
-    protected static final String DEBUG_MODE = "rstudioDebugOption";
+    protected static final String FLEX_REDIRECT_PROTOCOL = "flexRedirectProtocol";
 
     /* MISC */
 
@@ -218,14 +218,14 @@ public class ProxyServlet extends HttpServlet
 
     private CloseableHttpClient proxyClient;
 
-    private String rstudioDebugMode;
+    private boolean flexRedirectProtocol;
 
-    private void appendPath(StringBuilder sb, CharSequence path) // LKS
+    private void appendPath(StringBuilder sb, CharSequence path) // LKS override
     {
         appendPath(sb, path, false);
     }
 
-    private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash) // LKS
+    private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash) // LKS override
     {
         if (sb.length() < 1 || '/' != sb.charAt(sb.length()-1))
             sb.append('/');
@@ -361,13 +361,17 @@ public class ProxyServlet extends HttpServlet
 
         sourcePath = getConfigParam(P_SOURCE_PATH);
 
-        rstudioDebugMode = getConfigParam(DEBUG_MODE);
+        String flexRedirectProtocolString = getConfigParam(FLEX_REDIRECT_PROTOCOL);
+        if (flexRedirectProtocolString != null)
+        {
+            this.flexRedirectProtocol = Boolean.parseBoolean(flexRedirectProtocolString);
+        }
     }
 
 
     protected String getPathInfo(HttpServletRequest request)
     {
-        if (null != sourcePath && !rstudioDebugMode.contains("skipSourcePath")) // XY: can remove?
+        if (null != sourcePath) // LKS override
         {
             String requestURI = request.getRequestURI();
             if (requestURI.startsWith(sourcePath))
@@ -488,15 +492,15 @@ public class ProxyServlet extends HttpServlet
             {
                 log("proxy " + method + " uri: " + servletRequest.getRequestURI() + " -- " + proxyRequest.getUri());
             }
-            proxyResponse = proxyClient.execute(getTargetHost(servletRequest), proxyRequest); // LKS
+            proxyResponse = proxyClient.execute(getTargetHost(servletRequest), proxyRequest); // LKS override
 
             // Process the response:
 
             // Pass the response code. This method with the "reason phrase" is deprecated but it's the
             //   only way to pass the reason along too.
-            int statusCode = proxyResponse.getCode(); // LKS
+            int statusCode = proxyResponse.getCode(); // LKS override
             //noinspection deprecation
-            servletResponse.setStatus(statusCode, proxyResponse.getReasonPhrase());// LKS
+            servletResponse.setStatus(statusCode, proxyResponse.getReasonPhrase()); // LKS override
 
             // Copying response headers to make sure SESSIONID or other Cookie which comes from the remote
             // server will be saved in client when the proxied url was redirected to another one.
@@ -564,7 +568,7 @@ public class ProxyServlet extends HttpServlet
         // Add the input entity (streamed)
         //  note: we don't bother ensuring we close the servletInputStream since the container handles it
         eProxyRequest.setEntity(
-                new InputStreamEntity(servletRequest.getInputStream(), servletRequest.getContentLength(), null)); // LKS
+                new InputStreamEntity(servletRequest.getInputStream(), servletRequest.getContentLength(), null)); // LKS override
         return eProxyRequest;
     }
 
@@ -650,7 +654,7 @@ public class ProxyServlet extends HttpServlet
             // In case the proxy host is running multiple virtual servers,
             // rewrite the Host header to ensure that we get content from
             // the correct virtual server
-            if (!doPreserveHost && (headerName.equals(HttpHeaders.HOST) || headerName.equals("Origin"))) // Overriden by LK
+            if (!doPreserveHost && (headerName.equals(HttpHeaders.HOST) || headerName.equals("Origin"))) // LKS override
             {
                 HttpHost host = getTargetHost(servletRequest);
                 headerValue = host.getHostName();
@@ -679,12 +683,10 @@ public class ProxyServlet extends HttpServlet
             }
             proxyRequest.setHeader(forHeaderName, forHeader);
 
-            if (rstudioDebugMode.contains("forwardproto"))
-            {
-                String protoHeaderName = "X-Forwarded-Proto";
-                String protoHeader = servletRequest.getScheme();
-                proxyRequest.setHeader(protoHeaderName, protoHeader);
-            }
+            // LKS override to skip X-Forwarded-Proto
+//            String protoHeaderName = "X-Forwarded-Proto";
+//            String protoHeader = servletRequest.getScheme();
+//            proxyRequest.setHeader(protoHeaderName, protoHeader);
 
         }
     }
@@ -752,31 +754,13 @@ public class ProxyServlet extends HttpServlet
         servletCookie.setComment(cookie.getComment());
         servletCookie.setMaxAge((int) cookie.getMaxAge());
 
-        if (rstudioDebugMode.contains("proxyCookie"))
-        {
-            // original
-            LOG.error("createProxyCookie coookie.getPath: " + cookie.getPath());
-            LOG.error("createProxyCookie buildProxyCookiePath(servletRequest): " + buildProxyCookiePath(servletRequest));
-            String path = this.doPreserveCookiePath ?
-                    cookie.getPath() : // preserve original cookie path
-                    buildProxyCookiePath(servletRequest);//set to the path of the proxy servlet
-            LOG.error("createProxyCookie path: " + path);
-
-            servletCookie.setPath(path);
-
-        }
+        // LKS override
+        String path = getSourcePath(servletRequest);
+        String proxyCookiePath = replace(trimToEmpty(cookie.getPath()),"//","/");
+        if (StringUtils.startsWith(proxyCookiePath, path))
+            servletCookie.setPath( appendPath(new StringBuilder(proxyCookiePath),"",true).toString() );
         else
-        {
-            // lks override
-            String path = getSourcePath(servletRequest);
-            LOG.error("createProxyCookie getSourcePath(servletRequest): " + path);
-            String proxyCookiePath = replace(trimToEmpty(cookie.getPath()),"//","/");
-            LOG.error("createProxyCookie proxyCookiePath: " + proxyCookiePath);
-            if (StringUtils.startsWith(proxyCookiePath, path))
-                servletCookie.setPath( appendPath(new StringBuilder(proxyCookiePath),"",true).toString() );
-            else
-                servletCookie.setPath( appendPath(new StringBuilder(path),proxyCookiePath,true).toString() );
-        }
+            servletCookie.setPath( appendPath(new StringBuilder(path),proxyCookiePath,true).toString() );
 
         // don't set cookie domain
         servletCookie.setSecure(servletRequest.isSecure() && cookie.getSecure());
@@ -954,13 +938,15 @@ public class ProxyServlet extends HttpServlet
         //TODO document example paths
         String targetUri = getTargetUri(servletRequest);
 
-        LOG.error("theUrl: " + theUrl);
-        LOG.error("getTargetUri: " + getTargetUri(servletRequest));
-        LOG.error("getTargetHost: " + getTargetHost(servletRequest));
-        LOG.error("servletRequest.getRequestURL(): " + servletRequest.getRequestURL());
+        LOG.info("theUrl: " + theUrl);
+        LOG.info("getTargetUri(servletRequest): " + getTargetUri(servletRequest));
+        LOG.info("getTargetHost(servletRequest): " + getTargetHost(servletRequest));
+        LOG.info("servletRequest.getRequestURL(): " + servletRequest.getRequestURL());
 
-        if (theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
+        if (flexRedirectProtocol && theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
         {
+            // Issue 47596: Make Dockerized version of rstudio server work in LabKey's AWS environment
+            // For unknown reason, with AWS ALB, docker instance uses inconsistent http vs https protocol
             theUrl = theUrl.replace("https://localhost:", "http://localhost:");
         }
 
@@ -989,46 +975,19 @@ public class ProxyServlet extends HttpServlet
                 }
             }
 
-            LOG.error("curUrl: " + servletRequest.getRequestURL());
+            //Issue 42677: 404 Error when initiating a Jupyter Notebook session from RStudio Pro when integrated with LabKey
+            // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
+            String sourcePath = getSourcePath(servletRequest);
+            LOG.info("getSourcePath(servletRequest): " + getSourcePath(servletRequest));
+            if (!theUrl.startsWith(sourcePath))
+                curUrl.append(sourcePath);
 
-            if (rstudioDebugMode.contains("jupyterRaw"))
-            {
-                LOG.error("servletRequest.getContextPath(): " + servletRequest.getContextPath());
-                // Context path starts with a / if it is not blank
-                curUrl.append(servletRequest.getContextPath());
-                // Servlet path starts with a / if it is not blank
-
-                LOG.error("servletRequest.getServletPath(): " + servletRequest.getServletPath());
-                curUrl.append(servletRequest.getServletPath());
-
-                 curUrl.append(theUrl, targetUri.length(), theUrl.length());
-                return curUrl.toString();
-            }
-            else if (rstudioDebugMode.contains("jupyterNoFix"))
-            {
-                LOG.error("getSourcePath(servletRequest): " + getSourcePath(servletRequest));
-                curUrl.append(getSourcePath(servletRequest));
-                if (theUrl.startsWith("/"))
-                    appendPath(curUrl, theUrl);
-                else
-                    appendPath(curUrl, theUrl.substring(targetUri.length()));
-                theUrl = curUrl.toString();
-            }
+            if (theUrl.startsWith("/")) // LKS override
+                appendPath(curUrl, theUrl);
             else
-            {
-                //Issue 42677: 404 Error when initiating a Jupyter Notebook session from RStudio Pro when integrated with LabKey
-                // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
-                String sourcePath = getSourcePath(servletRequest);
-                LOG.error("getSourcePath(servletRequest): " + getSourcePath(servletRequest));
-                if (!theUrl.startsWith(sourcePath))
-                    curUrl.append(sourcePath);
+                appendPath(curUrl, theUrl.substring(targetUri.length()));
+            theUrl = curUrl.toString();
 
-                if (theUrl.startsWith("/")) // Overriden by LK
-                    appendPath(curUrl, theUrl);
-                else
-                    appendPath(curUrl, theUrl.substring(targetUri.length()));
-                theUrl = curUrl.toString();
-            }
         }
         return theUrl;
     }
