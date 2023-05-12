@@ -92,20 +92,6 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             response.setContentType(contentTypeOverride);
     }
 
-
-    @Override
-    public void write(ValidationException e) throws IOException
-    {
-        try
-        {
-            writeObject(toJSON(e));
-        }
-        finally
-        {
-            close();
-        }
-    }
-
     @Override
     public JSONObject toJSON(ValidationException e)
     {
@@ -143,7 +129,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     }
 
     @Override
-    public void writeAndClose(Errors errors) throws IOException
+    public void writeResponse(Errors errors) throws IOException
     {
         String message = null;
         JSONObject jsonErrors = new JSONObject();

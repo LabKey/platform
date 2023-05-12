@@ -103,7 +103,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public enum DataOperations {
         EditLineage("editing lineage"),
-        Delete("deleting");
+        Delete("deleting"),
+        Move("moving");
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
 
