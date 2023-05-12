@@ -419,22 +419,10 @@ public class ProxyServlet extends HttpServlet
         return val_str == null ? defaultValue : Boolean.valueOf(val_str);
     }
 
-//
-//    /**
-//     * Creates a {@code HttpClientBuilder}. Meant as preprocessor to possibly
-//     * adapt the client builder prior to any configuration got applied.
-//     *
-//     * @return HttpClient builder
-//     */
-//    protected HttpClientBuilder getHttpClientBuilder()
-//    {
-//        return HttpClientBuilder.create();
-//    }
-//
-
     @Override
     public void destroy()
     {
+        //TODO AutoCloseable?
         //Usually, clients implement Closeable:
         if (proxyClient instanceof Closeable)
         {
@@ -536,12 +524,10 @@ public class ProxyServlet extends HttpServlet
 
     protected void handleRequestException(HttpRequest proxyRequest, HttpResponse proxyResonse, Exception e) throws ServletException, IOException
     {
-        //abort request, according to best practice with HttpClient
-        if (proxyRequest instanceof AbortableHttpRequest)
-        {
-            AbortableHttpRequest abortableHttpRequest = (AbortableHttpRequest) proxyRequest;
-            abortableHttpRequest.abort();
-        }
+        // LKS override
+
+        // Note: We used to "abort" the request, but that doesn't seem possible anymore
+
         // If the response is a chunked response, it is read to completion when
         // #close is called. If the sending site does not timeout or keeps sending,
         // the connection will be kept open indefinitely. Closing the respone
@@ -552,8 +538,6 @@ public class ProxyServlet extends HttpServlet
         }
         if (e instanceof RuntimeException)
             throw (RuntimeException) e;
-        if (e instanceof ServletException)
-            throw (ServletException) e;
         //noinspection ConstantConditions
         if (e instanceof IOException)
             throw (IOException) e;
@@ -570,17 +554,6 @@ public class ProxyServlet extends HttpServlet
         eProxyRequest.setEntity(
                 new InputStreamEntity(servletRequest.getInputStream(), servletRequest.getContentLength(), null)); // LKS override
         return eProxyRequest;
-    }
-
-    // Get the header value as a long in order to more correctly proxy very large requests
-    private long getContentLength(HttpServletRequest request)
-    {
-        String contentLengthHeader = request.getHeader("Content-Length");
-        if (contentLengthHeader != null)
-        {
-            return Long.parseLong(contentLengthHeader);
-        }
-        return -1L;
     }
 
     protected void closeQuietly(Closeable closeable)
@@ -777,12 +750,12 @@ public class ProxyServlet extends HttpServlet
      */
     protected String getProxyCookieName(HttpCookie cookie)
     {
-        //
         return doPreserveCookies ? cookie.getName() : getCookieNamePrefix(cookie.getName()) + cookie.getName();
     }
 
     /**
      * Create path for proxy cookie.
+     * LKS override: not used due to createProxyCookie override
      *
      * @param servletRequest original request
      * @return proxy cookie path
@@ -889,12 +862,8 @@ public class ProxyServlet extends HttpServlet
         StringBuilder uri = new StringBuilder(500);
         uri.append(getTargetUri(servletRequest));
         // Handle the path given to the servlet
-        String pathInfo = getPathInfo(servletRequest);//XYTODO
-        if (pathInfo != null)
-        {//ex: /my/path.html
-            // getPathInfo() returns decoded string, so we need encodeUriQuery to encode "%" characters
-            uri.append(encodeUriQuery(pathInfo, true));
-        }
+        String pathInfo = getPathInfo(servletRequest); // LKS override
+        appendPath(uri, encodeUriQuery(trimToEmpty(pathInfo), true));
         // Handle the query string & fragment
         String queryString = servletRequest.getQueryString();//ex:(following '?'): name=value&foo=bar#fragment
         String fragment = null;
