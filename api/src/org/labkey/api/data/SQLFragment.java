@@ -109,7 +109,7 @@ public class SQLFragment implements Appendable, CharSequence
     {
         assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
         assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        // assert !StringUtils.contains(charseq, ';');
+        assert !StringUtils.contains(charseq, ';');
 
         // allow statement separators
         this.sql = charseq.toString();
@@ -692,6 +692,10 @@ public class SQLFragment implements Appendable, CharSequence
     /** Insert into the SQL */
     public void insert(int index, String str)
     {
+        assert (StringUtils.countMatches(str, '\'') % 2) == 0;
+        assert (StringUtils.countMatches(str, '\"') % 2) == 0;
+        assert !StringUtils.contains(str, ';');
+
         getStringBuilder().insert(index, str);
     }
 

@@ -39,7 +39,10 @@ public abstract class MutatingApiAction<FORM> extends BaseApiAction<FORM>
         assert false : "Should not get here";
         int status = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         String message = "You must use the POST method when calling this action.";
-        createResponseWriter().writeAndCloseError(status, message);
+        try (var writer = createResponseWriter())
+        {
+            writer.writeResponse(status, message);
+        }
         return null;
     }
 }
