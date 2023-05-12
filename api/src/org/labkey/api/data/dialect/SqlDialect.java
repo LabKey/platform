@@ -251,6 +251,10 @@ public abstract class SqlDialect
         addSqlTypeNames(_sqlTypeNameMap);
     }
 
+    protected Map<String, Integer> getSqlTypeNameMap()
+    {
+        return _sqlTypeNameMap;
+    }
 
     private void initializeSqlTypeIntMap()
     {
@@ -770,6 +774,18 @@ public abstract class SqlDialect
     public boolean isSystemTable(String tableName)
     {
         return systemTableSet.contains(tableName);
+    }
+
+    // Default value for the "Schemas to Exclude" box on the test data source page
+    public @NotNull String getDefaultSchemasToExcludeFromTesting()
+    {
+        return "";
+    }
+
+    // Default value for the "Tables to Exclude" box on the test data source page
+    public @NotNull String getDefaultTablesToExcludeFromTesting()
+    {
+        return "";
     }
 
     public abstract boolean isSystemSchema(String schemaName);
