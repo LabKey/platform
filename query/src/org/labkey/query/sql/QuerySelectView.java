@@ -494,17 +494,18 @@ public class QuerySelectView extends AbstractQueryRelation
         return Collections.singletonList(col);
     }
 
+    private static final int DEFAULT_SORT_MAX_COLUMNS = 5; // Limit default ORDER BY in no PK case to five columns
 
     private static boolean addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
 	    /* There is a bit of a chicken-and-egg problem here
-	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
+	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
         Map<FieldKey, ColumnInfo> available = new HashMap<>();
         columns.forEach(c -> available.putIfAbsent(c.getFieldKey(), c));
 
-        Set<FieldKey> presentInSort = sort.getSortList().stream().map(sf -> sf.getFieldKey()).collect(Collectors.toSet());
+        Set<FieldKey> presentInSort = sort.getSortList().stream().map(Sort.SortField::getFieldKey).collect(Collectors.toSet());
 
         boolean addedSortKeys = false;
 
@@ -516,9 +517,13 @@ public class QuerySelectView extends AbstractQueryRelation
             if (sortFields != null && !sortFields.isEmpty())
             {
                 if (presentInSort.add(column.getFieldKey()))
+                {
                     // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
                     sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
-                addedSortKeys = true;
+                    addedSortKeys = true;
+                    if (sort.getSortList().size() >= DEFAULT_SORT_MAX_COLUMNS)
+                        break;
+                }
             }
         }
         return addedSortKeys;
