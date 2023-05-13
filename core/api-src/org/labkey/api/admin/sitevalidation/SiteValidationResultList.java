@@ -43,11 +43,6 @@ public class SiteValidationResultList
         return result;
     }
 
-    public SiteValidationResult addBlank()
-    {
-        return addInfo("");
-    }
-
     public SiteValidationResult addInfo(String message)
     {
         return addInfo(message, null);
