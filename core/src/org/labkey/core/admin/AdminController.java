@@ -7830,8 +7830,6 @@ public class AdminController extends SpringActionController
         public boolean handlePost(Object o, BindException errors)
         {
             ModuleLoader.getInstance().recreateViews();
-            // Hopefully we've cleared whatever schema mismatch errors were showing related to DB views
-            ModuleLoader.getInstance().getModule(CoreModule.class).rerunSchemaCheck();
             return true;
         }
 
