@@ -1253,6 +1253,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
                 else if (st.prop != null)
                 {
+                    if (st.prop.getPropertyDescriptor().getStorageColumnName() == null)
+                    {
+                        PropertyDescriptor pd = st.prop.getPropertyDescriptor();
+                        pd.setStorageColumnName(pd.getName());
+                        OntologyManager.updatePropertyDescriptor(pd);
+                        continue;
+                    }
+
                     if (st.colName == null)
                     {
                         adds.addColumn(st.prop.getPropertyDescriptor());
@@ -1420,7 +1428,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 domainReport.getColumns().add(status);
                 status.prop = domainProp;
                 PropertyDescriptor propDescriptor = domainProp.getPropertyDescriptor();
-                if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
+
+                if (null == propDescriptor.getStorageColumnName())
+                {
+                    domainReport.addError(String.format("database table %s.%s column '%s' is missing the storage column name.", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
+                    status.fix = "Add storage column name '" + domainProp.getName() + "' to property descriptor";
+                    status.hasProblem = true;
+                    hardColumnNames.remove(propDescriptor.getName());
+                }
+                else if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
                 {
                     status.colName = domainProp.getName();
                 }
