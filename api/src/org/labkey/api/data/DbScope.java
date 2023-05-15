@@ -1549,7 +1549,7 @@ public class DbScope
         {
             if (i > 0)
             {
-                LOG.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
+                LOG.warn("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
 
                 try
                 {
@@ -1557,7 +1557,7 @@ public class DbScope
                 }
                 catch (InterruptedException e)
                 {
-                    LOG.error("ensureDataBase", e);
+                    LOG.warn("ensureDataBase", e);
                 }
             }
 
@@ -1582,8 +1582,8 @@ public class DbScope
                 }
                 else
                 {
-                    LOG.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
-                    LOG.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
+                    LOG.warn("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
+                    LOG.warn("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
                     lastException = e;
                 }
             }
