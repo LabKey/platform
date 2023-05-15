@@ -8414,11 +8414,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // LKB registry data class objects can have related junction list rows that need to be updated as well.
                 // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
                 BatchValidationException errors = new BatchValidationException();
-                Map<String, Object> extraContext = Map.of(
-                        "eventType", "move", "targetContainer", targetContainer,
-                        "classObjects", classObjects, "dataIds", dataIds
-                );
-                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.UPDATE, false, errors, extraContext);
+                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
                 if (errors.hasErrors())
                     throw errors;
 
