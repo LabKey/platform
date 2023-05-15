@@ -8399,7 +8399,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8468,13 +8468,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE ").append(idField);
+            .append(" SET container = ").appendValue(targetContainer.getEntityId());
+        if (withModified)
+        {
+            dataUpdate.append(", modified = ").appendValue(new Date());
+            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+        }
+        dataUpdate.append(" WHERE ").append(idField);
         dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
         return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
