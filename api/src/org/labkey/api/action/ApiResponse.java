@@ -29,6 +29,7 @@ public interface ApiResponse
      * try
      * {
      *    ... write response ...
+     *     write.endResponse();
      * }
      * catch (Exception x)
      * {
@@ -36,7 +37,7 @@ public interface ApiResponse
      * }
      * finally
      * {
-     *     write.endResponse();
+     *     writer.close();
      * }
      * </pre>
      *
