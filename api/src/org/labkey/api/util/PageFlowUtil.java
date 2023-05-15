@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.Assert;
@@ -152,7 +153,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
@@ -835,7 +835,7 @@ public class PageFlowUtil
         {
             throw new IOException(x);
         }
-        catch (ZipException x)
+        catch (JSONException x)
         {
             throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
         }
