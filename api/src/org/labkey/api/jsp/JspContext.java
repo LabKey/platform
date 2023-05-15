@@ -16,7 +16,6 @@
 package org.labkey.api.jsp;
 
 import org.apache.jasper.runtime.HttpJspBase;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
 
@@ -52,12 +51,11 @@ public abstract class JspContext extends HttpJspBase
     }
 
     /**
-     * This is called by every JSP to get our standard JspWriter. In production mode, this is a pass-through; in dev mode,
-     * it wraps the standard JspWriter with LabKeyJspWriter, an implementation that protects against unsafe output.
+     * This is called by every JSP to get our standard JspWriter, an implementation that protects against unsafe output.
      */
     protected JspWriter getLabKeyJspWriter(JspWriter out)
     {
-        return AppProps.getInstance().isDevMode() ? new LabKeyJspWriter(out) : out;
+        return new LabKeyJspWriter(out);
     }
 
     /**
