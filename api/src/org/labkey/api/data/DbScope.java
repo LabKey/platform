@@ -2184,6 +2184,7 @@ public class DbScope
             _conn = conn;
             _transactionKind = transactionKind;
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
+            MemTracker.get().put(this);
         }
 
         @Override @Nullable

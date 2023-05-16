@@ -121,16 +121,11 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             }
             TempTableInfo cacheEntry = tempTableInfo;
 
-            if (DbSchema.getTemp().getScope().isTransactionActive())
-            {
-                // Only put the entry in the cache after it's committed, since nobody else will be able to see
-                // it until then. See issue 38605
-                DbSchema.getTemp().getScope().getCurrentTransaction().addCommitTask(() -> _tempTableCache.put(cacheKey, cacheEntry), DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-            else
-            {
+            // Don't bother caching if we're in a transaction
+            // a) The table won't be visible to other connections until we commit
+            // b) It is more likely that this temptable is only used once anyway (e.g. used by a data iterator)
+            if (!DbSchema.getTemp().getScope().isTransactionActive())
                 _tempTableCache.put(cacheKey, cacheEntry);
-            }
         }
 
         sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
