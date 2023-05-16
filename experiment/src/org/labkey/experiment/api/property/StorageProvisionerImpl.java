@@ -1253,9 +1253,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
                 else if (st.prop != null)
                 {
-                    if (st.prop.getPropertyDescriptor().getStorageColumnName() == null)
+                    TableInfo table = DbSchema.get(report.getSchemaName(), DbSchemaType.Provisioned).getTable(report.getTableName());
+                    PropertyDescriptor pd = st.prop.getPropertyDescriptor();
+                    if (st.prop.getPropertyDescriptor().getStorageColumnName() == null && null != table.getColumn(pd.getName()))
                     {
-                        PropertyDescriptor pd = st.prop.getPropertyDescriptor();
                         pd.setStorageColumnName(pd.getName());
                         OntologyManager.updatePropertyDescriptor(pd);
                         continue;
@@ -1263,7 +1264,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
                     if (st.colName == null)
                     {
-                        adds.addColumn(st.prop.getPropertyDescriptor());
+                        adds.addColumn(pd);
                     }
                     if (st.mvColName == null && st.prop.isMvEnabled())
                     {
@@ -1429,7 +1430,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 status.prop = domainProp;
                 PropertyDescriptor propDescriptor = domainProp.getPropertyDescriptor();
 
-                if (null == propDescriptor.getStorageColumnName())
+                if (null == propDescriptor.getStorageColumnName() && hardColumnNames.contains(domainProp.getName()))
                 {
                     domainReport.addError(String.format("database table %s.%s column '%s' is missing the storage column name.", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
                     status.fix = "Add storage column name '" + domainProp.getName() + "' to property descriptor";
