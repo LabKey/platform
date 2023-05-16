@@ -198,6 +198,41 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         }
 
         @Test
+        public void testIntegerRollback()
+        {
+            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
+            try (DbScope.Transaction ignored = _scope.ensureTransaction())
+            {
+                SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertEquals("Validate inside transaction, pre-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
+                // Intentionally exit without committing, thus rolling back the transaction
+            }
+            SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+            Assert.assertEquals("Validate outside transaction, post-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
+        }
+
+        @Test
+        public void testIntegerCommit()
+        {
+            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
+            SQLFragment secondSelectSQL;
+            try (DbScope.Transaction transaction = _scope.ensureTransaction())
+            {
+                SQLFragment originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, originalSelectSQL).getRowCount());
+
+                secondSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertNotEquals("SQL shouldn't match until it's been committed", originalSelectSQL, secondSelectSQL);
+                Assert.assertEquals("Validate second inside transaction", 2, new SqlSelector(_scope, secondSelectSQL).getRowCount());
+
+                transaction.commit();
+            }
+            SQLFragment postCommitSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+            Assert.assertEquals("SQL should match after the original has been committed", secondSelectSQL, postCommitSQL);
+            Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, postCommitSQL).getRowCount());
+        }
+
+        @Test
         public void testString()
         {
             SQLFragment sql = new SQLFragment("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
