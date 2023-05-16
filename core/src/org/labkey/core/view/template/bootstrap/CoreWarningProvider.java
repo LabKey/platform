@@ -64,6 +64,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 
 public class CoreWarningProvider implements WarningProvider
 {
+    /** Schema name -> problem list */
     private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
 
     public CoreWarningProvider()
@@ -169,7 +170,7 @@ public class CoreWarningProvider implements WarningProvider
             {
                 if (count == 0)
                 {
-                    addStandardWarning(warnings, "One or more database schemas is not as expected. Adjust the module's schema or metadata, or contact LabKey support.", "sqlScripts", "docs for help with upgrade scripts");
+                    addStandardWarning(warnings, (schemaProblems.size() == 1 ? "One database schema is" : (schemaProblems.size() + " database schemas are")) + " not as expected. This indicates there was a serious problem with the upgrade process. Adjust the module's schema or metadata, or contact LabKey support.", "sqlScripts", "docs for help with upgrade scripts");
                 }
                 if (++count <= MAX_SCHEMA_PROBLEMS_TO_SHOW)
                 {

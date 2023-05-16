@@ -91,11 +91,8 @@ public class TableXmlUtils
                                               boolean errorOnXmlMiss,
                                               DbSchema schema)
     {
-        boolean bCopyTargetNode;
         TableType[] dbTables;
         TableType[] xmlTables;
-        TableType mt = null;
-        ColumnType mc = null;
         String xmlTableName;
         String xmlTableType;
         String dbTableName;
@@ -146,7 +143,6 @@ public class TableXmlUtils
 
                     if (!xmlTableType.equals("NOT_IN_DB"))
                     {
-                        rlOut.addBlank();
                         rlOut.addError("ERROR: TableName \"").append(xmlTableName).append("\" type \"").append(xmlTableType).append("\" found in XML but not in database.");
                     }
                     continue;
@@ -273,52 +269,52 @@ public class TableXmlUtils
 
                         compareStringProperty(columnType.getDisplayWidth(), xmlCol.getDisplayWidth(), "DisplayWidth", rlTmp, bCaseSensitive, problematicItem);
 
-                        bCopyTargetNode = compareIntegerProperty(
+                        compareIntegerProperty(
                                 (columnType.isSetScale() ? columnType.getScale() : null),
                                 (xmlCol.isSetScale() ? xmlCol.getScale() : null),
                                 "Scale", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareIntegerProperty(
+                        compareIntegerProperty(
                                 (columnType.isSetPrecision() ? columnType.getPrecision() : null),
                                 (xmlCol.isSetPrecision() ? xmlCol.getPrecision() : null),
                                 "Precision", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareIntegerProperty(
+                        compareIntegerProperty(
                                 (columnType.isSetInputLength() ? columnType.getInputLength() : null),
                                 (xmlCol.isSetInputLength() ? xmlCol.getInputLength() : null),
                                 "InputLength", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareIntegerProperty(
+                        compareIntegerProperty(
                                 (columnType.isSetInputRows() ? columnType.getInputRows() : null),
                                 (xmlCol.isSetInputRows() ? xmlCol.getInputRows() : null),
                                 "InputRows", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetNullable() ? columnType.getNullable() : null),
                                 (xmlCol.isSetNullable() ? xmlCol.getNullable() : null),
                                 "Nullable", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetIsAutoInc() ? columnType.getIsAutoInc() : null),
                                 (xmlCol.isSetIsAutoInc() ? xmlCol.getIsAutoInc() : null),
                                 "IsAutoInc", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetIsDisplayColumn() ? columnType.getIsDisplayColumn() : null),
                                 (xmlCol.isSetIsDisplayColumn() ? xmlCol.getIsDisplayColumn() : null),
                                 "IsDisplayColumn", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetIsReadOnly() ? columnType.getIsReadOnly() : null),
                                 (xmlCol.isSetIsReadOnly() ? xmlCol.getIsReadOnly() : null),
                                 "IsReadOnly", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetIsUserEditable() ? columnType.getIsUserEditable() : null),
                                 (xmlCol.isSetIsUserEditable() ? xmlCol.getIsUserEditable() : null),
                                 "IsUserEditable", rlTmp, problematicItem);
 
-                        bCopyTargetNode = compareBoolProperty(
+                        compareBoolProperty(
                                 (columnType.isSetIsKeyField() ? columnType.getIsKeyField() : null),
                                 (xmlCol.isSetIsKeyField() ? xmlCol.getIsKeyField() : null),
                                 "IsKeyField", rlTmp, problematicItem);
@@ -336,7 +332,7 @@ public class TableXmlUtils
                                     , xmlCol.getFk().getFkTable()
                                     , "FkTable", rlTmp, bCaseSensitive, problematicItem);
 
-                            bCopyTargetNode = compareStringProperty((declFk ? columnType.getFk().getFkDbSchema() : null)
+                            compareStringProperty((declFk ? columnType.getFk().getFkDbSchema() : null)
                                     , xmlCol.getFk().getFkDbSchema()
                                     , "FkDbSchema", rlTmp, bCaseSensitive, problematicItem);
                         }
@@ -350,7 +346,6 @@ public class TableXmlUtils
 
                         if (!rlTmp.getResults().isEmpty())
                         {
-                            rlOut.addBlank();
                             rlOut.addInfo(tt.getTableName() + "." + columnType.getColumnName());
                             rlOut.addAll(rlTmp);
                         }
@@ -378,7 +373,6 @@ public class TableXmlUtils
                 if (dbTab.startsWith("_"))
                     continue;
                 idt = mDbTableOrdinals.get(dbTab);
-                TableType tt = dbTables[idt];
                 SiteValidationResult result;
                 if (errorOnXmlMiss)
                     result = rlOut.addError("ERROR: ");

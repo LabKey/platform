@@ -151,6 +151,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -282,13 +283,13 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public static class AssayListAction extends MutatingApiAction<AssayListForm>
+    public static class AssayListAction extends ReadOnlyApiAction<AssayListForm>
     {
         @Override
         public ApiResponse execute(AssayListForm form, BindException errors)
         {
             Container c = getContainer();
-            HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
+            Map<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
@@ -303,7 +304,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
+    public static ApiResponse serializeAssayDefinitions(Map<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
         List<Map<String, Object>> assayList = new ArrayList<>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
@@ -333,8 +334,8 @@ public class AssayController extends SpringActionController
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
         assayProperties.put("reRunSupport", provider.getReRunSupport());
         assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
-        if (provider instanceof PlateBasedAssayProvider)
-            assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
+        if (provider instanceof PlateBasedAssayProvider plateBased)
+            assayProperties.put("plateTemplate", plateBased.getPlateTemplate(c, protocol));
         assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
@@ -359,7 +360,7 @@ public class AssayController extends SpringActionController
             domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
         }
 
-        Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new HashMap<>();
+        Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new EnumMap<>(ExpProtocol.AssayDomainTypes.class);
 
         final Domain batchDomain = provider.getBatchDomain(protocol);
         domainTypes.put(ExpProtocol.AssayDomainTypes.Batch, batchDomain == null ? null : batchDomain.getName());
@@ -582,55 +583,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static class CreateAssayForm extends ProtocolIdForm
-    {
-        private String _assayContainer;
-
-        public CreateAssayForm() { }
-
-        public String getAssayContainer()
-        {
-            return _assayContainer;
-        }
-
-        public void setAssayContainer(String assayContainer)
-        {
-            _assayContainer = assayContainer;
-        }
-
-        public Container getCreateContainer()
-        {
-            if (_assayContainer != null)
-            {
-                Container c = ContainerManager.getForId(_assayContainer);
-                if (c != null)
-                    return c;
-            }
-            return getContainer();
-        }
-    }
-
-    public static class ChooseAssayBean
-    {
-        private ActionURL _actionURL;
-
-        public List<AssayProvider> getProviders()
-        {
-            List<AssayProvider> providers = new ArrayList<>(AssayService.get().getAssayProviders());
-
-            // Remove AssayProviders without a designer action
-            providers.removeIf(provider -> provider.getDesignerAction() == null);
-            providers.sort(Comparator.comparing(AssayProvider::getName));
-            return providers;
-        }
-
-        public ActionURL getReturnURL()
-        {
-            return _actionURL;
-        }
-    }
-
-    public class AssayProviderBean
+    public static class AssayProviderBean
     {
         String name;
         String description;
