@@ -115,13 +115,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
         return false;
     }
 
     @Override
-    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         throw new IllegalStateException("Should not call when canShowExecutionPlan() returns false");
     }

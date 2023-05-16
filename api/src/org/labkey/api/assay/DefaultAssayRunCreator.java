@@ -604,7 +604,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
         {
-            if (entry.getValue() == null)
+            String value = entry.getValue();
+            if (value == null || value.isEmpty())
                 continue;
 
             DomainProperty dp = entry.getKey();
@@ -620,7 +621,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // Use the DomainProperty name as the role
             String role = dp.getName();
 
-            String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
                 addMaterialByName(context, inputMaterials, value, role, searchContainers, st, cache, materialCache);

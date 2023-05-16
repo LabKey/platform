@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,11 +27,6 @@ import java.util.stream.Stream;
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import static java.sql.Connection.TRANSACTION_READ_UNCOMMITTED;
 
-/**
- * User: adam
- * Date: 12/18/12
- * Time: 8:04 PM
- */
 public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
 {
     @Test
@@ -57,9 +53,15 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             assertTrue(e.getMessage().startsWith("Must select at least two columns"));
         }
 
-        // Verify that we can generate some execution plan
-        Collection<String> executionPlan = selector.getExecutionPlan();
-        assertTrue(!executionPlan.isEmpty());
+        // Verify that we can generate the supported execution plans
+        for (SqlDialect.ExecutionPlanType type : SqlDialect.ExecutionPlanType.values())
+        {
+            if (CoreSchema.getInstance().getSqlDialect().canShowExecutionPlan(type))
+            {
+                Collection<String> executionPlan = selector.getExecutionPlan(type);
+                assertFalse(executionPlan.isEmpty());
+            }
+        }
     }
 
     @Override

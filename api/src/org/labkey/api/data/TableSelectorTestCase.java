@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -34,13 +35,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -428,11 +427,14 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         test(selector, clazz);
         testOffsetAndLimit(selector, clazz);
 
-        // Verify that we can generate an execution plan (if supported)
-        if (table.getSqlDialect().canShowExecutionPlan())
+        // Verify that we can generate the supported execution plans
+        for (ExecutionPlanType type : ExecutionPlanType.values())
         {
-            Collection<String> executionPlan = selector.getExecutionPlan();
-            assertTrue(!executionPlan.isEmpty());
+            if (table.getSqlDialect().canShowExecutionPlan(type))
+            {
+                Collection<String> executionPlan = selector.getExecutionPlan(type);
+                assertFalse(executionPlan.isEmpty());
+            }
         }
     }
 

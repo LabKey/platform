@@ -1409,18 +1409,39 @@ public abstract class SqlDialect
         return _tableTypes;
     }
 
-    public abstract boolean canShowExecutionPlan();
-    protected abstract Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql);
+    public abstract boolean canShowExecutionPlan(ExecutionPlanType type);
+    protected abstract Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type);
 
-    public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql)
+    public enum ExecutionPlanType
     {
+        Estimated("Estimated Execution Plan"),
+        Actual("Execution Plan With Actual Timing");
+
+        private final String _description;
+
+        ExecutionPlanType(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
+    public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql, ExecutionPlanType type)
+    {
+        // Callers shouldn't be asking for an execution plan that the dialect doesn't support
+        assert canShowExecutionPlan(type);
+
         // Issue 35102 - use an unpooled connection so that nobody else tries to use this connection. Other code that
         // executes on this same thread (and therefore the scope's normal connection) could be trying to retrieve
         // properties, do logging, etc. This also ensures that unusual connection settings and other side effects are
         // always discarded.
         try (Connection conn = scope.getUnpooledConnection())
         {
-            return getQueryExecutionPlan(conn, scope, sql);
+            return getQueryExecutionPlan(conn, scope, sql, type);
         }
         catch (SQLException e)
         {
