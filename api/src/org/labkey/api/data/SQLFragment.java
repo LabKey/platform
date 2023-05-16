@@ -107,9 +107,9 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0 : "use SQLFragment.appendValue(String,Dialect) to append a string literal";
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0 : "use SQLFragment.appendIdentifier(String) to append a (potentially) quoted identifier";
+        assert !StringUtils.contains(charseq, ';') : "if necessary, use appeendEOS() to append a semicolon";
 
         // allow statement separators
         this.sql = charseq.toString();
@@ -378,9 +378,9 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0 : "use SQLFragment.appendValue(String,Dialect) to append a string literal";
+        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0 : "use SQLFragment.appendIdentifier(String) to append a (potentially) quoted identifier";
+        assert !StringUtils.contains(charseq, ';') : "if necessary, use appendEOS() to append a semicolon";
         getStringBuilder().append(charseq);
         return this;
     }
@@ -392,9 +392,9 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == charseq)
             return this;
         String identifier = charseq.toString().strip();
-        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
+        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0 : "identifier appears to be incorrectly formatted";
         boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
+        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;")) : "identifier appears to be incorrectly formatted";
         getStringBuilder().append(charseq);
         return this;
     }
@@ -475,7 +475,7 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == N)
             return appendNull();
         // Do we know that default java toString() for all numbers creates a valid SQL literal?
-        getStringBuilder().append(String.valueOf(N));
+        getStringBuilder().append(N);
         return this;
     }
 

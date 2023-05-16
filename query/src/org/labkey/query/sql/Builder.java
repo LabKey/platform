@@ -160,7 +160,7 @@ public class Builder extends SQLFragment
 //    }
 
     @Override
-    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {
         appendPrefix(); appendIndent();
         return super.appendStringLiteral(s, d);
@@ -187,6 +187,7 @@ public class Builder extends SQLFragment
         return super.appendValue(g, d);
     }
 
+    @Override
     public SQLFragment appendValue(@NotNull Container c)
     {
         appendPrefix(); appendIndent();
