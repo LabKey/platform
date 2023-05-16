@@ -137,10 +137,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum DataTypeForExclusion
     {
-        sampletype,
-        dataclass,
-        assaydesign,
-        storagelocation
+        SampleType,
+        DataClass,
+        AssayDesign,
+        StorageLocation
     }
 
     @Nullable
@@ -937,9 +937,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user);
 
-    Map<String, Object>[] getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId, Integer dataTypeRowId);
+    Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId);
 
-    void ensureContainerDataTypeExclusions(DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, String excludedContainerId, User user);
+    void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

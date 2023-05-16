@@ -8164,7 +8164,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Object>[] getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId, Integer dataTypeRowId)
+    public Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8206,7 +8206,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureContainerDataTypeExclusions(DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, String excludedContainerId, User user)
+    public void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user)
     {
         if (excludedDataTypeRowIds == null)
             return;
