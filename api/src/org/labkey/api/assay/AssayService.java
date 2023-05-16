@@ -34,7 +34,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.util.Pair;
@@ -59,28 +58,6 @@ public interface AssayService
 {
     String BATCH_COLUMN_NAME = "Batch";
     String ASSAY_DIR_NAME = "assay";
-
-    SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
-        }
-    };
-    SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batch") {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
-        }
-    };
-    SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Run") {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
-        }
-    };
 
     static AssayService get()
     {

@@ -183,12 +183,12 @@ public class AssayModule extends SpringModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(AssayService.ASSAY_CATEGORY);
-            ss.addSearchCategory(AssayService.ASSAY_BATCH_CATEGORY);
-            ss.addSearchCategory(AssayService.ASSAY_RUN_CATEGORY);
-            ss.addResourceResolver(AssayService.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
-            ss.addResourceResolver(AssayService.ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
-            ss.addResourceResolver(AssayService.ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
+            ss.addSearchCategory(AssayManager.get().ASSAY_CATEGORY);
+            ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
+            ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
+            ss.addResourceResolver(AssayManager.get().ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+            ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
+            ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
             ss.addDocumentProvider(new AssayBatchDocumentProvider());
             ss.addDocumentProvider(new AssayRunDocumentProvider());

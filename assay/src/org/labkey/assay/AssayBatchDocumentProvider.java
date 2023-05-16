@@ -3,7 +3,6 @@ package org.labkey.assay;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -35,7 +34,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
 
     private static SearchService.SearchCategory getSearchCategory()
     {
-        return AssayService.ASSAY_BATCH_CATEGORY;
+        return AssayManager.get().ASSAY_BATCH_CATEGORY;
     }
 
     private static String getDocumentIdPrefix()
