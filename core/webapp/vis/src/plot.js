@@ -1630,6 +1630,7 @@ boxPlot.render();
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
  * @param {Array} [config.properties.shapeRange] (Optional) The array of shape values to use for the data points.
+ * @param {Array} [config.properties.shapeDomain] (Optional) The domain of shape values to match with the provided shapeRange.
  * @param {Function} [config.properties.pointSize] (Optional) The LABKEY.vis.Geom.Point size.
  * @param {Function} [config.properties.pointOpacityFn] (Optional) A function to be called with the point data to
  *                  return an opacity value for that point.
@@ -2061,7 +2062,8 @@ boxPlot.render();
             },
             shape: {
                 scaleType: 'discrete',
-                range: config.properties.shapeRange
+                range: config.properties.shapeRange,
+                domain: config.properties.shapeDomain
             },
             x: {
                 scaleType: 'discrete',
