@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -49,6 +50,8 @@ import java.util.stream.StreamSupport;
  */
 public class SQLFragment implements Appendable, CharSequence
 {
+    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "sqlfragment-disable-strict-checks";
+
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -107,9 +110,13 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
 
         // allow statement separators
         this.sql = charseq.toString();
@@ -378,9 +385,15 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
+
         getStringBuilder().append(charseq);
         return this;
     }
@@ -392,9 +405,14 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == charseq)
             return this;
         String identifier = charseq.toString().strip();
-        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
+
         boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
+        if ((StringUtils.countMatches(identifier, '\"') % 2) != 0 || (!quoted && StringUtils.containsAny(identifier, "*/\\'\"?;- \t\n")))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to incorrectly formatted");
+        }
+
         getStringBuilder().append(charseq);
         return this;
     }
@@ -692,9 +710,13 @@ public class SQLFragment implements Appendable, CharSequence
     /** Insert into the SQL */
     public void insert(int index, String str)
     {
-        assert (StringUtils.countMatches(str, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(str, '\"') % 2) == 0;
-        assert !StringUtils.contains(str, ';');
+        if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(str, '\"') % 2) != 0 ||
+            StringUtils.contains(str, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
+        }
 
         getStringBuilder().insert(index, str);
     }
@@ -1082,6 +1104,38 @@ public class SQLFragment implements Appendable, CharSequence
                 assertEquals("parameterAone", params.get(2));
                 assertEquals(4, params.get(3));
             }
+        }
+
+
+        private void shouldFail(Runnable r)
+        {
+            try
+            {
+                r.run();
+                if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Expected IllegalArgumentException");
+            }
+            catch (IllegalArgumentException e)
+            {
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Did not expect IllegalArgumentException");
+            }
+        }
+
+
+        @Test
+        public void testIllegalArgument()
+        {
+            shouldFail(() -> new SQLFragment(";"));
+            shouldFail(() -> new SQLFragment().append(";"));
+            shouldFail(() -> new SQLFragment("AND name='"));
+            shouldFail(() -> new SQLFragment().append("AND name = '"));
+            shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
+
+            shouldFail(() -> new SQLFragment().appendIdentifier("column name"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("?"));
+            shouldFail(() -> new SQLFragment().appendIdentifier(";"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"column\"name\""));
         }
     }
 
