@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -144,6 +145,7 @@ public interface SearchService
         categories("searchCategories"),
         ontology("ontology"),
         summary("summary"),
+        jsonData("jsonData"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
@@ -323,6 +325,7 @@ public interface SearchService
         public String url;
         public String navtrail;
         public String identifiers; // identifiersHi
+        public JSONObject jsonData;
         public float score;
 
         public String normalizeHref(Path contextPath)

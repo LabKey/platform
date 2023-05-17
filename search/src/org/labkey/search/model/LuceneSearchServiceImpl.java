@@ -65,6 +65,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.AdminBean;
@@ -201,7 +202,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         container,        // Used as stored field in documents (used for low volume purposes, delete and results display). See securityContext below.
         securityContext,  // Stored in DocValues and used in SecurityQuery, which filters every search query. Format is <containerId>(|<resourceId>), where resourceId is optional (and rarely used)
         uniqueId,
-        navtrail
+        navtrail,
+        jsonData,
     }
 
 
@@ -686,6 +688,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new StoredField(FIELD_NAME.url.toString(), url));
             if (null != props.get(PROPERTY.navtrail.toString()))
                 doc.add(new StoredField(FIELD_NAME.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
+
+            if (null != props.get(PROPERTY.jsonData.toString()))
+            {
+                JSONObject jsonData = (JSONObject) props.get(PROPERTY.jsonData.toString());
+                doc.add(new StoredField(FIELD_NAME.jsonData.toString(), jsonData.toString()));
+            }
 
             // === Store security context in DocValues field ===
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
@@ -1628,6 +1636,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.doc = scoreDoc.doc;
             hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
             hit.score = scoreDoc.score;
+
+            String jsonStr = doc.get(FIELD_NAME.jsonData.toString());
+            if (StringUtils.trimToNull(jsonStr) != null)
+                hit.jsonData = new JSONObject(jsonStr);
 
             // BUG patch see Issue 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index

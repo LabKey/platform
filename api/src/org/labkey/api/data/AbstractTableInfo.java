@@ -1985,7 +1985,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         searchIndexColumns.put(column, property);
     }
 
-    public SearchService.PROPERTY getSearchIndexColumns(FieldKey column)
+    public SearchService.PROPERTY getSearchIndexColumn(FieldKey column)
     {
         if (searchIndexColumns == null)
             return null;

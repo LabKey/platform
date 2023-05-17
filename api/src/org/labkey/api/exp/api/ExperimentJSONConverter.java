@@ -675,22 +675,29 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
-
+        JSONObject jsonObject = null;
         if (settings.isIncludeProperties())
         {
-            final ExpDataClass dc = data.getDataClass(user);
-            if (dc != null)
+            ExpDataClass dataClass = data.getDataClass(user);
+
+            if (dataClass != null)
             {
-                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false), user);
-                if (dc.getCategory() != null)
-                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
+                jsonObject = serializeExpObject(data, dataClass.getDomain().getProperties(), settings, user);
+
+                JSONObject dataClassJsonObject = serializeExpObject(dataClass, null, settings.withIncludeProperties(false), user);
+                if (dataClass.getCategory() != null)
+                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dataClass.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
             }
         }
 
+        if (jsonObject == null)
+            jsonObject = serializeExpObject(data, null, settings, user);
+
+        jsonObject.put(CPAS_TYPE, data.getCpasType());
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+
         File f = data.getFile();
         if (f != null)
         {
@@ -701,8 +708,6 @@ public class ExperimentJSONConverter
                 jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
-
-        jsonObject.put(CPAS_TYPE, data.getCpasType());
 
         return jsonObject;
     }

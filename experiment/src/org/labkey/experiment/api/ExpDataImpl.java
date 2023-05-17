@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -483,7 +484,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         Set<String> identifiersLo,
         Set<String> keywordHi,
         Set<String> keywordMed,
-        Set<String> keywordsLo
+        Set<String> keywordsLo,
+        JSONObject jsonData
     )
     {
         // collect the set of columns to index
@@ -539,9 +541,18 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                     else
                         values = Arrays.asList(s);
 
-                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumns(fieldKey);
+                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
                     if (searchProperty != null)
                     {
+                        // Fow now only add indexed field values to search jsonData
+                        if (values.size() > 0)
+                        {
+                            if (values.size() == 1)
+                                jsonData.put(fieldKey.toString(), values.get(0));
+                            else
+                                jsonData.put(fieldKey.toString(), values);
+                        }
+
                         switch (searchProperty)
                         {
                             case identifiersHi -> {
@@ -785,6 +796,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public WebdavResource createDocument(@Nullable ExpDataClassDataTableImpl tableInfo)
     {
         Map<String, Object> props = new HashMap<>();
+        JSONObject jsonData = new JSONObject();
         Set<String> keywordsHi = new HashSet<>();
         Set<String> keywordsMed = new HashSet<>();
         Set<String> keywordsLo = new HashSet<>();
@@ -828,7 +840,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (tableInfo != null)
         {
             // Collect other text columns and lookup display columns
-            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo);
+            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
         }
 
         if (null != dc)
@@ -856,7 +868,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
         props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
 
-
         // === Stored, not indexed
 
         if (dc != null && dc.isMedia())
@@ -864,6 +875,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         else
             props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
+        props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
