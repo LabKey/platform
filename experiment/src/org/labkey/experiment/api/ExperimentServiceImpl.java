@@ -4776,11 +4776,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
         var runsUsingItems = new ArrayList<ExpRun>();
-        if (null != dataItems && !dataItems.isEmpty())
-            runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+        Set<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptySet() : dataItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
+        Set<Integer> sampleIds = materialItems == null || materialItems.isEmpty() ? Collections.emptySet() : materialItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
 
-        if (null != materialItems && !materialItems.isEmpty())
-            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
+        if (!dataIds.isEmpty())
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+
+        if (!sampleIds.isEmpty())
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), dataIds, getTinfoData()));
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -4818,9 +4821,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
+    private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Integer> rowIds, TableInfo primaryTableInfo, Collection<Integer> siblingRowIds, TableInfo siblingTableInfo)
     {
-        if (materialIds == null || materialIds.isEmpty())
+        if (rowIds == null || rowIds.isEmpty())
             return Collections.emptyList();
 
         /* Ex. SQL
@@ -4840,26 +4843,56 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         WHERE m3.rowId in (3592, 3593, 3594)
                             AND m2.rowId = m3.rowId
                     )
+            )
+            AND NOT EXIST (
+             -- Check for siblings that are not being deleted
+                SELECT DISTINCT d.runId
+                FROM exp.data d
+                WHERE m.rowId in (3592, 3593, 3594)
+                    AND m.runId = d.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.data d2
+                        WHERE d2.rowId in (23592, 23593, 23594)
+                            AND d.rowId = d2.rowId
+                    )
+
             );
          */
 
-        SQLFragment idInclause = getAppendInClause(materialIds);
+        SQLFragment idInClause = getAppendInClause(rowIds);
+        SQLFragment siblingIdInClause = getAppendInClause(siblingRowIds);
 
         SQLFragment sql = new SQLFragment(
                 "SELECT DISTINCT m.runId\n")
-                .append("FROM ").append(getTinfoMaterial(), "m").append("\n")
-                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("FROM ").append(primaryTableInfo, "m").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
                 .append("AND NOT EXISTS (\n")
                 .append("SELECT DISTINCT m2.runId\n")
-                .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("FROM ").append(primaryTableInfo, "m2").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
                 .append("AND m.runId = m2.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
-                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
-                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
-                .append(")\n")
-                .append(")");
+                .append("))\n")
+                .append("AND NOT EXISTS (\n")
+                .append("SELECT DISTINCT s.runId\n")
+                .append("FROM ").append(siblingTableInfo, "s").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId = s.runId\n");
+        if (!siblingRowIds.isEmpty())
+        {
+            sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds
+                    .append("SELECT rowId FROM ").append(siblingTableInfo, "s2").append("\n")
+                    .append("WHERE s2.rowId ").append(siblingIdInClause).append("\n")
+                    .append("AND s.rowId = s2.rowId\n")
+                    .append(")");
+        }
+        sql.append(")");
+
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
     }
@@ -8091,7 +8124,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(toSet());
             runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
-            runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(materialIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
