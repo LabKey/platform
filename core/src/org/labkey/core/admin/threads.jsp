@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.ThreadsBean> me = (HttpView<AdminController.ThreadsBean>) HttpView.currentView();
@@ -59,8 +60,13 @@ for (Thread t : bean.threads)
         {
             %>  DB Connection SPID(s): <%= h(StringUtils.join(values, ", "))%> <%
         }
+        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(t);
+        if (null != uri)
+        { %>    For URL <%= h(uri + "\n") %><%
+        }
 
-        for (StackTraceElement e : bean.stackTraces.get(t))
+
+    for (StackTraceElement e : bean.stackTraces.get(t))
         {
             %><%= h("    at " + e  + "\n") %><%
         }

@@ -160,8 +160,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
 
-    private static volatile List<String> _missingViews = Collections.emptyList();
-
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
@@ -1496,7 +1494,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 runScripts(runner, module, SchemaUpdateType.After);
         }
 
-        refreshMissingViews();
+        if (_startupState == StartupState.StartupComplete)
+        {
+            WarningService.get().rerunSchemaCheck();
+        }
     }
 
     // Runs the drop and create scripts in a single module using the standard upgrade script runner
@@ -1770,7 +1771,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // performedUpgrade is true if any module required upgrading
     private void afterUpgrade(boolean performedUpgrade, File lockFile)
     {
-        verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
 
         if (performedUpgrade)
@@ -1785,38 +1785,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         lockFile.delete();
 
         verifyRequiredModules();
-    }
-
-    // Register an admin warning that reports if any database views are missing, Issue 40187
-    private void verifyDatabaseViews()
-    {
-        // This is a "dynamic" warning because RecreateViewsAction might correct the problem at runtime
-        WarningService.get().register(new WarningProvider()
-        {
-            @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
-            {
-                if (context.getUser().hasSiteAdminPermission())
-                {
-                    if (showAllWarnings || !_missingViews.isEmpty())
-                        warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
-                            ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
-                }
-            }
-        });
-        refreshMissingViews();
-    }
-
-    // Determine if any module database views are missing
-    private void refreshMissingViews()
-    {
-        _missingViews = DbSchema.getAllSchemasToTest().stream()
-            .flatMap(s -> s.getTableXmlMap().entrySet().stream()
-                .filter(e -> "VIEW".equalsIgnoreCase(e.getValue().getTableDbType()))
-                .filter(e -> s.getTable(e.getKey()).getTableType() == DatabaseTableType.NOT_IN_DB)
-                .map(e -> s.getName() + "." + e.getValue().getTableName())
-            )
-            .collect(Collectors.toList());
     }
 
     // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
@@ -1854,13 +1822,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
             try
             {
                 Map<String, Object> map = new HashMap<>();
+                map.put("ClassName", module.getClass().getName());
                 map.put("AutoUninstall", module.isAutoUninstall());
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
                 Table.update(null, getTableInfoModules(), map, module.getName());
             }
             catch (RuntimeSQLException e)
             {
-                // This should be fixed now (see #24473), but leave detailed logging in place just in case
+                // This should be fixed now (see Issue 24473), but leave detailed logging in place just in case
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }

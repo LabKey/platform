@@ -2510,12 +2510,12 @@ public class StudyManager
             "WHERE v.RowId = vm.VisitRowId and vm.DataSetId = d.DataSetId and " +
             "v.Container = vm.Container and vm.Container = d.Container " +
             "and v.Container = ? and v.RowId = ?\n" +
-            "ORDER BY d.DisplayOrder,d.DataSetId;";
+            "ORDER BY d.DisplayOrder,d.DataSetId";
 
     private static final String VISITMAP_JOIN_BY_DATASET = "SELECT vm.VisitRowId, vm.Required\n" +
             "FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId\n" +
             "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
-            "ORDER BY v.DisplayOrder, v.RowId;";
+            "ORDER BY v.DisplayOrder, v.RowId";
 
     List<VisitDataset> getMapping(final VisitImpl visit)
     {

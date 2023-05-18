@@ -63,10 +63,6 @@ LABKEY.WebSocket = new function ()
 
     function websocketOnClose(evt) {
         if (evt.wasClean) {
-            var modalContent = 'Please reload the page or '
-                + '<a href="login-login.view?" target="_blank" rel="noopener noreferrer">'
-                + 'log in via another browser tab</a> to continue.'
-
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
                 _callbacks[evt.code].forEach(function(cb){cb(evt)});
@@ -78,7 +74,7 @@ LABKEY.WebSocket = new function ()
                 // normal close
                 if (evt.reason === "org.labkey.api.security.AuthNotify#SessionLogOut") {
                     setTimeout(function(){
-                        displayModal('Logged Out', 'You have been logged out. ' + modalContent);
+                        displayModal('Logged Out', 'You have been logged out.', true);
                     }, 1000);
                 }
             }
@@ -94,21 +90,8 @@ LABKEY.WebSocket = new function ()
                 // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
                 // evt.reason === "This connection was established under an authenticated HTTP session that has ended."
                 setTimeout(function() {
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
-                        success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                            // If the user was previously a guest, don't warn them about session expiration as they
-                            // just logged in. See issue 39337
-                            if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
-                                displayModal("Session Expired", 'Your session has expired. ' + modalContent);
-                            } else {
-                                hideModal();
-                            }
-                        }),
-                        failure: function () {
-                            setTimeout(showDisconnectedMessage, 1000);
-                        }
-                    });
+                    checkForExpiredSession();
+
                     // Note the extra second (5s in this case) for the timeout before we query whoami, this
                     // is to allow time for the server login from the other tab to take hold.
                 }, 5000);
@@ -116,8 +99,26 @@ LABKEY.WebSocket = new function ()
         }
     }
 
+    function checkForExpiredSession() {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
+            success: LABKEY.Utils.getCallbackWrapper(function(response) {
+                // If the user was previously a guest, don't warn them about session expiration as they
+                // just logged in. See issue 39337
+                if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
+                    displayModal("Session Expired", 'Your session has expired.', true);
+                } else {
+                    hideModal();
+                }
+            }),
+            failure: function () {
+                setTimeout(showDisconnectedMessage, 1000);
+            }
+        });
+    }
+
     function showDisconnectedMessage() {
-        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.");
+        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.", false);
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
     }
 
@@ -164,11 +165,17 @@ LABKEY.WebSocket = new function ()
         _modalShowing = false;
     }
 
-    function displayModal(title, message) {
+    function displayModal(title, message, showReloadMessage) {
         openWebsocket(); // re-establish the websocket connection for the new guest user session
 
         if (_modalShowing) return;
         _modalShowing = true;
+
+        if (showReloadMessage) {
+            message += ' Please reload the page or '
+                + '<a href="login-login.view?" target="_blank" rel="noopener noreferrer">'
+                + 'log in via another browser tab</a> to continue.'
+        }
 
         toggleBackgroundBlurred(true);
 
@@ -222,6 +229,7 @@ LABKEY.WebSocket = new function ()
 
     return {
         initWebSocket: initWebSocket,
-        addServerEventListener: addServerEventListener
+        addServerEventListener: addServerEventListener,
+        checkForExpiredSession: checkForExpiredSession
     };
 };

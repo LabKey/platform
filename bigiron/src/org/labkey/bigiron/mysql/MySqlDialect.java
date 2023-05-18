@@ -29,6 +29,8 @@ import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
@@ -193,16 +195,18 @@ public class MySqlDialect extends SimpleSqlDialect
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
+    private static final LimitRowsCustomizer CUSTOMIZER = new StandardLimitRowsCustomizer(false);
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, false);
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, CUSTOMIZER);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, false);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
 
     @Override

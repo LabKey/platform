@@ -25,6 +25,8 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -309,16 +311,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return false;
     }
 
+    private static final LimitRowsCustomizer CUSTOMIZER = new StandardLimitRowsCustomizer(true);
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, true);
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, CUSTOMIZER);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, true);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
 
     @Override

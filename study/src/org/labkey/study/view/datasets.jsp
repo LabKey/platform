@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
-<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyManager manager = StudyManager.getInstance();
@@ -68,11 +69,11 @@
 %>
 <table width="100%">
     <tr>
-        <td valign=top><%renderDatasets(out, userDatasets, 0, datasetsPerCol + 1);%>
+        <td valign=top><%=renderDatasets(userDatasets, 0, datasetsPerCol + 1)%>
         </td>
-        <td valign=top><%renderDatasets(out, userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1);%>
+        <td valign=top><%=renderDatasets(userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%>
         </td>
-        <td valign=top><%renderDatasets(out, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size());%>
+        <td valign=top><%=renderDatasets(userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%>
         </td>
     </tr>
 </table>
@@ -84,10 +85,10 @@
     }
 %>
 <%!
-    void renderDatasets(JspWriter out, List<DatasetDefinition> datasets, int startIndex, int endIndex)
+    Renderable renderDatasets(List<DatasetDefinition> datasets, int startIndex, int endIndex)
     {
         if (startIndex >= datasets.size() || startIndex >= endIndex)
-            return;
+            return EMPTY_STRING;
 
         String category = startIndex == 0 ? null : datasets.get(startIndex - 1).getCategory();
         ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, getContainer());
@@ -120,6 +121,6 @@
             tds.add(TR(TD(link(datasetLabel).href(datasetURL.replaceParameter("datasetId", dataset.getDatasetId())).clearClasses())));
         }
 
-        TABLE(tds.toArray()).appendTo(out);
+        return TABLE(tds);
     }
 %>

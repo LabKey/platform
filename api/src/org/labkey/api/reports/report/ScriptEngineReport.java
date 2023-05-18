@@ -631,12 +631,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     public static class NADisplayColumn extends DataColumn
     {
-        public NADisplayColumn(ColumnInfo col)
-        {
-            super(col);
-            this.setName(col.getPropertyName());
-        }
-
         public NADisplayColumn(String name, ColumnInfo col)
         {
             super(col);

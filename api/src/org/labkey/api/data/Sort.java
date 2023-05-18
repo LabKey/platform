@@ -475,10 +475,10 @@ public class Sort
 
     public String getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
-        if (null == _sortList || _sortList.size() == 0)
+        if (_sortList.isEmpty())
             return "";
 
-        StringBuffer sb = new StringBuffer("");
+        StringBuilder sb = new StringBuilder();
 
         //NOTE: we are translating between the raw sort, and the sortFieldKeys() provided by that column
         Set<String>  distinctKeys = new CaseInsensitiveHashSet();
@@ -538,7 +538,7 @@ public class Sort
         return "";
     }
 
-    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, StringBuffer sb)
+    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, StringBuilder sb)
     {
         if (distinctKeys.contains(alias))
             return;

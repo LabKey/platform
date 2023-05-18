@@ -61,11 +61,11 @@ public class DOM
 
     /*
      * BODY_PLACE_HOLDER and TemplateAppendableWrapper are used to make it possible to efficiently implement an HTML wrapper
-     * frame using DOM, even if the 'body' of the frame is not available yet.  For instance this can use use to implement
-     * Jsp tags that extend BodyTagSupport.  It can also be used to implement subclasses of WebPartFrame.
+     * frame using DOM, even if the 'body' of the frame is not available yet. For instance this can be used to implement
+     * Jsp tags that extend BodyTagSupport. It can also be used to implement subclasses of WebPartFrame.
      *
-     * The DOM Renderable objects write to the normal output Appendable until it hits BODY_PLACE_HOLDER.  At that point the
-     * output is captured in an StringBuilder.  The caller can stash the markup generated after BODY_PLACE_HOLDER and
+     * The DOM Renderable objects write to the normal output Appendable until it hits BODY_PLACE_HOLDER. At that point the
+     * output is captured in a StringBuilder. The caller can stash the markup generated after BODY_PLACE_HOLDER and
      * render that markup after the body is rendered.
      */
 
@@ -914,8 +914,9 @@ public class DOM
     /**
      * @param body supported values include null (nothing is included in the generated HTML),
      *             CharSequence (like String, StringBuilder, etc),
+     *             Number (assumed to be safe to render without encoding),
      *             DOM.Renderable (like the DIV, SPAN, or TABLE methods return),
-     *             any kind of array containing the other supported elements,
+     *             any kind of array or Iterable containing the other supported elements,
      *             or any kind of Stream containing the other supported elements
      * This method doesn't throw checked exception, because it makes using lambdas a big pain
      */
@@ -923,15 +924,26 @@ public class DOM
     {
         if (null == body)
             return builder;
-        else if (body instanceof CharSequence)
+        else if (body instanceof CharSequence cs)
         {
             try
             {
-                builder.append(filter(body));
+                builder.append(filter(cs));
             }
             catch (IOException io)
             {
                 throw new RuntimeException(io);
+            }
+        }
+        else if (body instanceof Number)
+        {
+            try
+            {
+                builder.append(body.toString());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
             }
         }
         else if (body instanceof DOM.Renderable)
@@ -955,7 +967,7 @@ public class DOM
         else
         {
             if (body instanceof Attribute)
-                throw new IllegalArgumentException("Unexpected type in element contents: " + body.getClass().getName() + ".  Did you forget to wrap your attributes with 'at()'?");
+                throw new IllegalArgumentException("Unexpected type in element contents: " + body.getClass().getName() + ". Did you forget to wrap your attributes with 'at()'?");
             throw new IllegalArgumentException("Unexpected type in element contents: " + body.getClass().getName());
         }
         return builder;

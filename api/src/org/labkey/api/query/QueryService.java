@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
@@ -74,6 +75,7 @@ public interface QueryService
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
+    String EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION = "queryProductProjectDataTypeSelection";
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
@@ -461,6 +463,8 @@ public interface QueryService
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
     List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId);
     AuditHandler getDefaultAuditHandler();
+
+    int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName);
 
     /**
      * Returns a URL for the audit history for the table.

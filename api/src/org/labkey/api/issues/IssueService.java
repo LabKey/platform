@@ -1,6 +1,5 @@
 package org.labkey.api.issues;
 
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;

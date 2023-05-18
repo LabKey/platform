@@ -134,80 +134,91 @@ public class ApiQueryResponse implements ApiResponse
     public void render(ApiResponseWriter writer) throws Exception
     {
         writer.startResponse();
-
-        //write the initial metaData section
-        writeInitialMetaData(writer);
-
-        if (_metaDataOnly)
+        try
         {
-            writeMetaData(writer);
-            if (_metaDataOnlyIncludesEmptyRowset)
-                writeEmptyRowset(writer);
-        }
-        else
-        {
-            // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
-            // Issue 33967: Close the connection before getting aggregates
-            boolean complete;
-            try (Results results = getResults())
+            //write the initial metaData section
+            writeInitialMetaData(writer);
+
+            if (_metaDataOnly)
             {
+                writeMetaData(writer);
+                if (_metaDataOnlyIncludesEmptyRowset)
+                    writeEmptyRowset(writer);
+            }
+            else
+            {
+                // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
+                // Issue 33967: Close the connection before getting aggregates
+                boolean complete;
+                try (Results results = getResults())
+                {
+                    if (_includeMetaData)
+                        writeMetaData(writer);
+
+                    complete = writeRowset(writer, results);
+                }
+
+                // Figure out if we need to make a separate request to get the total row count (via the aggregates)
+                if (!complete && _rowCount == 0)
+                {
+                    // Load the aggregates
+                    _dataRegion.getAggregateResults(_ctx);
+                    if (_dataRegion.getTotalRows() != null)
+                    {
+                        _rowCount = _dataRegion.getTotalRows();
+                    }
+                }
+
+                long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
+                writer.writeProperty("rowCount", rowCount);
+
                 if (_includeMetaData)
-                    writeMetaData(writer);
-
-                complete = writeRowset(writer, results);
-            }
-
-            // Figure out if we need to make a separate request to get the total row count (via the aggregates)
-            if (!complete && _rowCount == 0)
-            {
-                // Load the aggregates
-                _dataRegion.getAggregateResults(_ctx);
-                if (_dataRegion.getTotalRows() != null)
                 {
-                    _rowCount = _dataRegion.getTotalRows();
-                }
-            }
+                    // messages, but only if metadata is requested
+                    _dataRegion.setTotalRows(rowCount);
+                    _dataRegion.prepareMessages(_ctx);
+                    List<DataRegion.Message> dataRegionMessages = _dataRegion.getMessages();
 
-            long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
-            writer.writeProperty("rowCount", rowCount);
-
-            if (_includeMetaData)
-            {
-                // messages, but only if metadata is requested
-                _dataRegion.setTotalRows(rowCount);
-                _dataRegion.prepareMessages(_ctx);
-                List<DataRegion.Message> dataRegionMessages = _dataRegion.getMessages();
-
-                if (dataRegionMessages != null)
-                {
-                    List<Map<String, String>> messages = new ArrayList<>();
-                    for (DataRegion.Message msg : dataRegionMessages)
+                    if (dataRegionMessages != null)
                     {
-                        messages.add(PageFlowUtil.map("area", msg.getArea(),
-                                "content", msg.getContent(),
-                                "type", msg.getType().name()));
+                        List<Map<String, String>> messages = new ArrayList<>();
+                        for (DataRegion.Message msg : dataRegionMessages)
+                        {
+                            messages.add(PageFlowUtil.map("area", msg.getArea(),
+                                    "content", msg.getContent(),
+                                    "type", msg.getType().name()));
+                        }
+                        writer.writeProperty("messages", messages);
                     }
-                    writer.writeProperty("messages", messages);
-                }
 
-                // include metadata on properties encountered while rendering PropertiesDisplayColumn
-                Map<String, Pair<PropertyColumn, DisplayColumn>> extraProperties = (Map<String, Pair<PropertyColumn, DisplayColumn>>)_ctx.get("org.labkey.api.query.PropertiesDisplayColumn");
-                if (extraProperties != null)
-                {
-                    List<Map<String, Object>> props = new ArrayList<>(extraProperties.size());
-                    for (Pair<PropertyColumn, DisplayColumn> pair : extraProperties.values())
+                    // include metadata on properties encountered while rendering PropertiesDisplayColumn
+                    Map<String, Pair<PropertyColumn, DisplayColumn>> extraProperties = (Map<String, Pair<PropertyColumn, DisplayColumn>>) _ctx.get("org.labkey.api.query.PropertiesDisplayColumn");
+                    if (extraProperties != null)
                     {
-                        var dc = pair.second;
-                        Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, _includeLookupInfo, false);
-                        props.add(fmdata);
+                        List<Map<String, Object>> props = new ArrayList<>(extraProperties.size());
+                        for (Pair<PropertyColumn, DisplayColumn> pair : extraProperties.values())
+                        {
+                            var dc = pair.second;
+                            Map<String, Object> fmdata = JsonWriter.getMetaData(dc, null, false, _includeLookupInfo, false);
+                            props.add(fmdata);
+                        }
+                        writer.writeProperty("additionalFieldMetadata", props);
                     }
-                    writer.writeProperty("additionalFieldMetadata", props);
-                }
 
+                }
             }
+            writer.endResponse();
         }
-        writer.endResponse();
+        catch (Exception ex)
+        {
+            handleRenderException(writer, ex);
+        }
+        finally
+        {
+            writer.close();
+        }
     }
+
 
     /**
      * This initial set of metaData will always be serialized even if a SQLException is thrown when executing the query.

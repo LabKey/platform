@@ -17,8 +17,6 @@
 %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
@@ -35,15 +33,20 @@
 %>
 <%
     SecurityController.ClonePermissionsForm form = (SecurityController.ClonePermissionsForm)HttpView.currentModel();
-    User target = UserManager.getUser(form.getTargetUser());
+    User target = form.getTargetUserObject();
     boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
+
+    if (null != target)
+    {
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
         createCloneUserField(false, true, <%=excludeSiteAdmins%>, <%=target.getUserId()%>);
     });
 </script>
-
+<%
+    }
+%>
 <labkey:form action="<%=urlFor(ClonePermissionsAction.class)%>" method="POST">
     <table>
         <%
@@ -54,6 +57,9 @@
         <tr><td>&nbsp;</td></tr>
         <%
             }
+
+            if (null != target)
+            {
         %>
         <tr>
             <td>
@@ -69,16 +75,14 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td>
-                <input type="hidden" name="targetUser" value="<%=form.getTargetUser()%>">
+                <input type="hidden" name="targetUser" value="<%=target.getUserId()%>">
                 <%=ReturnUrlForm.generateHiddenFormField(form.getReturnActionURL())%>
-<%
-    ButtonBuilder submit = button("Clone Permissions");
-    submit.submit(true);
-%>
-                <%=submit%>
-                <%= button("Cancel").href(form.getReturnURLHelper()) %>
+                <%=button("Clone Permissions").submit(true)%>
+                <%=button("Cancel").href(form.getReturnURLHelper())%>
             </td>
         </tr>
+        <%
+            }
+        %>
     </table>
-
 </labkey:form>
