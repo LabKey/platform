@@ -135,6 +135,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
         SkipBulkRemapCache,
     }
 
+    enum DataTypeForExclusion
+    {
+        SampleType,
+        DataClass,
+        AssayDesign,
+        StorageLocation
+    }
+
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
@@ -656,6 +664,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoObjectLegacyNames();
 
+    TableInfo getTinfoDataTypeExclusion();
+
     /**
      * Get all runs associated with these materials, including the source runs and any derived runs
      * @param materials to get runs for
@@ -924,6 +934,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<QueryViewProvider<ExpRun>> getRunInputsViewProviders();
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
+
+    void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user);
+
+    Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId);
+
+    void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
