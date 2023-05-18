@@ -118,7 +118,6 @@ import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.factory.InitializingBean;
 
-import javax.validation.constraints.Null;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
