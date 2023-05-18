@@ -8497,7 +8497,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8508,6 +8508,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
+
+                // LKB registry data class objects can have related junction list rows that need to be updated as well.
+                // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
@@ -8558,13 +8566,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE ").append(idField);
+            .append(" SET container = ").appendValue(targetContainer.getEntityId());
+        if (withModified)
+        {
+            dataUpdate.append(", modified = ").appendValue(new Date());
+            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+        }
+        dataUpdate.append(" WHERE ").append(idField);
         dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
         return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }

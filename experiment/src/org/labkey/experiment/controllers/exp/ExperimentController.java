@@ -7881,7 +7881,7 @@ public class ExperimentController extends SpringActionController
             catch (Exception e)
             {
                 resp.put("success", false);
-                resp.put("error", e);
+                resp.put("error", e.getMessage());
             }
             return resp;
         }
