@@ -4776,14 +4776,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
         var runsUsingItems = new ArrayList<ExpRun>();
-        Set<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptySet() : dataItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
+        List<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptyList() : dataItems.stream().map(RunItem::getRowId).toList();
         Set<Integer> sampleIds = materialItems == null || materialItems.isEmpty() ? Collections.emptySet() : materialItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
 
         if (!dataIds.isEmpty())
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+            runsUsingItems.addAll(getRunsUsingDataIds(dataIds));
 
         if (!sampleIds.isEmpty())
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), dataIds, getTinfoData()));
+            // get all the runs that use these samples as inputs
+            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
+
+        if (!runsUsingItems.isEmpty())
+        {
+            List<Integer> runIds = runsUsingItems.stream().map(ExpRun::getRowId).toList();
+            runsUsingItems.removeAll(getDerivedRunsUsingOtherDataIds(getTinfoDataInput(), "dataID", dataIds, runIds));
+            runsUsingItems.removeAll(getDerivedRunsUsingOtherDataIds(getTinfoMaterialInput(), "materialID", sampleIds, runIds));
+        }
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -4903,6 +4911,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
+    }
+
+    private Collection<? extends ExpRun> getDerivedRunsFromDataIds(Collection<Integer> dataIds)
+    {
+        if (dataIds == null || dataIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromDataIds(getAppendInClause(dataIds))));
+    }
+
+    private Collection<? extends ExpRun> getDerivedRunsUsingOtherDataIds(TableInfo inputTable, String idFieldName, Collection<Integer> dataIds, Collection<Integer> runIds)
+    {
+        if (dataIds == null || dataIds.isEmpty())
+            return Collections.emptyList();
+
+        SQLFragment sql = new SQLFragment();
+        SQLFragment dataInSql = getAppendInClause(dataIds);
+        SQLFragment runInSql = getAppendInClause(runIds);
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(inputTable, "i").append("\n");
+        sql.append("WHERE pa.RunId ").append(runInSql)
+                .append(" AND i.TargetApplicationId = pa.RowId ")
+                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+                .append("AND ").append(idFieldName).append(" NOT ").append(dataInSql);
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
+
     }
 
     /**
@@ -5580,6 +5617,65 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of data class rowIds were used as inputs
+     * @param dataRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsUsingOtherDataIds(SQLFragment dataRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.datainput di
+            WHERE mi.TargetApplicationId = pa.RowId
+                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where data objects are inputs
+                AND di.dataID <dataRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoDataInput(), "di").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
+                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+                .append("AND di.dataID ").append(dataRowIdSQL);
+
+        return sql;
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of data class rowIds were used as inputs
+     * @param dataRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromDataIds(SQLFragment dataRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.datainput di
+            WHERE mi.TargetApplicationId = pa.RowId
+                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where data objects are inputs
+                AND di.dataID <dataRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoDataInput(), "di").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
+                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+                .append("AND di.dataID ").append(dataRowIdSQL);
+
+        return sql;
+    }
+
 
     /**
      * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
@@ -8645,6 +8741,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public static class TestCase extends Assert
     {
+        final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
+        QueryUpdateService sampleTypeSvc;
+        QueryUpdateService sourceTypeSvc;
+        ExpSampleType sampleType;
+        ExpDataClass dataClass;
+
         @Before
         public void setUp()
         {
@@ -8665,7 +8767,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
             final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
-            final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
 
             // assert no MaterialInput exp.object exist
             assertEquals(0L, countMaterialInputObjects(c));
@@ -8745,6 +8846,244 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
             TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
+        }
+
+        @Test
+        public void testRunDeletedWithChildContainer() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            // create subfolder that will be deleted
+            Container toDelete = ContainerManager.createContainer(c, "ToDelete1");
+            setUpTypes("TestSamples_1", "TestSources_1");
+
+            List<Map<String, Object>> rows = new ArrayList<>();
+            rows.add(CaseInsensitiveHashMap.of("name", "bob"));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> parentData = sampleTypeSvc.insertRows(user, c, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create child sample in container to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "sally",  "MaterialInputs/TestSamples_1", parentData.get(0).get("RowId")));
+            sampleTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpRun derivationRun = sampleType.getSample(toDelete, "sally").getRun();
+            assertNotNull(derivationRun);
+
+            ContainerManager.delete(toDelete, user);
+            // verify run is deleted but parents are retained
+            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
+            assertNull(impl.getExpRun(derivationRun.getRowId()));
+            assertNotNull(sampleType.getSample(c, "bob"));
+        }
+
+        @Test
+        public void testRunDeletedWithAllInputs() throws Exception
+        {
+            setUpTypes("TestSampleType_3", "TestSources_3");
+
+            final User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            // create subfolder that will be deleted
+            Container toDelete = ContainerManager.createContainer(c, "ToDelete2");
+
+            // create parent samples in subfolder
+            List<Map<String, Object>> rows = new ArrayList<>();
+            rows.add(CaseInsensitiveHashMap.of("name", "alice"));
+            rows.add(CaseInsensitiveHashMap.of("name", "bob"));
+            rows.add(CaseInsensitiveHashMap.of("name", "cecil"));
+            rows.add(CaseInsensitiveHashMap.of("name", "devon"));
+            rows.add(CaseInsensitiveHashMap.of("name", "eddie"));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> parentSamples = sampleTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create parent data class objects in subfolder
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "source1"));
+            rows.add(CaseInsensitiveHashMap.of("name", "source2"));
+            rows.add(CaseInsensitiveHashMap.of("name", "source3"));
+            rows.add(CaseInsensitiveHashMap.of("name", "source4"));
+            rows.add(CaseInsensitiveHashMap.of("name", "source5"));
+
+            List<Map<String, Object>> parentSources = sourceTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create child in parent folder with sample parents in container to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "freda",  "MaterialInputs/TestSamples_2", parentSamples.subList(0, 3).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
+            List<Map<String, Object>> childSamples = new ArrayList<>();
+            childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
+            if (errors.hasErrors())
+                throw errors;
+
+            // create child in subfolder with source parents in container to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "gregor",  "DataInputs/TestSources_2", parentSources.subList(0, 2).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
+            childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial sample1 = sampleType.getSample(toDelete, "gregor");
+            ExpRun derivationRun1 = sample1.getRun();
+            assertNotNull(derivationRun1);
+
+            // create child in subfolder with source and sample parents in container to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of(
+                    "name", "hilda",
+                    "DataInputs/TestSources_2", parentSources.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(",")),
+                    "MaterialInputs/TestSamples_2", parentSamples.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))
+            ));
+            childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpRun derivationRun2 = sampleType.getSample(toDelete, "hilda").getRun();
+            assertNotNull(derivationRun2);
+
+            ExperimentServiceImpl expSvcImpl = ExperimentServiceImpl.get();
+
+            // delete one sample parent and validate the run is not deleted
+            sampleTypeSvc.deleteRows(user, c, List.of(Map.of("RowId", parentSamples.get(0).get("rowId"))), null, null);
+            assertNotNull(expSvcImpl.getExpRun(derivationRun1.getRowId()));
+
+            // delete one source parent and validate the run is not deleted
+            sourceTypeSvc.deleteRows(user, c, List.of(Map.of("RowId", parentSources.get(0).get("rowId"))), null, null);
+            assertNotNull(expSvcImpl.getExpRun(derivationRun2.getRowId()));
+
+            // delete subfolder
+            ContainerManager.delete(toDelete, user);
+
+            // verify the runs are deleted
+            assertNull(expSvcImpl.getExpRun(derivationRun1.getRowId()));
+            assertNull(expSvcImpl.getExpRun(derivationRun2.getRowId()));
+        }
+
+        @Test
+        public void testRunRetainedWithSubsetOfInputsDeleted() throws Exception
+        {
+            setUpTypes("TestSampleType_3", "TestSources_3");
+
+            final User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            // create subfolder that will be deleted
+            Container toDelete = ContainerManager.createContainer(c, "ToDelete3");
+            // create parent samples in top folder
+            List<Map<String, Object>> rows = new ArrayList<>();
+            rows.add(CaseInsensitiveHashMap.of("name", "PS-1"));
+            rows.add(CaseInsensitiveHashMap.of("name", "PS-2"));
+            rows.add(CaseInsensitiveHashMap.of("name", "PS-3"));
+            rows.add(CaseInsensitiveHashMap.of("name", "PS-4"));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> parentSamples1 = sampleTypeSvc.insertRows(user, c, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create parent sources in top folder
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "PDC-1"));
+            rows.add(CaseInsensitiveHashMap.of("name", "PDC-2"));
+            rows.add(CaseInsensitiveHashMap.of("name", "PDC-3"));
+            List<Map<String, Object>> parentSources1 = sourceTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create parent samples in subfolder to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "CS-1"));
+            rows.add(CaseInsensitiveHashMap.of("name", "CS-2"));
+            List<Map<String, Object>> parentSamples2 = sampleTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create parent sources in subfolder to be deleted
+            rows.clear();
+            rows.add(CaseInsensitiveHashMap.of("name", "CDC-1"));
+            rows.add(CaseInsensitiveHashMap.of("name", "CDC-2"));
+            List<Map<String, Object>> parentSources2 = sourceTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            // create child sample in subfolder with sample parents in top and in subfolder to be deleted
+            rows.clear();
+            String sampleParents = parentSamples1.get(0).get("RowId") + "," + parentSamples2.get(0).get("RowId");
+            rows.add(CaseInsensitiveHashMap.of("name", "CS-3", "MaterialInputs/TestSampleType_3", sampleParents));
+
+            // create child in subfolder with source parents in top and in folder to be deleted
+            String sourceParents = parentSources1.get(0).get("RowId") + "," + parentSources2.get(0).get("RowId");
+            rows.add(CaseInsensitiveHashMap.of("name", "CS-4", "DataInputs/TestSourceType_3", sourceParents));
+            // create child in subfolder with source and sample parents in top and in subfolder to be deleted
+            sampleParents = parentSamples1.get(1).get("RowId") + "," + parentSamples2.get(1).get("RowId");
+            sourceParents = parentSources1.get(1).get("RowId") + "," + parentSources2.get(1).get("RowId");
+            rows.add(CaseInsensitiveHashMap.of("name", "CS-5", "DataInputs/TestSourceType_3", sourceParents, "MaterialInputs/TestSampleType_3", sampleParents));
+            sampleTypeSvc.insertRows(user, toDelete, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial childSample3 = sampleType.getSample(toDelete, "CS-3");
+            ExpMaterial childSample4 = sampleType.getSample(toDelete, "CS-4");
+            ExpMaterial childSample5 = sampleType.getSample(toDelete, "CS-5");
+            int runId3 = childSample3.getRunId();
+            int runId4 = childSample4.getRunId();
+            int runId5 = childSample5.getRunId();
+
+            // delete subfolder
+            ContainerManager.delete(toDelete, user);
+
+            ExperimentServiceImpl expSvcImpl = ExperimentServiceImpl.get();
+            // verify the runs are retained but the inputs from deleted container are removed
+            ExpRun run3 = expSvcImpl.getExpRun(runId3);
+            assertNotNull("Run for sample with some parents removed should still exist", run3);
+            Map<ExpMaterial, String> sampleInputs = run3.getMaterialInputs();
+            assertEquals("Should have a sample input remaining", 1, sampleInputs.size());
+
+            ExpRun run4 = expSvcImpl.getExpRun(runId4);
+            assertNotNull("Run for sample with some data class parents removed should still exist", run4);
+            Map<ExpData, String> dataInputs = run4.getDataInputs();
+            assertEquals("Should have a data input remaining", 1, dataInputs.size());
+
+            ExpRun run5 = expSvcImpl.getExpRun(runId5);
+            assertNotNull("Run for sample with some sample and some data class parents removed should still exist", run5);
+            sampleInputs = run5.getMaterialInputs();
+            dataInputs = run5.getDataInputs();
+            assertEquals("Should have one sample input remaining", 1, sampleInputs.size());
+            assertEquals("Should have one data input remaining", 1, dataInputs.size());
+        }
+
+        private void setUpTypes(String sampleTypeName, String dataClassName) throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            // create sample type in parent
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            sampleType = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+            UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+            TableInfo table = schema.getTable(sampleTypeName);
+            sampleTypeSvc = table.getUpdateService();
+            if (sampleTypeSvc == null)
+                throw new Exception("No update service for " + table.getName());
+
+            // create data class in parent
+            props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("data", "string"));
+            dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, Collections.emptyList(), null);
+
+            table = QueryService.get().getUserSchema(user, c, "exp.data").getTable(dataClassName);
+            sourceTypeSvc = table.getUpdateService();
+            if (sourceTypeSvc == null)
+                throw new Exception("No update service for " + table.getName());
         }
     }
 }
