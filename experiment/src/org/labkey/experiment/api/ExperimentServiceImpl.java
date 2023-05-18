@@ -5216,11 +5216,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 deleteExpExperiment(c, user, exp);
             }
 
-            // now delete protocols (including their nested actions and parameters.
+            // now delete protocols (including their nested actions and parameters).
             deleteProtocolByRowIds(c, user, null, protIds);
 
             // now delete starting materials that were not associated with a MaterialSource upload.
-            // we get this list now so that it doesn't include all of the run-scoped Materials that were
+            // we get this list now so that it doesn't include all the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ?";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
