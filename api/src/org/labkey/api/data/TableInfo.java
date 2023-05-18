@@ -435,7 +435,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     enum TriggerType
     {
-        INSERT, UPDATE, DELETE, SELECT, TRUNCATE;
+        INSERT, UPDATE, DELETE, SELECT, TRUNCATE, MOVE;
 
         public String getMethodName()
         {
