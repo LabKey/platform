@@ -118,6 +118,7 @@ import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.factory.InitializingBean;
 
+import javax.validation.constraints.Null;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -849,7 +850,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return _publishSourceId != null;
     }
 
-    @Override
+    @Override @Nullable
     public PublishSource getPublishSource()
     {
         if (_publishSourceType != null)
