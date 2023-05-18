@@ -513,6 +513,10 @@
                     // get the panel holding the list of folder objects
                     let pnl = this.down('#template_folder_writers');
                     if (pnl) {
+                        this.down('#templateIncludeSubfolders').setVisible(true);
+                        this.down('#folderObjectsLabel').setVisible(true);
+                        this.down('#folderOptionsLabel').setVisible(true);
+
                         pnl.removeAll();
                         pnl.add(folderWriterConfigs);
                         scrollToBottom();
@@ -528,6 +532,7 @@
                             xtype: 'combo',
                             name: 'templateSourceId',
                             itemId: 'sourceFolderCombo',
+                            emptyText: 'Select a template folder',
                             allowBlank: false,
                             displayField: 'path',
                             valueField: 'id',
@@ -551,17 +556,22 @@
                             }
                         },{
                             html: 'Folder objects to copy:',
-                            cls: 'labkey-wizard-header'
+                            cls: 'labkey-wizard-header',
+                            itemId: 'folderObjectsLabel',
+                            hidden: true
                         },{
                             xtype: 'panel',
                             border: false,
                             itemId: 'template_folder_writers',
                         },{
                             html: 'Options:',
-                            cls: 'labkey-wizard-header'
+                            cls: 'labkey-wizard-header',
+                            itemId: 'folderOptionsLabel',
+                            hidden: true
                         },{
                             xtype: 'checkbox',
                             hideLabel: true,
+                            hidden: true,
                             boxLabel: 'Include Subfolders',
                             name: 'templateIncludeSubfolders',
                             itemId: 'templateIncludeSubfolders',
