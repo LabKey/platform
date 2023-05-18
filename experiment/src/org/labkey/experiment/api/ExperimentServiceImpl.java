@@ -8964,7 +8964,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Container c = JunitUtil.getTestContainer();
             // create subfolder that will be deleted
             Container toDelete = ContainerManager.createContainer(c, "ToDelete1");
-            setUpTypes("TestSamples_1", "TestSources_1");
+            setUpTypes("TestSamples_1", null);
 
             List<Map<String, Object>> rows = new ArrayList<>();
             rows.add(CaseInsensitiveHashMap.of("name", "bob"));
@@ -8994,7 +8994,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @Test
         public void testRunDeletedWithAllInputs() throws Exception
         {
-            setUpTypes("TestSampleType_3", "TestSources_3");
+            setUpTypes("TestSampleType_2", "TestSourceType_2");
 
             final User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
@@ -9028,7 +9028,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // create child in parent folder with sample parents in container to be deleted
             rows.clear();
-            rows.add(CaseInsensitiveHashMap.of("name", "freda",  "MaterialInputs/TestSamples_2", parentSamples.subList(0, 3).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
+            rows.add(CaseInsensitiveHashMap.of("name", "freda",  "MaterialInputs/TestSampleType_2", parentSamples.subList(0, 3).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
             List<Map<String, Object>> childSamples = new ArrayList<>();
             childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
             if (errors.hasErrors())
@@ -9036,7 +9036,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // create child in subfolder with source parents in container to be deleted
             rows.clear();
-            rows.add(CaseInsensitiveHashMap.of("name", "gregor",  "DataInputs/TestSources_2", parentSources.subList(0, 2).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
+            rows.add(CaseInsensitiveHashMap.of("name", "gregor",  "DataInputs/TestSourceType_2", parentSources.subList(0, 2).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))));
             childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
             if (errors.hasErrors())
                 throw errors;
@@ -9049,8 +9049,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             rows.clear();
             rows.add(CaseInsensitiveHashMap.of(
                     "name", "hilda",
-                    "DataInputs/TestSources_2", parentSources.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(",")),
-                    "MaterialInputs/TestSamples_2", parentSamples.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))
+                    "DataInputs/TestSourceType_2", parentSources.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(",")),
+                    "MaterialInputs/TestSampleType_2", parentSamples.subList(2, 4).stream().map(data -> data.get("RowId").toString()).collect(Collectors.joining(","))
             ));
             childSamples.addAll(sampleTypeSvc.insertRows(user, c, rows, errors, null, null));
             if (errors.hasErrors())
@@ -9080,7 +9080,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @Test
         public void testRunRetainedWithSubsetOfInputsDeleted() throws Exception
         {
-            setUpTypes("TestSampleType_3", "TestSources_3");
+            setUpTypes("TestSampleType_3", "TestSourceType_3");
 
             final User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
@@ -9184,15 +9184,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (sampleTypeSvc == null)
                 throw new Exception("No update service for " + table.getName());
 
-            // create data class in parent
-            props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("data", "string"));
-            dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, Collections.emptyList(), null);
+            if (dataClassName != null)
+            {
+                // create data class in parent
+                props = new ArrayList<>();
+                props.add(new GWTPropertyDescriptor("data", "string"));
+                dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, Collections.emptyList(), null);
 
-            table = QueryService.get().getUserSchema(user, c, "exp.data").getTable(dataClassName);
-            sourceTypeSvc = table.getUpdateService();
-            if (sourceTypeSvc == null)
-                throw new Exception("No update service for " + table.getName());
+                table = QueryService.get().getUserSchema(user, c, "exp.data").getTable(dataClassName);
+                sourceTypeSvc = table.getUpdateService();
+                if (sourceTypeSvc == null)
+                    throw new Exception("No update service for " + table.getName());
+            }
         }
     }
 }
