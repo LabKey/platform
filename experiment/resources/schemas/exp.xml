@@ -1224,4 +1224,16 @@
             <column columnName="ModifiedBy"/>
         </columns>
     </table>
+    <table tableName="DataTypeExclusion" tableDbType="UNKNOWN">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="DataTypeRowId"/>
+            <column columnName="DataType"/>
+            <column columnName="ExcludedContainer" />
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
 </tables>

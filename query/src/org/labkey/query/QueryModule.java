@@ -72,6 +72,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -232,6 +233,8 @@ public class QueryModule extends DefaultModule
                 "Allow for lookup fields in product projects to query across all folders within the top-level folder.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
                 "Only list project-specific data within product projects.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION, "Selection of data structure to be shown in projects",
+                "Configure which sample types, source types, assay designs and storage locations are relevant for each project.", false);
     }
 
 
@@ -411,6 +414,7 @@ public class QueryModule extends DefaultModule
         json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductProjectsAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductProjectsDataListingScopedToProject());
+        json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION, AppProps.getInstance().isExperimentalFeatureEnabled(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_SELECTION));
 
         return json;
     }
