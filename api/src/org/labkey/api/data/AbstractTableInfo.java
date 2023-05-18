@@ -1100,6 +1100,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !effectiveTargetContainer.equals(fromSchema.getContainer()))
             {
+                if (lookupContainer == null) {
+                    cf = QueryService.get().getProductContainerFilterForLookups(fromSchema.getContainer(), fromSchema.getUser(), cf);
+                }
+
                 // Let the QueryForeignKey lazily create the schema on demand
                 ret = QueryForeignKey.from(fromSchema, cf)
                         .schema(fk.getFkDbSchema(), effectiveTargetContainer)
@@ -1116,6 +1120,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (ret == null)
         {
+            if (lookupContainer == null) {
+                cf = QueryService.get().getProductContainerFilterForLookups(fromSchema.getContainer(), fromSchema.getUser(), cf);
+            }
+
             // We can reuse the same schema object
             ret = QueryForeignKey.from(fromSchema, cf)
                     .container(lookupContainer)
