@@ -3773,6 +3773,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("ObjectLegacyNames");
     }
 
+    @Override
+    public TableInfo getTinfoDataTypeExclusion()
+    {
+        return getExpSchema().getTable("DataTypeExclusion");
+    }
+
     /**
      * return the object of any known experiment type that is identified with the LSID
      *
@@ -8265,6 +8271,98 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("DataTypeRowId", rowId);
+        fields.put("DataType", dataType.name());
+        fields.put("ExcludedContainer", excludedContainerId);
+        Table.insert(user, getTinfoDataTypeExclusion(), fields);
+    }
+
+    public void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ? AND ExcludedContainer = ?");
+        sql.add(rowId);
+        sql.add(dataType.name());
+        sql.add(excludedContainerId);
+
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE ");
+        String and = "";
+        if (dataType != null)
+        {
+            sql.append("DataType = ? ");
+            sql.add(dataType.name());
+            and = " AND ";
+        }
+
+        if (!StringUtils.isEmpty(excludedContainerId))
+        {
+            sql.append(and);
+            sql.append("ExcludedContainer = ? ");
+            sql.add(excludedContainerId);
+            and = " AND ";
+        }
+
+        if (dataTypeRowId != null && dataTypeRowId > 0)
+        {
+            sql.append(and);
+            sql.append("DataTypeRowId = ? ");
+            sql.add(dataTypeRowId);
+        }
+
+        return new SqlSelector(getTinfoDataTypeExclusion().getSchema(), sql).getMapArray();
+    }
+
+    public Set<Integer> getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
+    {
+        Set<Integer> excludedRowIds = new HashSet<>();
+        Map<String, Object>[] exclusions = getContainerDataTypeExclusions(dataType, excludedContainerId, null);
+        for (Map<String, Object> exclusion : exclusions)
+            excludedRowIds.add((Integer) exclusion.get("DataTypeRowId"));
+
+        return excludedRowIds;
+    }
+
+    @Override
+    public void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user)
+    {
+        if (excludedDataTypeRowIds == null)
+            return;
+
+        Set<Integer> previousExclusions = getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
+
+        Set<Integer> toAdd = new HashSet<>(updatedExclusions);
+        toAdd.removeAll(previousExclusions);
+
+        Set<Integer> toRemove = new HashSet<>(previousExclusions);
+        toRemove.removeAll(updatedExclusions);
+
+        if (!toAdd.isEmpty())
+        {
+            for (Integer add : toAdd)
+                addDataTypeExclusion(add, dataType, excludedContainerId, user);
+        }
+
+        if (!toRemove.isEmpty())
+        {
+            for (Integer remove : toRemove)
+                removeDataTypeExclusion(remove, dataType, excludedContainerId, user);
+        }
+    }
+
+    @Override
     public void addObjectLegacyName(int objectId, String objectType, String legacyName, User user)
     {
         Map<String, Object> fields = new HashMap<>();
@@ -8528,7 +8626,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8539,6 +8637,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
+
+                // LKB registry data class objects can have related junction list rows that need to be updated as well.
+                // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
@@ -8589,13 +8695,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE ").append(idField);
+            .append(" SET container = ").appendValue(targetContainer.getEntityId());
+        if (withModified)
+        {
+            dataUpdate.append(", modified = ").appendValue(new Date());
+            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+        }
+        dataUpdate.append(" WHERE ").append(idField);
         dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
         return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
