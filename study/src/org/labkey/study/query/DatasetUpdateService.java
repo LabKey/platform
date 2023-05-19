@@ -277,9 +277,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.datasetModified(_dataset, true);
             if (configParameters == null || !Boolean.TRUE.equals(configParameters.get(DatasetUpdateService.Config.SkipResyncStudy)))
             {
+                StudyManager.datasetModified(_dataset, true);
                 resyncStudy(user, container);
             }
         }
