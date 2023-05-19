@@ -65,9 +65,6 @@
 <%=formatMissedErrors("form")%>
 
 <style>
-    html {
-        scroll-behavior: smooth;
-    }
     .child-checkbox {
         margin-left: 20px;
     }
