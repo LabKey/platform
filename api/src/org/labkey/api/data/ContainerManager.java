@@ -238,12 +238,22 @@ public class ContainerManager
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
     {
+        return createContainer(parent, name, title, description, type, user, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user, @Nullable String auditMsg)
+    {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
-        return createContainer(parent, name, title, description, user, properties);
+        return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
+    {
+        return createContainer(parent, name, title, description, user, properties, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
@@ -341,7 +351,7 @@ public class ContainerManager
         // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
         _removeFromCache(parent);
 
-        fireCreateContainer(c, user);
+        fireCreateContainer(c, user, auditMsg);
 
         return c;
     }
@@ -2149,6 +2159,11 @@ public class ContainerManager
         /** Called after a new container has been created */
         void containerCreated(Container c, User user);
 
+        default void containerCreated(Container c, User user, @Nullable String auditMsg)
+        {
+            containerCreated(c, user);
+        }
+
         /** Called immediately prior to deleting the row from core.containers */
         void containerDeleted(Container c, User user);
 
@@ -2283,7 +2298,7 @@ public class ContainerManager
     }
 
 
-    protected static void fireCreateContainer(Container c, User user)
+    protected static void fireCreateContainer(Container c, User user, @Nullable String auditMsg)
     {
         List<ContainerListener> list = getListeners();
 
@@ -2291,7 +2306,7 @@ public class ContainerManager
         {
             try
             {
-                cl.containerCreated(c, user);
+                cl.containerCreated(c, user, auditMsg);
             }
             catch (Throwable t)
             {

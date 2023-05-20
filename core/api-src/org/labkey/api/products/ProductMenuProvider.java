@@ -18,6 +18,7 @@ package org.labkey.api.products;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -26,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class ProductMenuProvider
 {
@@ -64,14 +67,14 @@ public abstract class ProductMenuProvider
     public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);
 
     @Nullable
-    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName);
+    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions);
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames)
+    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
     {
         List<MenuSection> sections = new ArrayList<>();
         sectionNames.forEach((name) -> {
-            MenuSection section = getSection(context, name);
+            MenuSection section = getSection(context, name, dataTypeExclusions);
             if (section != null)
                 sections.add(section);
         });
@@ -80,8 +83,8 @@ public abstract class ProductMenuProvider
     }
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context)
+    public List<MenuSection> getSections(@NotNull ViewContext context, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
     {
-        return getSections(context, getSectionNames(context));
+        return getSections(context, getSectionNames(context), dataTypeExclusions);
     }
 }

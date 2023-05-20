@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.logging.LogHelper;
@@ -121,12 +122,14 @@ public class ProductRegistry
     {
         List<String> productIds = origProductIds == null ? getProductIdsForContainer(context.getContainer()) : origProductIds;
 
+        Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions = ExperimentService.get().getContainerDataTypeExclusions(context.getContainer().getId());
+
         List<MenuSection> sections = new ArrayList<>();
         for (String productId : productIds)
         {
             if (_productMap.containsKey(productId))
             {
-                sections.addAll(_productMap.get(productId).getSections(context));
+                sections.addAll(_productMap.get(productId).getSections(context, dataTypeExclusions));
             }
         }
         return sections;
@@ -140,7 +143,7 @@ public class ProductRegistry
             return Collections.emptyList();
         }
         ProductMenuProvider provider = _productMap.get(productId);
-        List<MenuSection> sections = provider.getSections(context);
+        List<MenuSection> sections = provider.getSections(context, null);
         // always include the user menu as the last item
         sections.add(new UserInfoMenuSection(context, provider));
         return sections;
@@ -151,7 +154,7 @@ public class ProductRegistry
     {
         if (_sectionMap.containsKey(name))
         {
-            return _sectionMap.get(name).getSection(context, name);
+            return _sectionMap.get(name).getSection(context, name, null /*used by unit test only*/ );
         }
         else
         {
@@ -240,7 +243,7 @@ public class ProductRegistry
             }
 
             @Override
-            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName)
+            public @Nullable MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
             {
                 if (_sectionNames.contains(sectionName))
                     return new TestMenuSection(context, sectionName, sectionName);
