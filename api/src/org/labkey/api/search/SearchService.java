@@ -635,7 +635,6 @@ public interface SearchService
         public final List<SearchCategory> categories;
         public final Container container;
         public final List<String> fields;
-        public final Boolean fullResult;
         public final Boolean invertResults;
         public final Integer limit;
         public final Integer offset;
@@ -654,14 +653,12 @@ public interface SearchService
             @Nullable Integer offset,
             @Nullable Integer limit,
             @Nullable Boolean invertResults,
-            @Nullable Boolean fullResult,
             @Nullable List<String> fields
         )
         {
             this.categories = categories;
             this.container = container;
             this.fields = fields;
-            this.fullResult = fullResult == null || fullResult;
             this.invertResults = invertResults != null && invertResults;
             this.limit = limit == null ? 100 : limit;
             this.offset = offset == null ? 0 : offset;
@@ -676,7 +673,6 @@ public interface SearchService
             public List<SearchCategory> categories;
             public Container container;
             public List<String> fields;
-            public Boolean fullResult;
             public Boolean invertResults;
             public Integer limit;
             public Integer offset;
@@ -699,7 +695,6 @@ public interface SearchService
                 this(options.queryString, options.user, options.container);
                 this.categories = options.categories;
                 this.fields = options.fields;
-                this.fullResult = options.fullResult;
                 this.invertResults = options.invertResults;
                 this.limit = options.limit;
                 this.offset = options.offset;
@@ -709,7 +704,7 @@ public interface SearchService
 
             public SearchOptions build()
             {
-                return new SearchOptions(queryString, user, container, categories, scope, sortField, offset, limit, invertResults, fullResult, fields);
+                return new SearchOptions(queryString, user, container, categories, scope, sortField, offset, limit, invertResults, fields);
             }
         }
     }
