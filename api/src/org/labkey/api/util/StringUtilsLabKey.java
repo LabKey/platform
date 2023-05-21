@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 
 import java.nio.charset.Charset;
@@ -64,7 +65,7 @@ public class StringUtilsLabKey
 
     public static void append(StringBuilder sb, @Nullable String value)
     {
-        if (null != value)
+        if (!StringUtils.isEmpty(value))
         {
             if (sb.length() > 0)
                 sb.append(" ");
@@ -665,6 +666,47 @@ public class StringUtilsLabKey
             assertEquals("abc\"", unquoteString("abc\""));
             assertEquals("ab\"c", unquoteString("\"ab\"\"c\""));
             assertEquals("WC-1,3", unquoteString("\"WC-1,3\""));
+        }
+
+        @Test
+        public void testAppend()
+        {
+            class TestIdentifiable implements Identifiable
+            {
+                @Override
+                public Container getContainer()
+                {
+                    return null;
+                }
+
+                @Override
+                public String getLSID()
+                {
+                    return null;
+                }
+
+                @Override
+                public String getName()
+                {
+                    return "TestIdentifiable";
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            append(sb, (Identifiable) null);
+            assertEquals("", sb.toString());
+
+            sb = new StringBuilder("first");
+            append(sb, "");
+            assertEquals("first", sb.toString());
+            append(sb, (String) null);
+            assertEquals("first", sb.toString());
+
+            append(sb, "second");
+            assertEquals("first second", sb.toString());
+
+            append(sb, new TestIdentifiable());
+            assertEquals("first second TestIdentifiable", sb.toString());
         }
     }
 }

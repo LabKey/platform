@@ -401,8 +401,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
-            int runRowId = run.getRowId();
-
             transaction.commit();
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
