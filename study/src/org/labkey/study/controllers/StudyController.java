@@ -61,7 +61,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
@@ -106,7 +105,6 @@ import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -191,6 +189,7 @@ import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
+import org.labkey.study.query.ParticipantTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
@@ -1547,25 +1546,71 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            // Issue 43898: Validate that the subject column name is not a user defined field in one of the datasets
+            StudyImpl study = getStudyRedirectIfNull();
+
+            // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
+            // study table or dataset
+            String subjectNounSingular = form.get("SubjectNounSingular");
+            if (null != subjectNounSingular)
+            {
+                // Search user ensures we validate against all datasets and tables
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, User.getSearchUser());
+
+                // This checks all study tables and dataset names, but not dataset labels (matching a label is tolerated)
+                if (schema.getTableNames().contains(subjectNounSingular))
+                {
+                    // Retrieve the table to provide guidance in the error message
+                    TableInfo table = schema.getTable(subjectNounSingular);
+
+                    // Allow subject noun to match the participant table's name -- otherwise we can never re-save study properties
+                    if (!(table instanceof ParticipantTable))
+                    {
+                        String quotedSubjectNoun = "\"" + subjectNounSingular + "\" ";
+                        String guidance = null;
+
+                        // It's a dataset... provide some guidance
+                        if (table instanceof DatasetTable datasetTable)
+                        {
+                            String name = datasetTable.getName();
+                            if (subjectNounSingular.equalsIgnoreCase(name))
+                            {
+                                guidance = quotedSubjectNoun + " is the name of an existing dataset.";
+                            }
+                            else
+                            {
+                                // This should never happen... it would mean we matched a dataset by label even though
+                                // there's a study table with this name
+                                assert false : "Illegal state: \"" + subjectNounSingular + "\" should not have matched dataset " + datasetTable.getName() + " (" + datasetTable.getTitle() + ")";
+                            }
+                        }
+
+                        // Some other table
+                        if (null == guidance)
+                        {
+                            guidance = quotedSubjectNoun + " matches the name of an existing study table.";
+                        }
+
+                        errors.reject(ERROR_MSG, "Cannot set Subject Noun Singular to a value that matches the name of an existing study table or dataset. " + guidance);
+                        return;
+                    }
+                }
+            }
+
+            // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
             String subjectColName = form.get("SubjectColumnName");
             if (null != subjectColName)
             {
-                Study study = StudyService.get().getStudy(getContainer());
-                if (null != study)
+                for (Dataset dataset : study.getDatasets())
                 {
-                    for (Dataset dataset : study.getDatasets())
+                    Domain domain = dataset.getDomain();
+                    if (null != domain)
                     {
-                        Domain domain = dataset.getDomain();
-                        if (null != domain)
+                        for (DomainProperty property : domain.getProperties())
                         {
-                            for (DomainProperty property : domain.getProperties())
+                            if (property.getName().equalsIgnoreCase(subjectColName))
                             {
-                                if (property.getName().equalsIgnoreCase(subjectColName))
-                                {
-                                    errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ". ");
-                                    return;
-                                }
+                                errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user-defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ".");
+                                return;
                             }
                         }
                     }
