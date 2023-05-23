@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -39,7 +40,9 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
@@ -63,6 +66,7 @@ import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
@@ -90,6 +94,11 @@ import org.labkey.study.query.BaseStudyTable;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DerivativeTypeTable;
 import org.labkey.study.query.LocationTable;
+import org.labkey.study.query.ParticipantCategoryTable;
+import org.labkey.study.query.ParticipantGroupMapTable;
+import org.labkey.study.query.ParticipantGroupTable;
+import org.labkey.study.query.ParticipantTable;
+import org.labkey.study.query.ParticipantVisitTable;
 import org.labkey.study.query.PrimaryTypeTable;
 import org.labkey.study.query.SimpleSpecimenTable;
 import org.labkey.study.query.SpecimenDetailTable;
@@ -485,38 +494,119 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
+    public String getSubjectColumnNameValidationErrorMessage(Container container, String subjectColumnName)
     {
         if (subjectColumnName == null || subjectColumnName.length() == 0)
-            return false;
-        // Short-circuit for the common case:
-        if ("ParticipantId".equalsIgnoreCase(subjectColumnName))
-            return true;
+            return "Subject Column Name can't be blank.";
+
+        // Disallow standard columns added to all datasets, except "ParticipantId"
         Set<String> colNames = new CaseInsensitiveHashSet(Arrays.asList(StudyUnionTableInfo.COLUMN_NAMES));
-        // We allow any name that isn't found in the default set of columns added to all datasets, except "participantid",
-        // which is handled above:
-        return !colNames.contains(subjectColumnName);
-    }
+        colNames.remove("ParticipantId");
 
-    @Override
-    public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
-    {
-        if (subjectNounSingular == null || subjectNounSingular.length() == 0)
-            return false;
+        if (colNames.contains(subjectColumnName))
+            return "\"" + subjectColumnName + "\" is a standard dataset column name";
 
-        String subjectTableName = getSubjectTableName(subjectNounSingular);
-        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
+        Study study = getStudy(container);
 
-        for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
+        if (null != study)
         {
-            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
+            for (Dataset dataset : study.getDatasets())
             {
-                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
-                    return false;
+                Domain domain = dataset.getDomain();
+                if (null != domain)
+                {
+                    for (DomainProperty property : domain.getProperties())
+                    {
+                        if (property.getName().equalsIgnoreCase(subjectColumnName))
+                        {
+                            return "Cannot set Subject Column Name to a user-defined dataset field. \"" + subjectColumnName + "\" is already defined in " + dataset.getName() + ".";
+                        }
+                    }
+                }
             }
         }
 
-        return true;
+        return null;
+    }
+
+    @Override
+    public String getSubjectNounSingularValidationErrorMessage(Container container, String subjectNounSingular)
+    {
+        if (StringUtils.isBlank(subjectNounSingular))
+            return "Subject Noun Singular can't be blank.";
+
+        StudyImpl study = getStudy(container);
+
+        if (study != null)
+        {
+            // Search user ensures we validate against all datasets and tables
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, User.getSearchUser());
+            Set<String> tableNames = schema.getTableNames();
+            String subjectTableName = getSubjectTableName(subjectNounSingular);
+
+            String message;
+
+            if (null != (message = getValidationError(subjectNounSingular, subjectTableName, ParticipantTable.class, tableNames, schema)))
+                return message;
+            if (null != (message = getValidationError(subjectNounSingular, getSubjectVisitTableName(subjectNounSingular), ParticipantVisitTable.class, tableNames, schema)))
+                return message;
+            if (null != (message = getValidationError(subjectNounSingular, subjectTableName + "Category", ParticipantCategoryTable.class, tableNames, schema)))
+                return message;
+            if (null != (message = getValidationError(subjectNounSingular, subjectTableName + "Group", ParticipantGroupTable.class, tableNames, schema)))
+                return message;
+            if (null != (message = getValidationError(subjectNounSingular, subjectTableName + "GroupMap", ParticipantGroupMapTable.class, tableNames, schema)))
+                return message;
+        }
+
+        return null;
+    }
+
+    private <T extends BaseStudyTable> @Nullable String getValidationError(String subjectNounSingular, String tableName, Class<T> allowedClazz, Set<String> tableNames, StudyQuerySchema schema)
+    {
+        if (tableNames.contains(tableName))
+        {
+            TableInfo table = schema.getTable(tableName);
+            if (table.getClass() != allowedClazz)
+            {
+                String quotedTableName = "\"" + tableName + "\"";
+                String guidance = null;
+
+                // It's a dataset... provide some guidance
+                if (table instanceof DatasetTable datasetTable)
+                {
+                    String name = datasetTable.getName();
+                    if (tableName.equalsIgnoreCase(name))
+                    {
+                        guidance = quotedTableName + " is the name of an existing dataset.";
+                    }
+                    else
+                    {
+                        // This should never happen... it would mean we matched a dataset by label even though
+                        // there's a study table with this name
+                        assert false : "Illegal state: " + quotedTableName + " should not have matched dataset " + datasetTable.getName() + " (" + datasetTable.getTitle() + ")";
+                    }
+                }
+
+                // Some other table
+                if (null == guidance)
+                {
+                    guidance = quotedTableName + " matches the name of an existing study table.";
+                }
+
+                return "Cannot set Subject Noun Singular to a value " + (getSubjectTableName(subjectNounSingular).equals(tableName) ? "" : "that causes LabKey to create a table ") + " that matches the name of an existing study table or dataset. " + guidance;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public String getSubjectNounPluralValidationErrorMessage(Container container, String subjectNounSingular)
+    {
+        if (StringUtils.isBlank(subjectNounSingular))
+            return "Subject Noun Plural can't be blank.";
+
+        return null;
     }
 
     @Override

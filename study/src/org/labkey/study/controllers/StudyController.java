@@ -50,7 +50,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -189,7 +188,6 @@ import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
-import org.labkey.study.query.ParticipantTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
@@ -1338,15 +1336,16 @@ public class StudyController extends BaseStudyController
             if (null == target.getLabel())
                 errors.reject(ERROR_MSG, "Please supply a label");
 
-            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectColumnName() + "\" is not a valid subject column name.");
+            String message;
 
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid singular subject noun.");
+            if (null != (message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), target.getSubjectColumnName())))
+                errors.reject(ERROR_MSG, message);
 
-            // For now, apply the same check to the plural noun as to the singular- there rules should be exactly the same.
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounPlural()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
+            if (null != (message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), target.getSubjectNounSingular())))
+                errors.reject(ERROR_MSG, message);
+
+            if (null != (message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), target.getSubjectNounPlural())))
+                errors.reject(ERROR_MSG, message);
         }
 
         @Override
@@ -1551,68 +1550,26 @@ public class StudyController extends BaseStudyController
             String subjectNounSingular = form.get("SubjectNounSingular");
             if (null != subjectNounSingular)
             {
-                // Search user ensures we validate against all datasets and tables
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), User.getSearchUser());
+                String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
+                if (message != null)
+                    errors.reject(ERROR_MSG, message);
+            }
 
-                // This checks all study tables and dataset names, but not dataset labels (matching a label is tolerated)
-                if (schema.getTableNames().contains(subjectNounSingular))
-                {
-                    // Retrieve the table to provide guidance in the error message
-                    TableInfo table = schema.getTable(subjectNounSingular);
-
-                    // Allow subject noun to match the participant table's name -- otherwise we can never re-save study properties
-                    if (!(table instanceof ParticipantTable))
-                    {
-                        String quotedSubjectNoun = "\"" + subjectNounSingular + "\" ";
-                        String guidance = null;
-
-                        // It's a dataset... provide some guidance
-                        if (table instanceof DatasetTable datasetTable)
-                        {
-                            String name = datasetTable.getName();
-                            if (subjectNounSingular.equalsIgnoreCase(name))
-                            {
-                                guidance = quotedSubjectNoun + " is the name of an existing dataset.";
-                            }
-                            else
-                            {
-                                // This should never happen... it would mean we matched a dataset by label even though
-                                // there's a study table with this name
-                                assert false : "Illegal state: \"" + subjectNounSingular + "\" should not have matched dataset " + datasetTable.getName() + " (" + datasetTable.getTitle() + ")";
-                            }
-                        }
-
-                        // Some other table
-                        if (null == guidance)
-                        {
-                            guidance = quotedSubjectNoun + " matches the name of an existing study table.";
-                        }
-
-                        errors.reject(ERROR_MSG, "Cannot set Subject Noun Singular to a value that matches the name of an existing study table or dataset. " + guidance);
-                        return;
-                    }
-                }
+            String subjectNounPlural = form.get("SubjectNounPlural");
+            if (null != subjectNounPlural)
+            {
+                String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
+                if (message != null)
+                    errors.reject(ERROR_MSG, message);
             }
 
             // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
             String subjectColName = form.get("SubjectColumnName");
             if (null != subjectColName)
             {
-                for (Dataset dataset : getStudy().getDatasets())
-                {
-                    Domain domain = dataset.getDomain();
-                    if (null != domain)
-                    {
-                        for (DomainProperty property : domain.getProperties())
-                        {
-                            if (property.getName().equalsIgnoreCase(subjectColName))
-                            {
-                                errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user-defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ".");
-                                return;
-                            }
-                        }
-                    }
-                }
+                String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);
+                if (message != null)
+                    errors.reject(ERROR_MSG, message);
             }
         }
 

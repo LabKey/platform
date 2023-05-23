@@ -159,9 +159,11 @@ public interface StudyService
 
     String getSubjectGroupMapTableName(Container container);
 
-    boolean isValidSubjectColumnName(Container container, String subjectColumnName);
+    @Nullable String getSubjectColumnNameValidationErrorMessage(Container container, String subjectColumnName);
 
-    boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
+    @Nullable String getSubjectNounSingularValidationErrorMessage(Container container, String subjectNounSingular);
+
+    @Nullable String getSubjectNounPluralValidationErrorMessage(Container container, String subjectNounSingular);
 
     Dataset.KeyType getDatasetKeyType(Container container, String datasetName);
 
