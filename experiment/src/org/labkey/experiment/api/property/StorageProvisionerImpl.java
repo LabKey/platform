@@ -1263,9 +1263,18 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
                 else if (st.prop != null)
                 {
+                    TableInfo table = DbSchema.get(report.getSchemaName(), DbSchemaType.Provisioned).getTable(report.getTableName());
+                    PropertyDescriptor pd = st.prop.getPropertyDescriptor();
+                    if (st.prop.getPropertyDescriptor().getStorageColumnName() == null && null != table.getColumn(pd.getName()))
+                    {
+                        pd.setStorageColumnName(pd.getName());
+                        OntologyManager.updatePropertyDescriptor(pd);
+                        continue;
+                    }
+
                     if (st.colName == null)
                     {
-                        adds.addColumn(st.prop.getPropertyDescriptor());
+                        adds.addColumn(pd);
                     }
                     if (st.mvColName == null && st.prop.isMvEnabled())
                     {
@@ -1430,7 +1439,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 domainReport.getColumns().add(status);
                 status.prop = domainProp;
                 PropertyDescriptor propDescriptor = domainProp.getPropertyDescriptor();
-                if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
+
+                if (null == propDescriptor.getStorageColumnName() && hardColumnNames.contains(domainProp.getName()))
+                {
+                    domainReport.addError(String.format("database table %s.%s column '%s' is missing the storage column name.", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
+                    status.fix = "Add storage column name '" + domainProp.getName() + "' to property descriptor";
+                    status.hasProblem = true;
+                    hardColumnNames.remove(propDescriptor.getName());
+                }
+                else if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
                 {
                     status.colName = domainProp.getName();
                 }
