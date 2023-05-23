@@ -504,7 +504,7 @@ public class StudyServiceImpl implements StudyService
         colNames.remove("ParticipantId");
 
         if (colNames.contains(subjectColumnName))
-            return "\"" + subjectColumnName + "\" is a standard dataset column name";
+            return "Cannot set Subject Column Name to \"" + subjectColumnName + "\" because this is a standard dataset column name.";
 
         Study study = getStudy(container);
 
@@ -519,7 +519,7 @@ public class StudyServiceImpl implements StudyService
                     {
                         if (property.getName().equalsIgnoreCase(subjectColumnName))
                         {
-                            return "Cannot set Subject Column Name to a user-defined dataset field. \"" + subjectColumnName + "\" is already defined in " + dataset.getName() + ".";
+                            return "Cannot set Subject Column Name to a user-defined dataset field. \"" + subjectColumnName + "\" is already defined in dataset \"" + dataset.getName() + "\".";
                         }
                     }
                 }
@@ -590,10 +590,10 @@ public class StudyServiceImpl implements StudyService
                 // Some other table
                 if (null == guidance)
                 {
-                    guidance = quotedTableName + " matches the name of an existing study table.";
+                    guidance = quotedTableName + " is the name of an existing study table.";
                 }
 
-                return "Cannot set Subject Noun Singular to a value " + (getSubjectTableName(subjectNounSingular).equals(tableName) ? "" : "that causes LabKey to create a table ") + " that matches the name of an existing study table or dataset. " + guidance;
+                return "Cannot set Subject Noun Singular to a value " + (getSubjectTableName(subjectNounSingular).equals(tableName) ? "" : "that causes LabKey to create a table ") + "that matches the name of an existing study table or dataset. " + guidance;
             }
         }
 
