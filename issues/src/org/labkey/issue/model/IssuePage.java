@@ -388,7 +388,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (!readOnly)
         {
             // default values don't apply if we are read only
-            row.putAll(_renderContextDefaultValues);
+            _renderContextDefaultValues.forEach(row::putIfAbsent);
         }
         renderContext.setRow(row);
 
