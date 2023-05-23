@@ -8,7 +8,7 @@ src/api-src
 test/
 webpack/
 
-# white-list files
+# allow-list files
 !*.js
 !*.jsx
 !*.ts
