@@ -74,7 +74,6 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
@@ -84,7 +83,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -1947,7 +1945,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return result;
     }
 
-    // Returns a set of data source names representing all external data sources that are required for module schemas
+    // Returns a set of data source names representing all external data sources that are required for module schemas.
+    // These are just the names that modules advertise; there's no guarantee that they're defined in labkey.xml or
+    // valid. Be sure to null check after attempting to resolve each to a DbScope.
     public Set<String> getAllModuleDataSourceNames()
     {
         synchronized (_modulesLock)
