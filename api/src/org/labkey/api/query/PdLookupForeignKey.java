@@ -95,7 +95,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
             cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer);
         else
         {
-            cf = QueryService.get().getProductContainerFilterForLookups(container, user, null);
+            cf = QueryService.get().getProductContainerFilterForLookups(container, user, cf);
 
             if (cf == null)
                 cf = new ContainerFilter.SimpleContainerFilterWithUser(user, container);
