@@ -1545,31 +1545,43 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
-            // study table or dataset
-            String subjectNounSingular = form.get("SubjectNounSingular");
-            if (null != subjectNounSingular)
+            // Skip validation if Spring binding already has an error for subject noun singular
+            if (errors.getFieldError("SubjectNounSingular") == null)
             {
-                String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
-                if (message != null)
-                    errors.reject(ERROR_MSG, message);
+                // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
+                // study table or dataset
+                String subjectNounSingular = form.get("SubjectNounSingular");
+                if (null != subjectNounSingular)
+                {
+                    String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
             }
 
-            String subjectNounPlural = form.get("SubjectNounPlural");
-            if (null != subjectNounPlural)
+            // Skip validation if Spring binding already has an error for subject noun plural
+            if (errors.getFieldError("SubjectNounPlural") == null)
             {
-                String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
-                if (message != null)
-                    errors.reject(ERROR_MSG, message);
+                String subjectNounPlural = form.get("SubjectNounPlural");
+                if (null != subjectNounPlural)
+                {
+                    String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
             }
 
-            // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
-            String subjectColName = form.get("SubjectColumnName");
-            if (null != subjectColName)
+            // Skip validation if Spring binding already has an error for subject column name
+            if (errors.getFieldError("SubjectColumnName") == null)
             {
-                String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);
-                if (message != null)
-                    errors.reject(ERROR_MSG, message);
+                // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
+                String subjectColName = form.get("SubjectColumnName");
+                if (null != subjectColName)
+                {
+                    String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
             }
         }
 

@@ -496,7 +496,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public String getSubjectColumnNameValidationErrorMessage(Container container, String subjectColumnName)
     {
-        if (subjectColumnName == null || subjectColumnName.length() == 0)
+        if (StringUtils.isBlank(subjectColumnName))
             return "Subject Column Name can't be blank.";
 
         // Disallow standard columns added to all datasets, except "ParticipantId"
