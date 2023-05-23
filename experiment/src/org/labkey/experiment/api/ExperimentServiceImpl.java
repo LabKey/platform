@@ -1683,10 +1683,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try
         {
+            // next attempt to resolve by rowId
             Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
 
-            // next attempt to resolve by rowId
-            return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+            if (rowId != null)
+                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
         }
         catch (ConversionException e1)
         {
