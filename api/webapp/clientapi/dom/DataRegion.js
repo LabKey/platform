@@ -2567,6 +2567,10 @@ if (!LABKEY.DataRegions) {
         $(this).bind(evt, function() { callback.apply(scope || this, $(arguments).slice(1)); });
     };
 
+    LABKEY.DataRegion.prototype.one = function(evt, callback, scope) {
+        $(this).one(evt, function() { callback.apply(scope || this, $(arguments).slice(1)); });
+    };
+
     LABKEY.DataRegion.prototype._onButtonClick = function(buttonId) {
         var item = this.findButtonById(this.buttonBar.items, buttonId);
         if (item && $.isFunction(item.handler)) {
