@@ -1546,15 +1546,13 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            StudyImpl study = getStudyRedirectIfNull();
-
             // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
             // study table or dataset
             String subjectNounSingular = form.get("SubjectNounSingular");
             if (null != subjectNounSingular)
             {
                 // Search user ensures we validate against all datasets and tables
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, User.getSearchUser());
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), User.getSearchUser());
 
                 // This checks all study tables and dataset names, but not dataset labels (matching a label is tolerated)
                 if (schema.getTableNames().contains(subjectNounSingular))
@@ -1600,7 +1598,7 @@ public class StudyController extends BaseStudyController
             String subjectColName = form.get("SubjectColumnName");
             if (null != subjectColName)
             {
-                for (Dataset dataset : study.getDatasets())
+                for (Dataset dataset : getStudy().getDatasets())
                 {
                     Domain domain = dataset.getDomain();
                     if (null != domain)
