@@ -192,7 +192,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         setFormElement(Locator.name("SubjectColumnName"), mySubjectId);
         click(findButton("Submit"));
 
-        waitForText("Cannot set Subject Column Name to a user defined dataset field. \"" + mySubjectId + "\" is already defined in \"" + subjectIdDataset + "\".");
+        waitForText("Cannot set Subject Column Name to a user-defined dataset field. \"" + mySubjectId + "\" is already defined in \"" + subjectIdDataset + "\".");
         click(findButton("Ok"));
         clickButton("Cancel");
         clickTab("Overview");
