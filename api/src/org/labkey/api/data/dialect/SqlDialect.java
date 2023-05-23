@@ -36,6 +36,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -164,6 +165,13 @@ public abstract class SqlDialect
                 sb.append(", SPIDs = ");
                 sb.append(spids);
                 sb.append("\n");
+                ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+                if (null != uri)
+                {
+                    sb.append("\t");
+                    sb.append(uri);
+                    sb.append("\n");
+                }
 
                 for (StackTraceElement stackTraceElement : entry.getValue())
                 {
