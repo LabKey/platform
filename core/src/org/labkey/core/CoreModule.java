@@ -1279,7 +1279,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);
-            result.add(scope.getLabKeySchema());
+            if (scope != null)
+            {
+                result.add(scope.getLabKeySchema());
+            }
         }
 
         return result;
