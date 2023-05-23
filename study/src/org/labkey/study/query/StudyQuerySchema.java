@@ -1022,36 +1022,48 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     {
         if (getStudy() != null)
         {
-            if ("SpecimenDetail".equalsIgnoreCase(settings.getQueryName()))
+            @Nullable String queryName = settings.getQueryName();
+
+            if ("SpecimenDetail".equalsIgnoreCase(queryName))
             {
                 return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
             }
 
-            if ("Cohort".equalsIgnoreCase(settings.getQueryName()))
+            if ("Cohort".equalsIgnoreCase(queryName))
             {
                 return new CohortQueryView(context.getUser(), getStudy(), context);
             }
 
-            if ("Location".equalsIgnoreCase(settings.getQueryName()))
+            if ("Location".equalsIgnoreCase(queryName))
             {
                 return new LocationQueryView(this, settings, errors);
             }
 
-            DatasetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
-            // Check for permission before deciding to treat the request as a dataset
-            if (dsd != null)
+            if (null != queryName)
             {
-                TableInfo t = getDatasetTable(dsd, null);
-                if (null != t && t.hasPermission(getUser(), ReadPermission.class))
+                // Call getTable() to ensure consistency with name resolution. Specifically, getTable() resolves datasets
+                // after attempting to resolve all standard tables by name, so dataset labels don't shadow standard tables.
+                // Before this check was added, createView() would resolve dataset labels before table names. See Issue 47444
+                TableInfo table = getTable(queryName);
+                if (table instanceof DatasetTable)
                 {
-                    // Issue 18787: if dataset name and label differ, use the name for the queryName
-                    if (!settings.getQueryName().equals(t.getName()))
-                        settings.setQueryName(t.getName());
+                    DatasetDefinition dsd = getDatasetDefinitionByQueryName(queryName);
+                    // Check for permission before deciding to treat the request as a dataset
+                    if (dsd != null)
+                    {
+                        TableInfo t = getDatasetTable(dsd, null);
+                        if (null != t && t.hasPermission(getUser(), ReadPermission.class))
+                        {
+                            // Issue 18787: if dataset name and label differ, use the name for the queryName
+                            if (!queryName.equals(t.getName()))
+                                settings.setQueryName(t.getName());
 
-                    if (!(settings instanceof DatasetQuerySettings))
-                        settings = new DatasetQuerySettings(settings);
+                            if (!(settings instanceof DatasetQuerySettings))
+                                settings = new DatasetQuerySettings(settings);
 
-                    return new DatasetQueryView(this, (DatasetQuerySettings) settings, errors);
+                            return new DatasetQueryView(this, (DatasetQuerySettings) settings, errors);
+                        }
+                    }
                 }
             }
         }
@@ -1147,7 +1159,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return true;
     }
 
-    protected void initSessionParticipantGroup(StudyImpl study, User user)
+    protected void initSessionParticipantGroup(Study study, User user)
     {
         if (study == null)
             return;
@@ -1215,8 +1227,8 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public FilteredTable<StudyQuerySchema> getStudyDatasetsUnion(boolean showAll)
     {
         Set<Container> containers = Objects.requireNonNull(getDefaultContainerFilter().getIds()).stream()
-                .map(ContainerManager::getForId).filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+            .map(ContainerManager::getForId).filter(Objects::nonNull)
+            .collect(Collectors.toSet());
         var study = getStudy();
         if (null == study)
             return null;
@@ -1224,10 +1236,10 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (null == datasets || datasets.isEmpty())
             return null;
         List<BaseStudyTable> bst = datasets.stream()
-                .filter(ds -> showAll || ds.isShowByDefault())
-                .map(ds -> (BaseStudyTable)getDatasetTable(ds, null)).filter(Objects::nonNull)
-                .filter(t -> t.hasPermission(getUser(), ReadPermission.class))
-                .collect(Collectors.toList());
+            .filter(ds -> showAll || ds.isShowByDefault())
+            .map(ds -> (BaseStudyTable)getDatasetTable(ds, null)).filter(Objects::nonNull)
+            .filter(t -> t.hasPermission(getUser(), ReadPermission.class))
+            .toList();
 
         if (bst.isEmpty())
             return null;
