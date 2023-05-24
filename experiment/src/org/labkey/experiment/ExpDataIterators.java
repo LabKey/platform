@@ -2320,7 +2320,7 @@ public class ExpDataIterators
                     {
                         try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
                         {
-                            // TODO Do we need to configureLoader with renamed fields or has that been taken care of when writing the file?
+                            // We do not need to configure the loader for renamed fields as that has been taken care of when writing the file.
                             _context.setCrossTypeImport(false);
                             updateService.loadRows(_user, _container, loader, _context, null);
                         }
@@ -2406,9 +2406,11 @@ public class ExpDataIterators
                 }
             }
 
-            // TODO if there are no fields for this sample type, is this an error?
             if (header.isEmpty())
+            {
+                _context.getErrors().addRowError(new ValidationException("No columns found for sample type '" + sampleType.getName() + "'."));
                 return null;
+            }
 
             List<String> dataRows = new ArrayList<String>();
             dataRows.add(StringUtils.join(header, "\t"));
