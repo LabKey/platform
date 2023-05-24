@@ -122,37 +122,56 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.items = [{
             xtype: 'box',
             itemId: 'loader',
-            id: 'loaderTag',
             autoEl: {
                 tag: 'p',
                 cls: 'lk-qd-loading',
-                html: 'Loading...'
-            }
+                html: 'Loading...',
+            },
+        },{
+            xtype: 'box',
+            itemId: 'error',
+            autoEl: {
+                tag: 'div',
+                cls: 'lk-qd-error',
+                html: 'There was an error',
+            },
+            hidden: true,
+        },{
+            xtype: 'container',
+            itemId: 'content'
         }];
         this.callParent();
         this.on('afterrender', this.loadQueryDetails, this, {single: true});
         this.parent.on('dependencychanged', this.refreshQueryDependencies, this);
     },
 
-    loadQueryDetails : function(){
-        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk,
-                function(queryDetails) {
-                    this.queryDetails = queryDetails;
-                    this.setQueryDetails(this.queryDetails);
-                },
-                this.onLoadError,
-                this);
-
+    getContent : function() {
+        return this.getComponent('content');
     },
 
-    onLoadError : function(errorInfo){
-        if (Ext4.getCmp('loaderTag')) {
-            Ext4.getCmp('loaderTag').update('<div class="lk-qd-error">Error in query: ' + Ext4.htmlEncode(errorInfo.exception) + '</div>');
-        }
+    getError : function() {
+        return this.getComponent('error');
+    },
+
+    getLoading : function() {
+        return this.getComponent('loader');
+    },
+
+    loadQueryDetails : function() {
+        this.getError().hide();
+        this.getLoading().show();
+        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, this.onLoadQueryDetails, this.onLoadError, this);
+    },
+
+    onLoadError : function(errorInfo) {
+        this.getLoading().hide();
+        this.getError().show();
+        this.getError().getEl().update('Error in query: ' + Ext4.htmlEncode(errorInfo.exception));
     },
 
     displayError : function(msg) {
-        return '<div class="lk-qd-error">' + Ext4.htmlEncode(msg) + '</div>';
+        this.getError().show();
+        this.getError().getEl().update(Ext4.htmlEncode(msg));
     },
 
     formatAttribute : function(attr) {
@@ -774,59 +793,69 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     },
 
     renderQueryDetails : function() {
-        this.removeAll();
-        var component = this.formatQueryDetails(this.queryDetails);
+        this.getContent().removeAll();
+
+        const component = this.formatQueryDetails(this.queryDetails);
 
         component.on('afterrender', function(c) {
             this.registerEventHandlers(c.getEl());
         }, this, {single: true});
 
-        this.add(component);
-
         // add a temporary placeholder for the query dependencies but don't block the entire page
-        this.add({
+        this.getContent().add(component, {
             xtype : 'box',
             height : 100,
             itemId : 'lk-dependency-report',
             listeners : {
                 render : {
                     scope : this,
-                    fn : function(cmp){
+                    fn : function(cmp) {
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(null, function(){this.refreshQueryDependencies()}, this.onLoadError, this);
+                        this.queriesCache.load(null, this.refreshQueryDependencies, function(error) {
+                            this.removeQueryDependencies();
+                            this.onLoadError(error);
+                        }, this);
                     }
                 }
             }
         });
     },
 
+    removeQueryDependencies : function() {
+        const content = this.getContent();
+        const dep = content.getComponent('lk-dependency-report');
+        if (dep) {
+            content.remove(dep);
+        }
+    },
+
     /**
      * Swap in query dependency report from the placeholder component.
      */
-    refreshQueryDependencies : function(){
-        let dep = this.getComponent('lk-dependency-report');
-        if (dep) {
-            this.remove(dep);
-        }
+    refreshQueryDependencies : function() {
+        this.removeQueryDependencies();
 
         let dependencies = this.formatDependencies();
-        if (dependencies)
-            this.add({
+        if (dependencies) {
+            this.getContent().add({
                 xtype : 'box',
                 itemId : 'lk-dependency-report',
                 html : dependencies,
                 listeners : {
                     afterrender : {
                         scope : this,
-                        fn : function(cmp){
+                        fn : function(cmp) {
                             this.registerEventHandlers(cmp.getEl());
                         }
                     }
                 }
             });
+        }
     },
 
-    setQueryDetails : function(queryDetails) {
+    onLoadQueryDetails : function(queryDetails) {
+        this.getLoading().hide();
+        this.getError().hide();
         this.queryDetails = queryDetails;
         this.renderQueryDetails();
     },
