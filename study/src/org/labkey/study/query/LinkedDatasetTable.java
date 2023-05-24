@@ -5,7 +5,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.model.DatasetDefinition;
 
-public class LinkedDatasetTable extends DatasetTableImpl
+abstract class LinkedDatasetTable extends DatasetTableImpl
 {
     LinkedDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
