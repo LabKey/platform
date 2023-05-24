@@ -192,7 +192,7 @@ public class RserveScriptEngine extends RScriptEngine
         }
 
         //
-        // Verify that the function the user is trying to execute has been declared in our whitelist.  Callable functions are declared
+        // Verify that the function the user is trying to execute has been declared in our allow list. Callable functions are declared
         // in the report metadata file by the script report authors.
         //
         if (!rh.isFunctionCallable(function))

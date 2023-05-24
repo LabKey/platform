@@ -194,9 +194,21 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings, @Nullable User user)
     {
-        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings, user);
-        jsonObject.put(COMMENT, runGroup.getComments());
+        JSONObject jsonObject = serializeExpObject(runGroup, domain == null ? null : domain.getProperties(), settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
+
+        ExpProtocol protocol = runGroup.getBatchProtocol();
+        if (protocol != null)
+        {
+            jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+
+        if (settings.isIncludeProperties())
+        {
+            jsonObject.put(COMMENT, runGroup.getComments());
+            jsonObject.put(PROTOCOL, serializeProtocol(protocol, user));
+        }
+
         return jsonObject;
     }
 
@@ -204,10 +216,17 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
+
+        ExpProtocol protocol = run.getProtocol();
+        if (protocol != null)
+        {
+            jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+
         if (settings.isIncludeProperties())
         {
             jsonObject.put(COMMENT, run.getComments());
-            jsonObject.put(PROTOCOL, serializeProtocol(run.getProtocol(), user));
+            jsonObject.put(PROTOCOL, serializeProtocol(protocol, user));
         }
 
         if (settings.isIncludeInputsAndOutputs())
@@ -224,7 +243,6 @@ public class ExperimentJSONConverter
                 jsonObject.put(MATERIAL_INPUTS, new JSONArray());
             }
 
-
             // Inputs into the final output step are outputs of the entire run
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
             if (outputApp != null)
@@ -239,12 +257,6 @@ public class ExperimentJSONConverter
             }
 
             serializeRunLevelProvenanceProperties(jsonObject, run);
-        }
-
-        ExpProtocol protocol = run.getProtocol();
-        if (protocol != null)
-        {
-            jsonObject.put(CPAS_TYPE, protocol.getLSID());
         }
 
         if (settings.isIncludeRunSteps())
@@ -663,22 +675,29 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
-
+        JSONObject jsonObject = null;
         if (settings.isIncludeProperties())
         {
-            final ExpDataClass dc = data.getDataClass(user);
-            if (dc != null)
+            ExpDataClass dataClass = data.getDataClass(user);
+
+            if (dataClass != null)
             {
-                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false), user);
-                if (dc.getCategory() != null)
-                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
+                jsonObject = serializeExpObject(data, dataClass.getDomain().getProperties(), settings, user);
+
+                JSONObject dataClassJsonObject = serializeExpObject(dataClass, null, settings.withIncludeProperties(false), user);
+                if (dataClass.getCategory() != null)
+                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dataClass.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
             }
         }
 
+        if (jsonObject == null)
+            jsonObject = serializeExpObject(data, null, settings, user);
+
+        jsonObject.put(CPAS_TYPE, data.getCpasType());
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+
         File f = data.getFile();
         if (f != null)
         {
@@ -689,8 +708,6 @@ public class ExperimentJSONConverter
                 jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
-
-        jsonObject.put(CPAS_TYPE, data.getCpasType());
 
         return jsonObject;
     }
