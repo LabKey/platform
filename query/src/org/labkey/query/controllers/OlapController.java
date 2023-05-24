@@ -731,7 +731,7 @@ public class OlapController extends SpringActionController
             if (errors.hasErrors())
                 return;
 
-            JSONObject q = (JSONObject)form.json.get("query");
+            JSONObject q = form.json.optJSONObject("query");
             if (null == q)
             {
                 errors.reject(ERROR_REQUIRED, "query");

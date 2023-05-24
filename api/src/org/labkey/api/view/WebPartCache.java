@@ -100,7 +100,7 @@ public class WebPartCache
             final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
             Container container = ContainerManager.getForId(containerId);
 
-            SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
+            SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).append(" WHERE Container = ? ORDER BY \"index\"").add(container);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
 
             Map<Integer, Portal.PortalPage> pagesByRowId = new HashMap<>();       // For webparts to lookup
@@ -109,8 +109,8 @@ public class WebPartCache
                 if (null == p.getEntityId())
                 {
                     GUID g = new GUID();
-                    SQLFragment updateEntityId = new SQLFragment("UPDATE " + Portal.getTableInfoPortalPages().getSelectName() + " SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL",
-                            g, containerId, p.getRowId());
+                    SQLFragment updateEntityId = new SQLFragment("UPDATE ").append(Portal.getTableInfoPortalPages()).append(" SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL")
+                        .addAll(g, containerId, p.getRowId());
                     new SqlExecutor(schema).execute(updateEntityId);
                     p.setEntityId(g);
                 }

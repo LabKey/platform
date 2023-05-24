@@ -317,7 +317,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
 
-    private final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
+    public final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
     private final static String filterNameAliasDot = filterNameAlias + ".";
 
     private SQLFragment filterName(ColumnInfo c)
@@ -325,7 +325,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
         // CONSIDER: always use "_x" and track down and fix usages that assume known table name
         SQLFragment name = c.getValueSql(filterNameAlias);
-        name.setRawSQL(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+        name.setSqlUnsafe(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
         return name;
     }
 
@@ -481,6 +481,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
+    @Override
+    public SQLFragment getSQLName()
+    {
+        if (_filter.isEmpty())
+            return getFromTable().getSQLName();
+        return null;
+    }
 
     @Override
     @NotNull

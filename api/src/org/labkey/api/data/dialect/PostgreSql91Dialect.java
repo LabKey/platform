@@ -25,6 +25,8 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -309,16 +311,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return false;
     }
 
+    private static final LimitRowsCustomizer CUSTOMIZER = new StandardLimitRowsCustomizer(true);
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, true);
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, CUSTOMIZER);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, true);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
 
     @Override
@@ -1223,7 +1227,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
@@ -1785,16 +1789,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public boolean canShowExecutionPlan()
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
         return true;
     }
 
     @Override
-    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         SQLFragment copy = new SQLFragment(sql);
-        copy.insert(0, "EXPLAIN ANALYZE ");
+        copy.insert(0, type == ExecutionPlanType.Estimated ? "EXPLAIN " : "EXPLAIN ANALYZE ");
 
         return new SqlSelector(scope, conn, copy).getCollection(String.class);
     }

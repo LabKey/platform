@@ -1364,7 +1364,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null == cat)
                 setSearchCategory(SearchService.fileCategory);
             else
-                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + " " + cat.toString());
+                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + StringUtils.capitalize(cat.toString()));
         }
 
         AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)

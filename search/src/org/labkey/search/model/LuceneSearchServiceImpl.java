@@ -1786,7 +1786,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             for (File file : sampledata.listFiles(File::isFile))
             {
                 String docId = "testtika";
-                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
+                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getName()), docId, null, null, null, null, null);
                 ContentHandler handler = new BodyContentHandler(-1);
                 Metadata metadata = new Metadata();
 
@@ -1895,7 +1895,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Map<String, Pair<Integer, String[]>> map = new HashMap<>();
 
             add(map, "7z_sample.7z", 53, "7zSearchFile.txt", "This is a sample 7z test file.");
-            add(map, "cmd_sample.cmd", 844, "Delete SetupPolicies directory");
+            add(map, "cmd_sample.cmd", 843, "Delete SetupPolicies directory");
             add(map, "cpp_sample.cpp", 281, "Rcpp::NumericVector");
             add(map, "css_sample.css", 697, "math display", "fixes display issues");
             add(map, "csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
@@ -1920,8 +1920,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "pptx_sample.pptx", 122, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
-            add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
-            add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");
+            add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
+            add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
             add(map, "tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);

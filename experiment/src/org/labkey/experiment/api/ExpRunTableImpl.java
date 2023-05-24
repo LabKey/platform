@@ -301,7 +301,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return ret;
             }
             case Flag:
-                return createFlagColumn(alias);
+            {
+                var result = createFlagColumn(alias);
+                result.setShownInInsertView(false); // Issue 47576
+                return result;
+            }
             case Links:
             {
                 var result = wrapColumn("Links", _rootTable.getColumn("RowId"));

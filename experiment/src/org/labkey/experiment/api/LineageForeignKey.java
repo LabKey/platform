@@ -145,7 +145,7 @@ class LineageForeignKey extends AbstractForeignKey
         abstract List<? extends ExpObject> getItems(UserSchema s);
     }
 
-    public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField, boolean unselectable)
+    public ColumnInfo _createLookupColumn(final ColumnInfo parent, TableInfo table, String displayField, boolean unselectable)
     {
         if (table == null)
         {
@@ -167,11 +167,17 @@ class LineageForeignKey extends AbstractForeignKey
         // We want to create a placeholder column here that DOES NOT generate any joins,
         // that's why we extend AbstractForeignKey instead of LookupForeignKey.
         // CONSIDER: we could consider adding a "really don't add any joins" flag to LookupForeignKey for this pattern
-        SQLFragment sql = parent.getValueSql(ExprColumn.STR_TABLE_ALIAS);
 
         // Issue 42873 - need to include parent as a dependency so that it can be resolved when we're not coming from
         // the base table of the query, but are instead being resolved through a lookup
-        var col = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(), displayField), sql, JdbcType.INTEGER, parent);
+        var col = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(), displayField), null, JdbcType.INTEGER, parent)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return  parent.getValueSql(tableAlias);
+            }
+        };
         col.setFk(lookup.getFk());
         col.setUserEditable(false);
         col.setReadOnly(true);

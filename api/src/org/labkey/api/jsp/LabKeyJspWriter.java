@@ -17,6 +17,7 @@ package org.labkey.api.jsp;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.SafeToRender;
 
@@ -49,6 +50,10 @@ public class LabKeyJspWriter extends JspWriterWrapper
         if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean || obj instanceof JSONObject || obj instanceof JSONArray)
         {
             super.print(obj);
+        }
+        else if (obj instanceof DOM.Renderable renderable)
+        {
+            renderable.appendTo(this);
         }
         else
         {

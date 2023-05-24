@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -25,7 +24,6 @@
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
 <%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController.ShowUsersAction" %>
-<%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -33,11 +31,13 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("completion");
+        dependencies.add("clonePermissions.js");
     }
 %>
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
     LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+    boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     document.addEventListener("DOMContentLoaded", function() {
@@ -64,34 +64,8 @@
         }
     }
 
-    function showUserAccess()
-    {
-        var textElem = document.getElementById("cloneUser");
-        if (textElem != null)
-        {
-            if (textElem.value != null && textElem.value.length > 0)
-            {
-                var target = <%=q(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()).addParameter("renderInHomeTemplate", false).addParameter("newEmail", null))%> + textElem.value;
-                window.open(target, "permissions", "height=450,width=500,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no,resizable=yes");
-            }
-        }
-    }
-
     Ext4.onReady(function(){
-
-        Ext4.create('LABKEY.element.AutoCompletionField', {
-            renderTo        : 'auto-completion-div',
-            completionUrl   : LABKEY.ActionURL.buildURL('security', 'completeUser.api'),
-            tagConfig   : {
-                tag     : 'input',
-                id      : 'cloneUser',
-                type    : 'text',
-                name    : 'cloneUser',
-                disabled: true,
-                style   : 'width: 303px;',
-                autocomplete : 'off'
-            }
-        });
+        createCloneUserField(true, false, <%=excludeSiteAdmins%>)
     });
 </script>
 
@@ -124,6 +98,7 @@
             <td>
                 <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
+        </tr>
         <tr>
             <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck">Clone permissions from user:<span id="auto-completion-div"></span>
             <span id=permissions><a id="showUserAccessLink" href="#" class="labkey-button" style="display:none">permissions</a></span></td>

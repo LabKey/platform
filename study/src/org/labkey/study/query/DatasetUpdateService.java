@@ -228,7 +228,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
-        if (count > 0 && Boolean.TRUE != context.getConfigParameterBoolean(Config.SkipResyncStudy))
+        if (count > 0 && !Boolean.TRUE.equals(context.getConfigParameterBoolean(Config.SkipResyncStudy)))
         {
             StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
@@ -277,8 +277,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.datasetModified(_dataset, true);
-            resyncStudy(user, container);
+            if (configParameters == null || !Boolean.TRUE.equals(configParameters.get(DatasetUpdateService.Config.SkipResyncStudy)))
+            {
+                StudyManager.datasetModified(_dataset, true);
+                resyncStudy(user, container);
+            }
         }
         return result;
     }

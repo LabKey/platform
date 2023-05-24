@@ -173,7 +173,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, ReadPermission.class))
@@ -361,7 +361,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         else
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, null);
             return count;
         }
     }

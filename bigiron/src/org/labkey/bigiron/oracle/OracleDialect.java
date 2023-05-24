@@ -16,8 +16,10 @@
 
 package org.labkey.bigiron.oracle;
 
+import oracle.sql.TIMESTAMP;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -25,6 +27,7 @@ import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -47,6 +50,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +88,15 @@ abstract class OracleDialect extends SimpleSqlDialect
             };
         }
     };
+
+    private final Set<String> _sortableTypeNames = new HashSet<>();
+
+    public OracleDialect()
+    {
+        _sortableTypeNames.addAll(getSqlTypeNameMap().keySet());
+        _sortableTypeNames.remove("BLOB"); // Not sortable
+        _sortableTypeNames.remove("CLOB"); // Not sortable
+    }
 
     @Override
     public TableResolver getTableResolver()
@@ -355,6 +369,40 @@ abstract class OracleDialect extends SimpleSqlDialect
         sqlTypeNameMap.put("NUMBER", Types.DECIMAL);
     }
 
+    @Override
+    public boolean isSortableDataType(String sqlDataTypeName)
+    {
+        return _sortableTypeNames.contains(sqlDataTypeName);
+    }
+
+    @Override
+    public boolean canShowExecutionPlan(ExecutionPlanType type)
+    {
+        // Just the estimated plan for now
+        return type == ExecutionPlanType.Estimated;
+    }
+
+    @Override
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
+    {
+        SQLFragment copy = new SQLFragment(sql);
+        copy.insert(0, "EXPLAIN PLAN FOR ");
+        new SqlExecutor(scope, conn).execute(copy);
+
+        return new SqlSelector(scope, conn, "SELECT plan_table_output FROM table(dbms_xplan.display('plan_table',null,'all'))").getCollection(String.class);
+    }
+
+    @Override
+    public @NotNull String getDefaultSchemasToExcludeFromTesting()
+    {
+        return "SYS";
+    }
+
+    @Override
+    public @NotNull String getDefaultTablesToExcludeFromTesting()
+    {
+        return "SYS_IOT_OVER_*";
+    }
 
     private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
@@ -385,8 +433,11 @@ abstract class OracleDialect extends SimpleSqlDialect
         {
             int sqlType = super.getSqlType();
 
-            // Oracle claims all numbers are DECIMAL... convert to INTEGER if decimal digits == 0
-            if (Types.DECIMAL == sqlType && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+            // Old JDBC driver gave us DECIMAL; assert that we don't anymore.
+            assert sqlType != Types.DECIMAL;
+
+            // Oracle claims all numbers are DECIMAL... convert to INTEGER if decimal digits <= 0 (sometimes -127 for numeric keys)
+            if (Types.NUMERIC == sqlType && _rsCols.getInt("DECIMAL_DIGITS") <= 0)
                 return Types.INTEGER;
 
             return sqlType;
@@ -397,7 +448,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         {
             String typeName = super.getSqlTypeName();
 
-            if ("NUMBER".equals(typeName) && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+            if ("NUMBER".equals(typeName) && _rsCols.getInt("DECIMAL_DIGITS") <= 0)
                 typeName = "INTEGER";
 
             return typeName;
@@ -475,8 +526,14 @@ abstract class OracleDialect extends SimpleSqlDialect
                 }
                 return val;
             }
+            else if (value instanceof TIMESTAMP oracleTimestamp)
+            {
+                return oracleTimestamp.timestampValue();
+            }
             else
+            {
                 return value;
+            }
         }
 
         @Override

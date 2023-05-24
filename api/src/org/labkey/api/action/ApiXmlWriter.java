@@ -15,9 +15,9 @@
  */
 package org.labkey.api.action;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
-import org.json.old.JSONString;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONString;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.DateUtil;
@@ -32,15 +32,15 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * Response writer that renders in XML.
- * User: jeckels
- * Date: 4/22/13
+ * Response writer that renders in XML
  */
 public class ApiXmlWriter extends ApiResponseWriter
 {
     private static final String ARRAY_ELEMENT_NAME = "element";
-    public static final String CONTENT_TYPE = "text/xml";
-    private XMLStreamWriter _xmlWriter;
+    private static final String CONTENT_TYPE = "text/xml";
+
+    private final XMLStreamWriter _xmlWriter;
+
     private boolean _closed = false;
 
     public ApiXmlWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
@@ -95,13 +95,13 @@ public class ApiXmlWriter extends ApiResponseWriter
             {
                 _xmlWriter.writeCharacters(filter(value.toString()));
             }
-            else if (value instanceof JSONObject)
+            else if (value instanceof JSONObject jo)
             {
-                writeJsonObjInternal((JSONObject) value);
+                writeJsonObjInternal(jo);
             }
-            else if (value instanceof JSONArray)
+            else if (value instanceof JSONArray ja)
             {
-                writeJsonArray((JSONArray) value);
+                writeJsonArray(ja);
             }
             else if (value instanceof Map)
             {
@@ -129,6 +129,14 @@ public class ApiXmlWriter extends ApiResponseWriter
             throw new IOException(e);
         }
     }
+
+
+    @Override
+    protected void writeProperties(JSONObject json) throws IOException
+    {
+        writeObject(json);
+    }
+
 
     private static String filter(String s)
     {
@@ -169,13 +177,13 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
-    protected void writeJsonObjInternal(JSONObject obj) throws IOException, XMLStreamException
+    protected void writeJsonObjInternal(JSONObject json) throws IOException, XMLStreamException
     {
         verifyOpen();
-        for (Map.Entry<String, Object> entry : obj.entrySet())
+        for (String key : json.keySet())
         {
-            _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
-            writeObject(entry.getValue());
+            _xmlWriter.writeStartElement(escapeElementName(key));
+            writeObject(json.get(key));
             _xmlWriter.writeEndElement();
         }
     }
@@ -195,38 +203,6 @@ public class ApiXmlWriter extends ApiResponseWriter
         verifyOpen();
         assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
         close();
-        _streamStack.pop();
-    }
-
-    @Override
-    public void startMap(String name) throws IOException
-    {
-        verifyOpen();
-        StreamState state = _streamStack.peek();
-        assert (null != state) : "startResponse will start the root-level map!";
-        try
-        {
-            _xmlWriter.writeStartElement(escapeElementName(name));
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
-        }
-        _streamStack.push(new StreamState(name, state.getLevel() + 1));
-    }
-
-    @Override
-    public void endMap() throws IOException
-    {
-        verifyOpen();
-        try
-        {
-            _xmlWriter.writeEndElement();
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
-        }
         _streamStack.pop();
     }
 

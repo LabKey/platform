@@ -35,6 +35,7 @@ import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -2934,6 +2935,13 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
+    public int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName)
+    {
+        QueryUpdateAuditProvider provider = new QueryUpdateAuditProvider();
+        return provider.moveEvents(targetContainer, rowPks, schemaName, queryName);
+    }
+
+    @Override
     public AuditHandler getDefaultAuditHandler()
     {
         return new AbstractAuditHandler()
@@ -3289,6 +3297,18 @@ public class QueryServiceImpl implements QueryService
     public ColumnInfoTransformer findColumnInfoTransformer(String conceptURI)
     {
         return columnTransformerMap.get(conceptURI);
+    }
+
+    @Override
+    public @Nullable ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter)
+    {
+        if (isProductProjectsAllFolderScopeEnabled())
+        {
+            ContainerFilter lookupCf = getContainerFilterForLookups(container, user);
+            if (lookupCf != null)
+                return lookupCf;
+        }
+        return defaultContainerFilter;
     }
 
     @Override

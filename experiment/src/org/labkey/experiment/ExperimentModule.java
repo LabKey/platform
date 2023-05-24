@@ -172,7 +172,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 23.006;
+        return 23.007;
     }
 
     @Nullable
@@ -371,7 +371,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (dataClass == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS, user).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
@@ -399,7 +399,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (sampleType == null)
                     return null;
 
-                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS, user).toMap();
 
                 //Need to map to proper Icon
                 properties.put("type", "sampleSet");
@@ -427,7 +427,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 if (material == null)
                     return null;
 
-                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
+                return ExperimentJSONConverter.serializeMaterial(material, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap();
             }
 
             @Override
@@ -449,7 +449,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
                 for (ExpMaterial material : ExperimentService.get().getExpMaterials(rowIds))
                 {
-                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap());
+                    searchJsonMap.put(
+                        rowIdIdentifierMap.get(material.getRowId()),
+                        ExperimentJSONConverter.serializeMaterial(material, user, ExperimentJSONConverter.DEFAULT_SETTINGS).toMap()
+                    );
                 }
 
                 return searchJsonMap;

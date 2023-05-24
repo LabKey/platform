@@ -32,7 +32,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -151,11 +153,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.onmouseout;
+import static org.labkey.api.util.DOM.Attribute.onmouseover;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.tabindex;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.Attribute.width;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
@@ -665,31 +675,24 @@ public class PageFlowUtil
 
     public static String encodeURI(String s)
     {
-        try
+        StringBuilder sb = new StringBuilder();
+        int len=s.length(),start=0,end=0;
+        while (start < s.length())
         {
-            StringBuilder sb = new StringBuilder();
-            int len=s.length(),start=0,end=0;
-            while (start < s.length())
+            for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
+                { /* */ }
+            sb.append(s,start,end);
+            if (end < len)
             {
-                for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
-                    { /* */ }
-                sb.append(s,start,end);
-                if (end < len)
-                {
-                    String ch = s.substring(end,end+1);
-                    if (ch.charAt(0)==' ')
-                        sb.append("%20");
-                    else
-                        sb.append(URLEncoder.encode(ch, StringUtilsLabKey.DEFAULT_CHARSET.name()));
-                }
-                start = end+1;
+                String ch = s.substring(end,end+1);
+                if (ch.charAt(0)==' ')
+                    sb.append("%20");
+                else
+                    sb.append(URLEncoder.encode(ch, StringUtilsLabKey.DEFAULT_CHARSET));
             }
-            return sb.toString();
+            start = end+1;
         }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return sb.toString();
     }
 
 
@@ -698,14 +701,7 @@ public class PageFlowUtil
      */
     public static String decode(String s)
     {
-        try
-        {
-            return null==s ? "" : URLDecoder.decode(s, StringUtilsLabKey.DEFAULT_CHARSET.name());
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return null == s ? "" : URLDecoder.decode(s, StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
     /**
@@ -753,14 +749,15 @@ public class PageFlowUtil
 
 
     /**
-     * boolean controlling whether or not we compress JSON-serialized objects when we render them in HTML forms.
+     * boolean controlling whether we compress JSON-serialized objects when we render them in HTML forms.
      */
-    static private final boolean COMPRESS_OBJECT_STREAMS = true;
+    private static final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public HtmlString encodeObject(Object o) throws IOException
+    public static <T> HtmlString encodeObject(T o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        OutputStream osCompressed;
+        final OutputStream osCompressed;
+
         if (COMPRESS_OBJECT_STREAMS)
         {
             osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
@@ -769,23 +766,33 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
+
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            Class cls = o.getClass();
-            final org.json.old.JSONObject json;
-            if (o instanceof Map)
+            final Map<?, ?> map;
+
+            if (o instanceof Map<?, ?> m)
             {
-                json = new org.json.old.JSONObject((Map)o);
+                map = m;
             }
             else
             {
-                ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-                json = new org.json.old.JSONObject();
-                f.toMap(o, json);
+                @SuppressWarnings("unchecked")
+                ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)o.getClass());
+                map = f.toMap(o, new HashMap<>());
             }
-            w.write(json.toString());
+
+            try
+            {
+                w.write(new JSONObject(map).toString());
+            }
+            catch (Throwable t)
+            {
+                _log.error("Failed to serialize " + o + ". Map: " + map.toString());
+                throw t;
+            }
         }
-        osCompressed.close();
+
         return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
@@ -799,34 +806,36 @@ public class PageFlowUtil
 
         byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-        InputStream isCompressed;
+        final InputStream isUncompressed;
 
         if (COMPRESS_OBJECT_STREAMS)
         {
-            isCompressed = new InflaterInputStream(byteArrayInputStream);
+            isUncompressed = new InflaterInputStream(byteArrayInputStream);
         }
         else
         {
-            isCompressed = byteArrayInputStream;
+            isUncompressed = byteArrayInputStream;
         }
-        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
+        try (InputStream is=isUncompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            org.json.old.JSONObject json = new org.json.old.JSONObject(IOUtils.toString(r));
+            JSONObject json = new JSONObject(new JSONTokener(r));
+            Map<String, Object> map = json.toMap();
 
             if (cls == Map.class || cls == HashMap.class)
-                return (T)json;
+                return (T)map;
 
-            ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
-            Object o = f.fromMap(json);
+            ObjectFactory<T> f = ObjectFactory.Registry.getFactory(cls);
+            T o = f.fromMap(map);
             if (cls.isAssignableFrom(o.getClass()))
-                return (T)o;
+                return o;
+
             throw new ClassCastException("Could not create class: " + cls.getName());
         }
         catch (IllegalArgumentException x)
         {
             throw new IOException(x);
         }
-        catch (ZipException x)
+        catch (JSONException x)
         {
             throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
         }
@@ -1274,7 +1283,7 @@ public class PageFlowUtil
 	}
 
 
-    // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.
+    // Fetch the contents of an input stream, and return it in a list, skipping comment lines if skipComments == true.
     // Assumes stream is encoded using the LabKey standard character set
     public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
     {
@@ -1308,7 +1317,7 @@ public class PageFlowUtil
         if (!m.find())
             return s;
         //for (int i=0 ; i<=m.groupCount() ; i++) System.err.println(i + " " + m.group(i));
-        StringBuffer sb = new StringBuffer(20);
+        StringBuilder sb = new StringBuilder(20);
         m.appendReplacement(sb, "");
         String area = m.group(3);
         String exch = m.group(4);
@@ -2644,7 +2653,6 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
-
         @Test
         public void testScriptDetection()
         {

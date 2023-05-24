@@ -336,13 +336,13 @@ public class WikiManager implements WikiService
             // that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so execute custom
             // INSERT SQL instead.
             SQLFragment sql = new SQLFragment("INSERT INTO ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(CommSchema.getInstance().getTableInfoPageAliases())
                 .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
                 .add(wiki.getContainerId())
                 .add(alias)
                 .add(wiki.getRowId())
                 .append("WHERE NOT EXISTS (SELECT * FROM ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(CommSchema.getInstance().getTableInfoPageAliases())
                 .append(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
                 .add(wiki.getContainerId())
                 .add(alias);
@@ -430,7 +430,7 @@ public class WikiManager implements WikiService
             else
             {
                 Wiki parent = wiki.getParentWiki();
-                int parentId = -1;
+                Integer parentId = null;
                 float wikiDisplay = wiki.getDisplayOrder();
                 Wiki nextWiki = null;
 
@@ -558,7 +558,7 @@ public class WikiManager implements WikiService
             if (destParentId != null)
                 newWikiPage.setParent(destParentId);
             else
-                newWikiPage.setParent(-1);
+                newWikiPage.setParent(null);
         }
 
         //get wiki & attachments

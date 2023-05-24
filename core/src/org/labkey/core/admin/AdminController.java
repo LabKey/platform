@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +36,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -67,6 +68,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
@@ -170,6 +172,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
+import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -232,6 +235,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -914,7 +918,10 @@ public class AdminController extends SpringActionController
             {
                 if (!checkResult.isHealthy())
                 {
-                    createResponseWriter().writeAndCloseError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    try (var writer= createResponseWriter())
+                    {
+                        writer.writeResponse(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    }
                     return null;
                 }
 
@@ -2451,7 +2458,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public HttpView getTabView(String tabId)
+        public HttpView<?> getTabView(String tabId)
         {
             if ("exceptions".equals(tabId))
                 return new ActionsExceptionsView();
@@ -2460,13 +2467,15 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class ExportActionsAction extends ExportAction<Object>
+    public static class ExportActionsAction extends ExportAction<Object>
     {
         @Override
         public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
         {
-            ActionsTsvWriter writer = new ActionsTsvWriter();
-            writer.write(response);
+            try (ActionsTsvWriter writer = new ActionsTsvWriter())
+            {
+                writer.write(response);
+            }
         }
     }
 
@@ -2560,12 +2569,17 @@ public class AdminController extends SpringActionController
     public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
         private int _hashCode;
+        private ExecutionPlanType _type;
 
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             _hashCode = form.getSqlHashCode();
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
+            _type = EnumUtils.getEnum(ExecutionPlanType.class, form.getType());
+            if (null == _type)
+                throw new NotFoundException("Unknown execution plan type");
+
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode(), _type);
         }
 
         @Override
@@ -2573,14 +2587,15 @@ public class AdminController extends SpringActionController
         {
             addAdminNavTrail(root, "Queries", QueriesAction.class);
             root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
-            root.addChild("Execution Plan");
+            root.addChild(_type.getDescription());
         }
     }
 
 
     public static class QueryForm
     {
-        int _sqlHashCode;
+        private int _sqlHashCode;
+        private String _type = "Estimated"; // All dialects support Estimated
 
         public int getSqlHashCode()
         {
@@ -2592,6 +2607,17 @@ public class AdminController extends SpringActionController
         {
             _sqlHashCode = sqlHashCode;
         }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setType(String type)
+        {
+            _type = type;
+        }
     }
 
 
@@ -2602,7 +2628,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ExportQueriesAction extends ExportAction<Object>
+    public static class ExportQueriesAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2622,7 +2648,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetQueryStatisticsAction extends FormHandlerAction<QueriesForm>
+    public static class ResetQueryStatisticsAction extends FormHandlerAction<QueriesForm>
     {
         @Override
         public void validateCommand(QueriesForm target, Errors errors)
@@ -2849,7 +2875,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class EnvironmentVariablesAction extends SimpleViewAction
+    public class EnvironmentVariablesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2865,7 +2891,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class SystemPropertiesAction extends SimpleViewAction
+    public class SystemPropertiesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -4029,7 +4055,7 @@ public class AdminController extends SpringActionController
     public static class FolderInformationAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HtmlView getTabView()
         {
             Container c = getContainer();
             User currentUser = getUser();
@@ -4091,7 +4117,7 @@ public class AdminController extends SpringActionController
     public static class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
     {
         @Override
-        protected HttpView getTabView(MissingValuesForm form, boolean reshow, BindException errors)
+        protected JspView<?> getTabView(MissingValuesForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
         }
@@ -6590,6 +6616,85 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class RenameContainerForm
+    {
+        private String name;
+        private String title;
+        private boolean addAlias = true;
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getTitle()
+        {
+            return title;
+        }
+
+        public void setTitle(String title)
+        {
+            this.title = title;
+        }
+
+        public boolean isAddAlias()
+        {
+            return addAlias;
+        }
+
+        public void setAddAlias(boolean addAlias)
+        {
+            this.addAlias = addAlias;
+        }
+    }
+
+    // Note that validation checks occur in ContainerManager.rename()
+    @RequiresPermission(AdminPermission.class)
+    public static class RenameContainerAction extends MutatingApiAction<RenameContainerForm>
+    {
+        @Override
+        public ApiResponse execute(RenameContainerForm form, BindException errors)
+        {
+            Container container = getContainer();
+            String name = StringUtils.trimToNull(form.getName());
+            String title = StringUtils.trimToNull(form.getTitle());
+
+            String nameValue = name;
+            String titleValue = title;
+            if (name == null && title == null)
+            {
+                errors.reject(ERROR_MSG, "Please specify a name or a title.");
+                return new ApiSimpleResponse("success", false);
+            }
+            else if (name != null && title == null)
+            {
+                titleValue = name;
+            }
+            else if (name == null)
+            {
+                nameValue = container.getName();
+            }
+
+            boolean addAlias = form.isAddAlias();
+
+            try
+            {
+                Container c = ContainerManager.rename(container, getUser(), nameValue, titleValue, addAlias);
+                return new ApiSimpleResponse(c.toJSON(getUser()));
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+                return new ApiSimpleResponse("success", false);
+            }
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
@@ -6598,12 +6703,6 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
-            Container c = getContainer();
-            if (!ContainerManager.isRenameable(c))
-            {
-                // 16221
-                errors.reject(ERROR_MSG, "This folder may not be renamed as it is reserved by the system.");
-            }
         }
 
         @Override
@@ -7724,7 +7823,7 @@ public class AdminController extends SpringActionController
         {
             getPageConfig().setShowHeader(false);
             getPageConfig().setTitle("Recreate Views?");
-            return new HtmlView("Are you sure you want to drop and recreate all module views?");
+            return new HtmlView(HtmlString.of("Are you sure you want to drop and recreate all module views?"));
         }
 
         @Override
@@ -8769,7 +8868,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
+    public static class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
     {
         @Override
         public ApiResponse execute(CustomizeMenuForm form, BindException errors)
@@ -8867,7 +8966,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class AddTabAction extends MutatingApiAction<TabActionForm>
+    public static class AddTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -8972,7 +9071,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowTabAction extends MutatingApiAction<TabActionForm>
+    public static class ShowTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -9177,7 +9276,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RenameTabAction extends MutatingApiAction<TabActionForm>
+    public static class RenameTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -9268,7 +9367,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ClearDeletedTabFoldersAction extends MutatingApiAction<DeletedFoldersForm>
+    public static class ClearDeletedTabFoldersAction extends MutatingApiAction<DeletedFoldersForm>
     {
         @Override
         public ApiResponse execute(DeletedFoldersForm form, BindException errors)
@@ -9755,9 +9854,9 @@ public class AdminController extends SpringActionController
                 params.putAll(report.getParams());
                 // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
                 Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
-                if (jsonMetrics instanceof String)
+                if (jsonMetrics instanceof String jms)
                 {
-                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    JSONObject o = new JSONObject(jms);
                     params.put(MothershipReport.JSON_METRICS_KEY, o);
                 }
                 if (form.isSubmit())
@@ -9907,9 +10006,7 @@ public class AdminController extends SpringActionController
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 throw new UnauthorizedException();
 
-            Map<String,Object> json;
-            json = getConfigurationJson();
-            return json;
+            return getConfigurationJson();
         }
 
         @Override
@@ -10146,7 +10243,7 @@ public class AdminController extends SpringActionController
     }
 
     /* returns a jackson serializable object that reports superset of information returned in admin console */
-    Map<String, Object> getConfigurationJson()
+    JSONObject getConfigurationJson()
     {
         JSONObject res = new JSONObject();
 
@@ -10693,7 +10790,7 @@ public class AdminController extends SpringActionController
             assertForReadPermission(user, false,
                 new GetModulesAction(),
                 new GetFolderTabsAction(),
-                controller.new ClearDeletedTabFoldersAction()
+                    new ClearDeletedTabFoldersAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
@@ -10706,10 +10803,11 @@ public class AdminController extends SpringActionController
                 new ResetResourceAction(),
                 new ResetPropertiesAction(),
                 controller.new SiteValidationAction(),
-                controller.new ResetQueryStatisticsAction(),
+                    new ResetQueryStatisticsAction(),
                 controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
                 new DeleteCustomEmailAction(),
+                new RenameContainerAction(),
                 controller.new RenameFolderAction(),
                 controller.new MoveFolderAction(),
                 new ConfirmProjectMoveAction(),
@@ -10719,11 +10817,11 @@ public class AdminController extends SpringActionController
                 controller.new ReorderFoldersAction(),
                 controller.new ReorderFoldersApiAction(),
                 new RevertFolderAction(),
-                controller.new CustomizeMenuAction(),
-                controller.new AddTabAction(),
-                controller.new ShowTabAction(),
+                    new CustomizeMenuAction(),
+                    new AddTabAction(),
+                    new ShowTabAction(),
                 controller.new MoveTabAction(),
-                controller.new RenameTabAction(),
+                    new RenameTabAction(),
                 new ProjectSettingsAction(),
                     new ResourcesAction(),
                     new MenuBarAction(),
@@ -10756,11 +10854,11 @@ public class AdminController extends SpringActionController
                 controller.new ShowAllErrorsAction(),
                 controller.new ShowPrimaryLogAction(),
                 controller.new ActionsAction(),
-                controller.new ExportActionsAction(),
+                    new ExportActionsAction(),
                 controller.new QueriesAction(),
                 controller.new QueryStackTracesAction(),
                 controller.new ExecutionPlanAction(),
-                controller.new ExportQueriesAction(),
+                    new ExportQueriesAction(),
                 controller.new MemTrackerAction(),
                 new MemoryChartAction(),
                 controller.new FolderTypesAction(),

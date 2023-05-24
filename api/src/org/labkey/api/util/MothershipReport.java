@@ -288,6 +288,7 @@ public class MothershipReport implements Runnable
     @Override
     public void run()
     {
+        LOG.debug("Starting to submit report to " + _url);
         try
         {
             HttpURLConnection connection = openConnectionWithRedirects(_url, _forwardedFor);
@@ -309,6 +310,7 @@ public class MothershipReport implements Runnable
                         _content = IOUtils.toString(in, encoding);
                     }
                 }
+                LOG.debug("Successfully submitted report to " + _url);
             }
             finally
             {
@@ -420,7 +422,7 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
-        addParam("distribution", getDistributionStamp());
+        addParam("distribution", getDistributionName());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
     }
@@ -430,30 +432,30 @@ public class MothershipReport implements Runnable
         return _content;
     }
 
-    private static String getDistributionStamp()
+    public static String getDistributionName()
     {
-        String distributionStamp;
+        String result;
         try(InputStream input = MothershipReport.class.getResourceAsStream("/distribution"))
         {
             if (null != input)
             {
-                distributionStamp = Readers.getReader(input).lines().collect(Collectors.joining("\n"));
-                if (StringUtils.isEmpty(distributionStamp))
+                result = Readers.getReader(input).lines().collect(Collectors.joining("\n"));
+                if (StringUtils.isEmpty(result))
                 {
-                    distributionStamp = "Distribution File Empty";
+                    result = "Distribution File Empty";
                 }
             }
             else
             {
-                distributionStamp = "localBuild";
+                result = "localBuild";
             }
         }
         catch (IOException e)
         {
-            distributionStamp = "Exception reading distribution file. " + e.getMessage();
+            result = "Exception reading distribution file. " + e.getMessage();
         }
 
-        return distributionStamp;
+        return result;
     }
 
     public void setMetrics(Map<String, Object> metrics)

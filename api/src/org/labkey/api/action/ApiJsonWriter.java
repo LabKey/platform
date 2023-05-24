@@ -18,23 +18,34 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.Pair;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Writer that knows how to generate a JSON version of the content back to the client.
- * User: tgaluhn
- * Date: 5/13/13
  */
 public class ApiJsonWriter extends ApiResponseWriter
 {
@@ -43,6 +54,10 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     private ObjectMapper _mapper;
     private JsonGenerator jg = new JsonFactory().createGenerator(getWriter());
+
+    enum WriterState {Initialized, Started, Ended, Closed}
+    private WriterState state = WriterState.Initialized;
+
 
     public ApiJsonWriter(Writer out) throws IOException
     {
@@ -108,36 +123,44 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     public void close() throws IOException
     {
+        if (state == WriterState.Closed)
+            return;
+        state = WriterState.Closed;
+
         jg.flush();
+        if (state == WriterState.Started)
+            throw new IllegalStateException("close() called without calling endResponse()");
+    }
+
+    private void ensureNotClosed()
+    {
+        if (state == WriterState.Closed)
+            throw new IllegalStateException("writer is closed");
     }
 
     @Override
     public void startResponse() throws IOException
     {
-        assert jg.getOutputContext().inRoot() : "called startResponse() after response was already started!";
+        ensureNotClosed();
+        if (state != WriterState.Initialized)
+            throw new IllegalStateException("startResponse() has already been called");
+        state = WriterState.Started;
+
         //we always return an object at the top level
+        assert jg.getOutputContext().inRoot();
         jg.writeStartObject();
     }
 
     @Override
     public void endResponse() throws IOException
     {
-        assert(!jg.getOutputContext().inRoot()) :  "called endResponse without a corresponding startResponse()!";
+        ensureNotClosed();
+        if (state != WriterState.Started)
+            throw new IllegalStateException("startResponse() has not been called");
+
+        assert !jg.getOutputContext().inRoot() :  "called endResponse() without a corresponding startResponse()!";
         jg.writeEndObject();
         jg.flush();
-    }
-
-    @Override
-    public void startMap(String name) throws IOException
-    {
-        assert(!jg.getOutputContext().inRoot()) : "startResponse will start the root-level map!";
-        jg.writeObjectFieldStart(name);
-    }
-
-    @Override
-    public void endMap() throws IOException
-    {
-        jg.writeEndObject();
     }
 
     @Override
@@ -150,6 +173,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     protected void writeObject(Object value) throws IOException
     {
+        ensureNotClosed();
         if (value instanceof String || value instanceof Number || value instanceof Boolean || value == null)
         {
             jg.writeObject(value);
@@ -165,36 +189,41 @@ public class ApiJsonWriter extends ApiResponseWriter
         else if (value instanceof Collection<?> coll)
         {
             jg.writeStartArray();
-            for (Object element : coll)
+            try
             {
-                writeObject(element);
+                for (Object element : coll)
+                    writeObject(element);
             }
-            jg.writeEndArray();
+            finally
+            {
+                jg.writeEndArray();
+            }
         }
         else if (value.getClass().isArray()) // Covers arrays of both objects and primitives
         {
             jg.writeStartArray();
-            for (int i = 0; i < Array.getLength(value); i++)
+            try
             {
-                writeObject(Array.get(value, i));
+                for (int i = 0; i < Array.getLength(value); i++)
+                    writeObject(Array.get(value, i));
             }
-            jg.writeEndArray();
+            finally
+            {
+                jg.writeEndArray();
+            }
         }
-        else if (value instanceof org.json.old.JSONArray jsonArray)  // JSONArray is a wrapper for ArrayList, but doesn't expose the same convenience methods. TODO: replace the upstream creation of these JSONArrays with Jackson methods
+        else if (value instanceof JSONArray jsonArray) // TODO: replace the upstream creation of these JSONArrays with Jackson methods
         {
             jg.writeStartArray();
-            for (int i = 0; i < jsonArray.length(); i++)
+            try
             {
-                writeObject(jsonArray.get(i));
+                for (Object o : jsonArray)
+                    writeObject(o);
             }
-            jg.writeEndArray();
-        }
-        else if (value instanceof JSONArray jsonArray)
-        {
-            jg.writeStartArray();
-            for (Object o : jsonArray)
-                writeObject(o);
-            jg.writeEndArray();
+            finally
+            {
+                jg.writeEndArray();
+            }
         }
         else if (value instanceof Date)
         {
@@ -209,10 +238,6 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeString(value.toString());
         }
-
-        // 21112: Malformed JSON response in production environments
-        // TODO: This is not the recommended pattern as this causes an unnecessary amount of flushing (performance)
-        jg.flush();
     }
 
     private void writeMap(Map<?, ?> map) throws IOException
@@ -220,23 +245,49 @@ public class ApiJsonWriter extends ApiResponseWriter
         boolean badContext = jg.getOutputContext().getCurrentName() == null && jg.getOutputContext().inObject();
         if (badContext)
         {
+            throw new IllegalStateException("How did we get here");
+            /* OLD VERSION
             // Exceptions get serialized out into the response. However, in some parts of the processing we're in the wrong output context
             // and this would create invalid JSON. Detect and prevent this to still create valid JSON, and hopefully something downstream will handle
             // the error gracefully.
-            jg.writeFieldName("unhandledException");
+            jg.writeFieldName("unhandledException");@J
+            jg.writeStartObject();
+            for (var e : map.entrySet())
+            {
+                jg.writeFieldName(String.valueOf(e.getKey()));
+                writeObject(e.getValue());
+            }
+            jg.writeEndObject();
+            jg.writeEndObject();
+             */
         }
+
         jg.writeStartObject();
-        for (var e : map.entrySet())
+        try
         {
-            jg.writeFieldName(String.valueOf(e.getKey()));
-            writeObject(e.getValue());
+            writeProperties(map);
         }
-        jg.writeEndObject();
-        if (badContext)
+        finally
         {
             jg.writeEndObject();
         }
     }
+
+
+    void writeProperties(Map<?,?> map) throws IOException
+    {
+        assert jg.getOutputContext().inObject();
+        for (var e : map.entrySet())
+            writeProperty(String.valueOf(e.getKey()), e.getValue());
+    }
+
+
+    @Override
+    public void writeProperties(JSONObject json) throws IOException
+    {
+        writeProperties(json.toMap());
+    }
+
 
     @Override
     public void startList(String name) throws IOException
@@ -256,13 +307,193 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeObject(entry);
     }
 
+    /**
+     * Attempt to reset the http response.  If possible the response will be completely reset.  If not possible,
+     * this code will attempt to return the response to the top-level object in the json response.
+     * Since the response will be in an unspecified state, the caller should use writeExceptionPropertiesToRootAndEndObject() after calling this method.
+
+     */
     @Override
     protected void resetOutput() throws IOException
     {
-        super.resetOutput();
-        // Brute force destroy the generator we have and get a new one. There's probably a less drastic way to reset
-        // the generator outputContext, but I can't find one.
-        jg = new JsonFactory().createGenerator(getWriter());
-        initGenerator();
+        var context = jg.getOutputContext();
+
+        // If the entire response so far is buffered in memory, we get a do over.
+        if (!getResponse().isCommitted())
+        {
+            getResponse().reset();
+            jg = new JsonFactory().createGenerator(getWriter());
+            initGenerator();
+            if (state == WriterState.Started)
+                jg.writeStartObject();
+            return;
+        }
+        else
+        {
+            // If context.inRoot() is true, then either we haven't started writing the response object, or we've finished writing it.
+            // So either there's nothing to do, or nothing we can do.
+            if (context.inRoot())
+                return;
+        }
+
+        // Because of our fastidious use of try-with-resource and try-finally we expect to be in the root object,
+        assert context.getParent().inRoot();
+
+        // But if that's not the case, we try to get back into that state to make any reported exception readable.
+        //noinspection StatementWithEmptyBody
+        while (!context.getParent().inRoot() && closeContext())
+        {
+            // pass
+        }
+    }
+
+    // return true if closeContext() can be called again
+    private boolean closeContext() throws IOException
+    {
+        var context = jg.getOutputContext();
+        if (context.inRoot())
+            return false;
+        else if (context.inArray())
+            jg.writeEndArray();
+        else if (context.inObject())
+            jg.writeEndObject();
+        return false;
+    }
+
+
+    static int beancount = 0;
+
+     public static class Bean extends HashMap<String,Object> {}
+
+    public static class TopBean extends Bean
+    {
+        TopBean()
+        {
+            beancount = 0;
+            putAll(Map.of("name","top","inner_beans",getBeans()));
+        }
+
+        public ArrayList<Map<String,Object>> getBeans()
+        {
+            int count = 2;
+            var ret = new ArrayList<Map<String,Object>>(count);
+            for (var i=0 ; i<count-1 ; i++)
+                ret.add(new GoodBean());
+            ret.add(new BadBean());
+            return ret;
+        }
+    }
+
+    public static class GoodBean extends Bean
+    {
+        GoodBean()
+        {
+            putAll(Map.of("names", getArray(), "map", getMap()));
+        }
+        public List<String> getArray()
+        {
+            return List.of("black","black-eyed","cannellini","chick peas","kidney","lentil","pinto","fava","navy","edamame","soy");
+        }
+        public Map<String,Object> getMap()
+        {
+            return Map.of("key","value");
+        }
+    }
+
+    public static class BadBean extends GoodBean
+    {
+        BadBean()
+        {
+            super();
+        }
+
+        @Override
+        public Map<String,Object> getMap()
+        {
+            // extra nesting for good measure
+            var poison = new AbstractMap<String,Object>()
+            {
+                @NotNull @Override public Set<Entry<String, Object>> entrySet()
+                {
+                    return new LinkedHashSet<>(Arrays.asList(new Pair<>("key","value"), new Pair<>("poison", "*") {
+                                @Override public String getValue()
+                                {
+                                    throw new IllegalStateException("throwing up");
+                                }
+                            }));
+                }
+            };
+            return Map.of("key","value","poison",poison);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testExceptionNotCommitted() throws IOException
+        {
+            var beans = new TopBean();
+            var writer = new ApiJsonWriter(new MockHttpServletResponse());
+            writer.setSerializeViaJacksonAnnotations(true);
+            writer.startResponse();
+            try
+            {
+                writer.writeProperty("schemaName", "test");
+                writer.writeProperty("queryName", "beans");
+                writer.writeProperty("formatVersion", 99.9);
+                writer.writeProperty("beans", beans);
+                fail("shouldn't be here");
+            }
+            catch (Exception ex)
+            {
+                writer.handleRenderException(ex);
+            }
+            finally
+            {
+                writer.endResponse();
+            }
+            var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
+            var json = new JSONObject(responseText);
+            assertEquals( "throwing up", json.getString("exception") );
+            assertTrue( json.has("stackTrace") );
+            assertFalse( json.has("schemaName"));
+            System.out.println(json);
+        }
+
+        public void testExceptionCommitted() throws IOException
+        {
+            var beans = new TopBean();
+
+            var res = new MockHttpServletResponse();
+            res.getWriter().write(StringUtils.repeat(' ', 10*1000));
+            res.flushBuffer();
+            assert res.isCommitted();
+
+            var writer = new ApiJsonWriter(new MockHttpServletResponse());
+            writer.setSerializeViaJacksonAnnotations(true);
+            writer.startResponse();
+            try
+            {
+                writer.writeProperty("schemaName", "test");
+                writer.writeProperty("queryName", "beans");
+                writer.writeProperty("formatVersion", 99.9);
+                writer.writeProperty("beans", beans);
+                fail("shouldn't be here");
+            }
+            catch (Exception ex)
+            {
+                writer.handleRenderException(ex);
+            }
+            finally
+            {
+                writer.endResponse();
+            }
+            var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
+            var json = new JSONObject(responseText);
+            assertEquals( "throwing up", json.getString("excception") );
+            assertTrue( json.has("stackTrace") );
+            assertTrue( json.has("schemaName"));
+            System.out.println(json);
+        }
     }
 }

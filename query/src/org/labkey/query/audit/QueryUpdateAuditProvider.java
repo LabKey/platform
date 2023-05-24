@@ -202,7 +202,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         SQLFragment sql = new SQLFragment("UPDATE ").append(auditTable)
                 .append(" SET container = ").appendValue(targetContainer)
                 .append(" WHERE RowPk ");
-        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowIds);
+        auditTable.getSchema().getSqlDialect().appendInClauseSql(sql, rowIds.stream().map(Object::toString).toList());
         sql.append(" AND SchemaName = ").appendValue(schemaName).append(" AND QueryName = ").appendValue(queryName);
         return new SqlExecutor(auditTable.getSchema()).execute(sql);
     }

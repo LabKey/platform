@@ -52,6 +52,7 @@ import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
@@ -172,6 +173,8 @@ public class SearchModule extends DefaultModule
                 SearchService._log.info("Purging SearchService queues");
                 ss.purgeQueues();
             });
+
+            ss.addDocumentParser(new PlainTextDocumentParser());
         }
 
         AuditLogService.get().registerAuditType(new SearchAuditProvider());

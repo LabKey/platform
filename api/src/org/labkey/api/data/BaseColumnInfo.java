@@ -40,7 +40,9 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -594,7 +596,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public SQLFragment getValueSql(String tableAliasName)
     {
         // call generateSelectName() to avoid asserts in getSelectName()
-        return new SQLFragment(tableAliasName + "." + generateSelectName());
+        String colIdentifier = generateSelectName();
+        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
+            return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
+        else
+            return new SQLFragment().appendIdentifier(tableAliasName).append(".").appendIdentifier(colIdentifier);
     }
 
     @Override
@@ -1675,14 +1681,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 while (rsCols.next())
                 {
                     String metaDataName = reader.getName();
-                    var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName()));
+                    int sqlType = reader.getSqlType();
+                    String sqlTypeName = reader.getSqlTypeName();
+                    var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(sqlType, sqlTypeName));
 
                     col._metaDataName = metaDataName;
                     col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
-                    col._sqlTypeName = reader.getSqlTypeName();
+                    col._sqlTypeName = sqlTypeName;
                     col._isAutoIncrement = reader.isAutoIncrement();
-                    int type = reader.getSqlType();
-                    if (type == Types.DECIMAL || type == Types.NUMERIC)
+
+                    if (sqlType == Types.DECIMAL || sqlType == Types.NUMERIC)
                     {
                         col._scale = reader.getDecimalDigits();
                         col._precision = reader.getScale();
@@ -1691,6 +1699,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     {
                         col._scale = reader.getScale();
                     }
+
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 

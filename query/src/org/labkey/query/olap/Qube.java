@@ -16,7 +16,7 @@
 package org.labkey.query.olap;
 
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.metadata.Cube;
@@ -61,13 +61,8 @@ public class Qube
         return null;
     }
 
-
     public CellSet executeQuery(QubeQuery expr)
     {
         return null;
     }
-
-
-
-
 }

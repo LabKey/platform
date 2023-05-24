@@ -18,6 +18,7 @@ package org.labkey.api.data.dialect;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
@@ -59,7 +60,7 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         {
             try
             {
-                new SqlExecutor(scope).execute(sql);
+                new SqlExecutor(scope).execute(SQLFragment.unsafe(sql));
             }
             catch (BadSqlGrammarException e)
             {

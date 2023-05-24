@@ -15,12 +15,13 @@
  */
 package org.labkey.api.security;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -37,8 +38,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.security.xml.GroupRefType;
 import org.labkey.security.xml.GroupRefsType;
@@ -51,19 +57,20 @@ import org.labkey.security.xml.roleAssignment.RoleRefType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Handles persistence and loading of {@link SecurityPolicy} information over {@link SecurableResource}s.
  * Caches for performance reasons.
- * User: adam
- * Date: 7/6/12
  */
 public class SecurityPolicyManager
 {
-    private static final Logger logger = LogManager.getLogger(SecurityPolicyManager.class);
+    private static final Logger logger = LogHelper.getLogger(SecurityPolicyManager.class, "Security policy information");
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "Security policies");
 
@@ -132,6 +139,51 @@ public class SecurityPolicyManager
         savePolicy(policy, true);
     }
 
+    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, User user)
+    {
+        Container c = ContainerManager.getForId(policy.getContainerId());
+        if (null == c)
+            throw new IllegalStateException("Container does not exist");
+
+        SecurableResource resource = c.findSecurableResource(policy.getResourceId(), user);
+        if (null == resource)
+            throw new IllegalStateException("No resource with the id '" + policy.getResourceId() + "' was found in this container!");
+
+        // Ensure that user has admin permission on resource
+        if (!resource.hasPermission(user, AdminPermission.class))
+            throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
+
+        // Get the existing policy so we can audit how it's changed and check for unauthorized changes
+        SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
+        SortedSet<RoleAssignment> savedAssignments = oldPolicy.getAssignments();
+        SortedSet<RoleAssignment> updatedAssignments = policy.getAssignments();
+        Set<Role> changedRoles = new HashSet<>();
+        for (RoleAssignment r : savedAssignments)
+            if (!updatedAssignments.contains(r))
+                changedRoles.add(r.getRole());
+        for (RoleAssignment r : updatedAssignments)
+            if (!savedAssignments.contains(r))
+                changedRoles.add(r.getRole());
+
+        if (c.isRoot() && !user.hasSiteAdminPermission())
+        {
+            for (Role changedRole : changedRoles)
+            {
+                // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
+                if (changedRole.getPermissions().contains(SiteAdminPermission.class))
+                    throw new UnauthorizedException("You do not have permission to modify the Site Admin role or permission.");
+                if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
+                    throw new UnauthorizedException("You do not have permission to modify the Platform Developer role or permission.");
+            }
+        }
+
+        savePolicy(policy, true);
+        writeToAuditLog(c, user, resource, oldPolicy, policy);
+
+        return !changedRoles.isEmpty();
+    }
+
     public static void savePolicy(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
     {
         DbScope scope = core.getSchema().getScope();
@@ -186,6 +238,120 @@ public class SecurityPolicyManager
         //remove the resource-oriented policy from cache
         remove(policy);
         notifyPolicyChange(policy.getResourceId());
+    }
+
+    protected enum RoleModification
+    {
+        Added,
+        Removed
+    }
+
+    private static void writeToAuditLog(Container c, User user, SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+    {
+        //if moving from inherited to not-inherited, just log the new role assignments
+        if (null == oldPolicy || !(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
+        {
+            SecurableResource parent = resource.getParentResource();
+            String parentName = parent != null ? parent.getResourceName() : "root";
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
+                    "A new security policy was established for " +
+                            resource.getResourceName() + ". It will no longer inherit permissions from " +
+                            parentName);
+            event.setResourceEntityId(resource.getResourceId());
+            AuditLogService.get().addEvent(user, event);
+
+            for (RoleAssignment newAsgn : newPolicy.getAssignments())
+            {
+                writeAuditEvent(c, user, newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+            }
+            return;
+        }
+
+        Iterator<RoleAssignment> oldIter = oldPolicy.getAssignments().iterator();
+        Iterator<RoleAssignment> newIter = newPolicy.getAssignments().iterator();
+        RoleAssignment oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+        RoleAssignment newAsgn = newIter.hasNext() ? newIter.next() : null;
+
+        while (null != oldAsgn && null != newAsgn)
+        {
+            //if different users...
+            if (oldAsgn.getUserId() != newAsgn.getUserId())
+            {
+                //if old user < new user, user has been removed
+                if (oldAsgn.getUserId() < newAsgn.getUserId())
+                {
+                    writeAuditEvent(c, user, oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+                }
+                else
+                {
+                    //else, user has been added
+                    writeAuditEvent(c, user, newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                }
+            }
+            else if (!oldAsgn.getRole().equals(newAsgn.getRole()))
+            {
+                //if old role < new role, role has been removed
+                if (oldAsgn.getRole().getUniqueName().compareTo(newAsgn.getRole().getUniqueName()) < 0)
+                {
+                    writeAuditEvent(c, user, oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+                }
+                else
+                {
+                    //else, role has been added
+                    writeAuditEvent(c, user, newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                }
+            }
+
+            //advance
+            if (oldAsgn.compareTo(newAsgn) > 0)
+                newAsgn = newIter.hasNext() ? newIter.next() : null;
+            else if (oldAsgn.compareTo(newAsgn) < 0)
+                oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+            else
+            {
+                newAsgn = newIter.hasNext() ? newIter.next() : null;
+                oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+            }
+        }
+
+        //after the loop, we may still have remaining entries in either the old or new assignments
+        while (null != newAsgn)
+        {
+            writeAuditEvent(c, user, newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+            newAsgn = newIter.hasNext() ? newIter.next() : null;
+        }
+
+        while (null != oldAsgn)
+        {
+            writeAuditEvent(c, user, oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+            oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+        }
+    }
+
+    protected static void writeAuditEvent(Container c, User user, int principalId, Role role, RoleModification mod, SecurableResource resource)
+    {
+        UserPrincipal principal = SecurityManager.getPrincipal(principalId);
+        if (null == principal)
+            return;
+
+        StringBuilder sb = new StringBuilder("The " + principal.getPrincipalType().getDescription().toLowerCase() + " ");
+        sb.append(principal.getName());
+        if (RoleModification.Added == mod)
+            sb.append(" was assigned to the security role ");
+        else
+            sb.append(" was removed from the security role ");
+        sb.append(role.getName());
+        sb.append(".");
+
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), sb.toString());
+        event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
+        if (principal.getPrincipalType() == PrincipalType.USER)
+            event.setUser(principal.getUserId());
+        else
+            event.setGroup(principal.getUserId());
+        event.setResourceEntityId(resource.getResourceId());
+
+        AuditLogService.get().addEvent(user, event);
     }
 
     public static void notifyPolicyChange(String objectID)

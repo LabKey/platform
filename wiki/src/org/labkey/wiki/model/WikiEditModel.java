@@ -101,9 +101,9 @@ public class WikiEditModel
         return null == _wiki ? null : _wiki.getRowId();
     }
 
-    public int getParent()
+    public Integer getParent()
     {
-        return null == _wiki ? -1 : _wiki.getParent();
+        return null == _wiki ? null : _wiki.getParent();
     }
 
     public int getPageVersionId()

@@ -164,7 +164,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                         + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
                         + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                        + " WHERE ER.LSID = ? AND E.Hidden = ?;"  ;
+                        + " WHERE ER.LSID = ? AND E.Hidden = ?";
 
         return ExpExperimentImpl.fromExperiments(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
     }
@@ -618,7 +618,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
         sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
 
-        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
+        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(SQLFragment.unsafe(sql));
     }
 
     private void deleteRunMaterials(User user)
@@ -644,13 +644,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             Collections.sort(_materialOutputs);
             Collections.sort(_dataOutputs);
 
-            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<>();
-            sortedMaterialInputs.putAll(_materialInputs);
-            _materialInputs = sortedMaterialInputs;
+            _materialInputs = new TreeMap<>(_materialInputs);
 
-            Map<ExpData, String> sortedDataInputs = new TreeMap<>();
-            sortedDataInputs.putAll(_dataInputs);
-            _dataInputs = sortedDataInputs;
+            _dataInputs = new TreeMap<>(_dataInputs);
 
             for (ExpProtocolApplicationImpl step : _protocolSteps)
             {

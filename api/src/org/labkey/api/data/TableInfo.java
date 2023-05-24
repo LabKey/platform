@@ -49,7 +49,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,14 +73,26 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     String getTitleField();
 
     /**
-     * simple name that can be used directly in SQL statement
-     *
-     * use only for tables known to be real database tables, usually
+     * Use getSQLName() instead for generating SQL.
+     * getSelectName() can still be used for error messages.
+     */
+    @Nullable
+    default String getSelectName()
+    {
+        var sqlf = getSQLName();
+        return null == sqlf ? null : sqlf.getSQL();
+    }
+
+    /**
+     * Return a schema.name that can be used directly in SQL statement
+     * Use only for tables known to be real database tables, usually
      * for INSERT/UPDATE/DELETE. For SELECT use getFromSQL(alias).
      */
     @Nullable
-    String getSelectName();
-
+    default SQLFragment getSQLName()
+    {
+        return null;
+    }
 
     @Nullable
     String getMetaDataName();
@@ -125,7 +136,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     class _DoNothingAuditHandler implements AuditHandler
     {
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment)
         {
         }
 
@@ -424,7 +435,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     enum TriggerType
     {
-        INSERT, UPDATE, DELETE, SELECT, TRUNCATE;
+        INSERT, UPDATE, DELETE, SELECT, TRUNCATE, MOVE;
 
         public String getMethodName()
         {

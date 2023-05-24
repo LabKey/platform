@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.bigiron.AbstractClrInstallationManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.HelpTopic;
@@ -96,9 +97,9 @@ public class GroupConcatInstallationManager extends AbstractClrInstallationManag
     }
 
     @Override
-    protected String getInstallationCheckSql()
+    protected SQLFragment getInstallationCheckSql()
     {
-        return "SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G";
+        return new SQLFragment("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
     }
 
     @Override

@@ -36,6 +36,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -164,6 +165,13 @@ public abstract class SqlDialect
                 sb.append(", SPIDs = ");
                 sb.append(spids);
                 sb.append("\n");
+                ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+                if (null != uri)
+                {
+                    sb.append("\t");
+                    sb.append(uri);
+                    sb.append("\n");
+                }
 
                 for (StackTraceElement stackTraceElement : entry.getValue())
                 {
@@ -251,6 +259,10 @@ public abstract class SqlDialect
         addSqlTypeNames(_sqlTypeNameMap);
     }
 
+    protected Map<String, Integer> getSqlTypeNameMap()
+    {
+        return _sqlTypeNameMap;
+    }
 
     private void initializeSqlTypeIntMap()
     {
@@ -690,7 +702,7 @@ public abstract class SqlDialect
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
         SQLFragment datePartExpr = new SQLFragment(value);
-        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        datePartExpr.setSqlUnsafe(getDatePart(part, datePartExpr.getRawSQL()));
         return datePartExpr;
     }
 
@@ -701,21 +713,21 @@ public abstract class SqlDialect
     public SQLFragment getDateTimeToDateCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        cast.setSqlUnsafe(getDateTimeToDateCast(cast.getRawSQL()));
         return cast;
     }
 
     public SQLFragment getVarcharCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        cast.setSqlUnsafe( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
         return cast;
     }
 
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
         return cast;
     }
 
@@ -750,7 +762,7 @@ public abstract class SqlDialect
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for auto-incrementing columns (e.g. IDENTITY in SQL Server
-     * or SERIAL in Postgres). The input StringBuffer is modified to
+     * or SERIAL in Postgres). The input StringBuilder is modified to
      * wrap the statements in dialect-specific code to allow this.
      *
      * @param statements the insert statements. If more than one,
@@ -770,6 +782,18 @@ public abstract class SqlDialect
     public boolean isSystemTable(String tableName)
     {
         return systemTableSet.contains(tableName);
+    }
+
+    // Default value for the "Schemas to Exclude" box on the test data source page
+    public @NotNull String getDefaultSchemasToExcludeFromTesting()
+    {
+        return "";
+    }
+
+    // Default value for the "Tables to Exclude" box on the test data source page
+    public @NotNull String getDefaultTablesToExcludeFromTesting()
+    {
+        return "";
     }
 
     public abstract boolean isSystemSchema(String schemaName);
@@ -880,7 +904,7 @@ public abstract class SqlDialect
 
     protected boolean isKeyword(SqlExecutor executor, String candidate)
     {
-        String sql = getIdentifierTestSql(candidate);
+        SQLFragment sql = getIdentifierTestSql(candidate);
 
         try
         {
@@ -912,14 +936,14 @@ public abstract class SqlDialect
         return 61;
     }
 
-    protected String getIdentifierTestSql(String candidate)
+    protected SQLFragment getIdentifierTestSql(String candidate)
     {
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
+        return SQLFragment.unsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";";
+               "DROP TABLE " + name + ";");
     }
 
 
@@ -1448,18 +1472,39 @@ public abstract class SqlDialect
         return _tableTypes;
     }
 
-    public abstract boolean canShowExecutionPlan();
-    protected abstract Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql);
+    public abstract boolean canShowExecutionPlan(ExecutionPlanType type);
+    protected abstract Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type);
 
-    public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql)
+    public enum ExecutionPlanType
     {
+        Estimated("Estimated Execution Plan"),
+        Actual("Execution Plan With Actual Timing");
+
+        private final String _description;
+
+        ExecutionPlanType(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
+    public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql, ExecutionPlanType type)
+    {
+        // Callers shouldn't be asking for an execution plan that the dialect doesn't support
+        assert canShowExecutionPlan(type);
+
         // Issue 35102 - use an unpooled connection so that nobody else tries to use this connection. Other code that
         // executes on this same thread (and therefore the scope's normal connection) could be trying to retrieve
         // properties, do logging, etc. This also ensures that unusual connection settings and other side effects are
         // always discarded.
         try (Connection conn = scope.getUnpooledConnection())
         {
-            return getQueryExecutionPlan(conn, scope, sql);
+            return getQueryExecutionPlan(conn, scope, sql, type);
         }
         catch (SQLException e)
         {

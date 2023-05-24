@@ -18,9 +18,7 @@ package org.labkey.api.view;
 import org.springframework.validation.BindException;
 
 /**
- * Simple view that just shows all of the Spring errors
- * User: jeckels
- * Date: Mar 5, 2012
+ * Simple view that just shows all the Spring errors
  */
 public class SpringErrorView extends JspView<Object>
 {

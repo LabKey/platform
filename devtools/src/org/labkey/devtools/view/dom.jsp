@@ -1,16 +1,13 @@
+<%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
-<%@ page import="org.labkey.api.util.DOM" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%!
     // TODO fix some collisions between DOM and JspBase
     // DOM.id
-    public void dom(JspWriter out, Renderable... nodes) throws IOException
+    public void dom(JspWriter out, Renderable... nodes)
     {
         for (var n : nodes)
             if (n != null)
