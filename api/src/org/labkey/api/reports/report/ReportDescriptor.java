@@ -937,7 +937,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return new LinkedHashSet<>();
     }
 
-    // Currently only used for R reports that want to expose a whitelist
+    // Currently only used for R reports that want to expose an allow list
     // of functions to a shared R session.  However, this could be
     // generalized to other report types
     public HashSet<String> getCallableFunctions()
