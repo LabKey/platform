@@ -23,6 +23,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import java.io.File;
 
@@ -108,4 +109,12 @@ public interface AntiVirusService
 
     /** originalName and user are used for error reporting and logging */
     ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info);
+
+    default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
+    {
+        CommonsMultipartResolver result = new CommonsMultipartResolver();
+        // Issue 47362 - configure a limit for the number of files per request
+        result.getFileUpload().setFileCountMax(1_000);
+        return result;
+    }
 }
