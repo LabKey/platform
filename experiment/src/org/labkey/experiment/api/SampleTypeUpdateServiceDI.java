@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,7 +60,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -80,6 +78,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
@@ -123,7 +122,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
  */
 public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
-    public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
+    public static final Logger LOG = LogHelper.getLogger(SampleTypeUpdateServiceDI.class, "Sample type update service info");
 
     public static final String PARENT_RECOMPUTE_LSID_COL = "ParentLsidToRecompute";
     public static final String PARENT_RECOMPUTE_NAME_COL = "ParentNameToRecompute";
@@ -318,7 +317,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        if (context.isCrossTypeImport())
+            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 
@@ -342,7 +343,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
         // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
         // Issue 46639: "SampleId" column header not recognized when loading samples from pipeline trigger
@@ -350,7 +351,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (rows instanceof DataLoader) // junit test uses ListofMapsDataIterator
             {
-                if (((DataLoader) rows).getColumnInfoMap().isEmpty())
+                if (!context.isCrossTypeImport() && ((DataLoader) rows).getColumnInfoMap().isEmpty())
                     ((DataLoader) rows).setKnownColumns(getQueryTable().getColumns());
                 ColumnDescriptor[] columnDescriptors = ((DataLoader) rows).getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
                 for (ColumnDescriptor columnDescriptor : columnDescriptors)
@@ -370,7 +371,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
-        if (ret > 0 && !context.getErrors().hasErrors())
+        if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
             boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
             onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters());

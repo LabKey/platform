@@ -317,7 +317,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class))
+        if (!context.isCrossTypeImport() && !hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
@@ -329,7 +329,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers);
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -411,7 +411,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
-    /* can be used for simple book keeping tasks, per row processing belongs in a data iterator */
+    /* can be used for simple bookkeeping tasks, per row processing belongs in a data iterator */
     protected void afterInsertUpdate(int count, BatchValidationException errors)
     {}
 

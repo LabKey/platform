@@ -123,6 +123,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
     protected boolean _importIdentity = false;
     protected boolean _importLookupByAlternateKey = false;
+    protected boolean _crossTypeImport = false;
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
     protected AuditBehaviorType _auditBehaviorType = null;
     public boolean _useAsync = false; // if true, do import using a background thread
@@ -290,7 +291,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
     }
 
-    enum Params
+    protected enum Params
     {
         text,
         path,
@@ -301,11 +302,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         importIdentity,
         importLookupByAlternateKey,
         format,
-        insertOption
+        insertOption,
+        crossTypeImport
     }
 
     @Nullable
-    private String getParam(Params p)
+    protected String getParam(Params p)
     {
         return getViewContext().getRequest().getParameter(p.name());
     }
@@ -374,16 +376,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         String saveToPipeline = getParam(Params.saveToPipeline); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
 
-        if (getParam(Params.useAsync) != null) // useAsync will save import file to pipeline root as well as run import in a background job
-            _useAsync = Boolean.valueOf(getParam(Params.useAsync ));
-
+        _useAsync = Boolean.valueOf(getParam(Params.useAsync)); // useAsync will save import file to pipeline root as well as run import in a background job
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
-        if (getParam(Params.importIdentity) != null)
-            _importIdentity = Boolean.valueOf(getParam(Params.importIdentity));
+        _importIdentity = Boolean.valueOf(getParam(Params.importIdentity));
 
-        if (getParam(Params.importLookupByAlternateKey) != null)
-            _importLookupByAlternateKey = Boolean.valueOf(getParam(Params.importLookupByAlternateKey));
+        _importLookupByAlternateKey = Boolean.valueOf(getParam(Params.importLookupByAlternateKey));
+        _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
 
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
@@ -443,7 +442,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                 if (!hasPostData)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
+                    errors.reject(SpringActionController.ERROR_GENERIC, "File not found: " + path);
                 }
             }
             else if (null != StringUtils.trimToNull(moduleResource))
@@ -462,7 +461,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                 if (m == null)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Module required to import module resource");
+                    errors.reject(SpringActionController.ERROR_REQUIRED, "Module required to import module resource");
                 }
                 else
                 {
@@ -475,7 +474,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     Resource r = m.getModuleResource(p);
                     if (r == null || !r.isFile())
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, "File not found: " + p);
+                        errors.reject(SpringActionController.ERROR_GENERIC, "File not found: " + p);
                     }
                     else
                     {
@@ -543,6 +542,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setInsertOption(_insertOption)
                                 .setAuditBehaviorType(behaviorType)
                                 .setImportLookupByAlternateKey(_importLookupByAlternateKey)
+                                .setCrossTypeImport(_crossTypeImport)
                                 .setImportIdentity(_importIdentity)
                                 .setHasLineageColumns(hasLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
@@ -565,7 +565,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
 
             if (!hasPostData && !errors.hasErrors())
-                errors.reject(SpringActionController.ERROR_MSG, "Form contains no data");
+                errors.reject(SpringActionController.ERROR_GENERIC, "Form contains no data");
             if (errors.hasErrors())
                 throw errors;
 
@@ -592,7 +592,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         catch (IOException e)
         {
-            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            errors.reject(SpringActionController.ERROR_GENERIC, e.getMessage());
             throw errors;
         }
         finally
@@ -700,21 +700,22 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (_noTableInfo)
         {
             // There is no TableInfo; Derived class should check permissions
-            errors.reject(SpringActionController.ERROR_MSG, "Table not specified");
+            errors.reject(SpringActionController.ERROR_GENERIC, "Table not specified");
         }
         else if (null == _target)
         {
-            errors.reject(SpringActionController.ERROR_MSG, "Table not specified");
+            if (!_crossTypeImport)
+                errors.reject(SpringActionController.ERROR_GENERIC, "Table not specified");
         }
-        else if (!_target.hasPermission(user, InsertPermission.class))
+        else if (!_crossTypeImport && !_target.hasPermission(user, InsertPermission.class))
         {
             if (user.isGuest())
                 throw new UnauthorizedException();
-            errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+            errors.reject(SpringActionController.ERROR_GENERIC, "User does not have permission to insert rows");
         }
         else if (null == _updateService)
         {
-            errors.reject(SpringActionController.ERROR_MSG, "Table does not support update service: " + _target.getName());
+            errors.reject(SpringActionController.ERROR_GENERIC, "Table does not support update service: " + _target.getName());
         }
     }
 
@@ -749,10 +750,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, _crossTypeImport, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
@@ -766,6 +767,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
             context.setSupportAutoIncrementKey(true);
         }
+        context.setCrossTypeImport(crossTypeImport);
 
         return importData(dl, target, updateService, context, auditEvent, user, container);
     }
@@ -796,7 +798,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     throw new RuntimeSQLException(x);
             }
         }
-        else
+        else if (!context.isCrossTypeImport())
         {
             context.getErrors().addRowError(new ValidationException("Table not specified"));
         }

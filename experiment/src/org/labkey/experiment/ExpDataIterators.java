@@ -72,18 +72,23 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -92,13 +97,16 @@ import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpRunItemTableImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2244,6 +2252,219 @@ public class ExpDataIterators
                 step8 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step7, _indexFunction)); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step8.getDataIterator(context));
+        }
+    }
+
+    public static class MultiSampleTypeDataIterator extends WrapperDataIterator
+    {
+        private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
+        private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
+        private static final int BATCH_SIZE = 1000;
+        record TypeData(
+                ExpSampleTypeImpl sampleType,
+                TableInfo tableInfo,
+                File dataFile,
+                List<Integer> fieldIndexes,
+                List<String> dataRows
+        ) { }
+
+        private final DataIteratorContext _context;
+        private final Container _container;
+        private final User _user;
+        private Integer _fileNameColIndex = null;
+        private String _fileNameColName = null;
+        private final Map<String, TypeData> _fileDataMap = new HashMap<>();
+        private final SamplesSchema _schema;
+
+        public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user)
+        {
+            super(di);
+            _context = context;
+            _container = container;
+            _user = user;
+            _schema = new SamplesSchema(_user, _container);
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+
+            SAMPLE_TYPE_FIELD_NAMES.forEach(name -> {
+                if (map.get(name) != null)
+                {
+                    if (_fileNameColIndex != null)
+                        _context.getErrors().addRowError(new ValidationException("Only one of " + SAMPLE_TYPE_FIELD_NAMES + " allowed for import."));
+                    _fileNameColIndex = map.get(name);
+                    _fileNameColName = di.getColumnInfo(_fileNameColIndex).getName();
+                }
+            });
+            if (_fileNameColIndex == null)
+                _context.getErrors().addRowError(new ValidationException("Sample type cannot be determined. Provide either a '" + StringUtils.join(SAMPLE_TYPE_FIELD_NAMES, "' or '") + "' column in the data."));
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (_context.getErrors().hasErrors())
+                return hasNext;
+
+            if (!hasNext)
+            {
+                // process the individual files
+                _fileDataMap.values().forEach(typeData -> {
+                    writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+                    var updateService = typeData.tableInfo.getUpdateService();
+                    if (updateService == null)
+                    {
+                        _context.getErrors().addRowError(new ValidationException("No update service available for sample type " + typeData.sampleType.getName() + "'."));
+                    }
+                    else
+                    {
+                        try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                        {
+                            // TODO Do we need to configureLoader with renamed fields or has that been taken care of when writing the file?
+                            _context.setCrossTypeImport(false);
+                            updateService.loadRows(_user, _container, loader, _context, null);
+                        }
+                        catch (SQLException | IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                        finally
+                        {
+                            typeData.dataFile.delete();
+                        }
+                    }
+                });
+                _context.setCrossTypeImport(true);
+
+                return false;
+            }
+            else
+            {
+                String fileName = (String) get(_fileNameColIndex);
+                if (StringUtils.isEmpty(StringUtils.trim(fileName)))
+                    _context.getErrors().addRowError(new ValidationException("No value provided for '" + _fileNameColName + "'."));
+                else
+                {
+                    TypeData typeData = _fileDataMap.get(fileName);
+                    if (typeData == null)
+                    {
+                        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(_container, _user, fileName);
+                        if (sampleType == null)
+                            _context.getErrors().addRowError(new ValidationException(_fileNameColName + " '" + fileName + "' not found.") );
+                        else
+                        {
+                            try
+                            {
+                                typeData = createHeaderRow(sampleType);
+                                _fileDataMap.put(fileName, typeData);
+                            }
+                            catch (IOException e)
+                            {
+//                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                    if (typeData != null)
+                    {
+                        addDataRow(typeData);
+                    }
+                }
+                return hasNext;
+            }
+        }
+
+        private TypeData createHeaderRow(ExpSampleTypeImpl sampleType) throws IOException
+        {
+            List<QueryException> qpe = new ArrayList<>();
+            QueryDefinition qDef = _schema.getQueryDefForTable(sampleType.getName());
+            TableInfo samplesTable = qDef.getTable(_schema, qpe, true);
+            if (samplesTable == null)
+            {
+                _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found"));
+                return null;
+            }
+            File dataFile = FileUtil.createTempFile("~importSplit-", sampleType.getName() + ".tsv");
+            Set<String> validFields = new CaseInsensitiveHashSet();
+            samplesTable.getColumns().forEach(column -> {
+                if (!IGNORED_FIELD_NAMES.contains(column.getName()))
+                {
+                    validFields.add(column.getName());
+                    validFields.addAll(column.getImportAliasSet());
+                }
+            });
+            List<Integer> fieldIndexes = new ArrayList<>();
+            List<String> header = new ArrayList<>();
+            // column 0 is the rowNumber
+            for (int i = 0; i <= getColumnCount(); i++)
+            {
+                ColumnInfo colInfo = getColumnInfo(i);
+                if (validFields.contains(colInfo.getName()))
+                {
+                    fieldIndexes.add(i);
+                    header.add(colInfo.getName());
+                }
+            }
+
+            // TODO if there are no fields for this sample type, is this an error?
+            if (header.isEmpty())
+                return null;
+
+            List<String> dataRows = new ArrayList<String>();
+            dataRows.add(StringUtils.join(header, "\t"));
+            return new TypeData(sampleType, samplesTable, dataFile, fieldIndexes, dataRows);
+        }
+
+        private void addDataRow(TypeData typeData)
+        {
+            if (typeData.dataRows.size() == BATCH_SIZE)
+            {
+                writeRowsToFile(typeData);
+            }
+            List<Object> dataRow = new ArrayList<>();
+            typeData.fieldIndexes.forEach(index -> {
+                dataRow.add(get(index));
+            });
+            typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
+        }
+
+        private void writeRowsToFile(TypeData typeData)
+        {
+            if (typeData.dataRows.size() == 0)
+                return;
+
+            try (FileWriter writer = new FileWriter(typeData.dataFile, true))
+            {
+                writer.write(StringUtils.join(typeData.dataRows, System.lineSeparator()));
+                typeData.dataRows.clear();
+            }
+            catch (IOException e)
+            {
+//                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.sampleType.getName() + "'."));
+
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static class MultiSampleTypeDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final User _user;
+
+        public MultiSampleTypeDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in)
+        {
+            _in = in;
+            _container = container;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new MultiSampleTypeDataIterator(pre, context, _container, _user));
         }
     }
 }
