@@ -308,13 +308,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public void save(User user) throws BatchValidationException
     {
-        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        ExperimentServiceImpl expService = ExperimentServiceImpl.get();
+        try (DbScope.Transaction t = expService.getExpSchema().getScope().ensureTransaction())
         {
             boolean newRun = getRowId() == 0;
-            ExperimentService.get().onBeforeRunSaved(getProtocol(), this, getContainer(), user);
-            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun(), true);
+            expService.onBeforeRunSaved(getProtocol(), this, getContainer(), user);
+            save(user, expService.getTinfoExperimentRun(), true);
             if (newRun)
-                ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
+                expService.auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
+            t.addCommitTask(() -> expService.onAfterRunSaved(getProtocol(), this, getContainer(), user), DbScope.CommitTaskOption.POSTCOMMIT);
             t.commit();
         }
     }
