@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -418,8 +419,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
                         "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
                         "search to find the other select values.", false);
-        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
-                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+        AdminConsole.addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
+                "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated.  Turn on this feature to disable checks.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1229,6 +1230,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
+            ApiJsonWriter.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
@@ -1277,7 +1279,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);
-            result.add(scope.getLabKeySchema());
+            if (scope != null)
+            {
+                result.add(scope.getLabKeySchema());
+            }
         }
 
         return result;

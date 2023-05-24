@@ -77,23 +77,25 @@ public class WarningServiceImpl implements WarningService
     }
 
     private static final String DISMISSAL_SCRIPT_FORMAT =
-        "<script type=\"text/javascript\">\n" +
-        "    (function($) {\n" +
-        "        function dismissMessage() {\n" +
-        "            var config = {\n" +
-        "                url: %1$s,\n" +
-        "                method: 'POST',\n" +
-        "                success: function () {$('.lk-dismissable-warn').hide();$('#headerWarningIcon').show();},\n" +
-        "                failure: LABKEY.Utils.displayAjaxErrorResponse\n" +
-        "            };\n" +
-        "            LABKEY.Ajax.request(config); \n" +
-        "            return false;\n" +
-        "        }\n" +
-        "        $('body').on('click', 'a.lk-dismissable-warn-close', function() {\n" +
-        "            dismissMessage();\n" +
-        "        });\n" +
-        "    })(jQuery);\n" +
-        "</script>\n";
+        """
+        <script type="text/javascript">
+            (function($) {
+                function dismissMessage() {
+                    var config = {
+                        url: %1$s,
+                        method: 'POST',
+                        success: function () {$('.lk-dismissable-warn').hide();$('#headerWarningIcon').show();},
+                        failure: LABKEY.Utils.displayAjaxErrorResponse
+                    };
+                    LABKEY.Ajax.request(config);\s
+                    return false;
+                }
+                $('body').on('click', 'a.lk-dismissable-warn-close', function() {
+                    dismissMessage();
+                });
+            })(jQuery);
+        </script>
+        """;
 
     @Override
     public Warnings getWarnings(ViewContext context)

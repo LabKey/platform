@@ -791,7 +791,7 @@ public class DbSchema
                 FirstPKValue VARCHAR(100) NULL,
                 ModuleName VARCHAR(50) NOT NULL,
                 OrphanedContainer VARCHAR(60) NULL
-            );
+            )
             
             """;
 
@@ -857,7 +857,7 @@ public class DbSchema
         else
         {
             new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
-                + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(rs -> {
+                + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3").forEach(rs -> {
                     sbOut.append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
                         .append("ERROR:  ")
                         .append(rs.getString(1))

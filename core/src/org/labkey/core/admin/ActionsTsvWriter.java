@@ -20,6 +20,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class ActionsTsvWriter extends TSVWriter
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         return ret;

@@ -29,6 +29,7 @@ import org.labkey.bigiron.mssql.MicrosoftSqlServerVersion;
 import org.labkey.bigiron.mssql.synonym.SynonymTestCase;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
 import org.labkey.bigiron.oracle.OracleDialectFactory;
+import org.labkey.bigiron.oracle.OracleVersion;
 import org.labkey.bigiron.sas.SasDialectFactory;
 
 import java.util.Collection;
@@ -87,6 +88,7 @@ public class BigIronModule extends CodeOnlyModule
         return Set.of(
             GroupConcatInstallationManager.TestCase.class,
             MicrosoftSqlServerVersion.TestCase.class,
+            OracleVersion.TestCase.class,
             SynonymTestCase.class
         );
     }

@@ -52,6 +52,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -1262,9 +1263,18 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 }
                 else if (st.prop != null)
                 {
+                    TableInfo table = DbSchema.get(report.getSchemaName(), DbSchemaType.Provisioned).getTable(report.getTableName());
+                    PropertyDescriptor pd = st.prop.getPropertyDescriptor();
+                    if (st.prop.getPropertyDescriptor().getStorageColumnName() == null && null != table.getColumn(pd.getName()))
+                    {
+                        pd.setStorageColumnName(pd.getName());
+                        OntologyManager.updatePropertyDescriptor(pd);
+                        continue;
+                    }
+
                     if (st.colName == null)
                     {
-                        adds.addColumn(st.prop.getPropertyDescriptor());
+                        adds.addColumn(pd);
                     }
                     if (st.mvColName == null && st.prop.isMvEnabled())
                     {
@@ -1316,9 +1326,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             for (DomainKind<?> dk : PropertyService.get().getDomainKinds())
             {
+                if (dk instanceof TestDomainKind)
+                    continue;
                 String schemaName = dk.getStorageSchemaName();
                 if (null != schemaName)
                 {
+                    assert !"temp".equalsIgnoreCase(schemaName);
                     Path path = new Path(schemaName);
                     schemaNames.add(path);
                     nonProvisionedTableMap.put(path, dk.getNonProvisionedTableNames());
@@ -1426,7 +1439,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 domainReport.getColumns().add(status);
                 status.prop = domainProp;
                 PropertyDescriptor propDescriptor = domainProp.getPropertyDescriptor();
-                if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
+
+                if (null == propDescriptor.getStorageColumnName() && hardColumnNames.contains(domainProp.getName()))
+                {
+                    domainReport.addError(String.format("database table %s.%s column '%s' is missing the storage column name.", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
+                    status.fix = "Add storage column name '" + domainProp.getName() + "' to property descriptor";
+                    status.hasProblem = true;
+                    hardColumnNames.remove(propDescriptor.getName());
+                }
+                else if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
                 {
                     status.colName = domainProp.getName();
                 }

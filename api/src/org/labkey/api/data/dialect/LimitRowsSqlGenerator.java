@@ -8,36 +8,45 @@ import org.labkey.api.data.Table;
  */
 public class LimitRowsSqlGenerator
 {
-    public static SQLFragment limitRows(SQLFragment frag, int rowCount, long offset, boolean supportsOffsetWithoutLimit)
+    public static SQLFragment limitRows(SQLFragment frag, int rowCount, long offset, LimitRowsCustomizer customizer)
     {
+        if (customizer.requiresOffsetBeforeLimit())
+            handleOffset(frag, offset, customizer);
+
         if (rowCount != Table.ALL_ROWS)
         {
-            frag.append("\nLIMIT ");
-            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
+            frag.append("\n");
+            customizer.appendLimit(frag, Table.NO_ROWS == rowCount ? 0 : rowCount);
         }
-        else if (offset > 0 && !supportsOffsetWithoutLimit)
+        else if (offset > 0 && !customizer.supportsOffsetWithoutLimit())
         {
             // This is Table.ALL_ROWS plus an offset on MySQL. MySQL OFFSET requires LIMIT (unlike PostgreSQL, where
             // LIMIT and OFFSET are independent clauses). MySQL documentation recommends specifying a very large LIMIT
             // to denote offset + all remaining rows.
-            frag.append("\nLIMIT ?");
-            frag.add(Integer.MAX_VALUE);
+            frag.append("\n");
+            customizer.appendLimit(frag, Integer.MAX_VALUE);
         }
 
-        if (offset > 0)
-        {
-            frag.append("\nOFFSET ");
-            frag.append(Long.toString(offset));
-        }
+        if (!customizer.requiresOffsetBeforeLimit())
+            handleOffset(frag, offset, customizer);
 
         return frag;
     }
 
-    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset, boolean supportsOffsetWithoutLimit)
+    private static void handleOffset(SQLFragment frag, long offset, LimitRowsCustomizer customizer)
+    {
+        if (offset > 0)
+        {
+            frag.append("\n");
+            customizer.appendOffset(frag, offset);
+        }
+    }
+
+    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset, LimitRowsCustomizer customizer)
     {
         SQLFragment sql = appendFromFilterOrderAndGroupBy(select, from, filter, order, groupBy);
 
-        return limitRows(sql, maxRows, offset, supportsOffsetWithoutLimit);
+        return limitRows(sql, maxRows, offset, customizer);
     }
 
     public static SQLFragment appendFromFilterOrderAndGroupBy(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy)
@@ -60,5 +69,48 @@ public class LimitRowsSqlGenerator
         if (order != null) sql.append("\n").append(order);
 
         return sql;
+    }
+
+    public interface LimitRowsCustomizer
+    {
+        void appendLimit(SQLFragment frag, int limit);
+        void appendOffset(SQLFragment frag, long offset);
+        boolean supportsOffsetWithoutLimit();
+        boolean requiresOffsetBeforeLimit();
+    }
+
+    // Standard customizer used by PostgreSQL, MySQL, and Redshift
+    public static class StandardLimitRowsCustomizer implements LimitRowsCustomizer
+    {
+        private final boolean _supportsOffsetWithoutLimit;
+
+        public StandardLimitRowsCustomizer(boolean supportsOffsetWithoutLimit)
+        {
+            _supportsOffsetWithoutLimit = supportsOffsetWithoutLimit;
+        }
+
+        @Override
+        public void appendLimit(SQLFragment frag, int limit)
+        {
+            frag.append("LIMIT ").appendValue(limit);
+        }
+
+        @Override
+        public void appendOffset(SQLFragment frag, long offset)
+        {
+            frag.append("OFFSET ").appendValue(offset);
+        }
+
+        @Override
+        public boolean supportsOffsetWithoutLimit()
+        {
+            return _supportsOffsetWithoutLimit;
+        }
+
+        @Override
+        public boolean requiresOffsetBeforeLimit()
+        {
+            return false; // MySQL requires LIMIT before OFFSET; PostgreSQL doesn't care
+        }
     }
 }

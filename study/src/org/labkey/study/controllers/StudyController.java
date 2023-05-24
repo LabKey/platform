@@ -50,7 +50,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -61,7 +60,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
@@ -106,7 +104,6 @@ import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1339,15 +1336,16 @@ public class StudyController extends BaseStudyController
             if (null == target.getLabel())
                 errors.reject(ERROR_MSG, "Please supply a label");
 
-            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectColumnName() + "\" is not a valid subject column name.");
+            String message;
 
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid singular subject noun.");
+            if (null != (message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), target.getSubjectColumnName())))
+                errors.reject(ERROR_MSG, message);
 
-            // For now, apply the same check to the plural noun as to the singular- there rules should be exactly the same.
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounPlural()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
+            if (null != (message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), target.getSubjectNounSingular())))
+                errors.reject(ERROR_MSG, message);
+
+            if (null != (message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), target.getSubjectNounPlural())))
+                errors.reject(ERROR_MSG, message);
         }
 
         @Override
@@ -1547,28 +1545,42 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            // Issue 43898: Validate that the subject column name is not a user defined field in one of the datasets
-            String subjectColName = form.get("SubjectColumnName");
-            if (null != subjectColName)
+            // Skip validation if Spring binding already has an error for subject noun singular
+            if (errors.getFieldError("SubjectNounSingular") == null)
             {
-                Study study = StudyService.get().getStudy(getContainer());
-                if (null != study)
+                // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
+                // study table or dataset
+                String subjectNounSingular = form.get("SubjectNounSingular");
+                if (null != subjectNounSingular)
                 {
-                    for (Dataset dataset : study.getDatasets())
-                    {
-                        Domain domain = dataset.getDomain();
-                        if (null != domain)
-                        {
-                            for (DomainProperty property : domain.getProperties())
-                            {
-                                if (property.getName().equalsIgnoreCase(subjectColName))
-                                {
-                                    errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ". ");
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
+            }
+
+            // Skip validation if Spring binding already has an error for subject noun plural
+            if (errors.getFieldError("SubjectNounPlural") == null)
+            {
+                String subjectNounPlural = form.get("SubjectNounPlural");
+                if (null != subjectNounPlural)
+                {
+                    String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
+            }
+
+            // Skip validation if Spring binding already has an error for subject column name
+            if (errors.getFieldError("SubjectColumnName") == null)
+            {
+                // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
+                String subjectColName = form.get("SubjectColumnName");
+                if (null != subjectColName)
+                {
+                    String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
                 }
             }
         }

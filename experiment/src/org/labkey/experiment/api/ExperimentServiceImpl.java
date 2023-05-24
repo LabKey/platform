@@ -69,6 +69,7 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
@@ -982,6 +983,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return experiment == null ? null : new ExpExperimentImpl(experiment);
     }
 
+    @Override
+    public List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), rowIds);
+        TableSelector selector = new TableSelector(getTinfoExperiment(), filter, null);
+
+        final List<ExpExperimentImpl> experiments = new ArrayList<>(rowIds.size());
+        selector.forEach(Experiment.class, exp -> experiments.add(new ExpExperimentImpl(exp)));
+
+        return experiments;
+    }
 
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
@@ -1671,10 +1683,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try
         {
+            // next attempt to resolve by rowId
             Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
 
-            // next attempt to resolve by rowId
-            return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+            if (rowId != null)
+                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
         }
         catch (ConversionException e1)
         {
@@ -2605,14 +2618,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
-            SQLFragment parentsInnerSelectFrag = new SQLFragment().setSqlUnsafe(parentsInnerSelect);
+            SQLFragment parentsInnerSelectFrag = SQLFragment.unsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
             String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment().setSqlUnsafe(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2620,14 +2633,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
             childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-            SQLFragment childrenInnerSelectFrag = new SQLFragment().setSqlUnsafe(childrenInnerSelect);
+            SQLFragment childrenInnerSelectFrag = SQLFragment.unsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment().setSqlUnsafe(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -3445,7 +3458,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ClosureQueryHelper.invalidateAll();
     }
 
-
     public void verifyRunEdges(ExpRun run)
     {
         new SyncRunEdges(run)
@@ -3453,7 +3465,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .verifyEdgesNoInsert(true)
                 .sync(null);
     }
-
 
     public void verifyAllEdges(Container c, @Nullable Integer limit)
     {
@@ -3555,7 +3566,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
     }
 
-
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
@@ -3568,14 +3578,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return datasToDelete;
     }
 
-
     private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user, String userComment)
     {
         ExpRunImpl run = getExpRun(runId);
         if (run == null)
-        {
             return;
-        }
 
         for (ExperimentListener listener : _listeners)
         {
@@ -3595,14 +3602,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         run.deleteProtocolApplications(datasToDelete, user);
 
-        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n").appendEOS();
-        sql.add(run.getRowId());
-        sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").appendEOS();
-        sql.add(run.getRowId());
-        sql.append("DELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?").appendEOS();
-        sql.add(run.getRowId());
-        sql.append("DELETE FROM exp.ExperimentRun WHERE RowId = ?").appendEOS();
-        sql.add(run.getRowId());
+        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?").add(run.getRowId()).appendEOS();
+        sql.append("\nUPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").add(run.getRowId()).appendEOS();
+        sql.append("\nDELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?").add(run.getRowId()).appendEOS();
+        sql.append("\nDELETE FROM exp.ExperimentRun WHERE RowId = ?").add(run.getRowId()).appendEOS();
 
         new SqlExecutor(getExpSchema()).execute(sql);
 
@@ -3615,6 +3618,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID() );
         }
         auditRunEvent(user, protocol, run, null, "Run deleted", userComment);
+
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterRunDelete(run.getProtocol(), run, user);
+        }
     }
 
 
@@ -3775,6 +3783,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public TableInfo getTinfoObjectLegacyNames()
     {
         return getExpSchema().getTable("ObjectLegacyNames");
+    }
+
+    @Override
+    public TableInfo getTinfoDataTypeExclusion()
+    {
+        return getExpSchema().getTable("DataTypeExclusion");
     }
 
     /**
@@ -4086,147 +4100,146 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (selectedRunIds.isEmpty())
             return;
 
-        for (Integer runId : selectedRunIds)
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
-            try (DbScope.Transaction transaction = ensureTransaction())
+            for (Integer runId : selectedRunIds)
             {
                 final ExpRunImpl run = getExpRun(runId);
-                if (run != null)
+                if (run == null)
+                    continue;
+
+                SimpleFilter containerFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
+                Table.delete(getTinfoAssayQCFlag(), containerFilter);
+
+                ExpProtocol protocol = run.getProtocol();
+                ProtocolImplementation protocolImpl = null;
+                if (protocol != null)
                 {
-                    SimpleFilter containerFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
-                    Table.delete(getTinfoAssayQCFlag(), containerFilter);
+                    protocolImpl = protocol.getImplementation();
 
-                    ExpProtocol protocol = run.getProtocol();
-                    ProtocolImplementation protocolImpl = null;
-                    if (protocol != null)
+                    if (!run.canDelete(user))
+                        throw new UnauthorizedException("You do not have permission to delete " +
+                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
+                                + " in " + run.getContainer());
+                    StudyPublishService publishService = StudyPublishService.get();
+                    if (publishService != null)
                     {
-                        protocolImpl = protocol.getImplementation();
+                        AssayWellExclusionService svc = AssayWellExclusionService.getProvider(protocol);
+                        if (svc != null)
+                            svc.deleteExclusionsForRun(protocol, runId);
 
-                        if (!run.canDelete(user))
-                            throw new UnauthorizedException("You do not have permission to delete " +
-                                    (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
-                                    + " in " + run.getContainer());
-                        StudyPublishService publishService = StudyPublishService.get();
-                        if (publishService != null)
+                        for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                         {
-                            AssayWellExclusionService svc = AssayWellExclusionService.getProvider(protocol);
-                            if (svc != null)
-                                svc.deleteExclusionsForRun(protocol, runId);
-
-                            for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
+                            // NOTE: these datasets come from various different containers
+                            UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                            TableInfo tableInfo = schema.getTable(dataset.getName());
+                            if (null == tableInfo || !dataset.hasPermission(user, DeletePermission.class))
                             {
-                                // NOTE: these datasets come from various different containers
-                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                                TableInfo tableInfo = schema.getTable(dataset.getName());
-                                if (null == tableInfo || !dataset.hasPermission(user, DeletePermission.class))
-                                {
-                                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                                }
-
-                                AssayProvider provider = AssayService.get().getProvider(protocol);
-                                if (provider != null)
-                                {
-                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
-
-                                    // Add an audit event to the link to study history
-                                    publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
-
-                                    // Do the actual delete on the dataset for the rows in question
-                                    dataset.deleteDatasetRows(user, lsids);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            LOG.info("Skipping delete of dataset rows associated with this run: Study service not available.");
-                        }
-                    }
-
-                    // Grab these to delete after we've deleted the Data rows
-                    List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
-
-                    // Find the cross-run file input or output exp.data to delete after the run is deleted:
-                    // - data outputs that have the same dataFileUrl as an "cross run input" exp.data input and aren't being used in another run.
-                    // - data inputs with "cross run input" role, have no custom file properties, and aren't being used in another run.
-                    List<ExpDataImpl> crossRunInputs = new ArrayList<>();
-                    List<ExpDataImpl> crossRunOutputs = new ArrayList<>();
-                    List<ExpDataImpl> inputData = run.getInputDatas(DefaultAssayRunCreator.CROSS_RUN_DATA_INPUT_ROLE, null);
-                    if (!inputData.isEmpty())
-                    {
-                        for (ExpDataImpl input : inputData)
-                        {
-                            // Find a matching exp.data output with the same dataFileUrl
-                            for (ExpDataImpl output : datasToDelete)
-                            {
-                                if (input.getDataFileUrl().equals(output.getDataFileUrl()))
-                                {
-                                    // Don't delete the exp.data output if it is being used in other runs
-                                    List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(output));
-                                    otherUsages.remove(run);
-                                    if (!otherUsages.isEmpty())
-                                    {
-                                        LOG.debug("Skipping delete of cross-run output data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
-                                        break;
-                                    }
-
-                                    crossRunOutputs.add(output);
-                                }
+                                throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                             }
 
-                            // If there are comments or file properties attached to the exp.data don't delete it.
-                            // TODO: We don't want to delete exp.data for uploaded files since we track created/createdby and other metadata... is there a better way to identify these exp.data we don't want to delete?
-                            // CONSIDER: move these properties to the matching output exp.data with the same dataFileUrl?
-                            if (hasFileProperties(container, input))
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (provider != null)
                             {
-                                LOG.debug("Skipping delete of cross-run input data '" + input.getName() + "' (" + input.getRowId() + ") with custom file properties");
-                                continue;
-                            }
+                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                            // If the file has no other usages, we can delete it.
-                            List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(input));
-                            otherUsages.remove(run);
-                            if (otherUsages.isEmpty())
-                            {
-                                crossRunInputs.add(input);
+                                // Add an audit event to the link to study history
+                                publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
+
+                                // Do the actual delete on the dataset for the rows in question
+                                dataset.deleteDatasetRows(user, lsids);
                             }
                         }
                     }
-
-                    // Archive all data files prior to deleting
-                    //  ideally this would be transacted as a commit task but we decided against it due to complications
-                    run.archiveDataFiles(user);
-
-                    deleteRun(runId, datasToDelete, user, userComment);
-
-                    for (ExpData data : datasToDelete)
+                    else
                     {
-                        ExperimentDataHandler handler = data.findDataHandler();
-                        handler.deleteData(data, container, user);
+                        LOG.info("Skipping delete of dataset rows associated with this run: Study service not available.");
                     }
-
-                    // Delete the cross run data completely
-                    for (ExpDataImpl data : crossRunInputs)
-                    {
-                        LOG.debug("Deleting cross-run input data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
-                        data.delete(user, false);
-                    }
-                    for (ExpDataImpl data : crossRunOutputs)
-                    {
-                        LOG.debug("Deleting cross-run output data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
-                        data.delete(user, false);
-                    }
-
-                    if (protocolImpl != null)
-                        protocolImpl.onRunDeleted(container, user);
                 }
 
-                transaction.commit();
+                // Grab these to delete after we've deleted the Data rows
+                List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
+
+                // Find the cross-run file input or output exp.data to delete after the run is deleted:
+                // - data outputs that have the same dataFileUrl as an "cross run input" exp.data input and aren't being used in another run.
+                // - data inputs with "cross run input" role, have no custom file properties, and aren't being used in another run.
+                List<ExpDataImpl> crossRunInputs = new ArrayList<>();
+                List<ExpDataImpl> crossRunOutputs = new ArrayList<>();
+                List<ExpDataImpl> inputData = run.getInputDatas(DefaultAssayRunCreator.CROSS_RUN_DATA_INPUT_ROLE, null);
+                if (!inputData.isEmpty())
+                {
+                    for (ExpDataImpl input : inputData)
+                    {
+                        // Find a matching exp.data output with the same dataFileUrl
+                        for (ExpDataImpl output : datasToDelete)
+                        {
+                            if (input.getDataFileUrl().equals(output.getDataFileUrl()))
+                            {
+                                // Don't delete the exp.data output if it is being used in other runs
+                                List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(output));
+                                otherUsages.remove(run);
+                                if (!otherUsages.isEmpty())
+                                {
+                                    LOG.debug("Skipping delete of cross-run output data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                    break;
+                                }
+
+                                crossRunOutputs.add(output);
+                            }
+                        }
+
+                        // If there are comments or file properties attached to the exp.data don't delete it.
+                        // TODO: We don't want to delete exp.data for uploaded files since we track created/createdby and other metadata... is there a better way to identify these exp.data we don't want to delete?
+                        // CONSIDER: move these properties to the matching output exp.data with the same dataFileUrl?
+                        if (hasFileProperties(container, input))
+                        {
+                            LOG.debug("Skipping delete of cross-run input data '" + input.getName() + "' (" + input.getRowId() + ") with custom file properties");
+                            continue;
+                        }
+
+                        // If the file has no other usages, we can delete it.
+                        List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(input));
+                        otherUsages.remove(run);
+                        if (otherUsages.isEmpty())
+                        {
+                            crossRunInputs.add(input);
+                        }
+                    }
+                }
+
+                // Archive all data files prior to deleting
+                //  ideally this would be transacted as a commit task but we decided against it due to complications
+                run.archiveDataFiles(user);
+
+                deleteRun(runId, datasToDelete, user, userComment);
+
+                for (ExpData data : datasToDelete)
+                {
+                    ExperimentDataHandler handler = data.findDataHandler();
+                    handler.deleteData(data, container, user);
+                }
+
+                // Delete the cross run data completely
+                for (ExpDataImpl data : crossRunInputs)
+                {
+                    LOG.debug("Deleting cross-run input data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    data.delete(user, false);
+                }
+                for (ExpDataImpl data : crossRunOutputs)
+                {
+                    LOG.debug("Deleting cross-run output data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    data.delete(user, false);
+                }
+
+                if (protocolImpl != null)
+                    protocolImpl.onRunDeleted(container, user);
             }
+
+            transaction.commit();
         }
     }
-
 
     // return true if the data has a comment or any other custom file properties
     private boolean hasFileProperties(Container c, ExpData data)
@@ -4441,7 +4454,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         if (assayService != null)
-            assayService.unindexAssays(Collections.unmodifiableCollection(expProtocols));
+            assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
     private void deleteProtocolInputs(Container c, String protocolIdsInClause)
@@ -4634,9 +4647,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
                             .add(material.getRootMaterialLSID());
                 }
-
             }
-
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
             {
@@ -4932,7 +4943,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     }
 
-
     public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
     {
         deleteDataByRowIds(user, container, selectedDataIds, true);
@@ -5046,10 +5056,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SearchService ss = SearchService.get();
             if (null != ss)
             {
+                Set<String> documentIds = new HashSet<>();
                 for (ExpDataImpl data : ExpDataImpl.fromDatas(datas))
                 {
-                    ss.deleteResource(data.getDocumentId());
+                    documentIds.add(data.getDocumentId());
                 }
+                ss.deleteResources(documentIds);
             }
 
             transaction.commit();
@@ -5069,13 +5081,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         ExpExperimentImpl experiment = getExpExperiment(rowId);
-        if(experiment == null)
+        if (experiment == null)
             return;
 
         deleteExpExperiment(c, user, experiment);
     }
 
-    private void deleteExpExperiment(Container c, User user, ExpExperimentImpl experiment)
+    // TODO: This should be refactored to support deletion of multiple ExpExperiments at one time
+    private void deleteExpExperiment(Container c, User user, @NotNull ExpExperimentImpl experiment)
     {
         try (DbScope.Transaction t = ensureTransaction())
         {
@@ -5100,7 +5113,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             OntologyManager.deleteOntologyObjects(experiment.getContainer(), experiment.getLSID());
 
             // Inform the listeners.
-            for (ExperimentListener listener: _listeners)
+            for (ExperimentListener listener : _listeners)
             {
                 listener.beforeExperimentDeleted(c, user, experiment);
             }
@@ -5109,6 +5122,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     + " WHERE RowId = " + experiment.getRowId()
                     + " AND Container = ?", experiment.getContainer());
             executor.execute(sql);
+
+            for (ExperimentListener listener : _listeners)
+            {
+                listener.afterExperimentDeleted(c, user, experiment);
+            }
 
             t.commit();
         }
@@ -5162,11 +5180,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // These are usually deleted when the run is deleted (unless the run is in a different container)
             // and would be cleaned up when deleting the exp.Material and exp.Data in this container at the end of this method.
             // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
-            String deleteObjEdges =
-                    "DELETE FROM " + getTinfoEdge() + "\nWHERE fromObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n"+
-                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n" +
-                    "DELETE FROM " + getTinfoEdge() + "\nWHERE sourceId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
-            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c, c);
+            SQLFragment deleteObjEdges = new SQLFragment()
+                    .append("DELETE FROM ").append(getTinfoEdge()).append(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = ?)").add(c).appendEOS()
+                    .append("\nDELETE FROM ").append(getTinfoEdge()).append(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = ?)").add(c).appendEOS()
+                    .append("\nDELETE FROM ").append(getTinfoEdge()).append(" WHERE sourceId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = ?)").add(c);
+            new SqlExecutor(getExpSchema()).execute(deleteObjEdges);
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoDataAliasMap(), containerFilter);
@@ -8056,6 +8074,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         _listeners.add(listener);
     }
 
+    public void onAfterExperimentSaved(ExpExperiment experiment, Container container, User user)
+    {
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterExperimentSaved(container, user, experiment);
+        }
+    }
+
+    public void onAfterRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user)
+    {
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterRunSaved(container, user, protocol, run);
+        }
+    }
+
     @Override
     public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException
     {
@@ -8137,6 +8171,98 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders()
     {
         return Collections.unmodifiableList(_runOutputsQueryViews);
+    }
+
+    @Override
+    public void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("DataTypeRowId", rowId);
+        fields.put("DataType", dataType.name());
+        fields.put("ExcludedContainer", excludedContainerId);
+        Table.insert(user, getTinfoDataTypeExclusion(), fields);
+    }
+
+    public void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ? AND ExcludedContainer = ?");
+        sql.add(rowId);
+        sql.add(dataType.name());
+        sql.add(excludedContainerId);
+
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE ");
+        String and = "";
+        if (dataType != null)
+        {
+            sql.append("DataType = ? ");
+            sql.add(dataType.name());
+            and = " AND ";
+        }
+
+        if (!StringUtils.isEmpty(excludedContainerId))
+        {
+            sql.append(and);
+            sql.append("ExcludedContainer = ? ");
+            sql.add(excludedContainerId);
+            and = " AND ";
+        }
+
+        if (dataTypeRowId != null && dataTypeRowId > 0)
+        {
+            sql.append(and);
+            sql.append("DataTypeRowId = ? ");
+            sql.add(dataTypeRowId);
+        }
+
+        return new SqlSelector(getTinfoDataTypeExclusion().getSchema(), sql).getMapArray();
+    }
+
+    public Set<Integer> getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
+    {
+        Set<Integer> excludedRowIds = new HashSet<>();
+        Map<String, Object>[] exclusions = getContainerDataTypeExclusions(dataType, excludedContainerId, null);
+        for (Map<String, Object> exclusion : exclusions)
+            excludedRowIds.add((Integer) exclusion.get("DataTypeRowId"));
+
+        return excludedRowIds;
+    }
+
+    @Override
+    public void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user)
+    {
+        if (excludedDataTypeRowIds == null)
+            return;
+
+        Set<Integer> previousExclusions = getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
+
+        Set<Integer> toAdd = new HashSet<>(updatedExclusions);
+        toAdd.removeAll(previousExclusions);
+
+        Set<Integer> toRemove = new HashSet<>(previousExclusions);
+        toRemove.removeAll(updatedExclusions);
+
+        if (!toAdd.isEmpty())
+        {
+            for (Integer add : toAdd)
+                addDataTypeExclusion(add, dataType, excludedContainerId, user);
+        }
+
+        if (!toRemove.isEmpty())
+        {
+            for (Integer remove : toRemove)
+                removeDataTypeExclusion(remove, dataType, excludedContainerId, user);
+        }
     }
 
     @Override
@@ -8332,19 +8458,37 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
+    public int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer)
     {
+        if (rowIds == null || rowIds.isEmpty())
+            return 0;
+
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
-        new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
+    }
+
+    private int updateExpObjectContainers(List<String> lsids, Container targetContainer)
+    {
+        if (lsids == null || lsids.isEmpty())
+            return 0;
+
+        TableInfo objectTable = OntologyManager.getTinfoObject();
+        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objecturi ");
+        objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, lsids);
+        return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
     }
 
     @Override
     public int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer)
     {
+        if (dataIds == null || dataIds.isEmpty())
+            return 0;
+
         SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).append(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
@@ -8385,7 +8529,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user);
+                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8396,6 +8540,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // update core.document.container for any files attached to the data objects that are moving
                 moveDataClassObjectAttachments(dataClass, classObjects, targetContainer, user);
+
+                // LKB registry data class objects can have related junction list rows that need to be updated as well.
+                // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
@@ -8446,13 +8598,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
     }
 
-    public int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user)
+    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE ").append(idField);
+            .append(" SET container = ").appendValue(targetContainer.getEntityId());
+        if (withModified)
+        {
+            dataUpdate.append(", modified = ").appendValue(new Date());
+            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+        }
+        dataUpdate.append(" WHERE ").append(idField);
         dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
         return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
@@ -8524,7 +8679,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(materialUpdate, runRowIds);
         int updateCount = new SqlExecutor(runsTable.getSchema()).execute(materialUpdate);
+
         ExperimentService.get().updateExpObjectContainers(getTinfoExperimentRun(), runRowIds, targetContainer);
+
+        // LKB media have object properties associated with the protocol applications of the run
+        // and object properties associated with the material and data inputs for those protocol applications
+        List<String> lsidsToUpdate = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            for (ExpProtocolApplication pa : run.getProtocolApplications())
+            {
+                lsidsToUpdate.add(pa.getLSID());
+                for (ExpDataRunInput dataInput : pa.getDataInputs())
+                    lsidsToUpdate.add(DataInput.lsid(dataInput.getData().getRowId(), pa.getRowId()));
+                for (ExpMaterialRunInput materialInput : pa.getMaterialInputs())
+                    lsidsToUpdate.add(MaterialInput.lsid(materialInput.getMaterial().getRowId(), pa.getRowId()));
+            }
+        }
+        updateExpObjectContainers(lsidsToUpdate, targetContainer);
+
         return updateCount;
     }
 

@@ -849,7 +849,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return _publishSourceId != null;
     }
 
-    @Override
+    @Override @Nullable
     public PublishSource getPublishSource()
     {
         if (_publishSourceType != null)

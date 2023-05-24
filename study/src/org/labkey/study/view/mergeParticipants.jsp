@@ -316,8 +316,15 @@
                         table = Object.values(this.tables).find(v => v.label === data.queryName);
                     }
                     if (!table) {
-                        console.error("Dataset: " + tableName + " not found.");
-                        return;
+                        var caseInsensitiveName = Object.keys(this.tables).find(k => k.toLowerCase() === data.queryName.toLowerCase());
+                        if (caseInsensitiveName) {
+                            table = this.tables[caseInsensitiveName];
+                        }
+                    }
+                    if (!table) {
+                        fatalError = true;
+                        updateMergeResults("Error: Dataset " + tableName + " not found.", true);
+                        console.error("Dataset: " + tableName + " not found. Returned queryName: " + data.queryName);
                     }
 
                     gatherIds(table, data.rows, checkTable.oldId, checkTable.newId);

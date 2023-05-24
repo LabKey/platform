@@ -172,6 +172,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
+import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -917,7 +918,10 @@ public class AdminController extends SpringActionController
             {
                 if (!checkResult.isHealthy())
                 {
-                    createResponseWriter().writeAndCloseError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    try (var writer= createResponseWriter())
+                    {
+                        writer.writeResponse(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    }
                     return null;
                 }
 
@@ -2454,7 +2458,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public HttpView getTabView(String tabId)
+        public HttpView<?> getTabView(String tabId)
         {
             if ("exceptions".equals(tabId))
                 return new ActionsExceptionsView();
@@ -2463,13 +2467,15 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class ExportActionsAction extends ExportAction<Object>
+    public static class ExportActionsAction extends ExportAction<Object>
     {
         @Override
         public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
         {
-            ActionsTsvWriter writer = new ActionsTsvWriter();
-            writer.write(response);
+            try (ActionsTsvWriter writer = new ActionsTsvWriter())
+            {
+                writer.write(response);
+            }
         }
     }
 
@@ -2622,7 +2628,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ExportQueriesAction extends ExportAction<Object>
+    public static class ExportQueriesAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2642,7 +2648,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetQueryStatisticsAction extends FormHandlerAction<QueriesForm>
+    public static class ResetQueryStatisticsAction extends FormHandlerAction<QueriesForm>
     {
         @Override
         public void validateCommand(QueriesForm target, Errors errors)
@@ -2869,7 +2875,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class EnvironmentVariablesAction extends SimpleViewAction
+    public class EnvironmentVariablesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2885,7 +2891,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class SystemPropertiesAction extends SimpleViewAction
+    public class SystemPropertiesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -4049,7 +4055,7 @@ public class AdminController extends SpringActionController
     public static class FolderInformationAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HtmlView getTabView()
         {
             Container c = getContainer();
             User currentUser = getUser();
@@ -4111,7 +4117,7 @@ public class AdminController extends SpringActionController
     public static class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
     {
         @Override
-        protected HttpView getTabView(MissingValuesForm form, boolean reshow, BindException errors)
+        protected JspView<?> getTabView(MissingValuesForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
         }
@@ -6662,7 +6668,8 @@ public class AdminController extends SpringActionController
             String titleValue = title;
             if (name == null && title == null)
             {
-                throw new ApiUsageException("Please specify a name or a title.");
+                errors.reject(ERROR_MSG, "Please specify a name or a title.");
+                return new ApiSimpleResponse("success", false);
             }
             else if (name != null && title == null)
             {
@@ -6682,7 +6689,8 @@ public class AdminController extends SpringActionController
             }
             catch (Exception e)
             {
-                throw new ApiUsageException(e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : "Failed to rename folder. An error has occurred.");
+                return new ApiSimpleResponse("success", false);
             }
         }
     }
@@ -7815,7 +7823,7 @@ public class AdminController extends SpringActionController
         {
             getPageConfig().setShowHeader(false);
             getPageConfig().setTitle("Recreate Views?");
-            return new HtmlView("Are you sure you want to drop and recreate all module views?");
+            return new HtmlView(HtmlString.of("Are you sure you want to drop and recreate all module views?"));
         }
 
         @Override
@@ -8860,7 +8868,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
+    public static class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
     {
         @Override
         public ApiResponse execute(CustomizeMenuForm form, BindException errors)
@@ -8958,7 +8966,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class AddTabAction extends MutatingApiAction<TabActionForm>
+    public static class AddTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -9063,7 +9071,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowTabAction extends MutatingApiAction<TabActionForm>
+    public static class ShowTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -9268,7 +9276,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RenameTabAction extends MutatingApiAction<TabActionForm>
+    public static class RenameTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -9359,7 +9367,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ClearDeletedTabFoldersAction extends MutatingApiAction<DeletedFoldersForm>
+    public static class ClearDeletedTabFoldersAction extends MutatingApiAction<DeletedFoldersForm>
     {
         @Override
         public ApiResponse execute(DeletedFoldersForm form, BindException errors)
@@ -10782,7 +10790,7 @@ public class AdminController extends SpringActionController
             assertForReadPermission(user, false,
                 new GetModulesAction(),
                 new GetFolderTabsAction(),
-                controller.new ClearDeletedTabFoldersAction()
+                    new ClearDeletedTabFoldersAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
@@ -10795,11 +10803,11 @@ public class AdminController extends SpringActionController
                 new ResetResourceAction(),
                 new ResetPropertiesAction(),
                 controller.new SiteValidationAction(),
-                controller.new ResetQueryStatisticsAction(),
+                    new ResetQueryStatisticsAction(),
                 controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
                 new DeleteCustomEmailAction(),
-                    new RenameContainerAction(),
+                new RenameContainerAction(),
                 controller.new RenameFolderAction(),
                 controller.new MoveFolderAction(),
                 new ConfirmProjectMoveAction(),
@@ -10809,11 +10817,11 @@ public class AdminController extends SpringActionController
                 controller.new ReorderFoldersAction(),
                 controller.new ReorderFoldersApiAction(),
                 new RevertFolderAction(),
-                controller.new CustomizeMenuAction(),
-                controller.new AddTabAction(),
-                controller.new ShowTabAction(),
+                    new CustomizeMenuAction(),
+                    new AddTabAction(),
+                    new ShowTabAction(),
                 controller.new MoveTabAction(),
-                controller.new RenameTabAction(),
+                    new RenameTabAction(),
                 new ProjectSettingsAction(),
                     new ResourcesAction(),
                     new MenuBarAction(),
@@ -10846,11 +10854,11 @@ public class AdminController extends SpringActionController
                 controller.new ShowAllErrorsAction(),
                 controller.new ShowPrimaryLogAction(),
                 controller.new ActionsAction(),
-                controller.new ExportActionsAction(),
+                    new ExportActionsAction(),
                 controller.new QueriesAction(),
                 controller.new QueryStackTracesAction(),
                 controller.new ExecutionPlanAction(),
-                controller.new ExportQueriesAction(),
+                    new ExportQueriesAction(),
                 controller.new MemTrackerAction(),
                 new MemoryChartAction(),
                 controller.new FolderTypesAction(),

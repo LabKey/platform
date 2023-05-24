@@ -57,7 +57,7 @@ public class AssignedToDisplayColumn extends DataColumn
             out.write("<option value=\"");
             out.write(Integer.toString(member.getUserId()));
             out.write("\"");
-            if (value != null && value instanceof Integer && ((Integer)value).intValue() == member.getUserId())
+            if (value instanceof Integer && ((Integer) value).intValue() == member.getUserId())
             {
                 out.write(" selected");
             }

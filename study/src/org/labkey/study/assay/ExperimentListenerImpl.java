@@ -15,7 +15,6 @@
  */
 package org.labkey.study.assay;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -39,7 +38,6 @@ import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.singleton;
