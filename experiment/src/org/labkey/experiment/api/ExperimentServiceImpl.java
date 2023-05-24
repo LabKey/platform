@@ -8163,7 +8163,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getExpSchema()).execute(sql);
     }
 
-    @NotNull public Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8195,7 +8195,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    public @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
     {
         Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
 
@@ -8223,7 +8223,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
 
-    public Set<Integer> getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
+    private Set<Integer> _getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
     {
         Set<Integer> excludedRowIds = new HashSet<>();
         Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId, null);
@@ -8239,7 +8239,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (excludedDataTypeRowIds == null)
             return;
 
-        Set<Integer> previousExclusions = getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> previousExclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId);
         Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
 
         Set<Integer> toAdd = new HashSet<>(updatedExclusions);

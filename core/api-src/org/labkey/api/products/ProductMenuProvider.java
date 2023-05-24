@@ -67,10 +67,10 @@ public abstract class ProductMenuProvider
     public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);
 
     @Nullable
-    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions);
+    public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions);
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
+    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Collection<String> sectionNames, @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
     {
         List<MenuSection> sections = new ArrayList<>();
         sectionNames.forEach((name) -> {
@@ -83,7 +83,7 @@ public abstract class ProductMenuProvider
     }
 
     @NotNull
-    public List<MenuSection> getSections(@NotNull ViewContext context, Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
+    public List<MenuSection> getSections(@NotNull ViewContext context, @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> dataTypeExclusions)
     {
         return getSections(context, getSectionNames(context), dataTypeExclusions);
     }

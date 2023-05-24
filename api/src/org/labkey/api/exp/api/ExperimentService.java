@@ -937,7 +937,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user);
 
-    Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
+    @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
 
     Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
 

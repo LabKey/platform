@@ -143,7 +143,7 @@ public class ProductRegistry
             return Collections.emptyList();
         }
         ProductMenuProvider provider = _productMap.get(productId);
-        List<MenuSection> sections = provider.getSections(context, null);
+        List<MenuSection> sections = provider.getSections(context, Collections.emptyMap());
         // always include the user menu as the last item
         sections.add(new UserInfoMenuSection(context, provider));
         return sections;
@@ -154,7 +154,7 @@ public class ProductRegistry
     {
         if (_sectionMap.containsKey(name))
         {
-            return _sectionMap.get(name).getSection(context, name, null /*used by unit test only*/ );
+            return _sectionMap.get(name).getSection(context, name, Collections.emptyMap() /*used by unit test only*/ );
         }
         else
         {
