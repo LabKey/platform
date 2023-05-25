@@ -126,6 +126,11 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
+import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
+import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
+import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
+import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
@@ -1734,7 +1739,7 @@ public class ExpDataIterators
             else if (parts.length == 2)
             {
                 String namePart = QueryKey.decodePart(parts[1]);
-                if (ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -1790,7 +1795,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                else if (DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -2265,6 +2270,7 @@ public class ExpDataIterators
                 TableInfo tableInfo,
                 File dataFile,
                 List<Integer> fieldIndexes,
+                Map<Integer, String> dependencyIndexes,
                 List<String> dataRows
         ) { }
 
@@ -2275,6 +2281,7 @@ public class ExpDataIterators
         private String _fileNameColName = null;
         private final Map<String, TypeData> _fileDataMap = new HashMap<>();
         private final SamplesSchema _schema;
+        private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
 
         public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user)
         {
@@ -2309,7 +2316,8 @@ public class ExpDataIterators
             if (!hasNext)
             {
                 // process the individual files
-                _fileDataMap.values().forEach(typeData -> {
+                getImportOrderKeys().forEach(key -> {
+                    TypeData typeData = _fileDataMap.get(key);
                     writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
                     var updateService = typeData.tableInfo.getUpdateService();
                     if (updateService == null)
@@ -2360,8 +2368,7 @@ public class ExpDataIterators
                             }
                             catch (IOException e)
                             {
-//                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
-                                throw new RuntimeException(e);
+                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
                             }
                         }
                     }
@@ -2372,6 +2379,40 @@ public class ExpDataIterators
                 }
                 return hasNext;
             }
+        }
+
+        private List<String> getImportOrderKeys()
+        {
+            List<String> keys = new ArrayList<>();
+            Set<String> allKeys = _fileDataMap.keySet();
+            allKeys.forEach(key -> {
+                if (!_orderDependencies.containsKey(key) || _orderDependencies.get(key).isEmpty())
+                {
+                    keys.add(key);
+                    _orderDependencies.values().forEach(set -> set.remove(key));
+                }
+            });
+
+            boolean hasCycle = keys.isEmpty();
+            while (keys.size() != allKeys.size() && !hasCycle)
+            {
+                Set<String> addedTypeNames = new HashSet<>();
+                _orderDependencies.forEach((typeName, dependencies) -> {
+                    if (dependencies.isEmpty())
+                        keys.add(typeName);
+                    addedTypeNames.add(typeName);
+                });
+                if (addedTypeNames.isEmpty())
+                    hasCycle = true;
+                else
+                    _orderDependencies.values().forEach(set -> set.removeAll(addedTypeNames));
+            }
+            if (hasCycle)
+                _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
+                        "A cycle of derivation dependencies among the sample types exists. " +
+                        "Either adjust dependencies or separate into multiple files."));
+
+            return keys;
         }
 
         private TypeData createHeaderRow(ExpSampleTypeImpl sampleType) throws IOException
@@ -2393,16 +2434,45 @@ public class ExpDataIterators
                     validFields.addAll(column.getImportAliasSet());
                 }
             });
+            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            validFields.addAll(aliasMap.keySet());
             List<Integer> fieldIndexes = new ArrayList<>();
+            Map<Integer, String> dependencyIndexes = new HashMap<>();
             List<String> header = new ArrayList<>();
-            // column 0 is the rowNumber
-            for (int i = 0; i <= getColumnCount(); i++)
+            // index is 1-based; column 0 is the rowNumber
+            for (int i = 1; i <= getColumnCount(); i++)
             {
                 ColumnInfo colInfo = getColumnInfo(i);
-                if (validFields.contains(colInfo.getName()))
+                String name = colInfo.getName();
+                String lcName = name.toLowerCase();
+                if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
-                    header.add(colInfo.getName());
+                    header.add(name);
+                }
+                else if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                    dependencyIndexes.put(i, name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, ""));
+                } else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                    dependencyIndexes.put(i, name.replaceAll("(?i)" + DATA_INPUTS_PREFIX_LC, ""));
+                }
+                else if (lcName.startsWith(INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                    dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
+                }
+                else if (aliasMap.containsKey(name))
+                {
+                    String aliasTarget = aliasMap.get(name);
+                    dependencyIndexes.put(i, aliasTarget
+                            .replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "")
+                            .replaceAll("(?i)" + DATA_INPUTS_PREFIX_LC, ""));
                 }
             }
 
@@ -2414,18 +2484,22 @@ public class ExpDataIterators
 
             List<String> dataRows = new ArrayList<String>();
             dataRows.add(StringUtils.join(header, "\t"));
-            return new TypeData(sampleType, samplesTable, dataFile, fieldIndexes, dataRows);
+            return new TypeData(sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows);
         }
 
         private void addDataRow(TypeData typeData)
         {
             if (typeData.dataRows.size() == BATCH_SIZE)
-            {
                 writeRowsToFile(typeData);
-            }
+
             List<Object> dataRow = new ArrayList<>();
             typeData.fieldIndexes.forEach(index -> {
-                dataRow.add(get(index));
+                Object data = get(index);
+                dataRow.add(data);
+                // if the data represents a derivation dependency between types, update ordering map, so we can
+                // figure out a good ordering to use for importing the data.
+                if (data != null && typeData.dependencyIndexes.containsKey(index))
+                    _orderDependencies.computeIfAbsent(typeData.sampleType.getName(), i -> new HashSet<>()).add(typeData.dependencyIndexes.get(index));
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
@@ -2442,9 +2516,7 @@ public class ExpDataIterators
             }
             catch (IOException e)
             {
-//                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.sampleType.getName() + "'."));
-
-                throw new RuntimeException(e);
+                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.sampleType.getName() + "'."));
             }
         }
     }
