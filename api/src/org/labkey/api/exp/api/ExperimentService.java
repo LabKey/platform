@@ -368,6 +368,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment getExpExperiment(String lsid);
 
+    List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
+
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     ExpProtocol getExpProtocol(int rowid);
