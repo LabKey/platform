@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.apache.hc.core5.http.HttpStatus;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -158,19 +159,19 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         {
             if (form.getFileName() == null)
             {
-                error(writer, "No fileName parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+                error(writer, "No fileName parameter values included", HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 return;
             }
 
             if (form.getFileContent() == null)
             {
-                error(writer, "No fileContent parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+                error(writer, "No fileContent parameter values included", HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 return;
             }
 
             if (form.getFileName().length != form.getFileContent().length)
             {
-                error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+                error(writer, "Must include the same number of fileName and fileContent parameter values", HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 return;
             }
 
@@ -179,9 +180,8 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             // Parameter name (String) -> File on disk/original file name Pair
             Map<String, Pair<File, String>> savedFiles = new HashMap<>();
 
-            if (basicRequest instanceof MultipartHttpServletRequest)
+            if (basicRequest instanceof MultipartHttpServletRequest request)
             {
-                MultipartHttpServletRequest request = (MultipartHttpServletRequest) basicRequest;
 
                 Iterator<String> nameIterator = request.getFileNames();
                 while (nameIterator.hasNext())
@@ -226,7 +226,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             }
             catch (UploadException e)
             {
-                error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+                error(writer, "Must include the same number of fileName and fileContent parameter values", e.getStatusCode());
             }
         }
     }
@@ -235,7 +235,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
     {
         if (filename == null || input == null)
         {
-            error(writer, "No file uploaded, or no filename specified", HttpServletResponse.SC_BAD_REQUEST);
+            error(writer, "No file uploaded, or no filename specified", HttpStatus.SC_UNPROCESSABLE_ENTITY);
             return null;
         }
 
@@ -266,14 +266,14 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
         catch (UploadException e)
         {
-            error(writer, e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
+            error(writer, e.getMessage(), e.getStatusCode());
             return null;
         }
     }
 
     public static class UploadException extends IOException
     {
-        private int _statusCode;
+        private final int _statusCode;
 
         public UploadException(String message, int statusCode)
         {

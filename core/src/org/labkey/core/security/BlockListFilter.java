@@ -73,9 +73,9 @@ public class BlockListFilter
     static void handleBadRequest(HttpServletRequest req)
     {
         Object ex = req.getAttribute(ExceptionUtil.REQUEST_EXCEPTION_ATTRIBUTE);
-        if (ex instanceof BadRequestException)
+        if (ex instanceof BadRequestException badRequestException)
         {
-            if (!((BadRequestException)ex).isSuspiciousRequest(req, isSuspicious(req.getRequestURI(),req.getQueryString(),req.getHeader("User-Agent"))))
+            if (!badRequestException.isSuspiciousRequest(req, isSuspicious(req.getRequestURI(),req.getQueryString(),req.getHeader("User-Agent"))))
                 return;
         }
         registerBadRequest(req);

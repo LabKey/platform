@@ -27,7 +27,7 @@ public class ApiUsageException extends BadRequestException implements SkipMother
 {
     public ApiUsageException(String message, Throwable cause)
     {
-        super(message, cause, HttpStatus.SC_BAD_REQUEST, HowBad.LetItGo);
+        super(message, cause, HttpStatus.SC_UNPROCESSABLE_ENTITY, HowBad.MaybeBad);
     }
 
     public ApiUsageException(String message)
@@ -37,6 +37,6 @@ public class ApiUsageException extends BadRequestException implements SkipMother
 
     public ApiUsageException(Throwable cause)
     {
-        this(cause.getMessage() == null ? cause.toString() : cause.getMessage(), cause);
+        this(cause.getMessage(), cause);
     }
 }

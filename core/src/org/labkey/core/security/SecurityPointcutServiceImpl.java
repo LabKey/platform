@@ -15,6 +15,7 @@
  */
 package org.labkey.core.security;
 
+import org.apache.hc.core5.http.HttpStatus;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.settings.AppProps;
@@ -69,7 +70,7 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
             if (ex instanceof CSRFException)
                 BlockListFilter.handleBadRequest(req);
         }
-        else if (res.getStatus() == SC_BAD_REQUEST)
+        else if (res.getStatus() == SC_BAD_REQUEST || res.getStatus() == HttpStatus.SC_UNPROCESSABLE_ENTITY)
         {
             BlockListFilter.handleBadRequest(req);
         }

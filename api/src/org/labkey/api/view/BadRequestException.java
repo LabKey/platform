@@ -16,11 +16,11 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Indicates that the client made a bad HTTP request, typically resulting in a 400 HTTP response code and avoiding much
@@ -73,22 +73,22 @@ public class BadRequestException extends HttpStatusException
 
     public BadRequestException(String message)
     {
-        this(message, null, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
+        this(message, null, HttpStatus.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
     public BadRequestException(String message, @Nullable Throwable x)
     {
-        this(message, x, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
+        this(message, x, HttpStatus.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
     public BadRequestException(String message, @Nullable Throwable x, int httpStatusCode)
     {
-        this(message, x, httpStatusCode, HttpServletResponse.SC_METHOD_NOT_ALLOWED == httpStatusCode ? HowBad.Malicious : HowBad.MaybeBad);
+        this(message, x, httpStatusCode, HttpStatus.SC_METHOD_NOT_ALLOWED == httpStatusCode ? HowBad.Malicious : HowBad.MaybeBad);
     }
 
     public BadRequestException(String message, @NotNull HowBad severity)
     {
-        this(message, null, HttpServletResponse.SC_BAD_REQUEST, severity);
+        this(message, null, HttpStatus.SC_BAD_REQUEST, severity);
     }
 
     protected BadRequestException(String message, @Nullable Throwable x, int httpStatusCode, HowBad severity)

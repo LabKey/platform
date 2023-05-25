@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -60,7 +61,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
      *
      * Allow new code to specify that SC_OK should be used for errors
      */
-    static final int defaultErrorStatus = HttpServletResponse.SC_BAD_REQUEST;
+    static final int defaultErrorStatus = HttpStatus.SC_BAD_REQUEST;
     Integer errorResponseStatus = null;
 
     private boolean serializeViaJacksonAnnotations = false;
