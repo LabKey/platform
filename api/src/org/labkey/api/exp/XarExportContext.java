@@ -3,7 +3,6 @@ package org.labkey.api.exp;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.security.User;
 
 import java.util.HashMap;
@@ -19,11 +18,6 @@ public class XarExportContext extends FolderExportContext
     private Set<Integer> _includedAssayRuns = new HashSet<>();
     private Map<Integer, Set<Integer>> _includedSamples = new HashMap<>();
     private Map<Integer, Set<Integer>> _includedDataClasses = new HashMap<>();
-
-    public XarExportContext(FolderExportContext ctx)
-    {
-        super(ctx.getUser(), ctx.getContainer(), ctx.getDataTypes(), ctx.getFormat(), ctx::getLogger);
-    }
 
     public XarExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
