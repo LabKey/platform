@@ -16,7 +16,6 @@
 
 package org.labkey.experiment;
 
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -25,7 +24,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,7 +38,6 @@ import java.util.Set;
  */
 public class ArchiveURLRewriter extends URLRewriter
 {
-    private static final Logger _log = LogHelper.getLogger(ArchiveURLRewriter.class, "ArchiveURLRewriter");
     private final Set<String> _roles;
 
     public ArchiveURLRewriter(boolean includeXarXml, Set<String> roles)
