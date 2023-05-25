@@ -4089,12 +4089,10 @@ public class ExperimentController extends SpringActionController
             _form = queryForm;
             _insertOption = queryForm.getInsertOption();
             _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
-            if (!_crossTypeImport)
-                _form.setSchemaName("samples");
-            else
+            _form.setSchemaName(getTargetSchemaName());
+            if (_crossTypeImport)
             {
-                _form.setSchemaName("exp");
-                _form.setQueryName("materials");
+                _form.setQueryName(getPipelineTargetQueryName());
             }
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
@@ -4110,6 +4108,23 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
+        }
+
+        private String getTargetSchemaName()
+        {
+            return _crossTypeImport ? ExpSchema.SCHEMA_NAME : "samples";
+        }
+
+        @Override
+        protected UserSchema getTargetSchema()
+        {
+            return _crossTypeImport ? QueryService.get().getUserSchema(getUser(), getContainer(), getTargetSchemaName()) : super.getTargetSchema();
+        }
+
+        @Override
+        protected String getPipelineTargetQueryName()
+        {
+            return _crossTypeImport ? "materials" : super.getPipelineTargetQueryName();
         }
 
         @Override

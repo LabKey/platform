@@ -317,6 +317,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return false;
     }
 
+    protected UserSchema getTargetSchema()
+    {
+        return _target.getUserSchema();
+    }
+
+    protected String getPipelineTargetQueryName()
+    {
+        return _target.getName();
+    }
+
     public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
@@ -525,11 +535,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                         ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), new ActionURL());
 
-                        UserSchema schema = _target.getUserSchema();
+                        UserSchema schema = getTargetSchema();
                         if (schema != null)
                         {
                             String schemaName = schema.getSchemaName();
-                            String queryName = _target.getName();
+                            String queryName = getPipelineTargetQueryName();
 
                             QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
                             importContextBuilder
