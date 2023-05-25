@@ -7759,7 +7759,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @NotNull
-    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull Path path)
+    public List<ExpDataImpl> getExpDatasAtAndUnderPath(@NotNull Path path)
     {
         SimpleFilter filter = new SimpleFilter();
 
