@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -31,10 +32,14 @@ public interface AntiVirusService
 {
     // NOTE purposefully this is not the same as the standard test file: ...EICAR-STANDARD-ANTIVIRUS-TEST-FILE...
     String TEST_VIRUS_CONTENT="X5O!P%@AP[4\\PZX54(P^)7CC)7}$LABKEY-ANTIVIRUS-TEST-FILE!$H+H*";
+    AntiVirusService DUMMY_SERVICE = new DummyAntiVirusService();
 
     static AntiVirusService get()
     {
-        return ServiceRegistry.get().getService(AntiVirusService.class);
+        AntiVirusService service = ServiceRegistry.get().getService(AntiVirusService.class);
+        if (null == service)
+            service = DUMMY_SERVICE;
+        return service;
     }
 
     static void setInstance(AntiVirusService impl)
