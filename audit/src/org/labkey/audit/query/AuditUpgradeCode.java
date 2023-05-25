@@ -57,4 +57,16 @@ public class AuditUpgradeCode implements UpgradeCode
             }
         });
     }
+
+    // called from audit-23.000-23.001.sql
+    public static void updateSerialToBigInt(ModuleContext context)
+    {
+        DbScope scope = AuditSchema.getInstance().getSchema().getScope();
+        if (scope.getSqlDialect().isPostgreSQL())
+        {
+            var list = new SqlSelector(scope,"SELECT sequencename FROM pg_sequences WHERE schemaname='audit'").getArrayList(String.class);
+            for (var seq : list)
+                new SqlExecutor(scope).execute("ALTER SEQUENCE audit." + seq + " AS bigint MAXVALUE 9223372036854775807");
+        }
+    }
 }
