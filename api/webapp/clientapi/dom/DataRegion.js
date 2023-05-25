@@ -3158,7 +3158,7 @@ if (!LABKEY.DataRegions) {
                             return;
                         }
                         else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
-                            // 26686: Black list known parameters, should be prefixed by region name
+                            // 26686: Block known parameters, should be prefixed by region name
                             return;
                         }
 

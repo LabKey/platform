@@ -38,7 +38,7 @@
 <%
     StudyManager manager = StudyManager.getInstance();
     Container container = getContainer();
-    Study study = manager.getStudy(container);
+    StudyImpl study = manager.getStudy(container);
     User user = getUser();
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
 
@@ -52,7 +52,7 @@
         return;
     }
 
-    StudyQuerySchema sqs = StudyQuerySchema.createSchema((StudyImpl)study, user);
+    StudyQuerySchema sqs = StudyQuerySchema.createSchema(study, user);
 
     List<DatasetDefinition> userDatasets = new ArrayList<>();
     for (DatasetDefinition dataset : datasets)

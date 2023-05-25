@@ -3300,6 +3300,18 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
+    public @Nullable ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter)
+    {
+        if (isProductProjectsAllFolderScopeEnabled())
+        {
+            ContainerFilter lookupCf = getContainerFilterForLookups(container, user);
+            if (lookupCf != null)
+                return lookupCf;
+        }
+        return defaultContainerFilter;
+    }
+
+    @Override
     @Nullable
     public ContainerFilter getContainerFilterForLookups(Container container, User user)
     {

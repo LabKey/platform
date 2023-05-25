@@ -2164,7 +2164,11 @@ public class ExpDataIterators
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
             if (context.getInsertOption().updateOnly)
+            {
                 dontUpdate.add("objectid");
+                dontUpdate.add("cpastype");
+                dontUpdate.add("lastindexed");
+            }
 
             boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
             _isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);

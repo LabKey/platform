@@ -391,7 +391,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
 
-        // Name is identifier with highest weight
+        // Name is identifier with the highest weight
         identifiersHi.add(getName());
 
         if (isMedia())
