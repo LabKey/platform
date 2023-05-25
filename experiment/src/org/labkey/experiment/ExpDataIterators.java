@@ -120,13 +120,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
-import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
@@ -140,7 +140,7 @@ import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPU
 
 public class ExpDataIterators
 {
-    private static final Logger LOG = LogHelper.getLogger(ExpDataIterators.class, "Experiment data related data iterators");
+    private static final Logger LOG = LogHelper.getLogger(ExpDataIterators.class, "Experiment data-related data iterators");
 
     public static class CounterDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -2283,9 +2283,13 @@ public class ExpDataIterators
         private final User _user;
         private Integer _fileNameColIndex = null;
         private String _fileNameColName = null;
-        private final Map<String, TypeData> _fileDataMap = new HashMap<>();
+        // want to process the sample types in the order given in the original file, unless we have dependencies
+        private final Map<String, TypeData> _fileDataMap = new TreeMap<>();
         private final SamplesSchema _schema;
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
+        private final int _sampleIdIndex;
+        private final Map<String, Set<String>> _idsPerType = new HashMap<>();
+        private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
 
         public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user)
         {
@@ -2296,6 +2300,7 @@ public class ExpDataIterators
             _schema = new SamplesSchema(_user, _container);
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
+            _sampleIdIndex = map.getOrDefault("Name", -1);
             SAMPLE_TYPE_FIELD_NAMES.forEach(name -> {
                 if (map.get(name) != null)
                 {
@@ -2319,41 +2324,45 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                // process the individual files
-                getImportOrderKeys().forEach(key -> {
-                    TypeData typeData = _fileDataMap.get(key);
-                    writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-                    var updateService = typeData.tableInfo.getUpdateService();
-                    if (updateService == null)
-                    {
-                        _context.getErrors().addRowError(new ValidationException("No update service available for sample type " + typeData.sampleType.getName() + "'."));
-                    }
-                    else
-                    {
-                        try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                Collection<String> importOrderKeys = getImportOrderKeys();
+                if (!_context.getErrors().hasErrors())
+                {
+                    // process the individual files
+                    importOrderKeys.forEach(key -> {
+                        TypeData typeData = _fileDataMap.get(key);
+                        writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+                        var updateService = typeData.tableInfo.getUpdateService();
+                        if (updateService == null)
                         {
-                            // We do not need to configure the loader for renamed fields as that has been taken care of when writing the file.
-                            _context.setCrossTypeImport(false);
-                            updateService.loadRows(_user, _container, loader, _context, null);
+                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type " + typeData.sampleType.getName() + "'."));
                         }
-                        catch (SQLException | IOException e)
+                        else
                         {
-                            throw new RuntimeException(e);
+                            try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                            {
+                                // We do not need to configure the loader for renamed fields as that has been taken care of when writing the file.
+                                _context.setCrossTypeImport(false);
+                                updateService.loadRows(_user, _container, loader, _context, null);
+                            }
+                            catch (SQLException | IOException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                            finally
+                            {
+                                typeData.dataFile.delete();
+                            }
                         }
-                        finally
-                        {
-                            typeData.dataFile.delete();
-                        }
-                    }
-                });
-                _context.setCrossTypeImport(true);
+                    });
+                    _context.setCrossTypeImport(true);
+                }
 
                 return false;
             }
             else
             {
-                String fileName = (String) get(_fileNameColIndex);
-                if (StringUtils.isEmpty(StringUtils.trim(fileName)))
+                String fileName = StringUtils.trim((String) get(_fileNameColIndex));
+                if (StringUtils.isEmpty(fileName))
                     _context.getErrors().addRowError(new ValidationException("No value provided for '" + _fileNameColName + "'."));
                 else
                 {
@@ -2385,10 +2394,19 @@ public class ExpDataIterators
             }
         }
 
-        private List<String> getImportOrderKeys()
+        private Collection<String> getImportOrderKeys()
         {
             List<String> keys = new ArrayList<>();
             Set<String> allKeys = _fileDataMap.keySet();
+            // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
+            _idsPerType.forEach((typeName, ids) -> {
+                Set<String> parentIds = _parentIdsPerType.get(typeName);
+                if (ids.stream().noneMatch(parentIds::contains))
+                {
+                    _orderDependencies.values().forEach(set -> set.remove(typeName));
+                }
+            });
+
             allKeys.forEach(key -> {
                 if (!_orderDependencies.containsKey(key) || _orderDependencies.get(key).isEmpty())
                 {
@@ -2402,9 +2420,11 @@ public class ExpDataIterators
             {
                 Set<String> addedTypeNames = new HashSet<>();
                 _orderDependencies.forEach((typeName, dependencies) -> {
-                    if (dependencies.isEmpty())
+                    if (dependencies.isEmpty() && !keys.contains(typeName))
+                    {
                         keys.add(typeName);
-                    addedTypeNames.add(typeName);
+                        addedTypeNames.add(typeName);
+                    }
                 });
                 if (addedTypeNames.isEmpty())
                     hasCycle = true;
@@ -2412,9 +2432,15 @@ public class ExpDataIterators
                     _orderDependencies.values().forEach(set -> set.removeAll(addedTypeNames));
             }
             if (hasCycle)
-                _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
-                        "A cycle of derivation dependencies among the sample types exists. " +
-                        "Either adjust dependencies or separate into multiple files."));
+            {
+                if (_context.getInsertOption().allowUpdate)
+                    LOG.warn("Possible derivation circular dependencies when updates are allowed. Using original file ordering of keys");
+                else
+                    _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
+                            "A cycle of derivation dependencies among the sample types exists. " +
+                            "Adjust or remove dependencies for this import."));
+                return _fileDataMap.keySet();
+            }
 
             return keys;
         }
@@ -2454,29 +2480,32 @@ public class ExpDataIterators
                     fieldIndexes.add(i);
                     header.add(name);
                 }
-                else if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
+                if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
                     header.add(name);
-                    dependencyIndexes.put(i, name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, ""));
-                } else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
-                {
-                    fieldIndexes.add(i);
-                    header.add(name);
-                    dependencyIndexes.put(i, name.replaceAll("(?i)" + DATA_INPUTS_PREFIX_LC, ""));
+                    // cannot create dependencies if the names of samples are not being provided in the file.
+                    if (_sampleIdIndex != -1)
+                    {
+                        String typeName = name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "");
+                        if (!sampleType.getName().equals(typeName))
+                            dependencyIndexes.put(i, typeName);
+                    }
                 }
                 else if (lcName.startsWith(INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
                     header.add(name);
-                    dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
+                    if (_sampleIdIndex != -1)
+                        dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
                 }
-                else if (aliasMap.containsKey(name))
+                else if (aliasMap.containsKey(name) && _sampleIdIndex != -1)
                 {
                     String aliasTarget = aliasMap.get(name);
-                    dependencyIndexes.put(i, aliasTarget
+                    if (aliasTarget.toLowerCase().startsWith(MATERIAL_INPUTS_PREFIX_LC))
+                        dependencyIndexes.put(i, aliasTarget
                             .replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "")
-                            .replaceAll("(?i)" + DATA_INPUTS_PREFIX_LC, ""));
+                        );
                 }
             }
 
@@ -2500,10 +2529,20 @@ public class ExpDataIterators
             typeData.fieldIndexes.forEach(index -> {
                 Object data = get(index);
                 dataRow.add(data);
-                // if the data represents a derivation dependency between types, update ordering map, so we can
-                // figure out a good ordering to use for importing the data.
-                if (data != null && typeData.dependencyIndexes.containsKey(index))
-                    _orderDependencies.computeIfAbsent(typeData.sampleType.getName(), i -> new HashSet<>()).add(typeData.dependencyIndexes.get(index));
+                if (data != null)
+                {
+                    if (index == _sampleIdIndex)
+                        _idsPerType.computeIfAbsent(typeData.sampleType.getName(), k -> new HashSet<>()).add(data.toString());
+
+                    // if the data represents a derivation dependency between types, and we're creating ids within the file,
+                    // capture a dependency map, so we can try to figure out a good ordering to use for importing the data.
+                    if (typeData.dependencyIndexes.containsKey(index) && _sampleIdIndex >= 0)
+                    {
+                        String parentTypeName = typeData.dependencyIndexes.get(index);
+                        _orderDependencies.computeIfAbsent(typeData.sampleType.getName(), i -> new HashSet<>()).add(parentTypeName);
+                        _parentIdsPerType.computeIfAbsent(parentTypeName, k -> new HashSet<>()).add(data.toString());
+                    }
+                }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
