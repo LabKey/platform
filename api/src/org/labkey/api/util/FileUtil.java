@@ -600,7 +600,6 @@ public class FileUtil
         {
             home = home.getCanonicalFile();
             file = file.getCanonicalFile();
-            LOG.info("relativize - home: " + home + ", file: " + file);
         }
         else
         {
@@ -622,7 +621,6 @@ public class FileUtil
      */
     public static String relativizeUnix(File home, File f, boolean canonicalize) throws IOException
     {
-        LOG.info("relativizeUnix - home: " + home + ", file: " + f);
         return relativize(home, f, canonicalize).replace('\\', '/');
     }
 
@@ -664,7 +662,6 @@ public class FileUtil
      */
     public static String matchPathLists(List<String> home, List<String> file)
     {
-        LOG.info("matchPathLists - home: " + home.get(0) + ", file: " + file.get(0));
         // start at the beginning of the lists
         // iterate while both lists are equal
         StringBuilder path = new StringBuilder();
@@ -698,7 +695,6 @@ public class FileUtil
         else
             path.append(file.get(j));   // add file name
 
-        LOG.info("matchPathLists - result: " + path);
         return path.toString();
     }
 
