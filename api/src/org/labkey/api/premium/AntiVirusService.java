@@ -20,11 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
-import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import java.io.File;
 
@@ -32,14 +30,10 @@ public interface AntiVirusService
 {
     // NOTE purposefully this is not the same as the standard test file: ...EICAR-STANDARD-ANTIVIRUS-TEST-FILE...
     String TEST_VIRUS_CONTENT="X5O!P%@AP[4\\PZX54(P^)7CC)7}$LABKEY-ANTIVIRUS-TEST-FILE!$H+H*";
-    AntiVirusService DUMMY_SERVICE = new DummyAntiVirusService();
 
-    static AntiVirusService get()
+    static @Nullable AntiVirusService get()
     {
-        AntiVirusService service = ServiceRegistry.get().getService(AntiVirusService.class);
-        if (null == service)
-            service = DUMMY_SERVICE;
-        return service;
+        return ServiceRegistry.get().getService(AntiVirusService.class);
     }
 
     static void setInstance(AntiVirusService impl)
@@ -114,12 +108,4 @@ public interface AntiVirusService
 
     /** originalName and user are used for error reporting and logging */
     ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info);
-
-    default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
-    {
-        CommonsMultipartResolver result = new CommonsMultipartResolver();
-        // Issue 47362 - configure a limit for the number of files per request
-        result.getFileUpload().setFileCountMax(1_000);
-        return result;
-    }
 }
