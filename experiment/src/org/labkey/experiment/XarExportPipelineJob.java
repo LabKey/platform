@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
