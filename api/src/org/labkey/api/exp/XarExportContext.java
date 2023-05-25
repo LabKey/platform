@@ -19,7 +19,11 @@ public class XarExportContext extends FolderExportContext
     private Set<Integer> _includedAssayRuns = new HashSet<>();
     private Map<Integer, Set<Integer>> _includedSamples = new HashMap<>();
     private Map<Integer, Set<Integer>> _includedDataClasses = new HashMap<>();
-    private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
+
+    public XarExportContext(FolderExportContext ctx)
+    {
+        super(ctx.getUser(), ctx.getContainer(), ctx.getDataTypes(), ctx.getFormat(), ctx::getLogger);
+    }
 
     public XarExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
@@ -59,10 +63,5 @@ public class XarExportContext extends FolderExportContext
     {
         if (includedDataClasses != null)
             _includedDataClasses = includedDataClasses;
-    }
-
-    public LSIDRelativizer.RelativizedLSIDs getRelativizedLSIDs()
-    {
-        return _relativizedLSIDs;
     }
 }

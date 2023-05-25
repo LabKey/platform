@@ -190,11 +190,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
-        if (null != _xarCtx)
-            _relativizedLSIDs = _xarCtx.getRelativizedLSIDs();
-        else
-            _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
-
+        _relativizedLSIDs = ctx.getRelativizedLSIDs();
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
