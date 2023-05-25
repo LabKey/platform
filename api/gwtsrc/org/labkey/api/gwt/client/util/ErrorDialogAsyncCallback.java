@@ -18,7 +18,6 @@ package org.labkey.api.gwt.client.util;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.StatusCodeException;
-import org.apache.hc.core5.http.HttpStatus;
 
 /**
  * User: jeckels
@@ -68,13 +67,13 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
                     // Indicates the request was cancelled because the user navigated to another page
                     // Don't bother showing any dialog at all
                     return;
-                case HttpStatus.SC_UNAUTHORIZED:
+                case 403: // HttpStatus.SC_UNAUTHORIZED
                     message = "You do not have permission to perform this operation. Your session may have expired.";
                     break;
-                case HttpStatus.SC_NOT_FOUND:
+                case 404: // HttpStatus.SC_NOT_FOUND
                     message = "Not found.";
                     break;
-                case HttpStatus.SC_INTERNAL_SERVER_ERROR:
+                case 500: // HttpStatus.SC_INTERNAL_SERVER_ERROR
                     message = "The server encountered an error";
                     if(statusCodeException.getMessage() != null)
                         message += ": " + statusCodeException.getMessage();
