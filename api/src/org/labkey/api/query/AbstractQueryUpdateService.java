@@ -125,7 +125,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *   - attachments
      *
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
-    */
+     */
     protected boolean _enableExistingRecordsDataIterator = true;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
@@ -213,7 +213,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
     }
 
-    public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
+    public static void addTransactionAuditEvent(DbScope.Transaction transaction, User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
     {
         UserSchema schema = AuditLogService.getAuditLogSchema(user, ContainerManager.getRoot());
 
@@ -243,7 +243,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     *  if QUS want to use something other than PKs to select existing rows for merge it can override this method
+     * if QUS want to use something other than PKs to select existing rows for merge it can override this method
      * Used only for generating  ExistingRecordDataIterator at the moment
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
@@ -267,7 +267,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
 
-        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+        dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;
@@ -276,7 +276,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /**
      * Implementation to use insertRows() while we migrate to using DIB for all code paths
-     *
+     * <p>
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
@@ -314,10 +314,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return 0;
     }
 
+    protected boolean hasImportRowsPermission(User user, Container container, DataIteratorContext context)
+    {
+        return hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class);
+    }
 
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!context.isCrossTypeImport() && !hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class))
+        if (!hasImportRowsPermission(user, container, context))
             throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
