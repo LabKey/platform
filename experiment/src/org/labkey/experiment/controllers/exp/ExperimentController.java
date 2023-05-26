@@ -4128,25 +4128,6 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected void initRequest(QueryForm form) throws ServletException
-        {
-            QueryDefinition query = form.getQueryDef();
-            List<QueryException> qpe = new ArrayList<>();
-            TableInfo t = query.getTable(form.getSchema(), qpe, true);
-
-            if (!qpe.isEmpty())
-                throw qpe.get(0);
-            if (!_crossTypeImport && null != t)
-            {
-                setTarget(t);
-                setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
-                setShowUpdateOption(t.supportsInsertOption(QueryUpdateService.InsertOption.UPDATE));
-            }
-
-            _auditBehaviorType = form.getAuditBehavior();
-        }
-
-        @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
             TableInfo tInfo = _crossTypeImport ? new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer())) : _target;
@@ -4201,7 +4182,7 @@ public class ExperimentController extends SpringActionController
 
             if (!qpe.isEmpty())
                 throw qpe.get(0);
-            if (null != t)
+            if (!_crossTypeImport && null != t)
             {
                 setTarget(t);
                 setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));

@@ -2327,6 +2327,7 @@ public class ExpDataIterators
                 Collection<String> importOrderKeys = getImportOrderKeys();
                 if (!_context.getErrors().hasErrors())
                 {
+                    _context.setCrossTypeImport(false);
                     // process the individual files
                     importOrderKeys.forEach(key -> {
                         TypeData typeData = _fileDataMap.get(key);
@@ -2334,27 +2335,24 @@ public class ExpDataIterators
                         var updateService = typeData.tableInfo.getUpdateService();
                         if (updateService == null)
                         {
-                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type " + typeData.sampleType.getName() + "'."));
+                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
                         }
                         else
                         {
                             try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
                             {
                                 // We do not need to configure the loader for renamed fields as that has been taken care of when writing the file.
-                                _context.setCrossTypeImport(false);
                                 updateService.loadRows(_user, _container, loader, _context, null);
                             }
                             catch (SQLException | IOException e)
                             {
-                                throw new RuntimeException(e);
-                            }
-                            finally
-                            {
-                                typeData.dataFile.delete();
+                                String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                                LOG.error(msg, e);
+                                _context.getErrors().addRowError(new ValidationException(msg));
                             }
                         }
+                        _context.setCrossTypeImport(true);
                     });
-                    _context.setCrossTypeImport(true);
                 }
 
                 return false;
@@ -2392,6 +2390,16 @@ public class ExpDataIterators
                 }
                 return hasNext;
             }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            _fileDataMap.values().forEach(typeData -> {
+                if (typeData.dataFile != null)
+                    typeData.dataFile.delete();
+            });
+            super.close();
         }
 
         private Collection<String> getImportOrderKeys()
@@ -2434,7 +2442,7 @@ public class ExpDataIterators
             if (hasCycle)
             {
                 if (_context.getInsertOption().allowUpdate)
-                    LOG.warn("Possible derivation circular dependencies when updates are allowed. Using original file ordering of keys");
+                    LOG.warn("Possible derivation circular dependencies when updates are allowed. Using ordering of sample types based data rows.");
                 else
                     _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
                             "A cycle of derivation dependencies among the sample types exists. " +
@@ -2452,7 +2460,7 @@ public class ExpDataIterators
             TableInfo samplesTable = qDef.getTable(_schema, qpe, true);
             if (samplesTable == null)
             {
-                _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found"));
+                _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
                 return null;
             }
             File dataFile = FileUtil.createTempFile("~importSplit-", sampleType.getName() + ".tsv");
@@ -2484,7 +2492,7 @@ public class ExpDataIterators
                 {
                     fieldIndexes.add(i);
                     header.add(name);
-                    // cannot create dependencies if the names of samples are not being provided in the file.
+                    // no dependencies to register if the names of samples are not being provided in the file.
                     if (_sampleIdIndex != -1)
                     {
                         String typeName = name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "");
