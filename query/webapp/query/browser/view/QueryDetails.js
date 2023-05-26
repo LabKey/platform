@@ -133,7 +133,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             autoEl: {
                 tag: 'div',
                 cls: 'lk-qd-error',
-                html: 'There was an error',
+                html: '',
             },
             hidden: true,
         },{
@@ -169,9 +169,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.getError().getEl().update('Error in query: ' + Ext4.htmlEncode(errorInfo.exception));
     },
 
-    displayError : function(msg) {
-        this.getError().show();
-        this.getError().getEl().update(Ext4.htmlEncode(msg));
+    formatError : function(msg) {
+        return '<div class="lk-qd-error">' + Ext4.htmlEncode(msg) + '</div>';
     },
 
     formatAttribute : function(attr) {
@@ -600,23 +599,19 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     },
 
     formatQueryDetails : function(queryDetails) {
-
-        var children = [
+        const children = [
             this.formatQueryLinks(queryDetails),
             this.formatQueryInfo(queryDetails)
         ];
 
-        if (queryDetails.exception) {
-            children.push(this.displayError('There was an error while parsing this query: ' + queryDetails.exception));
-        }
-        else {
+        if (!queryDetails.exception) {
             children.push(this.formatQueryColumns(queryDetails));
 
-            var indices = this.formatIndices(queryDetails);
+            const indices = this.formatIndices(queryDetails);
             if (indices)
                 children.push(indices);
 
-            let triggers = this.formatTriggers(queryDetails);
+            const triggers = this.formatTriggers(queryDetails);
             if (triggers)
                 children.push(triggers);
         }
@@ -625,6 +620,15 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             autoEl: {
                 tag: 'div',
                 children: children
+            },
+            listeners: {
+                afterrender: {
+                    fn: function(c) {
+                        this.registerEventHandlers(c.getEl());
+                    },
+                    single: true,
+                    scope: this,
+                }
             }
         });
     },
@@ -694,8 +698,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     },
 
     formatQueryLinks : function(queryDetails) {
-        var container = {tag: 'div', cls: 'lk-qd-links'},
-            children = [];
+        const children = [];
 
         if (queryDetails.isInherited) {
             children.push(this.formatJumpToDefinitionLink(queryDetails));
@@ -708,7 +711,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
 
         var metadataParams = {
             schemaName: queryDetails.schemaName,
-            'queryName': queryDetails.name
+            queryName: queryDetails.name
         };
 
         if (!queryDetails.exception) {
@@ -718,17 +721,17 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         if (queryDetails.isUserDefined) {
             if (!queryDetails.isInherited) {
                 if (queryDetails.canEdit) {
-                    children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
-                    children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
+                    children.push(this.formatQueryLink('sourceQuery', params, 'edit source'));
+                    children.push(this.formatQueryLink('propertiesQuery', params, 'edit properties'));
                 }
                 else {
                     children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
                 }
                 if (queryDetails.canDelete) {
-                    children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
+                    children.push(this.formatQueryLink('deleteQuery', params, 'delete query'));
                 }
                 if (queryDetails.isMetadataOverrideable) {
-                    children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
+                    children.push(this.formatQueryLink('metadataQuery', metadataParams, 'edit metadata'));
                 }
             }
         }
@@ -755,8 +758,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             children.push(this.formatQueryLink('auditHistory', params, 'view history', undefined, queryDetails.auditHistoryUrl));
         }
 
-        container.children = children;
-        return container;
+        return {
+            tag: 'div',
+            cls: 'lk-qd-links',
+            children: children,
+        };
     },
 
     getExpandoClickFn : function(expando) {
@@ -795,14 +801,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     renderQueryDetails : function() {
         this.getContent().removeAll();
 
-        const component = this.formatQueryDetails(this.queryDetails);
-
-        component.on('afterrender', function(c) {
-            this.registerEventHandlers(c.getEl());
-        }, this, {single: true});
-
         // add a temporary placeholder for the query dependencies but don't block the entire page
-        this.getContent().add(component, {
+        this.getContent().add(this.formatQueryDetails(this.queryDetails), {
             xtype : 'box',
             height : 100,
             itemId : 'lk-dependency-report',
@@ -892,7 +892,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 tdNew.createChild(this.formatQueryColumns(queryDetails));
                 this.registerEventHandlers(tdNew);
             }, function(errorInfo) {
-                tdNew.update(this.displayError(errorInfo.exception()));
+                tdNew.update(this.formatError(errorInfo.exception));
             }, this);
         }
         else {
