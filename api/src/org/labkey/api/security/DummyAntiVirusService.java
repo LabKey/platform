@@ -21,8 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.premium.AntiVirusProvider;
 import org.labkey.api.premium.AntiVirusService;
-import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -36,7 +36,7 @@ import static org.labkey.api.premium.AntiVirusService.Result.OK;
 
 public class DummyAntiVirusService implements AntiVirusService
 {
-    final static Logger LOG = LogManager.getLogger(DummyAntiVirusService.class);
+    private static final Logger LOG = LogManager.getLogger(DummyAntiVirusService.class);
 
     @Override
     public ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info)
@@ -66,8 +66,7 @@ public class DummyAntiVirusService implements AntiVirusService
         return new ScanResult(originalName, OK, null);
     }
 
-
-    public static class Provider implements PremiumService.AntiVirusProvider
+    public static class Provider implements AntiVirusProvider
     {
         @Override
         public @NotNull String getId()
