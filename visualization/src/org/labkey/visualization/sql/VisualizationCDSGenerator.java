@@ -212,7 +212,7 @@ public class VisualizationCDSGenerator
         //
         // VALIDATION
         //
-        // since we are wrapping the getData() API, I want to be strict and 'white-list' functionality,
+        // since we are wrapping the getData() API, I want to be strict and 'allow-list' functionality,
         // rather than passing through options without validating the behavior
         //
 

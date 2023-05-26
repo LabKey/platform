@@ -164,10 +164,4 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
 
         task.addRunnable(r, SearchService.PRIORITY.group);
     }
-
-
-    @Override
-    public void indexDeleted()
-    {
-    }
 }

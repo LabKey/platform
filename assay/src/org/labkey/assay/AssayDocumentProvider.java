@@ -25,11 +25,6 @@ public class AssayDocumentProvider implements DocumentProvider
         task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
     }
 
-    @Override
-    public void indexDeleted()
-    {
-    }
-
     public static SearchService.ResourceResolver getSearchResolver()
     {
         return new SearchService.ResourceResolver()

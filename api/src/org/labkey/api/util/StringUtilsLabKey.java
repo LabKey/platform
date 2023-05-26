@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.Identifiable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -54,6 +56,23 @@ public class StringUtilsLabKey
 
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
+
+    public static void append(StringBuilder sb, @Nullable Identifiable identifiable)
+    {
+        if (null != identifiable)
+            append(sb, identifiable.getName());
+    }
+
+    public static void append(StringBuilder sb, @Nullable String value)
+    {
+        if (!StringUtils.isEmpty(value))
+        {
+            if (sb.length() > 0)
+                sb.append(" ");
+
+            sb.append(value);
+        }
+    }
 
     // Finds the longest common prefix present in all elements of the passed in string collection. In other words,
     // the longest string (prefix) such that, for all s in strings, s.startsWith(prefix). An empty collection returns
@@ -647,6 +666,47 @@ public class StringUtilsLabKey
             assertEquals("abc\"", unquoteString("abc\""));
             assertEquals("ab\"c", unquoteString("\"ab\"\"c\""));
             assertEquals("WC-1,3", unquoteString("\"WC-1,3\""));
+        }
+
+        @Test
+        public void testAppend()
+        {
+            class TestIdentifiable implements Identifiable
+            {
+                @Override
+                public Container getContainer()
+                {
+                    return null;
+                }
+
+                @Override
+                public String getLSID()
+                {
+                    return null;
+                }
+
+                @Override
+                public String getName()
+                {
+                    return "TestIdentifiable";
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            append(sb, (Identifiable) null);
+            assertEquals("", sb.toString());
+
+            sb = new StringBuilder("first");
+            append(sb, "");
+            assertEquals("first", sb.toString());
+            append(sb, (String) null);
+            assertEquals("first", sb.toString());
+
+            append(sb, "second");
+            assertEquals("first second", sb.toString());
+
+            append(sb, new TestIdentifiable());
+            assertEquals("first second TestIdentifiable", sb.toString());
         }
     }
 }
