@@ -80,6 +80,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
@@ -4127,12 +4128,20 @@ public class ExperimentController extends SpringActionController
             return _crossTypeImport ? "materials" : super.getPipelineTargetQueryName();
         }
 
+
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            TableInfo tInfo = _crossTypeImport ? new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer())) : _target;
-            QueryUpdateService updateService = _crossTypeImport ? tInfo.getUpdateService() : _updateService;
-            return importData(dl, tInfo, updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, _crossTypeImport, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+            DataIteratorContext context = createDataIteratorContext(_insertOption, _importLookupByAlternateKey, _importIdentity,  _crossTypeImport, auditBehaviorType, errors);
+
+            TableInfo tInfo = _target;
+            QueryUpdateService updateService = _updateService;
+            if (_crossTypeImport)
+            {
+                tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
+                updateService = tInfo.getUpdateService();
+            }
+            return importData(dl, tInfo, updateService, context, auditEvent, getUser(), getContainer());
         }
 
         @Override

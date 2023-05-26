@@ -81,6 +81,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
 import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionAuditEvent;
 
@@ -353,17 +354,17 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             {
                 case UPDATE -> {
                     if (!canUpdate(user))
-                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
+                        errors.reject(ERROR_GENERIC, "User does not have permission to update rows");
                 }
                 case MERGE, REPLACE, UPSERT -> {
                     if (!canUpdate(user))
-                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
+                        errors.reject(ERROR_GENERIC, "User does not have permission to update rows");
                     if (!canInsert(user))
-                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                        errors.reject(ERROR_GENERIC, "User does not have permission to insert rows");
                 }
                 case IMPORT, IMPORT_IDENTITY, INSERT -> {
                     if (!canInsert(user))
-                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                        errors.reject(ERROR_GENERIC, "User does not have permission to insert rows");
                 }
                 default -> { throw new IllegalStateException("unhandled InsertOption"); }
             }
@@ -452,7 +453,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                 if (!hasPostData)
                 {
-                    errors.reject(SpringActionController.ERROR_GENERIC, "File not found: " + path);
+                    errors.reject(ERROR_GENERIC, "File not found: " + path);
                 }
             }
             else if (null != StringUtils.trimToNull(moduleResource))
@@ -484,7 +485,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     Resource r = m.getModuleResource(p);
                     if (r == null || !r.isFile())
                     {
-                        errors.reject(SpringActionController.ERROR_GENERIC, "File not found: " + p);
+                        errors.reject(ERROR_GENERIC, "File not found: " + p);
                     }
                     else
                     {
@@ -575,7 +576,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
 
             if (!hasPostData && !errors.hasErrors())
-                errors.reject(SpringActionController.ERROR_GENERIC, "Form contains no data");
+                errors.reject(ERROR_GENERIC, "Form contains no data");
             if (errors.hasErrors())
                 throw errors;
 
@@ -602,7 +603,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         catch (IOException e)
         {
-            errors.reject(SpringActionController.ERROR_GENERIC, e.getMessage());
+            errors.reject(ERROR_GENERIC, e.getMessage());
             throw errors;
         }
         finally
@@ -710,22 +711,22 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (_noTableInfo)
         {
             // There is no TableInfo; Derived class should check permissions
-            errors.reject(SpringActionController.ERROR_GENERIC, "Table not specified");
+            errors.reject(ERROR_GENERIC, "Table not specified");
         }
         else if (null == _target)
         {
             if (!_crossTypeImport)
-                errors.reject(SpringActionController.ERROR_GENERIC, "Table not specified");
+                errors.reject(ERROR_GENERIC, "Table not specified");
         }
-        else if (!_crossTypeImport && !_target.hasPermission(user, InsertPermission.class))
+        else if (!_target.hasPermission(user, InsertPermission.class))
         {
             if (user.isGuest())
                 throw new UnauthorizedException();
-            errors.reject(SpringActionController.ERROR_GENERIC, "User does not have permission to insert rows");
+            errors.reject(ERROR_GENERIC, "User does not have permission to insert rows");
         }
         else if (null == _updateService)
         {
-            errors.reject(SpringActionController.ERROR_GENERIC, "Table does not support update service: " + _target.getName());
+            errors.reject(ERROR_GENERIC, "Table does not support update service: " + _target.getName());
         }
     }
 
@@ -760,10 +761,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, _crossTypeImport, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, false, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    protected static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
@@ -778,8 +779,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setSupportAutoIncrementKey(true);
         }
         context.setCrossTypeImport(crossTypeImport);
+        return context;
+    }
 
-        return importData(dl, target, updateService, context, auditEvent, user, container);
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    {
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, auditBehaviorType, errors), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
