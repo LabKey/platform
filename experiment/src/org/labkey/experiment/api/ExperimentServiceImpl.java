@@ -8173,8 +8173,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return Collections.unmodifiableList(_runOutputsQueryViews);
     }
 
-    @Override
-    public void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    private void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
     {
         Map<String, Object> fields = new HashMap<>();
         fields.put("DataTypeRowId", rowId);
@@ -8183,7 +8182,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Table.insert(user, getTinfoDataTypeExclusion(), fields);
     }
 
-    public void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    private void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
@@ -8266,7 +8265,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user)
+    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
     {
         if (excludedDataTypeRowIds == null)
             return;
@@ -8291,6 +8290,48 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (Integer remove : toRemove)
                 removeDataTypeExclusion(remove, dataType, excludedContainerId, user);
         }
+    }
+
+    @Override
+    public void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    {
+        if (excludedContainerIds == null)
+            return;
+
+        Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
+        Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
+
+        Set<String> toAdd = new HashSet<>(updatedExclusions);
+        toAdd.removeAll(previousExclusions);
+
+        Set<String> toRemove = new HashSet<>(previousExclusions);
+        toRemove.removeAll(updatedExclusions);
+
+        if (!toAdd.isEmpty())
+        {
+            for (String add : toAdd)
+                addDataTypeExclusion(dataTypeId, dataType, add, user);
+        }
+
+        if (!toRemove.isEmpty())
+        {
+            for (String remove : toRemove)
+                removeDataTypeExclusion(dataTypeId, dataType, remove, user);
+        }
+    }
+
+    @Override
+    public String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Integer> ids, boolean isUpdate)
+    {
+        StringBuilder builder = new StringBuilder();
+        if (ids != null && (isUpdate || !ids.isEmpty()))
+        {
+            if (isUpdate && ids.isEmpty())
+                builder.append(type.name()).append( " exclusion has been cleared.");
+            else
+                builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
+        }
+        return builder.toString();
     }
 
     @Override

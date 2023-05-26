@@ -937,13 +937,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
-    void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user);
-
     @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
 
     Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
 
-    void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user);
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+
+    void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+
+    String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
