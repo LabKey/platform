@@ -555,7 +555,7 @@ public abstract class DisplayColumn extends RenderColumn
             {
                 value = ctx.get(this.getColumnInfo().getName());
 
-                // Exports how it is displayed in the UI as per Issue 47268: Export Does Not Include Failed Lookup Values;
+                // Exports how it is displayed in the UI as per Issue 47268: Export Does Not Include Failed Lookup Values
                 if (null != value)
                     return "<" + ctx.get(this.getColumnInfo().getName()) + ">";
             }
