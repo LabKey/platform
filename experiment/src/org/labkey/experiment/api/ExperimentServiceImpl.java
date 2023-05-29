@@ -8195,7 +8195,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getExpSchema()).execute(sql);
     }
 
-    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8208,8 +8208,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             and = " AND ";
         }
 
-        if (!StringUtils.isEmpty(excludedContainerId))
+        if (!StringUtils.isEmpty(excludedContainerIdOrPath))
         {
+            String excludedContainerId = excludedContainerIdOrPath;
+            if (!GUID.isGUID(excludedContainerIdOrPath))
+            {
+                Container container = ContainerManager.ensureContainer(excludedContainerIdOrPath);
+                if (container != null)
+                    excludedContainerId = container.getId();
+            }
+
             sql.append(and);
             sql.append("ExcludedContainer = ? ");
             sql.add(excludedContainerId);
