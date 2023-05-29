@@ -28,4 +28,8 @@ public interface Writer<T, CONTEXT extends ContainerUser>
     @Nullable
     String getDataType();
     void write(T object, CONTEXT ctx, VirtualFile vf) throws Exception;
+    default boolean includeWithTemplate()
+    {
+        return true;
+    }
 }

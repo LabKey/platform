@@ -48,12 +48,6 @@ public class BaseFolderWriter implements FolderWriter
     {}
 
     @Override
-    public boolean includeWithTemplate()
-    {
-        return true;
-    }
-
-    @Override
     public void initialize(FolderExportContext context)
     {
         // Do nothing

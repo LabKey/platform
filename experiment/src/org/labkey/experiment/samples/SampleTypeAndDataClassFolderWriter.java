@@ -1,5 +1,7 @@
 package org.labkey.experiment.samples;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
@@ -53,6 +55,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
@@ -66,6 +69,7 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,6 +95,10 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     public static final List<String> EXCLUDED_TYPES = List.of("MoleculeSet", "MolecularSpecies", "MixtureBatches");
 
+    private static final String SAMPLE_TYPE_DATA = "Sample Type Data";
+    private static final String DATA_CLASS_DATA = "Data Class Data";
+    private static List<Writer> CHILD_WRITERS = Arrays.asList(new SampleTypeDataWriter(), new DataClassDataWriter());
+
     private SampleTypeAndDataClassFolderWriter()
     {
     }
@@ -99,6 +107,19 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     public String getDataType()
     {
         return FolderArchiveDataTypes.SAMPLE_TYPES_AND_DATA_CLASSES;
+    }
+
+    @Override
+    public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
+    {
+        List<Writer<?,?>> children = new ArrayList<>();
+
+        for (Writer writer : CHILD_WRITERS)
+        {
+            if (!forTemplate || (forTemplate && writer.includeWithTemplate()))
+                children.add(writer);
+        }
+        return children;
     }
 
     @Override
@@ -212,10 +233,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         }
 
         // write the sample type data as .tsv files
-        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
+        if (ctx.getDataTypes().contains(SAMPLE_TYPE_DATA))
+            writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
 
         // write the data class data as .tsv files
-        writeDataClassDataFiles(dataClasses, ctx, xarDir);
+        if (ctx.getDataTypes().contains(DATA_CLASS_DATA))
+            writeDataClassDataFiles(dataClasses, ctx, xarDir);
     }
 
     private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir) throws Exception
@@ -644,6 +667,38 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         public FolderWriter create()
         {
             return new SampleTypeAndDataClassFolderWriter();
+        }
+    }
+
+    public static class SampleTypeDataWriter implements Writer<Container, FolderExportContext>
+    {
+        @Override
+        public @Nullable String getDataType()
+        {
+            return SAMPLE_TYPE_DATA;
+        }
+
+        @Override
+        public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
+        {
+            // noop, serialization occurs in the ListWriter and checks the context data types to determine
+            // if the list data needs to be written.
+        }
+    }
+
+    public static class DataClassDataWriter implements Writer<Container, FolderExportContext>
+    {
+        @Override
+        public @Nullable String getDataType()
+        {
+            return DATA_CLASS_DATA;
+        }
+
+        @Override
+        public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
+        {
+            // noop, serialization occurs in the ListWriter and checks the context data types to determine
+            // if the list data needs to be written.
         }
     }
 }
