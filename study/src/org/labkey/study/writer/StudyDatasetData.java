@@ -18,10 +18,4 @@ public class StudyDatasetData implements InternalStudyWriter
     public void write(StudyImpl object, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
     }
-
-    @Override
-    public boolean includeWithTemplate()
-    {
-        return false;
-    }
 }

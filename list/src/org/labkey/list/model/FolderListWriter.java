@@ -107,11 +107,5 @@ public class FolderListWriter extends BaseFolderWriter
             // noop, serialization occurs in the ListWriter and checks the context data types to determine
             // if the list data needs to be written.
         }
-
-        @Override
-        public boolean includeWithTemplate()
-        {
-            return true;
-        }
     }
 }
