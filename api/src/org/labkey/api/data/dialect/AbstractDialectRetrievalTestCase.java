@@ -59,7 +59,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
             int majorVersion = i / 10;
             int minorVersion = i % 10;
 
-            String description = databaseName + " version " + majorVersion + "." + minorVersion;
+            String description = "Retrieving dialect for " + databaseName + " version " + majorVersion + "." + minorVersion;
 
             try
             {
