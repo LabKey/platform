@@ -4803,9 +4803,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (!runsUsingItems.isEmpty())
         {
-            List<Integer> runIds = runsUsingItems.stream().map(ExpRun::getRowId).toList();
-            runsUsingItems.removeAll(getDerivedRunsUsingOtherDataIds(getTinfoDataInput(), "dataID", dataIds, runIds));
-            runsUsingItems.removeAll(getDerivedRunsUsingOtherDataIds(getTinfoMaterialInput(), "materialID", sampleIds, runIds));
+            Set<ExpRun> runsToKeep = new HashSet<>();
+            // determine if there are any outputs of this run that are not being deleted. If so, remove the run from the runs to be deleted.
+            runsUsingItems.forEach(run -> {
+                run.getMaterialOutputs().forEach(
+                    sample -> {
+                        if (!sampleIds.contains(sample.getRowId()))
+                            runsToKeep.add(sample.getRun());
+                    }
+                );
+                run.getDataOutputs().forEach(
+                    dataObject -> {
+                        if (!dataIds.contains(dataObject.getRowId()))
+                            runsToKeep.add(dataObject.getRun());
+                    }
+                );
+            });
+            runsUsingItems.removeAll(runsToKeep);
+
         }
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -4926,27 +4941,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
-    }
-
-    private Collection<? extends ExpRun> getDerivedRunsUsingOtherDataIds(TableInfo inputTable, String idFieldName, Collection<Integer> dataIds, Collection<Integer> runIds)
-    {
-        if (dataIds == null || dataIds.isEmpty())
-            return Collections.emptyList();
-
-        SQLFragment sql = new SQLFragment();
-        SQLFragment dataInSql = getAppendInClause(dataIds);
-        SQLFragment runInSql = getAppendInClause(runIds);
-
-        sql.append("SELECT pa.RunId\n");
-        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
-        sql.append(inputTable, "i").append("\n");
-        sql.append("WHERE pa.RunId ").append(runInSql)
-                .append(" AND i.TargetApplicationId = pa.RowId ")
-                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-                .append("AND NOT (").append(idFieldName).append(" ").append(dataInSql).append(")");
-
-        return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
-
     }
 
     /**
