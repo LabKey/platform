@@ -27,13 +27,18 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,11 +72,11 @@ public class SessionAppender extends AbstractAppender
 
         final String key;
         boolean on;
-        final Map<LogEvent, String> eventIdMap = Collections.synchronizedMap(new LinkedHashMap<>()
+        final Map<LogEvent, Integer> eventIdMap = Collections.synchronizedMap(new LinkedHashMap<>()
         {
             // Safeguard against runaway size.
             @Override
-            protected boolean removeEldestEntry(Map.Entry<LogEvent, String> eldest)
+            protected boolean removeEldestEntry(Map.Entry<LogEvent, Integer> eldest)
             {
                 return size() > 1000;
             }
@@ -111,21 +116,36 @@ public class SessionAppender extends AbstractAppender
         AppenderInfo info = localInfo.get();
         if (null == info || !info.on)
             return;
-        synchronized (info.eventIdMap)
-        {
-            info.eventIdMap.put(event, String.valueOf(++info.eventId));
-        }
+        info.eventIdMap.put(event, ++info.eventId);
     }
 
 
-    public static Map<LogEvent, String> getLoggingEvents(HttpServletRequest request)
+    public static List<Map<String, Object>> getLoggingEvents(HttpServletRequest request, @Nullable Integer maxEventId)
     {
         AppenderInfo info = _getLoggingForSession(request);
         if (null == info)
-            return Collections.emptyMap();
+            return Collections.emptyList();
+
+        // Lock the map to avoid concurrent modifications while we iterate
         synchronized (info.eventIdMap)
         {
-            return info.eventIdMap;
+            List<Map<String, Object>> result = new ArrayList<>(info.eventIdMap.size());
+            for (Map.Entry<LogEvent, Integer> entry : info.eventIdMap.entrySet())
+            {
+                if (maxEventId == null || maxEventId < entry.getValue().intValue())
+                {
+                    LogEvent e = entry.getKey();
+                    Map<String, Object> m = new HashMap<>();
+                    // We've historically returned these as strings
+                    m.put("eventId", Integer.toString(entry.getValue()));
+                    m.put("level", e.getLevel().toString());
+                    m.put("message", e.getMessage().getFormattedMessage());
+                    m.put("timestamp", new Date(e.getTimeMillis()));
+                    result.add(m);
+                }
+            }
+
+            return result;
         }
     }
 
