@@ -75,6 +75,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _qcEnabled;
     private boolean _plateMetadata;
     private String _status;
+    private List<String> _excludedContainerIds;
 
     public GWTProtocol()
     {
@@ -393,5 +394,15 @@ public class GWTProtocol implements IsSerializable
     public void setStatus(String status)
     {
         _status = status;
+    }
+
+    public List<String> getExcludedContainerIds()
+    {
+        return _excludedContainerIds;
+    }
+
+    public void setExcludedContainerIds(List<String> excludedContainerIds)
+    {
+        _excludedContainerIds = excludedContainerIds;
     }
 }
