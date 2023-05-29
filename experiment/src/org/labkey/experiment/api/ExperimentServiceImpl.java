@@ -7527,6 +7527,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
+            if (options != null && options.getExcludedContainerIds() != null && !options.getExcludedContainerIds().isEmpty())
+                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), impl.getRowId(), u);
+
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
         }
@@ -7589,6 +7592,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
+
+            if (options != null && options.getExcludedContainerIds() != null)
+                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
 
             if (!errors.hasErrors())
             {
