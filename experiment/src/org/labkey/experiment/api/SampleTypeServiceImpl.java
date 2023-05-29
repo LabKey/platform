@@ -1055,6 +1055,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
+            if (options != null && options.getExcludedContainerIds() != null)
+                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+
             if (!errors.hasErrors())
             {
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
