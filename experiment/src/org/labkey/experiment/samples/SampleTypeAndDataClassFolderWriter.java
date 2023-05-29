@@ -146,6 +146,9 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         boolean exportRuns = false;
         _xarCtx = ctx.getContext(XarExportContext.class);
 
+        boolean exportSampleTypeData = ctx.getDataTypes().contains(SAMPLE_TYPE_DATA);
+        boolean exportDataClassData = ctx.getDataTypes().contains(DATA_CLASS_DATA);
+
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(c, ExpSampleType.class, "export"));
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, ctx.getUser(), true))
         {
@@ -191,10 +194,10 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         // get the list of runs with the materials or data we expect to export, these will be the sample derivation
         // protocol runs to track the lineage
         Set<ExpRun> exportedRuns = new HashSet<>();
-        if (!materialsToExport.isEmpty())
+        if (!materialsToExport.isEmpty() && exportSampleTypeData)
             exportedRuns.addAll(ExperimentService.get().getRunsUsingMaterials(materialsToExport));
 
-        if (!datasToExport.isEmpty())
+        if (!datasToExport.isEmpty() && exportDataClassData)
             exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
         // only want the sample derivation runs; other runs will get included in the experiment xar.
         exportedRuns = exportedRuns.stream().filter(run -> {
@@ -233,11 +236,11 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         }
 
         // write the sample type data as .tsv files
-        if (ctx.getDataTypes().contains(SAMPLE_TYPE_DATA))
+        if (exportSampleTypeData)
             writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
 
         // write the data class data as .tsv files
-        if (ctx.getDataTypes().contains(DATA_CLASS_DATA))
+        if (exportDataClassData)
             writeDataClassDataFiles(dataClasses, ctx, xarDir);
     }
 

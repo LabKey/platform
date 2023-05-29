@@ -11,12 +11,11 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -35,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
@@ -155,11 +155,17 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
                     // Import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class.
                     // Registry files need to imported in a particular order because some files rely on data from other files.
-                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir, true, false);
+                    if (!dataClassDataFiles.isEmpty())
+                    {
+                        importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
+                                dataClassDataFiles, xarDir, true, false);
+                    }
 
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            sampleTypeDataFiles, xarDir, true, false);
+                    if (!sampleTypeDataFiles.isEmpty())
+                    {
+                        importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
+                                sampleTypeDataFiles, xarDir, true, false);
+                    }
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)

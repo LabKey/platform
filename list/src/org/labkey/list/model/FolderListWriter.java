@@ -114,33 +114,4 @@ public class FolderListWriter extends BaseFolderWriter
             return false;
         }
     }
-
-    @Override
-    public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
-    {
-        List<Writer<?,?>> children = new ArrayList<>();
-
-        for (Writer writer : CHILD_WRITERS)
-        {
-            if (!forTemplate || (forTemplate && writer.includeWithTemplate()))
-                children.add(writer);
-        }
-        return children;
-    }
-
-    public static class ListDataWriter implements Writer<Container, FolderExportContext>
-    {
-        @Override
-        public @Nullable String getDataType()
-        {
-            return LIST_DATA;
-        }
-
-        @Override
-        public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
-        {
-            // noop, serialization occurs in the ListWriter and checks the context data types to determine
-            // if the list data needs to be written.
-        }
-    }
 }
