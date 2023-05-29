@@ -120,6 +120,9 @@ public class SessionAppender extends AbstractAppender
     }
 
 
+    /**
+     * @return serialization-suitable list of events with eventId, level, message, and timestamp properties
+     */
     public static List<Map<String, Object>> getLoggingEvents(HttpServletRequest request, @Nullable Integer maxEventId)
     {
         AppenderInfo info = _getLoggingForSession(request);
