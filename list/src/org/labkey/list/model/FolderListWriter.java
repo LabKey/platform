@@ -43,7 +43,7 @@ public class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
     private static List<Writer> CHILD_WRITERS = Arrays.asList(new ListDataWriter());
-    public static final String LIST_DATA = "Lists Data";
+    public static final String LIST_DATA = "List Data";
 
     @Override
     public String getDataType()
