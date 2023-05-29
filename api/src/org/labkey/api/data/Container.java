@@ -1684,6 +1684,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return isFeatureEnabled(ProductFeature.Projects, true);
     }
 
+    public boolean isAppHomeFolder()
+    {
+        if (isProject()) // if it's a project
+            return true;
+
+        return !isProductProjectsEnabled(); // if subfolder, then the folder shouldn't have Projects feature enabled
+    }
+
     /**
      * Returns the subfolder count of the project container, if product projects feature is enabled in project
      */

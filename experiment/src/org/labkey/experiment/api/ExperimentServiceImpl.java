@@ -8324,8 +8324,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getExpSchema()).execute(sql);
     }
 
-    @Override
-    public Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8356,10 +8355,39 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new SqlSelector(getTinfoDataTypeExclusion().getSchema(), sql).getMapArray();
     }
 
-    public Set<Integer> getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
+    @Override
+    public @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    {
+        Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
+
+        Map<ExperimentService.DataTypeForExclusion, Set<Integer>> typeExclusions = new HashMap<>();
+        for (Map<String, Object> exclusion : exclusions)
+        {
+            String dataTypeStr = (String) exclusion.get("DataType");
+            DataTypeForExclusion dataType = DataTypeForExclusion.valueOf(dataTypeStr);
+            if (!typeExclusions.containsKey(dataType))
+                typeExclusions.put(dataType, new HashSet<>());
+            typeExclusions.get(dataType).add((Integer) exclusion.get("DataTypeRowId"));
+        }
+
+        return typeExclusions;
+    }
+
+    @Override
+    public Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId)
+    {
+        Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(dataType, null, dataTypeRowId);
+        Set<String> excludedProjects = new HashSet<>();
+        for (Map<String, Object> exclusion : exclusions)
+            excludedProjects.add((String) exclusion.get("ExcludedContainer"));
+        return excludedProjects;
+    }
+
+
+    private Set<Integer> _getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
     {
         Set<Integer> excludedRowIds = new HashSet<>();
-        Map<String, Object>[] exclusions = getContainerDataTypeExclusions(dataType, excludedContainerId, null);
+        Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId, null);
         for (Map<String, Object> exclusion : exclusions)
             excludedRowIds.add((Integer) exclusion.get("DataTypeRowId"));
 
@@ -8372,7 +8400,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (excludedDataTypeRowIds == null)
             return;
 
-        Set<Integer> previousExclusions = getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> previousExclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId);
         Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
 
         Set<Integer> toAdd = new HashSet<>(updatedExclusions);
