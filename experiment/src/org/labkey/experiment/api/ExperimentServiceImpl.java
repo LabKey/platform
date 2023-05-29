@@ -44,8 +44,10 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -8310,13 +8312,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!toAdd.isEmpty())
         {
             for (String add : toAdd)
+            {
                 addDataTypeExclusion(dataTypeId, dataType, add, user);
+                addAuditEventForDataTypeContainerUpdate(dataType, add, user);
+            }
         }
 
         if (!toRemove.isEmpty())
         {
             for (String remove : toRemove)
+            {
                 removeDataTypeExclusion(dataTypeId, dataType, remove, user);
+                addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
+            }
+        }
+    }
+
+    private void addAuditEventForDataTypeContainerUpdate(DataTypeForExclusion type, String containerId, User user)
+    {
+        Container container = ContainerManager.getForId(containerId);
+        if (container != null)
+        {
+            Set<Integer> exclusions = _getContainerDataTypeExclusions(type, containerId);
+            String auditMsg = ("Data exclusion for folder " + container.getName() + " was updated.\n")
+                    + getDisabledDataTypeAuditMsg(type, exclusions.stream().toList(), true);
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), auditMsg);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 
