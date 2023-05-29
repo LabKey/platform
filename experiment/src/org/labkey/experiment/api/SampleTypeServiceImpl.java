@@ -679,36 +679,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     @NotNull
     @Override
-    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
-            throws ExperimentException
-    {
-        return createSampleType(c,u,name,description,properties,indices,-1,-1,-1, -1, nameExpression, null);
-    }
-
-    @NotNull
-    @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
+                parentCol, nameExpression, null, templateInfo, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category) throws ExperimentException
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField)
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField, @Nullable List<String> excludedContainerIds)
         throws ExperimentException
     {
         if (name == null)
@@ -891,6 +882,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     domain.save(u);
                     st.save(u);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+                    if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
+                        ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
