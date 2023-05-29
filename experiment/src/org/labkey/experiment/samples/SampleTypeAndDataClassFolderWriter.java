@@ -684,8 +684,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         @Override
         public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
-            // noop, serialization occurs in the ListWriter and checks the context data types to determine
-            // if the list data needs to be written.
+            // noop, serialization occurs in the parent writer and checks the context data types to determine
+            // if the sample type data needs to be written.
         }
     }
 
@@ -700,8 +700,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         @Override
         public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
-            // noop, serialization occurs in the ListWriter and checks the context data types to determine
-            // if the list data needs to be written.
+            // noop, serialization occurs in the parent writer and checks the context data types to determine
+            // if the data class data needs to be written.
         }
     }
 }

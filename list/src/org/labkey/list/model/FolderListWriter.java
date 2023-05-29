@@ -111,7 +111,7 @@ public class FolderListWriter extends BaseFolderWriter
         @Override
         public boolean includeWithTemplate()
         {
-            return false;
+            return true;
         }
     }
 }

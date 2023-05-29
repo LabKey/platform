@@ -113,7 +113,7 @@ Ext4.onReady(function(){
                         inputValue: childName,
                         checked: checked,
                         objectType: "child",
-                        parentId: parentName
+                        parentId: parentName.replaceAll(',', '')
                     });
                 });
             }
