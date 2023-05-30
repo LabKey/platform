@@ -31,7 +31,9 @@ public class MenuItem
 
     private boolean _fromSharedContainer; // if the item comes from the /Shared container
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer)
+    private Boolean _hidden = false; // if the item should be hidden
+
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer, boolean hidden)
     {
         _label = label;
         _id = id;
@@ -41,6 +43,12 @@ public class MenuItem
         _productId = productId;
         _hasActiveJob = hasActiveJob;
         _fromSharedContainer = isSharedContainer;
+        _hidden = hidden;
+    }
+
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob, boolean isSharedContainer)
+    {
+        this(label, url, id, key, orderNum, productId, hasActiveJob, isSharedContainer, false);
     }
 
     public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob)
@@ -168,5 +176,14 @@ public class MenuItem
         _hasActiveJob = hasActiveJob;
     }
 
+    public Boolean getHidden()
+    {
+        return _hidden;
+    }
+
+    public void setHidden(Boolean hidden)
+    {
+        _hidden = hidden;
+    }
 
 }

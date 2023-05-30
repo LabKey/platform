@@ -7876,32 +7876,17 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            int eventId = 0;
+            Integer eventId = null;
             try
             {
                 String s = getViewContext().getRequest().getParameter("eventId");
                 if (null != s)
                     eventId = Integer.parseInt(s);
             }
-            catch (NumberFormatException x) {}
-            Map<LogEvent, String> events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map<String, Object>> list = new ArrayList<>(events.size());
-            for (Map.Entry<LogEvent, String> entry : events.entrySet())
-            {
-                if (eventId==0 || eventId<Integer.parseInt(entry.getValue()))
-                {
-                    LogEvent e = entry.getKey();
-                    HashMap<String, Object> m = new HashMap<>();
-                    m.put("eventId", entry.getValue());
-                    m.put("level", e.getLevel().toString());
-                    m.put("message", e.getMessage().getFormattedMessage());
-                    m.put("timestamp", new Date(e.getTimeMillis()));
-                    list.add(m);
-                }
-            }
+            catch (NumberFormatException ignored) {}
             ApiSimpleResponse res = new ApiSimpleResponse();
             res.put("success", true);
-            res.put("events", list);
+            res.put("events", SessionAppender.getLoggingEvents(getViewContext().getRequest(), eventId));
             return res;
         }
     }
