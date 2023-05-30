@@ -2351,8 +2351,8 @@ public class ExpDataIterators
                                 _context.getErrors().addRowError(new ValidationException(msg));
                             }
                         }
-                        _context.setCrossTypeImport(true);
                     });
+                    _context.setCrossTypeImport(true);
                 }
 
                 return false;
