@@ -18,6 +18,7 @@ package org.labkey.core;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -49,7 +50,13 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     @Override
     public void containerCreated(Container c, User user)
     {
-        String message = c.getContainerNoun(true) + " " + c.getName() + " was created";
+        containerCreated(c, user, null);
+    }
+
+    @Override
+    public void containerCreated(Container c, User user, @Nullable String auditMsg)
+    {
+        String message = auditMsg == null ? c.getContainerNoun(true) + " " + c.getName() + " was created" : auditMsg;
         addAuditEvent(user, c, message);
     }
 

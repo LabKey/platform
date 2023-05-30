@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AssayDatasetTable extends DatasetTableImpl
+public class AssayDatasetTable extends LinkedDatasetTable
 {
     /**
      * The assay result LSID column is added to the dataset for assays that support it.

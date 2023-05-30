@@ -65,7 +65,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.premium.PremiumService;
+import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
@@ -161,8 +161,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
-import org.labkey.core.view.TableViewFormTestCase;
-import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -246,11 +244,13 @@ import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.UserResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.wiki.MarkdownServiceImpl;
@@ -1089,7 +1089,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
-            PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
+            AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
 
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService != null)

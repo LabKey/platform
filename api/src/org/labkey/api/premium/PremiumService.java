@@ -15,13 +15,10 @@
  */
 package org.labkey.api.premium;
 
-import org.apache.commons.fileupload.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 public interface PremiumService
 {
@@ -41,16 +38,6 @@ public interface PremiumService
     boolean isFileUploadDisabled();
 
     boolean isFileWatcherSupported();
-
-    default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
-    {
-        CommonsMultipartResolver result = new CommonsMultipartResolver();
-        // Issue 47362 - configure a limit for the number of files per request
-        result.getFileUpload().setFileCountMax(1_000);
-        return result;
-    }
-
-    void registerAntiVirusProvider(AntiVirusProvider avp);
 
     static void setInstance(PremiumService instance)
     {
@@ -80,14 +67,6 @@ public interface PremiumService
         return null;
     }
 
-    interface AntiVirusProvider
-    {
-        @NotNull String getId();             // something unique e.g. className
-        @NotNull String getDescription();    // e.g. ClamAV Daemon
-        @Nullable ActionURL getConfigurationURL();
-        @NotNull AntiVirusService getService();
-    }
-
     class DefaultPremiumService implements PremiumService
     {
         @Override
@@ -113,9 +92,6 @@ public interface PremiumService
         {
             return false;
         }
-
-        @Override
-        public void registerAntiVirusProvider(AntiVirusProvider avp) {}
 
         @Override
         public boolean isRemoteREnabled()
