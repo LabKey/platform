@@ -127,6 +127,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
@@ -2502,6 +2503,11 @@ public class ExpDataIterators
                         if (!sampleType.getName().equals(typeName))
                             dependencyIndexes.put(i, typeName);
                     }
+                }
+                else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
                 }
                 else if (lcName.startsWith(INPUTS_PREFIX_LC))
                 {
