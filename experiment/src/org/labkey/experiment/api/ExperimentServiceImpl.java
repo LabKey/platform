@@ -8199,10 +8199,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType)
     {
-        _removeDataTypeExclusion(rowIds, dataType, null);
+        removeDataTypeExclusion(rowIds, dataType, null);
     }
 
-    public void _removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType, @Nullable String excludedContainerId)
+    private void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType, @Nullable String excludedContainerId)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
@@ -8237,7 +8237,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String excludedContainerId = excludedContainerIdOrPath;
             if (!GUID.isGUID(excludedContainerIdOrPath))
             {
-                Container container = ContainerManager.ensureContainer(excludedContainerIdOrPath);
+                Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
                 if (container != null)
                     excludedContainerId = container.getId();
             }
@@ -8319,7 +8319,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         if (!toRemove.isEmpty())
-            _removeDataTypeExclusion(toRemove, dataType, excludedContainerId);
+            removeDataTypeExclusion(toRemove, dataType, excludedContainerId);
     }
 
     @Override
