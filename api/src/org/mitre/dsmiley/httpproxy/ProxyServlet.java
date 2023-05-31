@@ -16,7 +16,6 @@ package org.mitre.dsmiley.httpproxy;
  * limitations under the License.
  */
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.StandardCookieSpec;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -35,11 +34,7 @@ import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.message.HeaderGroup;
-import org.apache.http.client.methods.AbortableHttpRequest;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -59,9 +54,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.Map;
-
-import static org.apache.commons.lang3.StringUtils.replace;
-import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 // moved from git, see history at https://github.com/LabKey/docker/commits/release18.1/src/org/mitre/dsmiley/httpproxy/ProxyServlet.java
 
@@ -83,8 +75,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 @SuppressWarnings({"deprecation", "serial", "WeakerAccess"})
 public class ProxyServlet extends HttpServlet
 {
-    private static final Logger LOG = LogManager.getLogger(ProxyServlet.class);
-
     private static final Map<String, String> preferredHeaderNames;
 
     static
@@ -175,8 +165,6 @@ public class ProxyServlet extends HttpServlet
      */
     public static final String P_HANDLECOMPRESSION = "handleCompression";
 
-    /** The source URI to proxy from , defaults to /{contextpath}/{servletpath}  */
-    protected static final String P_SOURCE_PATH = "sourcePath";
     /**
      * The parameter name for the target (destination) URI to proxy to.
      */
@@ -212,30 +200,11 @@ public class ProxyServlet extends HttpServlet
     // ATTR_* parameters.
     /** From the configured parameter "targetUri". */
     protected String targetUri;
-    protected String sourcePath;
     protected URI targetUriObj;//new URI(targetUri)
     protected HttpHost targetHost;//URIUtils.extractHost(targetUriObj);
 
     private CloseableHttpClient proxyClient;
 
-    private boolean flexRedirectProtocol;
-
-    private void appendPath(StringBuilder sb, CharSequence path) // LKS override
-    {
-        appendPath(sb, path, false);
-    }
-
-    private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash) // LKS override
-    {
-        if (sb.length() < 1 || '/' != sb.charAt(sb.length()-1))
-            sb.append('/');
-        if (path.length() > 0)
-            sb.append(path, '/'==path.charAt(0)?1:0 , path.length());
-        // trim trailing slash (unless sb is "/")
-        if (trimTrailingSlash && sb.length() > 1 && '/' == sb.charAt(sb.length()-1))
-            sb.setLength(sb.length()-1);
-        return sb;
-    }
 
     @Override
     public String getServletInfo()
@@ -358,36 +327,11 @@ public class ProxyServlet extends HttpServlet
             throw new ServletException("Trying to process targetUri init parameter: " + e, e);
         }
         targetHost = URIUtils.extractHost(targetUriObj);
-
-        sourcePath = getConfigParam(P_SOURCE_PATH);
-
-        String flexRedirectProtocolString = getConfigParam(FLEX_REDIRECT_PROTOCOL);
-        if (flexRedirectProtocolString != null)
-        {
-            this.flexRedirectProtocol = Boolean.parseBoolean(flexRedirectProtocolString);
-        }
-    }
-
-
-    protected String getPathInfo(HttpServletRequest request)
-    {
-        if (null != sourcePath) // LKS override
-        {
-            String requestURI = request.getRequestURI();
-            if (requestURI.startsWith(sourcePath))
-                return requestURI.substring(sourcePath.length() - (sourcePath.endsWith("/")?1:0));
-        }
-        return request.getPathInfo();
     }
 
     protected String getServletPath(HttpServletRequest request)
     {
         return request.getServletPath();
-    }
-
-    protected String getSourcePath(HttpServletRequest request)
-    {
-        return StringUtils.defaultString(sourcePath, request.getContextPath() + request.getServletPath());
     }
 
     /**
@@ -656,12 +600,19 @@ public class ProxyServlet extends HttpServlet
             }
             proxyRequest.setHeader(forHeaderName, forHeader);
 
-            // LKS override to skip X-Forwarded-Proto
-//            String protoHeaderName = "X-Forwarded-Proto";
-//            String protoHeader = servletRequest.getScheme();
-//            proxyRequest.setHeader(protoHeaderName, protoHeader);
+            if (skipXForwardedProto())
+                return;
+
+            String protoHeaderName = "X-Forwarded-Proto";
+            String protoHeader = servletRequest.getScheme();
+            proxyRequest.setHeader(protoHeaderName, protoHeader);
 
         }
+    }
+
+    protected boolean skipXForwardedProto()
+    {
+        return false;
     }
 
     /** Copy proxied response headers back to the servlet client. */
@@ -713,28 +664,27 @@ public class ProxyServlet extends HttpServlet
         }
     }
 
+    protected void setCookiePath(Cookie servletCookie, HttpServletRequest servletRequest, HttpCookie cookie)
+    {
+        servletCookie.setPath(this.doPreserveCookiePath ?
+                cookie.getPath() : // preserve original cookie path
+                buildProxyCookiePath(servletRequest) //set to the path of the proxy servlet
+        );
+    }
+
     /**
      * Creates a proxy cookie from the original cookie.
      *
      * @param servletRequest original request
-     * @param cookie         original cookie
+     * @param cookie original cookie
      * @return proxy cookie
      */
-    protected Cookie createProxyCookie(HttpServletRequest servletRequest, HttpCookie cookie)
-    {
+    protected Cookie createProxyCookie(HttpServletRequest servletRequest, HttpCookie cookie) {
         String proxyCookieName = getProxyCookieName(cookie);
         Cookie servletCookie = new Cookie(proxyCookieName, cookie.getValue());
+        setCookiePath(servletCookie, servletRequest, cookie);
         servletCookie.setComment(cookie.getComment());
         servletCookie.setMaxAge((int) cookie.getMaxAge());
-
-        // LKS override
-        String path = getSourcePath(servletRequest);
-        String proxyCookiePath = replace(trimToEmpty(cookie.getPath()),"//","/");
-        if (StringUtils.startsWith(proxyCookiePath, path))
-            servletCookie.setPath( appendPath(new StringBuilder(proxyCookiePath),"",true).toString() );
-        else
-            servletCookie.setPath( appendPath(new StringBuilder(path),proxyCookiePath,true).toString() );
-
         // don't set cookie domain
         servletCookie.setSecure(servletRequest.isSecure() && cookie.getSecure());
         servletCookie.setVersion(cookie.getVersion());
@@ -800,11 +750,8 @@ public class ProxyServlet extends HttpServlet
     }
 
     /** The string prefixing rewritten cookies. */
-    protected String getCookieNamePrefix(String cName)
-    {
-        String name = StringUtils.replace(getServletName()," ","-");
-        // make sure this is a legal cookie name
-        return "!Proxy!" + PageFlowUtil.encodeURIComponent(name) + "!";
+    protected String getCookieNamePrefix(String name) {
+        return "!Proxy!" + getServletConfig().getServletName();
     }
 
     /** Copy response body data (the entity) from the proxy to the servlet client. */
@@ -853,6 +800,15 @@ public class ProxyServlet extends HttpServlet
         }
     }
 
+    protected void appendRequestPath(StringBuilder uri, HttpServletRequest servletRequest)
+    {
+        String pathInfo = rewritePathInfoFromRequest(servletRequest);
+        if (pathInfo != null) {//ex: /my/path.html
+            // getPathInfo() returns decoded string, so we need encodeUriQuery to encode "%" characters
+            uri.append(encodeUriQuery(pathInfo, true));
+        }
+    }
+
     /**
      * Reads the request URI from {@code servletRequest} and rewrites it, considering targetUri.
      * It's used to make the new request.
@@ -862,8 +818,8 @@ public class ProxyServlet extends HttpServlet
         StringBuilder uri = new StringBuilder(500);
         uri.append(getTargetUri(servletRequest));
         // Handle the path given to the servlet
-        String pathInfo = getPathInfo(servletRequest); // LKS override
-        appendPath(uri, encodeUriQuery(trimToEmpty(pathInfo), true));
+        appendRequestPath(uri, servletRequest);
+
         // Handle the query string & fragment
         String queryString = servletRequest.getQueryString();//ex:(following '?'): name=value&foo=bar#fragment
         String fragment = null;
@@ -900,63 +856,48 @@ public class ProxyServlet extends HttpServlet
         return queryString;
     }
 
-    /** For a redirect response from the target server, this translates {@code theUrl} to redirect to
-     * and translates it to one the original client can use. */
-    protected String rewriteUrlFromResponse(HttpServletRequest servletRequest, String theUrl)
-    {
+    /**
+     * Allow overrides of {@link javax.servlet.http.HttpServletRequest#getPathInfo()}.
+     * Useful when url-pattern of servlet-mapping (web.xml) requires manipulation.
+     */
+    protected String rewritePathInfoFromRequest(HttpServletRequest servletRequest) {
+        return servletRequest.getPathInfo();
+    }
+
+    /**
+     * For a redirect response from the target server, this translates {@code theUrl} to redirect to
+     * and translates it to one the original client can use.
+     */
+    protected String rewriteUrlFromResponse(HttpServletRequest servletRequest, String theUrl) {
         //TODO document example paths
-        String targetUri = getTargetUri(servletRequest);
-
-        LOG.info("theUrl: " + theUrl);
-        LOG.info("getTargetUri(servletRequest): " + getTargetUri(servletRequest));
-        LOG.info("getTargetHost(servletRequest): " + getTargetHost(servletRequest));
-        LOG.info("servletRequest.getRequestURL(): " + servletRequest.getRequestURL());
-
-        if (flexRedirectProtocol && theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
-        {
-            // Issue 47596: Make Dockerized version of rstudio server work in LabKey's AWS environment
-            // For unknown reason, with AWS ALB, docker instance uses inconsistent http vs https protocol
-            theUrl = theUrl.replace("https://localhost:", "http://localhost:");
-        }
-
-        if (theUrl.startsWith("/") || theUrl.startsWith(targetUri))
-        {
-      /*-
-       * The URL points back to the back-end server.
-       * Instead of returning it verbatim we replace the target path with our
-       * source path in a way that should instruct the original client to
-       * request the URL pointed through this Proxy.
-       * We do this by taking the current request and rewriting the path part
-       * using this servlet's absolute path and the path from the returned URL
-       * after the base target URL.
-       */
-            StringBuilder curUrl = new StringBuilder(servletRequest.getRequestURL());//no query
+        final String targetUri = getTargetUri(servletRequest);
+        if (theUrl.startsWith(targetUri)) {
+            /*-
+             * The URL points back to the back-end server.
+             * Instead of returning it verbatim we replace the target path with our
+             * source path in a way that should instruct the original client to
+             * request the URL pointed through this Proxy.
+             * We do this by taking the current request and rewriting the path part
+             * using this servlet's absolute path and the path from the returned URL
+             * after the base target URL.
+             */
+            StringBuffer curUrl = servletRequest.getRequestURL();//no query
             int pos;
             // Skip the protocol part
-            if ((pos = curUrl.indexOf("://")) >= 0)
-            {
+            if ((pos = curUrl.indexOf("://"))>=0) {
                 // Skip the authority part
                 // + 3 to skip the separator between protocol and authority
-                if ((pos = curUrl.indexOf("/", pos + 3)) >= 0)
-                {
+                if ((pos = curUrl.indexOf("/", pos + 3)) >=0) {
                     // Trim everything after the authority part.
                     curUrl.setLength(pos);
                 }
             }
-
-            //Issue 42677: 404 Error when initiating a Jupyter Notebook session from RStudio Pro when integrated with LabKey
-            // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
-            String sourcePath = getSourcePath(servletRequest);
-            LOG.info("getSourcePath(servletRequest): " + getSourcePath(servletRequest));
-            if (!theUrl.startsWith(sourcePath))
-                curUrl.append(sourcePath);
-
-            if (theUrl.startsWith("/")) // LKS override
-                appendPath(curUrl, theUrl);
-            else
-                appendPath(curUrl, theUrl.substring(targetUri.length()));
-            theUrl = curUrl.toString();
-
+            // Context path starts with a / if it is not blank
+            curUrl.append(servletRequest.getContextPath());
+            // Servlet path starts with a / if it is not blank
+            curUrl.append(servletRequest.getServletPath());
+            curUrl.append(theUrl, targetUri.length(), theUrl.length());
+            return curUrl.toString();
         }
         return theUrl;
     }
