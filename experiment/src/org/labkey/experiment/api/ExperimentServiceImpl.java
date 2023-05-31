@@ -4433,6 +4433,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
 
+            removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
                 transaction.addCommitTask(() -> {
@@ -4791,11 +4792,37 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
         var runsUsingItems = new ArrayList<ExpRun>();
-        if (null != dataItems && !dataItems.isEmpty())
-            runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+        List<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptyList() : dataItems.stream().map(RunItem::getRowId).toList();
+        Set<Integer> sampleIds = materialItems == null || materialItems.isEmpty() ? Collections.emptySet() : materialItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
 
-        if (null != materialItems && !materialItems.isEmpty())
+        if (!dataIds.isEmpty())
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+
+        if (!sampleIds.isEmpty())
+            // get all the runs that use these samples as inputs
             runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
+
+        if (!runsUsingItems.isEmpty())
+        {
+            Set<ExpRun> runsToKeep = new HashSet<>();
+            // determine if there are any outputs of this run that are not being deleted. If so, remove the run from the runs to be deleted.
+            runsUsingItems.forEach(run -> {
+                run.getMaterialOutputs().forEach(
+                    sample -> {
+                        if (!sampleIds.contains(sample.getRowId()))
+                            runsToKeep.add(sample.getRun());
+                    }
+                );
+                run.getDataOutputs().forEach(
+                    dataObject -> {
+                        if (!dataIds.contains(dataObject.getRowId()))
+                            runsToKeep.add(dataObject.getRun());
+                    }
+                );
+            });
+            runsUsingItems.removeAll(runsToKeep);
+
+        }
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -4833,9 +4860,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
+    private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Integer> rowIds, TableInfo primaryTableInfo, Collection<Integer> siblingRowIds, TableInfo siblingTableInfo)
     {
-        if (materialIds == null || materialIds.isEmpty())
+        if (rowIds == null || rowIds.isEmpty())
             return Collections.emptyList();
 
         /* Ex. SQL
@@ -4855,26 +4882,56 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         WHERE m3.rowId in (3592, 3593, 3594)
                             AND m2.rowId = m3.rowId
                     )
+            )
+            AND NOT EXIST (
+             -- Check for siblings that are not being deleted
+                SELECT DISTINCT d.runId
+                FROM exp.data d
+                WHERE m.rowId in (3592, 3593, 3594)
+                    AND m.runId = d.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.data d2
+                        WHERE d2.rowId in (23592, 23593, 23594)
+                            AND d.rowId = d2.rowId
+                    )
+
             );
          */
 
-        SQLFragment idInclause = getAppendInClause(materialIds);
+        SQLFragment idInClause = getAppendInClause(rowIds);
+        SQLFragment siblingIdInClause = getAppendInClause(siblingRowIds);
 
         SQLFragment sql = new SQLFragment(
                 "SELECT DISTINCT m.runId\n")
-                .append("FROM ").append(getTinfoMaterial(), "m").append("\n")
-                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("FROM ").append(primaryTableInfo, "m").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
                 .append("AND NOT EXISTS (\n")
                 .append("SELECT DISTINCT m2.runId\n")
-                .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("FROM ").append(primaryTableInfo, "m2").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
                 .append("AND m.runId = m2.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
-                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
-                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
-                .append(")\n")
-                .append(")");
+                .append("))\n")
+                .append("AND NOT EXISTS (\n")
+                .append("SELECT DISTINCT s.runId\n")
+                .append("FROM ").append(siblingTableInfo, "s").append("\n")
+                .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId = s.runId\n");
+        if (!siblingRowIds.isEmpty())
+        {
+            sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds
+                    .append("SELECT rowId FROM ").append(siblingTableInfo, "s2").append("\n")
+                    .append("WHERE s2.rowId ").append(siblingIdInClause).append("\n")
+                    .append("AND s.rowId = s2.rowId\n")
+                    .append(")");
+        }
+        sql.append(")");
+
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
     }
@@ -5205,11 +5262,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 deleteExpExperiment(c, user, exp);
             }
 
-            // now delete protocols (including their nested actions and parameters.
+            // now delete protocols (including their nested actions and parameters).
             deleteProtocolByRowIds(c, user, null, protIds);
 
             // now delete starting materials that were not associated with a MaterialSource upload.
-            // we get this list now so that it doesn't include all of the run-scoped Materials that were
+            // we get this list now so that it doesn't include all the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ?";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
@@ -5697,6 +5754,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET dataClassId = NULL WHERE dataClassId = ?", rowId);
             executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
+
+            removeDataTypeExclusion(Collections.singleton(rowId), DataTypeForExclusion.DataClass);
 
             transaction.addCommitTask(() -> clearDataClassCache(dcContainer), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -8129,7 +8188,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(toSet());
             runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
-            runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(materialIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
@@ -8183,19 +8242,40 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Table.insert(user, getTinfoDataTypeExclusion(), fields);
     }
 
-    public void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    @Override
+    public void removeContainerDataTypeExclusions(String containerId)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
-                .append(" WHERE DataTypeRowId = ? AND DataType = ? AND ExcludedContainer = ?");
-        sql.add(rowId);
+                .append(" WHERE excludedContainer = ? ");
+        sql.add(containerId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType)
+    {
+        removeDataTypeExclusion(rowIds, dataType, null);
+    }
+
+    private void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType, @Nullable String excludedContainerId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE DataTypeRowId ");
+        sql.appendInClause(rowIds, getExpSchema().getSqlDialect());
+        sql.append(" AND DataType = ?");
         sql.add(dataType.name());
-        sql.add(excludedContainerId);
+        if (!StringUtils.isEmpty(excludedContainerId))
+        {
+            sql.append(" AND ExcludedContainer = ?");
+            sql.add(excludedContainerId);
+        }
 
         new SqlExecutor(getExpSchema()).execute(sql);
     }
 
-    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8208,8 +8288,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             and = " AND ";
         }
 
-        if (!StringUtils.isEmpty(excludedContainerId))
+        if (!StringUtils.isEmpty(excludedContainerIdOrPath))
         {
+            String excludedContainerId = excludedContainerIdOrPath;
+            if (!GUID.isGUID(excludedContainerIdOrPath))
+            {
+                Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
+                if (container != null)
+                    excludedContainerId = container.getId();
+            }
+
             sql.append(and);
             sql.append("ExcludedContainer = ? ");
             sql.add(excludedContainerId);
@@ -8287,10 +8375,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         if (!toRemove.isEmpty())
-        {
-            for (Integer remove : toRemove)
-                removeDataTypeExclusion(remove, dataType, excludedContainerId, user);
-        }
+            removeDataTypeExclusion(toRemove, dataType, excludedContainerId);
     }
 
     @Override
@@ -8781,6 +8866,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public static class TestCase extends Assert
     {
+        final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
+
         @Before
         public void setUp()
         {
@@ -8801,7 +8888,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
             final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
-            final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
 
             // assert no MaterialInput exp.object exist
             assertEquals(0L, countMaterialInputObjects(c));
