@@ -44,8 +44,10 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -7584,6 +7586,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
+            if (options != null && options.getExcludedContainerIds() != null && !options.getExcludedContainerIds().isEmpty())
+                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), impl.getRowId(), u);
+
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
         }
@@ -7646,6 +7651,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
+
+            if (options != null && options.getExcludedContainerIds() != null)
+                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
 
             if (!errors.hasErrors())
             {
@@ -8232,8 +8240,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return Collections.unmodifiableList(_runOutputsQueryViews);
     }
 
-    @Override
-    public void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    private void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
     {
         Map<String, Object> fields = new HashMap<>();
         fields.put("DataTypeRowId", rowId);
@@ -8315,11 +8322,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    public @NotNull Map<DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
     {
         Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
 
-        Map<ExperimentService.DataTypeForExclusion, Set<Integer>> typeExclusions = new HashMap<>();
+        Map<DataTypeForExclusion, Set<Integer>> typeExclusions = new HashMap<>();
         for (Map<String, Object> exclusion : exclusions)
         {
             String dataTypeStr = (String) exclusion.get("DataType");
@@ -8354,7 +8361,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user)
+    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
     {
         if (excludedDataTypeRowIds == null)
             return;
@@ -8376,6 +8383,67 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (!toRemove.isEmpty())
             removeDataTypeExclusion(toRemove, dataType, excludedContainerId);
+    }
+
+    @Override
+    public void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    {
+        if (excludedContainerIds == null)
+            return;
+
+        Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
+        Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
+
+        Set<String> toAdd = new HashSet<>(updatedExclusions);
+        toAdd.removeAll(previousExclusions);
+
+        Set<String> toRemove = new HashSet<>(previousExclusions);
+        toRemove.removeAll(updatedExclusions);
+
+        if (!toAdd.isEmpty())
+        {
+            for (String add : toAdd)
+            {
+                addDataTypeExclusion(dataTypeId, dataType, add, user);
+                addAuditEventForDataTypeContainerUpdate(dataType, add, user);
+            }
+        }
+
+        if (!toRemove.isEmpty())
+        {
+            for (String remove : toRemove)
+            {
+                removeDataTypeExclusion(Collections.singleton(dataTypeId), dataType, remove);
+                addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
+            }
+        }
+    }
+
+    private void addAuditEventForDataTypeContainerUpdate(DataTypeForExclusion type, String containerId, User user)
+    {
+        Container container = ContainerManager.getForId(containerId);
+        if (container != null)
+        {
+            Set<Integer> exclusions = _getContainerDataTypeExclusions(type, containerId);
+            String auditMsg = ("Data exclusion for folder " + container.getName() + " was updated.\n")
+                    + getDisabledDataTypeAuditMsg(type, exclusions.stream().toList(), true);
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), auditMsg);
+            AuditLogService.get().addEvent(user, event);
+        }
+    }
+
+    @Override
+    public String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Integer> ids, boolean isUpdate)
+    {
+        StringBuilder builder = new StringBuilder();
+        if (ids != null && (isUpdate || !ids.isEmpty()))
+        {
+            if (isUpdate && ids.isEmpty())
+                builder.append(type.name()).append( " exclusion has been cleared.\n");
+            else
+                builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
+        }
+        return builder.toString();
     }
 
     @Override
