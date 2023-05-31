@@ -1826,7 +1826,7 @@ public class ExpDataIterators
                             if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
                                 throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
                             else
-                                throw new ValidationException("Data input '" + entityName + "' not found in in Data Class '" + namePart + "'.");
+                                throw new ValidationException("Data input '" + entityName + "' not found in Data Class '" + namePart + "'.");
                         }
                     }
                 }

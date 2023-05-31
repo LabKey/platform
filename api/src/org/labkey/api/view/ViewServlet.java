@@ -62,6 +62,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -121,17 +122,17 @@ public class ViewServlet extends HttpServlet
         return _requestCount.get();
     }
 
-    public record RequestSummary(String url, long startTime)
+    public record RequestSummary(String url, Principal user, long startTime)
     {
-        private RequestSummary(String url)
+        private RequestSummary(String url, @Nullable Principal user)
         {
-            this(url, System.currentTimeMillis());
+            this(url, user, System.currentTimeMillis());
         }
 
         @Override
         public String toString()
         {
-            return url() + "  running for " + (System.currentTimeMillis() - startTime) + "ms";
+            return url() + "  running for " + (System.currentTimeMillis() - startTime) + "ms by " + (user == null ? "guest" : user.getName());
         }
     }
 
@@ -154,7 +155,7 @@ public class ViewServlet extends HttpServlet
         RequestSummary previousSummary = null;
         try
         {
-            previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString())));
+            previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()), request.getUserPrincipal()));
             _service(request, response);
         }
         finally
