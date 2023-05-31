@@ -2409,7 +2409,7 @@ public class ExpDataIterators
             // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
             _idsPerType.forEach((typeName, ids) -> {
                 Set<String> parentIds = _parentIdsPerType.get(typeName);
-                if (ids.stream().noneMatch(parentIds::contains))
+                if (parentIds != null && ids.stream().noneMatch(parentIds::contains))
                 {
                     _orderDependencies.values().forEach(set -> set.remove(typeName));
                 }
