@@ -5627,35 +5627,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /**
-     * Generate a query to get the runIds where the supplied set of data class rowIds were used as inputs
-     * @param dataRowIdSQL -- SQL clause generating material rowIds used to limit results
-     * @return Query to retrieve set of runIds from supplied input material ids
-     */
-    private SQLFragment getTargetRunIdsUsingOtherDataIds(SQLFragment dataRowIdSQL)
-    {
-        // ex SQL:
-        /*
-            SELECT pa.RunId
-            FROM exp.protocolapplication pa,
-                exp.datainput di
-            WHERE mi.TargetApplicationId = pa.RowId
-                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where data objects are inputs
-                AND di.dataID <dataRowIdSQL>
-        */
-
-        SQLFragment sql = new SQLFragment();
-
-        sql.append("SELECT pa.RunId\n");
-        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
-        sql.append(getTinfoDataInput(), "di").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
-                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-                .append("AND di.dataID ").append(dataRowIdSQL);
-
-        return sql;
-    }
-
-    /**
      * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
      * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
      * @return Query to retrieve set of runIds from supplied input material ids
