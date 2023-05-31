@@ -23,6 +23,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -262,6 +263,19 @@ public class MothershipReport implements Runnable
     public Map<String, String> getParams()
     {
         return Collections.unmodifiableMap(_params);
+    }
+
+    // Hack to make the JSON more readable for preview, as _params is a String->String map
+    public Map<String, Object> getJsonFriendlyParams()
+    {
+        Map<String, Object> params = new LinkedHashMap<>(getParams());
+        Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
+        if (jsonMetrics instanceof String jms)
+        {
+            JSONObject o = new JSONObject(jms);
+            params.put(MothershipReport.JSON_METRICS_KEY, o);
+        }
+        return params;
     }
 
     public String getErrorCode()
