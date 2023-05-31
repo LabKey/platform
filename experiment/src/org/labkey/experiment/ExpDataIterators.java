@@ -975,7 +975,7 @@ public class ExpDataIterators
             if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
                 return;
 
-            if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            if (_isSample && aliquotedFrom == null && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
                 throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
