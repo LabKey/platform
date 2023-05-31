@@ -937,6 +937,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
+    void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType);
+
+    void removeContainerDataTypeExclusions(String containerId);
+
     @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
 
     Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);

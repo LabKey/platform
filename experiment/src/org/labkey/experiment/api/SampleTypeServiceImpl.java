@@ -612,6 +612,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
 
+            ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
+
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }

@@ -35,12 +35,14 @@
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineage" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
@@ -50,21 +52,22 @@
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
+<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
+
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
-
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
-<%@ page import="org.labkey.api.query.SchemaKey" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.reader.DataLoader" %>
 
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.query.SchemaKey" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
+<%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.TabLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
@@ -79,16 +82,14 @@
 <%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="java.io.StringBufferInputStream" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="static org.hamcrest.CoreMatchers.containsString" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="static org.hamcrest.CoreMatchers.containsString" %>
-<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
-<%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.HashMap" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -105,7 +106,7 @@ private Container c;
 @Before
 public void setUp()
 {
-    // NOTE: We need to use a project to create the DataClass so we can insert rows into sub-folders
+    // NOTE: We need to use a project to create the sample type so we can insert rows into sub-folders
     c = ContainerManager.getForPath(PROJECT_NAME);
     if (c != null)
         ContainerManager.deleteAll(c, TestContext.get().getUser());
