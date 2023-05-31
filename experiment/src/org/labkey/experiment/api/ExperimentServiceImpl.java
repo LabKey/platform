@@ -8413,7 +8413,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             for (String remove : toRemove)
             {
-                removeDataTypeExclusion(dataTypeId, dataType, remove, user);
+                removeDataTypeExclusion(Collections.singleton(dataTypeId), dataType, remove);
                 addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
             }
         }
