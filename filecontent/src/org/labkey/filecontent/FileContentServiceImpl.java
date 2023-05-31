@@ -1144,12 +1144,6 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void fireFileReplacedEvent(@NotNull File replaced, @Nullable User user, @Nullable Container container)
-    {
-        fireFileReplacedEvent(replaced.toPath(), user, container);
-    }
-
-    @Override
     public void fireFileReplacedEvent(@NotNull java.nio.file.Path replaced, @Nullable User user, @Nullable Container container)
     {
         java.nio.file.Path absPath = FileUtil.getAbsoluteCaseSensitivePath(container, replaced);
@@ -1157,12 +1151,6 @@ public class FileContentServiceImpl implements FileContentService
         {
             fileListener.fileReplaced(absPath, user, container);
         }
-    }
-
-    @Override
-    public void fireFileDeletedEvent(@NotNull File deleted, @Nullable User user, @Nullable Container container)
-    {
-        fireFileDeletedEvent(deleted.toPath(), user, container);
     }
 
     @Override
