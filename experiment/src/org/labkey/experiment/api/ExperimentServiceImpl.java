@@ -7528,7 +7528,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             if (options != null && options.getExcludedContainerIds() != null && !options.getExcludedContainerIds().isEmpty())
-                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), impl.getRowId(), u);
+                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), impl.getRowId(), u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
@@ -8234,11 +8234,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    public @NotNull Map<DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
     {
         Map<String, Object>[] exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
 
-        Map<ExperimentService.DataTypeForExclusion, Set<Integer>> typeExclusions = new HashMap<>();
+        Map<DataTypeForExclusion, Set<Integer>> typeExclusions = new HashMap<>();
         for (Map<String, Object> exclusion : exclusions)
         {
             String dataTypeStr = (String) exclusion.get("DataType");
