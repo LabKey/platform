@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class DataClassDomainKindProperties
@@ -18,6 +19,7 @@ public class DataClassDomainKindProperties
     private String category;
     private boolean _strictFieldValidation = true; // Set as false to skip validation check in ExperimentServiceImpl.createDataClass (used in Rlabkey labkey.domain.createAndLoad)
     private Map<String, String> importAliases;
+    private List<String> excludedContainerIds;
 
     public DataClassDomainKindProperties()
     {}
@@ -165,4 +167,13 @@ public class DataClassDomainKindProperties
         return this.importAliases;
     }
 
+    public List<String> getExcludedContainerIds()
+    {
+        return excludedContainerIds;
+    }
+
+    public void setExcludedContainerIds(List<String> excludedContainerIds)
+    {
+        this.excludedContainerIds = excludedContainerIds;
+    }
 }
