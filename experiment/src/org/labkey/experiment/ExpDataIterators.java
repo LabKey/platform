@@ -129,6 +129,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
+import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
@@ -2474,10 +2475,12 @@ public class ExpDataIterators
                 {
                     validFields.add(column.getName());
                     validFields.addAll(column.getImportAliasSet());
+                    validFields.add(column.getLabel());
                 }
             });
             Map<String, String> aliasMap = sampleType.getImportAliasMap();
             validFields.addAll(aliasMap.keySet());
+            validFields.add(ALIQUOTED_FROM_INPUT);
             List<Integer> fieldIndexes = new ArrayList<>();
             Map<Integer, String> dependencyIndexes = new HashMap<>();
             List<String> header = new ArrayList<>();
