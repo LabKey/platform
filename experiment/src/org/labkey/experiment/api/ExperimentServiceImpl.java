@@ -8354,7 +8354,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (ids != null && (isUpdate || !ids.isEmpty()))
         {
             if (isUpdate && ids.isEmpty())
-                builder.append(type.name()).append( " exclusion has been cleared.");
+                builder.append(type.name()).append( " exclusion has been cleared.\n");
             else
                 builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
         }
