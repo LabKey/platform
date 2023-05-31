@@ -134,6 +134,7 @@ import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 
@@ -2341,7 +2342,8 @@ public class ExpDataIterators
                         {
                             try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
                             {
-                                // We do not need to configure the loader for renamed fields as that has been taken care of when writing the file.
+                                // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                                configureLoader(loader, typeData.tableInfo, null, true);
                                 updateService.loadRows(_user, _container, loader, _context, null);
                             }
                             catch (SQLException | IOException e)
@@ -2375,7 +2377,8 @@ public class ExpDataIterators
                             try
                             {
                                 typeData = createHeaderRow(sampleType);
-                                _fileDataMap.put(fileName, typeData);
+                                if (typeData != null)
+                                    _fileDataMap.put(fileName, typeData);
                             }
                             catch (IOException e)
                             {
