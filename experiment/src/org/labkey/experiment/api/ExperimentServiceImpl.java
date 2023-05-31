@@ -4433,6 +4433,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
 
+            removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
                 transaction.addCommitTask(() -> {
@@ -5753,6 +5754,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET dataClassId = NULL WHERE dataClassId = ?", rowId);
             executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
+
+            removeDataTypeExclusion(Collections.singleton(rowId), DataTypeForExclusion.DataClass);
 
             transaction.addCommitTask(() -> clearDataClassCache(dcContainer), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -8239,19 +8242,40 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Table.insert(user, getTinfoDataTypeExclusion(), fields);
     }
 
-    public void removeDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user)
+    @Override
+    public void removeContainerDataTypeExclusions(String containerId)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
-                .append(" WHERE DataTypeRowId = ? AND DataType = ? AND ExcludedContainer = ?");
-        sql.add(rowId);
+                .append(" WHERE excludedContainer = ? ");
+        sql.add(containerId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType)
+    {
+        removeDataTypeExclusion(rowIds, dataType, null);
+    }
+
+    private void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType, @Nullable String excludedContainerId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+                .append(getTinfoDataTypeExclusion())
+                .append(" WHERE DataTypeRowId ");
+        sql.appendInClause(rowIds, getExpSchema().getSqlDialect());
+        sql.append(" AND DataType = ?");
         sql.add(dataType.name());
-        sql.add(excludedContainerId);
+        if (!StringUtils.isEmpty(excludedContainerId))
+        {
+            sql.append(" AND ExcludedContainer = ?");
+            sql.add(excludedContainerId);
+        }
 
         new SqlExecutor(getExpSchema()).execute(sql);
     }
 
-    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId)
+    @NotNull private Map<String, Object>[] _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Integer dataTypeRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
@@ -8264,8 +8288,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             and = " AND ";
         }
 
-        if (!StringUtils.isEmpty(excludedContainerId))
+        if (!StringUtils.isEmpty(excludedContainerIdOrPath))
         {
+            String excludedContainerId = excludedContainerIdOrPath;
+            if (!GUID.isGUID(excludedContainerIdOrPath))
+            {
+                Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
+                if (container != null)
+                    excludedContainerId = container.getId();
+            }
+
             sql.append(and);
             sql.append("ExcludedContainer = ? ");
             sql.add(excludedContainerId);
@@ -8343,10 +8375,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         if (!toRemove.isEmpty())
-        {
-            for (Integer remove : toRemove)
-                removeDataTypeExclusion(remove, dataType, excludedContainerId, user);
-        }
+            removeDataTypeExclusion(toRemove, dataType, excludedContainerId);
     }
 
     @Override
