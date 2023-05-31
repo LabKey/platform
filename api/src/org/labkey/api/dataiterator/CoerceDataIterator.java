@@ -91,18 +91,6 @@ public class CoerceDataIterator extends SimpleTranslator
     }
 
     @Override
-    public boolean next() throws BatchValidationException
-    {
-        return super.next();
-    }
-
-    @Override
-    public Object get(int i)
-    {
-        return super.get(i);
-    }
-
-    @Override
     protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
     {
         return value;

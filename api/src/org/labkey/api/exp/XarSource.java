@@ -202,7 +202,7 @@ public abstract class XarSource implements Serializable
         return message;
     }
 
-    public ExpMaterial getMaterial(ExpRun experimentRun, ExpProtocolApplication protApp, String materialLSID) throws XarFormatException
+    private ExpMaterial getMaterialOLD(ExpRun experimentRun, ExpProtocolApplication protApp, String materialLSID) throws XarFormatException
     {
         String experimentRunLSID = experimentRun == null ? null : experimentRun.getLSID();
         Map<String, ExpMaterial> map = _materials.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
@@ -226,6 +226,29 @@ public abstract class XarSource implements Serializable
         }
         return result;
     }
+
+    public ExpMaterial getMaterial(ExpRun experimentRun, ExpProtocolApplication protApp, String materialLSID) throws XarFormatException
+    {
+        String experimentRunLSID = experimentRun == null ? null : experimentRun.getLSID();
+        Map<String, ExpMaterial> map = _materials.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
+        ExpMaterial result = map.get(materialLSID);
+        if (result == null)
+        {
+            // Try for a non-run scoped variant
+            result = _materials.computeIfAbsent(null, k -> new HashMap<>()).get(materialLSID);
+            if (null == result)
+            {
+                result = ExperimentService.get().getExpMaterial(materialLSID);
+            }
+            if (result == null)
+            {
+                throw new XarFormatException(createIllegalReferenceMessage(experimentRun, protApp, materialLSID, "Material"));
+            }
+            map.put(result.getLSID(), result);
+        }
+        return result;
+    }
+
 
     public void addProtocol(ExpProtocol protocol)
     {

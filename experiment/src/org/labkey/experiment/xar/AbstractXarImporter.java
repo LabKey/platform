@@ -53,6 +53,11 @@ public abstract class AbstractXarImporter
         _job = job;
     }
 
+    public XarSource getXarSource()
+    {
+        return _xarSource;
+    }
+
     protected ExpDataClass checkDataCpasType(String declaredType) throws ExperimentException
     {
         ExpDataClass result = null;
