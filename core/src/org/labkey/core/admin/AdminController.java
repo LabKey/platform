@@ -27,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LogEvent;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -172,7 +171,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -235,7 +233,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -9833,17 +9830,14 @@ public class AdminController extends SpringActionController
                         ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
 
-            Map<String, Object> params = new LinkedHashMap<>();
-            if (report != null)
+            final Map<String, Object> params;
+            if (report == null)
             {
-                params.putAll(report.getParams());
-                // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
-                Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
-                if (jsonMetrics instanceof String jms)
-                {
-                    JSONObject o = new JSONObject(jms);
-                    params.put(MothershipReport.JSON_METRICS_KEY, o);
-                }
+                params = new LinkedHashMap<>();
+            }
+            else
+            {
+                params = report.getJsonFriendlyParams();
                 if (form.isSubmit())
                 {
                     report.setForwardedFor(form.getForwardedFor());
