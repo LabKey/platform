@@ -29,8 +29,6 @@ import java.util.function.Function;
 
 /**
  * This class provides a single place to update system-wide constants that specify versions, cache sizes, and other key settings.
- *
- * Created by adam on 10/22/2016.
  */
 public class Constants
 {
