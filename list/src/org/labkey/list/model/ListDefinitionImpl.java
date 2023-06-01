@@ -51,6 +51,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
@@ -396,7 +397,7 @@ public class ListDefinitionImpl implements ListDefinition
         save(user, true);
     }
 
-    private static final ReentrantLock _saveLock = new ReentrantLock();
+    private static final ReentrantLock _saveLock = new ReentrantLockWithName(ListDefinitionImpl.class, "_saveLock");
 
     @Override
     public void save(User user, boolean ensureKey) throws Exception

@@ -82,6 +82,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -151,7 +152,7 @@ public class ContainerManager
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
     private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
-    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
+    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
