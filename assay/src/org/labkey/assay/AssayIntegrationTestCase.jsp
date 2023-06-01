@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-<%@ page import="com.google.common.base.Charsets" %>
 <%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.hamcrest.MatcherAssert" %>
@@ -22,14 +21,23 @@
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.assay.AssayDataCollector" %>
 <%@ page import="org.labkey.api.assay.AssayDomainService" %>
+<%@ page import="org.labkey.api.assay.AssayProtocolSchema" %>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.AssayResultTable" %>
 <%@ page import="org.labkey.api.assay.AssayRunCreator" %>
 <%@ page import="org.labkey.api.assay.AssayService" %>
+<%@ page import="org.labkey.api.assay.DefaultAssayRunCreator" %>
 <%@ page import="org.labkey.api.assay.PipelineDataCollector" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.OntologyObject" %>
@@ -45,15 +53,16 @@
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
-
 <%@ page import="org.labkey.api.files.FilesAdminOptions" %>
 <%@ page import="org.labkey.api.gwt.client.assay.AssayException" %>
 <%@ page import="org.labkey.api.gwt.client.assay.model.GWTProtocol" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.query.BatchValidationException" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.ValidationException" %>
-
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
@@ -65,31 +74,19 @@
 <%@ page import="org.labkey.assay.TsvAssayProvider" %>
 <%@ page import="org.springframework.mock.web.MockMultipartHttpServletRequest" %>
 <%@ page import="java.io.File" %>
-<%@ page import="static org.junit.Assert.*" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
+
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="static org.labkey.api.files.FileContentService.UPLOADED_FILE" %>
-<%@ page import="static java.util.Collections.emptySet" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItem" %>
 <%@ page import="static org.hamcrest.CoreMatchers.not" %>
-<%@ page import="org.labkey.api.assay.DefaultAssayRunCreator" %>
-<%@ page import="org.labkey.api.query.QueryUpdateService" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="org.labkey.api.assay.AssayProtocolSchema" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="org.labkey.api.query.BatchValidationException" %>
-<%@ page import="org.labkey.api.assay.AssayResultTable" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="org.labkey.remoteapi.CommandException" %>
-<%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="java.util.HashSet" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="static java.util.Collections.emptySet" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -241,7 +238,7 @@
 
         // create a file in the pipeline root to import
         var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", Charsets.UTF_8);
+        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", StandardCharsets.UTF_8);
 
         // import the file
         log.info("first import");
@@ -342,7 +339,7 @@
 
         // create a file in the pipeline root to import
         var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", Charsets.UTF_8);
+        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", StandardCharsets.UTF_8);
 
         var firstData = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
         firstData.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
@@ -439,7 +436,7 @@
 
         // create a file in the pipeline root to import
         var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "ResultProp\n" + 100 + "\n", Charsets.UTF_8);
+        Files.writeString(file.toPath(), "ResultProp\n" + 100 + "\n", StandardCharsets.UTF_8);
 
         // import the file
         log.info("first import");
