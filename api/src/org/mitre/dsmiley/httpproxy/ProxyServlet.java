@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.mitre.dsmiley.httpproxy;
 
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -174,7 +175,6 @@ public class ProxyServlet extends HttpServlet {
     protected HttpHost targetHost;//URIUtils.extractHost(targetUriObj);
 
     private CloseableHttpClient proxyClient;
-
 
     @Override
     public String getServletInfo() {
@@ -345,8 +345,7 @@ public class ProxyServlet extends HttpServlet {
         if (servletRequest.getHeader(HttpHeaders.CONTENT_LENGTH) != null ||
                 servletRequest.getHeader(HttpHeaders.TRANSFER_ENCODING) != null) {
             proxyRequest = newProxyRequestWithEntity(method, proxyRequestUri, servletRequest);
-        }
-        else {
+        } else {
             proxyRequest = new BasicClassicHttpRequest(method, proxyRequestUri);
         }
 
@@ -379,8 +378,7 @@ public class ProxyServlet extends HttpServlet {
                 // http://www.ics.uci.edu/pub/ietf/http/rfc1945.html#Code304
                 // Don't send body entity/content!
                 servletResponse.setIntHeader(HttpHeaders.CONTENT_LENGTH, 0);
-            }
-            else {
+            } else {
                 // Send the content to the client
                 copyResponseEntity(proxyResponse, servletResponse, proxyRequest, servletRequest);
             }
@@ -446,7 +444,7 @@ public class ProxyServlet extends HttpServlet {
 
     static {
         hopByHopHeaders = new HeaderGroup();
-        String[] headers = new String[]{
+        String[] headers = new String[] {
                 "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
                 "TE", "Trailers", "Transfer-Encoding", "Upgrade", "Upgrade-Insecure-Requests"};
         for (String header : headers) {
@@ -498,8 +496,7 @@ public class ProxyServlet extends HttpServlet {
                 headerValue = host.getHostName();
                 if (host.getPort() != -1)
                     headerValue += ":" + host.getPort();
-            }
-            else if (!doPreserveCookies && headerName.equals(SM.COOKIE)) {
+            } else if (!doPreserveCookies && headerName.equals(SM.COOKIE)) {
                 headerValue = getRealCookie(headerValue);
             }
             proxyRequest.addHeader(headerName, headerValue);
@@ -551,12 +548,10 @@ public class ProxyServlet extends HttpServlet {
         if (headerName.equalsIgnoreCase(SM.SET_COOKIE) ||
                 headerName.equalsIgnoreCase(SM.SET_COOKIE2)) {
             copyProxyCookie(servletRequest, servletResponse, headerValue);
-        }
-        else if (headerName.equalsIgnoreCase(HttpHeaders.LOCATION)) {
+        } else if (headerName.equalsIgnoreCase(HttpHeaders.LOCATION)) {
             // LOCATION Header may have to be rewritten.
             servletResponse.addHeader(headerName, rewriteUrlFromResponse(servletRequest, headerValue));
-        }
-        else {
+        } else {
             servletResponse.addHeader(headerName, headerValue);
         }
     }
@@ -590,7 +585,7 @@ public class ProxyServlet extends HttpServlet {
     protected Cookie createProxyCookie(HttpServletRequest servletRequest, HttpCookie cookie) {
         String proxyCookieName = getProxyCookieName(cookie);
         Cookie servletCookie = new Cookie(proxyCookieName, cookie.getValue());
-        setCookiePath(servletCookie, servletRequest, cookie);
+        setCookiePath(servletCookie, servletRequest, cookie); // LKS override
         servletCookie.setComment(cookie.getComment());
         servletCookie.setMaxAge((int) cookie.getMaxAge());
         // don't set cookie domain
@@ -688,8 +683,7 @@ public class ProxyServlet extends HttpServlet {
                     }
                 }
                 // Entity closing/cleanup is done in the caller (#service)
-            }
-            else {
+            } else {
                 OutputStream servletOutputStream = servletResponse.getOutputStream();
                 entity.writeTo(servletOutputStream);
             }
@@ -722,7 +716,7 @@ public class ProxyServlet extends HttpServlet {
             int fragIdx = queryString.indexOf('#');
             if (fragIdx >= 0) {
                 fragment = queryString.substring(fragIdx + 1);
-                queryString = queryString.substring(0, fragIdx);
+                queryString = queryString.substring(0,fragIdx);
             }
         }
 
@@ -802,7 +796,7 @@ public class ProxyServlet extends HttpServlet {
      * To be more forgiving, we must escape the problematic characters.  See the URI class for the
      * spec.
      *
-     * @param in            example: name=value&amp;foo=bar#fragment
+     * @param in example: name=value&amp;foo=bar#fragment
      * @param encodePercent determine whether percent characters need to be encoded
      */
     protected CharSequence encodeUriQuery(CharSequence in, boolean encodePercent) {
@@ -816,15 +810,13 @@ public class ProxyServlet extends HttpServlet {
                 if (asciiQueryChars.get(c) && !(encodePercent && c == '%')) {
                     escape = false;
                 }
-            }
-            else if (!Character.isISOControl(c) && !Character.isSpaceChar(c)) {//not-ascii
+            } else if (!Character.isISOControl(c) && !Character.isSpaceChar(c)) {//not-ascii
                 escape = false;
             }
             if (!escape) {
                 if (outBuf != null)
                     outBuf.append(c);
-            }
-            else {
+            } else {
                 //escape
                 if (outBuf == null) {
                     outBuf = new StringBuilder(in.length() + 5 * 3);
