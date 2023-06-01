@@ -4807,18 +4807,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!runsUsingItems.isEmpty())
         {
             Set<ExpRun> runsToKeep = new HashSet<>();
-            // determine if there are any outputs of this run that are not being deleted. If so, remove the run from the runs to be deleted.
+            // determine if there are any inputs of this run that are not being deleted. If so, we don't want to remove this run.
             runsUsingItems.forEach(run -> {
-                run.getMaterialOutputs().forEach(
+                run.getMaterialInputs().keySet().forEach(
                     sample -> {
                         if (!sampleIds.contains(sample.getRowId()))
-                            runsToKeep.add(sample.getRun());
+                            runsToKeep.add(run);
                     }
                 );
-                run.getDataOutputs().forEach(
+                run.getDataInputs().keySet().forEach(
                     dataObject -> {
                         if (!dataIds.contains(dataObject.getRowId()))
-                            runsToKeep.add(dataObject.getRun());
+                            runsToKeep.add(run);
                     }
                 );
             });
@@ -4862,6 +4862,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Integer> rowIds, TableInfo primaryTableInfo, Collection<Integer> siblingRowIds, TableInfo siblingTableInfo)
     {
         if (rowIds == null || rowIds.isEmpty())
