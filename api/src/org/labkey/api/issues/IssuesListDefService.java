@@ -198,5 +198,12 @@ public interface IssuesListDefService
      * @param domain The domain to clean up
      */
     void deleteIssueDefsForDomain(User user, Domain domain);
+
+    /**
+     * Registers a single instance of a restricted issue list permissions provider
+     */
+    void registerRestrictedIssueProvider(RestrictedIssueProvider provider);
+
+    @Nullable RestrictedIssueProvider getRestrictedIssueProvider();
 }
 
