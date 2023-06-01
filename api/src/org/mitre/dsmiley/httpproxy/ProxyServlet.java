@@ -316,8 +316,7 @@ public class ProxyServlet extends HttpServlet {
         if (proxyClient instanceof Closeable) {
             try {
                 ((Closeable) proxyClient).close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 log("While destroying servlet, shutting down HttpClient: "+e, e);
             }
         }
@@ -382,11 +381,9 @@ public class ProxyServlet extends HttpServlet {
                 // Send the content to the client
                 copyResponseEntity(proxyResponse, servletResponse, proxyRequest, servletRequest);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             handleRequestException(proxyRequest, proxyResponse, e);
-        }
-        finally {
+        } finally {
             // make sure the entire entity was consumed, so the connection is released
             if (proxyResponse != null)
                 EntityUtils.consumeQuietly(proxyResponse.getEntity());
@@ -429,8 +426,7 @@ public class ProxyServlet extends HttpServlet {
     protected void closeQuietly(Closeable closeable) {
         try {
             closeable.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log(e.getMessage(), e);
         }
     }
@@ -472,7 +468,7 @@ public class ProxyServlet extends HttpServlet {
      */
     protected void copyRequestHeader(HttpServletRequest servletRequest, HttpRequest proxyRequest,
                                      String headerName) {
-        headerName = preferredHeaderName(headerName);
+        headerName = preferredHeaderName(headerName); // LKS override
 
         //Instead the content-length is effectively set via InputStreamEntity
         if (headerName.equals(HttpHeaders.CONTENT_LENGTH))
@@ -514,7 +510,7 @@ public class ProxyServlet extends HttpServlet {
             }
             proxyRequest.setHeader(forHeaderName, forHeader);
 
-            if (skipXForwardedProto())
+            if (skipXForwardedProto()) // LKS override
                 return;
 
             String protoHeaderName = "X-Forwarded-Proto";
@@ -677,8 +673,7 @@ public class ProxyServlet extends HttpServlet {
                      *  To work around this, a flush is issued always if compression
                      *  is handled by apache http client
                      */
-                    if (doHandleCompression || is.available() == 0 /* next is.read will block */)
-                    {
+                    if (doHandleCompression || is.available() == 0 /* next is.read will block */) {
                         os.flush();
                     }
                 }
@@ -706,7 +701,7 @@ public class ProxyServlet extends HttpServlet {
         StringBuilder uri = new StringBuilder(500);
         uri.append(getTargetUri(servletRequest));
         // Handle the path given to the servlet
-        appendRequestPath(uri, servletRequest);
+        appendRequestPath(uri, servletRequest); // LKS override
 
         // Handle the query string & fragment
         String queryString = servletRequest.getQueryString();//ex:(following '?'): name=value&foo=bar#fragment
@@ -803,7 +798,7 @@ public class ProxyServlet extends HttpServlet {
         //Note that I can't simply use URI.java to encode because it will escape pre-existing escaped things.
         StringBuilder outBuf = null;
         Formatter formatter = null;
-        for (int i = 0; i < in.length(); i++) {
+        for(int i = 0; i < in.length(); i++) {
             char c = in.charAt(i);
             boolean escape = true;
             if (c < 128) {
@@ -819,12 +814,12 @@ public class ProxyServlet extends HttpServlet {
             } else {
                 //escape
                 if (outBuf == null) {
-                    outBuf = new StringBuilder(in.length() + 5 * 3);
-                    outBuf.append(in, 0, i);
+                    outBuf = new StringBuilder(in.length() + 5*3);
+                    outBuf.append(in,0,i);
                     formatter = new Formatter(outBuf);
                 }
                 //leading %, 0 padded, width 2, capital hex
-                formatter.format("%%%02X", (int) c);//TODO
+                formatter.format("%%%02X",(int)c);//TODO
             }
         }
         return outBuf != null ? outBuf : in;
