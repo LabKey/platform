@@ -172,7 +172,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const requiredFieldEmpty = emptyRequiredFields.indexOf('description') !== -1;
 
         return (
-            <Modal show={true} onHide={closeModal}>
+            <Modal backdrop="static" show={true} onHide={closeModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>{modalTitle}</Modal.Title>
                 </Modal.Header>
