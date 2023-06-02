@@ -19,7 +19,6 @@ package org.labkey.list.model;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,6 +68,7 @@ import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.Null
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -90,7 +90,7 @@ import java.util.stream.Collectors;
 
 public class ListManager implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = LogManager.getLogger(ListManager.class);
+    private static final Logger LOG = LogHelper.getLogger(ListManager.class, "List indexing events");
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
 
@@ -205,8 +205,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     /**
      * Utility method now that ListTable is ContainerFilter aware; TableInfo.getSelectName() returns now returns null
-     * @param ti
-     * @return
      */
     String getListTableName(TableInfo ti)
     {
@@ -301,6 +299,8 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
+            handleIndexSettingChanges(scope, def, old.getEachItemIndex(), ret.getEachItemIndex(), old.getEntireListIndex(), ret.getEachItemIndex(), old.getFileAttachmentIndex(), ret.getFileAttachmentIndex());
+
             String oldName = old.getName();
             String updatedName = ret.getName();
             queryChangeUpdate(user, c, oldName, updatedName);
@@ -323,14 +323,53 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDomainKindProperties old = getListDomainKindProperties(c, listProps.getListId());
             updated = Table.update(user, getListMetadataTable(), listProps, new Object[]{c, listProps.getListId()});
+            ListDef listDef = getList(c, listProps.getListId());
+            handleIndexSettingChanges(scope, listDef, old.isEachItemIndex(), listProps.isEachItemIndex(), old.isEntireListIndex(), listProps.isEntireListIndex(), old.isFileAttachmentIndex(), listProps.isFileAttachmentIndex());
+
             String oldName = old.getName();
             String updatedName = updated.getName();
-
             queryChangeUpdate(user, c, oldName, updatedName);
+
             transaction.commit();
         }
 
         return updated;
+    }
+
+    // Queue up one-time operations related to turning indexing on or off
+    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, boolean oldEachItemIndex, boolean newEachItemIndex, boolean oldEntireListIndex, boolean newEntireListIndex, boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex)
+    {
+        scope.addCommitTask(() -> {
+            ListDefinition list = ListDefinitionImpl.of(listDef);
+
+            // Turning on each-item indexing or attachment indexing -> clear last indexed column
+            if ((!oldEachItemIndex && newEachItemIndex) || (!oldFileAttachmentIndex && newFileAttachmentIndex))
+                clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
+
+            // Turning off each-item indexing -> clear item docs from the index
+            if (oldEachItemIndex && !newEachItemIndex)
+                deleteIndexedItems(list);
+
+            // Turning off attachment indexing -> clear attachment docs from the index
+            if (oldFileAttachmentIndex && !newFileAttachmentIndex)
+                deleteIndexedAttachments(list);
+
+            // Turning on entire-list indexing -> clear that list's last indexed column
+            if (!oldEntireListIndex && newEntireListIndex)
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ")
+                    .append(getListMetadataTable().getSelectName())
+                    .append(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
+                    .add(list.getListId());
+
+                new SqlExecutor(scope).execute(sql);
+            }
+
+            // Turning off entire-list indexing -> clear entire-list doc from the index
+            if (oldEntireListIndex && !newEntireListIndex)
+                deleteIndexedEntireListDoc(list);
+
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
@@ -442,11 +481,9 @@ public class ListManager implements SearchService.DocumentProvider
     {
         Domain domain = list.getDomain();
 
-        // Delete from index if list has just been deleted
         if (null == domain)
         {
-            // TODO: Shouldn't be necessary... triggers should delete on delete/change
-            deleteIndexedList(list);
+            // List was probably just deleted
             return;
         }
 
@@ -455,119 +492,6 @@ public class ListManager implements SearchService.DocumentProvider
 
         //If attachmentIndexing (checked within method) is enabled index attachment file(s)
         indexAttachments(task, list, designChange, reindex);
-    }
-
-
-    // Index (or delete) a single list item after item save or delete
-    public void indexItem(final ListDefinition list, final ListItem item)
-    {
-        SearchService ss = SearchService.get();
-        if (ss != null)
-        {
-            final IndexTask task = ss.defaultTask();
-
-            if (list.getEachItemIndex())
-            {
-                Runnable r = () ->
-                {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(list.getKeyName()), item.getKey());
-                    int count = indexItems(task, list, filter);
-                    if (0 == count)
-                        LOG.info("I should be deleting!");
-                };
-                _addIndexTask(r, SearchService.PRIORITY.item);
-            }
-
-            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
-            {
-                Runnable r = new ListIndexRunnable(task, list);
-                _addIndexTask(r, SearchService.PRIORITY.item);
-            }
-
-            //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-            indexAttachments(task, list, false, false);
-        }
-    }
-
-
-    private void _addIndexTask(final Runnable r, final SearchService.PRIORITY p)
-    {
-        SearchService ss = SearchService.get();
-
-        if (null != ss)
-        {
-            final IndexTask task = ss.defaultTask();
-
-            if (getListMetadataSchema().getScope().isTransactionActive())
-            {
-                getListMetadataSchema().getScope().addCommitTask(() -> task.addRunnable(r, p), DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-            else
-            {
-                task.addRunnable(r, p);
-            }
-        }
-    }
-
-
-    // This Runnable implementation defines equals() and hashCode() so the indexer will coalesce multiple re-indexing
-    // tasks of the same list within the same transaction (i.e., don't re-index the entire list on every insert during
-    // bulk upload).
-    private class ListIndexRunnable implements Runnable
-    {
-        private final @NotNull IndexTask _task;
-        private final @NotNull ListDefinition _list;
-
-        private ListIndexRunnable(@NotNull IndexTask task, final @NotNull ListDefinition list)
-        {
-            _task = task;
-            _list = list;
-        }
-
-        private int getListId()
-        {
-            return _list.getListId();
-        }
-
-        private Container getContainer()
-        {
-            return _list.getContainer();
-        }
-
-        @Override
-        public void run()
-        {
-            LOG.debug("Indexing entire list: " + _list.getName() + ", " + _list.getListId());
-            indexEntireList(_task, _list, false);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Indexing runnable for list " + getContainer().getPath() + ": " + getListId();
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ListIndexRunnable that = (ListIndexRunnable) o;
-
-            if (this.getListId() != that.getListId()) return false;
-            if (!this.getContainer().equals(that.getContainer())) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getContainer().hashCode();
-            result = 31 * result + getListId();
-            return result;
-        }
     }
 
     // Delete a single list item from the index after item delete
@@ -607,7 +531,6 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (!list.getEachItemIndex())
         {
-            deleteIndexedItems(list);
             return;
         }
 
@@ -730,7 +653,6 @@ public class ListManager implements SearchService.DocumentProvider
         //If FileAttachmentIndexing is disabled, remove any existing resources from the Index
         if (!list.getFileAttachmentIndex())
         {
-            deleteIndexedAttachments(list);
             return 0;
         }
 
@@ -792,8 +714,6 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (!list.getEntireListIndex())
         {
-            // TODO: Shouldn't be necessary
-            deleteIndexedEntireListDoc(list);
             return;
         }
 
@@ -1104,18 +1024,31 @@ public class ListManager implements SearchService.DocumentProvider
 
         // Now clear LastIndexed column of every underlying list table, which addresses the "index each list item as a separate document" case. See #28748.
         new TableSelector(getListMetadataTable()).forEach(ListDef.class, listDef -> {
+            clearLastIndexed(scope, listSchemaName, listDef);
+        });
+    }
+
+    private void clearLastIndexed(DbScope scope, String listSchemaName, ListDef listDef)
+    {
+        // Clear LastIndexed column only for lists that are set to index each item, Issue 47998
+        if (listDef.getEachItemIndex())
+        {
             ListDefinition list = new ListDefinitionImpl(listDef);
             Domain domain = list.getDomain();
             if (null != domain && null != domain.getStorageTableName())
+            {
+                LOG.info("List " + listDef.getContainerPath() + " - " + listDef.getName() + ": Set to index each item, so clearing last indexed");
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
-        });
+            }
+        }
     }
 
     private void clearLastIndexed(DbScope scope, String selectName)
     {
         try
         {
-            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL");
+            // Yes, that WHERE clause is intentional and makes a big performance improvement in some cases
+            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
         }
         catch (Exception e)
         {
