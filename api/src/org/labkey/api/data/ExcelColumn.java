@@ -191,7 +191,11 @@ public class ExcelColumn extends RenderColumn
     {
         Class valueClass = dc.getDisplayValueClass();
 
-        if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
+        //Issue 47268: Export Does Not Include Failed Lookup Values
+        //Set lookup columns to be of String type so that Integer broken lookups can get exported as well (otherwise Integer broken lookups show as an empty cell)
+        if (dc.getColumnInfo().isLookup())
+            _simpleType = TYPE_STRING;
+        else if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
                 Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass) ||
                 Short.class.isAssignableFrom(valueClass) || Short.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_INT;
