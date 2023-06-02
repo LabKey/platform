@@ -39,6 +39,12 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     return samples;
                 else if (schemaName.equalsIgnoreCase("exp.data"))
                     return sources;
+                else if (schemaName.equalsIgnoreCase("exp"))
+                {
+                    String queryName = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+                    if (queryName.equalsIgnoreCase("materials"))
+                        return samples;
+                }
             }
             else if (job instanceof AssayUploadPipelineJob)
             {
@@ -122,7 +128,10 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
 
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            urlFragment += "/" + type + "?";
+            if (!"materials".equalsIgnoreCase(type) || !"exp".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getSchemaName()))
+                urlFragment += "/" + type + "?";
+            else
+                urlFragment += "?";
 
             String and = "";
 

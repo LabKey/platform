@@ -57,6 +57,7 @@ public class QueryImportPipelineJob extends PipelineJob
         boolean _importLookupByAlternateKey = false;
         boolean _importIdentity = false;
         boolean _hasLineageColumns = false;
+        boolean _crossTypeImport = false;
 
         String _jobDescription;
 
@@ -120,6 +121,11 @@ public class QueryImportPipelineJob extends PipelineJob
         public boolean isHasLineageColumns()
         {
             return _hasLineageColumns;
+        }
+
+        public boolean isCrossTypeImport()
+        {
+            return _crossTypeImport;
         }
 
         public String getJobDescription()
@@ -188,6 +194,12 @@ public class QueryImportPipelineJob extends PipelineJob
         public QueryImportAsyncContextBuilder setImportLookupByAlternateKey(boolean importLookupByAlternateKey)
         {
             _importLookupByAlternateKey = importLookupByAlternateKey;
+            return this;
+        }
+
+        public QueryImportAsyncContextBuilder setCrossTypeImport(boolean crossTypeImport)
+        {
+            _crossTypeImport = crossTypeImport;
             return this;
         }
 
@@ -278,7 +290,7 @@ public class QueryImportPipelineJob extends PipelineJob
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
 
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, _importContextBuilder.getInsertOption(), _importContextBuilder.isImportLookupByAlternateKey(),
-                _importContextBuilder.isImportIdentity(), ve, _importContextBuilder.getAuditBehaviorType(), auditEvent, getInfo().getUser(), getInfo().getContainer());
+                _importContextBuilder.isImportIdentity(), _importContextBuilder.isCrossTypeImport(), ve, _importContextBuilder.getAuditBehaviorType(), auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())
                 throw ve;
