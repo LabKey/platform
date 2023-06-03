@@ -11,11 +11,15 @@ public class IssuesDomainKindProperties
     private Integer _assignedToUser;
     private String _relatedFolderName;
 
+    private Boolean _restrictedIssueList;
+    private Integer _restrictedIssueListGroup;
+
     public IssuesDomainKindProperties()
     {}
 
     public IssuesDomainKindProperties(String name, String singularName, String pluralName, String commentSortDirection,
-                                      Integer assignedToGroup, Integer assignedToUser, String relatedFolderName)
+                                      Integer assignedToGroup, Integer assignedToUser, String relatedFolderName,
+                                      Boolean restrictedIssueList, Integer restrictedIssueListGroup)
     {
         _issueDefName = name;
         _singularItemName = singularName;
@@ -24,6 +28,8 @@ public class IssuesDomainKindProperties
         _assignedToGroup = assignedToGroup;
         _assignedToUser = assignedToUser;
         _relatedFolderName = relatedFolderName;
+        _restrictedIssueList = restrictedIssueList;
+        _restrictedIssueListGroup = restrictedIssueListGroup;
     }
 
     public String getIssueDefName()
@@ -94,5 +100,25 @@ public class IssuesDomainKindProperties
     public void setRelatedFolderName(String relatedFolderName)
     {
         _relatedFolderName = relatedFolderName;
+    }
+
+    public Boolean isRestrictedIssueList()
+    {
+        return _restrictedIssueList;
+    }
+
+    public void setRestrictedIssueList(Boolean enable)
+    {
+        _restrictedIssueList = enable;
+    }
+
+    public Integer getRestrictedIssueListGroup()
+    {
+        return _restrictedIssueListGroup;
+    }
+
+    public void setRestrictedIssueListGroup(Integer restrictedGroup)
+    {
+        _restrictedIssueListGroup = restrictedGroup;
     }
 }
