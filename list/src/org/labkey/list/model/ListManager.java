@@ -337,6 +337,8 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     // Queue up one-time operations related to turning indexing on or off
+    // TODO: This is close, but not quite precise enough. We should detect changes to document titles, templates,
+    // sub-settings like metadata vs. data, etc. and take appropriate action (or inaction).
     private void handleIndexSettingChanges(DbScope scope, ListDef listDef, boolean oldEachItemIndex, boolean newEachItemIndex, boolean oldEntireListIndex, boolean newEntireListIndex, boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex)
     {
         scope.addCommitTask(() -> {
@@ -497,18 +499,25 @@ public class ListManager implements SearchService.DocumentProvider
     // Delete a single list item from the index after item delete
     public void deleteItemIndex(final ListDefinition list, @NotNull final String entityId)
     {
-        if (!list.getEntireListIndex() && !list.getEachItemIndex())
-            return;
-
         SearchService ss = SearchService.get();
 
         if (null != ss)
         {
             final IndexTask task = ss.defaultTask();
 
-            Runnable r = () -> ss.deleteResource(getDocumentId(list, entityId));
+            if (list.getEachItemIndex())
+            {
+                Runnable r = () -> ss.deleteResource(getDocumentId(list, entityId));
+                task.addRunnable(r, SearchService.PRIORITY.delete);
+            }
 
-            task.addRunnable(r, SearchService.PRIORITY.delete);
+            // Reindex the entire list document iff data is being indexed
+            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+            {
+                // Invoke in a post-commit task because indexEntireList() turns off JDBC caching. If called synchronously
+                // on PG, this method uses a non-transacted connection that doesn't reflect the deleted item.
+                getListMetadataSchema().getScope().addCommitTask(() -> indexEntireList(task, list, true), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
         }
     }
 
