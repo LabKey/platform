@@ -183,6 +183,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull
     List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c, boolean includeExactPath);
+
+    @NotNull
+    List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
     
     /**
      * Get all ExpData that are members of the ExpDataClass.
