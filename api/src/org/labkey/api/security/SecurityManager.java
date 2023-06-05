@@ -2878,7 +2878,7 @@ public class SecurityManager
         @Override
         public String getDescription()
         {
-            return "Ensure user exists and assign to the specified security group(s)";
+            return "Ensure user exists and assign to the site security group(s) specified in the value via comma-delimited group names";
         }
     }
 
@@ -2953,7 +2953,7 @@ public class SecurityManager
         @Override
         public String getDescription()
         {
-            return "Ensure site group exists and assign the specified security role(s)";
+            return "Ensure site group exists and assign the security role(s) specified in the value via comma-delimited full class names";
         }
     }
 
@@ -3017,7 +3017,7 @@ public class SecurityManager
         @Override
         public String getDescription()
         {
-            return "Ensure user exists and assign the specified security role(s)";
+            return "Ensure user exists and assign the security role(s) specified in the value via comma-delimited full class names";
         }
     }
 
