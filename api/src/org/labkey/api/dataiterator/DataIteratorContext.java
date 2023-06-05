@@ -48,6 +48,7 @@ public class DataIteratorContext
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
+    boolean _crossTypeImport = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
@@ -160,6 +161,17 @@ public class DataIteratorContext
     public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
     {
         _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
+    }
+
+    public boolean isCrossTypeImport()
+    {
+        return _crossTypeImport;
+    }
+
+    /** when true, allows import of files with data for multiple types in the same base schema (e.g., exp.material) */
+    public void setCrossTypeImport(boolean crossTypeImport)
+    {
+        _crossTypeImport = crossTypeImport;
     }
 
     /** Normally all built in columns (created, createdBy, etc) are populated with newly calculated values on writing to target.

@@ -1785,6 +1785,10 @@ public class ContainerManager
             // and delete all container-based sequences
             DbSequenceManager.deleteAll(c);
 
+            ExperimentService experimentService = ExperimentService.get();
+            if (experimentService != null)
+                experimentService.removeContainerDataTypeExclusions(c.getId());
+
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
             tx.addCommitTask(() ->

@@ -42,7 +42,7 @@ import java.util.function.Supplier;
  * User: matthewb
  * Date: 2011-05-19
  *
- * This is a pass-through iterator, it does not change any of the data, it only create errors
+ * This is a pass-through iterator, it does not change any of the data, it only creates errors
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
