@@ -1101,18 +1101,31 @@ public class ListManager implements SearchService.DocumentProvider
 
         // Now clear LastIndexed column of every underlying list table, which addresses the "index each list item as a separate document" case. See #28748.
         new TableSelector(getListMetadataTable()).forEach(ListDef.class, listDef -> {
+            clearLastIndexed(scope, listSchemaName, listDef);
+        });
+    }
+
+    private void clearLastIndexed(DbScope scope, String listSchemaName, ListDef listDef)
+    {
+        // Clear LastIndexed column only for lists that are set to index each item, Issue 47998
+        if (listDef.getEachItemIndex())
+        {
             ListDefinition list = new ListDefinitionImpl(listDef);
             Domain domain = list.getDomain();
             if (null != domain && null != domain.getStorageTableName())
+            {
+                LOG.info("List " + listDef.getContainerPath() + " - " + listDef.getName() + ": Set to index each item, so clearing last indexed");
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
-        });
+            }
+        }
     }
 
     private void clearLastIndexed(DbScope scope, String selectName)
     {
         try
         {
-            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL");
+            // Yes, that WHERE clause is intentional and makes a big performance improvement in some cases
+            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
         }
         catch (Exception e)
         {
