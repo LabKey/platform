@@ -68,6 +68,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
@@ -94,6 +95,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -120,6 +122,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
@@ -2491,6 +2495,61 @@ public class ContainerManager
                 path).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];
+    }
+
+    public static Container getMoveTargetContainer(String entityType, Container sourceContainer, User user, String targetIdOrPath, Errors errors)
+    {
+        if (targetIdOrPath == null)
+        {
+            errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
+            return null;
+        }
+
+        Container _targetContainer = getContainerForIdOrPath(targetIdOrPath);
+        if (_targetContainer == null)
+        {
+            errors.reject(ERROR_GENERIC, "The target container was not found: " + targetIdOrPath + ".");
+            return null;
+        }
+
+        if (!_targetContainer.hasPermission(user, InsertPermission.class))
+        {
+            errors.reject(ERROR_GENERIC, "You do not have permission to move " + entityType + " to the target container: " + targetIdOrPath + ".");
+            return null;
+        }
+
+        if (!isValidTargetContainer(sourceContainer, _targetContainer))
+        {
+            errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + targetIdOrPath + ".");
+            return null;
+        }
+        return _targetContainer;
+    }
+
+    private static Container getContainerForIdOrPath(String targetContainer)
+    {
+        Container c = ContainerManager.getForId(targetContainer);
+        if (c == null)
+            c = ContainerManager.getForPath(targetContainer);
+
+        return c;
+    }
+
+    // targetContainer must be in the same app project at this time
+    // i.e. child of current project, project of current child, sibling within project
+    private static boolean isValidTargetContainer(Container current, Container target)
+    {
+        if (current.isRoot() || target.isRoot())
+            return false;
+
+        if (current.equals(target))
+            return false;
+
+        boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
+        boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
+        boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+
+        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
     }
 
     /**
