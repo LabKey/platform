@@ -450,7 +450,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
         {
-            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), StringUtils.join("\n",columnLoggingComments),
+            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), StringUtils.join(columnLoggingComments,"\n"),
                     shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         }
         else if (!shouldLogNameLoggings.isEmpty())
