@@ -701,7 +701,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             if (null != getDomain())
             {
-                // Go through the schema so we always get all of the XML metadata applied
+                // Go through the schema so we always get all the XML metadata applied
                 UserSchema schema = new ListQuerySchema(user, c);
                 table = schema.getTable(getName(), cf, true, false);
             }
@@ -721,11 +721,13 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    @Override
     public TableInfo getTableForInsert(User user, Container c)
     {
         return getTable(user, c, QueryService.get().getContainerFilterForLookups(c, user));
     }
 
+    @Override
     public ActionURL urlImport(Container c)
     {
         return urlForName(ListController.UploadListItemsAction.class, c);
