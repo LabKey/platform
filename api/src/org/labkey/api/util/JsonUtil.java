@@ -31,7 +31,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -390,6 +393,30 @@ public class JsonUtil
             assertEquals(-Float.MAX_VALUE, json.getFloat("negInfinity"), 0.0f);
 
             assertEquals("{\"negDivide\":-3.4028235E38,\"min\":1.4E-45,\"max\":3.4028235E38,\"NaN\":null,\"divide\":3.4028235E38,\"negInfinity\":-3.4028235E38,\"float\":1,\"posInfinity\":3.4028235E38}", json.toString());
+        }
+
+        @Test
+        // Ensure that classes implementing JSONString are generating valid, expected JSON
+        public void testJsonString()
+        {
+            JSONObject json = new JSONObject();
+            Container c = JunitUtil.getTestContainer();
+            json.put("container", c);
+            GUID guid = c.getEntityId();
+            json.put("guid", guid);
+            ActionURL url = AppProps.getInstance().getHomePageActionURL();
+            json.put("actionUrl", url);
+            HtmlString html = HtmlString.unsafe("<html><table><td>Hello</td></table>");
+            json.put("htmlString", html);
+
+            // Round trip to ensure all these JSONString implementations produce valid JSON
+            JSONObject roundTripJson = new JSONObject(json.toString());
+
+            // Test expected value for each JSONString implementation
+            assertEquals(c.getId(), roundTripJson.get("container"));
+            assertEquals(guid.toString(), roundTripJson.get("guid"));
+            assertEquals(url.toString(), roundTripJson.get("actionUrl"));
+            assertEquals(html.toString(), roundTripJson.get("htmlString"));
         }
     }
 }

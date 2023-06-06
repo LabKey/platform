@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
@@ -1847,6 +1848,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @Override
     public String toJSONString()
     {
-        return getId();
+        return JSONObject.quote(getId());
     }
 }
