@@ -2552,6 +2552,20 @@ public class ContainerManager
         return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
     }
 
+    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
+    {
+        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId());
+        if (withModified)
+        {
+            dataUpdate.append(", modified = ").appendValue(new Date());
+            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+        }
+        dataUpdate.append(" WHERE ").append(idField);
+        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
+        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
+    }
+
     /**
      * If a container at the given path does not exist create one
      * and set permissions. If the container does exist, permissions
