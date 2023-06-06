@@ -720,7 +720,7 @@ public class IssueManager
         return containers;
     }
 
-   public static void moveIssues(User user, List<Integer> issueIds, Container dest) throws IOException
+    public static void moveIssues(User user, List<Integer> issueIds, Container dest) throws IOException
     {
         DbSchema schema = IssuesSchema.getInstance().getSchema();
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
@@ -899,14 +899,14 @@ public class IssueManager
                 "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
                 new Timestamp(ms), containerId, issueId);
     }
-    
+
 
     public static void indexIssues(IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         SearchService ss = SearchService.get();
         if (null == ss)
             return;
-        
+
         SimpleFilter f = SimpleFilter.createContainerFilter(c);
         SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
         if (!incremental.isEmpty())
@@ -916,14 +916,14 @@ public class IssueManager
 
         // Index issues in batches of 100
         new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
-            .forEachBatch(Integer.class, 100, batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group));
+                .forEachBatch(Integer.class, 100, batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group));
     }
 
     private static class IndexGroup implements Runnable
     {
         private final List<Integer> _ids;
         private final IndexTask _task;
-        
+
         IndexGroup(IndexTask task, List<Integer> ids)
         {
             _ids = ids;
@@ -1355,9 +1355,9 @@ public class IssueManager
         @Override
         public User getModifiedBy()
         {
-           Integer userId = (Integer)_properties.get("modifiedBy");
-           if (userId != null)
-               return UserManager.getUser(userId);
+            Integer userId = (Integer)_properties.get("modifiedBy");
+            if (userId != null)
+                return UserManager.getUser(userId);
             return null;
         }
 
@@ -1425,7 +1425,7 @@ public class IssueManager
                 return new FileStream.ByteArrayFileStream(bos.toByteArray());
             }
         }
-        
+
         @Override
         public InputStream getInputStream(User user) throws IOException
         {
@@ -1517,7 +1517,7 @@ public class IssueManager
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
                 assertEquals(IssueObject.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getCommentObjects().size());
-				String comment = (issue.getCommentObjects().iterator().next()).getHtmlComment().toString();
+                String comment = (issue.getCommentObjects().iterator().next()).getHtmlComment().toString();
                 assertTrue("new issue".equals(comment));
             }
 
