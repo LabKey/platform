@@ -284,7 +284,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields));
         return service.createSampleType(_container, _user, sampleTypeName,
                 "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
-                randomIndex(LABEL_COLORS), randomIndex(UNITS), null, null, null);
+                randomIndex(LABEL_COLORS), randomIndex(UNITS));
     }
 
     public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException

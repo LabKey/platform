@@ -368,6 +368,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment getExpExperiment(String lsid);
 
+    List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
+
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     ExpProtocol getExpProtocol(int rowid);
@@ -935,11 +937,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
-    void addDataTypeExclusion(int rowId, DataTypeForExclusion dataType, String excludedContainerId, User user);
+    void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType);
 
-    Map<String, Object>[] getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerId, @Nullable Integer dataTypeRowId);
+    void removeContainerDataTypeExclusions(String containerId);
 
-    void ensureContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @Nullable String excludedContainerId, User user);
+    @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
+
+    Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
+
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+
+    void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+
+    String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

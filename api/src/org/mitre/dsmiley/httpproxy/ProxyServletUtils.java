@@ -10,7 +10,7 @@ public class ProxyServletUtils
     public static ServletWrappingController initProxy(ServletContext servletContext, String servletName, Properties properties) throws Exception
     {
         ServletWrappingController proxy = new ServletWrappingController();
-        proxy.setServletClass(ProxyServlet.class);
+        proxy.setServletClass(LabKeyProxyServlet.class);
         proxy.setServletName(servletName);
         proxy.setInitParameters(properties);
         proxy.setServletContext(servletContext);

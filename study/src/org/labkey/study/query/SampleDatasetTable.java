@@ -8,7 +8,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
@@ -21,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class SampleDatasetTable extends DatasetTableImpl
+public class SampleDatasetTable extends LinkedDatasetTable
 {
     private TableInfo _sampleTable;
     private List<FieldKey> _defaultVisibleColumns = null;

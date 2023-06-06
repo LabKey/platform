@@ -56,6 +56,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
@@ -79,6 +80,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
@@ -193,6 +195,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.Link;
@@ -258,6 +261,7 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -4084,19 +4088,60 @@ public class ExperimentController extends SpringActionController
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
-            _form.setSchemaName("samples");
             _insertOption = queryForm.getInsertOption();
+            _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
+            _form.setSchemaName(getTargetSchemaName());
+            if (_crossTypeImport)
+            {
+                _form.setQueryName(getPipelineTargetQueryName());
+            }
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
-                errors.reject(ERROR_MSG, "Sample type name is required");
+                errors.reject(ERROR_REQUIRED, "Sample type name is required");
             else
             {
-                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
-                if (sampleType == null)
+                if (!_crossTypeImport)
                 {
-                    errors.reject(ERROR_MSG, "Sample type '" + queryForm.getQueryName() + " not found.");
+                    ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                    if (sampleType == null)
+                    {
+                        errors.reject(ERROR_GENERIC, "Sample type '" + queryForm.getQueryName() + " not found.");
+                    }
                 }
             }
+        }
+
+        private String getTargetSchemaName()
+        {
+            return _crossTypeImport ? ExpSchema.SCHEMA_NAME : "samples";
+        }
+
+        @Override
+        protected UserSchema getTargetSchema()
+        {
+            return _crossTypeImport ? QueryService.get().getUserSchema(getUser(), getContainer(), getTargetSchemaName()) : super.getTargetSchema();
+        }
+
+        @Override
+        protected String getPipelineTargetQueryName()
+        {
+            return _crossTypeImport ? "materials" : super.getPipelineTargetQueryName();
+        }
+
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        {
+            DataIteratorContext context = createDataIteratorContext(_insertOption, _importLookupByAlternateKey, _importIdentity,  _crossTypeImport, auditBehaviorType, errors);
+
+            TableInfo tInfo = _target;
+            QueryUpdateService updateService = _updateService;
+            if (_crossTypeImport)
+            {
+                tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
+                updateService = tInfo.getUpdateService();
+            }
+            return importData(dl, tInfo, updateService, context, auditEvent, getUser(), getContainer());
         }
 
         @Override
@@ -4133,7 +4178,7 @@ public class ExperimentController extends SpringActionController
             {
                 // cross folder import not supported
                 if (query.getContainerFilter().getType() != ContainerFilter.Type.Current)
-                    errors.reject(ERROR_MSG, "ContainerFilter is not supported for import actions.");
+                    errors.reject(ERROR_GENERIC, "ContainerFilter is not supported for import actions.");
             }
         }
 
@@ -4146,7 +4191,7 @@ public class ExperimentController extends SpringActionController
 
             if (!qpe.isEmpty())
                 throw qpe.get(0);
-            if (null != t)
+            if (!_crossTypeImport && null != t)
             {
                 setTarget(t);
                 setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
@@ -4220,13 +4265,13 @@ public class ExperimentController extends SpringActionController
             _insertOption = queryForm.getInsertOption();
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
-                errors.reject(ERROR_MSG, "Data class name is required");
+                errors.reject(ERROR_REQUIRED, "Data class name is required");
             else
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(getContainer(), getUser(), queryForm.getQueryName());
                 if (dataClass == null)
                 {
-                    errors.reject(ERROR_MSG, "Data class '" + queryForm.getQueryName() + " not found.");
+                    errors.reject(ERROR_GENERIC, "Data class '" + queryForm.getQueryName() + " not found.");
                 }
             }
         }

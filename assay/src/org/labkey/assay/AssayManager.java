@@ -56,6 +56,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -103,6 +104,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -119,7 +121,21 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    public static final SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
+    SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
+    };
+    SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batch") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
+    };
+    SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Run") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
@@ -684,8 +700,120 @@ public class AssayManager implements AssayService
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
+    private boolean shouldIndexBatch(ExpExperiment batch)
+    {
+        return batch != null && shouldIndexProtocolBatches(batch.getBatchProtocol());
+    }
+
+    /**
+     * Only index batches for assays that have batch properties on their domain
+     */
+    private boolean shouldIndexProtocolBatches(ExpProtocol protocol)
+    {
+        if (protocol == null)
+            return false;
+
+        AssayProvider assayProvider = AssayService.get().getProvider(protocol);
+        if (assayProvider == null)
+            return false;
+
+        Domain batchDomain = assayProvider.getBatchDomain(protocol);
+        if (batchDomain == null)
+            return false;
+
+        return !batchDomain.getProperties().isEmpty();
+    }
+
+    /**
+     * Only index runs that have an associated assay provider
+     */
+    private boolean shouldIndexRun(ExpRun expRun)
+    {
+        return getProvider(expRun) != null;
+    }
+
+    public void indexAssayBatch(int expRunRowId)
+    {
+        ExpRun run = ExperimentService.get().getExpRun(expRunRowId);
+        if (run == null)
+            return;
+
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        ExpExperiment batch = run.getBatch();
+        if (shouldIndexBatch(batch))
+            indexAssayBatch(ss.defaultTask(), batch);
+    }
+
+    private void indexAssayBatch(@NotNull SearchService.IndexTask task, ExpExperiment batch)
+    {
+        WebdavResource resource = AssayBatchDocumentProvider.createDocument(batch);
+        task.addResource(resource, SearchService.PRIORITY.item);
+    }
+
+    public void indexAssayBatches(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    {
+        for (ExpProtocol protocol : getAssayProtocols(c))
+        {
+            if (shouldIndexProtocolBatches(protocol))
+                indexAssayBatches(task, protocol, modifiedSince);
+        }
+    }
+
+    private void indexAssayBatches(SearchService.IndexTask task, ExpProtocol protocol, @Nullable Date modifiedSince)
+    {
+        if (shouldIndexProtocolBatches(protocol))
+        {
+            for (ExpExperiment batch : protocol.getBatches())
+            {
+                if (modifiedSince == null || modifiedSince.before(batch.getModified()))
+                    indexAssayBatch(task, batch);
+            }
+        }
+    }
+
+    public void indexAssayRuns(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    {
+        for (ExpProtocol protocol : getAssayProtocols(c))
+            indexAssayRuns(task, c, protocol, modifiedSince);
+    }
+
+    private void indexAssayRuns(SearchService.IndexTask task, Container c, ExpProtocol protocol, @Nullable Date modifiedSince)
+    {
+        for (ExpRun run : ExperimentService.get().getExpRuns(c, protocol, null))
+        {
+            if (modifiedSince == null || modifiedSince.before(run.getModified()))
+                indexAssayRun(task, run);
+        }
+    }
+
+    public void indexAssayRun(int expRunRowId)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
+        if (expRun == null)
+            return;
+        
+        if (shouldIndexRun(expRun))
+            indexAssayRun(ss.defaultTask(), ExperimentService.get().getExpRun(expRunRowId));
+    }
+
+    private void indexAssayRun(SearchService.IndexTask task, ExpRun run)
+    {
+        if (run == null)
+            return;
+
+        WebdavResource resource = AssayRunDocumentProvider.createDocument(run);
+        task.addResource(resource, SearchService.PRIORITY.item);
+    }
+
     @Override
-    public void unindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols)
+    public void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols)
     {
         SearchService ss = SearchService.get();
         if (null == ss)
@@ -693,6 +821,38 @@ public class AssayManager implements AssayService
 
         for (ExpProtocol protocol : expProtocols)
             ss.deleteResource(protocol.getDocumentId());
+    }
+
+    public void deindexAssayRuns(Collection<? extends ExpRun> expRuns)
+    {
+        if (expRuns == null || expRuns.isEmpty())
+            return;
+
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        Set<String> documentIds = new HashSet<>();
+        for (ExpRun expRun : expRuns)
+            documentIds.add(AssayRunDocumentProvider.getDocumentId(expRun));
+
+        ss.deleteResources(documentIds);
+    }
+
+    public void deindexAssayBatches(Collection<? extends ExpExperiment> batches)
+    {
+        if (batches == null || batches.isEmpty())
+            return;
+
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        Set<String> documentIds = new HashSet<>();
+        for (ExpExperiment batch : batches)
+            documentIds.add(AssayBatchDocumentProvider.getDocumentId(batch));
+
+        ss.deleteResources(documentIds);
     }
 
     @Override

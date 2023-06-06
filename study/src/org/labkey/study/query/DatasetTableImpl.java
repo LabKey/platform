@@ -194,6 +194,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
+            if (!acceptColumn(baseColumn))
+                continue;
+
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
@@ -482,6 +485,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
+    protected boolean acceptColumn(ColumnInfo column)
+    {
+        return true;
+    }
 
     @Override
     public void addContextualRole(Role contextualRole)

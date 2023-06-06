@@ -33,7 +33,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
-import org.labkey.api.premium.PremiumService;
+import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
@@ -481,7 +481,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL().clone());
-                    CommonsMultipartResolver resolver = PremiumService.get().getMultipartResolver(info);
+                    CommonsMultipartResolver resolver = AntiVirusProviderRegistry.get().getMultipartResolver(info);
                     resolver.setUploadTempDir(new FileSystemResource(getTempUploadDir()));
                     request = resolver.resolveMultipart(request);
                     context.setRequest(request);

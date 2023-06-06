@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -476,7 +477,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     // Get all text strings from the data class for indexing
-    private void getIndexValues(Set<String> identifiers, Set<String> keywords, TableInfo table)
+    private void getIndexValues(
+        ExpDataClassDataTableImpl table,
+        Set<String> identifiersHi,
+        Set<String> identifiersMed,
+        Set<String> identifiersLo,
+        Set<String> keywordHi,
+        Set<String> keywordMed,
+        Set<String> keywordsLo,
+        JSONObject jsonData
+    )
     {
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
@@ -502,7 +512,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return true;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
 
-        TableSelector ts = new TableSelector(table, columns, new SimpleFilter("rowId", getRowId()), null);
+        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(FieldKey.fromParts("rowId"), getRowId()), null);
         ts.setForDisplay(true);
         try (Results r = ts.getResults())
         {
@@ -521,29 +531,69 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                         continue;
 
                     Object o = map.get(fieldKey);
-                    if (!(o instanceof String))
+                    if (!(o instanceof String s))
                         continue;
 
                     List<String> values;
 
-                    String s = (String)o;
                     if (col instanceof MultiValuedLookupColumn)
                         values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
                     else
                         values = Arrays.asList(s);
 
-                    // treat multi-line text values as keywords, otherwise treat as an identifier
+                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
+                    if (searchProperty != null)
+                    {
+                        // Fow now only add indexed field values to search jsonData
+                        if (values.size() > 0)
+                        {
+                            if (values.size() == 1)
+                                jsonData.put(fieldKey.toString(), values.get(0));
+                            else
+                                jsonData.put(fieldKey.toString(), values);
+                        }
+
+                        switch (searchProperty)
+                        {
+                            case identifiersHi -> {
+                                identifiersHi.addAll(values);
+                                continue;
+                            }
+                            case identifiersMed -> {
+                                identifiersMed.addAll(values);
+                                continue;
+                            }
+                            case identifiersLo -> {
+                                identifiersLo.addAll(values);
+                                continue;
+                            }
+                            case keywordsHi -> {
+                                keywordHi.addAll(values);
+                                continue;
+                            }
+                            case keywordsMed -> {
+                                keywordMed.addAll(values);
+                                continue;
+                            }
+                            case keywordsLo -> {
+                                keywordsLo.addAll(values);
+                                continue;
+                            }
+                            default -> LOG.debug("Unable to index column " + fieldKey.toString() + " with property: " + searchProperty.name() + ". Not yet supported.");
+                        }
+                    }
+
                     if ("textarea".equalsIgnoreCase(col.getInputType()))
                     {
-                        keywords.addAll(values);
+                        // treat multi-line text values as keywords, otherwise treat as an identifier
+                        keywordsLo.addAll(values);
                     }
                     else
                     {
-                        identifiers.addAll(values);
+                        identifiersMed.addAll(values);
                     }
                 }
             }
-
         }
         catch (SQLException e)
         {
@@ -746,6 +796,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public WebdavResource createDocument(@Nullable ExpDataClassDataTableImpl tableInfo)
     {
         Map<String, Object> props = new HashMap<>();
+        JSONObject jsonData = new JSONObject();
+        Set<String> keywordsHi = new HashSet<>();
         Set<String> keywordsMed = new HashSet<>();
         Set<String> keywordsLo = new HashSet<>();
 
@@ -772,32 +824,28 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder(getName());
-        Collection<String> aliases = this.getAliases();
+        Collection<String> aliases = getAliases();
         if (!aliases.isEmpty())
         {
             title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
             identifiersHi.addAll(aliases);
         }
 
-        if (tableInfo == null)
+        ExpDataClassImpl dc = getDataClass(null);
+        if (tableInfo == null && dc != null)
         {
-            ExpDataClassImpl dc = this.getDataClass(null);
-            if (dc != null)
-            {
-                tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
-            }
+            tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
         }
 
         if (tableInfo != null)
         {
             // Collect other text columns and lookup display columns
-            getIndexValues(identifiersMed, keywordsLo, tableInfo);
+            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
         }
 
-        ExpDataClass dc = this.getDataClass(null);
         if (null != dc)
         {
-            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());
+            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
@@ -816,9 +864,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // === Stemmed
 
+        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
         props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
         props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
-
 
         // === Stored, not indexed
 
@@ -827,6 +875,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         else
             props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
+        props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
@@ -845,20 +894,19 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         props.put(SearchService.PROPERTY.summary.toString(), summary);
 
-        final int id = getRowId();
         return new ExpDataResource(
-                id,
-                new Path(docId),
-                docId,
-                getContainer().getId(),
-                "text/plain",
-                body.toString(),
-                view,
-                props,
-                getCreatedBy(),
-                getCreated(),
-                getModifiedBy(),
-                getModified()
+            getRowId(),
+            new Path(docId),
+            docId,
+            getContainer().getId(),
+            "text/plain",
+            body.toString(),
+            view,
+            props,
+            getCreatedBy(),
+            getCreated(),
+            getModifiedBy(),
+            getModified()
         );
     }
 

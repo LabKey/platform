@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
@@ -1684,6 +1685,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return isFeatureEnabled(ProductFeature.Projects, true);
     }
 
+    public boolean isAppHomeFolder()
+    {
+        if (isProject()) // if it's a project
+            return true;
+
+        return !isProductProjectsEnabled(); // if subfolder, then the folder shouldn't have Projects feature enabled
+    }
+
     /**
      * Returns the subfolder count of the project container, if product projects feature is enabled in project
      */
@@ -1839,6 +1848,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @Override
     public String toJSONString()
     {
-        return getId();
+        return JSONObject.quote(getId());
     }
 }

@@ -31,7 +31,7 @@ public interface AntiVirusService
     // NOTE purposefully this is not the same as the standard test file: ...EICAR-STANDARD-ANTIVIRUS-TEST-FILE...
     String TEST_VIRUS_CONTENT="X5O!P%@AP[4\\PZX54(P^)7CC)7}$LABKEY-ANTIVIRUS-TEST-FILE!$H+H*";
 
-    static AntiVirusService get()
+    static @Nullable AntiVirusService get()
     {
         return ServiceRegistry.get().getService(AntiVirusService.class);
     }

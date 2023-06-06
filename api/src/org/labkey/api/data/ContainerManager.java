@@ -82,6 +82,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -151,7 +152,7 @@ public class ContainerManager
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
     private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
-    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
+    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
@@ -238,12 +239,22 @@ public class ContainerManager
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
     {
+        return createContainer(parent, name, title, description, type, user, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user, @Nullable String auditMsg)
+    {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
-        return createContainer(parent, name, title, description, user, properties);
+        return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
+    {
+        return createContainer(parent, name, title, description, user, properties, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
@@ -341,7 +352,7 @@ public class ContainerManager
         // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
         _removeFromCache(parent);
 
-        fireCreateContainer(c, user);
+        fireCreateContainer(c, user, auditMsg);
 
         return c;
     }
@@ -1775,6 +1786,10 @@ public class ContainerManager
             // and delete all container-based sequences
             DbSequenceManager.deleteAll(c);
 
+            ExperimentService experimentService = ExperimentService.get();
+            if (experimentService != null)
+                experimentService.removeContainerDataTypeExclusions(c.getId());
+
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
             tx.addCommitTask(() ->
@@ -2149,6 +2164,11 @@ public class ContainerManager
         /** Called after a new container has been created */
         void containerCreated(Container c, User user);
 
+        default void containerCreated(Container c, User user, @Nullable String auditMsg)
+        {
+            containerCreated(c, user);
+        }
+
         /** Called immediately prior to deleting the row from core.containers */
         void containerDeleted(Container c, User user);
 
@@ -2283,7 +2303,7 @@ public class ContainerManager
     }
 
 
-    protected static void fireCreateContainer(Container c, User user)
+    protected static void fireCreateContainer(Container c, User user, @Nullable String auditMsg)
     {
         List<ContainerListener> list = getListeners();
 
@@ -2291,7 +2311,7 @@ public class ContainerManager
         {
             try
             {
-                cl.containerCreated(c, user);
+                cl.containerCreated(c, user, auditMsg);
             }
             catch (Throwable t)
             {
