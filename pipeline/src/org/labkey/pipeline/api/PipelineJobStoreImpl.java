@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.util.ReentrantLockWithName;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     // fair number of times, which has caused deadlocks.  SQL indexes have been
     // added in an effort to prevent the deadlocks on the database side, but
     // this seems like the safest fix with only one server accessing the database.
-    private static final ReentrantLock SPLIT_LOCK = new ReentrantLock();
+    private static final ReentrantLock SPLIT_LOCK = new ReentrantLockWithName(PipelineJobStoreImpl.class, "SPLIT_LOCK");
 
     // The split record was created in an effort to reduce the SQL round-trips
     // for a split that triggers re-joining on the same thread stack.  It seems
