@@ -143,7 +143,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
         }));
     };
 
-    // Whether a AuthRow modal is open
+    // Whether an AuthRow modal is open
     toggleModalOpen = (modalOpen: boolean): void => {
         this.setState({ modalOpen });
     };
