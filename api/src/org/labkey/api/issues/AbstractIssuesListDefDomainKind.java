@@ -56,6 +56,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -85,7 +86,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     protected static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     protected static final Set<PropertyStorageSpec> BASE_REQUIRED_PROPERTIES;
     protected static final Set<PropertyStorageSpec.Index> INDEXES;
-    private final ReentrantLock _lock = new ReentrantLock();
+    private final ReentrantLock _lock = new ReentrantLockWithName(AbstractIssuesListDefDomainKind.class, "_lock");
 
     static
     {

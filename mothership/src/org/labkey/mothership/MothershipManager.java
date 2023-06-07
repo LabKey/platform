@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
-    private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
+    private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLockWithName(MothershipManager.class, "INSERT_EXCEPTION_LOCK");
 
     private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
 
