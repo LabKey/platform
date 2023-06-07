@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONString;
 
 import java.io.IOException;
@@ -163,6 +164,6 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
     @Override
     public String toJSONString()
     {
-        return _s;
+        return JSONObject.quote(_s);
     }
 }

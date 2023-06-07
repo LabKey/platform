@@ -32,6 +32,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ReentrantLockWithName;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +55,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
     private static final String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";
 
-    private final Lock _lock = new ReentrantLock();
+    private final Lock _lock = new ReentrantLockWithName(DefaultValueServiceImpl.class, "_lock");
 
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
