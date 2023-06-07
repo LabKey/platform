@@ -14,16 +14,16 @@ const OPTIONS_MAP = {
 };
 
 interface Props {
-    closeModal: () => void;
     canEdit: boolean;
+    closeModal: () => void;
 }
 
 interface State {
+    currentSettings: DatabasePasswordSettings;
     error: string;
+    helpLink: string;
     initError: string;
     passwordRules: DatabasePasswordRules;
-    currentSettings: DatabasePasswordSettings;
-    helpLink: string;
 }
 
 export default class DatabaseConfigurationModal extends PureComponent<Props, State> {
@@ -44,12 +44,16 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
             success: Utils.getCallbackWrapper(response => {
                 this.setState({ ...response });
             }),
-            failure: Utils.getCallbackWrapper(error => {
-                console.error('Failed to get login properties', error);
-                this.setState({
-                    initError: resolveErrorMessage(error),
-                });
-            }, undefined, true),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to get login properties', error);
+                    this.setState({
+                        initError: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
         });
     };
 
@@ -76,12 +80,16 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
             success: Utils.getCallbackWrapper(() => {
                 this.props.closeModal();
             }),
-            failure: Utils.getCallbackWrapper(error => {
-                console.error('Failed to save login properties', error);
-                this.setState({
-                    error: resolveErrorMessage(error),
-                });
-            }, undefined, true),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to save login properties', error);
+                    this.setState({
+                        error: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
         });
     };
 
@@ -93,11 +101,9 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         const allowEdit = canEdit && initError === undefined;
 
         return (
-            <Modal show={true} onHide={this.props.closeModal}>
+            <Modal backdrop="static" show={true} onHide={this.props.closeModal}>
                 <Modal.Header closeButton>
-                    <Modal.Title>
-                        Configure Database Authentication
-                    </Modal.Title>
+                    <Modal.Title>Configure Database Authentication</Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
@@ -108,18 +114,15 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
                         <span className="database-modal__field">
                             <ButtonGroup onClick={this.handleChange}>
-                                <Button
-                                    value="Weak"
-                                    name="strength"
-                                    active={strength == 'Weak'}
-                                    disabled={!allowEdit}>
+                                <Button value="Weak" name="strength" active={strength == 'Weak'} disabled={!allowEdit}>
                                     Weak
                                 </Button>
                                 <Button
                                     value="Strong"
                                     name="strength"
                                     active={strength == 'Strong'}
-                                    disabled={!allowEdit}>
+                                    disabled={!allowEdit}
+                                >
                                     Strong
                                 </Button>
                             </ButtonGroup>
@@ -132,7 +135,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
                     </div>
 
-                    <br/>
+                    <br />
 
                     {/* this.state.passwordRules.Strong is safe server-generated HTML */}
                     <div className="bold-text"> Strong </div>
@@ -140,7 +143,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
                     </div>
 
-                    <br/>
+                    <br />
 
                     <div className="database-modal__field-row">
                         <span>Password Expiration:</span>
@@ -154,11 +157,11 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     onChange={this.handleChange}
                                     value={expiration}
                                 >
-                                    {Object.keys(OPTIONS_MAP).map((option) =>
+                                    {Object.keys(OPTIONS_MAP).map(option => (
                                         <option value={option} key={option}>
                                             {OPTIONS_MAP[option]}
                                         </option>
-                                    )}
+                                    ))}
                                 </FormControl>
                             ) : (
                                 OPTIONS_MAP[expiration]
@@ -168,7 +171,12 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
                     <div className="database-modal__bottom">
                         <div className="modal__bottom-buttons">
-                            <a target="_blank" href={this.state.helpLink} className="modal__help-link" rel="noopener noreferrer">
+                            <a
+                                target="_blank"
+                                href={this.state.helpLink}
+                                className="modal__help-link"
+                                rel="noopener noreferrer"
+                            >
                                 More about authentication
                             </a>
                             {allowEdit && (
