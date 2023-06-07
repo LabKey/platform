@@ -16,7 +16,7 @@
     "@labkey/components": "2.344.0-fb-query-api.0"
   },
   "devDependencies": {
-    "@labkey/build": "6.11.0",
+    "@labkey/build": "6.12.0",
     "@labkey/test": "1.1.3",
     "@types/jest": "29.2.0",
     "@types/react": "16.14.34",
