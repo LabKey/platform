@@ -5,7 +5,7 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.mime4jVersion="0.8.7"
+ext.mime4jVersion="0.8.9"
 
 dependencies {
     BuildUtils.addExternalDependency(
@@ -47,7 +47,8 @@ dependencies {
         )
     )
 
-    // tika-parsers.jar includes some simple text parsers plus adapters for many parsing libraries
+    // tika-parsers-standard-package.jar is basically empty... as of 2.8.0 all the adapters and simple parsing libraries
+    // were split out from it into a bazillion jar files. The ones we want to support are declared below.
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -57,7 +58,199 @@ dependencies {
             "http://lucene.apache.org/tika/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Parsers for text simple formats plus adapters for many external parsing libraries"
+            "Placeholder parser"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-apple-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for Apple-related file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-code-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for code file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-html-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapter for HTML file format"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-image-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for image file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-microsoft-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for Microsoft file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-miscoffice-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for Microsoft file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-pdf-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for PDF file format"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-pkg-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapter for various package formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-text-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsers and parser adapters for simple text file formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-xml-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapter for XML file format"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-xmp-commons:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapter for XMP file format"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-zip-commons:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for ZIP file formats"
         ),
         {
             transitive = false
@@ -161,7 +354,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.commons:commons-csv:1.9.0",
+            "org.apache.commons:commons-csv:1.10.0",
             "Commons CSV ™",
             "Apache",
             "http://commons.apache.org/proper/commons-csv/",
@@ -226,7 +419,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.26",
+            "com.googlecode.plist:dd-plist:1.27",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",
