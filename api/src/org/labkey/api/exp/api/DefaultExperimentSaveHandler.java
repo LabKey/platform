@@ -114,35 +114,28 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         boolean makeNameUnique = false;
         ExpExperiment batch;
-        if (batchJsonObject.has(ExperimentJSONConverter.ID))
+        if (!batchJsonObject.isNull(ExperimentJSONConverter.ID))
         {
             batch = lookupBatch(context.getContainer(), batchJsonObject.getInt(ExperimentJSONConverter.ID));
         }
         else
         {
-            String batchName;
-            if (batchJsonObject.has(ExperimentJSONConverter.NAME))
-            {
-                batchName = batchJsonObject.getString(ExperimentJSONConverter.NAME);
-            }
-            else
-            {
-                batchName = null;
+            String batchName = batchJsonObject.optString(ExperimentJSONConverter.NAME, null);
+            if (batchName == null)
                 makeNameUnique = true;
-            }
             batch = AssayService.get().createStandardBatch(context.getContainer(), batchName, protocol);
         }
 
         if (batchJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
-            batch.setComments(batchJsonObject.getString(ExperimentJSONConverter.COMMENT));
+            batch.setComments(batchJsonObject.optString(ExperimentJSONConverter.COMMENT, null));
         }
         handleStandardProperties(context, batchJsonObject, batch, getBatchDomainProperties(protocol));
 
         List<ExpRun> runs = new ArrayList<>();
-        if (batchJsonObject.has(AssayJSONConverter.RUNS))
+        JSONArray runsArray = batchJsonObject.optJSONArray(AssayJSONConverter.RUNS);
+        if (runsArray != null)
         {
-            JSONArray runsArray = batchJsonObject.getJSONArray(AssayJSONConverter.RUNS);
             for (int i = 0; i < runsArray.length(); i++)
             {
                 JSONObject runJsonObject = runsArray.getJSONObject(i);
@@ -250,10 +243,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
-        String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
 
-        if (runJsonObject.has(ExperimentJSONConverter.ID))
+        if (!runJsonObject.isNull(ExperimentJSONConverter.ID))
         {
             int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
             run = ExperimentService.get().getExpRun(runId);
@@ -268,12 +260,13 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
         else
         {
+            String name = runJsonObject.optString(ExperimentJSONConverter.NAME, null);
             run = createRun(name, context.getContainer(), protocol);
         }
 
         if (runJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
-            run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
+            run.setComments(runJsonObject.optString(ExperimentJSONConverter.COMMENT, null));
         }
 
         try
@@ -317,7 +310,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {
-            object.setName(jsonObject.getString(ExperimentJSONConverter.NAME));
+            object.setName(jsonObject.optString(ExperimentJSONConverter.NAME, null));
         }
 
         object.save(context.getUser());
