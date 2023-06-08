@@ -506,7 +506,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser)
+    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
         SearchService ss = SearchService.get();
         for (AttachmentParent parent : parents)
@@ -520,6 +520,18 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 for (Attachment att : atts)
                 {
                     filename = att.getName();
+                    if (parent instanceof AttachmentDirectory)
+                    {
+                        File currentDir = ((AttachmentDirectory)parent).getFileSystemDirectoryPath().toFile();
+                        File newDir = ((AttachmentDirectory) parent).getFileSystemDirectoryPath(newContainer).toFile();
+                        File src = new File(currentDir, filename);
+                        File dest = new File(newDir, filename);
+                        if (!src.exists())
+                            throw new FileNotFoundException(src.getAbsolutePath());
+                        if (dest.exists())
+                            throw new AttachmentService.DuplicateFilenameException(dest.getAbsolutePath());
+
+                    }
                     if (ss != null)
                         ss.deleteResource(makeDocId(parent, filename));
                     addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
