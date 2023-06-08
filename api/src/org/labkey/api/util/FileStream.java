@@ -76,7 +76,10 @@ public interface FileStream
         {
             throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
         }
-        FileUtil.copyFile(s.getInputChannel(), s.getSize(), dest);
+        try (ReadableByteChannel in = s.getInputChannel())
+        {
+            FileUtil.copyFile(in, s.getSize(), dest);
+        }
     }
 
 
