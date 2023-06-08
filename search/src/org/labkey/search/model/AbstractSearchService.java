@@ -19,7 +19,6 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +47,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
@@ -71,14 +71,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: matthewb
- * Date: Nov 12, 2009
- * Time: 12:58:21 PM
- */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
-    private static final Logger _log = LogManager.getLogger(AbstractSearchService.class);
+    private static final Logger _log = LogHelper.getLogger(AbstractSearchService.class, "Full-text search indexing events");
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);
@@ -407,6 +402,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.error("Unexpected error", t);
             }
         }
+
+        _log.info("Clearing last indexed is complete");
 
         // CONSIDER: have DavCrawler implement DocumentProvider and listen for indexDeleted()
         DavCrawler.getInstance().clearFailedDocuments();
@@ -1393,12 +1390,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         // TODO: Maintenance task to remove documents for participants that have been deleted
 
         SQLFragment delete = new SQLFragment(
-            "DELETE FROM search.CrawlResources\n" +
-            "WHERE parent IN (\n" +
-            "  SELECT parent from search.CrawlResources\n" +
-            "  EXCEPT \n" +
-            "  SELECT id from search.crawlcollections\n" +
-            ")\n");
+        """
+                DELETE FROM search.CrawlResources
+                WHERE parent IN (
+                  SELECT parent from search.CrawlResources
+                  EXCEPT\s
+                  SELECT id from search.crawlcollections
+                )
+                """);
 
         new SqlExecutor(search).execute(delete);
     }
