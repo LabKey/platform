@@ -836,6 +836,18 @@ public class OntologyManager
     }
 
     /**
+     * Moves the properties of an object from one container to another (used when the object is moving)
+     * @param targetContainer the container to move the properties to
+     * @param user the user doing the move
+     * @param objectLSID the LSID of the object to which the properties are attached
+     * @return number of properties moved
+     */
+    public static int updateContainer(Container targetContainer, User user, @NotNull String objectLSID)
+    {
+        return ContainerManager.updateContainer(getTinfoObject(), "objectURI", List.of(objectLSID), targetContainer, user, false);
+    }
+
+    /**
      * Get ordered list of the PropertyURI in {@link #PropertyOrder}, if present.
      */
     public static List<String> getObjectPropertyOrder(Container c, String objectLSID)
