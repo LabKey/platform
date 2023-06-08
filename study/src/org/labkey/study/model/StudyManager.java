@@ -2957,6 +2957,7 @@ public class StudyManager
 
         try (ResultSet rs = new TableSelector(sdti, filter, new Sort("DatasetId")).getResultSet())
         {
+            ColumnInfo visitDateCol = sdti.getColumn("_VisitDate");
             while (rs.next())
             {
                 ParticipantDataset pd = new ParticipantDataset();
@@ -2969,7 +2970,7 @@ public class StudyManager
                 if (!dataset.isDemographicData())
                 {
                     pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
-                    pd.setVisitDate(rs.getTimestamp("_VisitDate"));
+                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias()));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
