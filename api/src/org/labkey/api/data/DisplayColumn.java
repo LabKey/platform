@@ -551,7 +551,7 @@ public abstract class DisplayColumn extends RenderColumn
         Object value = getDisplayValue(ctx);
         if (null == value)
         {
-            if (this.getColumnInfo().isLookup())
+            if (this.getColumnInfo() != null && this.getColumnInfo().isLookup())
             {
                 value = ctx.get(this.getColumnInfo().getName());
 
