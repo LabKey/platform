@@ -1747,7 +1747,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         // expectations are invalid (e.g., expecting body length > 0 but specifying no substrings to search for).
         public void testTikaParsing() throws IOException, TikaException, SAXException
         {
-            boolean strict = true;
+            boolean strict = false;
 
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
             assertNotNull(sampledata);

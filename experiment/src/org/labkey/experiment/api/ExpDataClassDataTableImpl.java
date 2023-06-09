@@ -586,7 +586,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public ColumnInfo getExpObjectColumn()
     {
-        var ret = wrapColumn("_ExpDataClassTableImpl_object_", _rootTable.getColumn("objectid"));
+        var ret = wrapColumn("ExpDataClassTableImpl_object_", _rootTable.getColumn("objectid"));
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }
