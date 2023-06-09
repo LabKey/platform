@@ -464,7 +464,6 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
         ColumnInfo _col;
         final String _alias;
         final TableColumn _parent;
-        final String _uniqueName;
 
         TableColumn(@NotNull FieldKey key, @NotNull ColumnInfo col, @Nullable TableColumn parent)
         {
@@ -476,14 +475,8 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             _col = col;
             _alias = _aliasManager.decideAlias(col.getAlias());
             _parent = parent;
-            _uniqueName = super._defaultUniqueName(QueryTable.this);
 
             _query.addUniqueRelationColumn(this);
-        }
-
-        public String getUniqueName()
-        {
-            return _uniqueName;
         }
 
         @Override

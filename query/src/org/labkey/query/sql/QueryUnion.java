@@ -92,6 +92,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
     {
         super(query);
         MemTracker.getInstance().put(this);
+        setAlias("union_" + query.incrementAliasCounter());
     }
 
     QueryUnion(Query query, CommonTableExpressions.QueryTableWith tableWith)
@@ -725,12 +726,6 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             _name = new FieldKey(null, name);
             _first = col;
             _ordinal = ordinal;
-        }
-
-        @Override
-        public String getUniqueName()
-        {
-            return super._defaultUniqueName(QueryUnion.this);
         }
 
         private void addSourceColumn(UnionSourceColumn col)

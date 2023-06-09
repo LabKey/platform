@@ -623,7 +623,6 @@ public class QueryPivot extends AbstractQueryRelation
         private final @NotNull String _name;
         private final IConstant _c;
 
-        private final String _uniqueName;
 
         public _PivotedAggColumn(FieldKey key, String alias, @NotNull RelationColumn agg, CrosstabMember member, @NotNull String name, IConstant c)
         {
@@ -633,14 +632,8 @@ public class QueryPivot extends AbstractQueryRelation
             _member = member;
             _name = name;
             _c = c;
-            _uniqueName = super._defaultUniqueName(QueryPivot.this);
 
             _query.addUniqueRelationColumn(this);
-        }
-
-        public String getUniqueName()
-        {
-            return _uniqueName;
         }
 
         @Override
