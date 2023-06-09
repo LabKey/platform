@@ -584,10 +584,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Nullable
     private Object getField(Map<String, Object> map, String key)
     {
+        /* TODO: this is very strange, we have a TableInfo we should be using its ColumnInfo objects to figure out aliases, we don't need to guess */
         Object value = map.get(key);
 
         if (null == value)
-            value = map.get("_" + key);
+            value = map.get(key + "_");
 
         if (null == value)
             value = map.get(AliasManager.legalNameFromName(key));
