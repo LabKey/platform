@@ -85,7 +85,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
@@ -174,7 +173,7 @@ public class AssayModule extends SpringModule
                 result.addAll(AssayService.get().getAssayProtocols(container)
                     .stream()
                     .map(protocol -> new AssayRunType(protocol, container))
-                    .collect(Collectors.toList()));
+                    .toList());
             }
             return result;
         });
