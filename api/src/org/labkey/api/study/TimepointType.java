@@ -21,9 +21,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.SafeToRenderEnum;
 
 /**
- * List of ways that a study can group events based on their time.
- * User: markigra
- * Date: Oct 31, 2007
+ * List of ways that a study can group events based on their time
  */
 public enum TimepointType implements SafeToRenderEnum
 {
