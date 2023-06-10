@@ -23,7 +23,6 @@ import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +38,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -68,7 +68,7 @@ import java.util.Set;
  */
 public class TableViewForm extends ViewForm implements DynaBean, HasBindParameters
 {
-    private static final Logger _log = LogManager.getLogger(TableViewForm.class);
+    private static final Logger _log = LogHelper.getLogger(TableViewForm.class, "Table operation warnings");
 
     protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<>();
     protected Map<String, Object> _values = null;
@@ -763,10 +763,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
-    // Allow forms to opt out of deserializing old values JSON
+    // Forms must override and return true to opt in to deserializing old values JSON
     protected boolean deserializeOldValues()
     {
-        return true;
+        return false;
     }
 
     @Override
