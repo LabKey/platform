@@ -763,6 +763,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
+    // Allow forms to opt out of deserializing old values JSON
+    protected boolean deserializeOldValues()
+    {
+        return true;
+    }
 
     @Override
     public void setViewContext(@NotNull ViewContext context)
@@ -788,18 +793,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (null != StringUtils.trimToNull(pkString) && null != _tinfo)
             setPkVals(pkString);
 
-        try
+        if (deserializeOldValues())
         {
-            String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
-            if (null != StringUtils.trimToNull(oldVals))
+            try
             {
-                String className = getDynaClass().getName();
-                Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
-                _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
-                _isDataLoaded = true;
+                String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
+                if (null != StringUtils.trimToNull(oldVals))
+                {
+                    String className = getDynaClass().getName();
+                    Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
+                    _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
+                    _isDataLoaded = true;
+                }
+            }
+            catch (Exception ignored)
+            {
             }
         }
-        catch (Exception ignored) {}
     }
 
     @Override
