@@ -1245,24 +1245,23 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public boolean handlePost(AnnouncementForm form, BindException errors)
         {
-            AnnouncementModel ann = form.selectAnnouncement();
+            AnnouncementModel oldAnn = form.selectAnnouncement();
 
-            if (null == ann)
+            if (null == oldAnn)
             {
                 throw new NotFoundException("Announcement");
             }
 
-            if (!getPermissions().allowUpdate(ann))
+            if (!getPermissions().allowUpdate(oldAnn))
             {
                 throw new UnauthorizedException();
             }
 
-            Container c = getContainer();
-
+            form.setOldValues(oldAnn);
             AnnouncementModel update = form.getBean();
 
-            // TODO: What is this checking for?
-            if (!c.getId().equals(update.getContainerId()))
+            // Ensure that requested announcement's container matches current container (where perms have been checked)
+            if (!getContainer().getId().equals(update.getContainerId()))
             {
                 throw new UnauthorizedException();
             }
@@ -1290,7 +1289,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != urlHelper)
                 throw new RedirectException(urlHelper);
             else
-                throw new RedirectException(getThreadURL(getContainer(), ann.getParent(), ann.getRowId()));
+                throw new RedirectException(getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId()));
         }
 
         @Override
@@ -1705,6 +1704,12 @@ public class AnnouncementsController extends SpringActionController
             return _stringValues.get("parentid");
         }
 
+        @Override
+        protected boolean deserializeOldValues()
+        {
+            return false;
+        }
+
         AnnouncementModel selectAnnouncement()
         {
             if (null == _selectedAnnouncementModel)
@@ -1731,7 +1736,7 @@ public class AnnouncementsController extends SpringActionController
             // Validate "expires" conversion from String to Date
             try
             {
-                String expires = StringUtils.trimToNull((String) get("expires"));
+                String expires = StringUtils.trimToNull(get("expires"));
                 if (null != expires)
                     DateUtil.parseDateTime(getContainer(), expires);
             }

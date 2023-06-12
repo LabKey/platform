@@ -445,7 +445,6 @@
     {%>
         <%= generateReturnUrlFormField(bean.getReturnURL()) %> <%
     }%>
-    <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
     <input type="hidden" name="dirty" value="false">
 </labkey:form>

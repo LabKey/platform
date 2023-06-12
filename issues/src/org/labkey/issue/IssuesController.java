@@ -933,6 +933,8 @@ public class IssuesController extends SpringActionController
         {
             if (!form.getSkipPost())
             {
+                IssueObject oldIssue = getIssue(form.getIssueId(), false);
+                form.setOldValues(oldIssue);
                 Issue.action action = form.getAction();
                 IssueObject issue = form.getBean();
 
@@ -2205,6 +2207,12 @@ public class IssuesController extends SpringActionController
             map.put("action", String.class);
             map.put("callbackURL", String.class);
             return map;
+        }
+
+        @Override
+        protected boolean deserializeOldValues()
+        {
+            return false;
         }
 
         public Issue.action getAction()
