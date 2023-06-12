@@ -699,6 +699,17 @@ public class AnnouncementManager
         return result;
     }
 
+    public static int updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
+    {
+        int numUpdated = 0;
+        try (DbScope.Transaction transaction = _comm.getSchema().getScope().ensureTransaction())
+        {
+            numUpdated = ContainerManager.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
+            transaction.commit();
+        }
+        return numUpdated;
+    }
+
 
     private static void deleteAnnouncement(AnnouncementModel ann)
     {
