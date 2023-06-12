@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -83,6 +84,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public static final String DATA_SUBMIT_NAME = ".dataSubmit";
     public static final String BULK_UPDATE_NAME = ".bulkUpdate";
+    // TODO: Remove in 23.8
+    public static final String EXPERIMENTAL_DESERIALIZE_BEANS = "experimental-deserialize-beans-in-forms";
 
     /**
      * Creates a TableViewForm with no underlying dynaclass.
@@ -763,10 +766,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
-    // Forms must override and return true to opt in to deserializing old values JSON
+    // Forms can override and return true to opt in to always deserializing old values JSON
     protected boolean deserializeOldValues()
     {
-        return false;
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS);
     }
 
     @Override

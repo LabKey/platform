@@ -282,6 +282,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.TableViewForm.EXPERIMENTAL_DESERIALIZE_BEANS;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -1039,6 +1040,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_DESERIALIZE_BEANS,
+                "Deserialize objects from update forms",
+                "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
                 false);
 
         if (null != PropertyService.get())
