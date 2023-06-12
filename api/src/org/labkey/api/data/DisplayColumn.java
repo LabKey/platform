@@ -538,12 +538,29 @@ public abstract class DisplayColumn extends RenderColumn
         {
             format = getFormat();
         }
-        return formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format);
+        return formatValue(ctx, getExportCompatibleValue(ctx), getTextExpressionCompiled(ctx), format);
     }
 
     public Object getExcelCompatibleValue(RenderContext ctx)
     {
-        return getDisplayValue(ctx);
+        return getExportCompatibleValue(ctx);
+    }
+
+    public Object getExportCompatibleValue(RenderContext ctx)
+    {
+        Object value = getDisplayValue(ctx);
+        if (null == value)
+        {
+            if (this.getColumnInfo() != null && this.getColumnInfo().isLookup())
+            {
+                value = ctx.get(this.getColumnInfo().getName());
+
+                // Exports how it is displayed in the UI as per Issue 47268: Export Does Not Include Failed Lookup Values
+                if (null != value)
+                    return "<" + value + ">";
+            }
+        }
+        return value;
     }
 
     /**
