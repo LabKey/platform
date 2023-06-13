@@ -59,6 +59,27 @@ tinyMCE.init({
 function tinyMceHandleEvent(evt) {
     var handled = false;
 
+    // Issue 47893: Embedding pictures in a wiki using copy + paste from file browser in Safari
+    const isBrowserSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isBrowserSafari && evt && "paste" === evt.type) {
+        const items = (evt.clipboardData || evt.originalEvent.clipboardData).items;
+        const item = items[0];
+        if (item.kind === 'file') {
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = function(event){
+                const img = `<img src="${event.target.result}" alt="" />`;
+                tinyMCE.execCommand('mceInsertContent', false, img, {skip_undo : false});
+            };
+
+            reader.readAsDataURL(blob);
+
+            // Must exit early to avoid double-pasting
+            evt.preventDefault();
+            return false;
+        }
+    }
+
     if (evt && "keydown" == evt.type && evt.ctrlKey
             && !evt.altKey && 83 == evt.keyCode) { // ctrl + s
         evt.shiftKey ? LABKEY._wiki.onFinish() : LABKEY._wiki.onSave();
