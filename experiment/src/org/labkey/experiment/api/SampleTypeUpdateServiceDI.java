@@ -1175,18 +1175,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;
-            CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
-            skip.addAll("name", "lsid", "rootmateriallsid");
-            selectAll(skip);
+
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+                selectAll(CaseInsensitiveHashSet.of("name", "rootmateriallsid"));
+            else
+                selectAll(CaseInsensitiveHashSet.of("name", "lsid", "rootmateriallsid"));
 
             _lsidDbSeq = sampleType.getSampleLsidDbSeq(_batchSize, _container);
 
             addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier)() -> generatedName);
-            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
+            if (!context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+                addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
             // Ensure we have a cpasType column and it is of the right value
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
             addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
-
         }
 
         _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)

@@ -6,6 +6,7 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
@@ -79,9 +80,10 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
                 if (typesXarFile != null)
                 {
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
+                    XarContext xarContext = typesReader.getXarSource().getXarContext();
 
                     // process any sample status data files
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false, true);
+                    importTsvData(ctx, xarContext, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes(), sampleStatusDataFiles, xarDir, false, true);
                 }
                 else
                     log.info("No sample types XAR file to process.");
