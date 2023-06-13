@@ -530,7 +530,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                             throw new FileNotFoundException(src.getAbsolutePath());
                         if (dest.exists())
                             throw new AttachmentService.DuplicateFilenameException(dest.getAbsolutePath());
-
                     }
                     if (ss != null)
                         ss.deleteResource(makeDocId(parent, filename));
