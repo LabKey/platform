@@ -2498,7 +2498,7 @@ public class ContainerManager
         return ret.length == 0 ? null : ret[0];
     }
 
-    public static Container getMoveTargetContainer(String entityType, Container sourceContainer, User user, String targetIdOrPath, Errors errors)
+    public static Container getMoveTargetContainer(@NotNull String entityType, @NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
     {
         if (targetIdOrPath == null)
         {
@@ -2555,16 +2555,22 @@ public class ContainerManager
 
     public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
-        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId());
-        if (withModified)
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
-            dataUpdate.append(", modified = ").appendValue(new Date());
-            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+            SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
+                    .append(" SET container = ").appendValue(targetContainer.getEntityId());
+            if (withModified)
+            {
+                dataUpdate.append(", modified = ").appendValue(new Date());
+                dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+            }
+            dataUpdate.append(" WHERE ").append(idField);
+            dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
+            int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
+            transaction.commit();
+
+            return numUpdated;
         }
-        dataUpdate.append(" WHERE ").append(idField);
-        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
-        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
 
     /**
