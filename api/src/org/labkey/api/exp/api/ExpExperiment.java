@@ -34,7 +34,7 @@ public interface ExpExperiment extends ExpObject
      * If this experiment is a batch, it only allows runs that are of the same parent protocol.
      * @return the protocol for which this object is a batch. May be null.
      */
-    ExpProtocol getBatchProtocol();
+    @Nullable ExpProtocol getBatchProtocol();
 
     /**
      * If this experiment is a batch, it only allows runs that are of the same parent protocol.
@@ -65,9 +65,9 @@ public interface ExpExperiment extends ExpObject
 
     boolean isHidden();
 
-
     /** Stored in the exp.experimentrun table */
     String getComments();
+
     /** Stored in the exp.experimentrun table */
     void setComments(String comments);
 

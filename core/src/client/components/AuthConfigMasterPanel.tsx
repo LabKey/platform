@@ -1,11 +1,13 @@
 import React, { PureComponent } from 'react';
 import { Panel, DropdownButton, MenuItem, Tab, Tabs } from 'react-bootstrap';
 import { LabelHelpTip } from '@labkey/components';
+
+import { LOGIN_FORM_TIP_TEXT, SSO_TIP_TEXT } from '../AuthenticationConfiguration/constants';
+
 import DragAndDropPane from './DragAndDropPane';
 import AuthRow from './AuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
-import { Actions, AuthConfig, AuthConfigProvider } from "./models";
-import {LOGIN_FORM_TIP_TEXT, SSO_TIP_TEXT} from "../AuthenticationConfiguration/constants";
+import { Actions, AuthConfig, AuthConfigProvider } from './models';
 
 interface ViewOnlyAuthConfigRowsProps {
     data: AuthConfig[];
@@ -33,30 +35,22 @@ class ViewOnlyAuthConfigRows extends PureComponent<ViewOnlyAuthConfigRowsProps> 
 }
 
 interface PrimaryTabProps {
-    canEdit: boolean;
     addNewPrimaryDropdown: JSX.Element[];
+    canEdit: boolean;
     primaryTabLoginForm: JSX.Element;
     primaryTabSSO: JSX.Element;
 }
 
 class PrimaryTab extends PureComponent<PrimaryTabProps> {
     render() {
-        const {
-            addNewPrimaryDropdown,
-            primaryTabLoginForm,
-            primaryTabSSO,
-            canEdit
-        } = this.props;
+        const { addNewPrimaryDropdown, primaryTabLoginForm, primaryTabSSO, canEdit } = this.props;
 
-        return(
+        return (
             <>
                 <div className="configurations__auth-tab">
                     {canEdit && (
                         <div className="configurations__dropdown">
-                            <DropdownButton
-                                id="primary-configurations-dropdown"
-                                title="Add New Primary Configuration"
-                            >
+                            <DropdownButton id="primary-configurations-dropdown" title="Add New Primary Configuration">
                                 {addNewPrimaryDropdown}
                             </DropdownButton>
                         </div>
@@ -88,23 +82,20 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 }
 
 interface SecondaryTabProps {
-    canEdit: boolean;
     addNewSecondaryDropdown: JSX.Element[];
+    canEdit: boolean;
     secondaryTabDuo: JSX.Element;
 }
 
 class SecondaryTab extends PureComponent<SecondaryTabProps> {
     render() {
-        const {canEdit, addNewSecondaryDropdown, secondaryTabDuo} = this.props;
+        const { canEdit, addNewSecondaryDropdown, secondaryTabDuo } = this.props;
 
-        return(
+        return (
             <div className="configurations__auth-tab">
                 {canEdit && (
                     <div className="configurations__dropdown">
-                        <DropdownButton
-                            id="secondary-configurations-dropdown"
-                            title="Add New Secondary Configuration"
-                        >
+                        <DropdownButton id="secondary-configurations-dropdown" title="Add New Secondary Configuration">
                             {addNewSecondaryDropdown}
                         </DropdownButton>
                     </div>
@@ -117,21 +108,21 @@ class SecondaryTab extends PureComponent<SecondaryTabProps> {
 }
 
 interface Props {
-    formConfigurations: AuthConfig[];
-    ssoConfigurations: AuthConfig[];
-    secondaryConfigurations: AuthConfig[];
-    primaryProviders: AuthConfigProvider[];
-    secondaryProviders: AuthConfigProvider[];
-    helpLink: string;
-    canEdit: boolean;
     actions: Actions;
+    canEdit: boolean;
+    formConfigurations: AuthConfig[];
+    helpLink: string;
+    primaryProviders: AuthConfigProvider[];
+    secondaryConfigurations: AuthConfig[];
+    secondaryProviders: AuthConfigProvider[];
+    ssoConfigurations: AuthConfig[];
 }
 
 interface State {
-    primaryModalOpen: boolean;
-    secondaryModalOpen: boolean;
     addModalType: string | null;
     modalOpen: boolean;
+    primaryModalOpen: boolean;
+    secondaryModalOpen: boolean;
 }
 
 export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<State>> {
@@ -145,14 +136,14 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
         };
     }
 
-    // Whether or not a Create New AuthConfig modal is open
+    // Whether a Create New AuthConfig modal is open
     onToggleModal = (toggled: string): void => {
         this.setState(() => ({
             [toggled]: !this.state[toggled],
         }));
     };
 
-    // Whether or not a AuthRow modal is open
+    // Whether an AuthRow modal is open
     toggleModalOpen = (modalOpen: boolean): void => {
         this.setState({ modalOpen });
     };
@@ -177,109 +168,99 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
             secondaryConfigurations,
             canEdit,
             actions,
-            helpLink
+            helpLink,
         } = this.props;
 
-        const {primaryModalOpen, secondaryModalOpen, addModalType} = this.state;
+        const { primaryModalOpen, secondaryModalOpen, addModalType } = this.state;
 
-        const addNewPrimaryDropdown =
-            Object.keys(primaryProviders).map(authOption => (
-                <MenuItem
-                    key={authOption}
-                    onClick={() => this.setState({ primaryModalOpen: true, addModalType: authOption })}>
-                    {authOption} : {primaryProviders[authOption].description}
-                </MenuItem>
-            ));
+        const addNewPrimaryDropdown = Object.keys(primaryProviders).map(authOption => (
+            <MenuItem
+                key={authOption}
+                onClick={() => this.setState({ primaryModalOpen: true, addModalType: authOption })}
+            >
+                {authOption} : {primaryProviders[authOption].description}
+            </MenuItem>
+        ));
 
-        const addNewSecondaryDropdown =
-            Object.keys(secondaryProviders).map(authOption => (
-                <MenuItem
-                    key={authOption}
-                    onClick={() => this.setState({ secondaryModalOpen: true, addModalType: authOption })}>
-                    {authOption} : {secondaryProviders[authOption].description}
-                </MenuItem>
-            ));
+        const addNewSecondaryDropdown = Object.keys(secondaryProviders).map(authOption => (
+            <MenuItem
+                key={authOption}
+                onClick={() => this.setState({ secondaryModalOpen: true, addModalType: authOption })}
+            >
+                {authOption} : {secondaryProviders[authOption].description}
+            </MenuItem>
+        ));
 
         const dbAuth = formConfigurations.slice(-1)[0];
         const isDragDisabled = this.state.modalOpen;
 
-        const primaryTabLoginForm =
-            canEdit ? (
-                <div>
-                    <DragAndDropPane
-                        configType="formConfigurations"
-                        authConfigs={formConfigurations.slice(0, -1)} // Database config is excluded from DragAndDrop
-                        providers={primaryProviders}
-                        isDragDisabled={isDragDisabled}
-                        actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
-                        canEdit={canEdit}
-                    />
-
-                    <AuthRow
-                        draggable={false}
-                        toggleModalOpen={this.toggleModalOpen}
-                        authConfig={dbAuth}
-                        canEdit={canEdit}
-                    />
-                </div>
-            ) : (
-                <ViewOnlyAuthConfigRows data={formConfigurations} providers={primaryProviders} />
-            );
-
-        const primaryTabSSO =
-            canEdit ? (
+        const primaryTabLoginForm = canEdit ? (
+            <div>
                 <DragAndDropPane
-                    configType="ssoConfigurations"
-                    authConfigs={ssoConfigurations}
+                    configType="formConfigurations"
+                    authConfigs={formConfigurations.slice(0, -1)} // Database config is excluded from DragAndDrop
                     providers={primaryProviders}
                     isDragDisabled={isDragDisabled}
-                    actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
+                    actions={{ ...actions, toggleModalOpen: this.toggleModalOpen }}
                     canEdit={canEdit}
                 />
-            ) : (
-                <ViewOnlyAuthConfigRows data={ssoConfigurations} providers={primaryProviders} />
-            );
 
-        const secondaryTabDuo =
-            canEdit ? (
-                <DragAndDropPane
-                    configType="secondaryConfigurations"
-                    authConfigs={secondaryConfigurations}
-                    providers={secondaryProviders}
-                    isDragDisabled={isDragDisabled}
-                    actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
+                <AuthRow
+                    draggable={false}
+                    toggleModalOpen={this.toggleModalOpen}
+                    authConfig={dbAuth}
                     canEdit={canEdit}
                 />
-            ) : (
-                <ViewOnlyAuthConfigRows data={secondaryConfigurations} providers={secondaryProviders} />
-            );
+            </div>
+        ) : (
+            <ViewOnlyAuthConfigRows data={formConfigurations} providers={primaryProviders} />
+        );
 
-        const authConfig = {description: addModalType + ' Configuration', enabled: true, provider: addModalType};
-        const addNewModal = (primaryModalOpen || secondaryModalOpen) &&
-                <DynamicConfigurationModal
-                        authConfig={authConfig}
-                        modalType={
-                            primaryModalOpen
-                                ? primaryProviders[addModalType]
-                                : secondaryProviders[addModalType]
-                        }
-                        configType={this.determineConfigType(addModalType)}
-                        canEdit={canEdit}
-                        title={'New ' + addModalType + ' Configuration'}
-                        updateAuthRowsAfterSave={actions.updateAuthRowsAfterSave}
-                        closeModal={() => {
-                            this.onToggleModal(
-                                primaryModalOpen ? 'primaryModalOpen' : 'secondaryModalOpen'
-                            );
-                            this.toggleModalOpen(false);
-                        }}
-                />;
+        const primaryTabSSO = canEdit ? (
+            <DragAndDropPane
+                configType="ssoConfigurations"
+                authConfigs={ssoConfigurations}
+                providers={primaryProviders}
+                isDragDisabled={isDragDisabled}
+                actions={{ ...actions, toggleModalOpen: this.toggleModalOpen }}
+                canEdit={canEdit}
+            />
+        ) : (
+            <ViewOnlyAuthConfigRows data={ssoConfigurations} providers={primaryProviders} />
+        );
+
+        const secondaryTabDuo = canEdit ? (
+            <DragAndDropPane
+                configType="secondaryConfigurations"
+                authConfigs={secondaryConfigurations}
+                providers={secondaryProviders}
+                isDragDisabled={isDragDisabled}
+                actions={{ ...actions, toggleModalOpen: this.toggleModalOpen }}
+                canEdit={canEdit}
+            />
+        ) : (
+            <ViewOnlyAuthConfigRows data={secondaryConfigurations} providers={secondaryProviders} />
+        );
+
+        const authConfig = { description: addModalType + ' Configuration', enabled: true, provider: addModalType };
+        const addNewModal = (primaryModalOpen || secondaryModalOpen) && (
+            <DynamicConfigurationModal
+                authConfig={authConfig}
+                modalType={primaryModalOpen ? primaryProviders[addModalType] : secondaryProviders[addModalType]}
+                configType={this.determineConfigType(addModalType)}
+                canEdit={canEdit}
+                title={'New ' + addModalType + ' Configuration'}
+                updateAuthRowsAfterSave={actions.updateAuthRowsAfterSave}
+                closeModal={() => {
+                    this.onToggleModal(primaryModalOpen ? 'primaryModalOpen' : 'secondaryModalOpen');
+                    this.toggleModalOpen(false);
+                }}
+            />
+        );
 
         return (
             <Panel>
-                <Panel.Heading>
-                    Configurations
-                </Panel.Heading>
+                <Panel.Heading>Configurations</Panel.Heading>
                 <Panel.Body>
                     <a className="configurations__help-link" href={helpLink}>
                         Get help with authentication

@@ -55,15 +55,19 @@ public class AliasManager
             claimAliases(columns);
     }
 
-    /** Allows alpha and underscores, and numbers for all but the first character */
+    /**
+     *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
+     *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
+     */
     public static boolean isLegalNameChar(char ch, boolean first)
     {
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
+        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
             return true;
         if (first)
             return false;
-        return ch >= '0' && ch <= '9';
+        return ch >= '0' && ch <= '9' || ch == '_';
     }
+
 
     public static boolean isLegalName(String str)
     {
@@ -92,10 +96,14 @@ public class AliasManager
             return str;
 
         StringBuilder sb = new StringBuilder(length+20);
-        if (i==0 && isLegalNameChar(ch, false))
+        if (i==0)
         {
-            i++;
-            sb.append('_').append(ch);
+            sb.append("X_");
+            if (isLegalNameChar(ch, false))
+            {
+                sb.append(ch);
+                i++;
+            }
         }
         else
         {
@@ -105,7 +113,7 @@ public class AliasManager
         for ( ; i < length ; i ++)
         {
             ch = str.charAt(i);
-            boolean isLegal = isLegalNameChar(ch, i==0);
+            boolean isLegal = isLegalNameChar(ch, false);
             if (isLegal)
             {
                 sb.append(ch);
@@ -127,7 +135,9 @@ public class AliasManager
                 }
             }
         }
-        return sb.toString();
+        var ret = sb.toString();
+        assert isLegalName(ret);
+        return ret;
     }
 
 
@@ -162,17 +172,19 @@ public class AliasManager
     {
         String ret = legalNameFromName(str);
         if (null != dialect && dialect.isReserved(ret))
-            ret = "_" + ret;
+            ret = ret + "_";
         int length = ret.length();
         if (0 == length)
-            return "_";
+            return "X_";
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
         int maxLength = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength());
         if (reserveCount > 0)
             maxLength -= reserveCount;
         if (maxLength < 5)
             throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
-        return (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
+        ret = (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
+        assert isLegalName(ret);
+        return ret;
     }
 
 
@@ -189,7 +201,9 @@ public class AliasManager
             connector = "_";
         }
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
-        return truncate(sb.toString(), useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength()));
+        var ret = truncate(sb.toString(), useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength()));
+        assert isLegalName(ret);
+        return ret;
     }
 
 
@@ -328,9 +342,10 @@ public class AliasManager
         {
             assertEquals("bob", legalNameFromName("bob"));
             assertEquals("bob1", legalNameFromName("bob1"));
-            assertEquals("_1", legalNameFromName("1"));
-            assertEquals("_1bob", legalNameFromName("1bob"));
-            assertEquals("_bob", legalNameFromName("?bob"));
+            assertEquals("X_1", legalNameFromName("1"));
+            assertEquals("X_1bob", legalNameFromName("1bob"));
+            assertEquals("X__bob", legalNameFromName("_bob"));
+            assertEquals("X__bob", legalNameFromName("?bob"));
             assertEquals("bob_", legalNameFromName("bob?"));
             assertEquals("bob_by", legalNameFromName("bob?by"));
             assertFalse(legalNameFromName("bob+").equals(legalNameFromName("bob-")));
@@ -352,11 +367,11 @@ public class AliasManager
             assertEquals("fred1", m.decideAlias("fred"));
             assertEquals("fred2", m.decideAlias("fred"));
 
-            assertEquals("_1fred", m.decideAlias("1fred"));
-            assertEquals("_1fred1", m.decideAlias("1fred"));
-            assertEquals("_1fred2", m.decideAlias("1fred"));
+            assertEquals("X_1fred", m.decideAlias("1fred"));
+            assertEquals("X_1fred1", m.decideAlias("1fred"));
+            assertEquals("X_1fred2", m.decideAlias("1fred"));
 
-            assertEquals("_select", m.decideAlias("select"));
+            assertEquals("select_", m.decideAlias("select"));
 
             assertEquals(m._dialect.getIdentifierMaxLength(), m.decideAlias("This is a very long name for a column, but it happens! go figure.").length());
         }

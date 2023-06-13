@@ -178,7 +178,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public ColumnInfo getExpObjectColumn()
     {
-        var ret = wrapColumn("_ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
+        var ret = wrapColumn("ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -344,7 +345,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     @Override
     public String toJSONString()
     {
-        return _str;
+        return JSONObject.quote(_str);
     }
 }
 
