@@ -382,4 +382,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @param protocols all protocols for this assay provider
      */
     default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
+
+    void moveRuns(List<ExpRun> value, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
 }

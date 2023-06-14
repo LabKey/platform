@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
@@ -26,6 +27,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -35,12 +37,15 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -68,6 +73,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -76,6 +82,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -112,6 +119,8 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -128,8 +137,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.labkey.api.data.CompareType.IN;
 
 /**
  * User: jeckels
@@ -1733,5 +1745,235 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
         return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+    }
+
+    public record AssayFileMoveData(ExpRun run, String fieldName, File sourceFile, File targetFile) {}
+
+    public record AssayMoveData(Map<String, Integer> counts, Map<Integer, List<AssayFileMoveData>> fileMovesByRunId) {}
+
+    @Override
+    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData)
+    {
+        if (runs.isEmpty())
+            return;
+
+        Container sourceContainer = runs.get(0).getContainer();
+        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+
+        ExperimentService experimentService = ExperimentService.get();
+
+        Map<String, Integer> updateCounts = assayMoveData.counts;
+
+        // update Experiment
+        TableInfo experimentTable = experimentService.getTinfoExperiment();
+        List<Integer> runBatchIds = runs.stream().map(ExpRun::getBatch).filter(Objects::nonNull).map(ExpExperiment::getRowId).toList();
+        SQLFragment updateSql = new SQLFragment("UPDATE ").append(experimentTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE batchprotocolid ");
+        experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runBatchIds);
+        int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateSql);
+        updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
+
+        // update ExperimentRun
+        TableInfo runsTable = experimentService.getTinfoExperimentRun();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        updateSql = new SQLFragment("UPDATE ").append(runsTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
+        int updateRunsCount = new SqlExecutor(runsTable.getSchema()).execute(updateSql);
+        updateCounts.put("experimentRuns", updateCounts.getOrDefault("experimentRuns", 0) + updateRunsCount);
+
+        // update Exp.Data
+        TableInfo expDataTable = experimentService.getTinfoData();
+        updateSql = new SQLFragment("UPDATE ").append(expDataTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE runid ");
+        expDataTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
+        int expDataCount = new SqlExecutor(expDataTable.getSchema()).execute(updateSql);
+        updateCounts.put("expData", updateCounts.getOrDefault("expData", 0) + expDataCount);
+
+        // update exp.data.datafileurl
+        if (FileContentService.get().getFileRoot(sourceContainer) != null)
+        {
+            updateDataFileUrl(runs, sourceContainer, targetContainer, user, assayMoveData);
+            updateRunFiles(runs, sourceContainer, targetContainer, user, assayMoveData);
+        }
+
+        // handle results level data
+        moveAssayResults(runs, assayProtocol, sourceContainer, targetContainer, user, assayMoveData);
+    }
+
+    private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    {
+        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+
+        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+
+        List<? extends DomainProperty> fileDomainProps = getRunDomain(assayProtocol)
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+
+        if (fileDomainProps.isEmpty())
+            return;
+
+        FileContentService fileContentService = FileContentService.get();
+        for (ExpRun run : runs)
+        {
+            for (DomainProperty fileProp : fileDomainProps )
+            {
+                String sourceFileName;
+                File sourceFile;
+                Object fileValue = run.getProperty(fileProp);
+                if (fileValue == null)
+                    continue;
+
+                if (fileValue instanceof String)
+                {
+                    sourceFileName = (String) fileValue;
+                    sourceFile = new File(sourceFileName);
+                }
+                else
+                {
+                    sourceFile = (File) fileValue;
+                    sourceFileName = sourceFile.getAbsolutePath();
+                }
+
+                File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
+                if (updatedFile != null)
+                {
+                    Integer runId = run.getRowId();
+                    movedFiles.putIfAbsent(runId, new ArrayList<>());
+                    movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
+                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                }
+            }
+        }
+    }
+
+    private void updateDataFileUrl(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    {
+        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+        TableInfo expDataTable = ExperimentService.get().getTinfoData();
+
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("runid"), runRowIds, IN);
+        TableSelector ts = new TableSelector(expDataTable, expDataTable.getColumns("runid","datafileurl"), filter, null);
+        Map<Integer, String> runFile = ts.getValueMap();
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+            return;
+
+        if (runFile.isEmpty())
+            return;
+
+        Map<Integer, ExpRun> runMap = new HashMap<>();
+        runs.forEach(run -> runMap.put(run.getRowId(), run));
+        for (Integer runId : runFile.keySet())
+        {
+            String oldFileUrl = runFile.get(runId);
+            if (StringUtils.isEmpty(oldFileUrl))
+                continue;
+
+            try
+            {
+                URL url = new URL(oldFileUrl);
+                URI uri = url.toURI();
+                File sourceFile = new File(uri);
+                File updatedFile = fileContentService.getMoveTargetFile(sourceFile.getAbsolutePath(), sourceContainer, targetContainer);
+                if (updatedFile != null)
+                {
+                    movedFiles.putIfAbsent(runId, new ArrayList<>());
+                    movedFiles.get(runId).add(new AssayFileMoveData(runMap.get(runId), null, sourceFile, updatedFile));
+                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+    }
+
+    protected void moveAssayResults(List<ExpRun> runs, ExpProtocol protocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    {
+        String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
+        AssaySchema schema = createProtocolSchema(user, targetContainer, protocol, null);
+        FilteredTable assayResultTable = (FilteredTable) schema.getTable(tableName);
+        if (assayResultTable == null)
+            return;
+
+        updateResultFiles(assayResultTable, runs, protocol, sourceContainer, targetContainer, user, assayMoveData);
+    }
+
+    private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    {
+        if (FileContentService.get().getFileRoot(sourceContainer) == null)
+            return;
+
+        Domain resultsDomain = getResultsDomain(assayProtocol);
+        if (resultsDomain == null)
+            return;
+
+        List<String> fileFields = resultsDomain
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI()))
+                .map(ImportAliasable::getName)
+                .toList();
+
+        if (fileFields.isEmpty())
+            return;
+
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+            return;
+
+        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+
+        SimpleFilter filter = new SimpleFilter();
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        filter.addCondition(FieldKey.fromParts("run"), runRowIds, IN);
+
+        Map<Integer, ExpRun> runMap = new HashMap<>();
+        runs.forEach(run -> runMap.put(run.getRowId(), run));
+
+        for (String fileField : fileFields)
+        {
+            String columnName = assayResultTable.getSchema().getSqlDialect().getColumnSelectName(fileField);
+
+            TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", columnName), filter, null);
+            Map<String, Object>[] resultFiles = ts.getMapArray();
+
+            for (Map<String, Object> resultRow : resultFiles)
+            {
+                String sourceFileName = (String) resultRow.get(columnName);
+                if (StringUtils.isEmpty(sourceFileName))
+                    continue;
+                Integer resultRowId = (Integer) resultRow.get("rowid");
+                Integer resultRunId = (Integer) resultRow.get("run");
+                File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
+                if (updatedFile != null)
+                {
+                    File sourceFile = new File(sourceFileName);
+
+                    movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
+                    movedFiles.get(resultRunId).add(new AssayFileMoveData(runMap.get(resultRunId), fileField, sourceFile, updatedFile));
+
+                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
+                            .append(" SET ")
+                            .append(columnName)
+                            .append(" = ").appendValue(updatedFile.getAbsolutePath())
+                            .append(" WHERE rowId = ").appendValue(resultRowId);
+                    new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
+                }
+            }
+        }
     }
 }
