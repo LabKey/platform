@@ -2209,12 +2209,6 @@ public class IssuesController extends SpringActionController
             return map;
         }
 
-        @Override
-        protected boolean deserializeOldValues()
-        {
-            return false;
-        }
-
         public Issue.action getAction()
         {
             if (getStrings().containsKey("action"))

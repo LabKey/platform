@@ -1704,12 +1704,6 @@ public class AnnouncementsController extends SpringActionController
             return _stringValues.get("parentid");
         }
 
-        @Override
-        protected boolean deserializeOldValues()
-        {
-            return false;
-        }
-
         AnnouncementModel selectAnnouncement()
         {
             if (null == _selectedAnnouncementModel)

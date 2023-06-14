@@ -36,4 +36,10 @@ public class ExperimentForm extends BeanViewForm<Experiment>
         super(Experiment.class, ExperimentServiceImpl.get().getTinfoExperiment());
         setBean(exp);
     }
+
+    @Override
+    protected boolean deserializeOldValues()
+    {
+        return true;
+    }
 }
