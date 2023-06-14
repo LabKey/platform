@@ -431,7 +431,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return generatedCount;
     }
 
-    protected List<Integer> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
+    public List<Integer> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
     {
         if (limit <= 0)
             return Collections.emptyList();
