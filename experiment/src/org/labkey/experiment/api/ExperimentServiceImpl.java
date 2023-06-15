@@ -8972,12 +8972,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     provider.moveRuns(runs, targetContainer, user, assayMoveData);
                     Map<String, Integer> counts = assayMoveData.counts();
-                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids); //TODO fix?
+                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
                     counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
                     if (auditBehavior == AuditBehaviorType.DETAILED)
                     {
                         for (ExpRun run : runs)
+                        {
+                            run.setContainer(targetContainer);
                             auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment);
+                        }
                     }
                 }
             }
