@@ -313,7 +313,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
-                                    options.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+                                    options.put(ExperimentService.QueryOptions.UseLsidForUpdate, !isUpdate);
                                     context.setConfigParameters(options);
 
                                     Map<String, Object> extraContext = null;

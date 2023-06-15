@@ -1859,7 +1859,7 @@ public class ExpDataIterators
                  }
                 else
                 {
-                    String lsid = (String) get(_lsidCol);
+                    String lsid = _lsidCol == null ? null : (String) get(_lsidCol);
                     if (null != lsid)
                         _lsids.add(lsid);
                 }
