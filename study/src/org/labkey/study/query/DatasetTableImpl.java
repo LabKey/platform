@@ -77,6 +77,7 @@ import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -112,6 +113,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -474,7 +477,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         addFolderColumn();
 
-        if(getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
+        if(ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
         {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
             setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
