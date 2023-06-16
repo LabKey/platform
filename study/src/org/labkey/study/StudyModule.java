@@ -418,8 +418,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
 
         AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
-                "Allow merge of study dataset that uses server manage additional key fields",
-                "Merging of dataset that uses server managed third key (such as GUID or auto RowId) is currently not supported. Unexpected outcome might be experienced when merge is performed.",
+                "Allow merge of study dataset that uses server-managed additional key fields",
+                "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
                 false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
