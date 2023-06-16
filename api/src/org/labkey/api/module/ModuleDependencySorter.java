@@ -44,6 +44,12 @@ public class ModuleDependencySorter
     {
         List<Pair<Module, Set<String>>> dependencies = new ArrayList<>();
         Set<String> moduleNames = new CaseInsensitiveHashSet();
+
+        // Copy the list and sort alphabetically to make the ordering deterministic
+        modules = new ArrayList<>(modules);
+        modules.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+
+        // Track which dependencies need to be resolved
         for (Module module : modules)
         {
             Pair<Module, Set<String>> dependencyInfo = new Pair<>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
@@ -51,8 +57,8 @@ public class ModuleDependencySorter
             moduleNames.add(module.getName());
         }
 
+        // Find all missing dependencies
         MultiValuedMap<String, String> missingDependencies = new ArrayListValuedHashMap<>();
-
         for (Pair<Module, Set<String>> dependency : dependencies)
         {
             for (String dependencyName : dependency.getValue())
@@ -75,6 +81,7 @@ public class ModuleDependencySorter
 //  Uncomment this to generate an SVG graph of all module dependencies
 //        graphModuleDependencies(dependencies, "all");
 
+        // Now order based on dependencies
         List<Module> result = new ArrayList<>(modules.size());
         while (!dependencies.isEmpty())
         {

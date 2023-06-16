@@ -123,6 +123,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -215,7 +216,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
-    private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
+    private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
 
     private final List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private final Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
@@ -4797,33 +4798,61 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptyList() : dataItems.stream().map(RunItem::getRowId).toList();
         Set<Integer> sampleIds = materialItems == null || materialItems.isEmpty() ? Collections.emptySet() : materialItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
 
-        if (!dataIds.isEmpty())
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
-
         if (!sampleIds.isEmpty())
-            // get all the runs that use these samples as inputs
-            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
-
-        if (!runsUsingItems.isEmpty())
         {
-            Set<ExpRun> runsToKeep = new HashSet<>();
-            // determine if there are any outputs of this run that are not being deleted. If so, remove the run from the runs to be deleted.
-            runsUsingItems.forEach(run -> {
-                run.getMaterialOutputs().forEach(
-                    sample -> {
-                        if (!sampleIds.contains(sample.getRowId()))
-                            runsToKeep.add(sample.getRun());
-                    }
-                );
-                run.getDataOutputs().forEach(
-                    dataObject -> {
-                        if (!dataIds.contains(dataObject.getRowId()))
-                            runsToKeep.add(dataObject.getRun());
-                    }
-                );
-            });
-            runsUsingItems.removeAll(runsToKeep);
+            // get runs where these samples are used as inputs
+            runsUsingItems.addAll(getDerivedRunsFromMaterial(sampleIds));
+            // retain runs if there are other inputs that are not being deleted
+            if (!runsUsingItems.isEmpty())
+            {
+                Set<ExpRun> runsToKeep = new HashSet<>();
+                runsUsingItems.forEach(run -> {
+                    run.getMaterialInputs().keySet().forEach(
+                            sample -> {
+                                if (!sampleIds.contains(sample.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                    run.getDataInputs().keySet().forEach(
+                            dataObject -> {
+                                if (!dataIds.contains(dataObject.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                });
+                runsUsingItems.removeAll(runsToKeep);
+            }
+            // add runs that will no longer have any outputs
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+        }
 
+        if (!dataIds.isEmpty())
+        {
+            // get runs where these data objects are used as inputs
+            var dataInputRuns = new ArrayList<ExpRun>(getDerivedRunsFromData(dataIds));
+            // retain runs if there are other inputs that are not being deleted
+            if (!dataInputRuns.isEmpty())
+            {
+                Set<ExpRun> runsToKeep = new HashSet<>();
+                dataInputRuns.forEach(run -> {
+                    run.getMaterialInputs().keySet().forEach(
+                            sample -> {
+                                if (!sampleIds.contains(sample.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                    run.getDataInputs().keySet().forEach(
+                            dataObject -> {
+                                if (!dataIds.contains(dataObject.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                });
+                dataInputRuns.removeAll(runsToKeep);
+            }
+            runsUsingItems.addAll(dataInputRuns);
+            // get runs that will no longer have any outputs
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -4862,6 +4891,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Integer> rowIds, TableInfo primaryTableInfo, Collection<Integer> siblingRowIds, TableInfo siblingTableInfo)
     {
         if (rowIds == null || rowIds.isEmpty())
@@ -4944,6 +4974,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
+    }
+
+
+    private Collection<? extends ExpRun> getDerivedRunsFromData(Collection<Integer> rowIds)
+    {
+        if (rowIds == null || rowIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromDataIds(getAppendInClause(rowIds))));
     }
 
     /**
@@ -5636,6 +5675,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      */
     private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
     {
+        return getTargetRunIdsFromInputRowIds(materialRowIdSQL, getTinfoMaterialInput(), "MaterialID");
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param rowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromDataIds(SQLFragment rowIdSQL)
+    {
+        return getTargetRunIdsFromInputRowIds(rowIdSQL, getTinfoDataInput(), "DataID");
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param rowIdSQL -- SQL clause generating rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromInputRowIds(SQLFragment rowIdSQL, TableInfo inputTable, String idColumn)
+    {
         // ex SQL:
         /*
             SELECT pa.RunId
@@ -5650,10 +5709,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         sql.append("SELECT pa.RunId\n");
         sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
-        sql.append(getTinfoMaterialInput(), "mi").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
-            .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-            .append("AND mi.MaterialID ").append(materialRowIdSQL);
+        sql.append(inputTable, "i").append("\n");
+        sql.append("WHERE i.TargetApplicationId = pa.RowId ")
+                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+                .append("AND i.").append(idColumn).append(" ").append(rowIdSQL);
 
         return sql;
     }

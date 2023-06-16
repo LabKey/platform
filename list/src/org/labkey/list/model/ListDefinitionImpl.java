@@ -51,6 +51,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
@@ -396,7 +397,7 @@ public class ListDefinitionImpl implements ListDefinition
         save(user, true);
     }
 
-    private static final ReentrantLock _saveLock = new ReentrantLock();
+    private static final ReentrantLock _saveLock = new ReentrantLockWithName(ListDefinitionImpl.class, "_saveLock");
 
     @Override
     public void save(User user, boolean ensureKey) throws Exception
@@ -701,7 +702,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             if (null != getDomain())
             {
-                // Go through the schema so we always get all of the XML metadata applied
+                // Go through the schema so we always get all the XML metadata applied
                 UserSchema schema = new ListQuerySchema(user, c);
                 table = schema.getTable(getName(), cf, true, false);
             }
@@ -721,11 +722,13 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    @Override
     public TableInfo getTableForInsert(User user, Container c)
     {
         return getTable(user, c, QueryService.get().getContainerFilterForLookups(c, user));
     }
 
+    @Override
     public ActionURL urlImport(Container c)
     {
         return urlForName(ListController.UploadListItemsAction.class, c);

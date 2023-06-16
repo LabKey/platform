@@ -1027,18 +1027,18 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB = c.addCommonTableExpression(new Object(), "_B_", b);
+                String cteTokenB = c.addCommonTableExpression(new Object(), "B_", b);
                 c.append("SELECT * FROM ").append(cteTokenB).append(" WHERE i=?").add(3);
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterTWO')
-                        SELECT * FROM _B_ WHERE i=3""",
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterTWO')
+                        SELECT * FROM B_ WHERE i=3""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(3, params.size());
@@ -1052,21 +1052,21 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(new Object(), "_A2_", a2);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(new Object(), "A2_", a2);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
                         ,/*CTE*/
-                        \t_A2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)
-                        SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i""",
+                        \tA2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
@@ -1081,21 +1081,21 @@ public class SQLFragment implements Appendable, CharSequence
             {
                 SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "_A_", cf);
+                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "A_", cf);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "_A2_", cf);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "A2_", cf);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
                         ,/*CTE*/
-                        \t_A2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
-                        SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i""",
+                        \tA2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());

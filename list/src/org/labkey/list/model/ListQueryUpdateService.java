@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -584,10 +583,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Nullable
     private Object getField(Map<String, Object> map, String key)
     {
+        /* TODO: this is very strange, we have a TableInfo we should be using its ColumnInfo objects to figure out aliases, we don't need to guess */
         Object value = map.get(key);
 
         if (null == value)
-            value = map.get("_" + key);
+            value = map.get(key + "_");
 
         if (null == value)
             value = map.get(AliasManager.legalNameFromName(key));

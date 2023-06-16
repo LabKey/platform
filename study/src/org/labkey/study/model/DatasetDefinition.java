@@ -108,6 +108,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -155,7 +156,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     //    static final Object MANAGED_KEY_LOCK = new Object();
     private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
-    private final ReentrantLock _lock = new ReentrantLock();
+    private final ReentrantLock _lock = new ReentrantLockWithName(DatasetDefinition.class, "_lock");
 
     private Container _definitionContainer;
     private Boolean _isShared = null;

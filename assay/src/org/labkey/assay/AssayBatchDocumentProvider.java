@@ -59,6 +59,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Batch");
         props.put(SearchService.PROPERTY.categories.toString(), getSearchCategory().getName());
         props.put(SearchService.PROPERTY.title.toString(), "Assay Batch - " + batch.getName());
 

@@ -49,6 +49,7 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.view.ActionURL;
 import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.specimen.requirements.SpecimenRequest;
@@ -577,7 +578,7 @@ public class SpecimenRequestManager
         }
     }
 
-    private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLock();
+    private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLockWithName(SpecimenRequestManager.class, "REQUEST_ADDITION_LOCK");
 
     public void createRequestSpecimenMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
             throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException, SpecimenRequestException

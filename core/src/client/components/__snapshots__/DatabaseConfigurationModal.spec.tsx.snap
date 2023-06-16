@@ -4,7 +4,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
 <Modal
   animation={true}
   autoFocus={true}
-  backdrop={true}
+  backdrop="static"
   bsClass="modal"
   dialogComponentClass={[Function]}
   enforceFocus={true}
@@ -209,7 +209,7 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
 <Modal
   animation={true}
   autoFocus={true}
-  backdrop={true}
+  backdrop="static"
   bsClass="modal"
   dialogComponentClass={[Function]}
   enforceFocus={true}

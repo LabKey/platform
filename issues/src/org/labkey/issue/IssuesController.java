@@ -933,6 +933,8 @@ public class IssuesController extends SpringActionController
         {
             if (!form.getSkipPost())
             {
+                IssueObject oldIssue = getIssue(form.getIssueId(), false);
+                form.setOldValues(oldIssue);
                 Issue.action action = form.getAction();
                 IssueObject issue = form.getBean();
 
