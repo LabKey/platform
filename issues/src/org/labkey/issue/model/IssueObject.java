@@ -18,6 +18,7 @@ package org.labkey.issue.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONPropertyIgnore;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -404,12 +405,14 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         _properties.put("closed", closed);
     }
 
+    @JSONPropertyIgnore
     @Override
     public Collection<Comment> getComments()
     {
         return new ArrayList<>(getCommentObjects());
     }
 
+    @JSONPropertyIgnore
     public Collection<CommentObject> getCommentObjects()
     {
         List<CommentObject> result = new ArrayList<>(_comments);
@@ -421,6 +424,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return new ArrayList<>(result);
     }
 
+    @JSONPropertyIgnore
     public CommentObject getLastComment()
     {
         if (null == _comments || _comments.isEmpty())
@@ -503,6 +507,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return _issueDefName;
     }
 
+    @JSONPropertyIgnore
     public Container getContainerFromId()
     {
         return ContainerManager.getForId(getContainerId());
@@ -544,6 +549,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return getNotifyListEmail(getNotifyList(), null);
     }
 
+    @JSONPropertyIgnore
     @Override
     public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
     {
