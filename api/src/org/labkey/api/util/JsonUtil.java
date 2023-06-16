@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -71,7 +72,7 @@ public class JsonUtil
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
     {
         if (p.getCurrentToken() != JsonToken.START_OBJECT)
-            throw new JsonParseException("Expected object start '{', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+            throw new JsonParseException(p, "Expected object start '{', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
 
         JsonLocation loc = p.getTokenLocation();
         p.nextToken();
@@ -81,7 +82,7 @@ public class JsonUtil
     public static void expectObjectEnd(JsonParser p) throws IOException
     {
         if (p.getCurrentToken() != JsonToken.END_OBJECT)
-            throw new JsonParseException("Expected object end '}', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+            throw new JsonParseException(p, "Expected object end '}', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
 
         p.nextToken();
     }
@@ -89,7 +90,7 @@ public class JsonUtil
     public static JsonLocation expectArrayStart(JsonParser p) throws IOException
     {
         if (p.getCurrentToken() != JsonToken.START_ARRAY)
-            throw new JsonParseException("Expected array start '[', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+            throw new JsonParseException(p, "Expected array start '[', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
 
         JsonLocation loc = p.getTokenLocation();
         p.nextToken();
@@ -99,7 +100,7 @@ public class JsonUtil
     public static void expectArrayEnd(JsonParser p) throws IOException
     {
         if (!isArrayEnd(p))
-            throw new JsonParseException("Expected array end ']', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+            throw new JsonParseException(p, "Expected array end ']', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
 
         p.nextToken();
     }
@@ -126,7 +127,7 @@ public class JsonUtil
         }
 
         if (!n.isValueNode())
-            throw new JsonParseException("Expected value node", null);
+            throw new JsonParseException("Expected value node");
 
         if (n.isNull())
             return null;
@@ -140,7 +141,7 @@ public class JsonUtil
         if (n.isTextual())
             return n.textValue();
 
-        throw new JsonParseException("Unexpected value type: " + n.getNodeType(), null);
+        throw new JsonParseException("Unexpected value type: " + n.getNodeType());
     }
 
     public static String[] getStringArray(JSONObject json, String propName)
@@ -408,6 +409,8 @@ public class JsonUtil
             json.put("actionUrl", url);
             HtmlString html = HtmlString.unsafe("<html><table><td>Hello</td></table>");
             json.put("htmlString", html);
+            User u = TestContext.get().getUser();
+            json.put("user", u);
 
             // Round trip to ensure all these JSONString implementations produce valid JSON
             JSONObject roundTripJson = new JSONObject(json.toString());
@@ -417,6 +420,7 @@ public class JsonUtil
             assertEquals(guid.toString(), roundTripJson.get("guid"));
             assertEquals(url.toString(), roundTripJson.get("actionUrl"));
             assertEquals(html.toString(), roundTripJson.get("htmlString"));
+            assertEquals(u.getUserId(), roundTripJson.get("user"));
         }
     }
 }

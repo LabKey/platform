@@ -25,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Transient;
 import org.labkey.api.issues.Issue;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -550,7 +549,6 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return getNotifyListEmail(getNotifyList(), null);
     }
 
-    @Transient
     @JSONPropertyIgnore
     @Override
     public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
@@ -613,6 +611,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return ret;
     }
 
+    @Override
     public Map<String, Object> getProperties()
     {
         return _properties;
