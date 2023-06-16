@@ -29,7 +29,25 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
@@ -166,7 +184,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
@@ -2510,10 +2527,12 @@ public class StudyController extends BaseStudyController
 
             if (!result.getKey().isEmpty())
             {
-                // Log the import
+                // Log the import when SUMMARY is configured, if DETAILED is configured the DetailedAuditLogDataIterator will handle each row change.
+                // It would be nice in the future to replace the DetailedAuditLogDataIterator with a general purpose AuditLogDataIterator
+                // that can delegate the audit behavior type to the AuditDataHandler, so this code can go away
+                //
                 String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
-                StudyServiceImpl.addDatasetAuditEvent(
-                        getUser(), getContainer(), _def, comment, result.getValue());
+                new DatasetDefinition.DatasetAuditHandler(_def).addAuditEvent(getUser(), getContainer(), AuditBehaviorType.SUMMARY, comment, result.getValue());
             }
 
             return result.getKey().size();

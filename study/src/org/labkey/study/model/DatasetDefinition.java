@@ -1684,35 +1684,39 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditTypeOverride, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
         {
-            // Only add an event if Detailed audit logging is enabled
-            if (AuditBehaviorType.DETAILED != auditType)
-                return;
-            Objects.requireNonNull(rows);
-            AuditLogService auditLog = AuditLogService.get();
-
-            // Caller should provide existing rows for MERGE
-            assert action != QueryService.AuditAction.MERGE || null != existingRows;
-
-            List<DatasetAuditProvider.DatasetAuditEvent> batch = new ArrayList<>();
-            for (int i=0; i < rows.size(); i++)
+            switch (table.getAuditBehavior(auditTypeOverride))
             {
-                Map<String, Object> row = rows.get(i);
-                Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
-                // note switched order (oldRecord, newRecord)
-                var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow);
-                batch.add(event);
-                if (batch.size() > 1000)
+                case NONE,SUMMARY -> {}
+                case DETAILED ->
                 {
-                    auditLog.addEvents(user, batch);
-                    batch.clear();
+                    Objects.requireNonNull(rows);
+                    AuditLogService auditLog = AuditLogService.get();
+
+                    // Caller should provide existing rows for MERGE
+                    assert action != QueryService.AuditAction.MERGE || null != existingRows;
+
+                    List<DatasetAuditProvider.DatasetAuditEvent> batch = new ArrayList<>();
+                    for (int i=0; i < rows.size(); i++)
+                    {
+                        Map<String, Object> row = rows.get(i);
+                        Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
+                        // note switched order (oldRecord, newRecord)
+                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow);
+                        batch.add(event);
+                        if (batch.size() > 1000)
+                        {
+                            auditLog.addEvents(user, batch);
+                            batch.clear();
+                        }
+                    }
+                    if (batch.size() > 0)
+                    {
+                        auditLog.addEvents(user, batch);
+                        batch.clear();
+                    }
                 }
-            }
-            if (batch.size() > 0)
-            {
-                auditLog.addEvents(user, batch);
-                batch.clear();
             }
         }
 
@@ -1779,6 +1783,29 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if (newRecordString != null) event.setNewRecordMap(newRecordString);
 
             return event;
+        }
+
+        /**
+         * General purpose method to add dataset audit events.
+         * @param requiredAuditType The expected audit behavior type. If this does not match the type set on the
+         *                          dataset, then the event will not be logged.
+         */
+        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment, UploadLog ul /*optional*/)
+        {
+            TableInfo table = _dataset.getTableInfo(user);
+            if (table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
+                return;
+
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), comment);
+
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setDatasetId(_dataset.getDatasetId());
+            if (ul != null)
+            {
+                event.setLsid(ul.getFilePath());
+            }
+            AuditLogService.get().addEvent(user, event);
         }
     }
 
@@ -2727,7 +2754,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), getTableInfo(u), AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
 
             transaction.commit();
         }

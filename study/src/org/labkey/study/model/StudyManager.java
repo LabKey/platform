@@ -145,7 +145,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -2667,8 +2666,7 @@ public class StudyManager
 
         SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
         QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
-        StudyServiceImpl.addDatasetAuditEvent(
-                user, study.getContainer(), ds, "Dataset deleted: " + ds.getName(),null);
+        new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(),null);
 
         unindexDataset(ds);
     }

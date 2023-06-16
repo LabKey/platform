@@ -38,6 +38,7 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -506,7 +507,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                     StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
 
                                 ViewContext context = form.getViewContext();
-                                StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                                new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
                                         "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
 
                                 def.setLastUpdated(new Date());
@@ -523,7 +524,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 catch (SQLException | IOException e)
                 {
                     ViewContext context = form.getViewContext();
-                    StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                    new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
                             "Dataset snapshot was not updated. Cause of failure: " + e.getMessage(), null);
                 }
             }
